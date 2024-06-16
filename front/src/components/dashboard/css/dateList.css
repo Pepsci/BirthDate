@@ -1,0 +1,41 @@
+
+.birthDeck{
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.birthCard{
+    position: relative;
+    width: 200px;
+    height: 200px;
+    padding: 1rem;
+    margin: auto;
+    border: 3px solid black;
+    margin-bottom: 1rem;
+    border-radius: 10%;
+}
+
+.birthCard-delete{
+    position: absolute;
+    bottom: 0px;
+    right: 0px;
+}
+
+#delete{
+    background-color: transparent;
+    border: none;
+}
+
+#delete img{
+    height: 30px;
+    cursor: pointer;
+    margin-right: 3px;
+}
+
+.birthCard-name{
+    margin-right: 1rem;
+}
+
+
+
