@@ -17,9 +17,10 @@ const Home = () => {
           <h1>Je suis connecté avec {currentUser && currentUser.name}</h1>
           <img
             src={`https://api.dicebear.com/8.x/bottts/svg?seed=${currentUser.surname}`}
-            alt=""
+            alt="avatar"
+            className="avatar"
           />
-          <img src={`${currentUser.avatar}`} alt="" />
+          {/* <img src={`${currentUser.avatar}`} alt="" /> */}
           <button onClick={logOut}>LogOut</button>
           <DateList date={date} />
         </>

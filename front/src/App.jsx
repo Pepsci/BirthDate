@@ -9,16 +9,34 @@ function App() {
   return (
     <div className="App">
       <div className="headerApp">
-        <h1>BirthDate</h1>
+        <h1 className="title-font title-font-size">BirthDate</h1>
       </div>
 
-      <Routes>
-        <Route path="/" element={<Signup />} />
-        <Route path="/login" element={<Login />} />
-        <Route element={<PrivateRoute />}>
-          <Route path="/home" element={<Home />} />
-        </Route>
-      </Routes>
+      <div className="routeContent">
+        <Routes>
+          <Route
+            path="/"
+            element={
+              <div className="contentCenter">
+                {" "}
+                <Signup />
+              </div>
+            }
+          />
+          <Route
+            path="/login"
+            element={
+              <div className="contentCenter">
+                {" "}
+                <Login />{" "}
+              </div>
+            }
+          />
+          <Route element={<PrivateRoute />}>
+            <Route path="/home" element={<Home />} />
+          </Route>
+        </Routes>
+      </div>
     </div>
   );
 }

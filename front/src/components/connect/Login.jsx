@@ -40,9 +40,9 @@ const Login = () => {
 
   return (
     <div className="form-connect">
-      {/* <h1>Login</h1> */}
       <div className="peel">
         <form action="" className="form" onSubmit={handleSubmit}>
+          <h1 className="form-title-font">Login</h1>
           {/* <label htmlFor="email" className="form-label">
           Email
         </label> */}
@@ -73,8 +73,8 @@ const Login = () => {
         </form>
       </div>
 
-      <div className="form-connect-message">
-        {errorMessage && <p className="error-message">{errorMessage}</p>}
+      <div className="form-connect-message font fontErrorMessage">
+        {errorMessage && <p className="error-message ">{errorMessage}</p>}
         <Link to={"/"}>
           <span className="form-connect-msg">Don't have an account yet?</span>
         </Link>

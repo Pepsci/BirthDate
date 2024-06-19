@@ -2,8 +2,16 @@
     position: relative;
     display: flex;
     flex-direction: column;
+    margin-top: 100px;
+    margin-bottom: auto;
 }
 
+.form-title-font{
+    font-family: 'Roboto', sans-serif;
+    font-size: 32px;
+    color: #4a4a4a;
+    text-align: center;
+}
 
 .form{
     position: relative;
@@ -55,3 +63,8 @@
     margin: 1rem;
     font-size: 1rem;
 }
+
+/* .formConnectMessage{
+    margin-top: 20px;
+    padding: 2rem;
+} */

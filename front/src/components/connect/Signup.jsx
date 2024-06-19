@@ -51,8 +51,8 @@ const Signup = () => {
   return (
     <div className="form-connect">
       <div className="peel">
-        {/* <h1>Signup</h1> */}
         <form className="form" onSubmit={handleSubmit}>
+          <h1 className="form-title-font">Signup</h1>
           {/* <label htmlFor="name" className="form-label">
             Name
           </label> */}
@@ -111,19 +111,26 @@ const Signup = () => {
             }}
           />
           <div className="form-connect-avatar">
-            <span className="form-connect-msg">This will be your avatar</span>
+            <span className="form-connect-msg font">
+              This will be your avatar
+            </span>
             <img
               src={`https://api.dicebear.com/8.x/bottts/svg?seed=${user.surname}`}
-              alt=""
+              alt="avatar"
+              className="avatar"
             />
           </div>
           <button>Sign up</button>
         </form>
       </div>
 
-      {erroMessage && <p className="error-message">{erroMessage}</p>}
+      {erroMessage && (
+        <p className="error-message fontErrorMessage">{erroMessage}</p>
+      )}
       <Link to={"/login"}>
-        <span className="form-connect-msg">Already have an account ?</span>
+        <span className="formConnectMessage font">
+          Already have an account ?
+        </span>
       </Link>
     </div>
   );
