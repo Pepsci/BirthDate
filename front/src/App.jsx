@@ -8,10 +8,6 @@ import PrivateRoute from "./protectedRoutes/PrivateRoute";
 function App() {
   return (
     <div className="App">
-      <div className="headerApp">
-        <h1 className="title-font title-font-size">BirthDate</h1>
-      </div>
-
       <div className="routeContent">
         <Routes>
           <Route

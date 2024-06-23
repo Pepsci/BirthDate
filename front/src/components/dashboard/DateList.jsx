@@ -5,18 +5,21 @@ import CreateDate from "./CreateDate";
 import "./css/dateList.css";
 import corbeille1 from "./icons/corbeille1.png";
 import corbeille2 from "./icons/corbeille2.png";
+import plus from "./icons/plus.png";
+import moins from "./icons/moins.png";
 import annule from "./icons/annule.png";
 import { getRandomImage } from "./CadeauxRandom";
 import Countdown from "./Countdown";
 
 const ITEMS_PER_PAGE = 10;
+const ITEMS_PER_PAGE_MOBILE = 6;
 
 const DateList = () => {
   const [dates, setDates] = useState([]);
-  const [searchDate] = useState("");
   const { currentUser } = useAuth();
   const [currentPage, setCurrentPage] = useState(1);
   const [deleteId, setDeleteId] = useState(null);
+  const [isFormVisible, setIsFormVisible] = useState(false);
 
   useEffect(() => {
     apiHandler
@@ -32,14 +35,9 @@ const DateList = () => {
 
   if (!dates) return <p>Loading...</p>;
 
-  // let search = null;
-  // if (searchDate !== "") {
-  //   search = dates.filter((date) => {
-  //     return date.name.toLowerCase().includes(searchDate.toLowerCase());
-  //   });
-  // } else {
-  //   search = dates;
-  // }
+  const toggleFormVisibility = () => {
+    setIsFormVisible(!isFormVisible);
+  };
 
   const handleDateAdded = (newDate) => {
     setDates((prevDates) => [...prevDates, newDate]);
@@ -96,16 +94,27 @@ const DateList = () => {
   const nextPage = () => setCurrentPage((prev) => prev + 1);
   const prevPage = () => setCurrentPage((prev) => prev - 1);
 
+  let itemsPerPage =
+    window.innerWidth <= 600 ? ITEMS_PER_PAGE_MOBILE : ITEMS_PER_PAGE;
+
   return (
     <div className="dateList">
-      <CreateDate onDateAdded={handleDateAdded} />
-      <h1>Vos BirthDate</h1>
+      <div className="dateListheaderConter">
+        <h1 className="titleFont">Vos BirthDate</h1>
+        <button
+          className={`btnSwitch ${isFormVisible ? "active" : ""}`}
+          onClick={toggleFormVisibility}
+        >
+          {isFormVisible ? "Cacher le formulaire" : "Ajoutez une date"}
+        </button>
+        {isFormVisible && <CreateDate onDateAdded={handleDateAdded} />}
+      </div>
 
       <div className="birthDeck">
-        {currentItems.map((date) => {
+        {currentItems.slice(0, itemsPerPage).map((date) => {
           const randomImage = getRandomImage();
           return (
-            <div className="birthCard" key={date._id + "date"}>
+            <div className="birthCard titleFont" key={date._id + "date"}>
               <div className="birthCardName">
                 <span className="birthCard-name">
                   <b>{date.name}</b>

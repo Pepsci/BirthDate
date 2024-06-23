@@ -8,23 +8,28 @@ const Home = () => {
   const [date] = useState([]);
 
   return (
-    <div>
-      <div className="homePage-title">
-        <h1>Home page \o/</h1>
+    <div className="homePageRoot">
+      <div className="headerApp homePageHeader">
+        <h1 className="titleFont titleFontSize">BirthDate</h1>
+        {isLoggedIn && (
+          <div className="homePageUser">
+            <div className="homePageCurrentUser">
+              <img
+                src={`https://api.dicebear.com/8.x/bottts/svg?seed=${currentUser.surname}`}
+                alt="avatar"
+                className="avatar"
+              />
+              <div className="homePageCurrentUserName">
+                {currentUser && currentUser.name}
+              </div>
+            </div>
+            <button className="bntLogout" onClick={logOut}>
+              LogOut
+            </button>
+          </div>
+        )}
       </div>
-      {isLoggedIn && (
-        <>
-          <h1>Je suis connecté avec {currentUser && currentUser.name}</h1>
-          <img
-            src={`https://api.dicebear.com/8.x/bottts/svg?seed=${currentUser.surname}`}
-            alt="avatar"
-            className="avatar"
-          />
-          {/* <img src={`${currentUser.avatar}`} alt="" /> */}
-          <button onClick={logOut}>LogOut</button>
-          <DateList date={date} />
-        </>
-      )}
+      {isLoggedIn && <DateList date={date} />}
     </div>
   );
 };

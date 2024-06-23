@@ -10,7 +10,7 @@
   width: 100%;
   height: 100px;
   background-color: white;
-  padding-bottom: 1rem;
+  z-index: 1;
 }
 
 .routeContent{
@@ -23,7 +23,7 @@
   height: calc(100vh - 100px);
 }
 
-.title-font{
+.titleFont{
   font-family: 'Roboto', sans-serif;
   color: #4a4a4a;
 }
@@ -37,10 +37,11 @@
   color: red
 }
 
-.title-font-size{
+.titleFontSize{
   font-size: 50px;
 }
 
 .avatar{
-  height: 100px;
+  height: 60px;
 }
+

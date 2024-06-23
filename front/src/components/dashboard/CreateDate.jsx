@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import apiHandler from "../../api/apiHandler";
 import useAuth from "../../context/useAuth";
+import "./css/createDate.css";
 
 const CreateDate = ({ onDateAdded }) => {
   const { currentUser } = useAuth();
@@ -44,36 +45,37 @@ const CreateDate = ({ onDateAdded }) => {
   };
 
   return (
-    <div className="date">
+    <div className="formAddDAte">
       <form className="form-date" onSubmit={handleClick}>
-        <label htmlFor="name" className="form-date-label">
+        {/* <label htmlFor="name" className="form-date-label">
           Name
-        </label>
+        </label> */}
         <input
           type="text"
           name="name"
           id="name"
-          className="form-date-input"
+          className="formAddInput"
           placeholder="Enter a name"
           value={date.name}
           onChange={(e) => setDate({ ...date, name: e.target.value })}
         />
 
-        <label htmlFor="surname" className="form-date-label">
+        {/* <label htmlFor="surname" className="form-date-label">
           Surname
-        </label>
+        </label> */}
         <input
           type="text"
           name="surname"
           id="surname"
-          className="form-date-input"
+          className="formAddInput"
           placeholder="Enter a surname"
           value={date.surname}
           onChange={(e) => setDate({ ...date, surname: e.target.value })}
         />
 
-        <label htmlFor="date">Date</label>
+        {/* <label htmlFor="date">Date</label> */}
         <input
+          className="formAddInput"
           type="date"
           name="date"
           value={date.date}

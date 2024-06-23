@@ -25,7 +25,6 @@
 }
 
 .form-input{
-    border: 2px black;
     background: transparent;
     border: transparent;
     margin: 1rem;
@@ -64,7 +63,7 @@
     font-size: 1rem;
 }
 
-/* .formConnectMessage{
-    margin-top: 20px;
-    padding: 2rem;
-} */
+.formConnectAvatar{
+    display: flex;
+    flex-direction: column;
+}

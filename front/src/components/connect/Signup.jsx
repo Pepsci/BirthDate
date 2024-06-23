@@ -110,7 +110,7 @@ const Signup = () => {
               setUser({ ...user, password: e.target.value });
             }}
           />
-          <div className="form-connect-avatar">
+          <div className="formConnectAvatar titleFont">
             <span className="form-connect-msg font">
               This will be your avatar
             </span>
