@@ -10,6 +10,7 @@ import moins from "./icons/moins.png";
 import annule from "./icons/annule.png";
 import { getRandomImage } from "./CadeauxRandom";
 import Countdown from "./Countdown";
+import UpdateDate from "./UpdateDate";
 
 const ITEMS_PER_PAGE = 10;
 const ITEMS_PER_PAGE_MOBILE = 6;
@@ -20,6 +21,8 @@ const DateList = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [deleteId, setDeleteId] = useState(null);
   const [isFormVisible, setIsFormVisible] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [dateToUpdate, setDateToUpdate] = useState(null);
 
   useEffect(() => {
     apiHandler
@@ -97,6 +100,35 @@ const DateList = () => {
   let itemsPerPage =
     window.innerWidth <= 600 ? ITEMS_PER_PAGE_MOBILE : ITEMS_PER_PAGE;
 
+  const handleEditDate = async (e) => {
+    e.preventDefault();
+
+    const fd = new FormData();
+    fd.append("date", dateToUpdate.date);
+    fd.append("name", dateToUpdate.name);
+    fd.append("surname", dateToUpdate.surname);
+    try {
+      const dbResponse = await apiHandler.patch(
+        `/date/${dateToUpdate._id}`,
+        fd
+      );
+      setDateToUpdate(dbResponse.data);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const handleEditMode = (id) => {
+    setEditingId(id);
+    const date = dates.find((date) => date._id === id);
+    setDateToUpdate(date);
+  };
+
+  const handleCancelEditDate = (e) => {
+    e.preventDefault();
+    setIsEditing(false);
+  };
+
   return (
     <div className="dateList">
       <div className="dateListheaderConter">
@@ -138,14 +170,31 @@ const DateList = () => {
               <div className="birthCard-delete birthCardCenter">
                 {deleteId !== date._id && (
                   <div>
-                    <span className="daysUntilBirthday">
-                      {" "}
-                      <Countdown birthdate={date.date} />
-                    </span>
+                    {date._id === editingId ? (
+                      <UpdateDate
+                        dateToUpdate={dateToUpdate}
+                        onDateUpdated={(updatedDate) => {
+                          setDates(
+                            dates.map((date) =>
+                              date._id === updatedDate._id ? updatedDate : date
+                            )
+                          );
+                          setDateToUpdate(null);
+                          setEditingId(null);
+                        }}
+                      />
+                    ) : (
+                      <span className="daysUntilBirthday">
+                        <Countdown birthdate={date.date} />
+                      </span>
+                    )}
                     <br />
                     <img src={randomImage} alt="Random" />
                     <button onClick={() => confirmDelete(date._id)} id="delete">
                       <img src={corbeille2} alt="delete" />
+                    </button>
+                    <button onClick={() => handleEditMode(date._id)}>
+                      Edit
                     </button>
                   </div>
                 )}

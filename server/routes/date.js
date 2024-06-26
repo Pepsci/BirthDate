@@ -38,7 +38,35 @@ router.get("/:id", async (req, res, next) => {
   }
 });
 
-// router.patch("/:id", (req, res, next) => {});
+// router.patch("/:id", async (req, res) => {
+//   try {
+//     const { date, owner, name, surname } = req.body;
+//     const updatedDate = await dateModel.findByIdAndUpdate(
+//       req.params.id,
+//       { date, owner, name, surname },
+//       { new: true }
+//     );
+//     res.status(200).json(updatedDate);
+//   } catch (error) {
+//     console.error("Erreur lors de la mise à jour d'une date :", error);
+//     res.status(500).json({ message: "Erreur interne du serveur" });
+//   }
+// });
+
+router.patch("/:id", async (req, res, next) => {
+  try {
+    const { date, owner, name, surname } = req.body;
+    const updatedDate = await dateModel.findByIdAndUpdate(
+      req.params.id,
+      { date, owner, name, surname },
+      { new: true }
+    );
+    res.status(200).json(updatedDate);
+  } catch (error) {
+    console.error("Error updating date:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+});
 
 router.delete("/:id", async (req, res, next) => {
   try {
@@ -48,9 +76,5 @@ router.delete("/:id", async (req, res, next) => {
     next(error);
   }
 });
-
-// router.get("/:id/dates", async (req, res, next) => {});
-
-// router.patch("/dates/:id", async (req, res, next) => {});
 
 module.exports = router;
