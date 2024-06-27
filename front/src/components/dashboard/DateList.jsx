@@ -10,7 +10,7 @@ import moins from "./icons/moins.png";
 import annule from "./icons/annule.png";
 import { getRandomImage } from "./CadeauxRandom";
 import Countdown from "./Countdown";
-import UpdateDate from "./UpdateDate";
+// import UpdateDate from "./UpdateDate";
 
 const ITEMS_PER_PAGE = 10;
 const ITEMS_PER_PAGE_MOBILE = 6;
@@ -22,14 +22,18 @@ const DateList = () => {
   const [deleteId, setDeleteId] = useState(null);
   const [isFormVisible, setIsFormVisible] = useState(false);
   const [editingId, setEditingId] = useState(null);
-  const [dateToUpdate, setDateToUpdate] = useState(null);
+  const [dateToUpdate, setDateToUpdate] = useState({
+    name: "",
+    surname: "",
+    date: "",
+  });
 
   useEffect(() => {
     apiHandler
       .get(`/date?owner=${currentUser._id}`)
       .then((dbResponse) => {
+        console.log(dbResponse.data);
         setDates(dbResponse.data);
-        console.log("reponse db", dbResponse.data);
       })
       .catch((e) => {
         console.error(e);
@@ -46,6 +50,7 @@ const DateList = () => {
     setDates((prevDates) => [...prevDates, newDate]);
   };
 
+  //delete
   const deleteDate = async (id) => {
     try {
       await apiHandler.delete(`/date/${id}`);
@@ -60,11 +65,13 @@ const DateList = () => {
     setDeleteId(id);
   };
 
-  const cancelDelet = (e) => {
+  const cancelDelete = (e) => {
     e.preventDefault();
     setDeleteId(null);
   };
+  //delete
 
+  //age
   const calculateAge = (birthdate) => {
     const birthDate = new Date(birthdate);
     const today = new Date();
@@ -88,7 +95,9 @@ const DateList = () => {
     );
     return daysUntilBirthday;
   };
+  //age
 
+  //pagination
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
   const indexOfLastItem = currentPage * ITEMS_PER_PAGE;
   const indexOfFirstItem = indexOfLastItem - ITEMS_PER_PAGE;
@@ -99,25 +108,42 @@ const DateList = () => {
 
   let itemsPerPage =
     window.innerWidth <= 600 ? ITEMS_PER_PAGE_MOBILE : ITEMS_PER_PAGE;
+  //pagination
 
+  //edit
   const handleEditDate = async (e) => {
     e.preventDefault();
 
-    const fd = new FormData();
-    fd.append("date", dateToUpdate.date);
-    fd.append("name", dateToUpdate.name);
-    fd.append("surname", dateToUpdate.surname);
+    const updatedDate = {
+      name: dateToUpdate.name,
+      surname: dateToUpdate.surname,
+      date: dateToUpdate.date,
+    };
+
     try {
+      console.log("dateToUpdate", updatedDate);
       const dbResponse = await apiHandler.patch(
         `/date/${dateToUpdate._id}`,
-        fd
+        updatedDate
       );
-      setDateToUpdate(dbResponse.data);
+
+      // Mettre à jour la liste des dates avec la date mise à jour
+      const updatedDates = dates.map((date) => {
+        if (date._id === dbResponse.data._id) {
+          return dbResponse.data;
+        } else {
+          return date;
+        }
+      });
+
+      setDates(updatedDates);
+      setEditingId(null);
     } catch (error) {
       console.error(error);
     }
   };
 
+  //edit
   const handleEditMode = (id) => {
     setEditingId(id);
     const date = dates.find((date) => date._id === id);
@@ -126,7 +152,19 @@ const DateList = () => {
 
   const handleCancelEditDate = (e) => {
     e.preventDefault();
-    setIsEditing(false);
+    setEditingId(false);
+  };
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    let month = "" + (date.getMonth() + 1);
+    let day = "" + date.getDate();
+    const year = date.getFullYear();
+
+    if (month.length < 2) month = "0" + month;
+    if (day.length < 2) day = "0" + day;
+
+    return [year, month, day].join("-");
   };
 
   return (
@@ -171,19 +209,50 @@ const DateList = () => {
                 {deleteId !== date._id && (
                   <div>
                     {date._id === editingId ? (
-                      <UpdateDate
-                        dateToUpdate={dateToUpdate}
-                        onDateUpdated={(updatedDate) => {
-                          setDates(
-                            dates.map((date) =>
-                              date._id === updatedDate._id ? updatedDate : date
-                            )
-                          );
-                          setDateToUpdate(null);
-                          setEditingId(null);
-                        }}
-                      />
+                      //edit
+                      <div className="forEditDate">
+                        <form className="form-date">
+                          {/* <label htmlFor="name">Name</label> */}
+                          <input
+                            type="text"
+                            className="formEditDate"
+                            value={dateToUpdate.name}
+                            onChange={(e) =>
+                              setDateToUpdate({
+                                ...dateToUpdate,
+                                name: e.target.value,
+                              })
+                            }
+                          />
+                          {/* <label htmlFor="surname">Surname</label> */}
+                          <input
+                            type="text"
+                            className="formEditDate"
+                            value={dateToUpdate.surname}
+                            onChange={(e) =>
+                              setDateToUpdate({
+                                ...dateToUpdate,
+                                surname: e.target.value,
+                              })
+                            }
+                          />
+                          {/* <label htmlFor="date">Date</label> */}
+                          <input
+                            type="date"
+                            value={formatDate(dateToUpdate.date)}
+                            onChange={(e) =>
+                              setDateToUpdate({
+                                ...dateToUpdate,
+                                date: e.target.value,
+                              })
+                            }
+                          />
+                          <button onClick={handleEditDate}>Update</button>
+                          <button onClick={handleCancelEditDate}>Cancel</button>
+                        </form>
+                      </div>
                     ) : (
+                      //edit
                       <span className="daysUntilBirthday">
                         <Countdown birthdate={date.date} />
                       </span>
@@ -203,7 +272,7 @@ const DateList = () => {
               {deleteId === date._id && (
                 <div className="birthCard-deleteMode birthCardDeleteCValidation">
                   <p>are you sur ?</p>
-                  <button onClick={cancelDelet} id="delete">
+                  <button onClick={cancelDelete} id="delete">
                     <img src={annule} alt="cancel" className="birthCard-icon" />
                   </button>
                   <button onClick={() => deleteDate(date._id)} id="delete">

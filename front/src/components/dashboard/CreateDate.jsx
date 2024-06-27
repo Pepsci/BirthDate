@@ -18,15 +18,6 @@ const CreateDate = ({ onDateAdded }) => {
     owner: currentUserID,
   });
 
-  // const [dateToUpdate, setDateToUpdate] = useState({
-  //   date: "",
-  //   name: "",
-  //   surname: "",
-  //   comment: "",
-  // });
-
-  // const [isEditing, setIsEditing] = useState(false);
-
   const [addedDate, setAddedDate] = useState(false);
   const [filterdDate, setFilteredDates] = useState([]);
 
@@ -47,7 +38,7 @@ const CreateDate = ({ onDateAdded }) => {
     setFilteredDates(
       dates.filter((c) => {
         return c.owner._id === currentUserID;
-        console.log("filterdDates", setFilteredDates);
+        // console.log("filterdDates", setFilteredDates);
       })
     );
   }, [addedDate, dates, date]);

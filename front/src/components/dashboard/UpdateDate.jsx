@@ -1,7 +1,7 @@
 import apiHandler from "../../api/apiHandler";
 import { useState, useEffect } from "react";
 
-const UpdateDate = ({ dateToUpdate, onDateUpdated }) => {
+const UpdateDate = () => {
   const [date, setDate] = useState(dateToUpdate);
 
   useEffect(() => {
@@ -10,6 +10,7 @@ const UpdateDate = ({ dateToUpdate, onDateUpdated }) => {
 
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [dateToUpdate, setDateToUpdate] = useState(null);
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
