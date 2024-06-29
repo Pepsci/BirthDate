@@ -16,13 +16,18 @@ router.get("/", async (req, res, next) => {
 });
 
 router.post("/", async (req, res, next) => {
-  const { date, owner, name, surname } = req.body;
+  const { date, owner, name, surname, family } = req.body;
   try {
-    const newDate = await dateModel.create({ date, owner, name, surname });
+    const newDate = await dateModel.create({
+      date,
+      owner,
+      name,
+      surname,
+      family,
+    });
     res.status(201).json(newDate);
   } catch (error) {
-    console.error("Error fetching date list:", error);
-
+    console.error("Error creating date:", error);
     res.status(500).json({ message: "Internal Server Error" });
   }
 });
@@ -38,27 +43,12 @@ router.get("/:id", async (req, res, next) => {
   }
 });
 
-// router.patch("/:id", async (req, res) => {
-//   try {
-//     const { date, owner, name, surname } = req.body;
-//     const updatedDate = await dateModel.findByIdAndUpdate(
-//       req.params.id,
-//       { date, owner, name, surname },
-//       { new: true }
-//     );
-//     res.status(200).json(updatedDate);
-//   } catch (error) {
-//     console.error("Erreur lors de la mise à jour d'une date :", error);
-//     res.status(500).json({ message: "Erreur interne du serveur" });
-//   }
-// });
-
 router.patch("/:id", async (req, res, next) => {
   try {
-    const { date, owner, name, surname } = req.body;
+    const { date, owner, name, surname, family } = req.body;
     const updatedDate = await dateModel.findByIdAndUpdate(
       req.params.id,
-      { date, owner, name, surname },
+      { date, owner, name, surname, family },
       { new: true }
     );
     res.status(200).json(updatedDate);

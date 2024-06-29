@@ -43,6 +43,20 @@ const apiHandler = {
       .then((res) => res.data)
       .catch(errorHandler);
   },
+
+  requestPasswordReset(email) {
+    return service
+      .post("/forgot-password", { email })
+      .then((res) => res.data)
+      .catch(errorHandler);
+  },
+
+  resetPassword(token, password) {
+    return service
+      .post(`/reset/${token}`, { password })
+      .then((res) => res.data)
+      .catch(errorHandler);
+  },
 };
 
 export default apiHandler;

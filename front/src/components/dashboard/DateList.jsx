@@ -5,12 +5,9 @@ import CreateDate from "./CreateDate";
 import "./css/dateList.css";
 import corbeille1 from "./icons/corbeille1.png";
 import corbeille2 from "./icons/corbeille2.png";
-import plus from "./icons/plus.png";
-import moins from "./icons/moins.png";
 import annule from "./icons/annule.png";
 import { getRandomImage } from "./CadeauxRandom";
 import Countdown from "./Countdown";
-// import UpdateDate from "./UpdateDate";
 
 const ITEMS_PER_PAGE = 10;
 const ITEMS_PER_PAGE_MOBILE = 6;
@@ -22,23 +19,31 @@ const DateList = () => {
   const [deleteId, setDeleteId] = useState(null);
   const [isFormVisible, setIsFormVisible] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [isFamilyFilterActive, setIsFamilyFilterActive] = useState(false);
   const [dateToUpdate, setDateToUpdate] = useState({
     name: "",
     surname: "",
     date: "",
+    family: "",
   });
 
   useEffect(() => {
     apiHandler
       .get(`/date?owner=${currentUser._id}`)
       .then((dbResponse) => {
-        console.log(dbResponse.data);
-        setDates(dbResponse.data);
+        // console.log(dbResponse.data);
+        let filteredDates = dbResponse.data;
+        if (isFamilyFilterActive) {
+          filteredDates = dbResponse.data.filter(
+            (date) => date.family === true
+          );
+        }
+        setDates(filteredDates);
       })
       .catch((e) => {
         console.error(e);
       });
-  }, [currentUser]);
+  }, [currentUser, isFamilyFilterActive]);
 
   if (!dates) return <p>Loading...</p>;
 
@@ -118,6 +123,7 @@ const DateList = () => {
       name: dateToUpdate.name,
       surname: dateToUpdate.surname,
       date: dateToUpdate.date,
+      family: dateToUpdate.family,
     };
 
     try {
@@ -127,7 +133,6 @@ const DateList = () => {
         updatedDate
       );
 
-      // Mettre à jour la liste des dates avec la date mise à jour
       const updatedDates = dates.map((date) => {
         if (date._id === dbResponse.data._id) {
           return dbResponse.data;
@@ -167,10 +172,22 @@ const DateList = () => {
     return [year, month, day].join("-");
   };
 
+  const toggleFamilyFilter = () => {
+    setIsFamilyFilterActive(!isFamilyFilterActive);
+  };
+
   return (
     <div className="dateList">
       <div className="dateListheaderConter">
         <h1 className="titleFont">Vos BirthDate</h1>
+        <button
+          className={`btnSwitch ${isFamilyFilterActive ? "active" : ""}`}
+          onClick={toggleFamilyFilter}
+        >
+          {isFamilyFilterActive
+            ? "Afficher toutes les dates"
+            : "Famille uniquement"}
+        </button>
         <button
           className={`btnSwitch ${isFormVisible ? "active" : ""}`}
           onClick={toggleFormVisibility}
@@ -210,12 +227,12 @@ const DateList = () => {
                   <div>
                     {date._id === editingId ? (
                       //edit
-                      <div className="forEditDate">
-                        <form className="form-date">
+                      <div className="formEdit-Date">
+                        <form className="formEditDate">
                           {/* <label htmlFor="name">Name</label> */}
                           <input
                             type="text"
-                            className="formEditDate"
+                            className="formEditDateInput"
                             value={dateToUpdate.name}
                             onChange={(e) =>
                               setDateToUpdate({
@@ -227,7 +244,7 @@ const DateList = () => {
                           {/* <label htmlFor="surname">Surname</label> */}
                           <input
                             type="text"
-                            className="formEditDate"
+                            className="formEditDateInput"
                             value={dateToUpdate.surname}
                             onChange={(e) =>
                               setDateToUpdate({
@@ -244,6 +261,18 @@ const DateList = () => {
                               setDateToUpdate({
                                 ...dateToUpdate,
                                 date: e.target.value,
+                              })
+                            }
+                          />
+                          {/* <label htmlFor="family">Family</label> */}
+                          <input
+                            type="checkbox"
+                            id="family"
+                            checked={dateToUpdate.family}
+                            onChange={(e) =>
+                              setDateToUpdate({
+                                ...dateToUpdate,
+                                family: e.target.checked,
                               })
                             }
                           />

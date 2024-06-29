@@ -5,6 +5,7 @@ const dateSchema = Schema({
   name: String,
   surname: String,
   owner: { type: Schema.Types.ObjectId, ref: "user" },
+  family: { type: Boolean, default: false },
   comment: {
     type: Array,
     default: [],

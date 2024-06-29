@@ -7,6 +7,9 @@ const { isAuthenticated } = require("../middleware/jwt.middleware");
 const router = express.Router();
 const saltRounds = 10;
 
+const crypto = require("crypto");
+const nodemailer = require("nodemailer");
+
 // POST  /auth/signup
 router.post("/signup", (req, res, next) => {
   const { email, password, name, surname } = req.body;
@@ -27,14 +30,14 @@ router.post("/signup", (req, res, next) => {
   }
 
   // Use regex to validate the password format
-  // const passwordRegex = /(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,}/;
-  // if (!passwordRegex.test(password)) {
-  //   res.status(400).json({
-  //     message:
-  //       "Password must have at least 6 characters and contain at least one number, one lowercase and one uppercase letter.",
-  //   });
-  //   return;
-  // }
+  const passwordRegex = /(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,}/;
+  if (!passwordRegex.test(password)) {
+    res.status(400).json({
+      message:
+        "Password must have at least 6 characters and contain at least one number, one lowercase and one uppercase letter.",
+    });
+    return;
+  }
 
   // Check the users collection if a user with the same email already exists
   userModel
@@ -138,6 +141,82 @@ router.get("/auth/verify", isAuthenticated, (req, res, next) => {
   // Send back the object with user data
   // previously set as the token payload
   res.status(200).json(req.payload);
+});
+
+// POST /auth/forgot-password
+router.post("/forgot-password", (req, res, next) => {
+  const { email } = req.body;
+
+  userModel
+    .findOne({ email })
+    .then((user) => {
+      if (!user) {
+        return res.status(400).json({ message: "User not found" });
+      }
+
+      // Generate a reset token
+      const resetToken = crypto.randomBytes(20).toString("hex");
+      user.resetToken = resetToken;
+      user.save();
+
+      // Send the reset token to the user's email
+      const transporter = nodemailer.createTransport({
+        host: "smtp-mail.outlook.com",
+        port: 587,
+        secure: false, // true for 465, false for other ports
+        auth: {
+          user: "pep_man@msn.com",
+          pass: "v1t3llfRis4#",
+        },
+      });
+
+      const mailOptions = {
+        from: "pep_man@msn.com",
+        to: email,
+        subject: "Password Reset",
+        text: `You are receiving this because you (or someone else) have requested the reset of the password for your account.\n\nPlease click on the following link, or paste this into your browser to complete the process:\n\nhttp://localhost:3000/auth/reset/${resetToken}\n\nIf you did not request this, please ignore this email and your password will remain unchanged.\n`,
+      };
+
+      transporter.sendMail(mailOptions, (error, response) => {
+        if (error) {
+          console.log(error);
+        } else {
+          res.status(200).json({ message: "Recovery email sent" });
+        }
+      });
+    })
+    .catch((e) => {
+      console.error(e);
+      res.status(400).json({ message: "Internal server error" });
+    });
+});
+
+// POST /auth/reset/:token
+router.post("/reset/:token", (req, res, next) => {
+  const token = req.params.token;
+  const newPassword = req.body.password;
+
+  // Find the user with the reset token
+  userModel
+    .findOne({ resetToken: token })
+    .then((user) => {
+      if (!user) {
+        return res.status(400).json({ message: "Invalid token" });
+      }
+
+      // Update the user's password
+      const salt = bcrypt.genSaltSync(saltRounds);
+      const hashedPassword = bcrypt.hashSync(newPassword, salt);
+      user.password = hashedPassword;
+      user.resetToken = null;
+      user.save();
+
+      res.status(200).json({ message: "Password has been reset" });
+    })
+    .catch((e) => {
+      console.error(e);
+      res.status(400).json({ message: "Internal server error" });
+    });
 });
 
 module.exports = router;

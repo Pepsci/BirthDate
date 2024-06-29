@@ -4,6 +4,8 @@ import Login from "./components/connect/Login";
 import Signup from "./components/connect/Signup";
 import Home from "./components/Home";
 import PrivateRoute from "./protectedRoutes/PrivateRoute";
+import ForgotPassword from "./components/connect/ForgotPassword";
+import ResetPassword from "./components/connect/ResetPassword";
 
 function App() {
   return (
@@ -28,6 +30,16 @@ function App() {
               </div>
             }
           />
+          <Route
+            path="/forgot-password"
+            element={
+              <div className="contentCenter">
+                {" "}
+                <ForgotPassword />{" "}
+              </div>
+            }
+          />
+          <Route path="/auth/reset/:token" element={<ResetPassword />} />
           <Route element={<PrivateRoute />}>
             <Route path="/home" element={<Home />} />
           </Route>

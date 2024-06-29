@@ -75,8 +75,13 @@ const Login = () => {
 
       <div className="form-connect-message font fontErrorMessage">
         {errorMessage && <p className="error-message ">{errorMessage}</p>}
+        <Link to={"/forgot-password"}>
+          <span className="form-connect-msg">Mot de passe oublié ?</span>
+        </Link>
         <Link to={"/"}>
-          <span className="form-connect-msg">Don't have an account yet?</span>
+          <span className="form-connect-msg">
+            Vous n'avez pas encore de compte ?
+          </span>
         </Link>
       </div>
     </div>

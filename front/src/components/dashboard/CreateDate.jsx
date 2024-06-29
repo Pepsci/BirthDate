@@ -14,6 +14,7 @@ const CreateDate = ({ onDateAdded }) => {
     date: "",
     name: "",
     surname: "",
+    family: false,
     comment: "",
     owner: currentUserID,
   });
@@ -34,11 +35,9 @@ const CreateDate = ({ onDateAdded }) => {
   }, [addedDate]);
 
   useEffect(() => {
-    console.log("useEffect : where are the dates ? :", dates);
     setFilteredDates(
       dates.filter((c) => {
         return c.owner._id === currentUserID;
-        // console.log("filterdDates", setFilteredDates);
       })
     );
   }, [addedDate, dates, date]);
@@ -54,6 +53,7 @@ const CreateDate = ({ onDateAdded }) => {
         date: "",
         name: "",
         surname: "",
+        family: "",
         comment: "",
         owner: currentUserID,
       });
@@ -103,6 +103,14 @@ const CreateDate = ({ onDateAdded }) => {
             name="date"
             value={date.date}
             onChange={(e) => setDate({ ...date, date: e.target.value })}
+          />
+
+          <label htmlFor="family">Family</label>
+          <input
+            type="checkbox"
+            id="family"
+            checked={date.family}
+            onChange={(e) => setDate({ ...date, family: e.target.checked })}
           />
 
           <button>Add</button>
