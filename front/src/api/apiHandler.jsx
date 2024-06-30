@@ -52,6 +52,9 @@ const apiHandler = {
   },
 
   resetPassword(token, password) {
+    console.log("api token", token);
+    console.log("api password", password);
+
     return service
       .post(`/reset/${token}`, { password })
       .then((res) => res.data)

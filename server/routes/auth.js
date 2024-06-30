@@ -29,7 +29,7 @@ router.post("/signup", (req, res, next) => {
     return;
   }
 
-  // Use regex to validate the password format
+  //Use regex to validate the password format
   const passwordRegex = /(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,}/;
   if (!passwordRegex.test(password)) {
     res.status(400).json({
@@ -157,6 +157,7 @@ router.post("/forgot-password", (req, res, next) => {
       // Generate a reset token
       const resetToken = crypto.randomBytes(20).toString("hex");
       user.resetToken = resetToken;
+      user.resetTokenExpires = { $gt: Date.now() }; // 1 heure dans le futur
       user.save();
 
       // Send the reset token to the user's email
@@ -192,15 +193,16 @@ router.post("/forgot-password", (req, res, next) => {
 });
 
 // POST /auth/reset/:token
-router.post("/reset/:token", (req, res, next) => {
+router.post("/reset/:token", async (req, res, next) => {
   const token = req.params.token;
   const newPassword = req.body.password;
 
   // Find the user with the reset token
   userModel
     .findOne({ resetToken: token })
-    .then((user) => {
+    .then(async (user) => {
       if (!user) {
+        // If no user is found, the token is not valid
         return res.status(400).json({ message: "Invalid token" });
       }
 
@@ -208,8 +210,8 @@ router.post("/reset/:token", (req, res, next) => {
       const salt = bcrypt.genSaltSync(saltRounds);
       const hashedPassword = bcrypt.hashSync(newPassword, salt);
       user.password = hashedPassword;
-      user.resetToken = null;
-      user.save();
+      user.resetToken = null; // Remove the reset token
+      await user.save();
 
       res.status(200).json({ message: "Password has been reset" });
     })
