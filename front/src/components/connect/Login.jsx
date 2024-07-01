@@ -53,7 +53,9 @@ const Login = () => {
             className="form-input"
             placeholder="Enter your email"
             value={user.email}
-            onChange={(e) => setUser({ ...user, email: e.target.value })}
+            onChange={(e) =>
+              setUser({ ...user, email: e.target.value.toLowerCase() })
+            }
           />
 
           {/* <label htmlFor="password" className="form-label">
@@ -76,12 +78,12 @@ const Login = () => {
       <div className="form-connect-message font fontErrorMessage">
         {errorMessage && <p className="error-message ">{errorMessage}</p>}
         <Link to={"/forgot-password"}>
+          <br />
           <span className="form-connect-msg">Mot de passe oublié ?</span>
         </Link>
+        <span> / </span>
         <Link to={"/"}>
-          <span className="form-connect-msg">
-            Vous n'avez pas encore de compte ?
-          </span>
+          <span className="form-connect-msg">Pas encore de compte ?</span>
         </Link>
       </div>
     </div>

@@ -1,3 +1,4 @@
+require("dotenv").config();
 const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
@@ -136,7 +137,7 @@ router.get("/auth/verify", isAuthenticated, (req, res, next) => {
 
   // If JWT token is valid the payload gets decoded by the
   // isAuthenticated middleware and made available on `req.payload`
-  console.log(`req.payload`, req.payload);
+  // console.log(`req.payload`, req.payload);
 
   // Send back the object with user data
   // previously set as the token payload
@@ -161,13 +162,25 @@ router.post("/forgot-password", (req, res, next) => {
       user.save();
 
       // Send the reset token to the user's email
+      // const transporter = nodemailer.createTransport({
+      //   host: "smtp-mail.outlook.com",
+      //   port: 587,
+      //   secure: false,
+      //   auth: {
+      //     user: process.env.USER,
+      //     pass: process.env.PASS,
+      //   },
+      // });
       const transporter = nodemailer.createTransport({
-        host: "smtp-mail.outlook.com",
+        host: process.env.EMAIL_HOST,
         port: 587,
-        secure: false, // true for 465, false for other ports
+        service: "hotmail",
         auth: {
-          user: "pep_man@msn.com",
-          pass: "v1t3llfRis4#",
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASS,
+        },
+        tls: {
+          rejectUnauthorized: false,
         },
       });
 
