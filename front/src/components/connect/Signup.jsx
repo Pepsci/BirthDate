@@ -117,7 +117,7 @@ const Signup = () => {
             <img
               src={`https://api.dicebear.com/8.x/bottts/svg?seed=${user.surname}`}
               alt="avatar"
-              className="avatar"
+              className="avatarSignup"
             />
           </div>
           <button>Sign up</button>

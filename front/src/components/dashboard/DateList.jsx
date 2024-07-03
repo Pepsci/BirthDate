@@ -31,13 +31,34 @@ const DateList = () => {
     apiHandler
       .get(`/date?owner=${currentUser._id}`)
       .then((dbResponse) => {
-        // console.log(dbResponse.data);
         let filteredDates = dbResponse.data;
         if (isFamilyFilterActive) {
           filteredDates = dbResponse.data.filter(
             (date) => date.family === true
           );
         }
+
+        // Trier les dates
+        const today = new Date();
+        filteredDates.sort((a, b) => {
+          const nextBirthdayA = new Date(
+            today.getFullYear(),
+            new Date(a.date).getMonth(),
+            new Date(a.date).getDate()
+          );
+          const nextBirthdayB = new Date(
+            today.getFullYear(),
+            new Date(b.date).getMonth(),
+            new Date(b.date).getDate()
+          );
+          if (nextBirthdayA < today) {
+            nextBirthdayA.setFullYear(today.getFullYear() + 1);
+          }
+          if (nextBirthdayB < today) {
+            nextBirthdayB.setFullYear(today.getFullYear() + 1);
+          }
+          return nextBirthdayA - nextBirthdayB;
+        });
         setDates(filteredDates);
       })
       .catch((e) => {
@@ -119,6 +140,11 @@ const DateList = () => {
   const handleEditDate = async (e) => {
     e.preventDefault();
 
+    if (deleteId === dateToUpdate._id) {
+      await deleteDate(dateToUpdate._id);
+      return;
+    }
+
     const updatedDate = {
       name: dateToUpdate.name,
       surname: dateToUpdate.surname,
@@ -150,14 +176,19 @@ const DateList = () => {
 
   //edit
   const handleEditMode = (id) => {
-    setEditingId(id);
-    const date = dates.find((date) => date._id === id);
-    setDateToUpdate(date);
+    if (editingId === id) {
+      setEditingId(null); // annule le mode édition si on est déjà en train d'éditer cet élément
+    } else {
+      setEditingId(id);
+      const date = dates.find((date) => date._id === id);
+      setDateToUpdate(date);
+    }
   };
 
   const handleCancelEditDate = (e) => {
     e.preventDefault();
     setEditingId(false);
+    setDeleteId(null);
   };
 
   const formatDate = (dateString) => {
@@ -276,8 +307,37 @@ const DateList = () => {
                               })
                             }
                           />
-                          <button onClick={handleEditDate}>Update</button>
-                          <button onClick={handleCancelEditDate}>Cancel</button>
+                          <div className="buttonEditUpdateDelete">
+                            <button onClick={handleEditDate}>Update</button>
+                            <button
+                              onClick={() => confirmDelete(date._id)}
+                              id="delete"
+                            >
+                              <img src={corbeille2} alt="delete" />
+                            </button>
+                          </div>
+                          {deleteId === date._id && (
+                            <div className="birthCard-deleteMode birthCardDeleteCValidation">
+                              <p>are you sur ?</p>
+                              <button onClick={cancelDelete} id="delete">
+                                <img
+                                  src={annule}
+                                  alt="cancel"
+                                  className="birthCard-icon"
+                                />
+                              </button>
+                              <button
+                                onClick={() => deleteDate(date._id)}
+                                id="delete"
+                              >
+                                <img
+                                  src={corbeille1}
+                                  alt="delete"
+                                  className="birthCard-icon"
+                                />
+                              </button>
+                            </div>
+                          )}
                         </form>
                       </div>
                     ) : (
@@ -288,11 +348,8 @@ const DateList = () => {
                     )}
                     <br />
                     <img src={randomImage} alt="Random" />
-                    <button onClick={() => confirmDelete(date._id)} id="delete">
-                      <img src={corbeille2} alt="delete" />
-                    </button>
                     <button onClick={() => handleEditMode(date._id)}>
-                      Edit
+                      {editingId === date._id ? "Cancel" : "Edit"}
                     </button>
                   </div>
                 )}

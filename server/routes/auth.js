@@ -161,16 +161,6 @@ router.post("/forgot-password", (req, res, next) => {
       user.resetTokenExpires = { $gt: Date.now() }; // 1 heure dans le futur
       user.save();
 
-      // Send the reset token to the user's email
-      // const transporter = nodemailer.createTransport({
-      //   host: "smtp-mail.outlook.com",
-      //   port: 587,
-      //   secure: false,
-      //   auth: {
-      //     user: process.env.USER,
-      //     pass: process.env.PASS,
-      //   },
-      // });
       const transporter = nodemailer.createTransport({
         host: process.env.EMAIL_HOST,
         port: 587,
