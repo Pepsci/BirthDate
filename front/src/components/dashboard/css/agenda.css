@@ -26,7 +26,7 @@ h2 {
     color: #333;
 }
 
-button {
+.btnAgenda {
     background-color: #1b1b71;
     color: white;
     padding: 10px 24px;
@@ -36,7 +36,7 @@ button {
     cursor: pointer;
 }
 
-button:hover {
+.btnAgenda:hover {
     background-color: #008cba;
 }
 

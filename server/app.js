@@ -1,5 +1,5 @@
 require("dotenv").config();
-
+require("./services/birthdayEmailService");
 require("./config/mongoDb");
 
 const express = require("express");

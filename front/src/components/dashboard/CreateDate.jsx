@@ -53,7 +53,7 @@ const CreateDate = ({ onDateAdded }) => {
         date: "",
         name: "",
         surname: "",
-        family: "",
+        family: false,
         comment: "",
         owner: currentUserID,
       });

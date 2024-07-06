@@ -47,14 +47,18 @@ const Agenda = ({ dates }) => {
   return (
     <div>
       <div className="month-navigation">
-        <button onClick={handlePreviousMonth}>Mois précédent</button>
+        <button className="btnAgenda" onClick={handlePreviousMonth}>
+          Mois précédent
+        </button>
         <h2>
           {currentMonth.toLocaleString("fr-FR", {
             month: "long",
             year: "numeric",
           })}
         </h2>
-        <button onClick={handleNextMonth}>Mois suivant</button>
+        <button className="btnAgenda" onClick={handleNextMonth}>
+          Mois suivant
+        </button>
       </div>
       <table>
         <tbody>

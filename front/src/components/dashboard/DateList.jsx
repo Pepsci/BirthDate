@@ -9,6 +9,7 @@ import corbeille2 from "./icons/corbeille2.png";
 import annule from "./icons/annule.png";
 import { getRandomImage } from "./CadeauxRandom";
 import Countdown from "./Countdown";
+// import { sendBirthdayEmail } from "./../services/EmailService";
 
 const ITEMS_PER_PAGE = 10;
 const ITEMS_PER_PAGE_MOBILE = 6;
@@ -213,6 +214,20 @@ const DateList = () => {
   const toggleViewMode = () => {
     setViewMode(viewMode === "card" ? "agenda" : "card");
   };
+
+  // useEffect(() => {
+  //   dates.forEach((date) => {
+  //     const today = new Date();
+  //     const birthday = new Date(date.date);
+  //     if (
+  //       today.getDate() === birthday.getDate() &&
+  //       today.getMonth() === birthday.getMonth()
+  //     ) {
+  //       // Si la date d'aujourd'hui est la date d'anniversaire
+  //       sendBirthdayEmail(date.name, date.surname, currentUser.email);
+  //     }
+  //   });
+  // }, [dates]);
 
   return (
     <div className="dateList">
