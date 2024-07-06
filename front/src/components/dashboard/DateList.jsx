@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, require } from "react";
 import apiHandler from "../../api/apiHandler";
 import useAuth from "../../context/useAuth";
 import CreateDate from "./CreateDate";
+import Agenda from "./Agenda";
 import "./css/dateList.css";
 import corbeille1 from "./icons/corbeille1.png";
 import corbeille2 from "./icons/corbeille2.png";
@@ -207,6 +208,12 @@ const DateList = () => {
     setIsFamilyFilterActive(!isFamilyFilterActive);
   };
 
+  const [viewMode, setViewMode] = useState("card"); // Ajoutez cet état
+
+  const toggleViewMode = () => {
+    setViewMode(viewMode === "card" ? "agenda" : "card");
+  };
+
   return (
     <div className="dateList">
       <div className="dateListheaderConter">
@@ -219,6 +226,11 @@ const DateList = () => {
             ? "Afficher toutes les dates"
             : "Famille uniquement"}
         </button>
+        <button className="btnSwitch" onClick={toggleViewMode}>
+          {viewMode === "card"
+            ? "Passer en mode agenda"
+            : "Passer en mode carte"}
+        </button>
         <button
           className={`btnSwitch ${isFormVisible ? "active" : ""}`}
           onClick={toggleFormVisibility}
@@ -228,170 +240,181 @@ const DateList = () => {
         {isFormVisible && <CreateDate onDateAdded={handleDateAdded} />}
       </div>
 
-      <div className="birthDeck">
-        {currentItems.slice(0, itemsPerPage).map((date) => {
-          const randomImage = getRandomImage();
-          return (
-            <div className="birthCard titleFont" key={date._id + "date"}>
-              <div className="birthCardName">
-                <span className="birthCard-name">
-                  <b>{date.name}</b>
-                </span>
-                <span>
-                  <b>{date.surname}</b>
-                </span>
-                <br />
-              </div>
-              <div className="birthCardAge">
-                <span className="age">{calculateAge(date.date)} Ans</span>
-                <br />
-              </div>
-              <div className="birthCardDate">
-                <span className="date">
-                  {new Date(date.date).toLocaleDateString("fr-FR")}
-                </span>
-                <br />
-              </div>
+      {viewMode === "agenda" ? (
+        <Agenda dates={dates} />
+      ) : (
+        <div className="birthDeck">
+          {currentItems.slice(0, itemsPerPage).map((date) => {
+            const randomImage = getRandomImage();
+            return (
+              <div className="birthCard titleFont" key={date._id + "date"}>
+                <div className="birthCardName">
+                  <span className="birthCard-name">
+                    <b>{date.name}</b>
+                  </span>
+                  <span>
+                    <b>{date.surname}</b>
+                  </span>
+                  <br />
+                </div>
+                <div className="birthCardAge">
+                  <span className="age">{calculateAge(date.date)} Ans</span>
+                  <br />
+                </div>
+                <div className="birthCardDate">
+                  <span className="date">
+                    {new Date(date.date).toLocaleDateString("fr-FR")}
+                  </span>
+                  <br />
+                </div>
 
-              <div className="birthCard-delete birthCardCenter">
-                {deleteId !== date._id && (
-                  <div>
-                    {date._id === editingId ? (
-                      //edit
-                      <div className="formEdit-Date">
-                        <form className="formEditDate">
-                          {/* <label htmlFor="name">Name</label> */}
-                          <input
-                            type="text"
-                            className="formEditDateInput"
-                            value={dateToUpdate.name}
-                            onChange={(e) =>
-                              setDateToUpdate({
-                                ...dateToUpdate,
-                                name: e.target.value,
-                              })
-                            }
-                          />
-                          {/* <label htmlFor="surname">Surname</label> */}
-                          <input
-                            type="text"
-                            className="formEditDateInput"
-                            value={dateToUpdate.surname}
-                            onChange={(e) =>
-                              setDateToUpdate({
-                                ...dateToUpdate,
-                                surname: e.target.value,
-                              })
-                            }
-                          />
-                          {/* <label htmlFor="date">Date</label> */}
-                          <input
-                            type="date"
-                            value={formatDate(dateToUpdate.date)}
-                            onChange={(e) =>
-                              setDateToUpdate({
-                                ...dateToUpdate,
-                                date: e.target.value,
-                              })
-                            }
-                          />
-                          {/* <label htmlFor="family">Family</label> */}
-                          <input
-                            type="checkbox"
-                            id="family"
-                            checked={dateToUpdate.family}
-                            onChange={(e) =>
-                              setDateToUpdate({
-                                ...dateToUpdate,
-                                family: e.target.checked,
-                              })
-                            }
-                          />
-                          <div className="buttonEditUpdateDelete">
-                            <button onClick={handleEditDate}>Update</button>
-                            <button
-                              onClick={() => confirmDelete(date._id)}
-                              id="delete"
-                            >
-                              <img src={corbeille2} alt="delete" />
-                            </button>
-                          </div>
-                          {deleteId === date._id && (
-                            <div className="birthCard-deleteMode birthCardDeleteCValidation">
-                              <p>are you sur ?</p>
-                              <button onClick={cancelDelete} id="delete">
-                                <img
-                                  src={annule}
-                                  alt="cancel"
-                                  className="birthCard-icon"
-                                />
-                              </button>
+                <div className="birthCard-delete birthCardCenter">
+                  {deleteId !== date._id && (
+                    <div>
+                      {date._id === editingId ? (
+                        //edit
+                        <div className="formEdit-Date">
+                          <form className="formEditDate">
+                            {/* <label htmlFor="name">Name</label> */}
+                            <input
+                              type="text"
+                              className="formEditDateInput"
+                              value={dateToUpdate.name}
+                              onChange={(e) =>
+                                setDateToUpdate({
+                                  ...dateToUpdate,
+                                  name: e.target.value,
+                                })
+                              }
+                            />
+                            {/* <label htmlFor="surname">Surname</label> */}
+                            <input
+                              type="text"
+                              className="formEditDateInput"
+                              value={dateToUpdate.surname}
+                              onChange={(e) =>
+                                setDateToUpdate({
+                                  ...dateToUpdate,
+                                  surname: e.target.value,
+                                })
+                              }
+                            />
+                            {/* <label htmlFor="date">Date</label> */}
+                            <input
+                              type="date"
+                              value={formatDate(dateToUpdate.date)}
+                              onChange={(e) =>
+                                setDateToUpdate({
+                                  ...dateToUpdate,
+                                  date: e.target.value,
+                                })
+                              }
+                            />
+                            {/* <label htmlFor="family">Family</label> */}
+                            <input
+                              type="checkbox"
+                              id="family"
+                              checked={dateToUpdate.family}
+                              onChange={(e) =>
+                                setDateToUpdate({
+                                  ...dateToUpdate,
+                                  family: e.target.checked,
+                                })
+                              }
+                            />
+                            <div className="buttonEditUpdateDelete">
+                              <button onClick={handleEditDate}>Update</button>
                               <button
-                                onClick={() => deleteDate(date._id)}
+                                onClick={() => confirmDelete(date._id)}
                                 id="delete"
                               >
-                                <img
-                                  src={corbeille1}
-                                  alt="delete"
-                                  className="birthCard-icon"
-                                />
+                                <img src={corbeille2} alt="delete" />
                               </button>
                             </div>
-                          )}
-                        </form>
-                      </div>
-                    ) : (
-                      //edit
-                      <span className="daysUntilBirthday">
-                        <Countdown birthdate={date.date} />
-                      </span>
-                    )}
-                    <br />
-                    <img src={randomImage} alt="Random" />
-                    <button onClick={() => handleEditMode(date._id)}>
-                      {editingId === date._id ? "Cancel" : "Edit"}
+                            {deleteId === date._id && (
+                              <div className="birthCard-deleteMode birthCardDeleteCValidation">
+                                <p>are you sur ?</p>
+                                <button onClick={cancelDelete} id="delete">
+                                  <img
+                                    src={annule}
+                                    alt="cancel"
+                                    className="birthCard-icon"
+                                  />
+                                </button>
+                                <button
+                                  onClick={() => deleteDate(date._id)}
+                                  id="delete"
+                                >
+                                  <img
+                                    src={corbeille1}
+                                    alt="delete"
+                                    className="birthCard-icon"
+                                  />
+                                </button>
+                              </div>
+                            )}
+                          </form>
+                        </div>
+                      ) : (
+                        //edit
+                        <span className="daysUntilBirthday">
+                          <Countdown birthdate={date.date} />
+                        </span>
+                      )}
+                      <br />
+                      <img src={randomImage} alt="Random" />
+                      <button onClick={() => handleEditMode(date._id)}>
+                        {editingId === date._id ? "Cancel" : "Edit"}
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {deleteId === date._id && (
+                  <div className="birthCard-deleteMode birthCardDeleteCValidation">
+                    <p>are you sur ?</p>
+                    <button onClick={cancelDelete} id="delete">
+                      <img
+                        src={annule}
+                        alt="cancel"
+                        className="birthCard-icon"
+                      />
+                    </button>
+                    <button onClick={() => deleteDate(date._id)} id="delete">
+                      <img
+                        src={corbeille1}
+                        alt="delete"
+                        className="birthCard-icon"
+                      />
                     </button>
                   </div>
                 )}
               </div>
+            );
+          })}
+        </div>
+      )}
 
-              {deleteId === date._id && (
-                <div className="birthCard-deleteMode birthCardDeleteCValidation">
-                  <p>are you sur ?</p>
-                  <button onClick={cancelDelete} id="delete">
-                    <img src={annule} alt="cancel" className="birthCard-icon" />
-                  </button>
-                  <button onClick={() => deleteDate(date._id)} id="delete">
-                    <img
-                      src={corbeille1}
-                      alt="delete"
-                      className="birthCard-icon"
-                    />
-                  </button>
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-      <div className="pagination">
-        <button onClick={prevPage} disabled={currentPage === 1}>
-          Précédent
-        </button>
-        {[...Array(Math.ceil(dates.length / ITEMS_PER_PAGE)).keys()].map(
-          (number) => (
-            <button key={number + 1} onClick={() => paginate(number + 1)}>
-              {number + 1}
-            </button>
-          )
-        )}
-        <button
-          onClick={nextPage}
-          disabled={currentPage === Math.ceil(dates.length / ITEMS_PER_PAGE)}
-        >
-          Suivant
-        </button>
-      </div>
+      {viewMode === "card" && (
+        <div className="pagination">
+          <button onClick={prevPage} disabled={currentPage === 1}>
+            Précédent
+          </button>
+          {[...Array(Math.ceil(dates.length / ITEMS_PER_PAGE)).keys()].map(
+            (number) => (
+              <button key={number + 1} onClick={() => paginate(number + 1)}>
+                {number + 1}
+              </button>
+            )
+          )}
+          <button
+            onClick={nextPage}
+            disabled={currentPage === Math.ceil(dates.length / ITEMS_PER_PAGE)}
+          >
+            Suivant
+          </button>
+        </div>
+      )}
     </div>
   );
 };
