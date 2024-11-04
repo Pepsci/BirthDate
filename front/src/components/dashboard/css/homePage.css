@@ -1,0 +1,69 @@
+img{
+    height: 50px;
+}
+
+.homePageRoot {
+    margin-top: 80px;
+}
+
+.homePageCurrentuser{
+    display: flex;
+    flex-direction: column;
+    background-color: red;
+}
+
+.homePageUser{
+    display: flex;
+}
+
+.homePageHeader{
+    display: flex;
+    align-items: center;
+}
+
+.homePageHeader{
+position: fixed;
+    top: 0;
+    width: 100%;
+    height: 80px;
+    background-color: white;
+    z-index: 1;
+}
+
+.homePageHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    height: 80px;
+    background-color: white;
+}
+
+.homePageCurrentUser {
+    display: flex;
+    align-items: center;
+    margin-right: 10px;
+}
+
+.avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin-right: 10px;
+}
+
+.bntLogout{
+    padding: 5px 10px;
+        border: none;
+        border-radius: 5px;
+        background-color: #007bff;
+        color: #fff;
+        cursor: pointer;
+        margin-right: 20px;
+}
+
+.btnLogout:hover {
+    background-color: #0056b3;
+}

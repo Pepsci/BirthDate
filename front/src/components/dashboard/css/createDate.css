@@ -1,0 +1,29 @@
+.formAddDAte{
+    display: flex;
+    flex-direction: row;
+}
+
+.formAddInput{
+    background: transparent;
+        border: transparent;
+        margin: 1rem;
+        border-bottom: 1px solid grey;
+}
+
+.formAddInput:focus{
+outline: none;
+}
+
+.formEditDateInput:focus{
+    outline: none;
+}
+
+.formEditDateInput {
+    background: transparent;
+    border: transparent;
+    border-bottom: 1px solid grey;
+}
+
+.formEdit-Date{
+    margin-top: 200px;
+}
