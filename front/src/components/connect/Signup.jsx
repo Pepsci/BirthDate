@@ -100,7 +100,7 @@ const Signup = () => {
             Password
           </label> */}
           <input
-            type="text"
+            type="password"
             name="password"
             id="password"
             className="form-input "
