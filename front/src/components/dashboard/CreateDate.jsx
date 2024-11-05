@@ -11,7 +11,7 @@ const CreateDate = ({ onDateAdded }) => {
   const [dates, setDates] = useState([]);
 
   const [date, setDate] = useState({
-    date: "",
+    date: "2022-10-09",
     name: "",
     surname: "",
     family: false,
