@@ -7,7 +7,6 @@ import "./css/dateList.css";
 import corbeille1 from "./icons/corbeille1.png";
 import corbeille2 from "./icons/corbeille2.png";
 import annule from "./icons/annule.png";
-// import { getRandomImage } from "./CadeauxRandom";
 import Countdown from "./Countdown";
 // import { sendBirthdayEmail } from "./../services/EmailService";
 
@@ -75,7 +74,32 @@ const DateList = () => {
   };
 
   const handleDateAdded = (newDate) => {
-    setDates((prevDates) => [...prevDates, newDate]);
+    const updatedDates = [...dates, newDate];
+    sortDates(updatedDates); // Appelle la fonction de tri
+    setDates(updatedDates);
+  };
+
+  const sortDates = (datesArray) => {
+    const today = new Date();
+    datesArray.sort((a, b) => {
+      const nextBirthdayA = new Date(
+        today.getFullYear(),
+        new Date(a.date).getMonth(),
+        new Date(a.date).getDate()
+      );
+      const nextBirthdayB = new Date(
+        today.getFullYear(),
+        new Date(b.date).getMonth(),
+        new Date(b.date).getDate()
+      );
+      if (nextBirthdayA < today) {
+        nextBirthdayA.setFullYear(today.getFullYear() + 1);
+      }
+      if (nextBirthdayB < today) {
+        nextBirthdayB.setFullYear(today.getFullYear() + 1);
+      }
+      return nextBirthdayA - nextBirthdayB;
+    });
   };
 
   //delete
@@ -214,20 +238,6 @@ const DateList = () => {
   const toggleViewMode = () => {
     setViewMode(viewMode === "card" ? "agenda" : "card");
   };
-
-  // useEffect(() => {
-  //   dates.forEach((date) => {
-  //     const today = new Date();
-  //     const birthday = new Date(date.date);
-  //     if (
-  //       today.getDate() === birthday.getDate() &&
-  //       today.getMonth() === birthday.getMonth()
-  //     ) {
-  //       // Si la date d'aujourd'hui est la date d'anniversaire
-  //       sendBirthdayEmail(date.name, date.surname, currentUser.email);
-  //     }
-  //   });
-  // }, [dates]);
 
   return (
     <div className="dateList">
