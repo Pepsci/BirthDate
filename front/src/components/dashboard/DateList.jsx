@@ -352,7 +352,7 @@ const DateList = () => {
                                 onClick={() => confirmDelete(date._id)}
                                 id="delete"
                               >
-                                <img src={corbeille2} alt="delete" />
+                                Delete
                               </button>
                             </div>
                             {deleteId === date._id && (
