@@ -7,7 +7,7 @@ import "./css/dateList.css";
 import corbeille1 from "./icons/corbeille1.png";
 import corbeille2 from "./icons/corbeille2.png";
 import annule from "./icons/annule.png";
-import { getRandomImage } from "./CadeauxRandom";
+// import { getRandomImage } from "./CadeauxRandom";
 import Countdown from "./Countdown";
 // import { sendBirthdayEmail } from "./../services/EmailService";
 
@@ -260,7 +260,6 @@ const DateList = () => {
       ) : (
         <div className="birthDeck">
           {currentItems.slice(0, itemsPerPage).map((date) => {
-            const randomImage = getRandomImage();
             return (
               <div className="birthCard titleFont" key={date._id + "date"}>
                 <div className="birthCardName">
@@ -377,7 +376,6 @@ const DateList = () => {
                         </span>
                       )}
                       <br />
-                      <img src={randomImage} alt="Random" />
                       <button onClick={() => handleEditMode(date._id)}>
                         {editingId === date._id ? "Cancel" : "Edit"}
                       </button>
