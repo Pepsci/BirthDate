@@ -72,7 +72,7 @@ const Agenda = ({ dates }) => {
                   dayOfMonth
                 );
                 const dayOfWeek = dateObject.toLocaleDateString("fr-FR", {
-                  weekday: "long",
+                  weekday: window.innerWidth <= 600 ? "narrow" : "long",
                 });
                 return (
                   <td key={dayIndex}>
@@ -82,8 +82,13 @@ const Agenda = ({ dates }) => {
                           <strong>{dayOfMonth}</strong> {dayOfWeek}
                         </div>
                         <div className="names">
-                          {dates.length > 0
-                            ? dates.map((date) => (
+                          {dates.length > 0 ? (
+                            window.innerWidth <= 600 ? (
+                              <div>
+                                <h4>{dates.length} à fêter</h4>
+                              </div>
+                            ) : (
+                              dates.map((date) => (
                                 <div key={date._id}>
                                   <span>
                                     <b>
@@ -92,7 +97,10 @@ const Agenda = ({ dates }) => {
                                   </span>
                                 </div>
                               ))
-                            : "Pas d'anniversaire"}
+                            )
+                          ) : (
+                            ""
+                          )}
                         </div>
                       </div>
                     </div>

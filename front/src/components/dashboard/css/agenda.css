@@ -74,3 +74,24 @@ text-align: end;
     justify-content: center;
     align-items: center;
 }
+
+@media (max-width: 600px) {
+    .day-number {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .day-number strong {
+        margin-right: 4px;
+    }
+
+    .names {
+        font-size: smaller;
+        text-align: center;
+    }
+
+    td{
+        height: 80px;
+    }
+}
