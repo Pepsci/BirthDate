@@ -42,7 +42,7 @@ const Login = () => {
     <div className="form-connect">
       <div className="peel">
         <form action="" className="form" onSubmit={handleSubmit}>
-          <h1 className="form-title-font">Login</h1>
+          <h1 className="form-title-font">Connexion</h1>
           {/* <label htmlFor="email" className="form-label">
           Email
         </label> */}
@@ -51,7 +51,7 @@ const Login = () => {
             name="email"
             id="email"
             className="form-input"
-            placeholder="Enter your email"
+            placeholder="Entrez votre Email"
             value={user.email}
             onChange={(e) =>
               setUser({ ...user, email: e.target.value.toLowerCase() })
@@ -66,12 +66,12 @@ const Login = () => {
             name="password"
             id="password"
             className="form-input"
-            placeholder="Enter your password"
+            placeholder="Entrez votre mot de passe"
             value={user.password}
             onChange={(e) => setUser({ ...user, password: e.target.value })}
           />
 
-          <button>Login</button>
+          <button>Se connecter</button>
         </form>
       </div>
 

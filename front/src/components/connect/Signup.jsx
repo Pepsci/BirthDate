@@ -52,7 +52,7 @@ const Signup = () => {
     <div className="form-connect">
       <div className="peel">
         <form className="form" onSubmit={handleSubmit}>
-          <h1 className="form-title-font">Signup</h1>
+          <h1 className="form-title-font">Inscription</h1>
           {/* <label htmlFor="name" className="form-label">
             Name
           </label> */}
@@ -61,7 +61,7 @@ const Signup = () => {
             name="name"
             id="name"
             className="form-input"
-            placeholder="Enter your name"
+            placeholder="Prenom"
             value={user.name}
             onChange={(e) => {
               setUser({ ...user, name: e.target.value });
@@ -76,7 +76,7 @@ const Signup = () => {
             name="surname"
             id="surname"
             className="form-input"
-            placeholder="Enter your surname"
+            placeholder="Nom"
             value={user.surname}
             onChange={(e) => {
               setUser({ ...user, surname: e.target.value });
@@ -90,7 +90,7 @@ const Signup = () => {
             name="email"
             id="email"
             className="form-input"
-            placeholder="Enter your email"
+            placeholder="Votre Email"
             value={user.email}
             onChange={(e) => {
               setUser({ ...user, email: e.target.value });
@@ -104,23 +104,21 @@ const Signup = () => {
             name="password"
             id="password"
             className="form-input "
-            placeholder="Enter your password"
+            placeholder="Mot de passe"
             value={user.password}
             onChange={(e) => {
               setUser({ ...user, password: e.target.value });
             }}
           />
           <div className="formConnectAvatar titleFont">
-            <span className="form-connect-msg font">
-              This will be your avatar
-            </span>
+            <span className="form-connect-msg font">Voici votre avatar</span>
             <img
-              src={`https://api.dicebear.com/8.x/bottts/svg?seed=${user.surname}`}
+              src={`https://api.dicebear.com/8.x/bottts/svg?seed=${user.name}`}
               alt="avatar"
               className="avatarSignup"
             />
           </div>
-          <button>Sign up</button>
+          <button>Créer mon compte</button>
         </form>
       </div>
 
@@ -128,9 +126,7 @@ const Signup = () => {
         <p className="error-message fontErrorMessage">{erroMessage}</p>
       )}
       <Link to={"/login"}>
-        <span className="formConnectMessage font">
-          Already have an account ?
-        </span>
+        <span className="formConnectMessage font">Déjà un compte ?</span>
       </Link>
     </div>
   );

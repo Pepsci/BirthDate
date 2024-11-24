@@ -7,6 +7,7 @@
     "dev": "nodemon ./bin/www"
   },
   "dependencies": {
+    "@aws-sdk/client-ses": "^3.699.0",
     "bcryptjs": "^2.4.3",
     "cloudinary": "^1.28.1",
     "cookie-parser": "~1.4.4",
@@ -16,13 +17,14 @@
     "emailjs-com": "^3.2.0",
     "express": "^4.19.2",
     "express-jwt": "^7.7.8",
+    "googleapis": "^144.0.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^6.2.3",
     "morgan": "~1.9.1",
     "multer": "^1.4.5-lts.1",
     "multer-storage-cloudinary": "^4.0.0",
     "node-schedule": "^2.1.1",
-    "nodemailer": "^6.9.14",
+    "nodemailer": "^6.9.16",
     "react-router-dom": "^6.24.0"
   }
 }
