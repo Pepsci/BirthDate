@@ -14,8 +14,7 @@ const usersRouter = require("./routes/users");
 
 const app = express();
 
-console.log('FRONTEND_URL:', process.env.FRONTEND_URL);
-
+console.log("FRONTEND_URL:", process.env.FRONTEND_URL);
 
 app.use(
   cors({

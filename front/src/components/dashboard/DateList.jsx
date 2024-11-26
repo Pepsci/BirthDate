@@ -156,18 +156,17 @@ const DateList = () => {
     return daysUntilBirthday;
   };
   //age
+  let itemsPerPage =
+    window.innerWidth <= 600 ? ITEMS_PER_PAGE_MOBILE : ITEMS_PER_PAGE;
 
   //pagination
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
-  const indexOfLastItem = currentPage * ITEMS_PER_PAGE;
-  const indexOfFirstItem = indexOfLastItem - ITEMS_PER_PAGE;
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = dates.slice(indexOfFirstItem, indexOfLastItem);
-
   const nextPage = () => setCurrentPage((prev) => prev + 1);
   const prevPage = () => setCurrentPage((prev) => prev - 1);
 
-  let itemsPerPage =
-    window.innerWidth <= 600 ? ITEMS_PER_PAGE_MOBILE : ITEMS_PER_PAGE;
   //pagination
 
   //edit
@@ -428,22 +427,26 @@ const DateList = () => {
 
       {viewMode === "card" && (
         <div className="pagination">
+          {" "}
           <button onClick={prevPage} disabled={currentPage === 1}>
-            Précédent
-          </button>
-          {[...Array(Math.ceil(dates.length / ITEMS_PER_PAGE)).keys()].map(
+            {" "}
+            Précédent{" "}
+          </button>{" "}
+          {[...Array(Math.ceil(dates.length / itemsPerPage)).keys()].map(
             (number) => (
               <button key={number + 1} onClick={() => paginate(number + 1)}>
-                {number + 1}
+                {" "}
+                {number + 1}{" "}
               </button>
             )
-          )}
+          )}{" "}
           <button
             onClick={nextPage}
-            disabled={currentPage === Math.ceil(dates.length / ITEMS_PER_PAGE)}
+            disabled={currentPage === Math.ceil(dates.length / itemsPerPage)}
           >
-            Suivant
-          </button>
+            {" "}
+            Suivant{" "}
+          </button>{" "}
         </div>
       )}
     </div>
