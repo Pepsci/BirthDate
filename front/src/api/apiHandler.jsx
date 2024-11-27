@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const service = axios.create({
-  baseURL: import.meta.env.VITE_APP_BACKEND_URL.replace("http://", "https://"),
+  baseURL: import.meta.env.VITE_APP_BACKEND_URL,
   withCredentials: true,
 });
 
