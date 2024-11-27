@@ -1,7 +1,5 @@
-require("dotenv").config();
-require("./services/birthdayEmailService");
-require("./config/mongoDb");
-
+const fs = require("fs");
+const https = require("https");
 const express = require("express");
 const path = require("path");
 const cookieParser = require("cookie-parser");
@@ -34,15 +32,24 @@ app.use("/users", usersRouter);
 app.use("/date", dateRouter);
 
 app.use("/api/*", (req, res, next) => {
-  const error = new Error("Ressource not found.");
+  const error = new Error("Resource not found.");
   error.status = 404;
   next(error);
 });
 
 if (process.env.NODE_ENV === "production") {
-  app.use("*", (req, res) => {
-    res.sendFile(path.join(__dirname, "public", "index.html"));
+  app.use("*", (req, res, next) => {
+    res.sendFile(path.join(__dirname, "public/index.html"));
   });
 }
+
+const httpsOptions = {
+  key: fs.readFileSync("./localhost-key.pem"),
+  cert: fs.readFileSync("./localhost.pem"),
+};
+
+https.createServer(httpsOptions, app).listen(4000, () => {
+  console.log("HTTPS Server running on port 4000");
+});
 
 module.exports = app;
