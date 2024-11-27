@@ -40,7 +40,11 @@ const Signup = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await apiHandler.post("/signup", user);
+      const baseUrl = import.meta.env.VITE_APP_BACKEND_URL.replace(
+        "http://",
+        "https://"
+      );
+      await apiHandler.post(`${baseUrl}/signup`, user);
       navigate("/login");
     } catch (err) {
       setErrorMessage((prevValue) => err.response.data.message);
@@ -53,9 +57,6 @@ const Signup = () => {
       <div className="peel">
         <form className="form" onSubmit={handleSubmit}>
           <h1 className="form-title-font">Inscription</h1>
-          {/* <label htmlFor="name" className="form-label">
-            Name
-          </label> */}
           <input
             type="text"
             name="name"
@@ -68,9 +69,6 @@ const Signup = () => {
               handleAvatar(e.target.value);
             }}
           />
-          {/* <label htmlFor="surname" className="form-label">
-            Surname
-          </label> */}
           <input
             type="text"
             name="surname"
@@ -82,9 +80,6 @@ const Signup = () => {
               setUser({ ...user, surname: e.target.value });
             }}
           />
-          {/* <label htmlFor="email" className="form-label">
-            Email
-          </label> */}
           <input
             type="text"
             name="email"
@@ -96,9 +91,6 @@ const Signup = () => {
               setUser({ ...user, email: e.target.value });
             }}
           />
-          {/* <label htmlFor="password" className="form-label">
-            Password
-          </label> */}
           <input
             type="password"
             name="password"
@@ -121,7 +113,6 @@ const Signup = () => {
           <button>Créer mon compte</button>
         </form>
       </div>
-
       {erroMessage && (
         <p className="error-message fontErrorMessage">{erroMessage}</p>
       )}

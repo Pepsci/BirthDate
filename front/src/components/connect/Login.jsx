@@ -22,15 +22,19 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const dbResponse = await apiHandler.post("/login", user);
+      const baseUrl = import.meta.env.VITE_APP_BACKEND_URL.replace(
+        "http://",
+        "https://"
+      );
+      const dbResponse = await apiHandler.post(`${baseUrl}/login`, user);
 
-      // Stocker le jeton JWT dans le stockage local
+      // store the jwt token in local storage
       storeToken(dbResponse.data.authToken);
 
-      // Vérifier le jeton
+      // verify the token
       authenticateUser();
 
-      // Rediriger vers la page d'accueil
+      // redirect to home
       navigate("/");
     } catch (error) {
       const errorDescription = error.response.data.message;
@@ -43,9 +47,6 @@ const Login = () => {
       <div className="peel">
         <form action="" className="form" onSubmit={handleSubmit}>
           <h1 className="form-title-font">Connexion</h1>
-          {/* <label htmlFor="email" className="form-label">
-          Email
-        </label> */}
           <input
             type="text"
             name="email"
@@ -57,10 +58,6 @@ const Login = () => {
               setUser({ ...user, email: e.target.value.toLowerCase() })
             }
           />
-
-          {/* <label htmlFor="password" className="form-label">
-          Password
-        </label> */}
           <input
             type="password"
             name="password"
@@ -70,11 +67,9 @@ const Login = () => {
             value={user.password}
             onChange={(e) => setUser({ ...user, password: e.target.value })}
           />
-
           <button>Se connecter</button>
         </form>
       </div>
-
       <div className="form-connect-message font fontErrorMessage">
         {errorMessage && <p className="error-message ">{errorMessage}</p>}
         <Link to={"/forgot-password"}>
