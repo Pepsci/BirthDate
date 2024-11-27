@@ -167,6 +167,17 @@ const DateList = () => {
   const nextPage = () => setCurrentPage((prev) => prev + 1);
   const prevPage = () => setCurrentPage((prev) => prev - 1);
 
+  useEffect(() => {
+    const handleResize = () => {
+      itemsPerPage =
+        window.innerWidth <= 600 ? ITEMS_PER_PAGE_MOBILE : ITEMS_PER_PAGE;
+      setCurrentPage(1); // Optionnel: Réinitialise la page courante à 1
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   //pagination
 
   //edit

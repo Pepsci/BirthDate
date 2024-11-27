@@ -24,13 +24,13 @@ const Login = () => {
     try {
       const dbResponse = await apiHandler.post("/login", user);
 
-      // store the jwt token in local storage
+      // Stocker le jeton JWT dans le stockage local
       storeToken(dbResponse.data.authToken);
 
-      //verify the token
+      // Vérifier le jeton
       authenticateUser();
 
-      // redirect to home
+      // Rediriger vers la page d'accueil
       navigate("/");
     } catch (error) {
       const errorDescription = error.response.data.message;
