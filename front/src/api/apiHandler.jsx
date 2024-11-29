@@ -40,7 +40,10 @@ const apiHandler = {
   signin(userInfo) {
     return service
       .post("/login", userInfo)
-      .then((res) => res.data)
+      .then((res) => {
+        console.log("Response data:", res.data);
+        return res.data;
+      })
       .catch(errorHandler);
   },
 
