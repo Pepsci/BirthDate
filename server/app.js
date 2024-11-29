@@ -7,7 +7,6 @@ const path = require("path");
 const cookieParser = require("cookie-parser");
 const logger = require("morgan");
 const cors = require("cors");
-const helmet = require("helmet");
 
 const authRouter = require("./routes/auth");
 const dateRouter = require("./routes/date");
@@ -22,19 +21,6 @@ app.use(
   cors({
     credentials: true,
     origin: process.env.FRONTEND_URL || "http://localhost:3000", // Fallback to localhost during development
-  })
-);
-
-app.use(
-  helmet({
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        fontSrc: ["'self'", "data:"], // Autorise les polices depuis `data:` et le domaine
-        imgSrc: ["'self'", "data:"],
-        styleSrc: ["'self'", "'unsafe-inline'"], // Si des styles inline sont nécessaires
-      },
-    },
   })
 );
 
