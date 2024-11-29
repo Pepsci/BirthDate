@@ -27,9 +27,9 @@ app.use(logger("dev"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
-app.use(express.static(path.join(__dirname, "public")));
+app.use(express.static(path.join(__dirname, "dist"))); // Assure-toi d'utiliser le dossier 'dist'
 
-app.use("/", authRouter);
+app.use("/auth", authRouter); // Modifie pour utiliser le préfixe correct pour les routes
 app.use("/users", usersRouter);
 app.use("/date", dateRouter);
 
@@ -40,10 +40,13 @@ app.use("/api/*", (req, res, next) => {
 });
 
 if (process.env.NODE_ENV === "production") {
-  app.use("*", (req, res, next) => {
-    // If no routes match, send them the React HTML.
-    res.sendFile(path.join(__dirname, "public/index.html"));
+  app.use("*", (req, res) => {
+    res.sendFile(path.join(__dirname, "dist", "index.html")); // Assure-toi d'utiliser 'dist/index.html'
   });
 }
+
+app.listen(4000, () => {
+  console.log("HTTP Server running on port 4000");
+});
 
 module.exports = app;
