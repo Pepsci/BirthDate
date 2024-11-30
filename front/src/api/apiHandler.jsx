@@ -12,11 +12,13 @@ service.interceptors.request.use((config) => {
 });
 
 function errorHandler(error) {
-  if (error.response.data) {
-    console.log(error.response && error.response.data);
+  if (error.response && error.response.data) {
+    console.log("Error response data:", error.response.data);
+    throw error.response.data;
+  } else {
+    console.log("Error:", error);
     throw error;
   }
-  throw error;
 }
 
 const apiHandler = {
@@ -46,7 +48,6 @@ const apiHandler = {
       })
       .catch(errorHandler);
   },
-
   requestPasswordReset(email) {
     return service
       .post("/forgot-password", { email })

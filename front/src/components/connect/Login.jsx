@@ -19,22 +19,25 @@ const Login = () => {
     if (isLoggedIn) navigate("/home");
   }, [isLoggedIn]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
     try {
-      const dbResponse = await apiHandler.post("/login", user);
+      const response = await apiHandler.signin({
+        email: email,
+        password: password,
+      });
 
-      // store the jwt token in local storage
-      storeToken(dbResponse.data.authToken);
+      console.log("Response data:", response);
 
-      //verify the token
-      authenticateUser();
-
-      // redirect to home
-      navigate("/");
+      if (response && response.data) {
+        // Utilise les données de la réponse ici
+        console.log("Login successful");
+      } else {
+        console.error("No data in response");
+      }
     } catch (error) {
-      const errorDescription = error.response.data.message;
-      setErrorMessage(errorDescription);
+      console.error("Error during login:", error);
     }
   };
 
