@@ -24,8 +24,8 @@ const Login = () => {
 
     try {
       const response = await apiHandler.signin({
-        email: email,
-        password: password,
+        email: user.email, // Utilise les valeurs de l'état
+        password: user.password,
       });
 
       console.log("Response data:", response);
@@ -46,9 +46,6 @@ const Login = () => {
       <div className="peel">
         <form action="" className="form" onSubmit={handleSubmit}>
           <h1 className="form-title-font">Connexion</h1>
-          {/* <label htmlFor="email" className="form-label">
-          Email
-        </label> */}
           <input
             type="text"
             name="email"
@@ -61,9 +58,6 @@ const Login = () => {
             }
           />
 
-          {/* <label htmlFor="password" className="form-label">
-          Password
-        </label> */}
           <input
             type="password"
             name="password"
