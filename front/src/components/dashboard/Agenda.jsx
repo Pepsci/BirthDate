@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import agenda from "./css/agenda.css";
+import "./css/agenda.css";
 
 const Agenda = ({ dates }) => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
