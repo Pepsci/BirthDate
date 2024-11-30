@@ -30,14 +30,21 @@ const Login = () => {
 
       console.log("Response data:", response);
 
-      if (response && response.data) {
-        // Utilise les données de la réponse ici
+      if (response && response.authToken) {
+        // Utilise le jeton d'authentification ici
         console.log("Login successful");
+        console.log("AuthToken:", response.authToken);
+        storeToken(response.authToken);
+        authenticateUser();
+        navigate("/home");
       } else {
-        console.error("No data in response");
+        console.error("No authToken in response");
       }
     } catch (error) {
       console.error("Error during login:", error);
+      setErrorMessage(
+        "Une erreur est survenue lors de la connexion. Veuillez réessayer."
+      );
     }
   };
 
