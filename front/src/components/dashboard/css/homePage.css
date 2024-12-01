@@ -22,7 +22,7 @@ img{
 }
 
 .homePageHeader{
-position: fixed;
+    position: fixed;
     top: 0;
     width: 100%;
     height: 80px;
@@ -66,4 +66,35 @@ position: fixed;
 
 .btnLogout:hover {
     background-color: #0056b3;
+}
+
+.homeTest{
+    background-repeat: repeat;
+    background-image: url('../images/guirlande.png');
+    background-size: contain;
+    height: 100px;
+}
+
+.christmas-lights {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: fixed;
+    width: 100%;
+    
+}
+
+.guirlandeDeNoel {
+    width: 10%;
+    margin-bottom: 80px;
+    /* Pour que l'image prenne toute la largeur */
+    height: 50%;
+    /* Pour maintenir les proportions */
+}
+
+@media (max-width: 600px) {
+
+.homeTest{
+    height: 80px;
+}
 }
