@@ -9,7 +9,7 @@ img{
 .homePageCurrentuser{
     display: flex;
     flex-direction: column;
-    background-color: red;
+    background-color: rgb(255, 255, 255);
 }
 
 .homePageUser{
@@ -19,15 +19,17 @@ img{
 .homePageHeader{
     display: flex;
     align-items: center;
+    top: 200;
 }
 
-.homePageHeader{
+.homePageHeader, .test{
     position: fixed;
-    top: 0;
+    top: 80;
     width: 100%;
     height: 80px;
     background-color: white;
     z-index: 1;
+    
 }
 
 .homePageHeader {
@@ -38,7 +40,7 @@ img{
     top: 0;
     width: 100%;
     height: 80px;
-    background-color: white;
+    background-color: rgb(255, 255, 255);
 }
 
 .homePageCurrentUser {
@@ -82,14 +84,6 @@ img{
     position: fixed;
     width: 100%;
     
-}
-
-.guirlandeDeNoel {
-    width: 10%;
-    margin-bottom: 80px;
-    /* Pour que l'image prenne toute la largeur */
-    height: 50%;
-    /* Pour maintenir les proportions */
 }
 
 @media (max-width: 600px) {

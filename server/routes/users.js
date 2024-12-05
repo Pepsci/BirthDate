@@ -8,6 +8,8 @@ const jwt = require("jsonwebtoken");
 /* GET users listing. */
 router.get("/", isAuthenticated, async (req, res, next) => {
   try {
+    console.log("Request received for user ID:", req.params.id);
+
     const user = await userModel.findById(req.payload._id);
     const userToFront = {
       _id: user._id,

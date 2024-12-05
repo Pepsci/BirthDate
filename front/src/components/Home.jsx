@@ -1,12 +1,22 @@
 import React, { useContext, useState } from "react";
+import { Link } from "react-router-dom"; // Import du composant Link
 import { AuthContext } from "../context/auth.context";
 import DateList from "./dashboard/DateList";
+import ProfilDetails from "./profil/Profil"; // Assure-toi d'importer le composant ProfilDetails
 import "./dashboard/css/homePage.css";
-import guirlande from "../components/dashboard/images/guirlande.png";
 
 const Home = () => {
   const { logOut, isLoggedIn, currentUser } = useContext(AuthContext);
   const [date] = useState([]);
+  const [showProfile, setShowProfile] = useState(false); // Nouvel état pour gérer l'affichage du profil
+
+  const handleShowProfile = () => {
+    setShowProfile(true);
+  };
+
+  const handleHideProfile = () => {
+    setShowProfile(false);
+  };
 
   return (
     <div className="homePageRoot">
@@ -21,9 +31,9 @@ const Home = () => {
                   alt="avatar"
                   className="avatar"
                 />
-                <div className="homePageCurrentUserName">
+                <button onClick={handleShowProfile} className="bntLogout">
                   {currentUser && currentUser.name}
-                </div>
+                </button>
               </div>
               <button className="bntLogout" onClick={logOut}>
                 LogOut
@@ -31,17 +41,17 @@ const Home = () => {
             </div>
           )}
         </div>
-        {/* <div className="christmas-lights">
-          {" "}
-          <img
-            src={guirlande}
-            alt="Guirlande lumineuse de Noël"
-            className="guirlandeDeNoel"
-          />{" "}
-        </div> */}
       </div>
 
-      {isLoggedIn && <DateList date={date} />}
+      {isLoggedIn &&
+        (showProfile ? <ProfilDetails /> : <DateList date={date} />)}
+
+      {/* Ajout d'un bouton pour retourner à la liste des dates */}
+      {isLoggedIn && showProfile && (
+        <button onClick={handleHideProfile} className="btnBackToDateList">
+          Back to Date List
+        </button>
+      )}
     </div>
   );
 };

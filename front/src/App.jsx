@@ -3,6 +3,7 @@ import "./App.css";
 import Login from "./components/connect/Login";
 import Signup from "./components/connect/Signup";
 import Home from "./components/Home";
+import Profil from "./components/profil/Profil";
 import PrivateRoute from "./protectedRoutes/PrivateRoute";
 import ForgotPassword from "./components/connect/ForgotPassword";
 import ResetPassword from "./components/connect/ResetPassword";
@@ -42,6 +43,7 @@ function App() {
           <Route path="/auth/reset/:token" element={<ResetPassword />} />
           <Route element={<PrivateRoute />}>
             <Route path="/home" element={<Home />} />
+            <Route path="/profil" element={<Profil />} />
           </Route>
         </Routes>
       </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, require } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import apiHandler from "../../api/apiHandler";
 import useAuth from "../../context/useAuth";
 import CreateDate from "./CreateDate";
