@@ -2,7 +2,7 @@ import React, { useContext, useState } from "react";
 import { Link } from "react-router-dom"; // Import du composant Link
 import { AuthContext } from "../context/auth.context";
 import DateList from "./dashboard/DateList";
-import ProfilDetails from "./profil/Profil"; // Assure-toi d'importer le composant ProfilDetails
+import ProfilDetails from "./profil/Profile"; // Assure-toi d'importer le composant ProfilDetails
 import "./dashboard/css/homePage.css";
 
 const Home = () => {
@@ -31,7 +31,7 @@ const Home = () => {
                   alt="avatar"
                   className="avatar"
                 />
-                <button onClick={handleShowProfile} className="bntLogout">
+                <button onClick={handleShowProfile} className="btnProfile">
                   {currentUser && currentUser.name}
                 </button>
               </div>

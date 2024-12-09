@@ -63,11 +63,21 @@ img{
         background-color: #007bff;
         color: #fff;
         cursor: pointer;
-        margin-right: 20px;
+        margin-right: 10px;
 }
 
-.btnLogout:hover {
+.btnLogout .btnProfile:hover {
     background-color: #0056b3;
+}
+
+.btnProfile{
+    padding: 5px 10px;
+        border: none;
+        border-radius: 5px;
+        background-color: #007bff;
+        color: #fff;
+        cursor: pointer;
+        margin-right: 2px;
 }
 
 .homeTest{

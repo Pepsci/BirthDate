@@ -13,7 +13,6 @@ const ProfilDetails = () => {
     email: "",
     avatar: "",
     date: "",
-    password: "",
   });
 
   const [isEditing, setIsEditing] = useState(false);
@@ -23,13 +22,14 @@ const ProfilDetails = () => {
 
   useEffect(() => {
     if (currentUser) {
+      console.log("useeeeeeeeeeeeeer", currentUser._id);
       apiHandler
-        .get(`/user/${currentUser._id}`)
+        .get(`/users/${currentUser._id}`)
         .then((dbResponse) => {
           setUserToUpdate(dbResponse.data);
         })
         .catch((error) => {
-          console.log(error);
+          console.error(error);
         });
     }
     if (!isLoggedin) {
@@ -42,20 +42,22 @@ const ProfilDetails = () => {
     setIsEditing(true);
   };
 
-  const canceEdit = (e) => {
+  const handleCancelEdit = (e) => {
     e.preventDefault();
     setIsEditing(false);
   };
 
-  const SendForm = async (e) => {
+  const sendForm = async (e) => {
     e.preventDefault();
     const fd = new FormData();
     fd.append("username", userToUpdate.username);
     fd.append("name", userToUpdate.name);
     fd.append("email", userToUpdate.email);
     fd.append("date", userToUpdate.date);
-    fd.append("avatar", avatarRef.current.files[0]);
-    console.log("the current avatar ref is:", avatarRef.current.files[0]);
+    if (avatarRef.current.files[0]) {
+      fd.append("avatar", avatarRef.current.files[0]);
+    }
+
     try {
       const dbResponse = await apiHandler.patch(
         `/user/${userToUpdate._id}`,
@@ -69,8 +71,7 @@ const ProfilDetails = () => {
       storeToken(dbResponse.data.authToken);
       authenticateUser();
       setUserToUpdate((prevValue) => dbResponse.data.payload);
-
-      setIsEditing(!isEditing);
+      setIsEditing(false);
     } catch (error) {
       console.error(error);
     }
@@ -99,14 +100,57 @@ const ProfilDetails = () => {
     setIsEditing(true);
   };
 
-  if (!currentUser) return <p>loading ...</p>;
+  if (!currentUser) return <p>Loading...</p>;
 
   return (
     <div>
-      <p>page de profil de {currentUser && currentUser.name}!</p>
-      <p>{currentUser && currentUser.surname}</p>
-      <p>{currentUser && currentUser.email}</p>
-      <p>{currentUser && currentUser.date}</p>
+      {isEditing ? (
+        <div className="formEdit">
+          <form className="formEditProfile" onSubmit={sendForm}>
+            <label htmlFor="name">Nom</label>
+            <input
+              type="text"
+              className="formEditProfileInput"
+              value={userToUpdate.surname || ""}
+              onChange={(e) => {
+                setUserToUpdate({ ...userToUpdate, surname: e.target.value });
+              }}
+            />
+            <label htmlFor="name">Prenom</label>
+            <input
+              type="text"
+              className="formEditProfileInput"
+              value={userToUpdate.name || ""}
+              onChange={(e) => {
+                setUserToUpdate({ ...userToUpdate, name: e.target.value });
+              }}
+            />
+            <label htmlFor="email">Email</label>
+            <input
+              type="email"
+              name="email"
+              className="formEditProfileInput"
+              value={userToUpdate.email || ""}
+              onChange={(e) => {
+                setUserToUpdate({ ...userToUpdate, email: e.target.value });
+              }}
+            />
+            {/* Ajoute le reste des champs ici */}
+            <button type="submit">Save</button>
+            <button type="button" onClick={handleCancelEdit}>
+              Cancel
+            </button>
+          </form>
+        </div>
+      ) : (
+        <div className="profile">
+          <p>Page de profil de {currentUser && currentUser.name}!</p>
+          <p>{currentUser && currentUser.surname}</p>
+          <p>{currentUser && currentUser.email}</p>
+          <p>{currentUser && currentUser.date}</p>
+          <button onClick={handleEditMode}>Edit</button>
+        </div>
+      )}
     </div>
   );
 };

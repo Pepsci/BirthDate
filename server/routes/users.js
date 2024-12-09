@@ -5,12 +5,14 @@ const { isAuthenticated } = require("../middleware/jwt.middleware");
 const uploader = require("../config/cloudinary");
 const jwt = require("jsonwebtoken");
 
-/* GET users listing. */
+/* GET current user listing */
 router.get("/", isAuthenticated, async (req, res, next) => {
   try {
-    console.log("Request received for user ID:", req.params.id);
-
+    console.log("Request received for current user ID:", req.payload._id);
     const user = await userModel.findById(req.payload._id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
     const userToFront = {
       _id: user._id,
       name: user.name,
@@ -24,6 +26,28 @@ router.get("/", isAuthenticated, async (req, res, next) => {
   }
 });
 
+/* GET user by ID */
+router.get("/:id", isAuthenticated, async (req, res, next) => {
+  try {
+    console.log("Request received for user ID:", req.params.id);
+    const user = await userModel.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    const userToFront = {
+      _id: user._id,
+      name: user.name,
+      surname: user.surname,
+      email: user.email,
+      avatar: user.avatar,
+    };
+    res.status(200).json(userToFront);
+  } catch (error) {
+    next(error);
+  }
+});
+
+/* DELETE user by ID */
 router.delete("/:id", isAuthenticated, async (req, res, next) => {
   try {
     const deleteUser = await userModel.findByIdAndDelete(req.params.id);
@@ -34,6 +58,7 @@ router.delete("/:id", isAuthenticated, async (req, res, next) => {
   }
 });
 
+/* PATCH user by ID */
 router.patch(
   "/:id",
   uploader.single("avatar"),
