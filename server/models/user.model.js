@@ -10,6 +10,7 @@ const userSchema = new Schema({
     default:
       "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/No_image_available.svg/1024px-No_image_available.svg.png",
   },
+  birthDate: Date,
   date: [{ type: Schema.Types.ObjectId, ref: "date" }],
   resetToken: String,
 });

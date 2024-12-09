@@ -19,6 +19,7 @@ router.get("/", isAuthenticated, async (req, res, next) => {
       surname: user.surname,
       email: user.email,
       avatar: user.avatar,
+      birthDate: user.birthDate,
     };
     res.status(200).json(userToFront);
   } catch (error) {
@@ -40,6 +41,7 @@ router.get("/:id", isAuthenticated, async (req, res, next) => {
       surname: user.surname,
       email: user.email,
       avatar: user.avatar,
+      birthDate: user.birthDate,
     };
     res.status(200).json(userToFront);
   } catch (error) {
@@ -81,6 +83,7 @@ router.patch(
         surname: updatedUser.surname,
         email: updatedUser.email,
         avatar: updatedUser.avatar,
+        birthDate: user.birthDate,
       };
 
       const authToken = jwt.sign(payload, process.env.TOKEN_SECRET, {

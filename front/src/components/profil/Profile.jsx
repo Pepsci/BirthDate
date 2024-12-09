@@ -12,7 +12,7 @@ const ProfilDetails = () => {
     surname: "",
     email: "",
     avatar: "",
-    date: "",
+    birthDate: "", // Initialisation comme chaîne vide
   });
 
   const [isEditing, setIsEditing] = useState(false);
@@ -21,20 +21,24 @@ const ProfilDetails = () => {
   const avatarRef = useRef();
 
   useEffect(() => {
+    let isMounted = true; // Pour éviter les fuites de mémoire
     if (currentUser) {
-      console.log("useeeeeeeeeeeeeer", currentUser._id);
+      console.log("ID utilisateur : ", currentUser._id);
       apiHandler
-        .get(`/users/${currentUser._id}`)
+        .get(`/users/${currentUser._id}`) // Correction de l'URL
         .then((dbResponse) => {
-          setUserToUpdate(dbResponse.data);
+          if (isMounted) {
+            setUserToUpdate(dbResponse.data);
+            console.log("Données utilisateur : ", dbResponse.data); // Vérifier les données reçues
+          }
         })
         .catch((error) => {
-          console.error(error);
+          if (isMounted) console.error(error);
         });
     }
-    if (!isLoggedin) {
-      setUserToUpdate(null);
-    }
+    return () => {
+      isMounted = false;
+    };
   }, [isLoggedin, currentUser]);
 
   const handleEditMode = (e) => {
@@ -50,17 +54,19 @@ const ProfilDetails = () => {
   const sendForm = async (e) => {
     e.preventDefault();
     const fd = new FormData();
-    fd.append("username", userToUpdate.username);
-    fd.append("name", userToUpdate.name);
-    fd.append("email", userToUpdate.email);
-    fd.append("date", userToUpdate.date);
-    if (avatarRef.current.files[0]) {
+    fd.append("username", userToUpdate.username || "");
+    fd.append("name", userToUpdate.name || "");
+    fd.append("email", userToUpdate.email || "");
+    if (userToUpdate.birthDate) {
+      fd.append("birthDate", new Date(userToUpdate.birthDate).toISOString());
+    }
+    if (avatarRef.current && avatarRef.current.files[0]) {
       fd.append("avatar", avatarRef.current.files[0]);
     }
 
     try {
       const dbResponse = await apiHandler.patch(
-        `/user/${userToUpdate._id}`,
+        `/users/${userToUpdate._id}`, // Correction de l'URL
         fd,
         {
           headers: {
@@ -80,7 +86,7 @@ const ProfilDetails = () => {
   const deleteAccount = async (e) => {
     e.preventDefault();
     try {
-      await apiHandler.delete(`/user/${userToUpdate._id}`);
+      await apiHandler.delete(`/users/${userToUpdate._id}`); // Correction de l'URL
       removeUser();
       setDeleteMode(false);
       setIsEditing(false);
@@ -100,17 +106,18 @@ const ProfilDetails = () => {
     setIsEditing(true);
   };
 
-  if (!currentUser) return <p>Loading...</p>;
+  if (!currentUser) return <p>Chargement...</p>;
 
   return (
     <div>
       {isEditing ? (
         <div className="formEdit">
           <form className="formEditProfile" onSubmit={sendForm}>
-            <label htmlFor="name">Nom</label>
+            <label htmlFor="surname">Nom</label>
             <input
               type="text"
               className="formEditProfileInput"
+              id="surname"
               value={userToUpdate.surname || ""}
               onChange={(e) => {
                 setUserToUpdate({ ...userToUpdate, surname: e.target.value });
@@ -120,6 +127,7 @@ const ProfilDetails = () => {
             <input
               type="text"
               className="formEditProfileInput"
+              id="name"
               value={userToUpdate.name || ""}
               onChange={(e) => {
                 setUserToUpdate({ ...userToUpdate, name: e.target.value });
@@ -128,14 +136,35 @@ const ProfilDetails = () => {
             <label htmlFor="email">Email</label>
             <input
               type="email"
-              name="email"
+              id="email"
               className="formEditProfileInput"
               value={userToUpdate.email || ""}
               onChange={(e) => {
                 setUserToUpdate({ ...userToUpdate, email: e.target.value });
               }}
             />
-            {/* Ajoute le reste des champs ici */}
+            <label htmlFor="birthDate">Votre date d'anniversaire</label>
+            <input
+              type="date"
+              id="birthDate"
+              className="formEditProfileInput"
+              value={
+                userToUpdate.birthDate
+                  ? userToUpdate.birthDate.split("T")[0]
+                  : ""
+              }
+              onChange={(e) => {
+                setUserToUpdate({ ...userToUpdate, birthDate: e.target.value });
+              }}
+            />
+            <label htmlFor="avatar">Avatar</label>
+            <input
+              type="file"
+              id="avatar"
+              ref={avatarRef}
+              className="formEditProfileInput"
+              style={{ display: "none" }}
+            />
             <button type="submit">Save</button>
             <button type="button" onClick={handleCancelEdit}>
               Cancel
@@ -147,7 +176,12 @@ const ProfilDetails = () => {
           <p>Page de profil de {currentUser && currentUser.name}!</p>
           <p>{currentUser && currentUser.surname}</p>
           <p>{currentUser && currentUser.email}</p>
-          <p>{currentUser && currentUser.date}</p>
+          <p>
+            date :{" "}
+            {userToUpdate.birthDate
+              ? new Date(userToUpdate.birthDate).toLocaleDateString()
+              : "N/A"}
+          </p>
           <button onClick={handleEditMode}>Edit</button>
         </div>
       )}
