@@ -10,8 +10,11 @@ const saltRounds = 10;
 
 const crypto = require("crypto");
 const nodemailer = require("nodemailer");
-// const sesTransport = require("nodemailer-ses-transport");
 const { SESClient, SendRawEmailCommand } = require("@aws-sdk/client-ses");
+const {
+  generateVerificationToken,
+  sendVerificationEmail,
+} = require("../services/verififcation");
 
 // Configuration de AWS SDK v3
 const ses = new SESClient({
@@ -22,7 +25,7 @@ const ses = new SESClient({
   },
 });
 
-// Création du transporteur Nodemailer avec Amazon SES et nodemailer-ses-transport
+// Création du transporteur Nodemailer avec Amazon SES
 const transporter = nodemailer.createTransport({
   SES: { ses, aws: { SendRawEmailCommand } },
 });
@@ -47,7 +50,7 @@ async function sendEmail(email, token) {
 }
 
 // POST /auth/signup
-router.post("/signup", (req, res, next) => {
+router.post("/signup", async (req, res, next) => {
   const { email, password, name, surname } = req.body;
 
   if (email === "" || password === "" || name === "" || surname === "") {
@@ -72,40 +75,42 @@ router.post("/signup", (req, res, next) => {
     return;
   }
 
-  userModel
-    .findOne({ email })
-    .then((foundUser) => {
-      if (foundUser) {
-        res.status(400).json({ message: "User already exist" });
-        return;
-      }
+  try {
+    const foundUser = await userModel.findOne({ email });
+    if (foundUser) {
+      res.status(400).json({ message: "User already exists" });
+      return;
+    }
 
-      const salt = bcrypt.genSaltSync(saltRounds);
-      const hashedPassword = bcrypt.hashSync(password, salt);
+    const salt = bcrypt.genSaltSync(saltRounds);
+    const hashedPassword = bcrypt.hashSync(password, salt);
 
-      const avatar = `https://api.dicebear.com/8.x/bottts/svg?seed=${surname}`;
+    const avatar = `https://api.dicebear.com/8.x/bottts/svg?seed=${surname}`;
+    const verificationToken = generateVerificationToken();
 
-      return userModel.create({
-        email,
-        password: hashedPassword,
-        name,
-        surname,
-        avatar,
-      });
-    })
-    .then((createdUser) => {
-      const { email, name, surname, _id } = createdUser;
-      const user = { email, name, surname, _id };
-      res.status(201).json({ user: user });
-    })
-    .catch((e) => {
-      console.error(e, "herre");
-      res.status(400).json({ message: "Internal server error" });
+    const newUser = await userModel.create({
+      email,
+      password: hashedPassword,
+      name,
+      surname,
+      avatar,
+      verificationToken,
+      isVerified: false,
     });
+
+    await sendVerificationEmail(newUser.email, newUser.verificationToken);
+
+    res
+      .status(201)
+      .json({ message: "User created. Please verify your email address." });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal server error" });
+  }
 });
 
 // POST /auth/login
-router.post("/login", (req, res, next) => {
+router.post("/login", async (req, res, next) => {
   const { email, password } = req.body;
 
   if (email === "" || password === "") {
@@ -113,32 +118,37 @@ router.post("/login", (req, res, next) => {
     return;
   }
 
-  userModel
-    .findOne({ email })
-    .then((foundUser) => {
-      if (!foundUser) {
-        res.status(401).json({ message: "User not found." });
-        return;
-      }
+  try {
+    const foundUser = await userModel.findOne({ email });
+    if (!foundUser) {
+      res.status(401).json({ message: "User not found." });
+      return;
+    }
 
-      const passwordCorrect = bcrypt.compareSync(password, foundUser.password);
+    const passwordCorrect = bcrypt.compareSync(password, foundUser.password);
+    if (!foundUser.isVerified) {
+      res
+        .status(401)
+        .json({ message: "Please verify your email before logging in." });
+      return;
+    }
 
-      if (passwordCorrect) {
-        const { _id, email, name, surname } = foundUser;
-        const payload = { _id, email, name, surname };
-        const authToken = jwt.sign(payload, process.env.TOKEN_SECRET, {
-          algorithm: "HS256",
-          expiresIn: "24h",
-        });
+    if (passwordCorrect) {
+      const { _id, email, name, surname } = foundUser;
+      const payload = { _id, email, name, surname };
+      const authToken = jwt.sign(payload, process.env.TOKEN_SECRET, {
+        algorithm: "HS256",
+        expiresIn: "24h",
+      });
 
-        res.status(200).json({ authToken: authToken });
-      } else {
-        res.status(401).json({ message: "Unable to authenticate the user" });
-      }
-    })
-    .catch((e) => {
-      console.error(e);
-    });
+      res.status(200).json({ authToken: authToken });
+    } else {
+      res.status(401).json({ message: "Unable to authenticate the user" });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal server error" });
+  }
 });
 
 // GET /auth/verify

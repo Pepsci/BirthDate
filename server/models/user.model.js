@@ -11,10 +11,13 @@ const userSchema = new Schema({
       "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/No_image_available.svg/1024px-No_image_available.svg.png",
   },
   birthDate: Date,
-  date: [{ type: Schema.Types.ObjectId, ref: "date" }],
+  resetToken: String,
+  resetTokenExpires: Date,
+  verificationToken: String,
+  isVerified: { type: Boolean, default: false },
   resetToken: String,
 });
 
-const userModel = model("User", userSchema);
+const UserModel = model("User", userSchema);
 
-module.exports = userModel;
+module.exports = UserModel;

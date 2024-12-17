@@ -11,6 +11,7 @@ const cors = require("cors");
 const authRouter = require("./routes/auth");
 const dateRouter = require("./routes/date");
 const usersRouter = require("./routes/users");
+const verifyRouter = require("./routes/verify");
 
 const app = express();
 
@@ -32,6 +33,7 @@ app.use(express.static(path.join(__dirname, "public")));
 app.use("/", authRouter);
 app.use("/users", usersRouter);
 app.use("/date", dateRouter);
+app.use("verify", verifyRouter);
 
 app.use("/api/*", (req, res, next) => {
   const error = new Error("Ressource not found.");
