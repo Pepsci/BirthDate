@@ -127,10 +127,17 @@ router.post("/login", async (req, res, next) => {
 
     const passwordCorrect = bcrypt.compareSync(password, foundUser.password);
     if (!foundUser.isVerified) {
-      res
-        .status(401)
-        .json({ message: "Please verify your email before logging in." });
-      return;
+      // L'email n'est pas vérifié, on envoie un email de vérification
+      const verificationToken = generateVerificationToken();
+      await sendVerificationEmail(foundUser.email, verificationToken);
+      // On peut mettre à jour le token de vérification dans la base de données (si nécessaire)
+      foundUser.verificationToken = verificationToken;
+      await foundUser.save();
+
+      return res.status(401).json({
+        message:
+          "Please verify your email before logging in. A new verification email has been sent.",
+      });
     }
 
     if (passwordCorrect) {
