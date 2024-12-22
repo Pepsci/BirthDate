@@ -33,7 +33,7 @@ app.use(express.static(path.join(__dirname, "public")));
 app.use("/", authRouter);
 app.use("/users", usersRouter);
 app.use("/date", dateRouter);
-app.use("verify", verifyRouter);
+app.use("/verify-email", verifyRouter);
 
 app.use("/api/*", (req, res, next) => {
   const error = new Error("Ressource not found.");

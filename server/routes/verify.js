@@ -2,8 +2,8 @@ const express = require("express");
 const router = express.Router();
 const UserModel = require("../models/user.model");
 
-router.get("/verify-email", async (req, res) => {
-  const token = req.query.token;
+router.post("/", async (req, res) => {
+  const { token } = req.body; // Utilise req.body pour récupérer le token
   console.log("Token de vérification reçu :", token); // Log du token de vérification
   const user = await UserModel.findOne({ verificationToken: token });
 

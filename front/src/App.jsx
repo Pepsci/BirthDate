@@ -7,6 +7,7 @@ import Profile from "./components/profil/Profile";
 import PrivateRoute from "./protectedRoutes/PrivateRoute";
 import ForgotPassword from "./components/connect/ForgotPassword";
 import ResetPassword from "./components/connect/ResetPassword";
+import VerifyEmail from "./components/connect/VerifyEmail";
 
 function App() {
   return (
@@ -17,7 +18,6 @@ function App() {
             path="/"
             element={
               <div className="contentCenter">
-                {" "}
                 <Signup />
               </div>
             }
@@ -26,8 +26,7 @@ function App() {
             path="/login"
             element={
               <div className="contentCenter">
-                {" "}
-                <Login />{" "}
+                <Login />
               </div>
             }
           />
@@ -35,12 +34,12 @@ function App() {
             path="/forgot-password"
             element={
               <div className="contentCenter">
-                {" "}
-                <ForgotPassword />{" "}
+                <ForgotPassword />
               </div>
             }
           />
           <Route path="/auth/reset/:token" element={<ResetPassword />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
           <Route element={<PrivateRoute />}>
             <Route path="/home" element={<Home />} />
             <Route path="/profile" element={<Profile />} />
