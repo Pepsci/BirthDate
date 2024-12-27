@@ -49,6 +49,12 @@ async function sendEmail(email, token) {
   }
 }
 
+// Validation du mot de passe avec regex
+const validatePassword = (password) => {
+  const passwordRegex = /(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,}/;
+  return passwordRegex.test(password);
+};
+
 // POST /auth/signup
 router.post("/signup", async (req, res, next) => {
   const { email, password, name, surname } = req.body;
@@ -190,6 +196,13 @@ router.post("/forgot-password", async (req, res, next) => {
 router.post("/reset/:token", async (req, res, next) => {
   const token = req.params.token;
   const newPassword = req.body.password;
+
+  if (!validatePassword(newPassword)) {
+    return res.status(400).json({
+      message:
+        "Password must have at least 6 characters and contain at least one number, one lowercase and one uppercase letter.",
+    });
+  }
 
   userModel
     .findOne({ resetToken: token })

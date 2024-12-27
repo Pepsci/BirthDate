@@ -13,6 +13,12 @@
     text-align: center;
 }
 
+.form-title-font-h3{
+    font-family: 'Roboto', sans-serif;
+    text-align: center;
+    color: #4a4a4a;
+}
+
 .form{
     position: relative;
     display: flex;

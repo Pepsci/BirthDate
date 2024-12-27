@@ -19,15 +19,22 @@ function ForgotPassword() {
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <input
-        type="email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        required
-      />
-      <button type="submit">Réinitialiser le mot de passe</button>
-    </form>
+    <div className="form-connect">
+      <div className="peel">
+        <form className="form" onSubmit={handleSubmit}>
+          <h3 className="form-title-font-h3">Entrez votre Email</h3>
+          <input
+            type="email"
+            className="form-input"
+            placeholder="Votre Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+          <button type="submit">Réinitialiser le mot de passe</button>
+        </form>
+      </div>
+    </div>
   );
 }
 

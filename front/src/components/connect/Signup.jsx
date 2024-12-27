@@ -12,6 +12,7 @@ const Signup = () => {
     password: "",
   });
 
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [erroMessage, setErrorMessage] = useState(undefined);
   const { authenticateUser, isLoggedIn } = useContext(AuthContext);
 
@@ -39,6 +40,10 @@ const Signup = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (user.password !== confirmPassword) {
+      setErrorMessage("Les mots de passe ne correspondent pas.");
+      return;
+    }
     try {
       await apiHandler.post("/signup", user);
       navigate("/login");
@@ -110,6 +115,18 @@ const Signup = () => {
               setUser({ ...user, password: e.target.value });
             }}
           />
+          <input
+            type="password"
+            name="confirmPassword"
+            id="confirmPassword"
+            className="form-input "
+            placeholder="Confirmez le mot de passe"
+            value={confirmPassword}
+            onChange={(e) => {
+              setConfirmPassword(e.target.value);
+            }}
+          />
+
           <div className="formConnectAvatar titleFont">
             <span className="form-connect-msg font">Voici votre avatar</span>
             <img
