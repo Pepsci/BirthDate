@@ -73,3 +73,37 @@
     display: flex;
     flex-direction: column;
 }
+.password-input-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.password-input-container input:focus{
+    outline: none;
+}
+
+.password-input-container input {
+    width: 100%;
+    background: transparent;
+        border: transparent;
+        margin: 1rem;
+        border-bottom: 1px solid grey;
+}
+
+.toggle-password-visibility {
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    color: #888;
+    padding: 0;
+}
+
+.toggle-password-visibility:focus {
+    outline: none;
+}

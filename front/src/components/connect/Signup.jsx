@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import apiHandler from "../../api/apiHandler";
 import axios from "axios";
 import { AuthContext } from "../../context/auth.context";
+import PasswordInput from "./PasswordInput";
 
 const Signup = () => {
   const [user, setUser] = useState({
@@ -104,7 +105,7 @@ const Signup = () => {
           {/* <label htmlFor="password" className="form-label">
             Password
           </label> */}
-          <input
+          <PasswordInput
             type="password"
             name="password"
             id="password"
@@ -115,7 +116,7 @@ const Signup = () => {
               setUser({ ...user, password: e.target.value });
             }}
           />
-          <input
+          <PasswordInput
             type="password"
             name="confirmPassword"
             id="confirmPassword"

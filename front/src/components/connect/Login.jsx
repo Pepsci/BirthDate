@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import apiHandler from "../../api/apiHandler";
 import { AuthContext } from "../../context/auth.context";
 import "./form.css";
+import PasswordInput from "./PasswordInput";
 
 const Login = () => {
   const [user, setUser] = useState({
@@ -24,14 +25,13 @@ const Login = () => {
 
     try {
       const response = await apiHandler.signin({
-        email: user.email, // Utilise les valeurs de l'état
+        email: user.email,
         password: user.password,
       });
 
       console.log("Response data:", response);
 
       if (response && response.authToken) {
-        // Utilise le jeton d'authentification ici
         console.log("Login successful");
         console.log("AuthToken:", response.authToken);
         storeToken(response.authToken);
@@ -65,7 +65,7 @@ const Login = () => {
             }
           />
 
-          <input
+          <PasswordInput
             type="password"
             name="password"
             id="password"
