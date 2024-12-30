@@ -18,33 +18,36 @@ const Login = () => {
   useEffect(() => {
     authenticateUser();
     if (isLoggedIn) navigate("/home");
-  }, [isLoggedIn]);
+  }, [isLoggedIn, navigate]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
 
     try {
-      const response = await apiHandler.signin({
+      const response = await apiHandler.post("/login", {
         email: user.email,
         password: user.password,
       });
 
       console.log("Response data:", response);
 
-      if (response && response.authToken) {
+      if (response && response.data && response.data.authToken) {
         console.log("Login successful");
-        console.log("AuthToken:", response.authToken);
-        storeToken(response.authToken);
+        console.log("AuthToken:", response.data.authToken);
+        storeToken(response.data.authToken);
         authenticateUser();
+
         navigate("/home");
       } else {
-        console.error("No authToken in response");
+        setErrorMessage(response.data.message || "No authToken in response");
       }
-    } catch (error) {
-      console.error("Error during login:", error);
-      setErrorMessage(
-        "Une erreur est survenue lors de la connexion. Veuillez réessayer."
-      );
+    } catch (err) {
+      if (err.response && err.response.data && err.response.data.message) {
+        setErrorMessage(err.response.data.message);
+      } else {
+        setErrorMessage("Une erreur s'est produite.");
+      }
+      console.error(err);
     }
   };
 

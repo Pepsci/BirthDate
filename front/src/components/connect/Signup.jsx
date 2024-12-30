@@ -14,7 +14,8 @@ const Signup = () => {
   });
 
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [erroMessage, setErrorMessage] = useState(undefined);
+  const [errorMessage, setErrorMessage] = useState(undefined);
+  const [successMessage, setSuccessMessage] = useState(undefined); // État pour le message de succès
   const { authenticateUser, isLoggedIn } = useContext(AuthContext);
 
   useEffect(() => {
@@ -24,11 +25,6 @@ const Signup = () => {
 
   const avatarRef = useRef(null);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    authenticateUser();
-    if (isLoggedIn) navigate("/home");
-  }, [isLoggedIn]);
 
   const handleAvatar = (input) => {
     axios
@@ -46,10 +42,18 @@ const Signup = () => {
       return;
     }
     try {
-      await apiHandler.post("/signup", user);
-      navigate("/login");
+      const response = await apiHandler.post("/signup", user);
+      setSuccessMessage(response.data.message); // Stocke le message de succès du backend
+      setErrorMessage(undefined); // Efface tout message d'erreur précédent
+      setTimeout(() => {
+        navigate("/login");
+      }, 3000);
     } catch (err) {
-      setErrorMessage((prevValue) => err.response.data.message);
+      if (err.response && err.response.data && err.response.data.message) {
+        setErrorMessage(err.response.data.message);
+      } else {
+        setErrorMessage("Une erreur s'est produite.");
+      }
       console.error(err);
     }
   };
@@ -59,9 +63,6 @@ const Signup = () => {
       <div className="peel">
         <form className="form" onSubmit={handleSubmit}>
           <h1 className="form-title-font">Inscription</h1>
-          {/* <label htmlFor="name" className="form-label">
-            Name
-          </label> */}
           <input
             type="text"
             name="name"
@@ -74,9 +75,6 @@ const Signup = () => {
               handleAvatar(e.target.value);
             }}
           />
-          {/* <label htmlFor="surname" className="form-label">
-            Surname
-          </label> */}
           <input
             type="text"
             name="surname"
@@ -88,9 +86,6 @@ const Signup = () => {
               setUser({ ...user, surname: e.target.value });
             }}
           />
-          {/* <label htmlFor="email" className="form-label">
-            Email
-          </label> */}
           <input
             type="text"
             name="email"
@@ -102,14 +97,11 @@ const Signup = () => {
               setUser({ ...user, email: e.target.value });
             }}
           />
-          {/* <label htmlFor="password" className="form-label">
-            Password
-          </label> */}
           <PasswordInput
             type="password"
             name="password"
             id="password"
-            className="form-input "
+            className="form-input"
             placeholder="Mot de passe"
             value={user.password}
             onChange={(e) => {
@@ -120,14 +112,13 @@ const Signup = () => {
             type="password"
             name="confirmPassword"
             id="confirmPassword"
-            className="form-input "
+            className="form-input"
             placeholder="Confirmez le mot de passe"
             value={confirmPassword}
             onChange={(e) => {
               setConfirmPassword(e.target.value);
             }}
           />
-
           <div className="formConnectAvatar titleFont">
             <span className="form-connect-msg font">Voici votre avatar</span>
             <img
@@ -140,8 +131,11 @@ const Signup = () => {
         </form>
       </div>
 
-      {erroMessage && (
-        <p className="error-message fontErrorMessage">{erroMessage}</p>
+      {errorMessage && (
+        <p className="error-message fontErrorMessage">{errorMessage}</p>
+      )}
+      {successMessage && (
+        <p className="success-message fontSuccessMessage">{successMessage}</p>
       )}
       <Link to={"/login"}>
         <span className="formConnectMessage font">Déjà un compte ?</span>

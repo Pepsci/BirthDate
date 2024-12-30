@@ -142,7 +142,7 @@ router.post("/login", async (req, res, next) => {
 
       return res.status(401).json({
         message:
-          "Please verify your email before logging in. A new verification email has been sent.",
+          "Veuillez vérifier votre email avant de vous connecter. Un nouvel email de vérification a été envoyé..",
       });
     }
 
