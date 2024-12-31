@@ -4,6 +4,7 @@ const userModel = require("../models/user.model");
 const { isAuthenticated } = require("../middleware/jwt.middleware");
 const uploader = require("../config/cloudinary");
 const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
 
 /* GET current user listing */
 router.get("/", isAuthenticated, async (req, res, next) => {
@@ -66,16 +67,43 @@ router.patch(
   uploader.single("avatar"),
   isAuthenticated,
   async (req, res, next) => {
+    const { currentPassword, newPassword } = req.body;
     const avatar = req.file?.path || undefined;
+
     try {
-      const updatedUser = await userModel.findByIdAndUpdate(
-        req.params.id,
-        {
-          ...req.body,
-          avatar: avatar,
-        },
-        { new: true }
-      );
+      const user = await userModel.findById(req.params.id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Vérifie le mot de passe actuel
+      if (currentPassword && newPassword) {
+        const passwordCorrect = bcrypt.compareSync(
+          currentPassword,
+          user.password
+        );
+        if (!passwordCorrect) {
+          return res
+            .status(400)
+            .json({ message: "Current password is incorrect" });
+        }
+
+        // Hachage du nouveau mot de passe
+        const salt = bcrypt.genSaltSync(10);
+        const hashedPassword = bcrypt.hashSync(newPassword, salt);
+
+        user.password = hashedPassword;
+      }
+
+      user.username = req.body.username || user.username;
+      user.name = req.body.name || user.name;
+      user.email = req.body.email || user.email;
+      user.birthDate = req.body.birthDate || user.birthDate;
+      if (avatar) {
+        user.avatar = avatar;
+      }
+
+      const updatedUser = await user.save();
 
       const payload = {
         _id: updatedUser._id,

@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import apiHandler from "../../api/apiHandler";
 import useAuth from "../../context/useAuth";
 import "./profile.css";
+import PasswordInput from "../connect/PasswordInput";
 
 const ProfilDetails = () => {
   const { currentUser, isLoggedin, removeUser, storeToken, authenticateUser } =
@@ -13,7 +14,12 @@ const ProfilDetails = () => {
     surname: "",
     email: "",
     avatar: "",
-    birthDate: "", // Initialisation comme chaîne vide
+    birthDate: "",
+  });
+  const [passwords, setPasswords] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
   });
 
   const [isEditing, setIsEditing] = useState(false);
@@ -26,11 +32,11 @@ const ProfilDetails = () => {
     if (currentUser) {
       console.log("ID utilisateur : ", currentUser._id);
       apiHandler
-        .get(`/users/${currentUser._id}`) // Correction de l'URL
+        .get(`/users/${currentUser._id}`)
         .then((dbResponse) => {
           if (isMounted) {
             setUserToUpdate(dbResponse.data);
-            console.log("Données utilisateur : ", dbResponse.data); // Vérifier les données reçues
+            console.log("Données utilisateur : ", dbResponse.data);
           }
         })
         .catch((error) => {
@@ -65,9 +71,18 @@ const ProfilDetails = () => {
       fd.append("avatar", avatarRef.current.files[0]);
     }
 
+    if (passwords.newPassword) {
+      if (passwords.newPassword !== passwords.confirmPassword) {
+        alert("Les nouveaux mots de passe ne correspondent pas.");
+        return;
+      }
+      fd.append("currentPassword", passwords.currentPassword);
+      fd.append("newPassword", passwords.newPassword);
+    }
+
     try {
       const dbResponse = await apiHandler.patch(
-        `/users/${userToUpdate._id}`, // Correction de l'URL
+        `/users/${userToUpdate._id}`,
         fd,
         {
           headers: {
@@ -79,6 +94,11 @@ const ProfilDetails = () => {
       authenticateUser();
       setUserToUpdate((prevValue) => dbResponse.data.payload);
       setIsEditing(false);
+      setPasswords({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
     } catch (error) {
       console.error(error);
     }
@@ -87,7 +107,7 @@ const ProfilDetails = () => {
   const deleteAccount = async (e) => {
     e.preventDefault();
     try {
-      await apiHandler.delete(`/users/${userToUpdate._id}`); // Correction de l'URL
+      await apiHandler.delete(`/users/${userToUpdate._id}`);
       removeUser();
       setDeleteMode(false);
       setIsEditing(false);
@@ -115,8 +135,7 @@ const ProfilDetails = () => {
         <div className="formEdit form-connect">
           <div className="peel">
             <form className="formEditProfile form" onSubmit={sendForm}>
-              <h1 className="form-title-font">Modifiez votre profile</h1>
-              {/* <label htmlFor="surname">Nom</label> */}
+              <h1 className="form-title-font">Modifiez votre profil</h1>
               <input
                 type="text"
                 className="form-input"
@@ -126,7 +145,6 @@ const ProfilDetails = () => {
                   setUserToUpdate({ ...userToUpdate, surname: e.target.value });
                 }}
               />
-              {/* <label htmlFor="name">Prenom</label> */}
               <input
                 type="text"
                 className="form-input"
@@ -136,7 +154,6 @@ const ProfilDetails = () => {
                   setUserToUpdate({ ...userToUpdate, name: e.target.value });
                 }}
               />
-              {/* <label htmlFor="email">Email</label> */}
               <input
                 type="email"
                 id="email"
@@ -146,7 +163,6 @@ const ProfilDetails = () => {
                   setUserToUpdate({ ...userToUpdate, email: e.target.value });
                 }}
               />
-              {/* <label htmlFor="birthDate">Votre date d'anniversaire</label> */}
               <input
                 type="date"
                 id="birthDate"
@@ -163,33 +179,72 @@ const ProfilDetails = () => {
                   });
                 }}
               />
-              {/* <label htmlFor="avatar">Avatar</label>
-              <input
-                type="file"
-                id="avatar"
-                ref={avatarRef}
+              <PasswordInput
+                type="password"
+                placeholder="Mot de passe actuel"
                 className="form-input"
-                style={{ display: "none" }}
-              /> */}
-              <button type="submit">Save</button>
+                value={passwords.currentPassword}
+                onChange={(e) =>
+                  setPasswords({
+                    ...passwords,
+                    currentPassword: e.target.value,
+                  })
+                }
+              />
+              <PasswordInput
+                type="password"
+                placeholder="Nouveau mot de passe"
+                className="form-input"
+                value={passwords.newPassword}
+                onChange={(e) =>
+                  setPasswords({ ...passwords, newPassword: e.target.value })
+                }
+              />
+              <PasswordInput
+                type="password"
+                placeholder="Confirmez le nouveau mot de passe"
+                className="form-input"
+                value={passwords.confirmPassword}
+                onChange={(e) =>
+                  setPasswords({
+                    ...passwords,
+                    confirmPassword: e.target.value,
+                  })
+                }
+              />
+              <button type="submit">Enregistrer</button>
               <button type="button" onClick={handleCancelEdit}>
-                Cancel
+                Annuler
               </button>
             </form>
           </div>
         </div>
       ) : (
         <div className="profile">
-          <p>Page de profil de {currentUser && currentUser.name}!</p>
-          <p>{currentUser && currentUser.surname}</p>
-          <p>{currentUser && currentUser.email}</p>
-          <p>
-            date :{" "}
-            {userToUpdate.birthDate
-              ? new Date(userToUpdate.birthDate).toLocaleDateString()
-              : "N/A"}
-          </p>
-          <button onClick={handleEditMode}>Edit</button>
+          <div className="profile_info">
+            <h2>Vos données</h2>
+            <p className="profile_info_details">
+              <b>
+                {currentUser && currentUser.name}{" "}
+                {currentUser && currentUser.surname}
+              </b>
+            </p>
+            <p className="profile_info_details">
+              <b>{currentUser && currentUser.email}</b>
+            </p>
+            <p className="profile_info_details">
+              <b>Date de naissance:</b>{" "}
+              {userToUpdate.birthDate
+                ? new Date(userToUpdate.birthDate).toLocaleDateString()
+                : "N/A"}
+            </p>
+            <button
+              className="profile_info_details_btn"
+              onClick={handleEditMode}
+            >
+              Modifier
+            </button>
+          </div>
         </div>
       )}
     </div>
