@@ -83,7 +83,7 @@ router.patch(
         surname: updatedUser.surname,
         email: updatedUser.email,
         avatar: updatedUser.avatar,
-        birthDate: user.birthDate,
+        birthDate: updatedUser.birthDate,
       };
 
       const authToken = jwt.sign(payload, process.env.TOKEN_SECRET, {

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import apiHandler from "../../api/apiHandler";
 import useAuth from "../../context/useAuth";
+import "./profile.css";
 
 const ProfilDetails = () => {
   const { currentUser, isLoggedin, removeUser, storeToken, authenticateUser } =
@@ -111,65 +112,71 @@ const ProfilDetails = () => {
   return (
     <div>
       {isEditing ? (
-        <div className="formEdit">
-          <form className="formEditProfile" onSubmit={sendForm}>
-            <label htmlFor="surname">Nom</label>
-            <input
-              type="text"
-              className="formEditProfileInput"
-              id="surname"
-              value={userToUpdate.surname || ""}
-              onChange={(e) => {
-                setUserToUpdate({ ...userToUpdate, surname: e.target.value });
-              }}
-            />
-            <label htmlFor="name">Prenom</label>
-            <input
-              type="text"
-              className="formEditProfileInput"
-              id="name"
-              value={userToUpdate.name || ""}
-              onChange={(e) => {
-                setUserToUpdate({ ...userToUpdate, name: e.target.value });
-              }}
-            />
-            <label htmlFor="email">Email</label>
-            <input
-              type="email"
-              id="email"
-              className="formEditProfileInput"
-              value={userToUpdate.email || ""}
-              onChange={(e) => {
-                setUserToUpdate({ ...userToUpdate, email: e.target.value });
-              }}
-            />
-            <label htmlFor="birthDate">Votre date d'anniversaire</label>
-            <input
-              type="date"
-              id="birthDate"
-              className="formEditProfileInput"
-              value={
-                userToUpdate.birthDate
-                  ? userToUpdate.birthDate.split("T")[0]
-                  : ""
-              }
-              onChange={(e) => {
-                setUserToUpdate({ ...userToUpdate, birthDate: e.target.value });
-              }}
-            />
-            <label htmlFor="avatar">Avatar</label>
-            <input
-              type="file"
-              id="avatar"
-              ref={avatarRef}
-              className="formEditProfileInput"
-              style={{ display: "none" }}
-            />
-            <button type="submit">Save</button>
-            <button type="button" onClick={handleCancelEdit}>
-              Cancel
-            </button>
-          </form>
+        <div className="formEdit form-connect">
+          <div className="peel">
+            <form className="formEditProfile form" onSubmit={sendForm}>
+              <h1 className="form-title-font">Modifiez votre profile</h1>
+              {/* <label htmlFor="surname">Nom</label> */}
+              <input
+                type="text"
+                className="form-input"
+                id="surname"
+                value={userToUpdate.surname || ""}
+                onChange={(e) => {
+                  setUserToUpdate({ ...userToUpdate, surname: e.target.value });
+                }}
+              />
+              {/* <label htmlFor="name">Prenom</label> */}
+              <input
+                type="text"
+                className="form-input"
+                id="name"
+                value={userToUpdate.name || ""}
+                onChange={(e) => {
+                  setUserToUpdate({ ...userToUpdate, name: e.target.value });
+                }}
+              />
+              {/* <label htmlFor="email">Email</label> */}
+              <input
+                type="email"
+                id="email"
+                className="form-input"
+                value={userToUpdate.email || ""}
+                onChange={(e) => {
+                  setUserToUpdate({ ...userToUpdate, email: e.target.value });
+                }}
+              />
+              {/* <label htmlFor="birthDate">Votre date d'anniversaire</label> */}
+              <input
+                type="date"
+                id="birthDate"
+                className="form-input"
+                value={
+                  userToUpdate.birthDate
+                    ? userToUpdate.birthDate.split("T")[0]
+                    : ""
+                }
+                onChange={(e) => {
+                  setUserToUpdate({
+                    ...userToUpdate,
+                    birthDate: e.target.value,
+                  });
+                }}
+              />
+              {/* <label htmlFor="avatar">Avatar</label>
+              <input
+                type="file"
+                id="avatar"
+                ref={avatarRef}
+                className="form-input"
+                style={{ display: "none" }}
+              /> */}
+              <button type="submit">Save</button>
+              <button type="button" onClick={handleCancelEdit}>
+                Cancel
+              </button>
+            </form>
+          </div>
         </div>
       ) : (
         <div className="profile">
