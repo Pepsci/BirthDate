@@ -3,6 +3,7 @@ import apiHandler from "../../api/apiHandler";
 import useAuth from "../../context/useAuth";
 import "./profile.css";
 import PasswordInput from "../connect/PasswordInput";
+import Countdown from "../dashboard/Countdown";
 
 const ProfilDetails = () => {
   const { currentUser, isLoggedin, removeUser, storeToken, authenticateUser } =
@@ -21,6 +22,7 @@ const ProfilDetails = () => {
     newPassword: "",
     confirmPassword: "",
   });
+  const [showPasswordFields, setShowPasswordFields] = useState(false);
 
   const [isEditing, setIsEditing] = useState(false);
   const [deleteMode, setDeleteMode] = useState(false);
@@ -56,6 +58,12 @@ const ProfilDetails = () => {
   const handleCancelEdit = (e) => {
     e.preventDefault();
     setIsEditing(false);
+    setPasswords({
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: "",
+    });
+    setShowPasswordFields(false);
   };
 
   const sendForm = async (e) => {
@@ -71,7 +79,12 @@ const ProfilDetails = () => {
       fd.append("avatar", avatarRef.current.files[0]);
     }
 
-    if (passwords.newPassword) {
+    if (
+      showPasswordFields &&
+      (passwords.currentPassword ||
+        passwords.newPassword ||
+        passwords.confirmPassword)
+    ) {
       if (passwords.newPassword !== passwords.confirmPassword) {
         alert("Les nouveaux mots de passe ne correspondent pas.");
         return;
@@ -99,6 +112,7 @@ const ProfilDetails = () => {
         newPassword: "",
         confirmPassword: "",
       });
+      setShowPasswordFields(false);
     } catch (error) {
       console.error(error);
     }
@@ -179,39 +193,57 @@ const ProfilDetails = () => {
                   });
                 }}
               />
-              <PasswordInput
-                type="password"
-                placeholder="Mot de passe actuel"
-                className="form-input"
-                value={passwords.currentPassword}
-                onChange={(e) =>
-                  setPasswords({
-                    ...passwords,
-                    currentPassword: e.target.value,
-                  })
-                }
-              />
-              <PasswordInput
-                type="password"
-                placeholder="Nouveau mot de passe"
-                className="form-input"
-                value={passwords.newPassword}
-                onChange={(e) =>
-                  setPasswords({ ...passwords, newPassword: e.target.value })
-                }
-              />
-              <PasswordInput
-                type="password"
-                placeholder="Confirmez le nouveau mot de passe"
-                className="form-input"
-                value={passwords.confirmPassword}
-                onChange={(e) =>
-                  setPasswords({
-                    ...passwords,
-                    confirmPassword: e.target.value,
-                  })
-                }
-              />
+              <div className="password-toggle-container">
+                <button
+                  type="button"
+                  onClick={() => setShowPasswordFields(!showPasswordFields)}
+                  className="toggle-password-fields"
+                >
+                  {showPasswordFields
+                    ? "Annuler le changement de mot de passe"
+                    : "Changer le mot de passe"}
+                </button>
+              </div>
+              {showPasswordFields && (
+                <>
+                  <PasswordInput
+                    type="password"
+                    placeholder="Mot de passe actuel"
+                    className="form-input"
+                    value={passwords.currentPassword}
+                    onChange={(e) =>
+                      setPasswords({
+                        ...passwords,
+                        currentPassword: e.target.value,
+                      })
+                    }
+                  />
+                  <PasswordInput
+                    type="password"
+                    placeholder="Nouveau mot de passe"
+                    className="form-input"
+                    value={passwords.newPassword}
+                    onChange={(e) =>
+                      setPasswords({
+                        ...passwords,
+                        newPassword: e.target.value,
+                      })
+                    }
+                  />
+                  <PasswordInput
+                    type="password"
+                    placeholder="Confirmez le nouveau mot de passe"
+                    className="form-input"
+                    value={passwords.confirmPassword}
+                    onChange={(e) =>
+                      setPasswords({
+                        ...passwords,
+                        confirmPassword: e.target.value,
+                      })
+                    }
+                  />
+                </>
+              )}
               <button type="submit">Enregistrer</button>
               <button type="button" onClick={handleCancelEdit}>
                 Annuler
@@ -238,6 +270,9 @@ const ProfilDetails = () => {
                 ? new Date(userToUpdate.birthDate).toLocaleDateString()
                 : "N/A"}
             </p>
+            {userToUpdate.birthDate && (
+              <Countdown birthdate={userToUpdate.birthDate} />
+            )}
             <button
               className="profile_info_details_btn"
               onClick={handleEditMode}

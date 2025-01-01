@@ -26,6 +26,10 @@ const Countdown = ({ birthdate }) => {
     return () => clearInterval(timer);
   }, []);
 
+  if (isNaN(timeLeft)) {
+    return null;
+  }
+
   const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
   const hours = Math.floor(
     (timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
