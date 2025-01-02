@@ -127,22 +127,37 @@ router.post("/login", async (req, res, next) => {
   try {
     const foundUser = await userModel.findOne({ email });
     if (!foundUser) {
-      res.status(401).json({ message: "User not found." });
+      res.status(401).json({ message: "Utilisateur non trouvé." });
       return;
     }
 
     const passwordCorrect = bcrypt.compareSync(password, foundUser.password);
     if (!foundUser.isVerified) {
+      //vérification du temps de l'envoi entre chaque email de vérification
+      const now = Date.now();
+      const delay = 3600000;
+
+      if (
+        foundUser.lastVerificationEmailSent &&
+        now - foundUser.lastVerificationEmailSent < delay
+      ) {
+        return res.status(401).json({
+          message:
+            "Un email de vérification vous a été envoyé afin de pouvoir vous connecter.",
+        });
+      }
+
       // L'email n'est pas vérifié, on envoie un email de vérification
       const verificationToken = generateVerificationToken();
       await sendVerificationEmail(foundUser.email, verificationToken);
       // On peut mettre à jour le token de vérification dans la base de données (si nécessaire)
       foundUser.verificationToken = verificationToken;
+      foundUser.lastVerificationEmailSent = now;
       await foundUser.save();
 
       return res.status(401).json({
         message:
-          "Veuillez vérifier votre email avant de vous connecter. Un nouvel email de vérification a été envoyé..",
+          "Veuillez vérifier vos emails avant de vous connecter. Un nouvel email de vérification a été envoyé..",
       });
     }
 

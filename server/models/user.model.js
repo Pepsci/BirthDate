@@ -16,6 +16,7 @@ const userSchema = new Schema({
   verificationToken: String,
   isVerified: { type: Boolean, default: false },
   resetToken: String,
+  lastVerificationEmailSent: Date,
 });
 
 const UserModel = model("User", userSchema);

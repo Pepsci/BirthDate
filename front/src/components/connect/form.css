@@ -107,3 +107,8 @@
 .toggle-password-visibility:focus {
     outline: none;
 }
+
+
+.error-message{
+    margin-top: 20px;
+}
