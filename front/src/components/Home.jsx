@@ -1,14 +1,17 @@
 import React, { useContext, useState } from "react";
-import { Link } from "react-router-dom"; // Import du composant Link
 import { AuthContext } from "../context/auth.context";
 import DateList from "./dashboard/DateList";
-import ProfilDetails from "./profil/Profile"; // Assure-toi d'importer le composant ProfilDetails
+import ProfilDetails from "./profil/Profile";
+import UpdateDate from "./dashboard/UpdateDate";
+import FriendProfile from "./profil/FriendProfile";
 import "./dashboard/css/homePage.css";
 
 const Home = () => {
   const { logOut, isLoggedIn, currentUser } = useContext(AuthContext);
   const [date] = useState([]);
-  const [showProfile, setShowProfile] = useState(false); // Nouvel état pour gérer l'affichage du profil
+  const [showProfile, setShowProfile] = useState(false);
+  const [editingDate, setEditingDate] = useState(null);
+  const [viewingFriendProfile, setViewingFriendProfile] = useState(null); // Nouvel état pour gérer l'affichage du profil d'ami
 
   const handleShowProfile = () => {
     setShowProfile(true);
@@ -18,39 +21,72 @@ const Home = () => {
     setShowProfile(false);
   };
 
+  const handleEditDate = (date) => {
+    setEditingDate(date);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingDate(null);
+  };
+
+  const handleViewFriendProfile = (date) => {
+    setViewingFriendProfile(date);
+  };
+
+  const handleCancelViewProfile = () => {
+    setViewingFriendProfile(null);
+  };
+
   return (
     <div className="homePageRoot">
-      <div className="homeTest">
-        <div className="headerApp homePageHeader">
-          <h1 className="titleFont titleFontSize">BirthDate</h1>
-          {isLoggedIn && (
-            <div className="homePageUser">
-              <div className="homePageCurrentUser">
-                <img
-                  src={`https://api.dicebear.com/8.x/bottts/svg?seed=${currentUser.surname}`}
-                  alt="avatar"
-                  className="avatar"
-                />
-                <button onClick={handleShowProfile} className="btnProfile">
-                  {currentUser && currentUser.name}
-                </button>
-              </div>
-              <button className="bntLogout" onClick={logOut}>
-                LogOut
+      <div className="headerApp homePageHeader">
+        <h1 className="titleFont titleFontSize">BirthDate</h1>
+        {isLoggedIn && (
+          <div className="homePageUser">
+            <div className="homePageCurrentUser">
+              <img
+                src={`https://api.dicebear.com/8.x/bottts/svg?seed=${currentUser.surname}`}
+                alt="avatar"
+                className="avatar"
+              />
+              <button onClick={handleShowProfile} className="btnProfile">
+                {currentUser && currentUser.name}
               </button>
             </div>
-          )}
-        </div>
+            <button className="bntLogout" onClick={logOut}>
+              LogOut
+            </button>
+          </div>
+        )}
       </div>
 
       {isLoggedIn &&
-        (showProfile ? <ProfilDetails /> : <DateList date={date} />)}
+        !editingDate &&
+        !viewingFriendProfile &&
+        (showProfile ? (
+          <ProfilDetails />
+        ) : (
+          <DateList
+            onEditDate={handleEditDate}
+            onViewFriendProfile={handleViewFriendProfile}
+          />
+        ))}
 
-      {/* Ajout d'un bouton pour retourner à la liste des dates */}
       {isLoggedIn && showProfile && (
         <button onClick={handleHideProfile} className="btnBackToDateList">
           Back to Date List
         </button>
+      )}
+
+      {editingDate && (
+        <UpdateDate date={editingDate} onCancel={handleCancelEdit} />
+      )}
+
+      {viewingFriendProfile && (
+        <FriendProfile
+          date={viewingFriendProfile}
+          onCancel={handleCancelViewProfile}
+        />
       )}
     </div>
   );

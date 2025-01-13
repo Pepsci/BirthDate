@@ -80,22 +80,6 @@ img{
         margin-right: 2px;
 }
 
-.homeTest{
-    background-repeat: repeat;
-    background-image: url('../images/guirlande.png');
-    background-size: contain;
-    height: 100px;
-}
-
-.christmas-lights {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    position: fixed;
-    width: 100%;
-    
-}
-
 .btnBackToDateList{
     margin-top: 2rem;
 }

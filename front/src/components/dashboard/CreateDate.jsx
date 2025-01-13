@@ -10,8 +10,13 @@ const CreateDate = ({ onDateAdded }) => {
 
   const [dates, setDates] = useState([]);
 
+  const getTodayDate = () => {
+    const today = new Date();
+    return today.toISOString().split("T")[0];
+  };
+
   const [date, setDate] = useState({
-    date: "2025-01-01",
+    date: getTodayDate(),
     name: "",
     surname: "",
     family: false,
@@ -26,7 +31,6 @@ const CreateDate = ({ onDateAdded }) => {
     apiHandler
       .get("date")
       .then((dbResponse) => {
-        console.log("response db", dbResponse.date);
         setDates(dbResponse.data);
       })
       .catch((e) => {
@@ -50,7 +54,7 @@ const CreateDate = ({ onDateAdded }) => {
       setDates([...dates, newDate.data]);
       setDate({
         ...date,
-        date: "",
+        date: getTodayDate(),
         name: "",
         surname: "",
         family: false,

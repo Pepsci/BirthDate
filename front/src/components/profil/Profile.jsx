@@ -32,13 +32,11 @@ const ProfilDetails = () => {
   useEffect(() => {
     let isMounted = true; // Pour éviter les fuites de mémoire
     if (currentUser) {
-      console.log("ID utilisateur : ", currentUser._id);
       apiHandler
         .get(`/users/${currentUser._id}`)
         .then((dbResponse) => {
           if (isMounted) {
             setUserToUpdate(dbResponse.data);
-            console.log("Données utilisateur : ", dbResponse.data);
           }
         })
         .catch((error) => {
@@ -168,7 +166,7 @@ const ProfilDetails = () => {
                   setUserToUpdate({ ...userToUpdate, name: e.target.value });
                 }}
               />
-              <input
+              {/* <input
                 type="email"
                 id="email"
                 className="form-input"
@@ -176,7 +174,7 @@ const ProfilDetails = () => {
                 onChange={(e) => {
                   setUserToUpdate({ ...userToUpdate, email: e.target.value });
                 }}
-              />
+              /> */}
               <input
                 type="date"
                 id="birthDate"

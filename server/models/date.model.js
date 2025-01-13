@@ -10,6 +10,12 @@ const dateSchema = Schema({
     type: Array,
     default: [],
   },
+  gifts: [
+    {
+      giftName: { type: String, required: true },
+      purchased: { type: Boolean, default: false },
+    },
+  ],
 });
 
 const dateModel = model("Date", dateSchema);
