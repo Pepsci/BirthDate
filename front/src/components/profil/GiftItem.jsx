@@ -1,10 +1,24 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import apiHandler from "../../api/apiHandler";
 
 const GiftItem = ({ dateId, gift, onUpdate, onDelete }) => {
+  console.log("Gift Item:", gift); // Vérifiez les données
+
+  if (!gift || !gift.giftName || !gift._id) {
+    console.error("Gift is missing required properties");
+    return null;
+  }
+
   const [isEditing, setIsEditing] = useState(false);
-  const [giftName, setGiftName] = useState(gift.giftName);
-  const [purchased, setPurchased] = useState(gift.purchased);
+  const [giftName, setGiftName] = useState(gift.giftName || "");
+  const [purchased, setPurchased] = useState(gift.purchased || false);
+
+  useEffect(() => {
+    if (gift) {
+      setGiftName(gift.giftName || "");
+      setPurchased(gift.purchased || false);
+    }
+  }, [gift]);
 
   const handleUpdate = async () => {
     try {

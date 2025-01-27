@@ -6,6 +6,8 @@ import GiftItem from "../profil/GiftItem";
 const FriendProfile = ({ date, onCancel }) => {
   const [currentDate, setCurrentDate] = useState(date);
 
+  console.log("Current Date Gifts:", currentDate.gifts); // Vérifiez les données
+
   const handleGiftAdded = (updatedDate) => {
     setCurrentDate(updatedDate);
   };
@@ -72,15 +74,18 @@ const FriendProfile = ({ date, onCancel }) => {
       <div className="giftList">
         <h2>Liste des cadeaux</h2>
         <ul>
-          {currentDate.gifts.map((gift) => (
-            <GiftItem
-              key={gift._id}
-              gift={gift}
-              dateId={currentDate._id}
-              onGiftUpdated={handleGiftUpdated}
-              onGiftDeleted={handleGiftDeleted}
-            />
-          ))}
+          {currentDate.gifts &&
+            currentDate.gifts
+              .filter((gift) => gift !== undefined && gift.giftName && gift._id) // Filtre pour éviter les valeurs indéfinies
+              .map((gift) => (
+                <GiftItem
+                  key={gift._id}
+                  gift={gift}
+                  dateId={currentDate._id}
+                  onUpdate={handleGiftUpdated}
+                  onDelete={handleGiftDeleted}
+                />
+              ))}
         </ul>
       </div>
 
