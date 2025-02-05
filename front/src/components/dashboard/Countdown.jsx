@@ -4,38 +4,62 @@ const Countdown = ({ birthdate }) => {
   const calculateTimeLeft = () => {
     const birthDate = new Date(birthdate);
     const now = new Date();
-    const nextBirthday = new Date(
+    let nextBirthday = new Date(
       now.getFullYear(),
       birthDate.getMonth(),
       birthDate.getDate()
     );
+
     if (nextBirthday < now) {
       nextBirthday.setFullYear(now.getFullYear() + 1);
     }
-    const timeLeft = nextBirthday - now;
-    return timeLeft;
+
+    return nextBirthday - now;
   };
 
   const [timeLeft, setTimeLeft] = useState(calculateTimeLeft());
+  const [extraTime, setExtraTime] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setTimeLeft(calculateTimeLeft());
+      const newTimeLeft = calculateTimeLeft();
+      const now = new Date();
+      const birthDate = new Date(birthdate);
+      const todayBirthday = new Date(
+        now.getFullYear(),
+        birthDate.getMonth(),
+        birthDate.getDate()
+      );
+
+      if (
+        newTimeLeft <= 0 &&
+        now.getDate() === todayBirthday.getDate() &&
+        now.getMonth() === todayBirthday.getMonth()
+      ) {
+        setExtraTime(true);
+      } else if (extraTime && newTimeLeft <= -24 * 60 * 60 * 1000) {
+        setExtraTime(false);
+      }
+
+      setTimeLeft(newTimeLeft);
     }, 1000);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [birthdate, extraTime]);
 
   if (isNaN(timeLeft)) {
     return null;
   }
 
-  const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+  const displayTimeLeft = extraTime ? 24 * 60 * 60 * 1000 + timeLeft : timeLeft;
+  const days = Math.floor(displayTimeLeft / (1000 * 60 * 60 * 24));
   const hours = Math.floor(
-    (timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+    (displayTimeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
   );
-  const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
-  const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+  const minutes = Math.floor(
+    (displayTimeLeft % (1000 * 60 * 60)) / (1000 * 60)
+  );
+  const seconds = Math.floor((displayTimeLeft % (1000 * 60)) / 1000);
 
   return (
     <div className="birthCardCountdown">

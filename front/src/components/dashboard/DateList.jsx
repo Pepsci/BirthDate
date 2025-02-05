@@ -39,6 +39,19 @@ const DateList = ({ onEditDate, onViewFriendProfile }) => {
             new Date(b.date).getMonth(),
             new Date(b.date).getDate()
           );
+
+          // Check if the birthday is today and ensure it is displayed first
+          const isTodayBirthdayA =
+            today.getDate() === nextBirthdayA.getDate() &&
+            today.getMonth() === nextBirthdayA.getMonth();
+
+          const isTodayBirthdayB =
+            today.getDate() === nextBirthdayB.getDate() &&
+            today.getMonth() === nextBirthdayB.getMonth();
+
+          if (isTodayBirthdayA) return -1;
+          if (isTodayBirthdayB) return 1;
+
           if (nextBirthdayA < today) {
             nextBirthdayA.setFullYear(today.getFullYear() + 1);
           }
@@ -79,6 +92,19 @@ const DateList = ({ onEditDate, onViewFriendProfile }) => {
         new Date(b.date).getMonth(),
         new Date(b.date).getDate()
       );
+
+      // Check if the birthday is today and ensure it is displayed first
+      const isTodayBirthdayA =
+        today.getDate() === nextBirthdayA.getDate() &&
+        today.getMonth() === nextBirthdayA.getMonth();
+
+      const isTodayBirthdayB =
+        today.getDate() === nextBirthdayB.getDate() &&
+        today.getMonth() === nextBirthdayB.getMonth();
+
+      if (isTodayBirthdayA) return -1;
+      if (isTodayBirthdayB) return 1;
+
       if (nextBirthdayA < today) {
         nextBirthdayA.setFullYear(today.getFullYear() + 1);
       }
@@ -181,7 +207,7 @@ const DateList = ({ onEditDate, onViewFriendProfile }) => {
         <Agenda dates={dates} />
       ) : (
         <div className="birthDeck">
-          {currentItems.slice(0, itemsPerPage).map((date) => {
+          {currentItems.map((date) => {
             return (
               <div className="birthCard titleFont" key={date._id + "date"}>
                 <div className="birthCardName">
