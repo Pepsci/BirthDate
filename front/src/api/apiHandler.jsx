@@ -7,6 +7,7 @@ const service = axios.create({
 
 service.interceptors.request.use((config) => {
   const token = localStorage.getItem("authToken");
+  console.log("Token envoyé:", token);
   config.headers.Authorization = token ? `Bearer ${token}` : "";
   return config;
 });

@@ -2,6 +2,8 @@ require("dotenv").config();
 require("./services/birthdayEmailService");
 require("./config/mongoDb");
 
+console.log("TOKEN_SECRET:", process.env.TOKEN_SECRET);
+
 const express = require("express");
 const path = require("path");
 const cookieParser = require("cookie-parser");

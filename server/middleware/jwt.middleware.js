@@ -11,6 +11,8 @@ const isAuthenticated = expressjwt({
   getToken: getTokenFromHeaders,
 });
 
+console.log("🔑 Secret utilisé dans middleware:", process.env.TOKEN_SECRET);
+
 // Function used to extracts the JWT token from the request's 'Authorization' Headers
 function getTokenFromHeaders(req) {
   // Check if the token is available on the request Headers
@@ -20,9 +22,10 @@ function getTokenFromHeaders(req) {
   ) {
     // Get the encoded token string and return it
     const token = req.headers.authorization.split(" ")[1];
+    console.log("📩 Token extrait du header:", token);
     return token;
   }
-
+  console.warn("⚠️ Aucun token trouvé dans les headers");
   return null;
 }
 
