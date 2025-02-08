@@ -22,7 +22,7 @@ console.log("FRONTEND_URL:", process.env.FRONTEND_URL);
 app.use(
   cors({
     credentials: true,
-    origin: process.env.FRONTEND_URL,
+    origin: ["https://birthreminder.com", "https://www.birthreminder.com"],
   })
 );
 
