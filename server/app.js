@@ -43,6 +43,8 @@ app.use("/api/date", dateRouter);
 app.use("/api/verify-email", verifyRouter);
 
 app.use("/api/*", (req, res, next) => {
+  console.log(`📥 Requête reçue: ${req.method} ${req.url}`);
+
   const error = new Error("Ressource not found.");
   error.status = 404;
   next(error);
