@@ -2,8 +2,6 @@ require("dotenv").config();
 require("./services/birthdayEmailService");
 require("./config/mongoDb");
 
-console.log("TOKEN_SECRET:", process.env.TOKEN_SECRET);
-
 const express = require("express");
 const path = require("path");
 const cookieParser = require("cookie-parser");
@@ -16,13 +14,6 @@ const usersRouter = require("./routes/users");
 const verifyRouter = require("./routes/verify");
 
 const app = express();
-
-console.log("FRONTEND_URL:", process.env.FRONTEND_URL);
-
-app.use((req, res, next) => {
-  console.log(`📥 Requête reçue: ${req.method} ${req.url}`);
-  next();
-});
 
 app.use(
   cors({
@@ -37,14 +28,12 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
 
-app.use("/api/auth", authRouter);
-app.use("/api/users", usersRouter);
-app.use("/api/date", dateRouter);
-app.use("/api/verify-email", verifyRouter);
+app.use("/auth", authRouter);
+app.use("/users", usersRouter);
+app.use("/date", dateRouter);
+app.use("/verify-email", verifyRouter);
 
 app.use("/api/*", (req, res, next) => {
-  console.log(`📥 Requête reçue: ${req.method} ${req.url}`);
-
   const error = new Error("Ressource not found.");
   error.status = 404;
   next(error);
