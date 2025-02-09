@@ -19,6 +19,7 @@ app.use(
   cors({
     credentials: true,
     origin: ["https://birthreminder.com", "https://www.birthreminder.com"],
+    methods: "GET,POST,OPTIONS,PUT,DELETE",
   })
 );
 
