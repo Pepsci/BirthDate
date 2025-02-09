@@ -19,6 +19,11 @@ const app = express();
 
 console.log("FRONTEND_URL:", process.env.FRONTEND_URL);
 
+app.use((req, res, next) => {
+  console.log(`📥 Requête reçue: ${req.method} ${req.url}`);
+  next();
+});
+
 app.use(
   cors({
     credentials: true,
