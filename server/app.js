@@ -32,10 +32,10 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
 
-app.use("/", authRouter);
-app.use("/users", usersRouter);
-app.use("/date", dateRouter);
-app.use("/verify-email", verifyRouter);
+app.use("/api/auth", authRouter);
+app.use("/api/users", usersRouter);
+app.use("/api/date", dateRouter);
+app.use("/api/verify-email", verifyRouter);
 
 app.use("/api/*", (req, res, next) => {
   const error = new Error("Ressource not found.");
