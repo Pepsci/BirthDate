@@ -18,7 +18,11 @@ const app = express();
 app.use(
   cors({
     credentials: true,
-    origin: ["https://birthreminder.com", "https://www.birthreminder.com"],
+    origin: [
+      "https://birthreminder.com",
+      "https://www.birthreminder.com",
+      "http://13.39.137.26:3000",
+    ],
     methods: "GET,POST,OPTIONS,PUT,DELETE",
   })
 );
