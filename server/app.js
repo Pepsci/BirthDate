@@ -35,14 +35,14 @@ app.use("/api/users", usersRouter);
 app.use("/api/date", dateRouter);
 app.use("/api/verify-email", verifyRouter);
 
-// 📌 Correction de la gestion des routes non trouvées
-app.use("/api/*", (req, res, next) => {
-  res.status(404).json({ message: "Ressource API non trouvée." });
-});
-
 // 📌 Déplacer la route `/test` sous `/api/` pour qu'elle fonctionne via Nginx
 app.get("/api/test", (req, res) => {
   res.send("Le serveur fonctionne !");
+});
+
+// 📌 Correction de la gestion des routes non trouvées
+app.use("/api/*", (req, res, next) => {
+  res.status(404).json({ message: "Ressource API non trouvée." });
 });
 
 // 📌 Gestion du frontend React
