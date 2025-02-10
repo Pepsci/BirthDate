@@ -34,7 +34,7 @@ const apiHandler = {
 
   isLoggedIn(token) {
     return service
-      .get("/verify", {
+      .get("/api/auth/verify", {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => res.data)
