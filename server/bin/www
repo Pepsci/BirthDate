@@ -9,7 +9,7 @@ var fs = require("fs");
 var path = require("path");
 var app = require("../app");
 var debug = require("debug")("server:server");
-// var https = require("https"); // 🔹 Utilisation de HTTPS
+var https = require("https"); // 🔹 Utilisation de HTTPS
 var http = require("http");
 
 /**
@@ -23,18 +23,18 @@ app.set("port", port);
  * Load SSL certificates.
  */
 
-// var options = {
-//   key: fs.readFileSync("/etc/letsencrypt/live/birthreminder.com/privkey.pem"),
-//   cert: fs.readFileSync(
-//     "/etc/letsencrypt/live/birthreminder.com/fullchain.pem"
-//   ),
-// };
+var options = {
+  key: fs.readFileSync("/etc/letsencrypt/live/birthreminder.com/privkey.pem"),
+  cert: fs.readFileSync(
+    "/etc/letsencrypt/live/birthreminder.com/fullchain.pem"
+  ),
+};
 
 /**
  * Create HTTPS server.
  */
 
-// var server = https.createServer(options, app); // 🔹 Création du serveur HTTPS
+var server = https.createServer(options, app); // 🔹 Création du serveur HTTPS
 var server = http.createServer(app);
 
 /**
