@@ -29,26 +29,27 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
 
-app.use("/auth", authRouter);
-app.use("/users", usersRouter);
-app.use("/date", dateRouter);
-app.use("/verify-email", verifyRouter);
+// 📌 Ajout du préfixe `/api/` pour correspondre à la config Nginx
+app.use("/api/auth", authRouter);
+app.use("/api/users", usersRouter);
+app.use("/api/date", dateRouter);
+app.use("/api/verify-email", verifyRouter);
 
+// 📌 Correction de la gestion des routes non trouvées
 app.use("/api/*", (req, res, next) => {
-  const error = new Error("Ressource not found.");
-  error.status = 404;
-  next(error);
+  res.status(404).json({ message: "Ressource API non trouvée." });
 });
 
+// 📌 Déplacer la route `/test` sous `/api/` pour qu'elle fonctionne via Nginx
+app.get("/api/test", (req, res) => {
+  res.send("Le serveur fonctionne !");
+});
+
+// 📌 Gestion du frontend React
 if (process.env.NODE_ENV === "production") {
-  app.use("*", (req, res, next) => {
-    // If no routes match, send them the React HTML.
+  app.use("*", (req, res) => {
     res.sendFile(path.join(__dirname, "public/index.html"));
   });
 }
-
-app.get("/test", (req, res) => {
-  res.send("Le serveur fonctionne !");
-});
 
 module.exports = app;
