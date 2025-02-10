@@ -27,7 +27,7 @@ const apiHandler = {
 
   signup(userInfo) {
     return service
-      .post("/signup", userInfo)
+      .post("/auth/signup", userInfo)
       .then((res) => res.data)
       .catch(errorHandler);
   },
@@ -42,7 +42,7 @@ const apiHandler = {
 
   signin(userInfo) {
     return service
-      .post("/login", userInfo)
+      .post("/auth/login", userInfo)
       .then((res) => {
         console.log("Response data:", res.data);
         return res.data;
@@ -51,7 +51,7 @@ const apiHandler = {
   },
   requestPasswordReset(email) {
     return service
-      .post("/forgot-password", { email })
+      .post("/auth/forgot-password", { email })
       .then((res) => res.data)
       .catch(errorHandler);
   },
@@ -61,7 +61,7 @@ const apiHandler = {
     console.log("api password", password);
 
     return service
-      .post(`/reset/${token}`, { password })
+      .post(`/auth/reset/${token}`, { password })
       .then((res) => res.data)
       .catch(errorHandler);
   },
