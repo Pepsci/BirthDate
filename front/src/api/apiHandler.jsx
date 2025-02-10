@@ -27,14 +27,15 @@ const apiHandler = {
 
   signup(userInfo) {
     return service
-      .post("/auth/signup", userInfo)
+      .post("/api/auth/signup", userInfo) // Ajout du préfixe /api/
       .then((res) => res.data)
       .catch(errorHandler);
   },
 
   isLoggedIn(token) {
     return service
-      .get("/verify", {
+      .get("/api/auth/verify", {
+        // Ajout du préfixe /api/
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => res.data)
@@ -43,7 +44,7 @@ const apiHandler = {
 
   signin(userInfo) {
     return service
-      .post("/auth/login", userInfo)
+      .post("/api/auth/login", userInfo) // Ajout du préfixe /api/
       .then((res) => {
         console.log("Response data:", res.data);
         return res.data;
@@ -53,20 +54,16 @@ const apiHandler = {
 
   requestPasswordReset(email) {
     return service
-      .post("/auth/forgot-password", { email })
+      .post("/api/auth/forgot-password", { email }) // Ajout du préfixe /api/
       .then((res) => res.data)
       .catch(errorHandler);
   },
 
   resetPassword(token, password) {
-    console.log("api token", token);
-    console.log("api password", password);
-
     return service
-      .post(`/auth/reset/${token}`, { password })
+      .post(`/api/auth/reset/${token}`, { password }) // Ajout du préfixe /api/
       .then((res) => res.data)
       .catch(errorHandler);
   },
 };
-
 export default apiHandler;
