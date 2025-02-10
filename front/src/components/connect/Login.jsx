@@ -24,7 +24,7 @@ const Login = () => {
     event.preventDefault();
 
     try {
-      const response = await apiHandler.post("/login", {
+      const response = await apiHandler.post("/auth/login", {
         email: user.email,
         password: user.password,
       });
