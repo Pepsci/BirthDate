@@ -47,4 +47,8 @@ if (process.env.NODE_ENV === "production") {
   });
 }
 
+app.get("/test", (req, res) => {
+  res.send("Le serveur fonctionne !");
+});
+
 module.exports = app;
