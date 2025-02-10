@@ -18,7 +18,7 @@ const DateList = ({ onEditDate, onViewFriendProfile }) => {
 
   useEffect(() => {
     apiHandler
-      .get(`/date?owner=${currentUser._id}`)
+      .get(`/api/auth/date?owner=${currentUser._id}`)
       .then((dbResponse) => {
         let filteredDates = dbResponse.data;
         if (isFamilyFilterActive) {
