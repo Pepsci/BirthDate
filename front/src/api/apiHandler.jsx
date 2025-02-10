@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const service = axios.create({
-  baseURL: "https://birthreminder.com/api/", // Remplace cette URL si nécessaire
+  baseURL: "https://birthreminder.com/api/auth/", // Remplace cette URL si nécessaire
   withCredentials: true,
 });
 
@@ -27,15 +27,14 @@ const apiHandler = {
 
   signup(userInfo) {
     return service
-      .post("/api/auth/signup", userInfo) // Ajout du préfixe /api/
+      .post("/auth/signup", userInfo)
       .then((res) => res.data)
       .catch(errorHandler);
   },
 
   isLoggedIn(token) {
     return service
-      .get("/api/auth/verify", {
-        // Ajout du préfixe /api/
+      .get("/auth/verify", {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => res.data)
@@ -44,7 +43,7 @@ const apiHandler = {
 
   signin(userInfo) {
     return service
-      .post("/api/auth/login", userInfo) // Ajout du préfixe /api/
+      .post("/auth/login", userInfo)
       .then((res) => {
         console.log("Response data:", res.data);
         return res.data;
@@ -54,16 +53,20 @@ const apiHandler = {
 
   requestPasswordReset(email) {
     return service
-      .post("/api/auth/forgot-password", { email }) // Ajout du préfixe /api/
+      .post("/auth/forgot-password", { email })
       .then((res) => res.data)
       .catch(errorHandler);
   },
 
   resetPassword(token, password) {
+    console.log("api token", token);
+    console.log("api password", password);
+
     return service
-      .post(`/api/auth/reset/${token}`, { password }) // Ajout du préfixe /api/
+      .post(`/auth/reset/${token}`, { password })
       .then((res) => res.data)
       .catch(errorHandler);
   },
 };
+
 export default apiHandler;
