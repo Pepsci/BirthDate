@@ -43,7 +43,7 @@ const apiHandler = {
 
   signin(userInfo) {
     return service
-      .post("/login", userInfo)
+      .post("/api/login", userInfo)
       .then((res) => {
         console.log("Response data:", res.data);
         return res.data;
