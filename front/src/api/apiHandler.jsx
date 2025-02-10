@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const service = axios.create({
-  baseURL: "https://birthreminder.com/", // Remplace cette URL si nécessaire
+  baseURL: "https://birthreminder.com/api/auth/", // Remplace cette URL si nécessaire
   withCredentials: true,
 });
 
@@ -27,14 +27,14 @@ const apiHandler = {
 
   signup(userInfo) {
     return service
-      .post("/signup", userInfo)
+      .post("/auth/signup", userInfo)
       .then((res) => res.data)
       .catch(errorHandler);
   },
 
   isLoggedIn(token) {
     return service
-      .get("/api/auth/verify", {
+      .get("/auth/verify", {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => res.data)
@@ -43,7 +43,7 @@ const apiHandler = {
 
   signin(userInfo) {
     return service
-      .post("/api/auth/login", userInfo)
+      .post("/auth/login", userInfo)
       .then((res) => {
         console.log("Response data:", res.data);
         return res.data;
