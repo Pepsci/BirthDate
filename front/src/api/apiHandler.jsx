@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const service = axios.create({
-  baseURL: import.meta.env.VITE_APP_BACKEND_URL,
+  baseURL: "https://birthreminder.com/api", // Remplace cette URL si nécessaire
   withCredentials: true,
 });
 
@@ -31,6 +31,7 @@ const apiHandler = {
       .then((res) => res.data)
       .catch(errorHandler);
   },
+
   isLoggedIn(token) {
     return service
       .get("/auth/verify", {
@@ -49,6 +50,7 @@ const apiHandler = {
       })
       .catch(errorHandler);
   },
+
   requestPasswordReset(email) {
     return service
       .post("/auth/forgot-password", { email })
