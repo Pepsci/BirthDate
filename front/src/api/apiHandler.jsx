@@ -27,7 +27,7 @@ const apiHandler = {
 
   signup(userInfo) {
     return service
-      .post("/api/auth/signup", userInfo)
+      .post("/signup", userInfo)
       .then((res) => res.data)
       .catch(errorHandler);
   },
@@ -43,7 +43,7 @@ const apiHandler = {
 
   signin(userInfo) {
     return service
-      .post("/api/auth/login", userInfo)
+      .post("/login", userInfo)
       .then((res) => {
         console.log("Response data:", res.data);
         return res.data;
