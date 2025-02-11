@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const service = axios.create({
-  baseURL: "https://birthreminder.com/api/", // Assurez-vous que cette URL est correcte
+  baseURL: "https://birthreminder.com/api/", // Ne pas ajouter "/api/" dans les routes après
   withCredentials: true,
 });
 
@@ -26,15 +26,15 @@ const apiHandler = {
 
   signup(userInfo) {
     return service
-      .post("/api/auth/signup", userInfo) // Ajout de "/api/"
+      .post("/auth/signup", userInfo) // Supprimer "/api/"
       .then((res) => res.data)
       .catch(errorHandler);
   },
 
   isLoggedIn(token) {
     return service
-      .get("/api/auth/verify", {
-        headers: { Authorization: `Bearer ${token}` }, // Correction de la syntaxe
+      .get("/auth/verify", {
+        headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => res.data)
       .catch(errorHandler);
@@ -42,7 +42,7 @@ const apiHandler = {
 
   signin(userInfo) {
     return service
-      .post("/api/auth/login", userInfo) // Ajout de "/api/"
+      .post("/auth/login", userInfo) // Supprimer "/api/"
       .then((res) => {
         console.log("Response data:", res.data);
         return res.data;
@@ -52,7 +52,7 @@ const apiHandler = {
 
   requestPasswordReset(email) {
     return service
-      .post("/api/auth/forgot-password", { email }) // Ajout de "/api/"
+      .post("/auth/forgot-password", { email }) // Supprimer "/api/"
       .then((res) => res.data)
       .catch(errorHandler);
   },
@@ -62,7 +62,7 @@ const apiHandler = {
     console.log("api password", password);
 
     return service
-      .post(`/api/auth/reset/${token}`, { password }) // Correction des backticks
+      .post(`/auth/reset/${token}`, { password }) // Supprimer "/api/"
       .then((res) => res.data)
       .catch(errorHandler);
   },
