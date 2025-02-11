@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const service = axios.create({
-  baseURL: "https://birthreminder.com/api/auth/", // Ne pas ajouter "/api/" dans les routes après
+  baseURL: "https://birthreminder.com/api",
   withCredentials: true,
 });
 
@@ -12,12 +12,12 @@ service.interceptors.request.use((config) => {
 });
 
 function errorHandler(error) {
-  if (error.response) {
+  if (error.response && error.response.data) {
     console.log("Error response data:", error.response.data);
-    throw error.response.data || { message: "Une erreur est survenue." };
+    throw error.response.data;
   } else {
     console.log("Error:", error);
-    throw { message: "Une erreur inattendue s'est produite." };
+    throw error;
   }
 }
 
@@ -26,14 +26,13 @@ const apiHandler = {
 
   signup(userInfo) {
     return service
-      .post("/signup", userInfo) // Supprimer "/api/"
+      .post("/signup", userInfo)
       .then((res) => res.data)
       .catch(errorHandler);
   },
-
   isLoggedIn(token) {
     return service
-      .get("/verify", {
+      .get("/auth/verify", {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => res.data)
@@ -42,17 +41,16 @@ const apiHandler = {
 
   signin(userInfo) {
     return service
-      .post("/login", userInfo) // Supprimer "/api/"
+      .post("/login", userInfo)
       .then((res) => {
         console.log("Response data:", res.data);
         return res.data;
       })
       .catch(errorHandler);
   },
-
   requestPasswordReset(email) {
     return service
-      .post("/forgot-password", { email }) // Supprimer "/api/"
+      .post("/forgot-password", { email })
       .then((res) => res.data)
       .catch(errorHandler);
   },
@@ -62,7 +60,7 @@ const apiHandler = {
     console.log("api password", password);
 
     return service
-      .post(`/auth/reset/${token}`, { password }) // Supprimer "/api/"
+      .post(`/reset/${token}`, { password })
       .then((res) => res.data)
       .catch(errorHandler);
   },
