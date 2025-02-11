@@ -31,22 +31,17 @@ const Login = () => {
 
       console.log("Response data:", response);
 
-      if (response && response.data && response.data.authToken) {
+      if (response && response.authToken) {
         console.log("Login successful");
-        console.log("AuthToken:", response.data.authToken);
-        storeToken(response.data.authToken);
+        console.log("AuthToken:", response.authToken);
+        storeToken(response.authToken);
         authenticateUser();
-
         navigate("/home");
       } else {
-        setErrorMessage(response.data.message || "No authToken in response");
+        setErrorMessage("No authToken in response");
       }
     } catch (err) {
-      if (err.response && err.response.data && err.response.data.message) {
-        setErrorMessage(err.response.data.message);
-      } else {
-        setErrorMessage("Une erreur s'est produite.");
-      }
+      setErrorMessage(err.message || "Une erreur s'est produite.");
       console.error(err);
     }
   };

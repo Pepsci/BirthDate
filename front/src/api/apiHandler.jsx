@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const service = axios.create({
-  baseURL: "https://birthreminder.com/api/auth", // 🚨 Mauvais ! Ça ajoute "auth" partout
+  baseURL: "https://birthreminder.com/api",
   withCredentials: true,
 });
 
@@ -30,6 +30,7 @@ const apiHandler = {
       .then((res) => res.data)
       .catch(errorHandler);
   },
+
   isLoggedIn(token) {
     return service
       .get("/auth/verify", {
@@ -41,16 +42,14 @@ const apiHandler = {
 
   signin(userInfo) {
     return service
-      .post("/login", userInfo)
-      .then((res) => {
-        console.log("Response data:", res.data);
-        return res.data;
-      })
+      .post("/auth/login", userInfo)
+      .then((res) => res.data) // `axios` retourne déjà `res.data`
       .catch(errorHandler);
   },
+
   requestPasswordReset(email) {
     return service
-      .post("/forgot-password", { email })
+      .post("/auth/forgot-password", { email })
       .then((res) => res.data)
       .catch(errorHandler);
   },
@@ -60,7 +59,7 @@ const apiHandler = {
     console.log("api password", password);
 
     return service
-      .post(`/reset/${token}`, { password })
+      .post(`/auth/reset/${token}`, { password })
       .then((res) => res.data)
       .catch(errorHandler);
   },
