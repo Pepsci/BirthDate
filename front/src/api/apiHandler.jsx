@@ -27,14 +27,14 @@ const apiHandler = {
 
   signup(userInfo) {
     return service
-      .post("/auth/signup", userInfo)
+      .post("/signup", userInfo)
       .then((res) => res.data)
       .catch(errorHandler);
   },
 
   isLoggedIn(token) {
     return service
-      .get("/auth/verify", {
+      .get("/verify", {
         headers: { Authorization: `Bearer ${token}` },
       })
       .then((res) => res.data)
@@ -43,7 +43,7 @@ const apiHandler = {
 
   signin(userInfo) {
     return service
-      .post("/auth/login", userInfo)
+      .post("/login", userInfo)
       .then((res) => {
         console.log("Response data:", res.data);
         return res.data;
@@ -53,7 +53,7 @@ const apiHandler = {
 
   requestPasswordReset(email) {
     return service
-      .post("/auth/forgot-password", { email })
+      .post("/forgot-password", { email })
       .then((res) => res.data)
       .catch(errorHandler);
   },
