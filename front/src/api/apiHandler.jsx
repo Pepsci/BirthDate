@@ -1,14 +1,13 @@
 import axios from "axios";
 
 const service = axios.create({
-  baseURL: "https://birthreminder.com/api/", // Remplace cette URL si nécessaire
+  baseURL: "https://birthreminder.com/api/", // Assurez-vous que cette URL est correcte
   withCredentials: true,
 });
 
 service.interceptors.request.use((config) => {
   const token = localStorage.getItem("authToken");
-  console.log("Token envoyé:", token);
-  config.headers.Authorization = token ? Bearer ${token} : "";
+  config.headers.Authorization = token ? `Bearer ${token}` : "";
   return config;
 });
 
@@ -27,15 +26,15 @@ const apiHandler = {
 
   signup(userInfo) {
     return service
-      .post("/auth/signup", userInfo)
+      .post("/api/auth/signup", userInfo) // Ajout de "/api/"
       .then((res) => res.data)
       .catch(errorHandler);
   },
 
   isLoggedIn(token) {
     return service
-      .get("/auth/verify", {
-        headers: { Authorization: Bearer ${token} },
+      .get("/api/auth/verify", {
+        headers: { Authorization: `Bearer ${token}` }, // Correction de la syntaxe
       })
       .then((res) => res.data)
       .catch(errorHandler);
@@ -43,7 +42,7 @@ const apiHandler = {
 
   signin(userInfo) {
     return service
-      .post("/auth/login", userInfo)
+      .post("/api/auth/login", userInfo) // Ajout de "/api/"
       .then((res) => {
         console.log("Response data:", res.data);
         return res.data;
@@ -53,7 +52,7 @@ const apiHandler = {
 
   requestPasswordReset(email) {
     return service
-      .post("/auth/forgot-password", { email })
+      .post("/api/auth/forgot-password", { email }) // Ajout de "/api/"
       .then((res) => res.data)
       .catch(errorHandler);
   },
@@ -63,7 +62,7 @@ const apiHandler = {
     console.log("api password", password);
 
     return service
-      .post(/auth/reset/${token}, { password })
+      .post(`/api/auth/reset/${token}`, { password }) // Correction des backticks
       .then((res) => res.data)
       .catch(errorHandler);
   },
