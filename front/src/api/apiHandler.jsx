@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const service = axios.create({
-  baseURL: "https://birthreminder.com/api",
+  baseURL: "https://birthreminder.com/api/auth",
   withCredentials: true,
 });
 
