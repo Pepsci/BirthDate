@@ -26,10 +26,11 @@ const apiHandler = {
 
   signup(userInfo) {
     return service
-      .post("/signup", userInfo)
+      .post("/auth/signup", userInfo) // ✅ Correction ici
       .then((res) => res.data)
       .catch(errorHandler);
   },
+
   isLoggedIn(token) {
     return service
       .get("/auth/verify", {
@@ -41,16 +42,17 @@ const apiHandler = {
 
   signin(userInfo) {
     return service
-      .post("/login", userInfo)
+      .post("/auth/login", userInfo) // ✅ Correction ici
       .then((res) => {
         console.log("Response data:", res.data);
         return res.data;
       })
       .catch(errorHandler);
   },
+
   requestPasswordReset(email) {
     return service
-      .post("/forgot-password", { email })
+      .post("/auth/forgot-password", { email }) // ✅ Correction ici
       .then((res) => res.data)
       .catch(errorHandler);
   },
@@ -60,7 +62,7 @@ const apiHandler = {
     console.log("api password", password);
 
     return service
-      .post(`/reset/${token}`, { password })
+      .post(`/auth/reset/${token}`, { password }) // ✅ Correction ici
       .then((res) => res.data)
       .catch(errorHandler);
   },
