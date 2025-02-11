@@ -12,12 +12,12 @@ service.interceptors.request.use((config) => {
 });
 
 function errorHandler(error) {
-  if (error.response && error.response.data) {
+  if (error.response) {
     console.log("Error response data:", error.response.data);
-    throw error.response.data;
+    throw error.response.data || { message: "Une erreur est survenue." };
   } else {
     console.log("Error:", error);
-    throw error;
+    throw { message: "Une erreur inattendue s'est produite." };
   }
 }
 
