@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const service = axios.create({
-  baseURL: "https://birthreminder.com/api/auth",
+  baseURL: "https://birthreminder.com/api/",
   withCredentials: true,
 });
 
@@ -26,7 +26,7 @@ const apiHandler = {
 
   signup(userInfo) {
     return service
-      .post("/signup", userInfo)
+      .post("/auth/signup", userInfo)
       .then((res) => res.data)
       .catch(errorHandler);
   },
