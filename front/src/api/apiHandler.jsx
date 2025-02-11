@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const service = axios.create({
-  baseURL: "https://birthreminder.com/",
+  baseURL: import.meta.env.VITE_APP_BACKEND_URL,
   withCredentials: true,
 });
 
@@ -26,7 +26,7 @@ const apiHandler = {
 
   signup(userInfo) {
     return service
-      .post("/api/auth/signup", userInfo)
+      .post("/signup", userInfo)
       .then((res) => res.data)
       .catch(errorHandler);
   },
