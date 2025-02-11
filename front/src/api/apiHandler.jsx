@@ -1,14 +1,14 @@
 import axios from "axios";
 
 const service = axios.create({
-  baseURL: "https://birthreminder.com/api/auth/", // Remplace cette URL si nécessaire
+  baseURL: "https://birthreminder.com/api/", // Remplace cette URL si nécessaire
   withCredentials: true,
 });
 
 service.interceptors.request.use((config) => {
   const token = localStorage.getItem("authToken");
   console.log("Token envoyé:", token);
-  config.headers.Authorization = token ? `Bearer ${token}` : "";
+  config.headers.Authorization = token ? Bearer ${token} : "";
   return config;
 });
 
@@ -27,15 +27,15 @@ const apiHandler = {
 
   signup(userInfo) {
     return service
-      .post("/signup", userInfo)
+      .post("/auth/signup", userInfo)
       .then((res) => res.data)
       .catch(errorHandler);
   },
 
   isLoggedIn(token) {
     return service
-      .get("/verify", {
-        headers: { Authorization: `Bearer ${token}` },
+      .get("/auth/verify", {
+        headers: { Authorization: Bearer ${token} },
       })
       .then((res) => res.data)
       .catch(errorHandler);
@@ -43,7 +43,7 @@ const apiHandler = {
 
   signin(userInfo) {
     return service
-      .post("/login", userInfo)
+      .post("/auth/login", userInfo)
       .then((res) => {
         console.log("Response data:", res.data);
         return res.data;
@@ -53,7 +53,7 @@ const apiHandler = {
 
   requestPasswordReset(email) {
     return service
-      .post("/forgot-password", { email })
+      .post("/auth/forgot-password", { email })
       .then((res) => res.data)
       .catch(errorHandler);
   },
@@ -63,7 +63,7 @@ const apiHandler = {
     console.log("api password", password);
 
     return service
-      .post(`/auth/reset/${token}`, { password })
+      .post(/auth/reset/${token}, { password })
       .then((res) => res.data)
       .catch(errorHandler);
   },
