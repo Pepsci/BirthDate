@@ -27,7 +27,7 @@ const apiHandler = {
 
   signup(userInfo) {
     return service
-      .post("/auth/signup", userInfo)
+      .post("/api/auth/signup", userInfo)
       .then((res) => res.data)
       .catch(errorHandler);
   },
