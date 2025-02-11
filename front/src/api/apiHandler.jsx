@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const apiHandler = axios.create({
+const service = axios.create({
   baseURL: "https://birthreminder.com/api/auth", // 🚨 Mauvais ! Ça ajoute "auth" partout
   withCredentials: true,
 });
