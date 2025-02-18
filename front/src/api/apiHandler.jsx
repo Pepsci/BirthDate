@@ -1,7 +1,11 @@
 import axios from "axios";
 
+const isLocal = window.location.hostname === "localhost";
+
 const service = axios.create({
-  baseURL: "https://birthreminder.com/api",
+  baseURL: isLocal
+    ? "http://localhost:4000/api" // En local
+    : "https://birthreminder.com/api", // En production
   withCredentials: true,
 });
 
@@ -43,7 +47,7 @@ const apiHandler = {
   signin(userInfo) {
     return service
       .post("/auth/login", userInfo)
-      .then((res) => res.data) // `axios` retourne déjà `res.data`
+      .then((res) => res.data)
       .catch(errorHandler);
   },
 

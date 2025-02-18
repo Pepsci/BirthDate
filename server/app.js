@@ -15,15 +15,22 @@ const verifyRouter = require("./routes/verify");
 
 const app = express();
 
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://birthreminder.com",
+  "https://www.birthreminder.com",
+];
+
 app.use(
   cors({
     credentials: true,
-    origin: [
-      "http://13.39.137.26:3000",
-      "https://birthreminder.com",
-      "https://www.birthreminder.com",
-      "http://localhost:5173",
-    ],
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, origin);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     methods: "GET,POST,OPTIONS,PUT,DELETE",
   })
 );
