@@ -1,76 +1,67 @@
 #!/usr/bin/env node
 
-/**
- * Module dependencies.
- */
-
 require("dotenv").config();
-var fs = require("fs");
-var path = require("path");
-var app = require("../app");
-var debug = require("debug")("server:server");
-var https = require("https"); // 🔹 Utilisation de HTTPS
-var http = require("http");
+const fs = require("fs");
+const path = require("path");
+const app = require("../app");
+const debug = require("debug")("server:server");
+const https = require("https");
+const http = require("http");
 
-/**
- * Get port from environment and store in Express.
- */
-
-var port = normalizePort(process.env.PORT || "3000");
+// Définition du port
+const port = normalizePort(process.env.PORT || "3000");
 app.set("port", port);
 
-/**
- * Load SSL certificates.
- */
+// Vérifier si l'on est en production
+const isProduction = process.env.NODE_ENV === "production";
 
-var options = {
-  key: fs.readFileSync("/etc/letsencrypt/live/birthreminder.com/privkey.pem"),
-  cert: fs.readFileSync(
-    "/etc/letsencrypt/live/birthreminder.com/fullchain.pem"
-  ),
-};
+let server;
 
-/**
- * Create HTTPS server.
- */
+if (isProduction) {
+  try {
+    const options = {
+      key: fs.readFileSync(
+        "/etc/letsencrypt/live/birthreminder.com/privkey.pem"
+      ),
+      cert: fs.readFileSync(
+        "/etc/letsencrypt/live/birthreminder.com/fullchain.pem"
+      ),
+    };
+    server = https.createServer(options, app);
+    console.log("✅ Serveur HTTPS en production");
+  } catch (error) {
+    console.error("❌ Erreur lors du chargement des certificats SSL :", error);
+    process.exit(1);
+  }
+} else {
+  server = http.createServer(app);
+  console.log("✅ Serveur HTTP en local");
+}
 
-var server = https.createServer(options, app); // 🔹 Création du serveur HTTPS
-var server = http.createServer(app);
-
-/**
- * Listen on provided port, on all network interfaces.
- */
-console.log("✅ Tentative de démarrage du serveur sur le port", port);
-
+// Démarrer le serveur
 server.listen(port, () => {
   console.log(
-    `✅ Serveur HTTPS en cours d'exécution sur https://localhost:${port}`
+    `✅ Serveur en cours d'exécution sur ${
+      isProduction ? "HTTPS" : "HTTP"
+    } sur le port ${port}`
   );
 });
 
 server.on("error", onError);
 server.on("listening", onListening);
 
-/**
- * Normalize a port into a number, string, or false.
- */
-
+// Normalisation du port
 function normalizePort(val) {
-  var port = parseInt(val, 10);
-  if (isNaN(port)) return val;
-  if (port >= 0) return port;
-  return false;
+  const port = parseInt(val, 10);
+  return isNaN(port) ? val : port >= 0 ? port : false;
 }
 
-/**
- * Event listener for HTTPS server "error" event.
- */
-
+// Gestion des erreurs du serveur
 function onError(error) {
   if (error.syscall !== "listen") {
     throw error;
   }
-  var bind = typeof port === "string" ? "Pipe " + port : "Port " + port;
+  const bind = typeof port === "string" ? "Pipe " + port : "Port " + port;
 
   switch (error.code) {
     case "EACCES":
@@ -86,12 +77,9 @@ function onError(error) {
   }
 }
 
-/**
- * Event listener for HTTPS server "listening" event.
- */
-
+// Écoute de l'événement "listening"
 function onListening() {
-  var addr = server.address();
-  var bind = typeof addr === "string" ? "pipe " + addr : "port " + addr.port;
+  const addr = server.address();
+  const bind = typeof addr === "string" ? "pipe " + addr : "port " + addr.port;
   debug("Listening on " + bind);
 }

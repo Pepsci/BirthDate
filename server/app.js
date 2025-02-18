@@ -22,6 +22,7 @@ app.use(
       "http://13.39.137.26:3000",
       "https://birthreminder.com",
       "https://www.birthreminder.com",
+      "http://localhost:5173",
     ],
     methods: "GET,POST,OPTIONS,PUT,DELETE",
   })
