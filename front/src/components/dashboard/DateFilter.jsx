@@ -31,6 +31,13 @@ const DateFilter = ({ onFilterChange }) => {
   };
 
   const toggleFilterVisibility = () => {
+    if (isFilterVisible) {
+      // Réinitialiser les champs de recherche et le filtre famille
+      setNameSearch("");
+      setSurnameSearch("");
+      setIsFamilyFilterActive(false);
+      handleFilterChange("", "", false);
+    }
     setIsFilterVisible(!isFilterVisible);
   };
 
@@ -56,7 +63,7 @@ const DateFilter = ({ onFilterChange }) => {
             className="search-input"
           />
           <button
-            className={`btnSwitch ${isFamilyFilterActive ? "active" : ""}`}
+            className={`btn ${isFamilyFilterActive ? "active" : ""}`}
             onClick={toggleFamilyFilter}
           >
             {isFamilyFilterActive
