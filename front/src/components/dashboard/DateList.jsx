@@ -3,6 +3,7 @@ import apiHandler from "../../api/apiHandler";
 import useAuth from "../../context/useAuth";
 import CreateDate from "./CreateDate";
 import Agenda from "./Agenda";
+import DateFilter from "./DateFilter";
 import "./css/dateList.css";
 import Countdown from "./Countdown";
 
@@ -12,9 +13,9 @@ const ITEMS_PER_PAGE_MOBILE = 6;
 const DateList = ({ onEditDate, onViewFriendProfile }) => {
   const { currentUser } = useAuth();
   const [dates, setDates] = useState([]);
+  const [allDates, setAllDates] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [isFormVisible, setIsFormVisible] = useState(false);
-  const [isFamilyFilterActive, setIsFamilyFilterActive] = useState(false);
   const [itemsPerPage, setItemsPerPage] = useState(
     window.innerWidth <= 600 ? ITEMS_PER_PAGE_MOBILE : ITEMS_PER_PAGE
   );
@@ -47,25 +48,21 @@ const DateList = ({ onEditDate, onViewFriendProfile }) => {
     apiHandler
       .get(`/date?owner=${currentUser._id}`)
       .then((dbResponse) => {
-        let filteredDates = dbResponse.data;
-        if (isFamilyFilterActive) {
-          filteredDates = filteredDates.filter((date) => date.family === true);
-        }
-        setDates(sortDates(filteredDates));
+        const sortedDates = sortDates(dbResponse.data);
+        setAllDates(sortedDates);
+        setDates(sortedDates);
       })
       .catch((e) => console.error(e));
-  }, [currentUser, isFamilyFilterActive]);
+  }, [currentUser]);
 
   useEffect(() => {
     const handleResize = () => {
       const newItemsPerPage =
         window.innerWidth <= 600 ? ITEMS_PER_PAGE_MOBILE : ITEMS_PER_PAGE;
-
       if (itemsPerPage !== newItemsPerPage) {
         setItemsPerPage(newItemsPerPage);
       }
     };
-
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, [itemsPerPage]);
@@ -73,17 +70,33 @@ const DateList = ({ onEditDate, onViewFriendProfile }) => {
   const toggleFormVisibility = () => setIsFormVisible(!isFormVisible);
 
   const handleDateAdded = (newDate) => {
-    const updatedDates = sortDates([...dates, newDate]);
+    const updatedDates = sortDates([...allDates, newDate]);
+    setAllDates(updatedDates);
     setDates(updatedDates);
+  };
+
+  const handleFilterChange = (newName, newSurname, familyFilter) => {
+    let filteredDates = [...allDates];
+    if (familyFilter) {
+      filteredDates = filteredDates.filter((date) => date.family === true);
+    }
+    if (newName) {
+      filteredDates = filteredDates.filter((date) =>
+        date.name.toLowerCase().startsWith(newName.toLowerCase())
+      );
+    }
+    if (newSurname) {
+      filteredDates = filteredDates.filter((date) =>
+        date.surname.toLowerCase().startsWith(newSurname.toLowerCase())
+      );
+    }
+    setDates(filteredDates);
   };
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = dates.slice(indexOfFirstItem, indexOfLastItem);
-
-  const toggleFamilyFilter = () =>
-    setIsFamilyFilterActive(!isFamilyFilterActive);
 
   const [viewMode, setViewMode] = useState("card");
   const toggleViewMode = () =>
@@ -93,14 +106,7 @@ const DateList = ({ onEditDate, onViewFriendProfile }) => {
     <div className="dateList">
       <div className="dateListheaderConter">
         <h1 className="titleFont">Vos BirthDate</h1>
-        <button
-          className={`btnSwitch ${isFamilyFilterActive ? "active" : ""}`}
-          onClick={toggleFamilyFilter}
-        >
-          {isFamilyFilterActive
-            ? "Afficher toutes les dates"
-            : "Famille uniquement"}
-        </button>
+        <DateFilter onFilterChange={handleFilterChange} />
         <button className="btnSwitch" onClick={toggleViewMode}>
           {viewMode === "card"
             ? "Passer en mode agenda"
