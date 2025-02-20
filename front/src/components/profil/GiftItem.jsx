@@ -36,6 +36,23 @@ const GiftItem = ({ dateId, gift, onUpdate, onDelete }) => {
     }
   };
 
+  const handlePurchasedChange = async (e) => {
+    const newPurchased = e.target.checked;
+    setPurchased(newPurchased);
+    try {
+      const response = await apiHandler.patch(
+        `/date/${dateId}/gifts/${gift._id}`,
+        {
+          giftName,
+          purchased: newPurchased,
+        }
+      );
+      onUpdate(response.data);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   const handleDelete = async () => {
     try {
       const response = await apiHandler.delete(
@@ -56,20 +73,28 @@ const GiftItem = ({ dateId, gift, onUpdate, onDelete }) => {
             value={giftName}
             onChange={(e) => setGiftName(e.target.value)}
           />
-          <label>
+          {/* <label>
             Purchased
             <input
               type="checkbox"
               checked={purchased}
-              onChange={(e) => setPurchased(e.target.checked)}
+              onChange={handlePurchasedChange}
             />
-          </label>
+          </label> */}
           <button onClick={handleUpdate}>Save</button>
           <button onClick={() => setIsEditing(false)}>Cancel</button>
         </div>
       ) : (
         <div>
-          {gift.giftName} - {gift.purchased ? "Acheté" : "Non acheté"}
+          {gift.giftName} -{" "}
+          <label>
+            <input
+              type="checkbox"
+              checked={purchased}
+              onChange={handlePurchasedChange}
+            />{" "}
+            Acheté
+          </label>
           <button onClick={() => setIsEditing(true)}>Edit</button>
           <button onClick={handleDelete}>Delete</button>
         </div>

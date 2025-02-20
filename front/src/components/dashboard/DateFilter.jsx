@@ -53,14 +53,14 @@ const DateFilter = ({ onFilterChange }) => {
             placeholder="Rechercher par prénom..."
             value={nameSearch}
             onChange={handleNameChange}
-            className="search-input"
+            className="formAddInput"
           />
           <input
             type="text"
             placeholder="Rechercher par nom..."
             value={surnameSearch}
             onChange={handleSurnameChange}
-            className="search-input"
+            className="formAddInput"
           />
           <button
             className={`btn ${isFamilyFilterActive ? "active" : ""}`}
