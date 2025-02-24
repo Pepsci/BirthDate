@@ -31,13 +31,17 @@ async function sendBirthdayEmail() {
         tomorrow.getMonth() === birthday.getMonth() &&
         dateItem.owner &&
         dateItem.owner.email &&
-        dateItem.owner.receiveBirthdayEmails // Vérifiez la préférence d'e-mail
+        dateItem.owner.receiveBirthdayEmails
       ) {
+        const unsubscribeLink = `https://birthreminder.com/unsubscribe?userId=${dateItem.owner._id}`;
+
         let mailOptions = {
           from: process.env.EMAIL_BRTHDAY,
           to: dateItem.owner.email,
           subject: "Rappel: Anniversaire à venir!",
-          text: `Rappelez-vous que demain est l'anniversaire de ${dateItem.name} ${dateItem.surname} !`,
+          text: `Rappelez-vous que demain est l'anniversaire de ${dateItem.name} ${dateItem.surname} !\n\nPour vous désabonner des notifications, cliquez sur ce lien : ${unsubscribeLink}`,
+          html: `<p>Rappelez-vous que demain est l'anniversaire de ${dateItem.name} ${dateItem.surname} !</p>
+                 <p>Pour vous désabonner des notifications, cliquez sur ce lien : <a href="${unsubscribeLink}">Se désabonner</a></p>`,
         };
         transporter.sendMail(mailOptions, function (error, info) {
           if (error) {

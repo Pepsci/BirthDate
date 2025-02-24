@@ -6,13 +6,12 @@ import apiHandler from "../../api/apiHandler";
 
 const FriendProfile = ({ date, onCancel }) => {
   const [currentDate, setCurrentDate] = useState(date);
-  const [receiveEmails, setReceiveEmails] = useState(false);
 
   useEffect(() => {
     // Charger la préférence actuelle de l'utilisateur
     async function fetchEmailPreference() {
       try {
-        const response = await apiHandler.get(`/user/${date.owner._id}`);
+        const response = await apiHandler.get(`/users/${date.owner._id}`);
         setReceiveEmails(response.data.receiveBirthdayEmails);
       } catch (error) {
         console.error("Failed to fetch email preference:", error);
@@ -33,18 +32,6 @@ const FriendProfile = ({ date, onCancel }) => {
 
   const handleGiftDeleted = (updatedDate) => {
     setCurrentDate(updatedDate);
-  };
-
-  const handleEmailPreferenceChange = async () => {
-    try {
-      const newPreference = !receiveEmails;
-      await apiHandler.patch(`/user/${date.owner._id}`, {
-        receiveBirthdayEmails: newPreference,
-      });
-      setReceiveEmails(newPreference);
-    } catch (error) {
-      console.error("Failed to update email preference:", error);
-    }
   };
 
   const calculateAge = (birthdate) => {
@@ -114,17 +101,6 @@ const FriendProfile = ({ date, onCancel }) => {
                 />
               ))}
         </ul>
-      </div>
-
-      <div className="emailPreference">
-        <label>
-          <input
-            type="checkbox"
-            checked={receiveEmails}
-            onChange={handleEmailPreferenceChange}
-          />
-          Notification par e-mails de rappel d'anniversaire
-        </label>
       </div>
 
       <button type="button" onClick={onCancel} className="btnBack">

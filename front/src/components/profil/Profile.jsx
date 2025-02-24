@@ -16,6 +16,7 @@ const ProfilDetails = () => {
     email: "",
     avatar: "",
     birthDate: "",
+    receiveBirthdayEmails: false, // Ajout de ce champ
   });
   const [passwords, setPasswords] = useState({
     currentPassword: "",
@@ -23,9 +24,9 @@ const ProfilDetails = () => {
     confirmPassword: "",
   });
   const [showPasswordFields, setShowPasswordFields] = useState(false);
-
   const [isEditing, setIsEditing] = useState(false);
   const [deleteMode, setDeleteMode] = useState(false);
+  const [receiveEmails, setReceiveEmails] = useState(false);
 
   const avatarRef = useRef();
 
@@ -37,6 +38,7 @@ const ProfilDetails = () => {
         .then((dbResponse) => {
           if (isMounted) {
             setUserToUpdate(dbResponse.data);
+            setReceiveEmails(dbResponse.data.receiveBirthdayEmails); // Initialiser avec la préférence actuelle
           }
         })
         .catch((error) => {
@@ -91,6 +93,8 @@ const ProfilDetails = () => {
       fd.append("newPassword", passwords.newPassword);
     }
 
+    fd.append("receiveBirthdayEmails", receiveEmails); // Ajout de cette ligne
+
     try {
       const dbResponse = await apiHandler.patch(
         `/users/${userToUpdate._id}`,
@@ -115,7 +119,6 @@ const ProfilDetails = () => {
       console.error(error);
     }
   };
-
   const deleteAccount = async (e) => {
     e.preventDefault();
     try {
@@ -137,6 +140,18 @@ const ProfilDetails = () => {
     e.preventDefault();
     setDeleteMode(false);
     setIsEditing(true);
+  };
+
+  const handleEmailPreferenceChange = async () => {
+    try {
+      const newPreference = !receiveEmails;
+      await apiHandler.patch(`/users/${userToUpdate._id}`, {
+        receiveBirthdayEmails: newPreference,
+      });
+      setReceiveEmails(newPreference);
+    } catch (error) {
+      console.error("Failed to update email preference:", error);
+    }
   };
 
   if (!currentUser) return <p>Chargement...</p>;
@@ -166,15 +181,6 @@ const ProfilDetails = () => {
                   setUserToUpdate({ ...userToUpdate, name: e.target.value });
                 }}
               />
-              {/* <input
-                type="email"
-                id="email"
-                className="form-input"
-                value={userToUpdate.email || ""}
-                onChange={(e) => {
-                  setUserToUpdate({ ...userToUpdate, email: e.target.value });
-                }}
-              /> */}
               <input
                 type="date"
                 id="birthDate"
@@ -247,6 +253,16 @@ const ProfilDetails = () => {
                 Annuler
               </button>
             </form>
+          </div>
+          <div className="emailPreference">
+            <label>
+              <input
+                type="checkbox"
+                checked={receiveEmails}
+                onChange={handleEmailPreferenceChange}
+              />
+              Notification par e-mails de rappel d'anniversaire
+            </label>
           </div>
         </div>
       ) : (

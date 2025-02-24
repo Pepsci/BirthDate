@@ -9,6 +9,7 @@ import ForgotPassword from "./components/connect/ForgotPassword";
 import ResetPassword from "./components/connect/ResetPassword";
 import VerifyEmail from "./components/connect/VerifyEmail";
 import UpdateDate from "./components/dashboard/UpdateDate";
+import Unsubscribe from "./components/dashboard/Unsubscribe";
 
 function App() {
   return (
@@ -39,6 +40,7 @@ function App() {
               </div>
             }
           />
+          <Route path="/unsubscribe" component={Unsubscribe} />
           <Route path="/auth/reset/:token" element={<ResetPassword />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
           <Route element={<PrivateRoute />}>

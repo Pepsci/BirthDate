@@ -12,6 +12,7 @@ const authRouter = require("./routes/auth");
 const dateRouter = require("./routes/date");
 const usersRouter = require("./routes/users");
 const verifyRouter = require("./routes/verify");
+const unsubscribeRouter = require("./routes/unsubscribe");
 
 const app = express();
 
@@ -45,6 +46,7 @@ app.use("/api/auth", authRouter);
 app.use("/api/users", usersRouter);
 app.use("/api/date", dateRouter);
 app.use("/api/verify-email", verifyRouter);
+app.use("/api/unsubscribe", unsubscribeRouter);
 
 app.use("/api/*", (req, res, next) => {
   res.status(404).json({ message: "Ressource API non trouvée." });
