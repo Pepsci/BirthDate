@@ -21,6 +21,7 @@ router.get("/", isAuthenticated, async (req, res, next) => {
       email: user.email,
       avatar: user.avatar,
       birthDate: user.birthDate,
+      receiveBirthdayEmails: user.receiveBirthdayEmails, // Ajoutez cette ligne
     };
     res.status(200).json(userToFront);
   } catch (error) {
@@ -43,19 +44,9 @@ router.get("/:id", isAuthenticated, async (req, res, next) => {
       email: user.email,
       avatar: user.avatar,
       birthDate: user.birthDate,
+      receiveBirthdayEmails: user.receiveBirthdayEmails, // Ajoutez cette ligne
     };
     res.status(200).json(userToFront);
-  } catch (error) {
-    next(error);
-  }
-});
-
-/* DELETE user by ID */
-router.delete("/:id", isAuthenticated, async (req, res, next) => {
-  try {
-    const deleteUser = await userModel.findByIdAndDelete(req.params.id);
-    console.log("deleted user is", deleteUser);
-    res.status(200).json({ message: "successfully deleted user account" });
   } catch (error) {
     next(error);
   }
@@ -103,6 +94,11 @@ router.patch(
         user.avatar = avatar;
       }
 
+      // Mise à jour de la préférence d'e-mail
+      if (req.body.receiveBirthdayEmails !== undefined) {
+        user.receiveBirthdayEmails = req.body.receiveBirthdayEmails;
+      }
+
       const updatedUser = await user.save();
 
       const payload = {
@@ -112,6 +108,7 @@ router.patch(
         email: updatedUser.email,
         avatar: updatedUser.avatar,
         birthDate: updatedUser.birthDate,
+        receiveBirthdayEmails: updatedUser.receiveBirthdayEmails, // Ajoutez cette ligne
       };
 
       const authToken = jwt.sign(payload, process.env.TOKEN_SECRET, {

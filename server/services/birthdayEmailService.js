@@ -1,39 +1,43 @@
+const AWS = require("aws-sdk");
 const nodemailer = require("nodemailer");
 const dateModel = require("../models/date.model");
 const schedule = require("node-schedule");
 
-// Créez un objet de transport pour l'envoi d'e-mails
-const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST,
-  port: 587,
-  service: "hotmail",
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-  tls: {
-    rejectUnauthorized: false,
-  },
+// Configure AWS SDK
+AWS.config.update({
+  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  region: process.env.AWS_REGION,
 });
 
-// Fonction pour envoyer un e-mail d'anniversaire
+// Create Nodemailer SES transporter
+const transporter = nodemailer.createTransport({
+  SES: new AWS.SES({
+    apiVersion: "2010-12-01",
+  }),
+});
+
+// Function to send birthday email
 async function sendBirthdayEmail() {
   try {
     const today = new Date();
-    const dateList = await dateModel.find();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+    const dateList = await dateModel.find().populate("owner");
     dateList.forEach((dateItem) => {
       const birthday = new Date(dateItem.date);
       if (
-        today.getDate() === birthday.getDate() &&
-        today.getMonth() === birthday.getMonth() &&
-        dateItem.owner.email
+        tomorrow.getDate() === birthday.getDate() &&
+        tomorrow.getMonth() === birthday.getMonth() &&
+        dateItem.owner &&
+        dateItem.owner.email &&
+        dateItem.owner.receiveBirthdayEmails // Vérifiez la préférence d'e-mail
       ) {
-        // Si c'est l'anniversaire de quelqu'un aujourd'hui, envoyez un e-mail
         let mailOptions = {
-          from: process.env.EMAIL_USER,
+          from: process.env.EMAIL_BRTHDAY,
           to: dateItem.owner.email,
-          subject: "Joyeux anniversaire!",
-          text: `Joyeux anniversaire ${dateItem.name} ${dateItem.surname}!`,
+          subject: "Rappel: Anniversaire à venir!",
+          text: `Rappelez-vous que demain est l'anniversaire de ${dateItem.name} ${dateItem.surname} !`,
         };
         transporter.sendMail(mailOptions, function (error, info) {
           if (error) {
@@ -49,8 +53,8 @@ async function sendBirthdayEmail() {
   }
 }
 
-// Planifiez une tâche pour vérifier les anniversaires chaque jour à minuit
+// Schedule a task to check birthdays every day at midnight
 schedule.scheduleJob("0 0 * * *", sendBirthdayEmail);
 
-// Appel de la fonction pour un test
+// Call the function for a test
 sendBirthdayEmail();

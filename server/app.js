@@ -41,23 +41,15 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
 
-// 📌 Ajout du préfixe `/api/` pour correspondre à la config Nginx
 app.use("/api/auth", authRouter);
 app.use("/api/users", usersRouter);
 app.use("/api/date", dateRouter);
 app.use("/api/verify-email", verifyRouter);
 
-// 📌 Déplacer la route `/test` sous `/api/` pour qu'elle fonctionne via Nginx
-app.get("/api/test", (req, res) => {
-  res.send("Le serveur fonctionne !");
-});
-
-// 📌 Correction de la gestion des routes non trouvées
 app.use("/api/*", (req, res, next) => {
   res.status(404).json({ message: "Ressource API non trouvée." });
 });
 
-// 📌 Gestion du frontend React
 if (process.env.NODE_ENV === "production") {
   app.use("*", (req, res) => {
     res.sendFile(path.join(__dirname, "public/index.html"));
