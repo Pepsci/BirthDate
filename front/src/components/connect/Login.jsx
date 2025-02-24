@@ -29,11 +29,8 @@ const Login = () => {
         password: user.password,
       });
 
-      console.log("Response data:", response);
-
       if (response && response.authToken) {
         console.log("Login successful");
-        console.log("AuthToken:", response.authToken);
         storeToken(response.authToken);
         authenticateUser();
         navigate("/home");

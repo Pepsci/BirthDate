@@ -1,10 +1,25 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Countdown from "../dashboard/Countdown";
 import GiftForm from "../profil/CreateFriendGiftList";
 import GiftItem from "../profil/GiftItem";
+import apiHandler from "../../api/apiHandler";
 
 const FriendProfile = ({ date, onCancel }) => {
   const [currentDate, setCurrentDate] = useState(date);
+  const [receiveEmails, setReceiveEmails] = useState(false);
+
+  useEffect(() => {
+    // Charger la préférence actuelle de l'utilisateur
+    async function fetchEmailPreference() {
+      try {
+        const response = await apiHandler.get(`/user/${date.owner._id}`);
+        setReceiveEmails(response.data.receiveBirthdayEmails);
+      } catch (error) {
+        console.error("Failed to fetch email preference:", error);
+      }
+    }
+    fetchEmailPreference();
+  }, [date.owner._id]);
 
   console.log("Current Date Gifts:", currentDate.gifts); // Vérifiez les données
 
@@ -18,6 +33,18 @@ const FriendProfile = ({ date, onCancel }) => {
 
   const handleGiftDeleted = (updatedDate) => {
     setCurrentDate(updatedDate);
+  };
+
+  const handleEmailPreferenceChange = async () => {
+    try {
+      const newPreference = !receiveEmails;
+      await apiHandler.patch(`/user/${date.owner._id}`, {
+        receiveBirthdayEmails: newPreference,
+      });
+      setReceiveEmails(newPreference);
+    } catch (error) {
+      console.error("Failed to update email preference:", error);
+    }
   };
 
   const calculateAge = (birthdate) => {
@@ -87,6 +114,17 @@ const FriendProfile = ({ date, onCancel }) => {
                 />
               ))}
         </ul>
+      </div>
+
+      <div className="emailPreference">
+        <label>
+          <input
+            type="checkbox"
+            checked={receiveEmails}
+            onChange={handleEmailPreferenceChange}
+          />
+          Notification par e-mails de rappel d'anniversaire
+        </label>
       </div>
 
       <button type="button" onClick={onCancel} className="btnBack">

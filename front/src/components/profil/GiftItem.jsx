@@ -86,13 +86,13 @@ const GiftItem = ({ dateId, gift, onUpdate, onDelete }) => {
         </div>
       ) : (
         <div>
-          {gift.giftName} -{" "}
+          {gift.giftName}
           <label>
             <input
               type="checkbox"
               checked={purchased}
               onChange={handlePurchasedChange}
-            />{" "}
+            />
             Acheté
           </label>
           <button onClick={() => setIsEditing(true)}>Edit</button>
