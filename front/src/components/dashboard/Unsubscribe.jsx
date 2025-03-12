@@ -9,11 +9,13 @@ const Unsubscribe = () => {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const userId = params.get("userId");
+    console.log("UserID:", userId); // Ajoutez ceci pour vérifier le userId
 
     if (userId) {
       apiHandler
         .get(`/api/unsubscribe?userId=${userId}`)
         .then((response) => {
+          console.log("Unsubscribe response:", response.data); // Ajoutez ceci pour vérifier la réponse
           setMessage(response.data);
         })
         .catch((error) => {

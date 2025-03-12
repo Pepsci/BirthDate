@@ -4,8 +4,8 @@ const isLocal = window.location.hostname === "localhost";
 
 const service = axios.create({
   baseURL: isLocal
-    ? "http://localhost:4000/api" // En local
-    : "https://birthreminder.com/api", // En production
+    ? "http://localhost:4000/api/auth" // En local
+    : "https://birthreminder.com/api/auth", // En production
   withCredentials: true,
 });
 
