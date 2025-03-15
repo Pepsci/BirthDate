@@ -81,7 +81,7 @@ const Login = () => {
           <span className="form-connect-msg">Mot de passe oublié ?</span>
         </Link>
         <span> / </span>
-        <Link to={"/"}>
+        <Link to={"/signup"}>
           <span className="form-connect-msg">Pas encore de compte ?</span>
         </Link>
       </div>

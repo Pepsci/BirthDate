@@ -37,20 +37,29 @@ const Signup = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Validation de l'email au frontend
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(user.email)) {
+      setErrorMessage("Veuillez fournir une adresse e-mail valide.");
+      return;
+    }
+
     if (user.password !== confirmPassword) {
       setErrorMessage("Les mots de passe ne correspondent pas.");
       return;
     }
+
     try {
-      const response = await apiHandler.post("/signup", user);
-      setSuccessMessage(response.data.message); // Stocke le message de succès du backend
-      setErrorMessage(undefined); // Efface tout message d'erreur précédent
+      const response = await apiHandler.signup(user); // Utilise la méthode signup d'apiHandler
+      setSuccessMessage("Compte créé avec succès !");
+      setErrorMessage(undefined);
       setTimeout(() => {
         navigate("/login");
       }, 3000);
     } catch (err) {
-      if (err.response && err.response.data && err.response.data.message) {
-        setErrorMessage(err.response.data.message);
+      if (err.message) {
+        setErrorMessage(err.message);
       } else {
         setErrorMessage("Une erreur s'est produite.");
       }

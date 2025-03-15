@@ -10,14 +10,16 @@ import ResetPassword from "./components/connect/ResetPassword";
 import VerifyEmail from "./components/connect/VerifyEmail";
 import UpdateDate from "./components/dashboard/UpdateDate";
 import Unsubscribe from "./components/dashboard/Unsubscribe";
+import LandingPage from "./components/Accueil/LandingPage";
 
 function App() {
   return (
     <div className="App">
       <div className="routeContent">
         <Routes>
+          <Route path="/" element={<LandingPage />} />
           <Route
-            path="/"
+            path="/signup"
             element={
               <div className="contentCenter">
                 <Signup />
