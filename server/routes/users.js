@@ -21,7 +21,7 @@ router.get("/", isAuthenticated, async (req, res, next) => {
       email: user.email,
       avatar: user.avatar,
       birthDate: user.birthDate,
-      receiveBirthdayEmails: user.receiveBirthdayEmails, // Ajoutez cette ligne
+      receiveBirthdayEmails: user.receiveBirthdayEmails,
     };
     res.status(200).json(userToFront);
   } catch (error) {
