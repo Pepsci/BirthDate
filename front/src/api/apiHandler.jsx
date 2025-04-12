@@ -51,6 +51,13 @@ const apiHandler = {
       .catch(errorHandler);
   },
 
+  verifyEmail(token) {
+    return service
+      .post("/verify-email", { token })
+      .then((res) => res.data)
+      .catch(errorHandler);
+  },
+
   requestPasswordReset(email) {
     return service
       .post("/auth/forgot-password", { email })

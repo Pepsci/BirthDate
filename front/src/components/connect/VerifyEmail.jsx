@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
+import apiHandler from "../../api/apiHandler";
 
 function VerifyEmail() {
   const [status, setStatus] = useState("");
@@ -16,28 +17,15 @@ function VerifyEmail() {
     }
 
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_APP_BACKEND_URL}/verify-email`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ token }),
-        }
-      );
-
-      if (response.ok) {
-        setStatus("Adresse email vérifiée avec succès !");
-        setTimeout(() => {
-          navigate("/login");
-        }, 2000);
-      } else {
-        setStatus("Échec de la vérification de l'email.");
-      }
+      // Utiliser votre apiHandler au lieu de fetch
+      const response = await apiHandler.verifyEmail(token);
+      setStatus("Adresse email vérifiée avec succès !");
+      setTimeout(() => {
+        navigate("/login");
+      }, 2000);
     } catch (error) {
       console.error("Erreur lors de la vérification :", error);
-      setStatus("Une erreur est survenue.");
+      setStatus("Échec de la vérification de l'email.");
     }
   };
 

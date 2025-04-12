@@ -2,6 +2,12 @@ const express = require("express");
 const router = express.Router();
 const UserModel = require("../models/user.model");
 
+router.options("/", (req, res) => {
+  res.header("Access-Control-Allow-Methods", "GET,PUT,POST,DELETE,OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  res.sendStatus(200);
+});
+
 router.post("/", async (req, res) => {
   const { token } = req.body; // Utilise req.body pour récupérer le token
   console.log("Token de vérification reçu :", token); // Log du token de vérification
