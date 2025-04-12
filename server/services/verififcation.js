@@ -18,7 +18,7 @@ async function sendVerificationEmail(email, token) {
       Subject: { Data: "Vérification de votre adresse email" },
       Body: {
         Html: {
-          Data: `<p>Merci de vérifier votre adresse email en cliquant sur le lien suivant : <a href="${process.env.FRONTEND_URL}/verify-email?token=${token}">Vérifier Email</a></p>`,
+          Data: `<p>Merci de vérifier votre adresse email en cliquant sur le lien suivant : <a href="${process.env.FRONTEND_URL}/verify-email/?token=${token}">Vérifier Email</a></p>`,
         },
       },
     },

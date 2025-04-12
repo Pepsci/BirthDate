@@ -5,10 +5,11 @@ import "./css/createDate.css";
 
 const CreateDate = ({ onDateAdded }) => {
   const { currentUser } = useAuth();
-
-  const currentUserID = currentUser._id;
+  const currentUserID = currentUser ? currentUser._id : null;
 
   const [dates, setDates] = useState([]);
+  const [filteredDates, setFilteredDates] = useState([]);
+  const [addedDate, setAddedDate] = useState(false);
 
   const getTodayDate = () => {
     const today = new Date();
@@ -21,39 +22,52 @@ const CreateDate = ({ onDateAdded }) => {
     surname: "",
     family: false,
     comment: "",
-    owner: currentUserID,
+    owner: currentUserID || "",
   });
 
-  const [addedDate, setAddedDate] = useState(false);
-  const [filterdDate, setFilteredDates] = useState([]);
+  // Mise à jour de l'owner une fois que currentUser est chargé
+  useEffect(() => {
+    if (currentUser) {
+      setDate((prevDate) => ({
+        ...prevDate,
+        owner: currentUser._id,
+      }));
+    }
+  }, [currentUser]);
 
+  // Récupérer les dates depuis l'API
   useEffect(() => {
     apiHandler
-      .get("date")
+      .get("/date")
       .then((dbResponse) => {
         setDates(dbResponse.data);
       })
-      .catch((e) => {
-        console.error(e);
-      });
+      .catch((e) => console.error(e));
   }, [addedDate]);
 
+  // Filtrer les dates de l'utilisateur connecté
   useEffect(() => {
+    if (!currentUserID) return; // Vérification pour éviter l'erreur
     setFilteredDates(
-      dates.filter((c) => {
-        return c.owner._id === currentUserID;
-      })
+      dates.filter((c) => c.owner && c.owner._id === currentUserID)
     );
-  }, [addedDate, dates, date]);
+  }, [addedDate, dates, currentUserID]);
 
   const handleClick = async (e) => {
     e.preventDefault();
+
+    if (!currentUserID) {
+      console.error("User not authenticated");
+      return;
+    }
+
     try {
       const newDate = await apiHandler.post("/date", date);
-      setAddedDate(true);
-      setDates([...dates, newDate.data]);
+      setDates((prevDates) => [...prevDates, newDate.data]);
+      setFilteredDates((prevDates) => [...prevDates, newDate.data]);
+
+      // Réinitialiser le formulaire après l'ajout
       setDate({
-        ...date,
         date: getTodayDate(),
         name: "",
         surname: "",
@@ -61,7 +75,7 @@ const CreateDate = ({ onDateAdded }) => {
         comment: "",
         owner: currentUserID,
       });
-      setAddedDate(false);
+
       if (onDateAdded) {
         onDateAdded(newDate.data);
       }
@@ -74,33 +88,24 @@ const CreateDate = ({ onDateAdded }) => {
     <div>
       <div className="formAddDAte">
         <form className="form-date" onSubmit={handleClick}>
-          {/* <label htmlFor="name" className="form-date-label">
-          Name
-        </label> */}
           <input
             type="text"
             name="name"
-            id="name"
             className="formAddInput"
             placeholder="Enter a name"
             value={date.name}
             onChange={(e) => setDate({ ...date, name: e.target.value })}
           />
 
-          {/* <label htmlFor="surname" className="form-date-label">
-          Surname
-        </label> */}
           <input
             type="text"
             name="surname"
-            id="surname"
             className="formAddInput"
             placeholder="Enter a surname"
             value={date.surname}
             onChange={(e) => setDate({ ...date, surname: e.target.value })}
           />
 
-          {/* <label htmlFor="date">Date</label> */}
           <input
             className="formAddInput"
             type="date"
@@ -117,7 +122,7 @@ const CreateDate = ({ onDateAdded }) => {
             onChange={(e) => setDate({ ...date, family: e.target.checked })}
           />
 
-          <button>Add</button>
+          <button type="submit">Add</button>
         </form>
       </div>
     </div>
