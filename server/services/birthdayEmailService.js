@@ -41,7 +41,7 @@ async function sendBirthdayEmail() {
           subject: "Rappel: Anniversaire à venir!",
           text: `Rappelez-vous que demain est l'anniversaire de ${dateItem.name} ${dateItem.surname} !\n\nPour vous désabonner des notifications, cliquez sur ce lien : ${unsubscribeLink}`,
           html: `<p>Rappelez-vous que demain est l'anniversaire de ${dateItem.name} ${dateItem.surname} !</p>
-                 <p>Pour vous désabonner des notifications, cliquez sur ce lien : <a href="${unsubscribeLink}">Se désabonner</a></p>`,
+                 <p>Pour vous désabonner des notifications, rendez-vous sur votre profil et décochez la case <b>Notification par e-mails de rappel d'anniversaire</b></p>`,
         };
         transporter.sendMail(mailOptions, function (error, info) {
           if (error) {
