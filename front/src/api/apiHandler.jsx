@@ -58,6 +58,22 @@ const apiHandler = {
       .catch(errorHandler);
   },
 
+  // Pour activer/désactiver les notifications pour une date spécifique
+  toggleDateNotifications(dateId, receiveNotifications) {
+    return service
+      .put(`/date/${dateId}/notifications`, { receiveNotifications })
+      .then((res) => res.data)
+      .catch(errorHandler);
+  },
+
+  // Pour mettre à jour les préférences de timing des notifications pour une date spécifique
+  updateDateNotificationPreferences(dateId, preferences) {
+    return service
+      .put(`/date/${dateId}/notification-preferences`, preferences)
+      .then((res) => res.data)
+      .catch(errorHandler);
+  },
+
   requestPasswordReset(email) {
     return service
       .post("/auth/forgot-password", { email })

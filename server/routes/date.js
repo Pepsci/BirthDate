@@ -164,4 +164,61 @@ router.delete("/:id", async (req, res, next) => {
   }
 });
 
+// Route pour activer/désactiver les notifications pour une date spécifique
+router.put("/:id/notifications", async (req, res, next) => {
+  try {
+    const { receiveNotifications } = req.body;
+    const dateId = req.params.id;
+
+    // Trouver et mettre à jour la date
+    const updatedDate = await dateModel.findByIdAndUpdate(
+      dateId,
+      { receiveNotifications },
+      { new: true } // Retourne le document mis à jour
+    );
+
+    if (!updatedDate) {
+      return res.status(404).json({ message: "Date non trouvée" });
+    }
+
+    res.status(200).json(updatedDate);
+  } catch (error) {
+    console.error(
+      "Erreur lors de la mise à jour des préférences de notification:",
+      error
+    );
+    res.status(500).json({ message: "Erreur serveur", error: error.message });
+  }
+});
+
+// Route pour mettre à jour les préférences de timing des notifications
+router.put("/:id/notification-preferences", async (req, res, next) => {
+  try {
+    const { timings, notifyOnBirthday } = req.body;
+    const dateId = req.params.id;
+
+    // Trouver et mettre à jour la date
+    const updatedDate = await dateModel.findByIdAndUpdate(
+      dateId,
+      {
+        "notificationPreferences.timings": timings,
+        "notificationPreferences.notifyOnBirthday": notifyOnBirthday,
+      },
+      { new: true } // Retourne le document mis à jour
+    );
+
+    if (!updatedDate) {
+      return res.status(404).json({ message: "Date non trouvée" });
+    }
+
+    res.status(200).json(updatedDate);
+  } catch (error) {
+    console.error(
+      "Erreur lors de la mise à jour des préférences de timing:",
+      error
+    );
+    res.status(500).json({ message: "Erreur serveur", error: error.message });
+  }
+});
+
 module.exports = router;
