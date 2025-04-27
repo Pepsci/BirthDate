@@ -74,6 +74,13 @@ const apiHandler = {
       .catch(errorHandler);
   },
 
+  unsubscribe(data) {
+    return service
+      .post("/unsubscribe", data)
+      .then((res) => res.data)
+      .catch(errorHandler);
+  },
+
   requestPasswordReset(email) {
     return service
       .post("/auth/forgot-password", { email })

@@ -10,6 +10,7 @@ import ResetPassword from "./components/connect/ResetPassword";
 import VerifyEmail from "./components/connect/VerifyEmail";
 import UpdateDate from "./components/dashboard/UpdateDate";
 import Unsubscribe from "./components/dashboard/Unsubscribe";
+import UnsubscribeSuccess from "./components/dashboard/UnsubscribeSuccess";
 import LandingPage from "./components/Accueil/LandingPage";
 
 function App() {
@@ -42,7 +43,15 @@ function App() {
               </div>
             }
           />
-          <Route path="/unsubscribe" component={Unsubscribe} />
+          <Route
+            path="/unsubscribe"
+            element={
+              <div className="contentCenter">
+                <Unsubscribe />
+              </div>
+            }
+          />
+          <Route path="/unsubscribe-success" element={<UnsubscribeSuccess />} />
           <Route path="/auth/reset/:token" element={<ResetPassword />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
           <Route element={<PrivateRoute />}>

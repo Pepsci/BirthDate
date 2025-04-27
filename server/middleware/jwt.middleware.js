@@ -20,7 +20,6 @@ function getTokenFromHeaders(req) {
   ) {
     // Get the encoded token string and return it
     const token = req.headers.authorization.split(" ")[1];
-    console.log("📩 Token extrait du header:", token);
     return token;
   }
   console.warn("⚠️ Aucun token trouvé dans les headers");

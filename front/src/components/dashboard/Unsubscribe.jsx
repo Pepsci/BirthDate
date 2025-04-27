@@ -1,40 +1,79 @@
 import React, { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import apiHandler from "../../api/apiHandler";
 
-const Unsubscribe = () => {
-  const [message, setMessage] = useState("Chargement...");
-  const location = useLocation();
+function Unsubscribe() {
+  const [searchParams] = useSearchParams();
+  const [status, setStatus] = useState("loading");
+  const [message, setMessage] = useState("");
+
+  const userId = searchParams.get("userid");
+  const dateId = searchParams.get("dateid");
+  const type = searchParams.get("type") || "all_birthdays";
 
   useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const userId = params.get("userId");
-    console.log("UserID:", userId); // Ajoutez ceci pour vérifier le userId
-
-    if (userId) {
-      apiHandler
-        .get(`/api/unsubscribe?userId=${userId}`)
-        .then((response) => {
-          console.log("Unsubscribe response:", response.data); // Ajoutez ceci pour vérifier la réponse
-          setMessage(response.data);
-        })
-        .catch((error) => {
-          console.error("Erreur lors de la désinscription :", error);
+    async function handleUnsubscribe() {
+      try {
+        if (!userId) {
+          setStatus("error");
           setMessage(
-            "Erreur lors de la désinscription. Veuillez réessayer plus tard."
+            "ID utilisateur manquant. Impossible de traiter votre demande."
           );
+          return;
+        }
+
+        // Appeler l'API pour désabonner l'utilisateur
+        await apiHandler.post("/unsubscribe", {
+          userId,
+          dateId,
+          type,
         });
-    } else {
-      setMessage("Identifiant utilisateur manquant.");
+
+        setStatus("success");
+        setMessage(
+          "Vous avez été désabonné avec succès des notifications d'anniversaire."
+        );
+      } catch (error) {
+        console.error("Erreur lors du désabonnement:", error);
+        setStatus("error");
+        setMessage(
+          "Une erreur est survenue lors du traitement de votre demande."
+        );
+      }
     }
-  }, [location.search]);
+
+    handleUnsubscribe();
+  }, [userId, dateId, type]);
 
   return (
     <div className="unsubscribe-container">
-      <h1>Désinscription</h1>
-      <p>{message}</p>
+      <h1>Gestion des notifications</h1>
+
+      {status === "loading" && <p>Traitement de votre demande en cours...</p>}
+
+      {status === "success" && (
+        <div className="success-message">
+          <h2>Succès !</h2>
+          <p>{message}</p>
+          <p>
+            Vous pouvez désormais fermer cette page ou{" "}
+            <a href="/login">vous connecter</a> pour gérer vos préférences.
+          </p>
+        </div>
+      )}
+
+      {status === "error" && (
+        <div className="error-message">
+          <h2>Erreur</h2>
+          <p>{message}</p>
+          <p>
+            Veuillez <a href="/login">vous connecter</a> pour gérer vos
+            préférences de notification.
+          </p>
+        </div>
+      )}
     </div>
   );
-};
+}
 
 export default Unsubscribe;
