@@ -1,4 +1,4 @@
-// Dans routes/unsubscribe.js
+// routes/unsubscribe.js
 const express = require("express");
 const router = express.Router();
 const userModel = require("../models/user.model");
@@ -37,24 +37,62 @@ router.get("/", async (req, res, next) => {
 
     // Log pour debug
     console.log("Tentative de désabonnement pour l'email:", email);
+    if (dateid) {
+      console.log("Désabonnement spécifique pour la date:", dateid);
+    }
 
     try {
       // Si dateid est spécifié, désabonner d'un anniversaire spécifique
       if (dateid) {
-        await dateModel.findByIdAndUpdate(dateid, {
-          receiveNotifications: false,
-        });
+        const date = await dateModel.findByIdAndUpdate(
+          dateid,
+          { receiveNotifications: false },
+          { new: true }
+        );
+
+        if (!date) {
+          console.log("Date non trouvée:", dateid);
+          throw new Error("Anniversaire non trouvé");
+        }
+
+        console.log(
+          `Notifications désactivées pour l'anniversaire de ${date.name} ${date.surname}`
+        );
+
+        // Renvoyer une page HTML de succès spécifique à cet anniversaire
+        return res.send(`
+          <html>
+            <head>
+              <title>Désabonnement réussi</title>
+              <style>
+                body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 30px; text-align: center; }
+                .success { color: #2ecc71; }
+                .container { border: 1px solid #ddd; border-radius: 8px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+                a { color: #3498db; text-decoration: none; }
+                a:hover { text-decoration: underline; }
+              </style>
+            </head>
+            <body>
+              <div class="container">
+                <h1>Gestion des notifications</h1>
+                <h2 class="success">Succès !</h2>
+                <p>Vous ne recevrez plus de notifications pour l'anniversaire de ${date.name} ${date.surname}.</p>
+                <p>Vous pouvez désormais fermer cette page ou <a href="${process.env.FRONTEND_URL}/login">vous connecter</a> pour gérer vos préférences.</p>
+              </div>
+            </body>
+          </html>
+        `);
       } else {
         // Désabonner de toutes les notifications d'anniversaire
-        // const result = await userModel.findOneAndUpdate(
-        //   { email: email },
-        //   { receiveBirthdayEmails: false },
-        //   { new: true }
-        // );
-
         const userBefore = await userModel.findOne({
           email: { $regex: new RegExp("^" + email + "$", "i") },
         });
+
+        if (!userBefore) {
+          console.log("Utilisateur non trouvé avec cet email:", email);
+          throw new Error("Utilisateur non trouvé");
+        }
+
         console.log(
           "État avant mise à jour:",
           userBefore.receiveBirthdayEmails
@@ -68,44 +106,35 @@ router.get("/", async (req, res, next) => {
         );
 
         console.log("État après mise à jour:", result.receiveBirthdayEmails);
-
-        const updateResult = await userModel.updateOne(
-          { email: { $regex: new RegExp("^" + email + "$", "i") } },
-          { $set: { receiveBirthdayEmails: false } }
-        );
-        console.log("Résultat de la mise à jour:", updateResult);
-
-        if (!result) {
-          console.log("Utilisateur non trouvé avec cet email:", email);
-          throw new Error("Utilisateur non trouvé");
-        }
-
         console.log("Utilisateur désabonné avec succès:", result.email);
       }
 
-      // Renvoyer une page HTML de succès
-      res.send(`
-        <html>
-          <head>
-            <title>Désabonnement réussi</title>
-            <style>
-              body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 30px; text-align: center; }
-              .success { color: #2ecc71; }
-              .container { border: 1px solid #ddd; border-radius: 8px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-              a { color: #3498db; text-decoration: none; }
-              a:hover { text-decoration: underline; }
-            </style>
-          </head>
-          <body>
-            <div class="container">
-              <h1>Gestion des notifications</h1>
-              <h2 class="success">Succès !</h2>
-              <p>Vous avez été désabonné avec succès des notifications d'anniversaire.</p>
-              <p>Vous pouvez désormais fermer cette page ou <a href="${process.env.FRONTEND_URL}/login">vous connecter</a> pour gérer vos préférences.</p>
-            </div>
-          </body>
-        </html>
-      `);
+      // Si on arrive ici, c'est pour le désabonnement général
+      if (!dateid) {
+        // Renvoyer une page HTML de succès
+        res.send(`
+          <html>
+            <head>
+              <title>Désabonnement réussi</title>
+              <style>
+                body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 30px; text-align: center; }
+                .success { color: #2ecc71; }
+                .container { border: 1px solid #ddd; border-radius: 8px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+                a { color: #3498db; text-decoration: none; }
+                a:hover { text-decoration: underline; }
+              </style>
+            </head>
+            <body>
+              <div class="container">
+                <h1>Gestion des notifications</h1>
+                <h2 class="success">Succès !</h2>
+                <p>Vous avez été désabonné avec succès des notifications d'anniversaire.</p>
+                <p>Vous pouvez désormais fermer cette page ou <a href="${process.env.FRONTEND_URL}/login">vous connecter</a> pour gérer vos préférences.</p>
+              </div>
+            </body>
+          </html>
+        `);
+      }
     } catch (error) {
       console.error("Erreur lors du désabonnement:", error);
 

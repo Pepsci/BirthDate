@@ -1,5 +1,5 @@
 // Importation de AWS SDK v3 pour SES
-const { SESClient, SendRawEmailCommand } = require("@aws-sdk/client-ses");
+const { SESClient, SendEmailCommand } = require("@aws-sdk/client-ses");
 const nodemailer = require("nodemailer");
 const dateModel = require("../models/date.model");
 const schedule = require("node-schedule");
@@ -13,21 +13,23 @@ const sesClient = new SESClient({
   },
 });
 
-// Création d'un transporteur Nodemailer personnalisé avec AWS SES v3
+// Création d'un transporteur personnalisé avec une fonction send pour utiliser SES v3
 const transporter = nodemailer.createTransport({
-  // Utiliser la méthode recommandée pour AWS SES v3
+  // Fonction d'envoi personnalisée qui utilise directement l'API SES v3
   send: async (mail, callback) => {
-    const message = await new Promise((resolve, reject) => {
-      mail.message.build((error, message) => {
-        if (error) {
-          reject(error);
-        } else {
-          resolve(message);
-        }
-      });
-    });
-
     try {
+      const message = await new Promise((resolve, reject) => {
+        mail.message.build((error, message) => {
+          if (error) {
+            reject(error);
+          } else {
+            resolve(message);
+          }
+        });
+      });
+
+      // Importer dynamiquement SendRawEmailCommand pour éviter les conflits
+      const { SendRawEmailCommand } = require("@aws-sdk/client-ses");
       const command = new SendRawEmailCommand({
         RawMessage: { Data: message },
       });
@@ -35,19 +37,12 @@ const transporter = nodemailer.createTransport({
       const response = await sesClient.send(command);
       callback(null, response);
     } catch (error) {
+      console.error("Erreur lors de l'envoi de l'email:", error);
       callback(error);
     }
   },
-  // Informations simples d'envoi d'email
-  name: "birthreminder",
-  version: "1.0.0",
-  secure: true,
+  name: "ses-v3-transport",
 });
-
-// Fonction d'envoi d'email avec message personnalisé selon le délai
-async function sendReminderEmail(email, name, surname, daysBeforeBirthday) {
-  let subject, textContent, htmlContent;
-}
 
 // Fonction utilitaire pour vérifier si un anniversaire est à X jours
 function isBirthdayInXDays(birthday, daysFromNow) {
@@ -94,7 +89,7 @@ async function checkAndSendBirthdayEmails() {
             dateItem.name,
             dateItem.surname,
             daysBeforeBirthday,
-            dateItem.owner._id
+            dateItem._id // Passez l'ID de la date ici
           );
           console.log(
             `Email envoyé pour ${dateItem.name} ${dateItem.surname} (${daysBeforeBirthday} jours avant)`
@@ -108,7 +103,8 @@ async function checkAndSendBirthdayEmails() {
           dateItem.owner.email,
           dateItem.name,
           dateItem.surname,
-          0
+          0,
+          dateItem._id // Passez l'ID de la date ici aussi
         );
         console.log(
           `Email envoyé pour ${dateItem.name} ${dateItem.surname} (jour même)`
@@ -128,13 +124,9 @@ async function sendReminderEmail(
   name,
   surname,
   daysBeforeBirthday,
-  userId
+  dateId
 ) {
   let subject, textContent, htmlContent;
-
-  // Création du lien de désabonnement
-  const encodedEmail = encodeURIComponent(email);
-  const unsubscribeLink = `${process.env.BACKEND_URL}/api/unsubscribe?email=${encodedEmail}`;
 
   if (daysBeforeBirthday === 0) {
     subject = `C'est aujourd'hui l'anniversaire de ${name} ${surname} !`;
@@ -150,22 +142,33 @@ async function sendReminderEmail(
     htmlContent = `<p>Rappelez-vous que dans <strong>${daysBeforeBirthday} jours</strong> ce sera l'anniversaire de ${name} ${surname} !</p>`;
   }
 
-  // Ajout du pied de page avec le lien de désabonnement
-  htmlContent += `<p>Pour modifier vos préférences de notification, rendez-vous sur votre profil dans l'application.</p>
-                 <p style="color: #777; font-size: 12px; margin-top: 20px; border-top: 1px solid #ddd; padding-top: 10px;">
-                   Si vous ne souhaitez plus recevoir de notifications d'anniversaire, 
-                   <a href="${unsubscribeLink}">cliquez ici pour vous désabonner</a>.
-                 </p>`;
+  // Création des liens de désabonnement
+  const encodedEmail = encodeURIComponent(email);
+  const unsubscribeAllLink = `${process.env.BACKEND_URL}/api/unsubscribe?email=${encodedEmail}`;
+  const unsubscribeSpecificLink = `${process.env.BACKEND_URL}/api/unsubscribe?email=${encodedEmail}&dateid=${dateId}`;
 
-  // Ajout du lien de désabonnement dans l'en-tête de l'email (pour compatibilité avec les clients email)
+  // Ajout des liens de désabonnement au contenu HTML
+  htmlContent += `
+    <p style="margin-top: 20px; padding-top: 10px; border-top: 1px solid #ddd; color: #777; font-size: 12px;">
+      Options de notification :
+      <ul style="margin-top: 5px;">
+        <li><a href="${unsubscribeSpecificLink}">Ne plus recevoir de notifications pour l'anniversaire de ${name} ${surname}</a></li>
+        <li><a href="${unsubscribeAllLink}">Ne plus recevoir aucune notification d'anniversaire</a></li>
+      </ul>
+    </p>
+  `;
+
+  // Ajout du lien de désabonnement spécifique au texte brut également
+  textContent += `\n\nOptions de notification :\n- Ne plus recevoir de notifications pour l'anniversaire de ${name} ${surname} : ${unsubscribeSpecificLink}\n- Ne plus recevoir aucune notification d'anniversaire : ${unsubscribeAllLink}`;
+
   const mailOptions = {
     from: process.env.EMAIL_BRTHDAY,
     to: email,
     subject: subject,
-    text: textContent + `\n\nPour vous désabonner: ${unsubscribeLink}`,
+    text: textContent,
     html: htmlContent,
     headers: {
-      "List-Unsubscribe": `<${unsubscribeLink}>`,
+      "List-Unsubscribe": `<${unsubscribeAllLink}>`,
       "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
     },
   };
@@ -182,10 +185,6 @@ async function sendReminderEmail(
     });
   });
 }
-
-// Dans votre fichier birthdayEmailService.js
-
-// Votre code existant...
 
 // Planification de la tâche quotidienne
 schedule.scheduleJob("0 0 * * *", checkAndSendBirthdayEmails);
