@@ -23,23 +23,47 @@ const DateList = ({ onEditDate, onViewFriendProfile }) => {
   // Fonction pour trier les dates
   const sortDates = (datesArray) => {
     const today = new Date();
+    const todayDay = today.getDate();
+    const todayMonth = today.getMonth();
+    const todayYear = today.getFullYear();
+
     return datesArray.sort((a, b) => {
-      const nextBirthdayA = new Date(
-        today.getFullYear(),
-        new Date(a.date).getMonth(),
-        new Date(a.date).getDate()
-      );
-      const nextBirthdayB = new Date(
-        today.getFullYear(),
-        new Date(b.date).getMonth(),
-        new Date(b.date).getDate()
-      );
+      const dateA = new Date(a.date);
+      const dateB = new Date(b.date);
 
-      if (nextBirthdayA < today)
-        nextBirthdayA.setFullYear(today.getFullYear() + 1);
-      if (nextBirthdayB < today)
-        nextBirthdayB.setFullYear(today.getFullYear() + 1);
+      const dayA = dateA.getDate();
+      const monthA = dateA.getMonth();
 
+      const dayB = dateB.getDate();
+      const monthB = dateB.getMonth();
+
+      // Vérifier si c'est l'anniversaire aujourd'hui
+      const isTodayA = dayA === todayDay && monthA === todayMonth;
+      const isTodayB = dayB === todayDay && monthB === todayMonth;
+
+      // Si l'un est aujourd'hui et l'autre non, celui d'aujourd'hui vient en premier
+      if (isTodayA && !isTodayB) return -1;
+      if (!isTodayA && isTodayB) return 1;
+
+      // Si les deux sont aujourd'hui, trier par nom
+      if (isTodayA && isTodayB) {
+        return a.name.localeCompare(b.name);
+      }
+
+      // Pour les autres dates, calculer la prochaine occurrence
+      const nextBirthdayA = new Date(todayYear, monthA, dayA);
+      const nextBirthdayB = new Date(todayYear, monthB, dayB);
+
+      // Si la date est déjà passée cette année, on ajoute un an
+      if (nextBirthdayA < today) {
+        nextBirthdayA.setFullYear(todayYear + 1);
+      }
+
+      if (nextBirthdayB < today) {
+        nextBirthdayB.setFullYear(todayYear + 1);
+      }
+
+      // Trier par date la plus proche
       return nextBirthdayA - nextBirthdayB;
     });
   };
