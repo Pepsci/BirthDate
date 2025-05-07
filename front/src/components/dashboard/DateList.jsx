@@ -115,6 +115,8 @@ const DateList = ({ onEditDate, onViewFriendProfile }) => {
       );
     }
     setDates(filteredDates);
+    // Réinitialiser à la première page quand le filtre change
+    setCurrentPage(1);
   };
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
@@ -145,7 +147,11 @@ const DateList = ({ onEditDate, onViewFriendProfile }) => {
         {isFormVisible && <CreateDate onDateAdded={handleDateAdded} />}
       </div>
 
-      {viewMode === "agenda" ? (
+      {dates.length === 0 ? (
+        <div className="no-results">
+          Aucun résultat trouvé pour cette recherche
+        </div>
+      ) : viewMode === "agenda" ? (
         <Agenda dates={dates} />
       ) : (
         <div className="birthDeck">
@@ -189,7 +195,7 @@ const DateList = ({ onEditDate, onViewFriendProfile }) => {
         </div>
       )}
 
-      {viewMode === "card" && (
+      {viewMode === "card" && dates.length > 0 && (
         <div className="pagination">
           <button
             onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
@@ -199,7 +205,11 @@ const DateList = ({ onEditDate, onViewFriendProfile }) => {
           </button>
           {[...Array(Math.ceil(dates.length / itemsPerPage)).keys()].map(
             (number) => (
-              <button key={number + 1} onClick={() => paginate(number + 1)}>
+              <button
+                key={number + 1}
+                onClick={() => paginate(number + 1)}
+                className={currentPage === number + 1 ? "active" : ""}
+              >
                 {number + 1}
               </button>
             )

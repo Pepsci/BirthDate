@@ -20,7 +20,7 @@ const dateSchema = Schema({
     },
     notifyOnBirthday: {
       type: Boolean,
-      default: false,
+      default: true,
     },
   },
   comment: {

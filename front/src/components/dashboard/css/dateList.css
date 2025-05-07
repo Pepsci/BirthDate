@@ -134,6 +134,22 @@
     box-shadow: none;
 }
 
+    .no-results {
+        text-align: center;
+        padding: 20px;
+        font-size: 18px;
+        color: #666;
+        background-color: #f9f9f9;
+        border-radius: 8px;
+         margin: 20px 0;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+    
+    .pagination button.active {
+        background-color: #007bff;
+        color: white;
+    }
+
 @media (max-width: 600px) {
     .birthDeck {
         flex-direction: row;
@@ -199,5 +215,6 @@
         padding: 3px 6px;
         margin: 0 5px;
     }
+    
 }
 

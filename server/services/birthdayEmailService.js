@@ -81,6 +81,20 @@ async function checkAndSendBirthdayEmails() {
       const reminders = preferences.timings || [1]; // Par défaut 1 jour avant
       const notifyOnBirthday = preferences.notifyOnBirthday || false;
 
+      // Vérifier pour le rappel le jour même si activé
+      if (notifyOnBirthday && isBirthdayInXDays(birthday, 0)) {
+        await sendReminderEmail(
+          dateItem.owner.email,
+          dateItem.name,
+          dateItem.surname,
+          0,
+          dateItem._id // Passez l'ID de la date ici aussi
+        );
+        console.log(
+          `Email envoyé pour ${dateItem.name} ${dateItem.surname} (jour même)`
+        );
+      }
+
       // Vérifier pour chaque délai de rappel configuré
       for (const daysBeforeBirthday of reminders) {
         if (isBirthdayInXDays(birthday, daysBeforeBirthday)) {
@@ -95,20 +109,6 @@ async function checkAndSendBirthdayEmails() {
             `Email envoyé pour ${dateItem.name} ${dateItem.surname} (${daysBeforeBirthday} jours avant)`
           );
         }
-      }
-
-      // Vérifier pour le rappel le jour même si activé
-      if (notifyOnBirthday && isBirthdayInXDays(birthday, 0)) {
-        await sendReminderEmail(
-          dateItem.owner.email,
-          dateItem.name,
-          dateItem.surname,
-          0,
-          dateItem._id // Passez l'ID de la date ici aussi
-        );
-        console.log(
-          `Email envoyé pour ${dateItem.name} ${dateItem.surname} (jour même)`
-        );
       }
     }
 

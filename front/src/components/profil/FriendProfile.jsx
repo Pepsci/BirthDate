@@ -182,6 +182,18 @@ const FriendProfile = ({ date, onCancel }) => {
           <div className="notification-timing">
             <h3>Quand souhaitez-vous être notifié ?</h3>
 
+            <div className="timing-option">
+              <label>
+                <input
+                  type="checkbox"
+                  checked={notifyOnBirthday}
+                  onChange={(e) => setNotifyOnBirthday(e.target.checked)}
+                  disabled={isLoading}
+                />
+                Le jour même
+              </label>
+            </div>
+
             {reminderOptions.map((option) => (
               <div key={option.value} className="timing-option">
                 <label>
@@ -195,18 +207,6 @@ const FriendProfile = ({ date, onCancel }) => {
                 </label>
               </div>
             ))}
-
-            <div className="timing-option">
-              <label>
-                <input
-                  type="checkbox"
-                  checked={notifyOnBirthday}
-                  onChange={(e) => setNotifyOnBirthday(e.target.checked)}
-                  disabled={isLoading}
-                />
-                Le jour même
-              </label>
-            </div>
 
             <button
               className="save-preferences-btn"
