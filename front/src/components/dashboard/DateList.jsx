@@ -6,7 +6,7 @@ import Agenda from "./Agenda";
 import DateFilter from "./DateFilter";
 import Countdown from "./Countdown";
 import "./css/dateList.css";
-import "./css/birthCard.css";
+import "./css/birthcard.css";
 
 const ITEMS_PER_PAGE = 10;
 const ITEMS_PER_PAGE_MOBILE = 6;
