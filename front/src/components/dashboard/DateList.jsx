@@ -5,7 +5,6 @@ import CreateDate from "./CreateDate";
 import Agenda from "./Agenda";
 import DateFilter from "./DateFilter";
 import Countdown from "./Countdown";
-import "./css/dateList.css";
 import "./css/birthCard.css";
 
 const ITEMS_PER_PAGE = 10;
