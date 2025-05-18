@@ -1,0 +1,238 @@
+/* css/countdown.css */
+
+/* Variables de couleurs */
+:root {
+    --primary: #4361ee;
+    --primary-light: #4cc9f0;
+    --secondary: #f72585;
+    --secondary-light: #ff9e00;
+    --dark: #3a0ca3;
+    --light: #f8f9fa;
+    --gray: #6c757d;
+    --success: #4ade80;
+    --danger: #ef4444;
+}
+
+/* Animation pour les nombres du compteur */
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.05);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+.birthCardCountdown {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+    gap: 0.5rem;
+}
+
+.daysContainer,
+.hoursContainer,
+.minutesContainer,
+.secondsContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+}
+
+.days,
+.hours,
+.minutes,
+.seconds {
+    font-size: 1.5rem;
+    font-weight: bold;
+    width: 100%;
+    height: 46px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
+    color: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin-bottom: 0.25rem;
+    animation: pulse 1s infinite;
+    animation-delay: 0.1s;
+}
+
+.hours {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--dark) 100%);
+    animation-delay: 0.2s;
+}
+
+.minutes {
+    background: linear-gradient(135deg, var(--secondary-light) 0%, var(--secondary) 100%);
+    animation-delay: 0.3s;
+}
+
+.seconds {
+    background: linear-gradient(135deg, var(--secondary) 0%, var(--dark) 100%);
+    animation-delay: 0.4s;
+}
+
+.daysLabel,
+.hoursLabel,
+.minutesLabel,
+.secondsLabel {
+    font-size: 0.625rem;
+    color: var(--gray);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Animation spéciale pour le dernier jour */
+.lastDay .days {
+    animation: pulse 0.6s infinite;
+    background: linear-gradient(135deg, var(--secondary) 0%, var(--danger) 100%);
+}
+
+/* Pour les appareils mobiles */
+/* Ajouter ces règles spécifiques pour l'affichage mobile */
+@media (max-width: 600px) {
+    .birthDeck {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+        padding: 0.75rem;
+    }
+
+    /* Cartes redessinées pour mobile */
+    .birthCard {
+        border-radius: 12px;
+        display: flex;
+        flex-direction: column;
+        min-height: unset;
+        /* Supprimer la hauteur minimale fixe */
+        padding-bottom: 0;
+    }
+
+    /* En-tête de carte simplifiée */
+    .birthCardName {
+        padding: 0.75rem 0.75rem 0.25rem;
+        text-align: center;
+    }
+
+    .birthCard-name {
+        font-size: 1rem;
+        margin-right: 0;
+        display: block;
+    }
+
+    .birthCardName span:last-child {
+        font-size: 0.85rem;
+    }
+
+    /* Âge plus compact */
+    .birthCardAge {
+        padding: 0;
+        margin-bottom: 0.25rem;
+        text-align: center;
+    }
+
+    .age {
+        font-size: 1.5rem;
+    }
+
+    /* Date de naissance plus petite */
+    .birthCardDate {
+        padding: 0;
+        margin-bottom: 0.5rem;
+        text-align: center;
+        font-size: 0.7rem;
+    }
+
+    /* Compteur simplifié */
+    .birthCardCountdown {
+        margin-bottom: 0.5rem;
+    }
+
+    .days,
+    .hours,
+    .minutes,
+    .seconds {
+        font-size: 0.9rem;
+        height: 32px;
+    }
+
+    .daysLabel,
+    .hoursLabel,
+    .minutesLabel,
+    .secondsLabel {
+        font-size: 0.5rem;
+    }
+
+    /* Boutons plus compacts */
+    .birthCardCenter {
+        padding: 0.75rem;
+        gap: 0.5rem;
+    }
+
+    /* Afficher un seul bouton à la fois */
+    .button-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+    }
+
+    .btn-edit,
+    .btn-view {
+        padding: 0.5rem 0;
+        font-size: 0.75rem;
+        width: 100%;
+    }
+
+    /* Ajuster les badges */
+    .birthCard.today::after,
+    .birthCard.thisWeek::after {
+        font-size: 0.6rem;
+        right: -22px;
+        top: 12px;
+        padding: 0.15rem 1rem;
+    }
+}
+
+/* Style pour le compteur mobile */
+.birthCardCountdown.mobile {
+    gap: 0.25rem;
+}
+
+.birthCardCountdown.mobile .days,
+.birthCardCountdown.mobile .hours,
+.birthCardCountdown.mobile .minutes,
+.birthCardCountdown.mobile .seconds {
+    border-radius: 6px;
+    font-size: 0.85rem;
+    height: 28px;
+}
+
+.birthCardCountdown.mobile .daysLabel,
+.birthCardCountdown.mobile .hoursLabel,
+.birthCardCountdown.mobile .minutesLabel,
+.birthCardCountdown.mobile .secondsLabel {
+    font-size: 0.6rem;
+}
+
+/* Très petits écrans */
+@media (max-width: 380px) {
+    .birthDeck {
+        gap: 0.5rem;
+        padding: 0.5rem;
+    }
+
+    .days,
+    .hours,
+    .minutes,
+    .seconds {
+        font-size: 0.8rem;
+        height: 28px;
+    }
+}
