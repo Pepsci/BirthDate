@@ -1,0 +1,98 @@
+/* --------------------------------
+   Pagination
+-------------------------------- */
+
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 2rem auto;
+    max-width: 1600px;
+    padding: 0 1.5rem;
+}
+
+.pagination button {
+    min-width: 2.5rem;
+    height: 2.5rem;
+    padding: 0 0.75rem;
+    border: 1px solid var(--gray-200);
+    background-color: white;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 500;
+    color: var(--gray-700);
+}
+
+.pagination button:hover:not([disabled]) {
+    background-color: var(--gray-100);
+    color: var(--gray-900);
+}
+
+.pagination button.active {
+    background-color: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+.pagination button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.pagination .ellipsis {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2rem;
+    color: var(--gray-500);
+    font-weight: bold;
+}
+
+/* Styles spécifiques pour les boutons "Précédent" et "Suivant" */
+.pagination button:first-child,
+.pagination button:last-child {
+    min-width: auto;
+    padding: 0 1rem;
+    font-weight: 600;
+}
+
+/* Styles pour mobile */
+@media (max-width: 600px) {
+    .pagination {
+        flex-wrap: wrap;
+        gap: 0.3rem;
+    }
+
+    .pagination button {
+        min-width: 2rem;
+        height: 2rem;
+        padding: 0 0.5rem;
+        font-size: 0.85rem;
+    }
+
+    .pagination button:first-child,
+    .pagination button:last-child {
+        flex: 1;
+    }
+}
+
+/* Mode sombre */
+@media (prefers-color-scheme: dark) {
+    .pagination button {
+        background-color: var(--gray-800);
+        color: var(--gray-300);
+        border-color: var(--gray-700);
+    }
+
+    .pagination button:hover:not([disabled]) {
+        background-color: var(--gray-700);
+    }
+
+    .pagination .ellipsis {
+        color: var(--gray-400);
+    } }

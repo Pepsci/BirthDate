@@ -254,6 +254,7 @@ const DateList = ({ onEditDate, onViewFriendProfile }) => {
       {viewMode === "card" && dates.length > 0 && (
         <div className="pagination">
           <button
+            key="prev"
             onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
             disabled={currentPage === 1}
           >
@@ -265,61 +266,70 @@ const DateList = ({ onEditDate, onViewFriendProfile }) => {
             const maxPagesToShow = window.innerWidth <= 600 ? 3 : 5;
             const pages = [];
 
-            // Toujours afficher la première page
-            if (currentPage > 2) {
+            // Calcul des limites pour afficher les pages
+            let startPage, endPage;
+
+            if (totalPages <= maxPagesToShow) {
+              // Afficher toutes les pages si leur nombre est inférieur à maxPagesToShow
+              startPage = 1;
+              endPage = totalPages;
+            } else if (currentPage <= Math.ceil(maxPagesToShow / 2)) {
+              // Si la page actuelle est près du début
+              startPage = 1;
+              endPage = maxPagesToShow;
+            } else if (
+              currentPage + Math.floor(maxPagesToShow / 2) >=
+              totalPages
+            ) {
+              // Si la page actuelle est près de la fin
+              startPage = totalPages - maxPagesToShow + 1;
+              endPage = totalPages;
+            } else {
+              // Si la page actuelle est au milieu
+              startPage = currentPage - Math.floor(maxPagesToShow / 2);
+              endPage = currentPage + Math.floor(maxPagesToShow / 2);
+            }
+
+            // Générer les boutons de pagination
+            if (startPage > 1) {
               pages.push(
-                <button key={1} onClick={() => paginate(1)}>
+                <button key="page-first" onClick={() => paginate(1)}>
                   1
                 </button>
               );
-
-              // Ajouter des points de suspension si nécessaire
-              if (currentPage > 3) {
+              if (startPage > 2) {
                 pages.push(
-                  <span key="ellipsis1" className="ellipsis">
+                  <span key="ellipsis-start" className="ellipsis">
                     ...
                   </span>
                 );
               }
             }
 
-            // Afficher les pages autour de la page actuelle
-            const startPage = Math.max(
-              1,
-              currentPage - Math.floor(maxPagesToShow / 2)
-            );
-            const endPage = Math.min(
-              totalPages,
-              startPage + maxPagesToShow - 1
-            );
-
+            // Pages centrales
             for (let i = startPage; i <= endPage; i++) {
               pages.push(
                 <button
-                  key={i}
+                  key={`page-${i}`}
                   onClick={() => paginate(i)}
-                  className={`pagination-number-button ${
-                    currentPage === i ? "active" : ""
-                  }`}
+                  className={currentPage === i ? "active" : ""}
                 >
                   {i}
                 </button>
               );
             }
 
-            // Ajouter des points de suspension pour les pages suivantes si nécessaire
-            if (endPage < totalPages - 1) {
-              pages.push(
-                <span key="ellipsis2" className="ellipsis">
-                  ...
-                </span>
-              );
-            }
-
-            // Toujours afficher la dernière page
+            // Dernière page
             if (endPage < totalPages) {
+              if (endPage < totalPages - 1) {
+                pages.push(
+                  <span key="ellipsis-end" className="ellipsis">
+                    ...
+                  </span>
+                );
+              }
               pages.push(
-                <button key={totalPages} onClick={() => paginate(totalPages)}>
+                <button key="page-last" onClick={() => paginate(totalPages)}>
                   {totalPages}
                 </button>
               );
@@ -329,6 +339,7 @@ const DateList = ({ onEditDate, onViewFriendProfile }) => {
           })()}
 
           <button
+            key="next"
             onClick={() =>
               setCurrentPage((prev) =>
                 Math.min(prev + 1, Math.ceil(dates.length / itemsPerPage))

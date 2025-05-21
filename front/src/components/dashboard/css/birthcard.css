@@ -1,16 +1,26 @@
-/* css/birthCard.css */
-
 /* Variables de couleurs */
 :root {
-  --primary: #4361ee;
-  --primary-light: #4cc9f0;
-  --secondary: #f72585;
-  --secondary-light: #ff9e00;
-  --dark: #3a0ca3;
-  --light: #f8f9fa;
-  --gray: #6c757d;
-  --success: #4ade80;
+  /* Palette de gris */
+  --gray-50: #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-300: #d1d5db;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+  --gray-600: #4b5563;
+  --gray-700: #374151;
+  --gray-800: #1f2937;
+  --gray-900: #111827;
+
+  /* Couleur principale pour les âges et accents */
+  --primary: #3b82f6;
+  --primary-light: #60a5fa;
+
+  /* Couleurs de statut */
+  --success: #10b981;
   --danger: #ef4444;
+
+  /* Ombres */
   --card-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
 }
 
@@ -33,7 +43,6 @@
 .birthDeck {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
-  /* 5 colonnes par défaut */
   gap: 1.5rem;
   padding: 1.5rem;
   max-width: 1600px;
@@ -55,6 +64,8 @@
   flex-direction: column;
   min-height: 320px;
   height: 100%;
+  z-index: 0;
+  /* Important pour les bandeaux */
 }
 
 /* Animation avec délai différent */
@@ -83,7 +94,7 @@
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 
-/* Bande colorée en haut de chaque carte */
+/* Bande colorée en haut de chaque carte avec variations de gris */
 .birthCard::before {
   content: '';
   position: absolute;
@@ -91,29 +102,28 @@
   left: 0;
   right: 0;
   height: 6px;
-  background: linear-gradient(to right, var(--primary), var(--primary-light));
+  background: var(--gray-400);
 }
 
-/* Variation des couleurs de la bande */
-.birthCard:nth-child(5n+2)::before {
-  background: linear-gradient(to right, var(--secondary), var(--secondary-light));
+.birthCard:nth-child(4n+1)::before {
+  background: var(--gray-400);
 }
 
-.birthCard:nth-child(5n+3)::before {
-  background: linear-gradient(to right, var(--dark), var(--primary));
+.birthCard:nth-child(4n+2)::before {
+  background: var(--gray-500);
 }
 
-.birthCard:nth-child(5n+4)::before {
-  background: linear-gradient(to right, var(--secondary-light), var(--secondary));
+.birthCard:nth-child(4n+3)::before {
+  background: var(--gray-600);
 }
 
-.birthCard:nth-child(5n+5)::before {
-  background: linear-gradient(to right, var(--primary-light), var(--dark));
+.birthCard:nth-child(4n+4)::before {
+  background: var(--primary);
 }
 
 /* Style pour les cartes de famille */
 .birthCard.family::before {
-  background: linear-gradient(to right, var(--secondary), var(--dark));
+  background: var(--gray-700);
 }
 
 /* --------------------------------
@@ -124,17 +134,19 @@
   display: flex;
   flex-direction: column;
   line-height: 1.2;
+  z-index: 1;
+  /* Assurez-vous que le texte est au-dessus du bandeau */
 }
 
 .birthCard-name {
   font-size: 1.25rem;
-  color: var(--dark);
+  color: var(--gray-800);
   margin-right: 0.5rem;
 }
 
 .birthCardName span:last-child {
   font-size: 1rem;
-  color: var(--gray);
+  color: var(--gray-500);
 }
 
 .birthCardAge {
@@ -145,24 +157,38 @@
 .age {
   font-size: 2rem;
   font-weight: bold;
-  background: linear-gradient(to right, var(--primary), var(--secondary));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
+  color: var(--primary);
   display: inline-block;
+}
+
+/* Variation des couleurs pour les âges */
+.birthCard:nth-child(4n+2) .age {
+  color: var(--primary);
+  opacity: 0.9;
+}
+
+.birthCard:nth-child(4n+3) .age {
+  color: var(--primary);
+  opacity: 0.8;
+}
+
+.birthCard:nth-child(4n+4) .age {
+  color: var(--primary);
+  opacity: 0.7;
 }
 
 .birthCardDate {
   padding: 0 1.25rem;
   margin-bottom: 1rem;
   font-size: 0.875rem;
-  color: var(--gray);
+  color: var(--gray-500);
 }
 
 .birthCardCenter {
   margin-top: auto;
   padding: 1.25rem;
-  border-top: 1px solid rgba(0, 0, 0, 0.05);
-  background-color: rgba(0, 0, 0, 0.01);
+  border-top: 1px solid var(--gray-200);
+  background-color: var(--gray-50);
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -193,9 +219,9 @@
 }
 
 .btn-edit {
-  background-color: var(--light);
-  color: var(--dark);
-  border: 1px solid rgba(0, 0, 0, 0.1);
+  background-color: var(--gray-100);
+  color: var(--gray-700);
+  border: 1px solid var(--gray-200);
 }
 
 .btn-view {
@@ -204,11 +230,11 @@
 }
 
 .btn-edit:hover {
-  background-color: #eee;
+  background-color: var(--gray-200);
 }
 
 .btn-view:hover {
-  background-color: #3852d4;
+  background-color: var(--primary-light);
 }
 
 /* --------------------------------
@@ -219,29 +245,33 @@
   position: absolute;
   top: 20px;
   right: -25px;
-  background-color: var(--secondary);
+  background-color: var(--gray-600);
   color: white;
   padding: 0.25rem 1.5rem;
   font-size: 0.75rem;
   font-weight: bold;
   transform: rotate(45deg);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  z-index: 2;
+  z-index: 1;
+  width: 110px;
+  text-align: center;
 }
 
 .birthCard.thisWeek::after {
   content: "Cette semaine";
   position: absolute;
   top: 20px;
-  right: -28px;
-  background-color: var(--secondary-light);
+  right: -30px;
+  background-color: var(--gray-500);
   color: white;
   padding: 0.25rem 1.5rem;
   font-size: 0.75rem;
   font-weight: bold;
   transform: rotate(45deg);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  z-index: 2;
+  z-index: 1;
+  width: 110px;
+  text-align: center;
 }
 
 /* Icône pour cartes avec cadeaux */
@@ -252,60 +282,98 @@
   left: 10px;
   width: 20px;
   height: 20px;
-  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23f72585"><path d="M22,10V13H2V10H22M19,16H5V19H19V16M19,5H5V8H19V5M22,8H21V5C21,3.9 20.1,3 19,3H5C3.9,3 3,3.9 3,5V8H2C0.9,8 0,8.9 0,10V13C0,14.1 0.9,15 2,15H3V19C3,20.1 3.9,21 5,21H19C20.1,21 21,20.1 21,19V15H22C23.1,15 24,14.1 24,13V10C24,8.9 23.1,8 22,8Z" /></svg>');
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%236b7280"><path d="M22,10V13H2V10H22M19,16H5V19H19V16M19,5H5V8H19V5M22,8H21V5C21,3.9 20.1,3 19,3H5C3.9,3 3,3.9 3,5V8H2C0.9,8 0,8.9 0,10V13C0,14.1 0.9,15 2,15H3V19C3,20.1 3.9,21 5,21H19C20.1,21 21,20.1 21,19V15H22C23.1,15 24,14.1 24,13V10C24,8.9 23.1,8 22,8Z" /></svg>');
   background-size: contain;
   background-repeat: no-repeat;
-  z-index: 1;
+  z-index: 2;
 }
 
-/* --------------------------------
-   Pagination
--------------------------------- */
-.pagination {
-  display: flex;
-  justify-content: center;
-  gap: 0.5rem;
-  margin: 2rem auto;
-  max-width: 1600px;
-  padding: 0 1.5rem;
-}
-
-.pagination button {
-  padding: 0.5rem 1rem;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  background-color: white;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.pagination button:hover:not([disabled]) {
-  background-color: var(--primary-light);
-  color: white;
-}
-
-.pagination button.active {
-  background-color: var(--primary);
-  color: white;
-  border-color: var(--primary);
-}
-
-.pagination button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
 
 /* Message "Aucun résultat" */
 .no-results {
   text-align: center;
   padding: 2rem;
-  background-color: var(--light);
+  background-color: var(--gray-100);
   border-radius: 8px;
-  color: var(--gray);
+  color: var(--gray-600);
   font-size: 1.1rem;
   margin: 2rem auto;
   box-shadow: var(--card-shadow);
   max-width: 600px;
+}
+
+/* --------------------------------
+   Agenda view (styles de base)
+-------------------------------- */
+
+/* --------------------------------
+   Header et filtres
+-------------------------------- */
+.dateListheaderConter {
+  padding: 1.5rem;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+.titleFont {
+  font-size: 1.75rem;
+  color: var(--gray-800);
+  margin-bottom: 1.5rem;
+}
+
+.btnSwitch {
+  padding: 0.65rem 1.25rem;
+  background-color: var(--gray-100);
+  color: var(--gray-700);
+  border: 1px solid var(--gray-200);
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+  margin-right: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.btnSwitch:hover {
+  background-color: var(--gray-200);
+}
+
+.btnSwitch.active {
+  background-color: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+/* --------------------------------
+   Countdown (composant de décompte)
+-------------------------------- */
+/* Styles pour le composant Countdown */
+.countdown-container {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 0.5rem;
+}
+
+.countdown-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 8px;
+  background-color: var(--primary);
+  color: white;
+  font-weight: bold;
+  font-size: 1.25rem;
+}
+
+.countdown-item span {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  margin-top: 0.1rem;
 }
 
 /* --------------------------------
@@ -361,7 +429,6 @@
     min-height: unset;
     padding: 0.75rem;
     border-radius: 12px;
-    z-index: 0;
   }
 
   /* Placement des éléments dans la grille */
@@ -394,7 +461,7 @@
     grid-area: actions;
     padding: 0.5rem 0 0;
     margin-top: 0.4rem;
-    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    border-top: 1px solid var(--gray-200);
   }
 
   /* Ajustements du texte pour mobile */
@@ -428,9 +495,11 @@
   .birthCard.today::after,
   .birthCard.thisWeek::after {
     font-size: 0.65rem;
-    right: -26px;
+    right: -36px;
+    /* Ajusté pour éviter le débordement */
     top: 12px;
     padding: 0.2rem 1rem;
+    width: 100px;
   }
 
   /* Pagination mobile */
@@ -442,6 +511,11 @@
   .pagination button {
     padding: 0.4rem 0.7rem;
     font-size: 0.8rem;
+  }
+
+  /* Masquer l'ellipsis sur mobile */
+  .pagination .ellipsis {
+    display: none;
   }
 }
 
@@ -458,24 +532,23 @@
     padding: 0.45rem 0;
   }
 
-  /* Masquer certains boutons de pagination pour libérer de l'espace */
-  .pagination button:not(.active):not(:first-child):not(:last-child) {
-    display: none;
-  }
+  
 
-  /* Masquer ou ajuster les badges pour éviter qu'ils dépassent */
+  /* Ajuster les badges pour éviter qu'ils dépassent */
   .birthCard.today::after,
   .birthCard.thisWeek::after {
-    right: -30px;
+    right: -40px;
     font-size: 0.6rem;
     padding: 0.15rem 0.8rem;
+    width: 90px;
   }
 }
 
 /* Mode sombre */
 @media (prefers-color-scheme: dark) {
   .birthCard {
-    background: #1f2937;
+    background: var(--gray-800);
+    border: 1px solid var(--gray-700);
   }
 
   .birthCard-name {
@@ -483,30 +556,44 @@
   }
 
   .birthCardName span:last-child {
-    color: #d1d5db;
+    color: var(--gray-300);
   }
 
   .birthCardDate {
-    color: #9ca3af;
+    color: var(--gray-400);
+  }
+
+  .birthCardCenter {
+    border-top: 1px solid var(--gray-700);
+    background-color: var(--gray-900);
   }
 
   .btn-edit {
-    background-color: #374151;
+    background-color: var(--gray-700);
     color: white;
-    border-color: #4b5563;
+    border-color: var(--gray-600);
   }
 
   .btn-edit:hover {
-    background-color: #4b5563;
+    background-color: var(--gray-600);
+  }
+
+  .btnSwitch {
+    background-color: var(--gray-700);
+    color: white;
+    border-color: var(--gray-600);
+  }
+
+  .btnSwitch:hover {
+    background-color: var(--gray-600);
   }
 
   .no-results {
-    background-color: #1f2937;
-    color: #d1d5db;
+    background-color: var(--gray-800);
+    color: var(--gray-300);
   }
 
-  .pagination button {
-    background-color: #1f2937;
-    color: #d1d5db;
+  .titleFont {
+    color: var(--gray-100);
   }
 }
