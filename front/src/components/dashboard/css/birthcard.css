@@ -302,9 +302,6 @@
   max-width: 600px;
 }
 
-/* --------------------------------
-   Agenda view (styles de base)
--------------------------------- */
 
 /* --------------------------------
    Header et filtres
@@ -430,6 +427,11 @@
     padding: 0.75rem;
     border-radius: 12px;
   }
+    .birthCardCenter{
+      width: 107%;
+      margin: -0.8rem;
+      margin-right: 1rem;
+    }
 
   /* Placement des éléments dans la grille */
   .birthCardName {
@@ -459,7 +461,7 @@
 
   .birthCardCenter {
     grid-area: actions;
-    padding: 0.5rem 0 0;
+    padding: 0.5rem  0.5rem 0.5rem;
     margin-top: 0.4rem;
     border-top: 1px solid var(--gray-200);
   }
