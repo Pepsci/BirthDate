@@ -251,7 +251,7 @@ const DateList = ({ onEditDate, onViewFriendProfile }) => {
                 </div>
                 <div className="birthCardAge">
                   <span className="age">
-                    {calculateCurrentAge(date.date)} Ans
+                    {calculateCurrentAge(date.date)} <span>Ans</span>
                   </span>
                 </div>
                 <div className="birthCardDate">
