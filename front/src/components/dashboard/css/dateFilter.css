@@ -1,0 +1,35 @@
+.date-filter{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+    gap: 1rem;
+}
+
+.date-filter div, input{
+    margin: 0.2rem;
+}
+
+.title-filter{
+    font-size: 1.5rem;
+    color: white;
+    font-family: 'Roboto', sans-serif;
+}
+
+.inputFilter{
+    background: transparent;
+    border: transparent;
+    margin: 0.5rem;
+    border-bottom: 1px solid grey;
+}
+
+.inputFilter:focus{
+    outline: none;
+}
+
+.inputFilter::placeholder{
+color: white;
+}

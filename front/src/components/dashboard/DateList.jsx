@@ -17,18 +17,18 @@ const DateList = ({ onEditDate, onViewFriendProfile }) => {
   const [allDates, setAllDates] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [isFormVisible, setIsFormVisible] = useState(false);
+  const [isFilterVisible, setIsFilterVisible] = useState(false); // Nouvel état pour le filtre
   const [itemsPerPage, setItemsPerPage] = useState(
     window.innerWidth <= 600 ? ITEMS_PER_PAGE_MOBILE : ITEMS_PER_PAGE
   );
 
-  // Fonction pour calculer l'âge actuel
+  // Vos fonctions existantes...
   const calculateCurrentAge = (birthDate) => {
     const today = new Date();
     const birth = new Date(birthDate);
 
     let age = today.getFullYear() - birth.getFullYear();
 
-    // Si l'anniversaire de cette année n'est pas encore passé, on retire 1
     if (
       today.getMonth() < birth.getMonth() ||
       (today.getMonth() === birth.getMonth() &&
@@ -40,7 +40,6 @@ const DateList = ({ onEditDate, onViewFriendProfile }) => {
     return age;
   };
 
-  // Fonction pour trier les dates
   const sortDates = (datesArray) => {
     const today = new Date();
     const todayDay = today.getDate();
@@ -57,24 +56,19 @@ const DateList = ({ onEditDate, onViewFriendProfile }) => {
       const dayB = dateB.getDate();
       const monthB = dateB.getMonth();
 
-      // Vérifier si c'est l'anniversaire aujourd'hui
       const isTodayA = dayA === todayDay && monthA === todayMonth;
       const isTodayB = dayB === todayDay && monthB === todayMonth;
 
-      // Si l'un est aujourd'hui et l'autre non, celui d'aujourd'hui vient en premier
       if (isTodayA && !isTodayB) return -1;
       if (!isTodayA && isTodayB) return 1;
 
-      // Si les deux sont aujourd'hui, trier par nom
       if (isTodayA && isTodayB) {
         return a.name.localeCompare(b.name);
       }
 
-      // Pour les autres dates, calculer la prochaine occurrence
       const nextBirthdayA = new Date(todayYear, monthA, dayA);
       const nextBirthdayB = new Date(todayYear, monthB, dayB);
 
-      // Si la date est déjà passée cette année, on ajoute un an
       if (nextBirthdayA < today) {
         nextBirthdayA.setFullYear(todayYear + 1);
       }
@@ -83,7 +77,6 @@ const DateList = ({ onEditDate, onViewFriendProfile }) => {
         nextBirthdayB.setFullYear(todayYear + 1);
       }
 
-      // Trier par date la plus proche
       return nextBirthdayA - nextBirthdayB;
     });
   };
@@ -111,12 +104,29 @@ const DateList = ({ onEditDate, onViewFriendProfile }) => {
     return () => window.removeEventListener("resize", handleResize);
   }, [itemsPerPage]);
 
-  const toggleFormVisibility = () => setIsFormVisible(!isFormVisible);
+  // Gestion des boutons
+  const toggleFormVisibility = () => {
+    setIsFormVisible(!isFormVisible);
+    // Fermer le filtre si on ouvre le formulaire
+    if (!isFormVisible) {
+      setIsFilterVisible(false);
+    }
+  };
+
+  const toggleFilterVisibility = () => {
+    setIsFilterVisible(!isFilterVisible);
+    // Fermer le formulaire si on ouvre le filtre
+    if (!isFilterVisible) {
+      setIsFormVisible(false);
+    }
+  };
 
   const handleDateAdded = (newDate) => {
     const updatedDates = sortDates([...allDates, newDate]);
     setAllDates(updatedDates);
     setDates(updatedDates);
+    // Optionnel : fermer le formulaire après ajout
+    setIsFormVisible(false);
   };
 
   const handleFilterChange = (newName, newSurname, familyFilter) => {
@@ -135,7 +145,6 @@ const DateList = ({ onEditDate, onViewFriendProfile }) => {
       );
     }
     setDates(filteredDates);
-    // Réinitialiser à la première page quand le filtre change
     setCurrentPage(1);
   };
 
@@ -150,23 +159,49 @@ const DateList = ({ onEditDate, onViewFriendProfile }) => {
 
   return (
     <div className="dateList">
-      <div className="dateListheaderConter">
+      <div className="dateListHeader">
         <h1 className="titleFont">Vos BirthDate</h1>
-        <DateFilter onFilterChange={handleFilterChange} />
-        <button className="btnSwitch" onClick={toggleViewMode}>
-          {viewMode === "card"
-            ? "Passer en mode agenda"
-            : "Passer en mode carte"}
-        </button>
-        <button
-          className={`btnSwitch ${isFormVisible ? "active" : ""}`}
-          onClick={toggleFormVisibility}
-        >
-          {isFormVisible ? "Cacher le formulaire" : "Ajoutez une date"}
-        </button>
-        {isFormVisible && <CreateDate onDateAdded={handleDateAdded} />}
+
+        {/* Boutons */}
+        <div className="dateListHeader-btn">
+          <button
+            className={`btnSwitch ${isFilterVisible ? "active" : ""}`}
+            onClick={toggleFilterVisibility}
+          >
+            Filtre
+          </button>
+
+          <button className="btnSwitch" onClick={toggleViewMode}>
+            {viewMode === "card" ? "Agenda" : "Carte"}
+          </button>
+
+          <button
+            className={`btnSwitch ${isFormVisible ? "active" : ""}`}
+            onClick={toggleFormVisibility}
+          >
+            {isFormVisible ? "Cacher le formulaire" : "Ajouter une date"}
+          </button>
+        </div>
+
+        {/* Zone des formulaires sous les boutons */}
+        <div className="forms-container">
+          {/* Formulaire de filtre */}
+          {isFilterVisible && (
+            <div className="form-section filter-section">
+              <DateFilter onFilterChange={handleFilterChange} />
+            </div>
+          )}
+
+          {/* Formulaire d'ajout de date */}
+          {isFormVisible && (
+            <div className="form-section add-date-section">
+              <CreateDate onDateAdded={handleDateAdded} />
+            </div>
+          )}
+        </div>
       </div>
 
+      {/* Contenu principal */}
       {dates.length === 0 ? (
         <div className="no-results">
           Aucun résultat trouvé pour cette recherche
@@ -176,7 +211,6 @@ const DateList = ({ onEditDate, onViewFriendProfile }) => {
       ) : (
         <div className="birthDeck">
           {currentItems.map((date) => {
-            // Calculer si c'est un anniversaire aujourd'hui ou cette semaine
             const today = new Date();
             const birthDate = new Date(date.date);
             const nextBirthday = new Date(
@@ -197,7 +231,6 @@ const DateList = ({ onEditDate, onViewFriendProfile }) => {
             const hasGifts = date.gifts && date.gifts.length > 0;
             const isFamily = date.family === true;
 
-            // Ajouter une classe CSS conditionnelle pour la famille, sans le badge
             const cardClassName = `
               birthCard titleFont 
               ${isToday ? "today" : ""} 
@@ -251,6 +284,7 @@ const DateList = ({ onEditDate, onViewFriendProfile }) => {
         </div>
       )}
 
+      {/* Pagination existante */}
       {viewMode === "card" && dates.length > 0 && (
         <div className="pagination">
           <button
@@ -266,37 +300,37 @@ const DateList = ({ onEditDate, onViewFriendProfile }) => {
             const maxPagesToShow = window.innerWidth <= 600 ? 3 : 5;
             const pages = [];
 
-            // Calcul des limites pour afficher les pages
             let startPage, endPage;
 
             if (totalPages <= maxPagesToShow) {
-              // Afficher toutes les pages si leur nombre est inférieur à maxPagesToShow
               startPage = 1;
               endPage = totalPages;
             } else if (currentPage <= Math.ceil(maxPagesToShow / 2)) {
-              // Si la page actuelle est près du début
               startPage = 1;
               endPage = maxPagesToShow;
             } else if (
               currentPage + Math.floor(maxPagesToShow / 2) >=
               totalPages
             ) {
-              // Si la page actuelle est près de la fin
               startPage = totalPages - maxPagesToShow + 1;
               endPage = totalPages;
             } else {
-              // Si la page actuelle est au milieu
               startPage = currentPage - Math.floor(maxPagesToShow / 2);
               endPage = currentPage + Math.floor(maxPagesToShow / 2);
             }
 
-            // Générer les boutons de pagination
             if (startPage > 1) {
               pages.push(
-                <button key="page-first" onClick={() => paginate(1)}>
+                <button
+                  key="page-1"
+                  onClick={() => paginate(1)}
+                  className={currentPage === 1 ? "active" : ""}
+                  data-page="1"
+                >
                   1
                 </button>
               );
+
               if (startPage > 2) {
                 pages.push(
                   <span key="ellipsis-start" className="ellipsis">
@@ -306,20 +340,19 @@ const DateList = ({ onEditDate, onViewFriendProfile }) => {
               }
             }
 
-            // Pages centrales
             for (let i = startPage; i <= endPage; i++) {
               pages.push(
                 <button
                   key={`page-${i}`}
                   onClick={() => paginate(i)}
                   className={currentPage === i ? "active" : ""}
+                  data-page={i}
                 >
                   {i}
                 </button>
               );
             }
 
-            // Dernière page
             if (endPage < totalPages) {
               if (endPage < totalPages - 1) {
                 pages.push(
@@ -328,8 +361,14 @@ const DateList = ({ onEditDate, onViewFriendProfile }) => {
                   </span>
                 );
               }
+
               pages.push(
-                <button key="page-last" onClick={() => paginate(totalPages)}>
+                <button
+                  key={`page-${totalPages}`}
+                  onClick={() => paginate(totalPages)}
+                  className={currentPage === totalPages ? "active" : ""}
+                  data-page={totalPages}
+                >
                   {totalPages}
                 </button>
               );

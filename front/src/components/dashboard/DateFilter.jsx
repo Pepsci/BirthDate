@@ -1,10 +1,9 @@
 import React, { useState } from "react";
-
+import "./css/DateFilter.css";
 const DateFilter = ({ onFilterChange }) => {
   const [nameSearch, setNameSearch] = useState("");
   const [surnameSearch, setSurnameSearch] = useState("");
   const [isFamilyFilterActive, setIsFamilyFilterActive] = useState(false);
-  const [isFilterVisible, setIsFilterVisible] = useState(false);
 
   const handleFilterChange = (newName, newSurname, familyFilter) => {
     onFilterChange(newName, newSurname, familyFilter);
@@ -30,48 +29,47 @@ const DateFilter = ({ onFilterChange }) => {
     });
   };
 
-  const toggleFilterVisibility = () => {
-    if (isFilterVisible) {
-      // Réinitialiser les champs de recherche et le filtre famille
-      setNameSearch("");
-      setSurnameSearch("");
-      setIsFamilyFilterActive(false);
-      handleFilterChange("", "", false);
-    }
-    setIsFilterVisible(!isFilterVisible);
+  const clearFilters = () => {
+    setNameSearch("");
+    setSurnameSearch("");
+    setIsFamilyFilterActive(false);
+    handleFilterChange("", "", false);
   };
 
+  // Suppression du bouton et de isFilterVisible
+  // Affichage direct des options de filtre
   return (
     <div className="date-filter">
-      <button className="btnSwitch" onClick={toggleFilterVisibility}>
-        {isFilterVisible ? "Masquer le filtre" : "Filtrer"}
-      </button>
-      {isFilterVisible && (
-        <div className="filter-options">
-          <input
-            type="text"
-            placeholder="Rechercher par prénom..."
-            value={nameSearch}
-            onChange={handleNameChange}
-            className="formAddInput"
-          />
-          <input
-            type="text"
-            placeholder="Rechercher par nom..."
-            value={surnameSearch}
-            onChange={handleSurnameChange}
-            className="formAddInput"
-          />
+      <h3 className="title-filter">Filtrer les anniversaires</h3>
+      <div className="filter-options">
+        <input
+          type="text"
+          placeholder="Rechercher par prénom..."
+          value={nameSearch}
+          onChange={handleNameChange}
+          className="inputFilter"
+        />
+        <input
+          type="text"
+          placeholder="Rechercher par nom..."
+          value={surnameSearch}
+          onChange={handleSurnameChange}
+          className="inputFilter"
+        />
+        <div className="btn-filter">
           <button
-            className={`btn ${isFamilyFilterActive ? "active" : ""}`}
+            className={`btn ${isFamilyFilterActive ? "active" : ""}, btnSwitch`}
             onClick={toggleFamilyFilter}
           >
             {isFamilyFilterActive
               ? "Afficher toutes les dates"
               : "Famille uniquement"}
           </button>
+          <button className="btn btn-clear btnSwitch" onClick={clearFilters}>
+            Effacer les filtres
+          </button>
         </div>
-      )}
+      </div>
     </div>
   );
 };

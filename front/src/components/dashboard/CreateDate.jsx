@@ -87,6 +87,8 @@ const CreateDate = ({ onDateAdded }) => {
   return (
     <div>
       <div className="formAddDAte">
+        <h3 className="title-filter">Ajouter une date d'anniversaires</h3>
+
         <form className="form-date" onSubmit={handleClick}>
           <input
             type="text"
