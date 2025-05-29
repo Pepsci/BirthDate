@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import "./css/DateFilter.css";
+import "./css/dateFilter.css";
 const DateFilter = ({ onFilterChange }) => {
   const [nameSearch, setNameSearch] = useState("");
   const [surnameSearch, setSurnameSearch] = useState("");
