@@ -33,3 +33,12 @@
 .inputFilter::placeholder{
 color: white;
 }
+
+@media (max-width: 600px) {
+    
+    .btn-filter{
+        width: 180px;
+        padding: 0.65rem 1rem;
+    }
+}
+    

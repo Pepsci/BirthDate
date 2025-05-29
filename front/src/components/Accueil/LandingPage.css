@@ -1,23 +1,24 @@
 .landing-container {
     text-align: center;
-    padding: 50px;
     background-color: #f9f9f9;
     height: 100vh;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
+    background-color: var(--gray-900);
 }
 
 .landing-container h1 {
     font-size: 3rem;
     margin-bottom: 20px;
+    color: #fff;
 }
 
 .landing-container p {
     font-size: 1.5rem;
     margin-bottom: 30px;
-    color: #555;
+    color: #b8b8b8;
 }
 
 .btn-start {

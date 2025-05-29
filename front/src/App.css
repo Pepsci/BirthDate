@@ -31,10 +31,6 @@
   z-index: 1;
 }
 
-.routeContent{
-  margin-top: 60px;
-}
-
 .contentCenter{
   display: flex;
   justify-content: center;
@@ -62,5 +58,6 @@
 .avatar{
   height: 60px;
 }
+
 
 }

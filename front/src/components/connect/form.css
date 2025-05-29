@@ -9,7 +9,7 @@
 .form-title-font{
     font-family: 'Roboto', sans-serif;
     font-size: 32px;
-    color: #4a4a4a;
+    color: #acacac;
     text-align: center;
 }
 
@@ -35,9 +35,14 @@
     border: transparent;
     margin: 1rem;
     border-bottom: 1px solid grey;
+    color: #acacac  ;
 }
 .form-input:focus{
     outline: none;
+}
+
+.form-input::placeholder{
+    color: grey;
 }
 
 .peel{
@@ -59,8 +64,8 @@
     width: 90%;
     display: block;
     bottom: 0;
-    -webkit-box-shadow: -8px 8px 7px 2px #c9c9c9;
-    -moz-box-shadow: -8px 8px 7px 2px #c9c9c9;
+    /* -webkit-box-shadow: -8px 8px 7px 2px #c9c9c9;
+    -moz-box-shadow: -8px 8px 7px 2px #c9c9c9; */
     z-index: 1;
 }
 
