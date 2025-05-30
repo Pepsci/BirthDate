@@ -7,7 +7,7 @@ import FriendProfile from "./profil/FriendProfile";
 import "./dashboard/css/homePage.css";
 
 const Home = () => {
-  const { logOut, isLoggedIn, currentUser } = useContext(AuthContext);
+  const { isLoggedIn, currentUser } = useContext(AuthContext);
   const [date] = useState([]);
   const [showProfile, setShowProfile] = useState(false);
   const [editingDate, setEditingDate] = useState(null);
@@ -44,18 +44,17 @@ const Home = () => {
         {isLoggedIn && (
           <div className="homePageUser">
             <div className="homePageCurrentUser">
-              <img
-                src={`https://api.dicebear.com/8.x/bottts/svg?seed=${currentUser.surname}`}
-                alt="avatar"
-                className="avatar"
-              />
               <button onClick={handleShowProfile} className="btnProfile">
-                {currentUser && currentUser.name}
+                <div className="btn-currentName">
+                  {currentUser && currentUser.name}
+                  <img
+                    src={`https://api.dicebear.com/8.x/bottts/svg?seed=${currentUser.surname}`}
+                    alt="avatar"
+                    className="avatar"
+                  />
+                </div>
               </button>
             </div>
-            <button className="bntLogout" onClick={logOut}>
-              LogOut
-            </button>
           </div>
         )}
       </div>

@@ -44,9 +44,14 @@ img{
 }
 
 .homePageCurrentUser {
-    display: flex;
+    
+}
+
+.btn-currentName{
+   display: flex;
+    flex-direction: row;
     align-items: center;
-    margin-right: 10px;
+    gap: 0.5rem;
 }
 
 .avatar {
@@ -56,28 +61,16 @@ img{
     margin-right: 10px;
 }
 
-.bntLogout{
-    padding: 5px 10px;
-        border: none;
-        border-radius: 5px;
-        background-color: #007bff;
-        color: #fff;
-        cursor: pointer;
-        margin-right: 10px;
-}
 
-.btnLogout .btnProfile:hover {
-    background-color: #0056b3;
-}
 
 .btnProfile{
-    padding: 5px 10px;
         border: none;
         border-radius: 5px;
         background-color: #007bff;
         color: #fff;
         cursor: pointer;
         margin-right: 2px;
+        background-color: var(--primary);
 }
 
 .btnBackToDateList{

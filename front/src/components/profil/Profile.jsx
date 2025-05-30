@@ -1,4 +1,5 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useContext } from "react";
+import { AuthContext } from "../../context/auth.context";
 import apiHandler from "../../api/apiHandler";
 import useAuth from "../../context/useAuth";
 import "./profile.css";
@@ -6,6 +7,7 @@ import PasswordInput from "../connect/PasswordInput";
 import Countdown from "../dashboard/Countdown";
 
 const ProfilDetails = () => {
+  const { logOut } = useContext(AuthContext);
   const { currentUser, isLoggedin, removeUser, storeToken, authenticateUser } =
     useAuth();
 
@@ -296,6 +298,11 @@ const ProfilDetails = () => {
           </div>
         </div>
       )}
+      <div>
+        <button className="bntLogout" onClick={logOut}>
+          LogOut
+        </button>
+      </div>
     </div>
   );
 };

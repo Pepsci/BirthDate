@@ -35,3 +35,20 @@
         transition: background-color 0.3s ease;
         
 }
+
+.bntLogout {
+        margin-top: 2rem;
+        padding: 10px 20px;
+        box-sizing: border-box;
+        border: none;
+        border-radius: 4px;
+        background-color: #2196f3;
+        color: white;
+        font-size: 16px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+}
+
+.btnLogout .btnProfile:hover {
+    background-color: #0056b3;
+}
