@@ -32,3 +32,17 @@ outline: none;
     border: transparent;
     border-bottom: 1px solid grey;
 }
+
+#family{
+    color: aliceblue;
+
+}
+
+.form-date-labelDate{
+    font-size: 0.8em;
+    color: white;
+}
+
+.form-date-input{
+    color: white;
+}

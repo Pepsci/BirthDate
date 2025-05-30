@@ -88,43 +88,48 @@ const CreateDate = ({ onDateAdded }) => {
     <div>
       <div className="formAddDAte">
         <h3 className="title-filter">Ajouter une date d'anniversaires</h3>
-
         <form className="form-date" onSubmit={handleClick}>
-          <input
-            type="text"
-            name="name"
-            className="formAddInput"
-            placeholder="Enter a name"
-            value={date.name}
-            onChange={(e) => setDate({ ...date, name: e.target.value })}
-          />
+          <div className="form-date-input1">
+            <input
+              type="text"
+              name="name"
+              className="form-date-input formAddInput"
+              placeholder="Enter a name"
+              value={date.name}
+              onChange={(e) => setDate({ ...date, name: e.target.value })}
+            />
 
-          <input
-            type="text"
-            name="surname"
-            className="formAddInput"
-            placeholder="Enter a surname"
-            value={date.surname}
-            onChange={(e) => setDate({ ...date, surname: e.target.value })}
-          />
-
-          <input
-            className="formAddInput"
-            type="date"
-            name="date"
-            value={date.date}
-            onChange={(e) => setDate({ ...date, date: e.target.value })}
-          />
-
-          <label htmlFor="family">Family</label>
-          <input
-            type="checkbox"
-            id="family"
-            checked={date.family}
-            onChange={(e) => setDate({ ...date, family: e.target.checked })}
-          />
-
-          <button type="submit">Add</button>
+            <input
+              type="text"
+              name="surname"
+              className="form-date-input formAddInput"
+              placeholder="Enter a surname"
+              value={date.surname}
+              onChange={(e) => setDate({ ...date, surname: e.target.value })}
+            />
+          </div>
+          <div className="form-date-input2">
+            <input
+              className="form-date-input formAddInput"
+              type="date"
+              name="date"
+              value={date.date}
+              onChange={(e) => setDate({ ...date, date: e.target.value })}
+            />
+            <label className="form-date-labelDate" htmlFor="family">
+              Family
+            </label>
+            <input
+              className="form-date-input formAddInput"
+              type="checkbox"
+              id="family"
+              checked={date.family}
+              onChange={(e) => setDate({ ...date, family: e.target.checked })}
+            />
+          </div>
+          <button className="btnSwitch" type="submit">
+            Ajouter
+          </button>
         </form>
       </div>
     </div>
