@@ -372,7 +372,7 @@
   .birthDeck {
     grid-template-columns: repeat(2, 1fr);
     gap: 0.8rem;
-    row-gap: 2rem;
+    row-gap: 2.5rem;
     padding: 0.8rem;
   }
 
@@ -443,6 +443,7 @@
       font-size: 1.5rem;
       display: flex;
   }
+
 
   /* Ajustements des boutons pour mobile */
   .button-group {

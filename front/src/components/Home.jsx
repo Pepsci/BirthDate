@@ -40,7 +40,7 @@ const Home = () => {
   return (
     <div className="homePageRoot">
       <div className="headerApp homePageHeader">
-        <h1 className="titleFont titleFontSize">BirthDate</h1>
+        <h1 className="homeTiltle titleFont titleFontSize">BirthReminder</h1>
         {isLoggedIn && (
           <div className="homePageUser">
             <div className="homePageCurrentUser">

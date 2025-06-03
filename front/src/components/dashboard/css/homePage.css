@@ -43,15 +43,15 @@ img{
     background-color: rgb(255, 255, 255);
 }
 
-.homePageCurrentUser {
-    
-}
 
 .btn-currentName{
-   display: flex;
+    display: flex;
     flex-direction: row;
     align-items: center;
     gap: 0.5rem;
+    font-size: 3ch;
+    padding-left: 1rem;
+    font-family: 'Roboto', sans-serif;
 }
 
 .avatar {
@@ -66,11 +66,11 @@ img{
 .btnProfile{
         border: none;
         border-radius: 5px;
-        background-color: #007bff;
-        color: #fff;
         cursor: pointer;
-        margin-right: 2px;
-        background-color: var(--primary);
+        margin-right: 1rem;
+        background-color: var(--gray-700);
+        color: white;
+        border-color: var(--gray-600);
 }
 
 .btnBackToDateList{
@@ -81,5 +81,9 @@ img{
 
 .homeTest{
     height: 80px;
+}
+
+.titleFontSize{
+    font-size: 2.2em !important;
 }
 }
