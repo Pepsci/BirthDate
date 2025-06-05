@@ -11,10 +11,13 @@ const Home = () => {
   const [date] = useState([]);
   const [showProfile, setShowProfile] = useState(false);
   const [editingDate, setEditingDate] = useState(null);
-  const [viewingFriendProfile, setViewingFriendProfile] = useState(null); // Nouvel état pour gérer l'affichage du profil d'ami
+  const [viewingFriendProfile, setViewingFriendProfile] = useState(null);
 
   const handleShowProfile = () => {
+    // Quand on clique sur son profil, on ferme tout le reste
     setShowProfile(true);
+    setViewingFriendProfile(null); // Fermer le profil d'ami
+    setEditingDate(null); // Fermer l'édition
   };
 
   const handleHideProfile = () => {
@@ -23,6 +26,8 @@ const Home = () => {
 
   const handleEditDate = (date) => {
     setEditingDate(date);
+    setShowProfile(false); // Fermer le profil
+    setViewingFriendProfile(null); // Fermer le profil d'ami
   };
 
   const handleCancelEdit = () => {
@@ -31,6 +36,8 @@ const Home = () => {
 
   const handleViewFriendProfile = (date) => {
     setViewingFriendProfile(date);
+    setShowProfile(false); // Fermer notre profil
+    setEditingDate(null); // Fermer l'édition
   };
 
   const handleCancelViewProfile = () => {
@@ -40,7 +47,7 @@ const Home = () => {
   return (
     <div className="homePageRoot">
       <div className="headerApp homePageHeader">
-        <h1 className="homeTiltle titleFont titleFontSize">BirthReminder</h1>
+        <h1 className="titleFont titleFontSize">BirthReminder</h1>
         {isLoggedIn && (
           <div className="homePageUser">
             <div className="homePageCurrentUser">
@@ -59,33 +66,39 @@ const Home = () => {
         )}
       </div>
 
-      {isLoggedIn &&
-        !editingDate &&
-        !viewingFriendProfile &&
-        (showProfile ? (
-          <ProfilDetails />
-        ) : (
-          <DateList
-            onEditDate={handleEditDate}
-            onViewFriendProfile={handleViewFriendProfile}
-          />
-        ))}
+      {isLoggedIn && (
+        <>
+          {/* Afficher le profil utilisateur */}
+          {showProfile && !editingDate && !viewingFriendProfile && (
+            <>
+              <ProfilDetails />
+              <button onClick={handleHideProfile} className="btnBackToDateList">
+                Back to Date List
+              </button>
+            </>
+          )}
 
-      {isLoggedIn && showProfile && (
-        <button onClick={handleHideProfile} className="btnBackToDateList">
-          Back to Date List
-        </button>
-      )}
+          {/* Afficher la liste des dates */}
+          {!showProfile && !editingDate && !viewingFriendProfile && (
+            <DateList
+              onEditDate={handleEditDate}
+              onViewFriendProfile={handleViewFriendProfile}
+            />
+          )}
 
-      {editingDate && (
-        <UpdateDate date={editingDate} onCancel={handleCancelEdit} />
-      )}
+          {/* Afficher l'édition de date */}
+          {editingDate && (
+            <UpdateDate date={editingDate} onCancel={handleCancelEdit} />
+          )}
 
-      {viewingFriendProfile && (
-        <FriendProfile
-          date={viewingFriendProfile}
-          onCancel={handleCancelViewProfile}
-        />
+          {/* Afficher le profil d'ami */}
+          {viewingFriendProfile && (
+            <FriendProfile
+              date={viewingFriendProfile}
+              onCancel={handleCancelViewProfile}
+            />
+          )}
+        </>
       )}
     </div>
   );

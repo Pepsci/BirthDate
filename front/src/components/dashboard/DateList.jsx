@@ -114,9 +114,17 @@ const DateList = ({ onEditDate, onViewFriendProfile }) => {
   };
 
   const toggleFilterVisibility = () => {
-    setIsFilterVisible(!isFilterVisible);
+    const newVisibility = !isFilterVisible;
+    setIsFilterVisible(newVisibility);
+
+    // Si on ferme le filtre, réinitialiser les dates filtrées
+    if (!newVisibility) {
+      setDates(allDates); // Réinitialiser avec toutes les dates
+      setCurrentPage(1); // Retourner à la première page
+    }
+
     // Fermer le formulaire si on ouvre le filtre
-    if (!isFilterVisible) {
+    if (newVisibility) {
       setIsFormVisible(false);
     }
   };
@@ -126,7 +134,7 @@ const DateList = ({ onEditDate, onViewFriendProfile }) => {
     setAllDates(updatedDates);
     setDates(updatedDates);
     // Optionnel : fermer le formulaire après ajout
-    setIsFormVisible(false);
+    setIsFormVisible(true);
   };
 
   const handleFilterChange = (newName, newSurname, familyFilter) => {
@@ -160,7 +168,7 @@ const DateList = ({ onEditDate, onViewFriendProfile }) => {
   return (
     <div className="dateList">
       <div className="dateListHeader">
-        <h1 className="titleFont">Vos BirthDate</h1>
+        <h1 className="titleFont">Vos BirthDates</h1>
 
         {/* Boutons */}
         <div className="dateListHeader-btn">

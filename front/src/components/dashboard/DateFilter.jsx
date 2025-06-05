@@ -36,8 +36,6 @@ const DateFilter = ({ onFilterChange }) => {
     handleFilterChange("", "", false);
   };
 
-  // Suppression du bouton et de isFilterVisible
-  // Affichage direct des options de filtre
   return (
     <div className="date-filter">
       <h3 className="title-filter">Filtrer les anniversaires</h3>
