@@ -124,7 +124,7 @@ const FriendProfile = ({ date, onCancel }) => {
     <div className="friendProfil">
       {/* Section info profil */}
       <h1 className="name-profilFriend font-profilFriend">
-        Profil de {currentDate.name} {currentDate.surname}
+        {currentDate.name} {currentDate.surname}
       </h1>
       <div className="grid-friendProfil">
         <div className="info-friendProfil grid1-friendProfil">
@@ -205,8 +205,8 @@ const FriendProfile = ({ date, onCancel }) => {
           </div>
 
           {/* Liste des cadeaux */}
+          <h2>Liste des cadeaux</h2>
           <div className="giftList-friendProfil">
-            <h2>Liste des cadeaux</h2>
             <div className="giftList-friendProfil">
               {currentDate.gifts &&
                 currentDate.gifts

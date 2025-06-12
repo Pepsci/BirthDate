@@ -30,7 +30,9 @@ const GiftForm = ({ dateId, onGiftAdded }) => {
         onChange={(e) => setGiftName(e.target.value)}
         required
       />
-      <button type="submit">Add Gift</button>
+      <button className="addGift-friendProfil" type="submit">
+        Add Gift
+      </button>
     </form>
   );
 };
