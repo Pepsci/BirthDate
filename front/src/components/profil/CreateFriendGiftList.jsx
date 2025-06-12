@@ -21,22 +21,15 @@ const GiftForm = ({ dateId, onGiftAdded }) => {
   };
 
   return (
-    <form onSubmit={handleAddGift}>
+    <form className="formGift-friendProfil" onSubmit={handleAddGift}>
       <input
+        className="inputGift-friendProfil"
         type="text"
-        placeholder="Enter gift name"
+        placeholder="Ajouter un cadeau"
         value={giftName}
         onChange={(e) => setGiftName(e.target.value)}
         required
       />
-      <label>
-        Purchased
-        <input
-          type="checkbox"
-          checked={purchased}
-          onChange={(e) => setPurchased(e.target.checked)}
-        />
-      </label>
       <button type="submit">Add Gift</button>
     </form>
   );

@@ -18,9 +18,10 @@
     min-height: 100vh;
   background-color: var(--gray-900);
   }
-.App {
-  text-align: center;
-}
+
+  /* .App{
+    text-align: center;
+  } */
 
 .headerApp{
   position: fixed;

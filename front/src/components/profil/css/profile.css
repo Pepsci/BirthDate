@@ -52,3 +52,7 @@
 .btnLogout .btnProfile:hover {
     background-color: #0056b3;
 }
+
+.name-profilFriend{
+    text-align: center;
+}

@@ -65,29 +65,32 @@ const GiftItem = ({ dateId, gift, onUpdate, onDelete }) => {
   };
 
   return (
-    <li>
+    <div>
       {isEditing ? (
-        <div>
+        <div className="giftList-giftItem">
           <input
             type="text"
             value={giftName}
             onChange={(e) => setGiftName(e.target.value)}
           />
-          {/* <label>
-            Purchased
-            <input
-              type="checkbox"
-              checked={purchased}
-              onChange={handlePurchasedChange}
-            />
-          </label> */}
-          <button onClick={handleUpdate}>Save</button>
-          <button onClick={() => setIsEditing(false)}>Cancel</button>
+          <div className="giftList-btnEdit">
+            <button className="giftList-btn" onClick={handleUpdate}>
+              Save
+            </button>
+            <button
+              className="giftList-btn"
+              onClick={() => setIsEditing(false)}
+            >
+              Cancel
+            </button>
+          </div>
         </div>
       ) : (
-        <div>
-          {gift.giftName}
-          <label>
+        <div className="giftList-giftItem">
+          <div className="giftList-name">
+            <span>{gift.giftName}</span>
+          </div>
+          <label className="giftList-checkbox">
             <input
               type="checkbox"
               checked={purchased}
@@ -95,11 +98,17 @@ const GiftItem = ({ dateId, gift, onUpdate, onDelete }) => {
             />
             Acheté
           </label>
-          <button onClick={() => setIsEditing(true)}>Edit</button>
-          <button onClick={handleDelete}>Delete</button>
+          <div className="giftList-btnEdit">
+            <button className="giftList-btn" onClick={() => setIsEditing(true)}>
+              Edit
+            </button>
+            <button className="giftList-btn" onClick={handleDelete}>
+              Delete
+            </button>
+          </div>
         </div>
       )}
-    </li>
+    </div>
   );
 };
 

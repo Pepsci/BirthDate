@@ -142,9 +142,11 @@
   font-size: 1.25rem;
   color: var(--gray-800);
   margin-right: 0.5rem;
+  text-align: center;
 }
 
 .birthCardName span:last-child {
+  text-align: center;
   font-size: 1rem;
   color: var(--gray-500);
 }
@@ -301,38 +303,6 @@
   box-shadow: var(--card-shadow);
   max-width: 600px;
 }
-
-
-/* --------------------------------
-   Countdown (composant de décompte)
--------------------------------- */
-/* Styles pour le composant Countdown */
-/* .countdown-container {
-  display: flex;
-  justify-content: space-between;
-  width: 100%;
-  margin-bottom: 0.5rem;
-}
-
-.countdown-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  width: 3rem;
-  height: 3rem;
-  border-radius: 8px;
-  background-color: var(--primary);
-  color: white;
-  font-weight: bold;
-  font-size: 1.25rem;
-}
-
-.countdown-item span {
-  font-size: 0.65rem;
-  text-transform: uppercase;
-  margin-top: 0.1rem;
-} */
 
 /* --------------------------------
    Media Queries - Responsive

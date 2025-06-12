@@ -3,25 +3,31 @@
     padding: 15px;
     border-radius: 8px;
     margin-bottom: 20px;
-    font-family: 'Arial', sans-serif;
+    font-family: 'Roboto', sans-serif;
+    height: 500px;
 }
-
+/* 
 .notification-message {
     background-color: #d4edda;
     color: #155724;
     padding: 10px;
     border-radius: 4px;
     margin-bottom: 15px;
-}
+} */
 
 .notification-toggle {
     display: flex;
     align-items: center;
     margin-bottom: 15px;
+    gap: 10px;
 }
 
 .notification-toggle span {
-    margin-left: 10px;
+    /* margin-left: 10px; Retiré car on utilise gap */
+    /* flex: 1; */
+    /* Permet au texte de prendre l'espace restant */
+    /* word-wrap: break-word; */
+    /* Permet au texte de passer à la ligne si nécessaire */
 }
 
 .notification-timing {
@@ -34,6 +40,13 @@
     margin-bottom: 8px;
 }
 
+.timing-option label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
 .save-preferences-btn {
     background-color: #007bff;
     color: white;
@@ -42,6 +55,10 @@
     border-radius: 4px;
     cursor: pointer;
     margin-top: 10px;
+    width: 100%;
+    /* Prend toute la largeur en mobile */
+    max-width: 300px;
+    /* Limite la largeur sur grand écran */
 }
 
 .save-preferences-btn:disabled {
@@ -53,8 +70,12 @@
 .switch {
     position: relative;
     display: inline-block;
-    width: 60px;
-    height: 34px;
+    width: 50px;
+    /* Réduit de 60px à 50px */
+    height: 28px;
+    /* Réduit de 34px à 28px */
+    flex-shrink: 0;
+    /* Empêche le switch de rétrécir */
 }
 
 .switch input {
@@ -72,17 +93,22 @@
     bottom: 0;
     background-color: #ccc;
     transition: .4s;
+    border-radius: 28px;
+    /* Ajusté pour la nouvelle hauteur */
 }
 
 .slider:before {
     position: absolute;
     content: "";
-    height: 26px;
-    width: 26px;
+    height: 20px;
+    /* Réduit de 26px à 20px */
+    width: 20px;
+    /* Réduit de 26px à 20px */
     left: 4px;
     bottom: 4px;
     background-color: white;
     transition: .4s;
+    border-radius: 50%;
 }
 
 input:checked+.slider {
@@ -94,13 +120,80 @@ input:focus+.slider {
 }
 
 input:checked+.slider:before {
-    transform: translateX(26px);
+    transform: translateX(22px);
+    /* Ajusté de 26px à 22px */
 }
 
-.slider.round {
-    border-radius: 34px;
+/* Media queries pour mobile */
+@media (max-width: 600px) {
+    .notificationPreferences {
+        padding: 12px;
+        margin-bottom: 15px;
+    }
+
+    .notificationPreferences h2 {
+        font-size: 1.2rem;
+        margin-bottom: 12px;
+    }
+
+    .notificationPreferences h3 {
+        font-size: 1rem;
+        margin-bottom: 10px;
+    }
+
+    .notification-toggle {
+        font-size: 14px;
+    }
+
+    .notification-timing {
+        padding-left: 10px;
+        margin-top: 8px;
+    }
+
+    .timing-option {
+        margin-bottom: 10px;
+        font-size: 14px;
+    }
+
+    .timing-option input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+    }
+
+    .save-preferences-btn {
+        width: 100%;
+        padding: 10px 16px;
+        font-size: 14px;
+    }
+
+    /* Switch encore plus petit en mobile si nécessaire */
+    .switch {
+        width: 44px;
+        height: 24px;
+    }
+
+    .slider:before {
+        height: 18px;
+        width: 18px;
+        left: 3px;
+        bottom: 3px;
+    }
+
+    input:checked+.slider:before {
+        transform: translateX(20px);
+    }
 }
 
-.slider.round:before {
-    border-radius: 50%;
+/* Pour très petits écrans */
+@media (max-width: 350px) {
+    .notification-toggle {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .switch {
+        margin-bottom: 5px;
+    }
 }

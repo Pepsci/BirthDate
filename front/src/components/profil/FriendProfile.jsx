@@ -4,6 +4,7 @@ import GiftForm from "../profil/CreateFriendGiftList";
 import GiftItem from "../profil/GiftItem";
 import apiHandler from "../../api/apiHandler";
 import "./css/notifications.css";
+import "./css/friendProfile.css";
 
 const FriendProfile = ({ date, onCancel }) => {
   const [currentDate, setCurrentDate] = useState(date);
@@ -11,7 +12,6 @@ const FriendProfile = ({ date, onCancel }) => {
   const [notificationTimings, setNotificationTimings] = useState([1]); // Par défaut 1 jour avant
   const [notifyOnBirthday, setNotifyOnBirthday] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [message, setMessage] = useState("");
 
   // Options de rappel disponibles
   const reminderOptions = [
@@ -79,20 +79,15 @@ const FriendProfile = ({ date, onCancel }) => {
         currentDate._id,
         newValue
       );
-      setMessage(
-        `Notifications ${newValue ? "activées" : "désactivées"} avec succès`
-      );
 
       // Mettre à jour l'état local
       setCurrentDate(updatedDate);
     } catch (error) {
       console.error("Failed to update notification preference:", error);
-      setMessage("Erreur lors de la mise à jour des préférences");
       // Remettre à l'état précédent en cas d'erreur
       setReceiveNotifications(!newValue);
     } finally {
       setIsLoading(false);
-      setTimeout(() => setMessage(""), 3000); // Effacer le message après 3 secondes
     }
   };
 
@@ -115,71 +110,56 @@ const FriendProfile = ({ date, onCancel }) => {
           notifyOnBirthday: notifyOnBirthday,
         }
       );
-      setMessage("Préférences de notification mises à jour avec succès");
 
       // Mettre à jour l'état local
       setCurrentDate(updatedDate);
     } catch (error) {
       console.error("Failed to save notification preferences:", error);
-      setMessage("Erreur lors de la mise à jour des préférences");
     } finally {
       setIsLoading(false);
-      setTimeout(() => setMessage(""), 3000);
     }
   };
 
   return (
-    <div className="friendProfile">
-      <h1 className="titleFont">
-        Profile de {currentDate.name} {currentDate.surname}
+    <div className="friendProfil">
+      {/* Section info profil */}
+      <h1 className="name-profilFriend font-profilFriend">
+        Profil de {currentDate.name} {currentDate.surname}
       </h1>
-      <div className="birthCard titleFont" key={currentDate._id + "date"}>
-        <div className="birthCardName">
-          <span className="birthCard-name">
-            <b>{currentDate.name}</b>
-          </span>
-          <span>
-            <b>{currentDate.surname}</b>
-          </span>
-          <br />
-        </div>
-        <div className="birthCardAge">
-          <span className="age">{calculateAge(currentDate.date)} Ans</span>
-          <br />
-        </div>
-        <div className="birthCardDate">
-          <span className="date">
-            {new Date(currentDate.date).toLocaleDateString("fr-FR")}
-          </span>
-          <br />
-        </div>
-        <div className="birthCardCenter">
-          <span className="daysUntilBirthday">
+      <div className="grid-friendProfil">
+        <div className="info-friendProfil grid1-friendProfil">
+          <div className="birthCardAge">
+            <span className="age">{calculateAge(currentDate.date)} Ans</span>
+            <br />
+            <span className="date-profilFriend font-profilFriend">
+              {new Date(currentDate.date).toLocaleDateString("fr-FR")}
+            </span>
             <Countdown birthdate={currentDate.date} />
-          </span>
-        </div>
-      </div>
-
-      {/* Section des préférences de notification */}
-      <div className="notificationPreferences">
-        <h2>Préférences de notification</h2>
-        {message && <div className="notification-message">{message}</div>}
-
-        <div className="notification-toggle">
-          <label className="switch">
-            <input
-              type="checkbox"
-              checked={receiveNotifications}
-              onChange={handleReceiveNotificationsChange}
-              disabled={isLoading}
-            />
-            <span className="slider round"></span>
-          </label>
-          <span>Recevoir des notifications pour cet anniversaire</span>
+          </div>
         </div>
 
-        {receiveNotifications && (
-          <div className="notification-timing">
+        {/* Section des préférences de notification */}
+        <div className="notificationPreferences gri2-friendProfil">
+          <h2>Préférences de notification</h2>
+
+          <div className="notification-toggle">
+            <label className="switch">
+              <input
+                type="checkbox"
+                checked={receiveNotifications}
+                onChange={handleReceiveNotificationsChange}
+                disabled={isLoading}
+              />
+              <span className="slider round"></span>
+            </label>
+            <span>
+              {receiveNotifications
+                ? "Notifications activées pour cet anniversaire"
+                : "Notifications désactivées pour cet anniversaire"}
+            </span>
+          </div>
+
+          <div className="notificationFrequency-friendProfil">
             <h3>Quand souhaitez-vous être notifié ?</h3>
 
             <div className="timing-option">
@@ -188,7 +168,7 @@ const FriendProfile = ({ date, onCancel }) => {
                   type="checkbox"
                   checked={notifyOnBirthday}
                   onChange={(e) => setNotifyOnBirthday(e.target.checked)}
-                  disabled={isLoading}
+                  disabled={isLoading || !receiveNotifications}
                 />
                 Le jour même
               </label>
@@ -201,7 +181,7 @@ const FriendProfile = ({ date, onCancel }) => {
                     type="checkbox"
                     checked={notificationTimings.includes(option.value)}
                     onChange={() => handleTimingChange(option.value)}
-                    disabled={isLoading}
+                    disabled={isLoading || !receiveNotifications}
                   />
                   {option.label}
                 </label>
@@ -211,34 +191,40 @@ const FriendProfile = ({ date, onCancel }) => {
             <button
               className="save-preferences-btn"
               onClick={handleSaveNotificationPreferences}
-              disabled={isLoading}
+              disabled={isLoading || !receiveNotifications}
             >
-              {isLoading ? "Sauvegarde..." : "Sauvegarder les préférences"}
+              Sauvegarder les préférences
             </button>
           </div>
-        )}
-      </div>
+        </div>
 
-      {/* Formulaire pour ajouter des cadeaux */}
-      <GiftForm dateId={currentDate._id} onGiftAdded={handleGiftAdded} />
+        {/* Formulaire pour ajouter des cadeaux */}
+        <div className="gift-friendProfil grid3-friendProfil">
+          <div className="form-friendProfil">
+            <GiftForm dateId={currentDate._id} onGiftAdded={handleGiftAdded} />
+          </div>
 
-      {/* Liste des cadeaux */}
-      <div className="giftList">
-        <h2>Liste des cadeaux</h2>
-        <ul>
-          {currentDate.gifts &&
-            currentDate.gifts
-              .filter((gift) => gift !== undefined && gift.giftName && gift._id)
-              .map((gift) => (
-                <GiftItem
-                  key={gift._id}
-                  gift={gift}
-                  dateId={currentDate._id}
-                  onUpdate={handleGiftUpdated}
-                  onDelete={handleGiftDeleted}
-                />
-              ))}
-        </ul>
+          {/* Liste des cadeaux */}
+          <div className="giftList-friendProfil">
+            <h2>Liste des cadeaux</h2>
+            <div className="giftList-friendProfil">
+              {currentDate.gifts &&
+                currentDate.gifts
+                  .filter(
+                    (gift) => gift !== undefined && gift.giftName && gift._id
+                  )
+                  .map((gift) => (
+                    <GiftItem
+                      key={gift._id}
+                      gift={gift}
+                      dateId={currentDate._id}
+                      onUpdate={handleGiftUpdated}
+                      onDelete={handleGiftDeleted}
+                    />
+                  ))}
+            </div>
+          </div>
+        </div>
       </div>
 
       <button type="button" onClick={onCancel} className="btnBack">

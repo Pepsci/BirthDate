@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useContext } from "react";
 import { AuthContext } from "../../context/auth.context";
 import apiHandler from "../../api/apiHandler";
 import useAuth from "../../context/useAuth";
-import "./profile.css";
+import "./css/profile.css";
 import PasswordInput from "../connect/PasswordInput";
 import Countdown from "../dashboard/Countdown";
 
