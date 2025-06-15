@@ -3,6 +3,7 @@
     grid-template-columns: repeat(2, 1fr);
     grid-template-rows: repeat(1, 1fr);
     gap: 0.6rem;
+    margin: .6rem;
 }
 
 .grid1-friendProfil {
@@ -62,9 +63,11 @@
 -------------------------------- */
 
 .gift-friendProfil {
-    background-color: aliceblue;
     padding: 12px;
     height: 450px;
+    border-radius: 12px;
+    background: var(--gray-800);
+        border: 1px solid var(--gray-700);
 }
 
 .giftList-friendProfil {
@@ -123,6 +126,14 @@
 -------------------------------- */
 
 @media (max-width: 600px) {
+
+    .grid-friendProfil {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            grid-template-rows: repeat(1, 1fr);
+            gap: 0.6rem;
+            margin: .6rem;
+       }
 
     .friendProfil {
         border-radius: 16px;

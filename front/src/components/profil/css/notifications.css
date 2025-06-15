@@ -5,6 +5,10 @@
     margin-bottom: 20px;
     font-family: 'Roboto', sans-serif;
     height: 450px;
+    border-radius: 12px;
+    background: var(--gray-800);
+    border: 1px solid var(--gray-700);
+    color:#f8f9fa;
 }
 
 .notification-toggle {
@@ -108,11 +112,13 @@ input:checked+.slider:before {
     .notificationPreferences h2 {
         font-size: 1.2rem;
         margin-bottom: 12px;
+        color: #f8f9fa;
     }
 
     .notificationPreferences h3 {
         font-size: 1rem;
         margin-bottom: 10px;
+        color: #f8f9fa;
     }
 
     .notification-toggle {
