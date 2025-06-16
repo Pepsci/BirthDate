@@ -205,9 +205,9 @@ const FriendProfile = ({ date, onCancel }) => {
           </div>
 
           {/* Liste des cadeaux */}
-          <h2>Liste des cadeaux</h2>
+          <h2 className="giftTiltle-friendProfil">Liste des cadeaux</h2>
           <div className="giftList-friendProfil">
-            <div className="giftList-friendProfil">
+            <div className="giftName-friendProfil">
               {currentDate.gifts &&
                 currentDate.gifts
                   .filter(

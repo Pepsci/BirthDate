@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import apiHandler from "../../api/apiHandler";
+import "./css/GiftItem.css";
 
 const GiftItem = ({ dateId, gift, onUpdate, onDelete }) => {
   console.log("Gift Item:", gift); // Vérifiez les données
