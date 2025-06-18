@@ -130,10 +130,9 @@ const FriendProfile = ({ date, onCancel }) => {
         <div className="info-friendProfil grid1-friendProfil">
           <div className="birthCardAge">
             <span className="age">{calculateAge(currentDate.date)} Ans</span>
-            <br />
-            <span className="date-profilFriend font-profilFriend">
+            <div className="date-profilFriend font-profilFriend">
               {new Date(currentDate.date).toLocaleDateString("fr-FR")}
-            </span>
+            </div>
             <Countdown birthdate={currentDate.date} />
           </div>
         </div>
@@ -226,10 +225,11 @@ const FriendProfile = ({ date, onCancel }) => {
           </div>
         </div>
       </div>
-
-      <button type="button" onClick={onCancel} className="btnBack">
-        Retour à la liste des dates
-      </button>
+      <div className="btnRLD">
+        <button type="button" onClick={onCancel} className="btnBack">
+          Retour à la liste des dates
+        </button>
+      </div>
     </div>
   );
 };
