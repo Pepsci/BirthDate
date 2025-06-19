@@ -168,8 +168,9 @@ const DateList = ({ onEditDate, onViewFriendProfile }) => {
   return (
     <div className="dateList">
       <div className="dateListHeader">
-        <h1 className="titleFont">Vos BirthDates</h1>
-
+        <div className="dateList-tiltle">
+          <h1 className="titleFont">Vos BirthDates</h1>
+        </div>
         {/* Boutons */}
         <div className="dateListHeader-btn">
           <button

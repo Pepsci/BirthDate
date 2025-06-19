@@ -5,6 +5,13 @@
     display: flex;
     flex-direction: column;
 }
+
+.dateList-tiltle{
+display: flex;
+justify-content: center;
+}
+
+
 .dateListHeader-btn {
     display: flex;
     justify-content: center;
@@ -203,6 +210,10 @@
 
 /* Styles pour mobile */
 @media (max-width: 600px) {
+    
+    .dateListHeader{
+        /* margin: 0.2rem; */
+    }
 
     .dateListHeader-btn{
     margin:1rem;
@@ -211,10 +222,11 @@
   .dateListHeader-btn .btnSwitch {
     width: 130px;  
     height: 60px;
-         }
-     .btnSwitch{
-    margin: 0 0.2rem 0 0.2rem;
-    padding: 0.5rem .5rem;
+    }
+
+    .btnSwitch{
+    margin: 0.2rem;
+    padding: 0.2rem 0.2rem;
      }   
 
     .pagination {

@@ -245,8 +245,8 @@
 .birthCard.today::after {
   content: "Aujourd'hui !";
   position: absolute;
-  top: 20px;
-  right: -25px;
+  top: 22px;
+  right: -47px;
   background-color: var(--gray-600);
   color: white;
   padding: 0.25rem 1.5rem;
@@ -262,8 +262,8 @@
 .birthCard.thisWeek::after {
   content: "Cette semaine";
   position: absolute;
-  top: 20px;
-  right: -30px;
+  top: 22px;
+  right: -47px;
   background-color: var(--gray-500);
   color: white;
   padding: 0.25rem 1.5rem;
@@ -432,9 +432,8 @@
   .birthCard.today::after,
   .birthCard.thisWeek::after {
     font-size: 0.65rem;
-    right: -36px;
-    /* Ajusté pour éviter le débordement */
-    top: 12px;
+    top: 19px;
+    right: -40px;
     padding: 0.2rem 1rem;
     width: 100px;
   }

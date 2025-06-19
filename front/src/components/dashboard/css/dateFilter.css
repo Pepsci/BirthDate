@@ -18,9 +18,8 @@
 .inputFilter{
     background: transparent;
     border: transparent;
-    margin: 0.5rem;
     border-bottom: 1px solid grey;
-    margin: 0.2rem;
+    margin: 0.5rem;
 }
 
 .inputFilter:focus{
