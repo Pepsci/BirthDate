@@ -42,14 +42,14 @@ const DateFilter = ({ onFilterChange }) => {
       <div className="filter-options">
         <input
           type="text"
-          placeholder="Rechercher par prénom..."
+          placeholder=" Rechercher par prénom..."
           value={nameSearch}
           onChange={handleNameChange}
           className="inputFilter"
         />
         <input
           type="text"
-          placeholder="Rechercher par nom..."
+          placeholder=" Rechercher par nom..."
           value={surnameSearch}
           onChange={handleSurnameChange}
           className="inputFilter"

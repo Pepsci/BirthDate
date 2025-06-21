@@ -12,6 +12,7 @@ const PasswordInput = ({ value, onChange, placeholder }) => {
   return (
     <div className="password-input-container">
       <input
+        className="form-input"
         type={showPassword ? "text" : "password"}
         value={value}
         placeholder={placeholder}

@@ -25,6 +25,7 @@
   height: 100px;
   background-color: var(--gray-900);
   z-index: 1;
+  margin-left: 0.5rem;
 }
 
 .contentCenter{

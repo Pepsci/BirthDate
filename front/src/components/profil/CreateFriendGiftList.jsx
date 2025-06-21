@@ -25,13 +25,13 @@ const GiftForm = ({ dateId, onGiftAdded }) => {
       <input
         className="inputGift-friendProfil"
         type="text"
-        placeholder="Ajouter un cadeau"
+        placeholder=" Ajoutez un cadeau"
         value={giftName}
         onChange={(e) => setGiftName(e.target.value)}
         required
       />
       <button className="addGift-friendProfil" type="submit">
-        Add Gift
+        Ajoutez un cadeau
       </button>
     </form>
   );

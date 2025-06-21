@@ -53,7 +53,7 @@ const Login = () => {
             name="email"
             id="email"
             className="form-input"
-            placeholder="Entrez votre Email"
+            placeholder=" Entrez votre Email"
             value={user.email}
             onChange={(e) =>
               setUser({ ...user, email: e.target.value.toLowerCase() })
@@ -65,7 +65,7 @@ const Login = () => {
             name="password"
             id="password"
             className="form-input"
-            placeholder="Entrez votre mot de passe"
+            placeholder=" Entrez votre mot de passe"
             value={user.password}
             onChange={(e) => setUser({ ...user, password: e.target.value })}
           />

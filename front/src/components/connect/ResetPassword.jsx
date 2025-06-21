@@ -39,7 +39,7 @@ function ResetPassword() {
             type="password"
             className="form-input"
             value={password}
-            placeholder="Nouveau mot de passe"
+            placeholder=" Nouveau mot de passe"
             onChange={(e) => setPassword(e.target.value)}
             required
           />
@@ -48,7 +48,7 @@ function ResetPassword() {
             name="confirmPassword"
             id="confirmPassword"
             className="form-input"
-            placeholder="Confirmez le mot de passe"
+            placeholder=" Confirmez le mot de passe"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             required

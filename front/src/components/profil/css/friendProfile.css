@@ -2,7 +2,7 @@
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     grid-template-rows: repeat(1, 1fr);
-    gap: 0.6rem;
+    gap: 1.6rem;
     margin: 0 0 .6rem 0;
 }
 
@@ -29,6 +29,30 @@
     color: var(--gray-100);
     font-family: 'Roboto', sans-serif;
 }
+
+.friendProfil{
+    border-radius: 16px;
+        overflow: hidden;
+        position: relative;
+        box-shadow: var(--card-shadow);
+        height: 100%;
+}
+
+.info-friendProfil {
+    margin: auto;
+    width: 500px;
+}
+
+.age {
+    width: 100%;
+    text-align: center;
+}
+
+.date-profilFriend {
+    text-align: center;
+    margin: 0.5rem;
+}
+
 
 .btnRLD{
     width: 100%;
@@ -95,14 +119,6 @@
             margin: 0 0.6rem;
        }
 
-    .friendProfil {
-        border-radius: 16px;
-        overflow: hidden;
-        position: relative;
-        box-shadow: var(--card-shadow);
-        height: 100%;
-    }
-
     .notificationPreferences-friendProfil {
         background-color: rgb(34, 76, 114);
     }
@@ -121,17 +137,7 @@
         width: 250px;
     }
 
-    .friendProfil-age{
-        justify-content: center;
-    }
-    .age{
-        align-items: center;
-    }
 
-    .date-profilFriend{
-        text-align: center;
-        margin: 0.5rem;
-    }
 
 
 

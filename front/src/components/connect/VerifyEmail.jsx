@@ -7,7 +7,6 @@ function VerifyEmail() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  // Récupérer le token depuis l'URL
   const token = searchParams.get("token");
 
   const verifyEmail = async () => {
@@ -17,7 +16,6 @@ function VerifyEmail() {
     }
 
     try {
-      // Utiliser votre apiHandler au lieu de fetch
       const response = await apiHandler.verifyEmail(token);
       setStatus("Adresse email vérifiée avec succès !");
       setTimeout(() => {

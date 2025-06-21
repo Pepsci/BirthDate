@@ -20,6 +20,7 @@
     border: transparent;
     border-bottom: 1px solid grey;
     margin: 0.5rem;
+    color: aliceblue;
 }
 
 .inputFilter:focus{

@@ -77,7 +77,7 @@ const Signup = () => {
             name="name"
             id="name"
             className="form-input"
-            placeholder="Prenom"
+            placeholder=" Prenom"
             value={user.name}
             onChange={(e) => {
               setUser({ ...user, name: e.target.value });
@@ -89,7 +89,7 @@ const Signup = () => {
             name="surname"
             id="surname"
             className="form-input"
-            placeholder="Nom"
+            placeholder=" Nom"
             value={user.surname}
             onChange={(e) => {
               setUser({ ...user, surname: e.target.value });
@@ -100,7 +100,7 @@ const Signup = () => {
             name="email"
             id="email"
             className="form-input"
-            placeholder="Votre Email"
+            placeholder=" Votre Email"
             value={user.email}
             onChange={(e) => {
               setUser({ ...user, email: e.target.value });
@@ -111,7 +111,7 @@ const Signup = () => {
             name="password"
             id="password"
             className="form-input"
-            placeholder="Mot de passe"
+            placeholder=" Mot de passe"
             value={user.password}
             onChange={(e) => {
               setUser({ ...user, password: e.target.value });
@@ -122,7 +122,7 @@ const Signup = () => {
             name="confirmPassword"
             id="confirmPassword"
             className="form-input"
-            placeholder="Confirmez le mot de passe"
+            placeholder=" Confirmez le mot de passe"
             value={confirmPassword}
             onChange={(e) => {
               setConfirmPassword(e.target.value);
