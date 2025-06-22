@@ -27,7 +27,12 @@
     height: auto;
     padding: 2rem;
     margin: auto;
+    border: 1px solid grey;
+    border-radius: 12px;
     z-index: 2;
+    box-shadow:
+            0 10px 25px -5px rgba(59, 130, 246, 0.15),
+            0 4px 6px -2px rgba(0, 0, 0, 0.1);
 }
 
 .form-input{
@@ -45,33 +50,14 @@
     color: grey;
 }
 
-.peel{
-    margin: auto;
-    display: block;
-    position: relative;
-    width: auto;
-    height: auto;
-}
-
-.peel:before{
-    content: "";
-    position: absolute;
-    left: 0px;
-    border-color: #FFF transparent transparent #FFF;
-    border-style: solid;
-    border-width: 0px 30px 30px 0px;
-    height: 100%;
-    width: 90%;
-    display: block;
-    bottom: 0;
-    /* -webkit-box-shadow: -8px 8px 7px 2px #c9c9c9;
-    -moz-box-shadow: -8px 8px 7px 2px #c9c9c9; */
-    z-index: 1;
+.forgotPassword-input{
+    text-align: center;
 }
 
 .alreadyHaveAnAccont{
     margin: 1rem;
     font-size: 1rem;
+    color: #4a4a4a;
 }
 
 .formConnectAvatar{
@@ -84,16 +70,12 @@
     align-items: center;
 }
 
-.password-input-container input:focus{
-    outline: none;
-}
-
 .password-input-container input {
     width: 100%;
     background: transparent;
-        border: transparent;
-        margin: 1rem;
-        border-bottom: 1px solid grey;
+    border: transparent;
+    margin: 1rem;
+    border-bottom: 1px solid grey;
 }
 
 .toggle-password-visibility {
@@ -113,7 +95,49 @@
     outline: none;
 }
 
-
 .error-message{
-    margin-top: 20px;
+    margin: 20px;
+}
+
+.btn-link{
+    display: flex;
+    justify-content: center;
+    margin-top: 10px;
+
+}
+
+.btnAcount{
+    padding: .6rem;
+    font-size: .8rem;
+    background-color: var(--gray-700);
+    color: var(--gray-300);
+    border-color: var(--gray-600);
+    margin-bottom: 1rem;
+    border-radius: 7px;
+}
+
+.btnLog {
+    padding: .6rem;
+    font-size: .8rem;
+    background-color: var(--gray-800);
+    color: var(--gray-300);
+    border-color: var(--gray-700);
+    margin-top: 1rem;
+    border-radius: 10px;
+}
+
+.btnLog:hover {
+    background-color: var(--gray-600)
+}
+
+.form-connect-message{
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+}
+
+.btnLogin{
+    /* display: flex; */
+    /* justify-content: ; */
 }

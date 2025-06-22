@@ -136,19 +136,20 @@ const Signup = () => {
               className="avatarSignup"
             />
           </div>
-          <button>Créer mon compte</button>
+          <button className="btnLog">Créer mon compte</button>
         </form>
       </div>
-
-      {errorMessage && (
-        <p className="error-message fontErrorMessage">{errorMessage}</p>
-      )}
-      {successMessage && (
-        <p className="success-message fontSuccessMessage">{successMessage}</p>
-      )}
-      <Link to={"/login"}>
-        <span className="formConnectMessage font">Déjà un compte ?</span>
-      </Link>
+      <div className="form-connect-message">
+        {errorMessage && (
+          <p className="error-message fontErrorMessage">{errorMessage}</p>
+        )}
+        {successMessage && (
+          <p className="success-message fontSuccessMessage">{successMessage}</p>
+        )}
+        <Link to={"/login"}>
+          <button className="btnAcount font">Déjà un compte ?</button>
+        </Link>
+      </div>
     </div>
   );
 };

@@ -70,20 +70,21 @@ const Login = () => {
             onChange={(e) => setUser({ ...user, password: e.target.value })}
           />
 
-          <button>Se connecter</button>
+          <button className="btnLog">Se connecter</button>
         </form>
       </div>
 
       <div className="form-connect-message font fontErrorMessage">
         {errorMessage && <p className="error-message ">{errorMessage}</p>}
-        <Link to={"/forgot-password"}>
-          <br />
-          <span className="form-connect-msg">Mot de passe oublié ?</span>
-        </Link>
-        <span> / </span>
-        <Link to={"/signup"}>
-          <span className="form-connect-msg">Pas encore de compte ?</span>
-        </Link>
+        <div className="btnLogin">
+          <Link to={"/forgot-password"}>
+            <br />
+            <button className="btnAcount">Mot de passe oublié ?</button>
+          </Link>
+          <Link to={"/signup"}>
+            <button className="btnAcount">Pas encore de compte ?</button>
+          </Link>
+        </div>
       </div>
     </div>
   );
