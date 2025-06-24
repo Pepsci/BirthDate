@@ -78,7 +78,6 @@ const Login = () => {
         {errorMessage && <p className="error-message ">{errorMessage}</p>}
         <div className="btnLogin">
           <Link to={"/forgot-password"}>
-            <br />
             <button className="btnAcount">Mot de passe oublié ?</button>
           </Link>
           <Link to={"/signup"}>

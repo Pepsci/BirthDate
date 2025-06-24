@@ -289,20 +289,17 @@ const ProfilDetails = () => {
             {userToUpdate.birthDate && (
               <Countdown birthdate={userToUpdate.birthDate} />
             )}
-            <button
-              className="profile_info_details_btn"
-              onClick={handleEditMode}
-            >
-              Modifier
-            </button>
+            <div className="profil-btn">
+              <button className="btn-profil" onClick={handleEditMode}>
+                Modifier
+              </button>
+              <button className="btn-profil" onClick={logOut}>
+                LogOut
+              </button>
+            </div>
           </div>
         </div>
       )}
-      <div>
-        <button className="bntLogout" onClick={logOut}>
-          LogOut
-        </button>
-      </div>
     </div>
   );
 };

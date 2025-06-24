@@ -107,7 +107,7 @@
 }
 
 .btnAcount{
-    padding: .6rem;
+    padding: .4rem;
     font-size: .8rem;
     background-color: var(--gray-700);
     color: var(--gray-300);
@@ -138,6 +138,6 @@
 }
 
 .btnLogin{
-    /* display: flex; */
-    /* justify-content: ; */
+    display: flex;
+    justify-content:space-around;
 }

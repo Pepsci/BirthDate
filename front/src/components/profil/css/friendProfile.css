@@ -3,7 +3,7 @@
     grid-template-columns: repeat(2, 1fr);
     grid-template-rows: repeat(1, 1fr);
     gap: 1.6rem;
-    margin: 0 0 .6rem 0;
+    margin: .6rem ;
 }
 
 .grid1-friendProfil {
@@ -71,6 +71,10 @@
     border-radius: 12px;
 }
 
+.name-profilFriend{
+    text-align: center;
+}
+
 
 /* --------------------------------
    Form ajout cadeau
@@ -79,10 +83,11 @@
 .formGift-friendProfil {
     display: flex;
     flex-direction: column;
+    align-items: center;
 }
 
 .inputGift-friendProfil{
-    width: 150px;
+    width: 200px;
     margin: 0.2rem;
     box-sizing: border-box;
     padding: 8px;
@@ -91,7 +96,7 @@
 }
 
 .addGift-friendProfil{
-    width: 150px;
+    width: 200px;
     margin: 0.2rem;
     box-sizing: border-box;
     padding: 8px;
@@ -112,12 +117,12 @@
 @media (max-width: 600px) {
 
     .grid-friendProfil {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            grid-template-rows: repeat(1, 1fr);
-            gap: 0.6rem;
-            margin: 0 0.6rem;
-       }
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        grid-template-rows: repeat(1, 1fr);
+        gap: 0.6rem;
+        margin: 0 0.6rem;
+    }
 
     .notificationPreferences-friendProfil {
         background-color: rgb(34, 76, 114);
@@ -137,6 +142,13 @@
         width: 250px;
     }
 
+    .inputGift-friendProfil {
+        width: 150px;
+    }
+
+    .addGift-friendProfil{
+        width: 150px;
+    }        
 
 
 

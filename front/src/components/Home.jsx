@@ -72,9 +72,14 @@ const Home = () => {
           {showProfile && !editingDate && !viewingFriendProfile && (
             <>
               <ProfilDetails />
-              <button onClick={handleHideProfile} className="btnBackToDateList">
-                Back to Date List
-              </button>
+              <div className="profil-btn">
+                <button
+                  onClick={handleHideProfile}
+                  className="btnBackToDateList"
+                >
+                  Back to Date List
+                </button>
+              </div>
             </>
           )}
 
