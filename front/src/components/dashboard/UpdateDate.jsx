@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import apiHandler from "../../api/apiHandler";
-// import "./css/updateDate.css";
+import "./css/updateDate.css";
 
 const UpdateDate = ({ date, onCancel }) => {
   const [dateToUpdate, setDateToUpdate] = useState(date);
@@ -53,7 +53,7 @@ const UpdateDate = ({ date, onCancel }) => {
   };
 
   return (
-    <div className="form-connect">
+    <div className="form-connect formUpdate">
       <form className="form" onSubmit={handleUpdateDate}>
         <input
           className="form-input"
@@ -78,7 +78,7 @@ const UpdateDate = ({ date, onCancel }) => {
           value={dateToUpdate.date.split("T")[0]}
           onChange={handleInputChange}
         />
-        <label>
+        <label className="updateLbel">
           Family
           <input
             className="form-input"
@@ -89,32 +89,50 @@ const UpdateDate = ({ date, onCancel }) => {
           />
           <span>?</span>
         </label>
-        <textarea
+        {/* <textarea
           name="comment"
           placeholder="Add a comment"
           value={dateToUpdate.comment}
           onChange={handleInputChange}
-        />
-
-        <button type="submit">Update</button>
-        <button type="button" onClick={onCancel}>
-          Annuler
-        </button>
-
+        /> */}
+        <div className="btn-updateContainer">
+          <button className="btn-update btn-updateGreen" type="submit">
+            Update
+          </button>
+          <button
+            className="btn-update btn-updateGrey"
+            type="button"
+            onClick={onCancel}
+          >
+            Annuler
+          </button>
+        </div>
         {showConfirm ? (
-          <>
+          <div className="btn-updateContainer">
             <p>Êtes-vous sûr de vouloir supprimer cette date ?</p>
-            <button type="button" onClick={handleDeleteDate}>
+            <button
+              className="btn-update btn-updateRed"
+              type="button"
+              onClick={handleDeleteDate}
+            >
               Confirm
             </button>
-            <button type="button" onClick={handleCancelDelete}>
+            <button
+              className="btn-update btn-updateGrey"
+              type="button"
+              onClick={handleCancelDelete}
+            >
               Cancel
             </button>
-          </>
+          </div>
         ) : (
-          <div>
+          <div className="btn-updateContainer">
             <span>Voulez supprimer cette date ?</span>
-            <button type="button" onClick={handleShowConfirm}>
+            <button
+              className="btn-update btn-updateRed"
+              type="button"
+              onClick={handleShowConfirm}
+            >
               Delete
             </button>
           </div>

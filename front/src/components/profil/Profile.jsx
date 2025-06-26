@@ -199,11 +199,11 @@ const ProfilDetails = () => {
                   });
                 }}
               />
-              <div className="password-toggle-container">
+              <div className="profile-togglePasswordContainer">
                 <button
                   type="button"
                   onClick={() => setShowPasswordFields(!showPasswordFields)}
-                  className="toggle-password-fields"
+                  className="profile-togglePassword btn-profil"
                 >
                   {showPasswordFields
                     ? "Annuler le changement de mot de passe"
@@ -250,10 +250,18 @@ const ProfilDetails = () => {
                   />
                 </>
               )}
-              <button type="submit">Enregistrer</button>
-              <button type="button" onClick={handleCancelEdit}>
-                Annuler
-              </button>
+              <div className="btn-profilEditContainer">
+                <button className="btn-profil btn-profilGreen" type="submit">
+                  Enregistrer
+                </button>
+                <button
+                  className="btn-profil btn-profilGrey"
+                  type="button"
+                  onClick={handleCancelEdit}
+                >
+                  Annuler
+                </button>
+              </div>
             </form>
           </div>
           <div className="emailPreference">

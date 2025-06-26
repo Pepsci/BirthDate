@@ -1,0 +1,44 @@
+.btn-updateContainer{
+    display: flex;
+    flex-direction: column;
+    margin-top: 1rem;
+    align-items: center;
+}
+
+.btn-update {
+    margin-top: 1rem;
+    padding: 8px;
+    box-sizing: border-box;
+    border: none;
+    border-radius: 4px;
+    background-color: #2196f3;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    width: 200px;
+}
+
+.btn-updateGreen{
+    background-color: rgb(35, 206, 149);
+}
+
+.btn-updateGrey{
+    background-color: rgb(73, 77, 77);
+}
+
+.btn-updateRed{
+    background-color: brown;
+}
+
+.formUpdate{
+    color: var(--gray-300);
+}
+
+.btn-updateContainer, p{
+    color: var(--gray-300);
+}
+
+.updateLbel{
+    margin-left: 16px;
+}
