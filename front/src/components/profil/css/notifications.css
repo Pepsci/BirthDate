@@ -9,6 +9,11 @@
     background: var(--gray-800);
     border: 1px solid var(--gray-700);
     color:#f8f9fa;
+    max-width: 400px;
+}
+
+.notificationPreferences h3 {
+    color:var(--gray-300);
 }
 
 .notification-toggle {

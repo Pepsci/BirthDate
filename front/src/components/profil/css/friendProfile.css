@@ -3,7 +3,8 @@
     grid-template-columns: repeat(2, 1fr);
     grid-template-rows: repeat(1, 1fr);
     gap: 1.6rem;
-    margin: .6rem ;
+    margin: auto;
+    max-width: 900px;
 }
 
 .grid1-friendProfil {
@@ -18,6 +19,7 @@
 
 .grid3-friendProfil {
     grid-area: 2 / 1 / 4 / 2;
+    max-width: 400px;
 }
 
 .font-profilFriend {

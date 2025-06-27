@@ -222,31 +222,43 @@ const DateList = ({ onEditDate, onViewFriendProfile }) => {
           {currentItems.map((date) => {
             const today = new Date();
             const birthDate = new Date(date.date);
-            const nextBirthday = new Date(
+
+            // Obtenir la date d'anniversaire pour cette année
+            const thisYearBirthday = new Date(
               today.getFullYear(),
               birthDate.getMonth(),
               birthDate.getDate()
             );
 
-            if (nextBirthday < today) {
-              nextBirthday.setFullYear(today.getFullYear() + 1);
+            // Si l'anniversaire de cette année est déjà passé, prendre l'année suivante
+            let nextBirthday = thisYearBirthday;
+            if (thisYearBirthday < today) {
+              nextBirthday = new Date(
+                today.getFullYear() + 1,
+                birthDate.getMonth(),
+                birthDate.getDate()
+              );
             }
 
-            const diffTime = Math.abs(nextBirthday - today);
+            // Calculer la différence en jours
+            const diffTime = nextBirthday.getTime() - today.getTime();
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-            const isToday = diffDays === 0;
-            const isThisWeek = diffDays <= 7 && !isToday;
+            const isToday =
+              today.getDate() === birthDate.getDate() &&
+              today.getMonth() === birthDate.getMonth();
+
+            const isThisWeek = diffDays <= 7 && diffDays > 0; // Exclu aujourd'hui
             const hasGifts = date.gifts && date.gifts.length > 0;
             const isFamily = date.family === true;
 
             const cardClassName = `
-              birthCard titleFont 
-              ${isToday ? "today" : ""} 
-              ${isThisWeek ? "thisWeek" : ""} 
-              ${hasGifts ? "has-gifts" : ""} 
-              ${isFamily ? "family" : ""}
-            `;
+    birthCard titleFont 
+    ${isToday ? "today" : ""} 
+    ${isThisWeek ? "thisWeek" : ""} 
+    ${hasGifts ? "has-gifts" : ""} 
+    ${isFamily ? "family" : ""}
+  `;
 
             return (
               <div className={cardClassName} key={date._id + "date"}>

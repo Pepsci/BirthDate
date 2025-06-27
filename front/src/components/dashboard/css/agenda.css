@@ -1,4 +1,16 @@
-
+/* Variables de couleurs */
+:root {
+    /* Palette de gris */
+    --gray-50: #f9fafb;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-300: #d1d5db;
+    --gray-400: #9ca3af;
+    --gray-500: #6b7280;
+    --gray-600: #4b5563;
+    --gray-700: #374151;
+    --gray-800: #1f2937;
+    --gray-900: #111827;
 
 table {
     width: 100%;
@@ -11,14 +23,18 @@ td {
     padding: 8px;
     vertical-align: top;
     width: 14.28%;
+    color: #8dbfce;
+    overflow: auto;
+    scrollbar-width: none;
 }
 
 tr:nth-child(even) {
-    background-color: #f2f2f2;
+    background-color: var(--gray-600);
 }
 
 td:hover {
     background-color: #ddd;
+    color:var(--gray-600);
 }
 
 h2 {
@@ -40,11 +56,6 @@ h2 {
     background-color: #008cba;
 }
 
-h3 {
-    margin: 0;
-    color: #333;
-}
-
 p {
     margin: 0;
     color: #666;
@@ -54,7 +65,7 @@ p {
     width: 80%;
     /* Ajustez cette valeur selon vos besoins */
     height: 0;
-    padding-bottom: 80%;
+    padding-bottom: 45%;
     /* La hauteur est définie par le padding pour créer un carré */
     position: relative;
 }
@@ -66,13 +77,23 @@ p {
 }
 
 .nameAgenda{
-text-align: end;
+    text-align: end;
 }
 
 .month-navigation {
     display: flex;
     justify-content: center;
     align-items: center;
+}
+
+.currentMonth{
+    color: var(--gray-300);
+}
+
+.agenda-names{
+    width: 225px;
+    margin: 0.3rem;
+    font-size: smaller;
 }
 
 @media (max-width: 600px) {
@@ -94,4 +115,10 @@ text-align: end;
     td{
         height: 80px;
     }
+
+    table{
+        margin-top: 1rem;
+    }
+
+}
 }

@@ -9,11 +9,18 @@ import "./css/friendProfile.css";
 const FriendProfile = ({ date, onCancel }) => {
   const [currentDate, setCurrentDate] = useState(date);
   const [receiveNotifications, setReceiveNotifications] = useState(true);
-  const [notificationTimings, setNotificationTimings] = useState([1]); // Par défaut 1 jour avant
+  const [notificationTimings, setNotificationTimings] = useState([1]);
   const [notifyOnBirthday, setNotifyOnBirthday] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Options de rappel disponibles
+  // Nouveaux états pour gérer les changements
+  const [originalPreferences, setOriginalPreferences] = useState({
+    timings: [1],
+    notifyOnBirthday: false,
+  });
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [saveStatus, setSaveStatus] = useState("idle"); // 'idle', 'saved', 'hasChanges'
+
   const reminderOptions = [
     { value: 1, label: "1 jour avant" },
     { value: 3, label: "3 jours avant" },
@@ -23,24 +30,43 @@ const FriendProfile = ({ date, onCancel }) => {
   ];
 
   useEffect(() => {
-    // Charger les préférences de notification pour cette date
     function loadNotificationPreferences() {
-      // Initialiser à partir de l'état de l'objet currentDate
-      setReceiveNotifications(currentDate.receiveNotifications !== false); // true par défaut si non défini
+      setReceiveNotifications(currentDate.receiveNotifications !== false);
 
-      // Si les préférences de notification existent
-      if (currentDate.notificationPreferences) {
-        setNotificationTimings(
-          currentDate.notificationPreferences.timings || [1]
-        );
-        setNotifyOnBirthday(
-          currentDate.notificationPreferences.notifyOnBirthday || false
-        );
-      }
+      const initialTimings = currentDate.notificationPreferences?.timings || [
+        1,
+      ];
+      const initialNotifyOnBirthday =
+        currentDate.notificationPreferences?.notifyOnBirthday || false;
+
+      setNotificationTimings(initialTimings);
+      setNotifyOnBirthday(initialNotifyOnBirthday);
+
+      // Sauvegarder les préférences originales
+      setOriginalPreferences({
+        timings: [...initialTimings],
+        notifyOnBirthday: initialNotifyOnBirthday,
+      });
+
+      setSaveStatus("idle");
+      setHasUnsavedChanges(false);
     }
 
     loadNotificationPreferences();
   }, [currentDate]);
+
+  // Fonction pour vérifier s'il y a des changements
+  const checkForChanges = (newTimings, newNotifyOnBirthday) => {
+    const timingsChanged =
+      JSON.stringify([...newTimings].sort()) !==
+      JSON.stringify([...originalPreferences.timings].sort());
+    const birthdayChanged =
+      newNotifyOnBirthday !== originalPreferences.notifyOnBirthday;
+
+    const hasChanges = timingsChanged || birthdayChanged;
+    setHasUnsavedChanges(hasChanges);
+    setSaveStatus(hasChanges ? "hasChanges" : "saved");
+  };
 
   const handleGiftAdded = (updatedDate) => {
     setCurrentDate(updatedDate);
@@ -80,11 +106,9 @@ const FriendProfile = ({ date, onCancel }) => {
         newValue
       );
 
-      // Mettre à jour l'état local
       setCurrentDate(updatedDate);
     } catch (error) {
       console.error("Failed to update notification preference:", error);
-      // Remettre à l'état précédent en cas d'erreur
       setReceiveNotifications(!newValue);
     } finally {
       setIsLoading(false);
@@ -92,17 +116,28 @@ const FriendProfile = ({ date, onCancel }) => {
   };
 
   const handleTimingChange = (value) => {
-    // Si la valeur est déjà dans le tableau, la retirer, sinon l'ajouter
+    let newTimings;
     if (notificationTimings.includes(value)) {
-      setNotificationTimings(notificationTimings.filter((r) => r !== value));
+      newTimings = notificationTimings.filter((r) => r !== value);
     } else {
-      setNotificationTimings([...notificationTimings, value]);
+      newTimings = [...notificationTimings, value];
     }
+
+    setNotificationTimings(newTimings);
+    checkForChanges(newTimings, notifyOnBirthday);
+  };
+
+  const handleNotifyOnBirthdayChange = (e) => {
+    const newValue = e.target.checked;
+    setNotifyOnBirthday(newValue);
+    checkForChanges(notificationTimings, newValue);
   };
 
   const handleSaveNotificationPreferences = async () => {
     try {
       setIsLoading(true);
+      setSaveStatus("saving");
+
       const updatedDate = await apiHandler.updateDateNotificationPreferences(
         currentDate._id,
         {
@@ -111,18 +146,74 @@ const FriendProfile = ({ date, onCancel }) => {
         }
       );
 
-      // Mettre à jour l'état local
       setCurrentDate(updatedDate);
+
+      // Mettre à jour les préférences originales après sauvegarde réussie
+      setOriginalPreferences({
+        timings: [...notificationTimings],
+        notifyOnBirthday: notifyOnBirthday,
+      });
+
+      setHasUnsavedChanges(false);
+      setSaveStatus("saved");
+
+      // Revenir à l'état 'idle' après 2 secondes
+      setTimeout(() => {
+        setSaveStatus("idle");
+      }, 2000);
     } catch (error) {
       console.error("Failed to save notification preferences:", error);
+      setSaveStatus("error");
+
+      // Revenir à l'état précédent après 3 secondes
+      setTimeout(() => {
+        setSaveStatus(hasUnsavedChanges ? "hasChanges" : "idle");
+      }, 3000);
     } finally {
       setIsLoading(false);
     }
   };
 
+  // Fonction pour obtenir le texte et la classe du bouton
+  const getButtonConfig = () => {
+    switch (saveStatus) {
+      case "hasChanges":
+        return {
+          text: "Sauvegarder les préférences",
+          className: "save-preferences-btn has-changes",
+          disabled: false,
+        };
+      case "saved":
+        return {
+          text: "Préférences sauvegardées ✓",
+          className: "save-preferences-btn saved",
+          disabled: true,
+        };
+      case "saving":
+        return {
+          text: "Sauvegarde en cours...",
+          className: "save-preferences-btn saving",
+          disabled: true,
+        };
+      case "error":
+        return {
+          text: "Erreur lors de la sauvegarde",
+          className: "save-preferences-btn error",
+          disabled: false,
+        };
+      default:
+        return {
+          text: "Sauvegarder les préférences",
+          className: "save-preferences-btn",
+          disabled: true,
+        };
+    }
+  };
+
+  const buttonConfig = getButtonConfig();
+
   return (
     <div className="friendProfil">
-      {/* Section info profil */}
       <h1 className="name-profilFriend font-profilFriend">
         {currentDate.name} {currentDate.surname}
       </h1>
@@ -137,7 +228,6 @@ const FriendProfile = ({ date, onCancel }) => {
           </div>
         </div>
 
-        {/* Section des préférences de notification */}
         <div className="notificationPreferences gri2-friendProfil">
           <h2>Préférences de notification</h2>
 
@@ -166,7 +256,7 @@ const FriendProfile = ({ date, onCancel }) => {
                 <input
                   type="checkbox"
                   checked={notifyOnBirthday}
-                  onChange={(e) => setNotifyOnBirthday(e.target.checked)}
+                  onChange={handleNotifyOnBirthdayChange}
                   disabled={isLoading || !receiveNotifications}
                 />
                 Le jour même
@@ -188,22 +278,22 @@ const FriendProfile = ({ date, onCancel }) => {
             ))}
 
             <button
-              className="save-preferences-btn"
+              className={buttonConfig.className}
               onClick={handleSaveNotificationPreferences}
-              disabled={isLoading || !receiveNotifications}
+              disabled={
+                buttonConfig.disabled || isLoading || !receiveNotifications
+              }
             >
-              Sauvegarder les préférences
+              {buttonConfig.text}
             </button>
           </div>
         </div>
 
-        {/* Formulaire pour ajouter des cadeaux */}
         <div className="gift-friendProfil grid3-friendProfil">
           <div className="form-friendProfil">
             <GiftForm dateId={currentDate._id} onGiftAdded={handleGiftAdded} />
           </div>
 
-          {/* Liste des cadeaux */}
           <h2 className="giftTiltle-friendProfil">Vos idées de cadeaux</h2>
           <div className="giftList-friendProfil">
             <div className="giftName-friendProfil">

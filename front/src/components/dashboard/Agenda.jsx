@@ -50,7 +50,7 @@ const Agenda = ({ dates }) => {
         <button className="btnAgenda" onClick={handlePreviousMonth}>
           Mois précédent
         </button>
-        <h2>
+        <h2 className="currentMonth">
           {currentMonth.toLocaleString("fr-FR", {
             month: "long",
             year: "numeric",
@@ -89,7 +89,7 @@ const Agenda = ({ dates }) => {
                               </div>
                             ) : (
                               dates.map((date) => (
-                                <div key={date._id}>
+                                <div className="agenda-names" key={date._id}>
                                   <span>
                                     <b>
                                       {date.name} {date.surname}

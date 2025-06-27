@@ -279,7 +279,7 @@
 }
 
 /* Icône pour cartes avec cadeaux */
-.birthCard.has-gifts::before {
+/* .birthCard.has-gifts::before {
   content: "";
   position: absolute;
   top: 10px;
@@ -290,7 +290,7 @@
   background-size: contain;
   background-repeat: no-repeat;
   z-index: 2;
-}
+} */
 
 
 /* Message "Aucun résultat" */
