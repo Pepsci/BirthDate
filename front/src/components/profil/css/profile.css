@@ -18,13 +18,13 @@
 }
 
 .profil, h2{
-    color: var(--gray-100);
+    color: var(--gray-100) !important;
     font-family: 'Roboto', sans-serif;
 }
 
 .profile_info_details{
-    margin: 1rem;
-    color: var(--gray-300);
+    margin: 1rem !important;
+    color: var(--gray-300) !important;
     font-family: 'Roboto', sans-serif;
 }
 
