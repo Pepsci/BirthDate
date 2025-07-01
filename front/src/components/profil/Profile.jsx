@@ -5,6 +5,7 @@ import useAuth from "../../context/useAuth";
 import "./css/profile.css";
 import PasswordInput from "../connect/PasswordInput";
 import Countdown from "../dashboard/Countdown";
+import Notifications from "./Notifications";
 
 const ProfilDetails = () => {
   const { logOut } = useContext(AuthContext);
@@ -308,6 +309,9 @@ const ProfilDetails = () => {
           </div>
         </div>
       )}
+      <div className="notification">
+        <Notifications />
+      </div>
     </div>
   );
 };
