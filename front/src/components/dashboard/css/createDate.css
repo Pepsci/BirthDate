@@ -46,3 +46,12 @@ outline: none;
 .form-date-input{
     color: white;
 }
+
+.form-date-input1{
+    margin-bottom: .6rem;
+}
+
+.addDate-inputDate{
+    width: 100px;
+    border-bottom: none;
+}

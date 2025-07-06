@@ -9,7 +9,12 @@
     gap: 1rem;
 }
 
+.filter-input{
+    margin-bottom: .6rem
+}
+
 .title-filter{
+    margin: 0;
     font-size: 1.5rem;
     color: white;
     font-family: 'Roboto', sans-serif;

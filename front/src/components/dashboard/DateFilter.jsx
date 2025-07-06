@@ -40,20 +40,22 @@ const DateFilter = ({ onFilterChange }) => {
     <div className="date-filter">
       <h3 className="title-filter">Filtrer les anniversaires</h3>
       <div className="filter-options">
-        <input
-          type="text"
-          placeholder=" Rechercher par prénom..."
-          value={nameSearch}
-          onChange={handleNameChange}
-          className="inputFilter"
-        />
-        <input
-          type="text"
-          placeholder=" Rechercher par nom..."
-          value={surnameSearch}
-          onChange={handleSurnameChange}
-          className="inputFilter"
-        />
+        <div className="filter-input">
+          <input
+            type="text"
+            placeholder=" Rechercher par prénom..."
+            value={nameSearch}
+            onChange={handleNameChange}
+            className="inputFilter"
+          />
+          <input
+            type="text"
+            placeholder=" Rechercher par nom..."
+            value={surnameSearch}
+            onChange={handleSurnameChange}
+            className="inputFilter"
+          />
+        </div>
         <div className="btnFilter">
           <button
             className={`btn ${

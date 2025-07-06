@@ -107,26 +107,27 @@ const CreateDate = ({ onDateAdded }) => {
               value={date.surname}
               onChange={(e) => setDate({ ...date, surname: e.target.value })}
             />
+            <div className="form-date-input2">
+              <input
+                className="form-date-input addDate-inputDate formAddInput"
+                type="date"
+                name="date"
+                value={date.date}
+                onChange={(e) => setDate({ ...date, date: e.target.value })}
+              />
+              <label className="form-date-labelDate" htmlFor="family">
+                Family
+              </label>
+              <input
+                className="form-date-input formAddInput"
+                type="checkbox"
+                id="family"
+                checked={date.family}
+                onChange={(e) => setDate({ ...date, family: e.target.checked })}
+              />
+            </div>
           </div>
-          <div className="form-date-input2">
-            <input
-              className="form-date-input formAddInput"
-              type="date"
-              name="date"
-              value={date.date}
-              onChange={(e) => setDate({ ...date, date: e.target.value })}
-            />
-            <label className="form-date-labelDate" htmlFor="family">
-              Family
-            </label>
-            <input
-              className="form-date-input formAddInput"
-              type="checkbox"
-              id="family"
-              checked={date.family}
-              onChange={(e) => setDate({ ...date, family: e.target.checked })}
-            />
-          </div>
+
           <button className="btnSwitch" type="submit">
             Ajouter
           </button>
