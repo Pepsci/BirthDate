@@ -5,7 +5,7 @@ import useAuth from "../../context/useAuth";
 import "./css/profile.css";
 import PasswordInput from "../connect/PasswordInput";
 import Countdown from "../dashboard/Countdown";
-import Notifications from "./Notifications";
+import GestionNotification from "./GestionNotifications";
 
 const ProfilDetails = () => {
   const { logOut } = useContext(AuthContext);
@@ -265,16 +265,6 @@ const ProfilDetails = () => {
               </div>
             </form>
           </div>
-          <div className="emailPreference">
-            <label>
-              <input
-                type="checkbox"
-                checked={receiveEmails}
-                onChange={handleEmailPreferenceChange}
-              />
-              Notification par e-mails de rappel d'anniversaire
-            </label>
-          </div>
         </div>
       ) : (
         <div className="profile">
@@ -296,7 +286,9 @@ const ProfilDetails = () => {
                 : "N/A"}
             </p>
             {userToUpdate.birthDate && (
-              <Countdown birthdate={userToUpdate.birthDate} />
+              <div className="profil-countdown">
+                <Countdown birthdate={userToUpdate.birthDate} />
+              </div>
             )}
             <div className="profil-btn">
               <button className="btn-profil" onClick={handleEditMode}>
@@ -307,11 +299,9 @@ const ProfilDetails = () => {
               </button>
             </div>
           </div>
+          <div className="notification">{/* <GestionNotification /> */}</div>
         </div>
       )}
-      <div className="notification">
-        <Notifications />
-      </div>
     </div>
   );
 };

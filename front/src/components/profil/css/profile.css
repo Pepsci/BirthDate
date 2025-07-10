@@ -5,9 +5,10 @@
 }
 
 .profile_info{
+    margin-top: 2rem;
     position: relative;
-    width: 200px;
-    height: auto;
+    max-width: 400px;
+    max-height: 650px;
     padding: 1rem;
     margin: 1.5rem;
     border: 3px solid black;
@@ -30,6 +31,7 @@
 
 .profil-btn{
     gap: 1rem;
+    margin-top: 6rem !important;
 }
 
 .profile-togglePasswordContainer{
@@ -69,4 +71,18 @@
     flex-direction: column;
     margin-top: 1rem;
     align-items: center;
+}
+
+.profil-countdown{
+    margin-top: 4rem;
+}
+
+
+@media (max-width: 600px) {
+
+    .profile_info {
+        width: 200px;
+        margin: 2rem;
+    }
+
 }

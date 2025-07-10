@@ -17,12 +17,11 @@ const DateList = ({ onEditDate, onViewFriendProfile }) => {
   const [allDates, setAllDates] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [isFormVisible, setIsFormVisible] = useState(false);
-  const [isFilterVisible, setIsFilterVisible] = useState(false); // Nouvel état pour le filtre
+  const [isFilterVisible, setIsFilterVisible] = useState(false);
   const [itemsPerPage, setItemsPerPage] = useState(
     window.innerWidth <= 600 ? ITEMS_PER_PAGE_MOBILE : ITEMS_PER_PAGE
   );
 
-  // Vos fonctions existantes...
   const calculateCurrentAge = (birthDate) => {
     const today = new Date();
     const birth = new Date(birthDate);

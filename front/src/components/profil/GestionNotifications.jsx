@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import useAuth from "../../context/useAuth";
 import apiHandler from "../../api/apiHandler";
-import "./css/notification.css";
+import "./css/gestionNotifications.css";
 
 const Notifications = () => {
   const { currentUser } = useAuth();
@@ -230,9 +230,9 @@ const Notifications = () => {
                     <span className="birth-date">
                       {new Date(date.date).toLocaleDateString("fr-FR")}
                     </span>
-                    {date.family && (
+                    {/* {date.family && (
                       <span className="family-badge">👨‍👩‍👧‍👦 Famille</span>
-                    )}
+                    )} */}
                   </div>
                 </div>
 
@@ -252,7 +252,7 @@ const Notifications = () => {
                       isEnabled ? "enabled" : "disabled"
                     }`}
                   >
-                    {isUpdating ? (
+                    {/* {isUpdating ? (
                       <span className="updating-text">
                         <span className="mini-spinner"></span>
                         Mise à jour...
@@ -261,7 +261,7 @@ const Notifications = () => {
                       "Activé"
                     ) : (
                       "Désactivé"
-                    )}
+                    )} */}
                   </span>
                 </div>
               </div>

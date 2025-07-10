@@ -1,11 +1,19 @@
 /* Styles pour le gestionnaire simple de notifications */
 .simple-notification-manager {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 24px;
-  background-color: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  position: relative;
+    max-width: 400px;
+    max-height: 650px;
+    padding: 1rem;
+    margin: 1.5rem;
+    border: 3px solid black;
+    margin-bottom: -10px;
+    border-radius: 10%;
+    /* z-index: 0; */
+    background-color: var(--gray-800);
+    overflow: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+
 }
 
 /* En-tête */
@@ -72,10 +80,10 @@
   color: white;
 }
 
-.disable-all:hover:not(:disabled) {
+/* .disable-all:hover:not(:disabled) {
   background-color: #dc2626;
   transform: translateY(-2px);
-}
+} */
 
 /* Liste des notifications */
 .notification-list {
@@ -88,11 +96,12 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px;
+  padding: 6px;
   background-color: #f9fafb;
   border-radius: 12px;
   border: 2px solid transparent;
   transition: all 0.3s ease;
+  height: 50px;
 }
 
 .notification-item.enabled {
