@@ -3,7 +3,7 @@ import { AuthContext } from "../../context/auth.context";
 import apiHandler from "../../api/apiHandler";
 import useAuth from "../../context/useAuth";
 import "./css/profile.css";
-import "./css/carousel.css";
+import "./css/carousel.css"; // Import du nouveau fichier CSS
 import PasswordInput from "../connect/PasswordInput";
 import Countdown from "../dashboard/Countdown";
 import GestionNotification from "./GestionNotifications";
@@ -316,7 +316,7 @@ const ProfilDetails = () => {
         </div>
       ) : (
         <div className="profile">
-          {/* CARROUSEL MOBILE UNIQUEMENT */}
+          {/* CARROUSEL VISIBLE SUR TOUTES TAILLES D'ÉCRAN */}
           <div className="mobile-carousel-container">
             <div className="mobile-carousel">
               {/* Header avec titre de section */}
@@ -388,8 +388,8 @@ const ProfilDetails = () => {
             </div>
           </div>
 
-          {/* AFFICHAGE DESKTOP - VOTRE STRUCTURE ORIGINALE */}
-          {/* <div className="profileWrapper hidden md:block">
+          {/* AFFICHAGE DESKTOP - CACHÉ MAINTENANT */}
+          <div className="profileWrapper hidden">
             <div className="profile_info">
               <h2>Vos données</h2>
               <p className="profile_info_details">
@@ -424,7 +424,7 @@ const ProfilDetails = () => {
             <div className="notification">
               <GestionNotification />
             </div>
-          </div> */}
+          </div>
         </div>
       )}
     </div>

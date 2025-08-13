@@ -1,5 +1,5 @@
 /* ========================================
-   CARROUSEL MOBILE - STYLES
+   CARROUSEL - STYLES (MOBILE ET DESKTOP)
    ======================================== */
 
 .mobile-carousel {
@@ -150,16 +150,64 @@
     /* Styles spécifiques au contenu si nécessaire */
 }
 
-/* Responsive - Cacher le carrousel sur desktop */
-@media (min-width: 768px) {
+/* AFFICHAGE RESPONSIVE CORRECT */
+/* Mobile: Carrousel visible */
+@media (max-width: 767px) {
     .mobile-carousel-container {
-        display: none;
+        display: block !important;
+    }
+
+    .profileWrapper {
+        display: none !important;
     }
 }
 
-/* Afficher le carrousel seulement sur mobile */
-@media (max-width: 767px) {
+/* Desktop: Affichage original visible */
+@media (min-width: 768px) {
     .mobile-carousel-container {
-        display: block;
+        display: none !important;
     }
+
+    .profileWrapper {
+        display: flex !important;
+    }
+}
+
+/* ========================================
+   CORRECTIONS POUR LES CHECKBOXES NOTIFICATIONS
+   ======================================== */
+
+/* Correction pour centrer les toggles dans les cases vertes */
+.notification-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    /* Padding plus équilibré */
+    background-color: var(--gray-700);
+    border-radius: 12px;
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+    min-height: 60px;
+    /* Hauteur minimale pour un bon alignement */
+}
+
+/* Toggle switch centré */
+.notification-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    min-width: 120px;
+    /* Largeur minimale pour le toggle */
+}
+
+/* Amélioration du switch */
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 34px;
+    flex-shrink: 0;
+    /* Empêche la compression */
 }
