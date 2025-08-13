@@ -1,7 +1,12 @@
+/* profile.css - Styles pour le composant profil */
+
 .profile{
     display: flex;
     flex-direction: row;
     justify-content: center;
+    align-items: flex-start;
+    gap: 1rem;
+    flex-wrap: nowrap; /* Empêche le passage à la ligne */
 }
 
 .profile_info{
@@ -16,11 +21,18 @@
     border-radius: 10%;
     z-index: 0;
     background-color: var(--gray-800);
+    flex-shrink: 0;
+}
+
+.notification{
+    margin-top: 2rem;
+    flex-shrink: 0;
 }
 
 .profil, h2{
     color: var(--gray-100) !important;
     font-family: 'Roboto', sans-serif;
+    font-size: xx-large;
 }
 
 .profile_info_details{
@@ -31,7 +43,7 @@
 
 .profil-btn{
     gap: 1rem;
-    margin-top: 6rem !important;
+    margin-top: -1rem !important;
 }
 
 .profile-togglePasswordContainer{
@@ -77,12 +89,54 @@
     margin-top: 4rem;
 }
 
+/* Responsive design pour le profil */
+
+@media (max-width: 900px) {
+    .profile {
+        flex-direction: row; 
+        justify-content: center;
+        gap: 0.5rem; 
+    }
+    
+    .profile_info,
+    .notification {
+        margin: 0.5rem; 
+        max-width: 350px; 
+    }
+}
 
 @media (max-width: 600px) {
 
-    .profile_info {
-        width: 200px;
+    .profileWrapper{
         margin: 2rem;
+        background-color: blue;
+        display: flex;
+        flex-direction: row;
+        justify-content: space-around;
     }
 
+    /* .profile {
+        flex-direction: row; 
+        gap: 0.25rem;
+        width: 750px;
+        overflow: auto;
+    } */
+    
+    .profile_info {
+        width: 300px; 
+        height: 600px;
+        margin: 0.25rem;
+        padding: 0.75rem; 
+    }
+    
+    .simple-notification-manager {
+        width: 280px;
+        margin: 0.25rem;
+        max-width: calc(50vw - 1rem);
+        padding: 0.75rem;
+    }
+
+    .profile_info:nth-child(2){
+        color: beige;
+    }
 }

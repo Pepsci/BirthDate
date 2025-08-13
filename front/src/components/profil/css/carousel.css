@@ -1,0 +1,165 @@
+/* ========================================
+   CARROUSEL MOBILE - STYLES
+   ======================================== */
+
+.mobile-carousel {
+    max-width: 400px;
+    margin: 0 auto;
+    background-color: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Header du carrousel */
+.mobile-carousel__header {
+    padding: 2px;
+    background-color: var(--gray-900);
+    border: 1px solid #e9ecef;
+    text-align: center;
+}
+
+.mobile-carousel__icon {
+    font-size: 24px;
+}
+
+.mobile-carousel__title {
+    margin: 8px 0 0 0;
+    font-size: 18px;
+    font-weight: bold;
+    color: #495057;
+}
+
+/* Contenu du carrousel */
+.mobile-carousel__content {
+    position: relative;
+    min-height: 300px;
+    padding: 16px;
+    background-color: var(--gray-900);
+}
+
+/* Boutons de navigation */
+.mobile-carousel__nav-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: rgba(255, 255, 255, 0.9);
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    z-index: 10;
+}
+
+.mobile-carousel__nav-btn:hover {
+    background-color: rgba(255, 255, 255, 1);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.mobile-carousel__nav-btn--prev {
+    left: 8px;
+}
+
+.mobile-carousel__nav-btn--next {
+    right: 8px;
+}
+
+/* Indicateurs */
+.mobile-carousel__indicators {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    padding: 16px;
+    background-color: var(--gray-900);
+}
+
+.mobile-carousel__indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: none;
+    background-color: #ced4da;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.mobile-carousel__indicator--active {
+    background-color: #007bff;
+    transform: scale(1.2);
+}
+
+.mobile-carousel__indicator:hover {
+    background-color: #adb5bd;
+}
+
+.mobile-carousel__indicator--active:hover {
+    background-color: #0056b3;
+}
+
+/* Navigation rapide */
+.mobile-carousel__quick-nav {
+    padding: 12px 16px;
+    background-color: var(--gray-900);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px;
+}
+
+.mobile-carousel__counter {
+    color: #6c757d;
+}
+
+.mobile-carousel__quick-buttons {
+    display: flex;
+    gap: 4px;
+}
+
+.mobile-carousel__quick-btn {
+    padding: 4px 8px;
+    font-size: 12px;
+    border: none;
+    border-radius: 12px;
+    background-color: white;
+    color: #495057;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.mobile-carousel__quick-btn--active {
+    background-color: #007bff;
+    color: white;
+}
+
+.mobile-carousel__quick-btn:hover {
+    background-color: #e9ecef;
+}
+
+.mobile-carousel__quick-btn--active:hover {
+    background-color: #0056b3;
+}
+
+/* Section mobile */
+.mobile-section {
+    /* Styles spécifiques au contenu si nécessaire */
+}
+
+/* Responsive - Cacher le carrousel sur desktop */
+@media (min-width: 768px) {
+    .mobile-carousel-container {
+        display: none;
+    }
+}
+
+/* Afficher le carrousel seulement sur mobile */
+@media (max-width: 767px) {
+    .mobile-carousel-container {
+        display: block;
+    }
+}

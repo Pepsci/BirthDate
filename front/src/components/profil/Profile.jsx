@@ -3,9 +3,11 @@ import { AuthContext } from "../../context/auth.context";
 import apiHandler from "../../api/apiHandler";
 import useAuth from "../../context/useAuth";
 import "./css/profile.css";
+import "./css/carousel.css";
 import PasswordInput from "../connect/PasswordInput";
 import Countdown from "../dashboard/Countdown";
 import GestionNotification from "./GestionNotifications";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const ProfilDetails = () => {
   const { logOut } = useContext(AuthContext);
@@ -19,29 +21,39 @@ const ProfilDetails = () => {
     email: "",
     avatar: "",
     birthDate: "",
-    receiveBirthdayEmails: false, // Ajout de ce champ
+    receiveBirthdayEmails: false,
   });
+
   const [passwords, setPasswords] = useState({
     currentPassword: "",
     newPassword: "",
     confirmPassword: "",
   });
+
   const [showPasswordFields, setShowPasswordFields] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [deleteMode, setDeleteMode] = useState(false);
   const [receiveEmails, setReceiveEmails] = useState(false);
+
+  // État pour le carrousel mobile uniquement
+  const [currentCarouselIndex, setCurrentCarouselIndex] = useState(0);
 
   const avatarRef = useRef();
 
+  // Sections du carrousel pour mobile
+  const carouselSections = [
+    { id: "personal", title: "Infos Personnelles", icon: "👤" },
+    { id: "notifications", title: "Notifications", icon: "🔔" },
+  ];
+
   useEffect(() => {
-    let isMounted = true; // Pour éviter les fuites de mémoire
+    let isMounted = true;
     if (currentUser) {
       apiHandler
         .get(`/users/${currentUser._id}`)
         .then((dbResponse) => {
           if (isMounted) {
             setUserToUpdate(dbResponse.data);
-            setReceiveEmails(dbResponse.data.receiveBirthdayEmails); // Initialiser avec la préférence actuelle
+            setReceiveEmails(dbResponse.data.receiveBirthdayEmails);
           }
         })
         .catch((error) => {
@@ -96,7 +108,7 @@ const ProfilDetails = () => {
       fd.append("newPassword", passwords.newPassword);
     }
 
-    fd.append("receiveBirthdayEmails", receiveEmails); // Ajout de cette ligne
+    fd.append("receiveBirthdayEmails", receiveEmails);
 
     try {
       const dbResponse = await apiHandler.patch(
@@ -122,38 +134,73 @@ const ProfilDetails = () => {
       console.error(error);
     }
   };
-  const deleteAccount = async (e) => {
-    e.preventDefault();
-    try {
-      await apiHandler.delete(`/users/${userToUpdate._id}`);
-      removeUser();
-      setDeleteMode(false);
-      setIsEditing(false);
-    } catch (error) {
-      console.error(error);
-    }
+
+  // Fonctions du carrousel
+  const goToPrevious = () => {
+    setCurrentCarouselIndex(
+      currentCarouselIndex > 0
+        ? currentCarouselIndex - 1
+        : carouselSections.length - 1
+    );
   };
 
-  const confirmDelete = (e) => {
-    e.preventDefault();
-    setDeleteMode(true);
+  const goToNext = () => {
+    setCurrentCarouselIndex(
+      currentCarouselIndex < carouselSections.length - 1
+        ? currentCarouselIndex + 1
+        : 0
+    );
   };
 
-  const cancelDelete = (e) => {
-    e.preventDefault();
-    setDeleteMode(false);
-    setIsEditing(true);
-  };
+  // Rendu du contenu selon la section
+  const renderMobileSection = () => {
+    const currentSection = carouselSections[currentCarouselIndex];
 
-  const handleEmailPreferenceChange = async () => {
-    try {
-      const newPreference = !receiveEmails;
-      await apiHandler.patch(`/users/${userToUpdate._id}`, {
-        receiveBirthdayEmails: newPreference,
-      });
-      setReceiveEmails(newPreference);
-    } catch (error) {
-      console.error("Failed to update email preference:", error);
+    switch (currentSection.id) {
+      case "personal":
+        return (
+          <div className="mobile-section">
+            <h2>Vos données</h2>
+            <p className="profile_info_details">
+              <b>
+                {currentUser && currentUser.name}{" "}
+                {currentUser && currentUser.surname}
+              </b>
+            </p>
+            <p className="profile_info_details">
+              <b>{currentUser && currentUser.email}</b>
+            </p>
+            <p className="profile_info_details">
+              <b>Date de naissance:</b>{" "}
+              {userToUpdate.birthDate
+                ? new Date(userToUpdate.birthDate).toLocaleDateString()
+                : "N/A"}
+            </p>
+            {userToUpdate.birthDate && (
+              <div className="profil-countdown">
+                <Countdown birthdate={userToUpdate.birthDate} />
+              </div>
+            )}
+            <div className="profil-btn" style={{ marginTop: "20px" }}>
+              <button className="btn-profil" onClick={handleEditMode}>
+                Modifier
+              </button>
+              <button className="btn-profil" onClick={logOut}>
+                LogOut
+              </button>
+            </div>
+          </div>
+        );
+
+      case "notifications":
+        return (
+          <div className="mobile-section">
+            <GestionNotification />
+          </div>
+        );
+
+      default:
+        return null;
     }
   };
 
@@ -162,6 +209,7 @@ const ProfilDetails = () => {
   return (
     <div>
       {isEditing ? (
+        // Mode édition - inchangé
         <div className="formEdit form-connect">
           <div className="peel">
             <form className="formEditProfile form" onSubmit={sendForm}>
@@ -268,38 +316,115 @@ const ProfilDetails = () => {
         </div>
       ) : (
         <div className="profile">
-          <div className="profile_info">
-            <h2>Vos données</h2>
-            <p className="profile_info_details">
-              <b>
-                {currentUser && currentUser.name}{" "}
-                {currentUser && currentUser.surname}
-              </b>
-            </p>
-            <p className="profile_info_details">
-              <b>{currentUser && currentUser.email}</b>
-            </p>
-            <p className="profile_info_details">
-              <b>Date de naissance:</b>{" "}
-              {userToUpdate.birthDate
-                ? new Date(userToUpdate.birthDate).toLocaleDateString()
-                : "N/A"}
-            </p>
-            {userToUpdate.birthDate && (
-              <div className="profil-countdown">
-                <Countdown birthdate={userToUpdate.birthDate} />
+          {/* CARROUSEL MOBILE UNIQUEMENT */}
+          <div className="mobile-carousel-container">
+            <div className="mobile-carousel">
+              {/* Header avec titre de section */}
+              <div className="mobile-carousel__header">
+                <span className="mobile-carousel__icon">
+                  {carouselSections[currentCarouselIndex].icon}
+                </span>
+                <h3 className="mobile-carousel__title">
+                  {carouselSections[currentCarouselIndex].title}
+                </h3>
               </div>
-            )}
-            <div className="profil-btn">
-              <button className="btn-profil" onClick={handleEditMode}>
-                Modifier
-              </button>
-              <button className="btn-profil" onClick={logOut}>
-                LogOut
-              </button>
+
+              {/* Contenu de la section */}
+              <div className="mobile-carousel__content">
+                {renderMobileSection()}
+
+                {/* Boutons de navigation */}
+                <button
+                  onClick={goToPrevious}
+                  className="mobile-carousel__nav-btn mobile-carousel__nav-btn--prev"
+                >
+                  <ChevronLeft size={20} color="#495057" />
+                </button>
+
+                <button
+                  onClick={goToNext}
+                  className="mobile-carousel__nav-btn mobile-carousel__nav-btn--next"
+                >
+                  <ChevronRight size={20} color="#495057" />
+                </button>
+              </div>
+
+              {/* Indicateurs */}
+              <div className="mobile-carousel__indicators">
+                {carouselSections.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setCurrentCarouselIndex(index)}
+                    className={`mobile-carousel__indicator ${
+                      index === currentCarouselIndex
+                        ? "mobile-carousel__indicator--active"
+                        : ""
+                    }`}
+                  />
+                ))}
+              </div>
+
+              {/* Navigation rapide */}
+              <div className="mobile-carousel__quick-nav">
+                <span className="mobile-carousel__counter">
+                  {currentCarouselIndex + 1} / {carouselSections.length}
+                </span>
+                <div className="mobile-carousel__quick-buttons">
+                  {carouselSections.map((section, index) => (
+                    <button
+                      key={section.id}
+                      onClick={() => setCurrentCarouselIndex(index)}
+                      className={`mobile-carousel__quick-btn ${
+                        index === currentCarouselIndex
+                          ? "mobile-carousel__quick-btn--active"
+                          : ""
+                      }`}
+                    >
+                      {section.icon}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
-          <div className="notification">{/* <GestionNotification /> */}</div>
+
+          {/* AFFICHAGE DESKTOP - VOTRE STRUCTURE ORIGINALE */}
+          {/* <div className="profileWrapper hidden md:block">
+            <div className="profile_info">
+              <h2>Vos données</h2>
+              <p className="profile_info_details">
+                <b>
+                  {currentUser && currentUser.name}{" "}
+                  {currentUser && currentUser.surname}
+                </b>
+              </p>
+              <p className="profile_info_details">
+                <b>{currentUser && currentUser.email}</b>
+              </p>
+              <p className="profile_info_details">
+                <b>Date de naissance:</b>{" "}
+                {userToUpdate.birthDate
+                  ? new Date(userToUpdate.birthDate).toLocaleDateString()
+                  : "N/A"}
+              </p>
+              {userToUpdate.birthDate && (
+                <div className="profil-countdown">
+                  <Countdown birthdate={userToUpdate.birthDate} />
+                </div>
+              )}
+              <div className="profil-btn">
+                <button className="btn-profil" onClick={handleEditMode}>
+                  Modifier
+                </button>
+                <button className="btn-profil" onClick={logOut}>
+                  LogOut
+                </button>
+              </div>
+            </div>
+            <div className="notification">
+              <GestionNotification />
+            </div>
+          </div> */}
         </div>
       )}
     </div>
