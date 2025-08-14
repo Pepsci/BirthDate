@@ -339,8 +339,9 @@ input:disabled + .slider {
     }
 
     .notification-item {
-        flex-direction: row;
-        align-items: flex-start;
+        /* flex-direction: row;
+        align-items: flex-start; */
+        justify-content: space-between !important;
         gap: 16px;
         height: 42px;
         padding: 12px;
@@ -364,4 +365,5 @@ input:disabled + .slider {
         align-items: flex-start;
         gap: 8px;
     }
+
 }

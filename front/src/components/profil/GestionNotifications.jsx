@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from "react";
 import useAuth from "../../context/useAuth";
 import apiHandler from "../../api/apiHandler";
+import DateFilter from "../dashboard/DateFilter";
 import "./css/gestionNotifications.css";
+import "../dashboard/css/dateFilter.css";
 
 const Notifications = () => {
   const { currentUser } = useAuth();
   const [dates, setDates] = useState([]);
+  const [filteredDates, setFilteredDates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [updatingIds, setUpdatingIds] = useState(new Set());
@@ -27,12 +30,43 @@ const Notifications = () => {
       });
 
       setDates(sortedDates);
+      setFilteredDates(sortedDates); // Initialiser les dates filtrées
     } catch (err) {
       setError("Erreur lors du chargement des dates");
       console.error(err);
     } finally {
       setLoading(false);
     }
+  };
+
+  // Fonction de filtrage
+  const handleFilterChange = (
+    nameSearch,
+    surnameSearch,
+    isFamilyFilterActive
+  ) => {
+    let filtered = dates;
+
+    // Filtrer par prénom
+    if (nameSearch.trim()) {
+      filtered = filtered.filter((date) =>
+        date.name.toLowerCase().includes(nameSearch.toLowerCase())
+      );
+    }
+
+    // Filtrer par nom
+    if (surnameSearch.trim()) {
+      filtered = filtered.filter((date) =>
+        date.surname.toLowerCase().includes(surnameSearch.toLowerCase())
+      );
+    }
+
+    // Filtrer par famille
+    if (isFamilyFilterActive) {
+      filtered = filtered.filter((date) => date.family === true);
+    }
+
+    setFilteredDates(filtered);
   };
 
   // Utilisation de la même méthode que dans FriendProfile
@@ -49,11 +83,24 @@ const Notifications = () => {
       );
 
       // Mettre à jour l'état local avec la réponse complète
-      setDates((prevDates) =>
-        prevDates.map((date) =>
+      setDates((prevDates) => {
+        const newDates = prevDates.map((date) =>
           date._id === dateId
             ? { ...date, ...updatedDate } // Fusionner avec la réponse du serveur
             : date
+        );
+
+        // Réappliquer les filtres actuels
+        const currentFilters = getCurrentFilters();
+        applyFilters(newDates, currentFilters);
+
+        return newDates;
+      });
+
+      // Mettre à jour aussi les dates filtrées
+      setFilteredDates((prevFilteredDates) =>
+        prevFilteredDates.map((date) =>
+          date._id === dateId ? { ...date, ...updatedDate } : date
         )
       );
     } catch (error) {
@@ -72,6 +119,22 @@ const Notifications = () => {
         return newSet;
       });
     }
+  };
+
+  // Fonction helper pour maintenir la cohérence des filtres
+  const getCurrentFilters = () => {
+    // Cette fonction devrait idéalement récupérer les filtres actuels
+    // Pour simplifier, on peut la laisser vide ou implémenter une logique plus complexe
+    return { nameSearch: "", surnameSearch: "", isFamilyFilterActive: false };
+  };
+
+  const applyFilters = (datesToFilter, filters) => {
+    // Appliquer les mêmes filtres que handleFilterChange
+    handleFilterChange(
+      filters.nameSearch,
+      filters.surnameSearch,
+      filters.isFamilyFilterActive
+    );
   };
 
   const enableAllNotifications = async () => {
@@ -94,8 +157,24 @@ const Notifications = () => {
       const results = await Promise.all(promises);
 
       // Mettre à jour l'état local avec les réponses du serveur
-      setDates((prevDates) =>
-        prevDates.map((date) => {
+      setDates((prevDates) => {
+        const newDates = prevDates.map((date) => {
+          const updatedResult = results.find(
+            (result) => result._id === date._id
+          );
+          return updatedResult ? { ...date, ...updatedResult } : date;
+        });
+
+        // Réappliquer les filtres
+        const currentFilters = getCurrentFilters();
+        applyFilters(newDates, currentFilters);
+
+        return newDates;
+      });
+
+      // Mettre à jour les dates filtrées
+      setFilteredDates((prevFilteredDates) =>
+        prevFilteredDates.map((date) => {
           const updatedResult = results.find(
             (result) => result._id === date._id
           );
@@ -128,8 +207,23 @@ const Notifications = () => {
 
       const results = await Promise.all(promises);
 
-      setDates((prevDates) =>
-        prevDates.map((date) => {
+      setDates((prevDates) => {
+        const newDates = prevDates.map((date) => {
+          const updatedResult = results.find(
+            (result) => result._id === date._id
+          );
+          return updatedResult ? { ...date, ...updatedResult } : date;
+        });
+
+        // Réappliquer les filtres
+        const currentFilters = getCurrentFilters();
+        applyFilters(newDates, currentFilters);
+
+        return newDates;
+      });
+
+      setFilteredDates((prevFilteredDates) =>
+        prevFilteredDates.map((date) => {
           const updatedResult = results.find(
             (result) => result._id === date._id
           );
@@ -168,10 +262,11 @@ const Notifications = () => {
     );
   }
 
-  const activeCount = dates.filter(
+  const activeCount = filteredDates.filter(
     (date) => date.receiveNotifications !== false
   ).length;
-  const totalCount = dates.length;
+  const totalCount = filteredDates.length;
+  const totalOriginalCount = dates.length;
 
   return (
     <div className="simple-notification-manager">
@@ -181,9 +276,18 @@ const Notifications = () => {
         <div className="notification-summary">
           <span className="summary-text">
             {activeCount} sur {totalCount} personnes recevront des notifications
+            {totalCount !== totalOriginalCount && (
+              <span className="filter-info">
+                {" "}
+                (sur {totalOriginalCount} au total)
+              </span>
+            )}
           </span>
         </div>
       </div>
+
+      {/* Composant de filtrage */}
+      <DateFilter onFilterChange={handleFilterChange} />
 
       {/* Actions globales */}
       <div className="global-actions">
@@ -205,12 +309,16 @@ const Notifications = () => {
 
       {/* Liste des personnes */}
       <div className="notification-list">
-        {dates.length === 0 ? (
+        {filteredDates.length === 0 ? (
           <div className="empty-state">
-            <p>Aucune date d'anniversaire trouvée</p>
+            <p>
+              {dates.length === 0
+                ? "Aucune date d'anniversaire trouvée"
+                : "Aucune date ne correspond aux critères de filtrage"}
+            </p>
           </div>
         ) : (
-          dates.map((date) => {
+          filteredDates.map((date) => {
             const isUpdating = updatingIds.has(date._id);
             const isEnabled = date.receiveNotifications !== false;
 
@@ -230,9 +338,6 @@ const Notifications = () => {
                     <span className="birth-date">
                       {new Date(date.date).toLocaleDateString("fr-FR")}
                     </span>
-                    {/* {date.family && (
-                      <span className="family-badge">👨‍👩‍👧‍👦 Famille</span>
-                    )} */}
                   </div>
                 </div>
 

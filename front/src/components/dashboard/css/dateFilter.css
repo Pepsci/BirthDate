@@ -5,7 +5,7 @@
     justify-content: center;
     width: 100%;
     max-width: 800px;
-    margin: 0 auto;
+    margin: 0 0 0.5rem 0;
     gap: 1rem;
 }
 
@@ -41,6 +41,14 @@ color: white;
     .btn-filter{
         width: 180px;
         padding: 0.65rem 1rem;
+    }
+    
+    .inputFilter{
+        width: 125px;
+    }
+
+    .title-filter{
+        font-size: 1.3em;
     }
 }
     
