@@ -5,7 +5,6 @@
 .mobile-carousel {
     max-width: 400px;
     margin: 0 auto;
-    background-color: white;
     border-radius: 8px;
     overflow: hidden;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -34,14 +33,13 @@
 .mobile-carousel__content {
     position: relative;
     min-height: 300px;
-    padding: 16px;
     background-color: var(--gray-900);
 }
 
 /* Boutons de navigation */
 .mobile-carousel__nav-btn {
     position: absolute;
-    top: 50%;
+    top: 55%;
     transform: translateY(-50%);
     background-color: rgba(255, 255, 255, 0.9);
     border: none;
@@ -145,13 +143,6 @@
     background-color: #0056b3;
 }
 
-/* Section mobile */
-.mobile-section {
-    /* Styles spécifiques au contenu si nécessaire */
-}
-
-/* AFFICHAGE RESPONSIVE CORRECT */
-/* Mobile: Carrousel visible */
 @media (max-width: 767px) {
     .mobile-carousel-container {
         display: block !important;
@@ -160,9 +151,11 @@
     .profileWrapper {
         display: none !important;
     }
+    .mobile-section .notification-header h2 {
+        display: none;
+    }
 }
 
-/* Desktop: Affichage original visible */
 @media (min-width: 768px) {
     .mobile-carousel-container {
         display: none !important;
@@ -173,41 +166,31 @@
     }
 }
 
-/* ========================================
-   CORRECTIONS POUR LES CHECKBOXES NOTIFICATIONS
-   ======================================== */
 
-/* Correction pour centrer les toggles dans les cases vertes */
 .notification-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 12px 16px;
-    /* Padding plus équilibré */
     background-color: var(--gray-700);
     border-radius: 12px;
     border: 2px solid transparent;
     transition: all 0.3s ease;
     min-height: 60px;
-    /* Hauteur minimale pour un bon alignement */
 }
 
-/* Toggle switch centré */
 .notification-toggle {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 12px;
     min-width: 120px;
-    /* Largeur minimale pour le toggle */
 }
 
-/* Amélioration du switch */
 .switch {
     position: relative;
     display: inline-block;
     width: 60px;
     height: 34px;
     flex-shrink: 0;
-    /* Empêche la compression */
 }
