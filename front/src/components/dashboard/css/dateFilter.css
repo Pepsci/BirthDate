@@ -24,8 +24,10 @@
     background: transparent;
     border: transparent;
     border-bottom: 1px solid grey;
-    margin: 0.5rem;
     color: aliceblue;
+    width: 175px;
+    margin: 0 1rem 0 1rem;
+
 }
 
 .inputFilter:focus{
@@ -39,12 +41,12 @@ color: white;
 @media (max-width: 600px) {
     
     .btn-filter{
-        width: 180px;
         padding: 0.65rem 1rem;
     }
     
     .inputFilter{
-        width: 125px;
+        width: 135px;
+        margin: 0.2rem;
     }
 
     .title-filter{
