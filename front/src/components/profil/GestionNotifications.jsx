@@ -3,7 +3,6 @@ import useAuth from "../../context/useAuth";
 import apiHandler from "../../api/apiHandler";
 import DateFilter from "../dashboard/DateFilter";
 import "./css/gestionNotifications.css";
-import "../dashboard/css/dateFilter.css";
 
 const Notifications = () => {
   const { currentUser } = useAuth();
@@ -47,17 +46,17 @@ const Notifications = () => {
   ) => {
     let filtered = dates;
 
-    // Filtrer par prénom
+    // Filtrer par prénom (commence par...)
     if (nameSearch.trim()) {
       filtered = filtered.filter((date) =>
-        date.name.toLowerCase().includes(nameSearch.toLowerCase())
+        date.name.toLowerCase().startsWith(nameSearch.toLowerCase())
       );
     }
 
-    // Filtrer par nom
+    // Filtrer par nom (commence par...)
     if (surnameSearch.trim()) {
       filtered = filtered.filter((date) =>
-        date.surname.toLowerCase().includes(surnameSearch.toLowerCase())
+        date.surname.toLowerCase().startsWith(surnameSearch.toLowerCase())
       );
     }
 
@@ -342,7 +341,6 @@ const Notifications = () => {
                 </div>
 
                 <div className="notification-toggle">
-                  {/* Utilisation du même pattern que FriendProfile */}
                   <label className="switch">
                     <input
                       type="checkbox"

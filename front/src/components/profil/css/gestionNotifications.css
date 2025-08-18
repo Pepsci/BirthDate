@@ -332,10 +332,10 @@ input:disabled + .slider {
 /* Responsive pour les notifications */
 @media (max-width: 600px) {
     .simple-notification-manager {
-        width: 300px;
+        width: 330px;
         height: 450px;
-        padding: 16px;
-        margin-top: 20px;
+        padding: 0;
+        margin-top: 10px;
     }
 
     .notification-item {

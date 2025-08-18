@@ -25,8 +25,8 @@
     border: transparent;
     border-bottom: 1px solid grey;
     color: aliceblue;
-    width: 175px;
-    margin: 0 1rem 0 1rem;
+    width: 170px;
+    margin: 0 1rem 0 0rem;
 
 }
 
@@ -45,8 +45,8 @@ color: white;
     }
     
     .inputFilter{
-        width: 135px;
-        margin: 0.2rem;
+        width: 130px;
+        margin: 0.4rem;
     }
 
     .title-filter{

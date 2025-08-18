@@ -118,8 +118,8 @@ const DateList = ({ onEditDate, onViewFriendProfile }) => {
 
     // Si on ferme le filtre, réinitialiser les dates filtrées
     if (!newVisibility) {
-      setDates(allDates); // Réinitialiser avec toutes les dates
-      setCurrentPage(1); // Retourner à la première page
+      setDates(allDates);
+      setCurrentPage(1);
     }
 
     // Fermer le formulaire si on ouvre le filtre
@@ -132,7 +132,6 @@ const DateList = ({ onEditDate, onViewFriendProfile }) => {
     const updatedDates = sortDates([...allDates, newDate]);
     setAllDates(updatedDates);
     setDates(updatedDates);
-    // Optionnel : fermer le formulaire après ajout
     setIsFormVisible(true);
   };
 
