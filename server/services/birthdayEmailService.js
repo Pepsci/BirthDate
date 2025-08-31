@@ -144,8 +144,8 @@ async function sendReminderEmail(
 
   // Création des liens de désabonnement
   const encodedEmail = encodeURIComponent(email);
-  const unsubscribeAllLink = `${process.env.BACKEND_URL}/api/unsubscribe?email=${encodedEmail}`;
-  const unsubscribeSpecificLink = `${process.env.BACKEND_URL}/api/unsubscribe?email=${encodedEmail}&dateid=${dateId}`;
+  const unsubscribeAllLink = `${process.env.FRONTEND_URL}/api/unsubscribe?email=${encodedEmail}`;
+  const unsubscribeSpecificLink = `${process.env.FRONTEND_URL}/api/unsubscribe?email=${encodedEmail}&dateid=${dateId}`;
 
   // Ajout des liens de désabonnement au contenu HTML
   htmlContent += `
