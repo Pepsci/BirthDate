@@ -329,6 +329,58 @@ input:disabled + .slider {
     margin: 0;
 }
 
+/* Section des préférences globales - Design simplifié */
+.user-email-preferences-simple {
+    margin: 20px 0;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 20px;
+}
+
+.user-pref-toggle-simple {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+}
+
+.toggle-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.toggle-label {
+    font-size: 16px;
+    font-weight: 500;
+    color: #e2e8f0;
+}
+
+.toggle-sublabel {
+    font-size: 13px;
+    color: #a0aec0;
+}
+
+.warning-simple {
+    margin-top: 15px;
+    padding: 12px 16px;
+    background: rgba(245, 101, 101, 0.1);
+    border-left: 3px solid #f56565;
+    border-radius: 6px;
+    color: #fc8181;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.notification-item.user-disabled {
+    opacity: 0.5;
+}
+
+.notification-item.user-disabled .switch {
+    pointer-events: none;
+}
+
 /* Responsive pour les notifications */
 @media (max-width: 600px) {
     .simple-notification-manager {

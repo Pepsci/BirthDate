@@ -5,15 +5,25 @@ import DateFilter from "../dashboard/DateFilter";
 import "./css/gestionNotifications.css";
 
 const Notifications = () => {
-  const { currentUser } = useAuth();
+  const { currentUser, setCurrentUser } = useAuth();
   const [dates, setDates] = useState([]);
   const [filteredDates, setFilteredDates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [updatingIds, setUpdatingIds] = useState(new Set());
+  const [updatingUserPref, setUpdatingUserPref] = useState(false);
+
+  // État local pour les préférences utilisateur
+  const [userReceivesEmails, setUserReceivesEmails] = useState(
+    currentUser?.receiveBirthdayEmails !== false
+  );
 
   useEffect(() => {
     loadDates();
+  }, [currentUser]);
+
+  useEffect(() => {
+    setUserReceivesEmails(currentUser?.receiveBirthdayEmails !== false);
   }, [currentUser]);
 
   const loadDates = async () => {
@@ -21,7 +31,6 @@ const Notifications = () => {
       setLoading(true);
       const response = await apiHandler.get(`/date?owner=${currentUser._id}`);
 
-      // Trier par nom alphabétique
       const sortedDates = response.data.sort((a, b) => {
         const nameA = `${a.name} ${a.surname}`.toLowerCase();
         const nameB = `${b.name} ${b.surname}`.toLowerCase();
@@ -29,7 +38,7 @@ const Notifications = () => {
       });
 
       setDates(sortedDates);
-      setFilteredDates(sortedDates); // Initialiser les dates filtrées
+      setFilteredDates(sortedDates);
     } catch (err) {
       setError("Erreur lors du chargement des dates");
       console.error(err);
@@ -38,7 +47,6 @@ const Notifications = () => {
     }
   };
 
-  // Fonction de filtrage
   const handleFilterChange = (
     nameSearch,
     surnameSearch,
@@ -46,21 +54,18 @@ const Notifications = () => {
   ) => {
     let filtered = dates;
 
-    // Filtrer par prénom (commence par...)
     if (nameSearch.trim()) {
       filtered = filtered.filter((date) =>
         date.name.toLowerCase().startsWith(nameSearch.toLowerCase())
       );
     }
 
-    // Filtrer par nom (commence par...)
     if (surnameSearch.trim()) {
       filtered = filtered.filter((date) =>
         date.surname.toLowerCase().startsWith(surnameSearch.toLowerCase())
       );
     }
 
-    // Filtrer par famille
     if (isFamilyFilterActive) {
       filtered = filtered.filter((date) => date.family === true);
     }
@@ -68,35 +73,54 @@ const Notifications = () => {
     setFilteredDates(filtered);
   };
 
-  // Utilisation de la même méthode que dans FriendProfile
+  // Fonction pour toggle les emails de l'utilisateur
+  const toggleUserEmails = async () => {
+    setUpdatingUserPref(true);
+    const newValue = !userReceivesEmails;
+
+    try {
+      const response = await apiHandler.patch(`/users/${currentUser._id}`, {
+        receiveBirthdayEmails: newValue,
+      });
+
+      setUserReceivesEmails(newValue);
+
+      if (setCurrentUser) {
+        setCurrentUser((prev) => ({
+          ...prev,
+          receiveBirthdayEmails: newValue,
+        }));
+      }
+    } catch (error) {
+      console.error("Erreur lors de la modification des emails:", error);
+      setError("Erreur lors de la modification. Veuillez réessayer.");
+      setTimeout(() => setError(null), 3000);
+    } finally {
+      setUpdatingUserPref(false);
+    }
+  };
+
   const toggleNotifications = async (dateId, currentStatus) => {
     setUpdatingIds((prev) => new Set(prev).add(dateId));
 
     try {
       const newValue = !currentStatus;
-
-      // Utilisation de la même méthode que FriendProfile qui fonctionne
       const updatedDate = await apiHandler.toggleDateNotifications(
         dateId,
         newValue
       );
 
-      // Mettre à jour l'état local avec la réponse complète
       setDates((prevDates) => {
         const newDates = prevDates.map((date) =>
-          date._id === dateId
-            ? { ...date, ...updatedDate } // Fusionner avec la réponse du serveur
-            : date
+          date._id === dateId ? { ...date, ...updatedDate } : date
         );
 
-        // Réappliquer les filtres actuels
         const currentFilters = getCurrentFilters();
         applyFilters(newDates, currentFilters);
 
         return newDates;
       });
 
-      // Mettre à jour aussi les dates filtrées
       setFilteredDates((prevFilteredDates) =>
         prevFilteredDates.map((date) =>
           date._id === dateId ? { ...date, ...updatedDate } : date
@@ -104,11 +128,7 @@ const Notifications = () => {
       );
     } catch (error) {
       console.error("Failed to update notification preference:", error);
-
-      // En cas d'erreur, recharger les données pour avoir l'état correct
       loadDates();
-
-      // Optionnel : afficher un message d'erreur temporaire
       setError("Erreur lors de la mise à jour. Données rechargées.");
       setTimeout(() => setError(null), 3000);
     } finally {
@@ -120,15 +140,11 @@ const Notifications = () => {
     }
   };
 
-  // Fonction helper pour maintenir la cohérence des filtres
   const getCurrentFilters = () => {
-    // Cette fonction devrait idéalement récupérer les filtres actuels
-    // Pour simplifier, on peut la laisser vide ou implémenter une logique plus complexe
     return { nameSearch: "", surnameSearch: "", isFamilyFilterActive: false };
   };
 
   const applyFilters = (datesToFilter, filters) => {
-    // Appliquer les mêmes filtres que handleFilterChange
     handleFilterChange(
       filters.nameSearch,
       filters.surnameSearch,
@@ -143,19 +159,16 @@ const Notifications = () => {
 
     if (datesToUpdate.length === 0) return;
 
-    // Marquer tous les éléments comme en cours de mise à jour
     const idsToUpdate = datesToUpdate.map((date) => date._id);
     setUpdatingIds(new Set(idsToUpdate));
 
     try {
-      // Utiliser la même méthode que le toggle individuel
       const promises = datesToUpdate.map((date) =>
         apiHandler.toggleDateNotifications(date._id, true)
       );
 
       const results = await Promise.all(promises);
 
-      // Mettre à jour l'état local avec les réponses du serveur
       setDates((prevDates) => {
         const newDates = prevDates.map((date) => {
           const updatedResult = results.find(
@@ -164,14 +177,12 @@ const Notifications = () => {
           return updatedResult ? { ...date, ...updatedResult } : date;
         });
 
-        // Réappliquer les filtres
         const currentFilters = getCurrentFilters();
         applyFilters(newDates, currentFilters);
 
         return newDates;
       });
 
-      // Mettre à jour les dates filtrées
       setFilteredDates((prevFilteredDates) =>
         prevFilteredDates.map((date) => {
           const updatedResult = results.find(
@@ -182,7 +193,6 @@ const Notifications = () => {
       );
     } catch (err) {
       console.error("Erreur lors de l'activation globale:", err);
-      // Recharger en cas d'erreur
       loadDates();
     } finally {
       setUpdatingIds(new Set());
@@ -214,7 +224,6 @@ const Notifications = () => {
           return updatedResult ? { ...date, ...updatedResult } : date;
         });
 
-        // Réappliquer les filtres
         const currentFilters = getCurrentFilters();
         applyFilters(newDates, currentFilters);
 
@@ -285,6 +294,36 @@ const Notifications = () => {
         </div>
       </div>
 
+      {/* Section des préférences globales des emails - Design simplifié */}
+      <div className="user-email-preferences-simple">
+        <div className="user-pref-toggle-simple">
+          <div className="toggle-info">
+            <span className="toggle-label">
+              Recevoir les emails d'anniversaire
+            </span>
+            <span className="toggle-sublabel">
+              {userReceivesEmails ? "Actif" : "Désactivé"}
+            </span>
+          </div>
+          <label className="switch">
+            <input
+              type="checkbox"
+              checked={userReceivesEmails}
+              onChange={toggleUserEmails}
+              disabled={updatingUserPref}
+            />
+            <span className="slider round"></span>
+          </label>
+        </div>
+
+        {!userReceivesEmails && (
+          <div className="warning-simple">
+            Les notifications individuelles ci-dessous ne fonctionneront pas
+            tant que cette option est désactivée
+          </div>
+        )}
+      </div>
+
       {/* Composant de filtrage */}
       <DateFilter onFilterChange={handleFilterChange} />
 
@@ -326,7 +365,9 @@ const Notifications = () => {
                 key={date._id}
                 className={`notification-item ${
                   isEnabled ? "enabled" : "disabled"
-                } ${isUpdating ? "updating" : ""}`}
+                } ${isUpdating ? "updating" : ""} ${
+                  !userReceivesEmails ? "user-disabled" : ""
+                }`}
               >
                 <div className="person-info">
                   <div className="person-name">
@@ -346,26 +387,10 @@ const Notifications = () => {
                       type="checkbox"
                       checked={isEnabled}
                       onChange={() => toggleNotifications(date._id, isEnabled)}
-                      disabled={isUpdating}
+                      disabled={isUpdating || !userReceivesEmails}
                     />
                     <span className="slider round"></span>
                   </label>
-                  <span
-                    className={`status-text ${
-                      isEnabled ? "enabled" : "disabled"
-                    }`}
-                  >
-                    {/* {isUpdating ? (
-                      <span className="updating-text">
-                        <span className="mini-spinner"></span>
-                        Mise à jour...
-                      </span>
-                    ) : isEnabled ? (
-                      "Activé"
-                    ) : (
-                      "Désactivé"
-                    )} */}
-                  </span>
                 </div>
               </div>
             );
