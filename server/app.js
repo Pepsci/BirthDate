@@ -1,6 +1,9 @@
 require("dotenv").config();
-require("./services/birthdayEmailService");
-require("./config/mongoDb");
+require("./config/mongoDb"); // Charger MongoDB EN PREMIER
+// Attendre que la connexion soit établie avant de charger le service
+setTimeout(() => {
+  require("./services/birthdayEmailService");
+}, 2000);
 
 const express = require("express");
 const path = require("path");
