@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import apiHandler from "../../api/apiHandler";
 import useAuth from "../../context/useAuth";
 import "./css/createDate.css";
-import "../ui/css/modals.css"; // Import de la modal d'erreur
+import "../UI/css/modals.css";
 
 const CreateDate = ({ onDateAdded }) => {
   const { currentUser } = useAuth();
