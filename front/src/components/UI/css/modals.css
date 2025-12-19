@@ -1,0 +1,355 @@
+/* ========================================
+   MODAL DE BASE (Overlay)
+   ======================================== */
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+/* ========================================
+   MODAL DE SUPPRESSION / DANGER
+   ======================================== */
+
+.delete-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.delete-modal {
+    background: var(--gray-800, #2d3748);
+    padding: 2rem;
+    border-radius: 12px;
+    max-width: 500px;
+    width: 90%;
+    border: 3px solid #dc3545;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    animation: slideUp 0.3s ease-in-out;
+}
+
+.delete-modal h2 {
+    color: #dc3545;
+    margin-bottom: 1rem;
+    font-size: 1.5rem;
+    font-family: 'Roboto', sans-serif;
+    text-align: center;
+}
+
+.delete-modal p {
+    margin-bottom: 1rem;
+    color: var(--gray-300, #cbd5e0);
+    line-height: 1.6;
+    font-family: 'Roboto', sans-serif;
+    text-align: center;
+}
+
+.delete-modal strong {
+    color: #dc3545;
+    font-weight: 600;
+}
+
+.delete-modal input {
+    width: 100%;
+    margin: 1rem 0;
+    padding: 12px;
+    border: 2px solid var(--gray-600, #4a5568);
+    border-radius: 4px;
+    background-color: var(--gray-700, #1a202c);
+    color: var(--gray-100, #f7fafc);
+    font-size: 16px;
+    font-family: 'Roboto', sans-serif;
+    box-sizing: border-box;
+}
+
+.delete-modal input:focus {
+    outline: none;
+    border-color: #dc3545;
+}
+
+.delete-modal-buttons {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1.5rem;
+    justify-content: center;
+    align-items: stretch;
+}
+
+.delete-modal-buttons .btn-profil,
+.delete-modal-buttons .btn-delete {
+    padding: 10px;
+    height: 50px;
+}
+
+/* ========================================
+   MODAL DE SUCCÈS
+   ======================================== */
+
+.success-message-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1001;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.success-message {
+    background: var(--gray-800, #2d3748);
+    padding: 2.5rem 2rem;
+    border-radius: 12px;
+    max-width: 400px;
+    width: 90%;
+    border: 3px solid rgb(35, 206, 149);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    animation: slideUp 0.3s ease-in-out;
+    text-align: center;
+}
+
+.success-icon {
+    width: 70px;
+    height: 70px;
+    background: rgb(35, 206, 149);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    color: white;
+    margin: 0 auto 1.5rem;
+    animation: successPulse 0.6s ease-in-out;
+}
+
+.success-message h2 {
+    color: rgb(35, 206, 149);
+    margin-bottom: 1rem;
+    font-size: 1.5rem;
+    font-family: 'Roboto', sans-serif;
+}
+
+.success-message p {
+    color: var(--gray-300, #cbd5e0);
+    font-family: 'Roboto', sans-serif;
+    font-size: 1rem;
+}
+
+/* ========================================
+   MODAL D'ERREUR
+   ======================================== */
+
+.error-message-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1001;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.error-message {
+    background: var(--gray-800, #2d3748);
+    padding: 2.5rem 2rem;
+    border-radius: 12px;
+    max-width: 400px;
+    width: 90%;
+    border: 3px solid #dc3545;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    animation: slideUp 0.3s ease-in-out;
+    text-align: center;
+}
+
+.error-icon {
+    width: 70px;
+    height: 70px;
+    background: #dc3545;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+    color: white;
+    margin: 0 auto 1.5rem;
+    animation: errorShake 0.6s ease-in-out;
+}
+
+.error-message h2 {
+    color: #dc3545;
+    margin-bottom: 1rem;
+    font-size: 1.5rem;
+    font-family: 'Roboto', sans-serif;
+}
+
+.error-message p {
+    color: var(--gray-300, #cbd5e0);
+    font-family: 'Roboto', sans-serif;
+    font-size: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.error-message-button {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 12px 32px;
+    border-radius: 4px;
+    font-size: 16px;
+    font-family: 'Roboto', sans-serif;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.error-message-button:hover {
+    background-color: #c82333;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
+}
+
+/* ========================================
+   ANIMATIONS
+   ======================================== */
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(50px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes successPulse {
+    0% {
+        transform: scale(0);
+        opacity: 0;
+    }
+
+    50% {
+        transform: scale(1.1);
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes errorShake {
+
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    10%,
+    30%,
+    50%,
+    70%,
+    90% {
+        transform: translateX(-5px);
+    }
+
+    20%,
+    40%,
+    60%,
+    80% {
+        transform: translateX(5px);
+    }
+}
+
+/* ========================================
+   RESPONSIVE MOBILE
+   ======================================== */
+
+@media (max-width: 600px) {
+    .delete-modal {
+        padding: 1.5rem;
+        width: 95%;
+    }
+
+    .delete-modal h2 {
+        font-size: 1.3rem;
+    }
+
+    .delete-modal-buttons {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .delete-modal-buttons button {
+        width: 100%;
+        margin: 0;
+    }
+
+    .success-message {
+        padding: 2rem 1.5rem;
+    }
+
+    .success-icon {
+        width: 60px;
+        height: 60px;
+        font-size: 2rem;
+    }
+
+    .success-message h2 {
+        font-size: 1.3rem;
+    }
+
+    .error-message {
+        padding: 2rem 1.5rem;
+    }
+
+    .error-icon {
+        width: 60px;
+        height: 60px;
+        font-size: 2rem;
+    }
+
+    .error-message h2 {
+        font-size: 1.3rem;
+    }
+
+    .error-message-button {
+        width: 100%;
+        padding: 12px 16px;
+    }
+}

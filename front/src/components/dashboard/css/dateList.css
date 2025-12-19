@@ -1,6 +1,10 @@
 /* --------------------------------
    Header
 -------------------------------- */
+.dateList{
+    margin-top: 120px;
+}
+
 .dateListHeader{
     display: flex;
     flex-direction: column;

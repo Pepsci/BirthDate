@@ -2,6 +2,12 @@ img{
     height: 50px;
 }
 
+.logoHeader{
+    height: 100px;
+    margin: 2em;
+    margin-top: 3re2;
+}
+
 .homePageRoot {
     margin-top: 100px;
 }
@@ -95,6 +101,12 @@ img{
 
 .titleFontSize{
     font-size: 2.2em !important;
+}
+
+.logoHeader {
+    height: 70px;
+    margin: 0.5em;
+    margin-top: 0rem;
 }
 
 }

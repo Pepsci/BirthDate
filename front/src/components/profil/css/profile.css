@@ -1,15 +1,15 @@
 /* profile.css - Styles pour le composant profil */
 
-.profile{
+.profile {
     display: flex;
     flex-direction: row;
     justify-content: center;
     align-items: flex-start;
     gap: 1rem;
-    flex-wrap: nowrap; /* Empêche le passage à la ligne */
+    flex-wrap: nowrap;
 }
 
-.profile_info{
+.profile_info {
     margin-top: 2rem;
     position: relative;
     max-width: 400px;
@@ -24,33 +24,36 @@
     flex-shrink: 0;
 }
 
-.notification{
+.notification {
     margin-top: 2rem;
     flex-shrink: 0;
 }
 
-.profil, h2{
+.profile h2 {
     color: var(--gray-100) !important;
     font-family: 'Roboto', sans-serif;
     font-size: xx-large;
+    margin-bottom: 3rem;
 }
 
-.profile_info_details{
+.profile_info_details {
     margin: 1rem !important;
     color: var(--gray-300) !important;
     font-family: 'Roboto', sans-serif;
+    font-size: 1.8rem;
+    text-align: center;
 }
 
-.profil-btn{
+.profil-btn {
     gap: 1rem;
     margin-top: -1rem !important;
 }
 
-.profile-togglePasswordContainer{
+.profile-togglePasswordContainer {
     text-align: center;
 }
 
-.btn-profil{
+.btn-profil {
     margin-top: 1rem;
     padding: 10px;
     margin: 8px 0;
@@ -65,49 +68,83 @@
     width: 200px;
 }
 
-.btn-profilGreen{
+.btn-profilGreen {
     background-color: rgb(35, 206, 149);
     margin: 0;
     padding: 8px;
 }
 
-.btn-profilGrey{
+.btn-profilGrey {
     background-color: rgb(73, 77, 77);
     margin: 0;
     padding: 8px;
     margin-top: 8px;
 }
 
-.btn-profilEditContainer{
+.btn-profilEditContainer {
     display: flex;
     flex-direction: column;
     margin-top: 1rem;
     align-items: center;
 }
 
-.profil-countdown{
+.profil-countdown {
     margin-top: 7rem;
 }
 
-/* Responsive design pour le profil */
+/* Bouton supprimer (rouge danger) */
+.btn-delete {
+    background-color: #dc3545;
+    color: white;
+    border: none;
+    padding: 10px;
+    margin: 8px 0;
+    box-sizing: border-box;
+    border-radius: 4px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: 200px;
+}
+
+.btn-profilEditContainer .btn-delete {
+    width: 200px;
+    margin-top: 8px;
+}
+
+.btn-delete:hover:not(:disabled) {
+    background-color: #c82333;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
+}
+
+.btn-delete:disabled {
+    background-color: #6c757d;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+/* ========================================
+   RESPONSIVE DESIGN POUR LE PROFIL
+   ======================================== */
 
 @media (max-width: 900px) {
     .profile {
-        flex-direction: row; 
+        flex-direction: row;
         justify-content: center;
-        gap: 0.5rem; 
+        gap: 0.5rem;
     }
-    
+
     .profile_info,
     .notification {
-        margin: 0.5rem; 
-        max-width: 350px; 
+        margin: 0.5rem;
+        max-width: 350px;
     }
 }
 
 @media (max-width: 600px) {
 
-    .profileWrapper{
+    .profileWrapper {
         margin: 2rem;
         background-color: blue;
         display: flex;
@@ -115,20 +152,30 @@
         justify-content: space-around;
     }
 
-    /* .profile {
-        flex-direction: row; 
-        gap: 0.25rem;
-        width: 750px;
-        overflow: auto;
-    } */
-    
+    .mobile-section h2 {
+        display: none;
+    }
+
     .profile_info {
-        width: 300px; 
+        width: 300px;
         height: 600px;
         margin: 0.25rem;
-        padding: 0.75rem; 
+        padding: 0.75rem;
     }
-    
+
+    .profile_info_details {
+        margin-top: 2rem !important;
+    }
+
+    .profil-countdown {
+        width: 80%;
+        margin: 5rem auto 2rem;
+    }
+
+    .profil-btn {
+        margin: 0 1em 1em;
+    }
+
     .simple-notification-manager {
         width: 280px;
         margin: 0.25rem;
@@ -136,7 +183,13 @@
         padding: 0.75rem;
     }
 
-    .profile_info:nth-child(2){
+    .profile_info:nth-child(2) {
         color: beige;
+    }
+
+    .btn-profilEditContainer .btn-profil,
+    .btn-profilEditContainer .btn-delete {
+        width: 100%;
+        max-width: 300px;
     }
 }

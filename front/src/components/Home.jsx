@@ -5,6 +5,7 @@ import ProfilDetails from "./profil/Profile";
 import UpdateDate from "./dashboard/UpdateDate";
 import FriendProfile from "./profil/FriendProfile";
 import "./dashboard/css/homePage.css";
+import Logo from "./dashboard/images/LogoNomCouleur.png";
 
 const Home = () => {
   const { isLoggedIn, currentUser } = useContext(AuthContext);
@@ -47,7 +48,8 @@ const Home = () => {
   return (
     <div className="homePageRoot">
       <div className="headerApp homePageHeader">
-        <h1 className="titleFont titleFontSize">BirthReminder</h1>
+        {/* <h1 className="titleFont titleFontSize">BirthReminder</h1> */}
+        <img src={Logo} className="logoHeader" alt="BirthReminder" />
         {isLoggedIn && (
           <div className="homePageUser">
             <div className="homePageCurrentUser">

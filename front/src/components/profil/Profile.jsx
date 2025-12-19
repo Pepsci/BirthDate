@@ -2,14 +2,16 @@ import React, { useState, useRef, useEffect, useContext } from "react";
 import { AuthContext } from "../../context/auth.context";
 import apiHandler from "../../api/apiHandler";
 import useAuth from "../../context/useAuth";
+import { useNavigate } from "react-router-dom";
 import "./css/profile.css";
-import "./css/carousel.css"; // Import du nouveau fichier CSS
+import "./css/carousel.css";
 import PasswordInput from "../connect/PasswordInput";
 import Countdown from "../dashboard/Countdown";
 import GestionNotification from "./GestionNotifications";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const ProfilDetails = () => {
+  const navigate = useNavigate();
   const { logOut } = useContext(AuthContext);
   const { currentUser, isLoggedin, removeUser, storeToken, authenticateUser } =
     useAuth();
@@ -33,6 +35,18 @@ const ProfilDetails = () => {
   const [showPasswordFields, setShowPasswordFields] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [receiveEmails, setReceiveEmails] = useState(false);
+
+  // États pour la modal de suppression
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // État pour le message de succès
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+
+  // État pour le message d'erreur
+  const [showErrorMessage, setShowErrorMessage] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   // État pour le carrousel mobile uniquement
   const [currentCarouselIndex, setCurrentCarouselIndex] = useState(0);
@@ -65,6 +79,18 @@ const ProfilDetails = () => {
     };
   }, [isLoggedin, currentUser]);
 
+  // Redirection automatique après 3 secondes
+  useEffect(() => {
+    let timer;
+    if (showSuccessMessage) {
+      timer = setTimeout(() => {
+        removeUser(); // Nettoie les données utilisateur
+        window.location.href = "/"; // Redirection complète vers l'accueil
+      }, 3000); // 3 secondes
+    }
+    return () => clearTimeout(timer);
+  }, [showSuccessMessage, removeUser]);
+
   const handleEditMode = (e) => {
     e.preventDefault();
     setIsEditing(true);
@@ -79,6 +105,58 @@ const ProfilDetails = () => {
       confirmPassword: "",
     });
     setShowPasswordFields(false);
+  };
+
+  // Gestion de la suppression de compte
+  const handleDeleteAccount = (e) => {
+    e.preventDefault();
+    setShowDeleteModal(true);
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteModal(false);
+    setDeleteConfirmText("");
+  };
+
+  const handleConfirmDelete = async () => {
+    if (deleteConfirmText.toLowerCase() !== "supprimer") {
+      setErrorMessage(
+        "Veuillez taper 'supprimer' pour confirmer la suppression de votre compte."
+      );
+      setShowErrorMessage(true);
+      return;
+    }
+
+    setIsDeleting(true);
+
+    try {
+      await apiHandler.delete(`/users/${currentUser._id}`);
+
+      // Fermer la modal de confirmation
+      setShowDeleteModal(false);
+
+      // Afficher le message de succès (redirection après 3s via useEffect)
+      setShowSuccessMessage(true);
+    } catch (error) {
+      console.error("Erreur lors de la suppression:", error);
+      setIsDeleting(false);
+
+      // Fermer la modal de confirmation
+      setShowDeleteModal(false);
+      setDeleteConfirmText("");
+
+      // Afficher le message d'erreur approprié
+      if (error.response?.status === 403) {
+        setErrorMessage("Vous n'êtes pas autorisé à supprimer ce compte.");
+      } else if (error.response?.status === 404) {
+        setErrorMessage("Compte introuvable.");
+      } else {
+        setErrorMessage(
+          "Une erreur est survenue lors de la suppression du compte. Veuillez réessayer."
+        );
+      }
+      setShowErrorMessage(true);
+    }
   };
 
   const sendForm = async (e) => {
@@ -132,6 +210,9 @@ const ProfilDetails = () => {
       setShowPasswordFields(false);
     } catch (error) {
       console.error(error);
+      if (error.response?.data?.message) {
+        alert(error.response.data.message);
+      }
     }
   };
 
@@ -208,8 +289,82 @@ const ProfilDetails = () => {
 
   return (
     <div>
+      {/* Modal de confirmation de suppression */}
+      {showDeleteModal && (
+        <div className="delete-modal-overlay" onClick={handleCancelDelete}>
+          <div className="delete-modal" onClick={(e) => e.stopPropagation()}>
+            <h2>⚠️ Supprimer votre compte</h2>
+            <p>
+              Cette action est <strong>irréversible</strong>. Toutes vos données
+              seront définitivement supprimées.
+            </p>
+            <p>
+              Pour confirmer, tapez <strong>"supprimer"</strong> ci-dessous :
+            </p>
+            <input
+              type="text"
+              className="form-input"
+              placeholder="Tapez 'supprimer'"
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              autoFocus
+              disabled={isDeleting}
+            />
+            <div className="delete-modal-buttons">
+              <button
+                className="btn-profil btn-profilGrey"
+                onClick={handleCancelDelete}
+                disabled={isDeleting}
+              >
+                Annuler
+              </button>
+              <button
+                className="btn-profil btn-delete"
+                onClick={handleConfirmDelete}
+                disabled={
+                  deleteConfirmText.toLowerCase() !== "supprimer" || isDeleting
+                }
+              >
+                {isDeleting ? "Suppression..." : "Supprimer définitivement"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Message de succès simple */}
+      {showSuccessMessage && (
+        <div className="success-message-overlay">
+          <div className="success-message">
+            <div className="success-icon">✓</div>
+            <h2>Compte supprimé avec succès</h2>
+            <p>Vous allez être redirigé vers l'accueil...</p>
+          </div>
+        </div>
+      )}
+
+      {/* Message d'erreur */}
+      {showErrorMessage && (
+        <div
+          className="error-message-overlay"
+          onClick={() => setShowErrorMessage(false)}
+        >
+          <div className="error-message" onClick={(e) => e.stopPropagation()}>
+            <div className="error-icon">✕</div>
+            <h2>Erreur</h2>
+            <p>{errorMessage}</p>
+            <button
+              className="error-message-button"
+              onClick={() => setShowErrorMessage(false)}
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
+
       {isEditing ? (
-        // Mode édition - inchangé
+        // Mode édition
         <div className="formEdit form-connect">
           <div className="peel">
             <form className="formEditProfile form" onSubmit={sendForm}>
@@ -218,6 +373,7 @@ const ProfilDetails = () => {
                 type="text"
                 className="form-input"
                 id="surname"
+                placeholder="Prénom"
                 value={userToUpdate.surname || ""}
                 onChange={(e) => {
                   setUserToUpdate({ ...userToUpdate, surname: e.target.value });
@@ -227,6 +383,7 @@ const ProfilDetails = () => {
                 type="text"
                 className="form-input"
                 id="name"
+                placeholder="Nom"
                 value={userToUpdate.name || ""}
                 onChange={(e) => {
                   setUserToUpdate({ ...userToUpdate, name: e.target.value });
@@ -310,6 +467,13 @@ const ProfilDetails = () => {
                 >
                   Annuler
                 </button>
+                <button
+                  className="btn-profil btn-delete"
+                  type="button"
+                  onClick={handleDeleteAccount}
+                >
+                  Supprimer mon compte
+                </button>
               </div>
             </form>
           </div>
@@ -337,6 +501,7 @@ const ProfilDetails = () => {
                 <button
                   onClick={goToPrevious}
                   className="mobile-carousel__nav-btn mobile-carousel__nav-btn--prev"
+                  aria-label="Section précédente"
                 >
                   <ChevronLeft size={20} color="#495057" />
                 </button>
@@ -344,6 +509,7 @@ const ProfilDetails = () => {
                 <button
                   onClick={goToNext}
                   className="mobile-carousel__nav-btn mobile-carousel__nav-btn--next"
+                  aria-label="Section suivante"
                 >
                   <ChevronRight size={20} color="#495057" />
                 </button>
@@ -360,6 +526,7 @@ const ProfilDetails = () => {
                         ? "mobile-carousel__indicator--active"
                         : ""
                     }`}
+                    aria-label={`Aller à la section ${index + 1}`}
                   />
                 ))}
               </div>
@@ -379,6 +546,7 @@ const ProfilDetails = () => {
                           ? "mobile-carousel__quick-btn--active"
                           : ""
                       }`}
+                      aria-label={section.title}
                     >
                       {section.icon}
                     </button>

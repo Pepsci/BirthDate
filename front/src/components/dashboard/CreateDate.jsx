@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import apiHandler from "../../api/apiHandler";
 import useAuth from "../../context/useAuth";
 import "./css/createDate.css";
+import "../ui/css/modals.css"; // Import de la modal d'erreur
 
 const CreateDate = ({ onDateAdded }) => {
   const { currentUser } = useAuth();
@@ -10,6 +11,10 @@ const CreateDate = ({ onDateAdded }) => {
   const [dates, setDates] = useState([]);
   const [filteredDates, setFilteredDates] = useState([]);
   const [addedDate, setAddedDate] = useState(false);
+
+  // États pour la modal d'erreur
+  const [showErrorMessage, setShowErrorMessage] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const getTodayDate = () => {
     const today = new Date();
@@ -47,7 +52,7 @@ const CreateDate = ({ onDateAdded }) => {
 
   // Filtrer les dates de l'utilisateur connecté
   useEffect(() => {
-    if (!currentUserID) return; // Vérification pour éviter l'erreur
+    if (!currentUserID) return;
     setFilteredDates(
       dates.filter((c) => c.owner && c.owner._id === currentUserID)
     );
@@ -58,6 +63,13 @@ const CreateDate = ({ onDateAdded }) => {
 
     if (!currentUserID) {
       console.error("User not authenticated");
+      return;
+    }
+
+    // Validation : vérifier que le nom est rempli
+    if (!date.name || date.name.trim() === "") {
+      setErrorMessage("Veuillez entrer un nom avant d'ajouter une date.");
+      setShowErrorMessage(true);
       return;
     }
 
@@ -81,11 +93,33 @@ const CreateDate = ({ onDateAdded }) => {
       }
     } catch (error) {
       console.error(error);
+      setErrorMessage("Une erreur est survenue lors de l'ajout de la date.");
+      setShowErrorMessage(true);
     }
   };
 
   return (
     <div>
+      {/* Modal d'erreur */}
+      {showErrorMessage && (
+        <div
+          className="error-message-overlay"
+          onClick={() => setShowErrorMessage(false)}
+        >
+          <div className="error-message" onClick={(e) => e.stopPropagation()}>
+            <div className="error-icon">✕</div>
+            <h2>Erreur</h2>
+            <p>{errorMessage}</p>
+            <button
+              className="error-message-button"
+              onClick={() => setShowErrorMessage(false)}
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="formAddDAte">
         <h3 className="title-filter">Ajouter une date d'anniversaires</h3>
         <form className="form-date" onSubmit={handleClick}>
@@ -97,6 +131,7 @@ const CreateDate = ({ onDateAdded }) => {
               placeholder="Enter a name"
               value={date.name}
               onChange={(e) => setDate({ ...date, name: e.target.value })}
+              required // Validation HTML5
             />
 
             <input

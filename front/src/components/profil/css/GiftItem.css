@@ -8,7 +8,7 @@
 
 .giftList-friendProfil {
     overflow-y: auto;
-    height: 330px;
+    height: 280px;
     scrollbar-width: none;
     -ms-overflow-style: none;
 }
@@ -43,8 +43,6 @@
     font-size: smaller;
 }
 
-.giftList-btnEdit{
-}
 .giftList-btn {
     padding: 4px 8px;
     border: none;

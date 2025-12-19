@@ -28,7 +28,7 @@ function VerifyEmail() {
   };
 
   return (
-    <div>
+    <div className="verifyEmail">
       <h1>Vérification de l'email</h1>
       <button onClick={verifyEmail}>Vérifier mon email</button>
       <p>{status}</p>

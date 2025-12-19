@@ -1,6 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import "./LandingPage.css";
+import Logo from "./Logo+nom-couleur.png";
 
 const LandingPage = () => {
   const navigate = useNavigate();
@@ -11,11 +12,14 @@ const LandingPage = () => {
 
   return (
     <div className="landing-container">
-      <h1>Bienvenue sur BirthReminder</h1>
-      <p>Organisez vos rappels d'anniversaire en toute simplicité.</p>
-      <button onClick={handleGetStarted} className="btn-start">
-        Commencer
-      </button>
+      <img src={Logo} alt="BirthReminder" />
+      <div className="welcome">
+        <h1>Bienvenue</h1>
+        <p>Organisez vos rappels d'anniversaire en toute simplicité.</p>
+        <button onClick={handleGetStarted} className="btn-start">
+          Commencer
+        </button>
+      </div>
     </div>
   );
 };

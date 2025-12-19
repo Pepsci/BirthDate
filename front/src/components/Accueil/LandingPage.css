@@ -34,3 +34,12 @@
 .btn-start:hover {
     background-color: #005bb5;
 }
+
+img{
+    height: 600px;
+    color: wheat;
+}
+
+.welcome{
+    margin-bottom: 7rem;
+}

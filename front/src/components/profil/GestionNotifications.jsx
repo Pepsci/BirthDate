@@ -283,7 +283,7 @@ const Notifications = () => {
         <h2>🔔 Gestion des Notifications</h2>
         <div className="notification-summary">
           <span className="summary-text">
-            {activeCount} sur {totalCount} personnes recevront des notifications
+            {activeCount} sur {totalCount} de notifications activé
             {totalCount !== totalOriginalCount && (
               <span className="filter-info">
                 {" "}

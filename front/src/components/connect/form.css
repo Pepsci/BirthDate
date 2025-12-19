@@ -122,7 +122,6 @@
     background-color: var(--gray-800);
     color: var(--gray-300);
     border-color: var(--gray-700);
-    margin-top: 1rem;
     border-radius: 10px;
 }
 
@@ -140,4 +139,9 @@
 .btnLogin{
     display: flex;
     justify-content:space-around;
+}
+
+.avatarSignup{
+    height: 100px;
+    margin-top: 1rem;
 }

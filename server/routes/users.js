@@ -44,7 +44,7 @@ router.get("/:id", isAuthenticated, async (req, res, next) => {
       email: user.email,
       avatar: user.avatar,
       birthDate: user.birthDate,
-      receiveBirthdayEmails: user.receiveBirthdayEmails, // Ajoutez cette ligne
+      receiveBirthdayEmails: user.receiveBirthdayEmails,
     };
     res.status(200).json(userToFront);
   } catch (error) {
@@ -108,7 +108,7 @@ router.patch(
         email: updatedUser.email,
         avatar: updatedUser.avatar,
         birthDate: updatedUser.birthDate,
-        receiveBirthdayEmails: updatedUser.receiveBirthdayEmails, // Ajoutez cette ligne
+        receiveBirthdayEmails: updatedUser.receiveBirthdayEmails,
       };
 
       const authToken = jwt.sign(payload, process.env.TOKEN_SECRET, {
@@ -122,5 +122,32 @@ router.patch(
     }
   }
 );
+
+/* DELETE user account */
+router.delete("/:id", isAuthenticated, async (req, res, next) => {
+  try {
+    // Vérifie que l'utilisateur supprime bien son propre compte
+    if (req.payload._id.toString() !== req.params.id) {
+      return res.status(403).json({
+        message: "Vous ne pouvez supprimer que votre propre compte",
+      });
+    }
+
+    const user = await userModel.findById(req.params.id);
+    if (!user) {
+      return res.status(404).json({ message: "Utilisateur non trouvé" });
+    }
+
+    // Suppression de l'utilisateur
+    await userModel.findByIdAndDelete(req.params.id);
+
+    res.status(200).json({
+      message: "Compte supprimé avec succès",
+    });
+  } catch (error) {
+    console.error("Erreur lors de la suppression:", error);
+    next(error);
+  }
+});
 
 module.exports = router;

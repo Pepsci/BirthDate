@@ -4,6 +4,7 @@ import apiHandler from "../../api/apiHandler";
 import axios from "axios";
 import { AuthContext } from "../../context/auth.context";
 import PasswordInput from "./PasswordInput";
+import "../UI/css/modals.css";
 
 const Signup = () => {
   const [user, setUser] = useState({
