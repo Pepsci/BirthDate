@@ -157,7 +157,7 @@ async function sendReminderEmail(
     name,
     surname,
     daysBeforeBirthday,
-    birthdayLink, // NOUVEAU : le lien vers la page birthday
+    birthdayLink,
     unsubscribeAllLink,
     unsubscribeSpecificLink,
   };
@@ -168,7 +168,7 @@ async function sendReminderEmail(
 
   // Configuration de l'email
   const mailOptions = {
-    from: process.env.EMAIL_BRTHDAY,
+    from: `Birthday <${process.env.EMAIL_BRTHDAY}>`,
     to: email,
     subject: subject,
     text: textContent, // Version texte brut
@@ -195,5 +195,6 @@ async function sendReminderEmail(
 
 // Planification de la tâche quotidienne (tous les jours à minuit)
 schedule.scheduleJob("0 0 * * *", checkAndSendBirthdayEmails);
+// schedule.scheduleJob("*/1 * * * *", checkAndSendBirthdayEmails);
 
 module.exports = { checkAndSendBirthdayEmails };
