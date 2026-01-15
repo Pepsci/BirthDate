@@ -52,13 +52,20 @@ app.use("/api/date", dateRouter);
 app.use("/api/verify-email", verifyRouter);
 app.use("/api/unsubscribe", unsubscribeRouter);
 
+// IMPORTANT : Cette route doit rester AVANT le wildcard
 app.use("/api/*", (req, res, next) => {
   res.status(404).json({ message: "Ressource API non trouvée." });
 });
 
+// MODIFICATION : Servir le frontend React pour toutes les routes NON-API
 if (process.env.NODE_ENV === "production") {
-  app.use("*", (req, res) => {
-    res.sendFile(path.join(__dirname, "public/index.html"));
+  // Servir les fichiers statiques du build React
+  app.use(express.static(path.join(__dirname, "public")));
+
+  // Pour toutes les autres routes (non-API), servir index.html
+  // Cela permet au React Router de gérer les routes côté client
+  app.get("*", (req, res) => {
+    res.sendFile(path.join(__dirname, "public", "index.html"));
   });
 }
 

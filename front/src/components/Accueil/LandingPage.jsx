@@ -12,7 +12,7 @@ const LandingPage = () => {
 
   return (
     <div className="landing-container">
-      <img src={Logo} alt="BirthReminder" />
+      <img className="landingPage_logo" src={Logo} alt="BirthReminder" />
       <div className="welcome">
         <h1>Bienvenue</h1>
         <p>Organisez vos rappels d'anniversaire en toute simplicité.</p>

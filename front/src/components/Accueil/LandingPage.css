@@ -35,9 +35,9 @@
     background-color: #005bb5;
 }
 
-img{
+.landingPage_logo{
+    margin-top: 90px;
     height: 600px;
-    color: wheat;
 }
 
 .welcome{
@@ -46,9 +46,8 @@ img{
 
 @media (max-width: 600px) {
 
-    img {
+    .landingPage_logo {
         height: 400px;
-        color: wheat;
 }
 
 }

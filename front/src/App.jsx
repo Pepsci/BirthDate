@@ -12,6 +12,7 @@ import UpdateDate from "./components/dashboard/UpdateDate";
 import Unsubscribe from "./components/dashboard/Unsubscribe";
 import UnsubscribeSuccess from "./components/dashboard/UnsubscribeSuccess";
 import LandingPage from "./components/Accueil/LandingPage";
+import BirthdayView from "./components/dashboard/BirthdayView";
 
 function App() {
   return (
@@ -57,6 +58,7 @@ function App() {
           <Route element={<PrivateRoute />}>
             <Route path="/home" element={<Home />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/birthday/:id" element={<BirthdayView />} />
             <Route path="/update-date/:id" element={<UpdateDate />} />
           </Route>
         </Routes>

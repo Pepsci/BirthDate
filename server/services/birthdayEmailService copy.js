@@ -4,12 +4,6 @@ const nodemailer = require("nodemailer");
 const dateModel = require("../models/date.model");
 const schedule = require("node-schedule");
 
-// NOUVEAU : Import des templates HTML et texte
-const {
-  getBirthdayReminderTemplate,
-  getBirthdayReminderTextVersion,
-} = require("./emailTemplates/birthdayReminder");
-
 // Création du client SES avec AWS SDK v3
 const sesClient = new SESClient({
   region: process.env.AWS_REGION,
@@ -94,7 +88,7 @@ async function checkAndSendBirthdayEmails() {
           dateItem.name,
           dateItem.surname,
           0,
-          dateItem._id // L'ID de la date pour créer le lien
+          dateItem._id // Passez l'ID de la date ici aussi
         );
         console.log(
           `Email envoyé pour ${dateItem.name} ${dateItem.surname} (jour même)`
@@ -109,7 +103,7 @@ async function checkAndSendBirthdayEmails() {
             dateItem.name,
             dateItem.surname,
             daysBeforeBirthday,
-            dateItem._id // L'ID de la date pour créer le lien
+            dateItem._id // Passez l'ID de la date ici
           );
           console.log(
             `Email envoyé pour ${dateItem.name} ${dateItem.surname} (${daysBeforeBirthday} jours avant)`
@@ -124,7 +118,7 @@ async function checkAndSendBirthdayEmails() {
   }
 }
 
-// FONCTION MODIFIÉE : Envoi d'email avec le nouveau template HTML et le lien vers la page birthday
+// Fonction d'envoi d'email avec message personnalisé selon le délai
 async function sendReminderEmail(
   email,
   name,
@@ -132,54 +126,53 @@ async function sendReminderEmail(
   daysBeforeBirthday,
   dateId
 ) {
-  // Création des liens
+  let subject, textContent, htmlContent;
+
+  if (daysBeforeBirthday === 0) {
+    subject = `C'est aujourd'hui l'anniversaire de ${name} ${surname} !`;
+    textContent = `N'oubliez pas que c'est aujourd'hui l'anniversaire de ${name} ${surname} !`;
+    htmlContent = `<p>N'oubliez pas que c'est <strong>aujourd'hui</strong> l'anniversaire de ${name} ${surname} !</p>`;
+  } else if (daysBeforeBirthday === 1) {
+    subject = `Rappel: Anniversaire à venir demain !`;
+    textContent = `Rappelez-vous que demain est l'anniversaire de ${name} ${surname} !`;
+    htmlContent = `<p>Rappelez-vous que <strong>demain</strong> est l'anniversaire de ${name} ${surname} !</p>`;
+  } else {
+    subject = `Rappel: Anniversaire à venir dans ${daysBeforeBirthday} jours !`;
+    textContent = `Rappelez-vous que dans ${daysBeforeBirthday} jours ce sera l'anniversaire de ${name} ${surname} !`;
+    htmlContent = `<p>Rappelez-vous que dans <strong>${daysBeforeBirthday} jours</strong> ce sera l'anniversaire de ${name} ${surname} !</p>`;
+  }
+
+  // Création des liens de désabonnement
   const encodedEmail = encodeURIComponent(email);
-
-  // NOUVEAU : Lien vers la page de l'anniversaire spécifique
-  const birthdayLink = `${process.env.FRONTEND_URL}/birthday/${dateId}`;
-
-  // Liens de désabonnement
   const unsubscribeAllLink = `${process.env.FRONTEND_URL}/api/unsubscribe?email=${encodedEmail}`;
   const unsubscribeSpecificLink = `${process.env.FRONTEND_URL}/api/unsubscribe?email=${encodedEmail}&dateid=${dateId}`;
 
-  // Définir le sujet de l'email selon le délai
-  let subject;
-  if (daysBeforeBirthday === 0) {
-    subject = `C'est aujourd'hui l'anniversaire de ${name} ${surname} ! 🎉`;
-  } else if (daysBeforeBirthday === 1) {
-    subject = `Rappel: Anniversaire demain ! 🎂`;
-  } else {
-    subject = `Rappel: Anniversaire dans ${daysBeforeBirthday} jours 📅`;
-  }
+  // Ajout des liens de désabonnement au contenu HTML
+  htmlContent += `
+    <p style="margin-top: 20px; padding-top: 10px; border-top: 1px solid #ddd; color: #777; font-size: 12px;">
+      Options de notification :
+      <ul style="margin-top: 5px;">
+        <li><a href="${unsubscribeSpecificLink}">Ne plus recevoir de notifications pour l'anniversaire de ${name} ${surname}</a></li>
+        <li><a href="${unsubscribeAllLink}">Ne plus recevoir aucune notification d'anniversaire</a></li>
+      </ul>
+    </p>
+  `;
 
-  // Préparer les données pour le template
-  const templateData = {
-    name,
-    surname,
-    daysBeforeBirthday,
-    birthdayLink, // NOUVEAU : le lien vers la page birthday
-    unsubscribeAllLink,
-    unsubscribeSpecificLink,
-  };
+  // Ajout du lien de désabonnement spécifique au texte brut également
+  textContent += `\n\nOptions de notification :\n- Ne plus recevoir de notifications pour l'anniversaire de ${name} ${surname} : ${unsubscribeSpecificLink}\n- Ne plus recevoir aucune notification d'anniversaire : ${unsubscribeAllLink}`;
 
-  // NOUVEAU : Générer le contenu HTML et texte à partir des templates
-  const htmlContent = getBirthdayReminderTemplate(templateData);
-  const textContent = getBirthdayReminderTextVersion(templateData);
-
-  // Configuration de l'email
   const mailOptions = {
     from: process.env.EMAIL_BRTHDAY,
     to: email,
     subject: subject,
-    text: textContent, // Version texte brut
-    html: htmlContent, // Version HTML stylisée
+    text: textContent,
+    html: htmlContent,
     headers: {
       "List-Unsubscribe": `<${unsubscribeAllLink}>`,
       "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
     },
   };
 
-  // Envoi de l'email via le transporteur
   return new Promise((resolve, reject) => {
     transporter.sendMail(mailOptions, (error, info) => {
       if (error) {
@@ -193,7 +186,7 @@ async function sendReminderEmail(
   });
 }
 
-// Planification de la tâche quotidienne (tous les jours à minuit)
+// Planification de la tâche quotidienne
 schedule.scheduleJob("0 0 * * *", checkAndSendBirthdayEmails);
 
 module.exports = { checkAndSendBirthdayEmails };
