@@ -7,32 +7,56 @@ const dateSchema = Schema({
   surname: String,
   owner: { type: Schema.Types.ObjectId, ref: "user" },
   family: { type: Boolean, default: false },
-  // Nouveau champ pour les notifications
+
   receiveNotifications: {
     type: Boolean,
-    default: true, // Par défaut, on envoie des notifications
+    default: true,
   },
-  // Option pour les préférences de timing des notifications
+
   notificationPreferences: {
     timings: {
       type: [Number],
-      default: [1], // Par défaut, notification 1 jour avant
+      default: [1],
     },
     notifyOnBirthday: {
       type: Boolean,
       default: true,
     },
   },
+
   comment: {
     type: Array,
     default: [],
   },
+
   gifts: [
     {
       giftName: { type: String, required: true },
       purchased: { type: Boolean, default: false },
+
+      // 👇 NOUVEAUX CHAMPS (optionnels pour rester compatible)
+      occasion: {
+        type: String,
+        enum: ["birthday", "christmas", "other"],
+        default: "birthday",
+      },
+      year: {
+        type: Number,
+        default: () => new Date().getFullYear(),
+      },
+      purchasedAt: {
+        type: Date,
+        default: null,
+      },
     },
   ],
+
+  // Pour lier à un utilisateur inscrit (plus tard)
+  linkedUser: {
+    type: Schema.Types.ObjectId,
+    ref: "user",
+    default: null,
+  },
 });
 
 const dateModel = model("Date", dateSchema);

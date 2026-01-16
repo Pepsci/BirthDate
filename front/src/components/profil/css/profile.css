@@ -18,7 +18,7 @@
     margin: 1.5rem;
     border: 3px solid black;
     margin-bottom: -10px;
-    border-radius: 10%;
+    border-radius: 12px;
     z-index: 0;
     background-color: var(--gray-800);
     flex-shrink: 0;

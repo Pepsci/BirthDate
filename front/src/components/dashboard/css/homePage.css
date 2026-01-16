@@ -5,11 +5,11 @@ img{
 .logoHeader{
     height: 100px;
     margin: 2em;
-    margin-top: 3re2;
+    margin-top: 3rem;
 }
 
 .homePageRoot {
-    margin-top: 100px;
+    margin-top: 110px;
 }
 
 .homePageCurrentuser{
@@ -107,6 +107,9 @@ img{
     height: 70px;
     margin: 0.5em;
     margin-top: 0rem;
+}
+.homePageRoot{
+    margin-top: 120px;
 }
 
 }

@@ -280,7 +280,6 @@ const Notifications = () => {
     <div className="simple-notification-manager">
       {/* En-tête avec statistiques */}
       <div className="notification-header">
-        <h2>🔔 Gestion des Notifications</h2>
         <div className="notification-summary">
           <span className="summary-text">
             {activeCount} sur {totalCount} de notifications activé
@@ -299,11 +298,11 @@ const Notifications = () => {
         <div className="user-pref-toggle-simple">
           <div className="toggle-info">
             <span className="toggle-label">
-              Recevoir les emails d'anniversaire
+              Recevoir les emails de notifications
             </span>
-            <span className="toggle-sublabel">
+            {/* <span className="toggle-sublabel">
               {userReceivesEmails ? "Actif" : "Désactivé"}
-            </span>
+            </span> */}
           </div>
           <label className="switch">
             <input

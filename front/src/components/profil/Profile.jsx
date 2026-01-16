@@ -8,6 +8,7 @@ import "./css/carousel.css";
 import PasswordInput from "../connect/PasswordInput";
 import Countdown from "../dashboard/Countdown";
 import GestionNotification from "./GestionNotifications";
+import Wishlist from "./Wishlist";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 const ProfilDetails = () => {
@@ -36,27 +37,23 @@ const ProfilDetails = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [receiveEmails, setReceiveEmails] = useState(false);
 
-  // États pour la modal de suppression
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // État pour le message de succès
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
-  // État pour le message d'erreur
   const [showErrorMessage, setShowErrorMessage] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
-  // État pour le carrousel mobile uniquement
   const [currentCarouselIndex, setCurrentCarouselIndex] = useState(0);
 
   const avatarRef = useRef();
 
-  // Sections du carrousel pour mobile
   const carouselSections = [
     { id: "personal", title: "Infos Personnelles", icon: "👤" },
     { id: "notifications", title: "Notifications", icon: "🔔" },
+    { id: "wishlist", title: "Ma Wishlist", icon: "🎁" },
   ];
 
   useEffect(() => {
@@ -79,14 +76,13 @@ const ProfilDetails = () => {
     };
   }, [isLoggedin, currentUser]);
 
-  // Redirection automatique après 3 secondes
   useEffect(() => {
     let timer;
     if (showSuccessMessage) {
       timer = setTimeout(() => {
-        removeUser(); // Nettoie les données utilisateur
-        window.location.href = "/"; // Redirection complète vers l'accueil
-      }, 3000); // 3 secondes
+        removeUser();
+        window.location.href = "/";
+      }, 3000);
     }
     return () => clearTimeout(timer);
   }, [showSuccessMessage, removeUser]);
@@ -107,7 +103,6 @@ const ProfilDetails = () => {
     setShowPasswordFields(false);
   };
 
-  // Gestion de la suppression de compte
   const handleDeleteAccount = (e) => {
     e.preventDefault();
     setShowDeleteModal(true);
@@ -131,21 +126,14 @@ const ProfilDetails = () => {
 
     try {
       await apiHandler.delete(`/users/${currentUser._id}`);
-
-      // Fermer la modal de confirmation
       setShowDeleteModal(false);
-
-      // Afficher le message de succès (redirection après 3s via useEffect)
       setShowSuccessMessage(true);
     } catch (error) {
       console.error("Erreur lors de la suppression:", error);
       setIsDeleting(false);
-
-      // Fermer la modal de confirmation
       setShowDeleteModal(false);
       setDeleteConfirmText("");
 
-      // Afficher le message d'erreur approprié
       if (error.response?.status === 403) {
         setErrorMessage("Vous n'êtes pas autorisé à supprimer ce compte.");
       } else if (error.response?.status === 404) {
@@ -216,7 +204,6 @@ const ProfilDetails = () => {
     }
   };
 
-  // Fonctions du carrousel
   const goToPrevious = () => {
     setCurrentCarouselIndex(
       currentCarouselIndex > 0
@@ -233,7 +220,6 @@ const ProfilDetails = () => {
     );
   };
 
-  // Rendu du contenu selon la section
   const renderMobileSection = () => {
     const currentSection = carouselSections[currentCarouselIndex];
 
@@ -280,6 +266,13 @@ const ProfilDetails = () => {
           </div>
         );
 
+      case "wishlist":
+        return (
+          <div className="mobile-section">
+            <Wishlist />
+          </div>
+        );
+
       default:
         return null;
     }
@@ -289,7 +282,7 @@ const ProfilDetails = () => {
 
   return (
     <div>
-      {/* Modal de confirmation de suppression */}
+      {/* Modals (inchangées) */}
       {showDeleteModal && (
         <div className="delete-modal-overlay" onClick={handleCancelDelete}>
           <div className="delete-modal" onClick={(e) => e.stopPropagation()}>
@@ -332,7 +325,6 @@ const ProfilDetails = () => {
         </div>
       )}
 
-      {/* Message de succès simple */}
       {showSuccessMessage && (
         <div className="success-message-overlay">
           <div className="success-message">
@@ -343,7 +335,6 @@ const ProfilDetails = () => {
         </div>
       )}
 
-      {/* Message d'erreur */}
       {showErrorMessage && (
         <div
           className="error-message-overlay"
@@ -364,7 +355,7 @@ const ProfilDetails = () => {
       )}
 
       {isEditing ? (
-        // Mode édition
+        // Mode édition (inchangé)
         <div className="formEdit form-connect">
           <div className="peel">
             <form className="formEditProfile form" onSubmit={sendForm}>
@@ -480,42 +471,38 @@ const ProfilDetails = () => {
         </div>
       ) : (
         <div className="profile">
-          {/* CARROUSEL VISIBLE SUR TOUTES TAILLES D'ÉCRAN */}
+          {/* 👇 CARROUSEL MOBILE */}
           <div className="mobile-carousel-container">
             <div className="mobile-carousel">
-              {/* Header avec titre de section */}
-              <div className="mobile-carousel__header">
+              {/* <div className="mobile-carousel__header">
                 <span className="mobile-carousel__icon">
                   {carouselSections[currentCarouselIndex].icon}
                 </span>
                 <h3 className="mobile-carousel__title">
                   {carouselSections[currentCarouselIndex].title}
                 </h3>
-              </div>
+              </div> */}
 
-              {/* Contenu de la section */}
               <div className="mobile-carousel__content">
                 {renderMobileSection()}
 
-                {/* Boutons de navigation */}
-                <button
+                {/* <button
                   onClick={goToPrevious}
                   className="mobile-carousel__nav-btn mobile-carousel__nav-btn--prev"
                   aria-label="Section précédente"
                 >
                   <ChevronLeft size={20} color="#495057" />
-                </button>
+                </button> */}
 
-                <button
+                {/* <button
                   onClick={goToNext}
                   className="mobile-carousel__nav-btn mobile-carousel__nav-btn--next"
                   aria-label="Section suivante"
                 >
                   <ChevronRight size={20} color="#495057" />
-                </button>
+                </button> */}
               </div>
 
-              {/* Indicateurs */}
               <div className="mobile-carousel__indicators">
                 {carouselSections.map((_, index) => (
                   <button
@@ -531,11 +518,10 @@ const ProfilDetails = () => {
                 ))}
               </div>
 
-              {/* Navigation rapide */}
               <div className="mobile-carousel__quick-nav">
-                <span className="mobile-carousel__counter">
+                {/* <span className="mobile-carousel__counter">
                   {currentCarouselIndex + 1} / {carouselSections.length}
-                </span>
+                </span> */}
                 <div className="mobile-carousel__quick-buttons">
                   {carouselSections.map((section, index) => (
                     <button
@@ -556,8 +542,8 @@ const ProfilDetails = () => {
             </div>
           </div>
 
-          {/* AFFICHAGE DESKTOP - CACHÉ MAINTENANT */}
-          <div className="profileWrapper hidden">
+          {/* 👇 AFFICHAGE DESKTOP - MAINTENANT VISIBLE */}
+          <div className="profileWrapper">
             <div className="profile_info">
               <h2>Vos données</h2>
               <p className="profile_info_details">
@@ -589,8 +575,14 @@ const ProfilDetails = () => {
                 </button>
               </div>
             </div>
+
             <div className="notification">
               <GestionNotification />
+            </div>
+
+            {/* 👇 NOUVELLE SECTION WISHLIST POUR DESKTOP */}
+            <div className="wishlist-desktop">
+              <Wishlist />
             </div>
           </div>
         </div>

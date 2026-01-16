@@ -8,7 +8,7 @@
     margin: 1.5rem;
     border: 3px solid black;
     margin-bottom: -10px;
-    border-radius: 10%;
+    border-radius: 12px;
     background-color: var(--gray-800);
     overflow: auto;
     scrollbar-width: none;
@@ -36,7 +36,6 @@
 
 .notification-summary {
     padding: 8px 16px;
-    background-color: var(--gray-700);
     border-radius: 8px;
     display: inline-block;
 }
@@ -335,7 +334,7 @@ input:disabled + .slider {
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 12px;
-    padding: 20px;
+    padding: 10px;
 }
 
 .user-pref-toggle-simple {
@@ -352,7 +351,7 @@ input:disabled + .slider {
 }
 
 .toggle-label {
-    font-size: 16px;
+    font-size: 12px;
     font-weight: 500;
     color: #e2e8f0;
 }
@@ -369,7 +368,7 @@ input:disabled + .slider {
     border-left: 3px solid #f56565;
     border-radius: 6px;
     color: #fc8181;
-    font-size: 13px;
+    font-size: 12px;
     line-height: 1.5;
 }
 
@@ -385,8 +384,8 @@ input:disabled + .slider {
 @media (max-width: 600px) {
     .simple-notification-manager {
         width: 330px;
-        height: 450px;
-        padding: 0;
+        height: 500px;
+        padding: 5px;
         margin-top: 10px;
     }
 
