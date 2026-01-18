@@ -330,14 +330,14 @@ const Notifications = () => {
       <div className="global-actions">
         <button
           onClick={enableAllNotifications}
-          className="action-button enable-all"
+          className="btn-profil enable-all"
           disabled={activeCount === totalCount || updatingIds.size > 0}
         >
           ✅ Activer tout
         </button>
         <button
           onClick={disableAllNotifications}
-          className="action-button disable-all"
+          className="btn-profil disable-all"
           disabled={activeCount === 0 || updatingIds.size > 0}
         >
           ❌ Désactiver tout

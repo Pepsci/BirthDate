@@ -5,7 +5,7 @@
   max-width: 400px;
   max-height: 650px;
   padding: 1rem;
-  margin: 1.5rem;
+  margin: 2rem;
   border: 3px solid black;
   margin-bottom: -10px;
   border-radius: 12px;
@@ -53,6 +53,11 @@
 }
 
 /* Formulaire card */
+
+.wishlist-form{
+  margin-top: 0;
+}
+
 .wishlist-form-card {
   background: rgba(45, 55, 72, 0.6);
   backdrop-filter: blur(10px);
@@ -70,7 +75,7 @@
 }
 
 .wishlist-form-card .form-input {
-  width: 80%;
+  /* width: 80%; */
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
@@ -259,13 +264,115 @@
   background: rgba(239, 68, 68, 0.3);
 }
 
+/* Ajouter à la fin de wishlist.css */
+
+/* ========================================
+   MODE CONFIRMATION DE SUPPRESSION
+   ======================================== */
+
+.wishlist-delete-confirm {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 24px 16px;
+  min-height: 200px;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.delete-confirm-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  animation: pulse 1s ease-in-out infinite;
+}
+
+@keyframes pulse {
+
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+.delete-confirm-title {
+  color: #fff;
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.delete-confirm-text {
+  color: #667eea;
+  font-size: 16px;
+  margin-bottom: 8px;
+  word-break: break-word;
+}
+
+.delete-confirm-warning {
+  color: #ef4444;
+  font-size: 13px;
+  margin-bottom: 20px;
+  font-weight: 500;
+}
+
+.delete-confirm-buttons {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  max-width: 300px;
+}
+
+.delete-confirm-buttons .btn-profil {
+  flex: 1;
+  margin: 0;
+}
+
+/* Hover states pour les boutons de confirmation */
+.delete-confirm-buttons .btn-profilGrey:hover {
+  background-color: rgb(90, 95, 95);
+  transform: translateY(-2px);
+}
+
+.delete-confirm-buttons .btn-delete:hover {
+  background-color: #c82333;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+}
+
+/* Animation de la carte pendant la suppression */
+.wishlist-item-card {
+  transition: all 0.3s ease;
+}
+
+.wishlist-item-card:has(.wishlist-delete-confirm) {
+  border-color: rgba(239, 68, 68, 0.3);
+  background: rgba(239, 68, 68, 0.05);
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .wishlist-container {
       width: 300px;
-        margin: 0.25rem;
-        padding: 0.75rem;
-        height: 480px ;
+      margin: 0.25rem;
+      padding: 0.75rem;
+      height: 480px ;
 
   }
 
@@ -283,5 +390,18 @@
 
   .wishlist-form-buttons {
     flex-direction: column;
+  }
+
+  .delete-confirm-buttons {
+    flex-direction: column;
+    gap: 8px;
+  }
+    
+  .delete-confirm-icon {
+    font-size: 40px;
+  }
+    
+  .delete-confirm-title {
+    font-size: 16px;
   }
 }

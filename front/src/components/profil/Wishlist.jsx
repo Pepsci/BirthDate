@@ -9,6 +9,7 @@ const Wishlist = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
+  const [deletingItemId, setDeletingItemId] = useState(null); // 👈 NOUVEAU
 
   // Formulaire
   const [formData, setFormData] = useState({
@@ -87,13 +88,26 @@ const Wishlist = () => {
       isShared: item.isShared,
     });
     setShowForm(true);
+    setDeletingItemId(null); // 👈 Annuler la suppression si active
   };
 
-  const handleDelete = async (itemId) => {
-    if (!window.confirm("Supprimer cet item ?")) return;
+  // 👇 NOUVEAU : Activer le mode suppression
+  const handleDeleteClick = (itemId) => {
+    setDeletingItemId(itemId);
+    setShowForm(false); // Fermer le formulaire si ouvert
+    setEditingItem(null);
+  };
 
+  // 👇 NOUVEAU : Annuler la suppression
+  const handleCancelDelete = () => {
+    setDeletingItemId(null);
+  };
+
+  // 👇 NOUVEAU : Confirmer la suppression
+  const handleConfirmDelete = async (itemId) => {
     try {
       await apiHandler.delete(`/wishlist/${itemId}`);
+      setDeletingItemId(null);
       fetchWishlist();
     } catch (error) {
       console.error("Erreur lors de la suppression:", error);
@@ -125,7 +139,7 @@ const Wishlist = () => {
       <div className="wishlist-header">
         <h2>🎁 Ma Wishlist</h2>
         <p className="wishlist-count">
-          {wishlistItems.length} item{wishlistItems.length > 1 ? "s" : ""}
+          {wishlistItems.length} idée{wishlistItems.length > 1 ? "s" : ""}
         </p>
       </div>
 
@@ -134,14 +148,14 @@ const Wishlist = () => {
           className="btn-profil btn-add-item"
           onClick={() => setShowForm(true)}
         >
-          + Ajouter un item
+          + Ajouter une idée
         </button>
       )}
 
       {showForm && (
         <div className="wishlist-form-card">
           <h3>{editingItem ? "Modifier l'item" : "Nouvel item"}</h3>
-          <form onSubmit={handleSubmit}>
+          <form className="form-connect wishlist-form" onSubmit={handleSubmit}>
             <input
               type="text"
               name="title"
@@ -208,57 +222,88 @@ const Wishlist = () => {
         ) : (
           wishlistItems.map((item) => (
             <div key={item._id} className="wishlist-item-card">
-              <div className="wishlist-item-header">
-                <h4 className="wishlist-item-title">{item.title}</h4>
-                <span
-                  className={`wishlist-item-badge ${
-                    item.isShared ? "shared" : "private"
-                  }`}
-                >
-                  {item.isShared ? "🔓 Partagé" : "🔒 Privé"}
-                </span>
-              </div>
+              {/* 👇 MODE NORMAL */}
+              {deletingItemId !== item._id ? (
+                <>
+                  <div className="wishlist-item-header">
+                    <h4 className="wishlist-item-title">{item.title}</h4>
+                    <span
+                      className={`wishlist-item-badge ${
+                        item.isShared ? "shared" : "private"
+                      }`}
+                    >
+                      {item.isShared ? "🔓 Partagé" : "🔒 Privé"}
+                    </span>
+                  </div>
 
-              {item.price && (
-                <p className="wishlist-item-price">{item.price} €</p>
+                  {item.price && (
+                    <p className="wishlist-item-price">{item.price} €</p>
+                  )}
+
+                  {item.url && (
+                    <a
+                      href={item.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="wishlist-item-link"
+                    >
+                      🔗 Voir le lien
+                    </a>
+                  )}
+
+                  {item.isPurchased && (
+                    <p className="wishlist-item-purchased">✅ Acheté</p>
+                  )}
+
+                  <div className="wishlist-item-actions">
+                    <button
+                      className="btn-wishlist btn-toggle"
+                      onClick={() => handleToggleSharing(item)}
+                      title={item.isShared ? "Rendre privé" : "Partager"}
+                    >
+                      {item.isShared ? "🔒" : "🔓"}
+                    </button>
+                    <button
+                      className="btn-wishlist btn-edit"
+                      onClick={() => handleEdit(item)}
+                    >
+                      ✏️
+                    </button>
+                    <button
+                      className="btn-wishlist btn-delete"
+                      onClick={() => handleDeleteClick(item._id)}
+                    >
+                      🗑️
+                    </button>
+                  </div>
+                </>
+              ) : (
+                /* 👇 MODE SUPPRESSION */
+                <div className="wishlist-delete-confirm">
+                  <div className="delete-confirm-icon">⚠️</div>
+                  <h4 className="delete-confirm-title">Supprimer cet item ?</h4>
+                  <p className="delete-confirm-text">
+                    <strong>{item.title}</strong>
+                  </p>
+                  <p className="delete-confirm-warning">
+                    Cette action est irréversible
+                  </p>
+                  <div className="delete-confirm-buttons">
+                    <button
+                      className="btn-profil btn-profilGrey"
+                      onClick={handleCancelDelete}
+                    >
+                      Annuler
+                    </button>
+                    <button
+                      className="btn-profil btn-delete"
+                      onClick={() => handleConfirmDelete(item._id)}
+                    >
+                      Supprimer
+                    </button>
+                  </div>
+                </div>
               )}
-
-              {item.url && (
-                <a
-                  href={item.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="wishlist-item-link"
-                >
-                  🔗 Voir le lien
-                </a>
-              )}
-
-              {item.isPurchased && (
-                <p className="wishlist-item-purchased">✅ Acheté</p>
-              )}
-
-              <div className="wishlist-item-actions">
-                <button
-                  className="btn-wishlist btn-toggle"
-                  onClick={() => handleToggleSharing(item)}
-                  title={item.isShared ? "Rendre privé" : "Partager"}
-                >
-                  {item.isShared ? "🔒" : "🔓"}
-                </button>
-                <button
-                  className="btn-wishlist btn-edit"
-                  onClick={() => handleEdit(item)}
-                >
-                  ✏️
-                </button>
-                <button
-                  className="btn-wishlist btn-delete"
-                  onClick={() => handleDelete(item._id)}
-                >
-                  🗑️
-                </button>
-              </div>
             </div>
           ))
         )}
