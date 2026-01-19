@@ -2,7 +2,7 @@
 .wishlist-container {
   width: 100%;
   position: relative;
-  max-width: 400px;
+  width: 400px;
   max-height: 650px;
   padding: 1rem;
   margin: 2rem;

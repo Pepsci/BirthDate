@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
 import Countdown from "../dashboard/Countdown";
-import GiftForm from "../profil/CreateFriendGiftList";
-import GiftItem from "../profil/GiftItem";
+import FriendGiftList from "./FriendGiftList";
 import apiHandler from "../../api/apiHandler";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import "./css/notifications.css";
 import "./css/friendProfile.css";
+import "./css/friendCarousel.css";
 
 const FriendProfile = ({ date, onCancel }) => {
   const [currentDate, setCurrentDate] = useState(date);
@@ -13,13 +14,16 @@ const FriendProfile = ({ date, onCancel }) => {
   const [notifyOnBirthday, setNotifyOnBirthday] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
+  // État pour le carrousel mobile
+  const [currentCarouselIndex, setCurrentCarouselIndex] = useState(0);
+
   // Nouveaux états pour gérer les changements
   const [originalPreferences, setOriginalPreferences] = useState({
     timings: [1],
     notifyOnBirthday: false,
   });
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const [saveStatus, setSaveStatus] = useState("idle"); // 'idle', 'saved', 'hasChanges'
+  const [saveStatus, setSaveStatus] = useState("idle");
 
   const reminderOptions = [
     { value: 1, label: "1 jour avant" },
@@ -27,6 +31,13 @@ const FriendProfile = ({ date, onCancel }) => {
     { value: 7, label: "1 semaine avant" },
     { value: 14, label: "2 semaines avant" },
     { value: 30, label: "1 mois avant" },
+  ];
+
+  // 👇 Sections du carrousel
+  const carouselSections = [
+    { id: "info", title: "Infos", icon: "👤" },
+    { id: "notifications", title: "Notifications", icon: "🔔" },
+    { id: "gifts", title: "Cadeaux", icon: "💝" },
   ];
 
   useEffect(() => {
@@ -42,7 +53,6 @@ const FriendProfile = ({ date, onCancel }) => {
       setNotificationTimings(initialTimings);
       setNotifyOnBirthday(initialNotifyOnBirthday);
 
-      // Sauvegarder les préférences originales
       setOriginalPreferences({
         timings: [...initialTimings],
         notifyOnBirthday: initialNotifyOnBirthday,
@@ -55,7 +65,6 @@ const FriendProfile = ({ date, onCancel }) => {
     loadNotificationPreferences();
   }, [currentDate]);
 
-  // Fonction pour vérifier s'il y a des changements
   const checkForChanges = (newTimings, newNotifyOnBirthday) => {
     const timingsChanged =
       JSON.stringify([...newTimings].sort()) !==
@@ -68,15 +77,7 @@ const FriendProfile = ({ date, onCancel }) => {
     setSaveStatus(hasChanges ? "hasChanges" : "saved");
   };
 
-  const handleGiftAdded = (updatedDate) => {
-    setCurrentDate(updatedDate);
-  };
-
   const handleGiftUpdated = (updatedDate) => {
-    setCurrentDate(updatedDate);
-  };
-
-  const handleGiftDeleted = (updatedDate) => {
     setCurrentDate(updatedDate);
   };
 
@@ -148,7 +149,6 @@ const FriendProfile = ({ date, onCancel }) => {
 
       setCurrentDate(updatedDate);
 
-      // Mettre à jour les préférences originales après sauvegarde réussie
       setOriginalPreferences({
         timings: [...notificationTimings],
         notifyOnBirthday: notifyOnBirthday,
@@ -157,7 +157,6 @@ const FriendProfile = ({ date, onCancel }) => {
       setHasUnsavedChanges(false);
       setSaveStatus("saved");
 
-      // Revenir à l'état 'idle' après 2 secondes
       setTimeout(() => {
         setSaveStatus("idle");
       }, 2000);
@@ -165,7 +164,6 @@ const FriendProfile = ({ date, onCancel }) => {
       console.error("Failed to save notification preferences:", error);
       setSaveStatus("error");
 
-      // Revenir à l'état précédent après 3 secondes
       setTimeout(() => {
         setSaveStatus(hasUnsavedChanges ? "hasChanges" : "idle");
       }, 3000);
@@ -174,7 +172,6 @@ const FriendProfile = ({ date, onCancel }) => {
     }
   };
 
-  // Fonction pour obtenir le texte et la classe du bouton
   const getButtonConfig = () => {
     switch (saveStatus) {
       case "hasChanges":
@@ -212,12 +209,201 @@ const FriendProfile = ({ date, onCancel }) => {
 
   const buttonConfig = getButtonConfig();
 
+  // 👇 Navigation carrousel
+  const goToPrevious = () => {
+    setCurrentCarouselIndex(
+      currentCarouselIndex > 0
+        ? currentCarouselIndex - 1
+        : carouselSections.length - 1
+    );
+  };
+
+  const goToNext = () => {
+    setCurrentCarouselIndex(
+      currentCarouselIndex < carouselSections.length - 1
+        ? currentCarouselIndex + 1
+        : 0
+    );
+  };
+
+  // 👇 Rendu des sections mobiles
+  const renderMobileSection = () => {
+    const currentSection = carouselSections[currentCarouselIndex];
+
+    switch (currentSection.id) {
+      case "info":
+        return (
+          <div className="mobile-section">
+            <div className="birthCardAge">
+              <span className="age">{calculateAge(currentDate.date)} Ans</span>
+              <div className="date-profilFriend font-profilFriend">
+                {new Date(currentDate.date).toLocaleDateString("fr-FR")}
+              </div>
+              <Countdown birthdate={currentDate.date} />
+            </div>
+          </div>
+        );
+
+      case "notifications":
+        return (
+          <div className="mobile-section">
+            <div className="notificationPreferences">
+              <h2>Préférences de notification</h2>
+
+              <div className="notification-toggle">
+                <label className="switch">
+                  <input
+                    type="checkbox"
+                    checked={receiveNotifications}
+                    onChange={handleReceiveNotificationsChange}
+                    disabled={isLoading}
+                  />
+                  <span className="slider round"></span>
+                </label>
+                <span>
+                  {receiveNotifications
+                    ? "Notifications activées"
+                    : "Notifications désactivées"}
+                </span>
+              </div>
+
+              <div className="notificationFrequency-friendProfil">
+                <h3>Quand souhaitez-vous être notifié ?</h3>
+
+                <div className="timing-option">
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={notifyOnBirthday}
+                      onChange={handleNotifyOnBirthdayChange}
+                      disabled={isLoading || !receiveNotifications}
+                    />
+                    Le jour même
+                  </label>
+                </div>
+
+                {reminderOptions.map((option) => (
+                  <div key={option.value} className="timing-option">
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={notificationTimings.includes(option.value)}
+                        onChange={() => handleTimingChange(option.value)}
+                        disabled={isLoading || !receiveNotifications}
+                      />
+                      {option.label}
+                    </label>
+                  </div>
+                ))}
+
+                <button
+                  className={buttonConfig.className}
+                  onClick={handleSaveNotificationPreferences}
+                  disabled={
+                    buttonConfig.disabled || isLoading || !receiveNotifications
+                  }
+                >
+                  {buttonConfig.text}
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+
+      case "gifts":
+        return (
+          <div className="mobile-section">
+            <FriendGiftList
+              currentDate={currentDate}
+              onUpdate={handleGiftUpdated}
+            />
+          </div>
+        );
+
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="friendProfil">
       <h1 className="name-profilFriend font-profilFriend">
         {currentDate.name} {currentDate.surname}
       </h1>
-      <div className="grid-friendProfil">
+
+      {/* 👇 CARROUSEL MOBILE */}
+      <div className="mobile-carousel-container">
+        <div className="mobile-carousel">
+          {/* <div className="mobile-carousel__header">
+            <span className="mobile-carousel__icon">
+              {carouselSections[currentCarouselIndex].icon}
+            </span>
+            <h3 className="mobile-carousel__title">
+              {carouselSections[currentCarouselIndex].title}
+            </h3>
+          </div> */}
+
+          <div className="mobile-carousel__content">
+            {renderMobileSection()}
+
+            {/* <button
+              onClick={goToPrevious}
+              className="mobile-carousel__nav-btn mobile-carousel__nav-btn--prev"
+              aria-label="Section précédente"
+            >
+              <ChevronLeft size={20} color="#495057" />
+            </button>
+
+            <button
+              onClick={goToNext}
+              className="mobile-carousel__nav-btn mobile-carousel__nav-btn--next"
+              aria-label="Section suivante"
+            >
+              <ChevronRight size={20} color="#495057" />
+            </button> */}
+          </div>
+
+          <div className="mobile-carousel__indicators">
+            {carouselSections.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => setCurrentCarouselIndex(index)}
+                className={`mobile-carousel__indicator ${
+                  index === currentCarouselIndex
+                    ? "mobile-carousel__indicator--active"
+                    : ""
+                }`}
+                aria-label={`Aller à la section ${index + 1}`}
+              />
+            ))}
+          </div>
+
+          <div className="mobile-carousel__quick-nav">
+            {/* <span className="mobile-carousel__counter">
+              {currentCarouselIndex + 1} / {carouselSections.length}
+            </span> */}
+            <div className="mobile-carousel__quick-buttons">
+              {carouselSections.map((section, index) => (
+                <button
+                  key={section.id}
+                  onClick={() => setCurrentCarouselIndex(index)}
+                  className={`mobile-carousel__quick-btn ${
+                    index === currentCarouselIndex
+                      ? "mobile-carousel__quick-btn--active"
+                      : ""
+                  }`}
+                  aria-label={section.title}
+                >
+                  {section.icon}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 👇 AFFICHAGE DESKTOP CLASSIQUE */}
+      <div className="grid-friendProfil desktop-view">
         <div className="info-friendProfil grid1-friendProfil">
           <div className="birthCardAge">
             <span className="age">{calculateAge(currentDate.date)} Ans</span>
@@ -228,7 +414,7 @@ const FriendProfile = ({ date, onCancel }) => {
           </div>
         </div>
 
-        <div className="notificationPreferences gri2-friendProfil">
+        <div className="notificationPreferences grid2-friendProfil">
           <h2>Préférences de notification</h2>
 
           <div className="notification-toggle">
@@ -290,31 +476,13 @@ const FriendProfile = ({ date, onCancel }) => {
         </div>
 
         <div className="gift-friendProfil grid3-friendProfil">
-          <div className="form-friendProfil">
-            <GiftForm dateId={currentDate._id} onGiftAdded={handleGiftAdded} />
-          </div>
-
-          <h2 className="giftTiltle-friendProfil">Vos idées de cadeaux</h2>
-          <div className="giftList-friendProfil">
-            <div className="giftName-friendProfil">
-              {currentDate.gifts &&
-                currentDate.gifts
-                  .filter(
-                    (gift) => gift !== undefined && gift.giftName && gift._id
-                  )
-                  .map((gift) => (
-                    <GiftItem
-                      key={gift._id}
-                      gift={gift}
-                      dateId={currentDate._id}
-                      onUpdate={handleGiftUpdated}
-                      onDelete={handleGiftDeleted}
-                    />
-                  ))}
-            </div>
-          </div>
+          <FriendGiftList
+            currentDate={currentDate}
+            onUpdate={handleGiftUpdated}
+          />
         </div>
       </div>
+
       <div className="btnRLD">
         <button type="button" onClick={onCancel} className="btnBack">
           Retour à la liste des dates

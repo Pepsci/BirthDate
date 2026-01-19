@@ -1,0 +1,322 @@
+import React, { useState } from "react";
+import apiHandler from "../../api/apiHandler";
+import "./css/friendGiftList.css";
+
+const FriendGiftList = ({ currentDate, onUpdate }) => {
+  const [showForm, setShowForm] = useState(false);
+  const [editingGift, setEditingGift] = useState(null);
+  const [deletingGiftId, setDeletingGiftId] = useState(null);
+
+  // Formulaire
+  const [formData, setFormData] = useState({
+    giftName: "",
+    occasion: "birthday",
+    year: new Date().getFullYear(),
+  });
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({
+      ...formData,
+      [name]: value,
+    });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    if (!formData.giftName.trim()) {
+      alert("Le nom du cadeau est requis");
+      return;
+    }
+
+    try {
+      if (editingGift) {
+        // Modification
+        const response = await apiHandler.patch(
+          `/date/${currentDate._id}/gifts/${editingGift._id}`,
+          {
+            giftName: formData.giftName,
+            occasion: formData.occasion,
+            year: parseInt(formData.year),
+            purchased: editingGift.purchased,
+          }
+        );
+        onUpdate(response.data);
+      } else {
+        // Création
+        const response = await apiHandler.patch(
+          `/date/${currentDate._id}/gifts`,
+          {
+            giftName: formData.giftName,
+            occasion: formData.occasion,
+            year: parseInt(formData.year),
+            purchased: false,
+          }
+        );
+        onUpdate(response.data);
+      }
+
+      // Réinitialiser
+      setFormData({
+        giftName: "",
+        occasion: "birthday",
+        year: new Date().getFullYear(),
+      });
+      setShowForm(false);
+      setEditingGift(null);
+    } catch (error) {
+      console.error("Erreur lors de la sauvegarde:", error);
+      alert("Erreur lors de la sauvegarde");
+    }
+  };
+
+  const handleEdit = (gift) => {
+    setEditingGift(gift);
+    setFormData({
+      giftName: gift.giftName,
+      occasion: gift.occasion || "birthday",
+      year: gift.year || new Date().getFullYear(),
+    });
+    setShowForm(true);
+    setDeletingGiftId(null);
+  };
+
+  const handleDeleteClick = (giftId) => {
+    setDeletingGiftId(giftId);
+    setShowForm(false);
+    setEditingGift(null);
+  };
+
+  const handleCancelDelete = () => {
+    setDeletingGiftId(null);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deletingGiftId) return;
+
+    try {
+      const response = await apiHandler.delete(
+        `/date/${currentDate._id}/gifts/${deletingGiftId}`
+      );
+      onUpdate(response.data);
+      setDeletingGiftId(null);
+    } catch (error) {
+      console.error("Erreur lors de la suppression:", error);
+      alert("Erreur lors de la suppression");
+    }
+  };
+
+  const handleTogglePurchased = async (gift) => {
+    try {
+      const response = await apiHandler.patch(
+        `/date/${currentDate._id}/gifts/${gift._id}`,
+        {
+          giftName: gift.giftName,
+          occasion: gift.occasion,
+          year: gift.year,
+          purchased: !gift.purchased,
+        }
+      );
+      onUpdate(response.data);
+    } catch (error) {
+      console.error("Erreur lors du changement de statut:", error);
+    }
+  };
+
+  const handleCancel = () => {
+    setShowForm(false);
+    setEditingGift(null);
+    setFormData({
+      giftName: "",
+      occasion: "birthday",
+      year: new Date().getFullYear(),
+    });
+  };
+
+  const getOccasionDisplay = (occasion) => {
+    switch (occasion) {
+      case "birthday":
+        return { emoji: "🎂", label: "Anniversaire" };
+      case "christmas":
+        return { emoji: "🎄", label: "Noël" };
+      case "other":
+        return { emoji: "🎁", label: "Autre" };
+      default:
+        return { emoji: "🎁", label: "Anniversaire" };
+    }
+  };
+
+  const gifts = currentDate.gifts || [];
+  const validGifts = gifts.filter((gift) => gift && gift.giftName && gift._id);
+
+  return (
+    <div className="friend-gift-container">
+      {/* <div className="friend-gift-header">
+        <h2>💝 Vos idées de cadeaux</h2>
+        <p className="friend-gift-count">
+          {validGifts.length} idée{validGifts.length > 1 ? "s" : ""}
+        </p>
+      </div> */}
+
+      {!showForm && (
+        <button
+          className="btn-profil btn-add-gift"
+          onClick={() => setShowForm(true)}
+        >
+          + Ajouter une idée
+        </button>
+      )}
+
+      {showForm && (
+        <div className="friend-gift-form-card">
+          <h3>{editingGift ? "Modifier l'idée" : "Nouvelle idée"}</h3>
+          <form className="form-connect wishlist-form" onSubmit={handleSubmit}>
+            <input
+              type="text"
+              name="giftName"
+              className="form-input"
+              placeholder="Nom du cadeau *"
+              value={formData.giftName}
+              onChange={handleInputChange}
+              required
+            />
+
+            <select
+              name="occasion"
+              className="form-input"
+              value={formData.occasion}
+              onChange={handleInputChange}
+            >
+              <option value="birthday">🎂 Anniversaire</option>
+              <option value="christmas">🎄 Noël</option>
+              <option value="other">🎁 Autre occasion</option>
+            </select>
+
+            <input
+              type="number"
+              name="year"
+              className="form-input"
+              placeholder="Année"
+              value={formData.year}
+              onChange={handleInputChange}
+              min="2000"
+              max="2100"
+              required
+            />
+
+            <div className="friend-gift-form-buttons">
+              <button type="submit" className="btn-profil btn-profilGreen">
+                {editingGift ? "Enregistrer" : "Ajouter"}
+              </button>
+              <button
+                type="button"
+                className="btn-profil btn-profilGrey"
+                onClick={handleCancel}
+              >
+                Annuler
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      <div className="friend-gift-items">
+        {validGifts.length === 0 ? (
+          <p className="friend-gift-empty">
+            Aucune idée de cadeau pour le moment 💡
+          </p>
+        ) : (
+          validGifts.map((gift) => {
+            const occasionDisplay = getOccasionDisplay(gift.occasion);
+
+            return (
+              <div key={gift._id} className="friend-gift-item-card">
+                {deletingGiftId !== gift._id ? (
+                  <>
+                    <div className="friend-gift-item-header">
+                      <h4 className="friend-gift-item-title">
+                        {gift.giftName}
+                      </h4>
+                      <span
+                        className={`friend-gift-item-badge ${
+                          gift.purchased ? "purchased" : "pending"
+                        }`}
+                      >
+                        {gift.purchased ? "✅ Acheté" : "⭕ À acheter"}
+                      </span>
+                    </div>
+
+                    <div className="friend-gift-item-meta">
+                      <span className="friend-gift-occasion">
+                        {occasionDisplay.emoji} {occasionDisplay.label}
+                      </span>
+                      <span className="friend-gift-year">
+                        {gift.year || new Date().getFullYear()}
+                      </span>
+                    </div>
+
+                    <div className="friend-gift-item-actions">
+                      <button
+                        className="btn-gift btn-toggle"
+                        onClick={() => handleTogglePurchased(gift)}
+                        title={
+                          gift.purchased
+                            ? "Marquer comme non acheté"
+                            : "Marquer comme acheté"
+                        }
+                      >
+                        {gift.purchased ? "⭕" : "✅"}
+                      </button>
+                      <button
+                        className="btn-gift btn-edit"
+                        onClick={() => handleEdit(gift)}
+                      >
+                        ✏️
+                      </button>
+                      <button
+                        className="btn-gift btn-delete"
+                        onClick={() => handleDeleteClick(gift._id)}
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="friend-gift-delete-confirm">
+                    <div className="delete-confirm-icon">⚠️</div>
+                    <h4 className="delete-confirm-title">
+                      Supprimer cette idée ?
+                    </h4>
+                    <p className="delete-confirm-text">
+                      <strong>{gift.giftName}</strong>
+                    </p>
+                    <p className="delete-confirm-warning">
+                      Cette action est irréversible
+                    </p>
+                    <div className="delete-confirm-buttons">
+                      <button
+                        className="btn-profil btn-profilGrey"
+                        onClick={handleCancelDelete}
+                      >
+                        Annuler
+                      </button>
+                      <button
+                        className="btn-profil btn-delete"
+                        onClick={handleConfirmDelete}
+                      >
+                        Supprimer
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default FriendGiftList;

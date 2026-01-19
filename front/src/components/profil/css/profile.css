@@ -1,5 +1,3 @@
-/* profile.css - Styles pour le composant profil */
-
 .profile {
     display: flex;
     flex-direction: row;
@@ -12,7 +10,7 @@
 .profile_info {
     margin-top: 2rem;
     position: relative;
-    max-width: 400px;
+    width: 400px;
     max-height: 650px;
     padding: 1rem;
     margin: 2rem;
@@ -90,10 +88,10 @@
 }
 
 .profil-countdown {
-    margin-top: 7rem;
+    margin: 5rem auto 4rem;
 }
 
-/* Bouton supprimer (rouge danger) */
+/* Bouton supprimer */
 .btn-delete {
     background-color: #dc3545;
     color: white;
@@ -169,8 +167,8 @@
     }
 
     .profil-countdown {
-        width: 80%;
-        margin: 5rem auto 2rem;
+        width: 90%;
+        margin: 5rem auto 4rem;
     }
 
     .profil-btn {

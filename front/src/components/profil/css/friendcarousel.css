@@ -1,0 +1,252 @@
+/* friendCarousel.css - Style carrousel mobile pour FriendProfile */
+
+/* ========================================
+   MOBILE CAROUSEL
+   ======================================== */
+
+/* Cacher le carrousel sur desktop, afficher sur mobile */
+@media (min-width: 901px) {
+    .mobile-carousel-container {
+        display: none !important;
+    }
+
+    .desktop-view {
+        display: grid !important;
+    }
+}
+
+@media (max-width: 900px) {
+    .mobile-carousel-container {
+        display: block;
+    }
+
+    .desktop-view {
+        display: none !important;
+    }
+}
+
+/* Container du carrousel */
+.mobile-carousel-container {
+    width: 330px;
+    max-width: 600px;
+    margin: 20px auto;
+    padding: 0 16px;
+}
+
+.mobile-carousel {
+    background: var(--gray-800);
+    border: 1px solid var(--gray-700);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: var(--card-shadow);
+}
+
+/* Header du carrousel */
+.mobile-carousel__header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 20px;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+    border-bottom: 1px solid var(--gray-700);
+}
+
+.mobile-carousel__icon {
+    font-size: 28px;
+}
+
+.mobile-carousel__title {
+    color: var(--gray-100);
+    font-size: 20px;
+    font-weight: 500;
+    margin: 0;
+}
+
+/* Content avec navigation */
+.mobile-carousel__content {
+    position: relative;
+    padding: 24px 16px;
+    min-height: 400px;
+}
+
+.mobile-section {
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateX(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Boutons de navigation */
+.mobile-carousel__nav-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 10;
+}
+
+.mobile-carousel__nav-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-50%) scale(1.1);
+}
+
+.mobile-carousel__nav-btn--prev {
+    left: 8px;
+}
+
+.mobile-carousel__nav-btn--next {
+    right: 8px;
+}
+
+/* Indicateurs */
+.mobile-carousel__indicators {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    padding: 16px;
+    border-top: 1px solid var(--gray-700);
+}
+
+.mobile-carousel__indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    padding: 0;
+}
+
+.mobile-carousel__indicator--active {
+    width: 24px;
+    border-radius: 4px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* Navigation rapide */
+.mobile-carousel__quick-nav {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding: 12px 16px;
+    background: rgba(0, 0, 0, 0.2);
+    border-top: 1px solid var(--gray-700);
+}
+
+/* .mobile-carousel__counter {
+    color: var(--gray-400);
+    font-size: 14px;
+    font-weight: 500;
+} */
+
+.mobile-carousel__quick-buttons {
+    display: flex;
+    gap: 1rem;
+}
+
+.mobile-carousel__quick-btn {
+    /* width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 18px; */
+    padding: 4px 8px;
+        font-size: 50px;
+        border: none;
+        border-radius: 12px;
+        background-color: #fff;
+        color: #495057;
+        cursor: pointer;
+        transition: all .2s ease;
+}
+
+.mobile-carousel__quick-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px);
+}
+
+.mobile-carousel__quick-btn--active {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.3) 0%, rgba(118, 75, 162, 0.3) 100%);
+    border-color: rgba(102, 126, 234, 0.5);
+}
+
+/* Ajustements pour les sections mobiles */
+.mobile-section .birthCardAge {
+    text-align: center;
+    padding: 20px;
+}
+
+.mobile-section .age {
+    display: block;
+    font-size: 48px;
+    color: #667eea;
+    font-weight: bold;
+    margin-bottom: 16px;
+}
+
+.mobile-section .notificationPreferences {
+    background: transparent;
+    border: none;
+    padding: 0;
+    max-width: 100%;
+}
+
+.mobile-section .friend-gift-container {
+    padding: 0;
+    max-width: 100%;
+}
+
+/* Responsive mobile */
+@media (max-width: 600px) {
+    .mobile-carousel__content {
+        padding: 10px 12px;
+        min-height: 350px;
+    }
+
+    .mobile-carousel__nav-btn {
+        width: 36px;
+        height: 36px;
+    }
+
+    .mobile-carousel__quick-btn {
+        padding: 4px 8px;
+        font-size: 50px;
+        border: none;
+        border-radius: 12px;
+        background-color: #fff;
+        color: #495057;
+        cursor: pointer;
+        transition: all .2s ease;
+    }
+
+    .mobile-section .age {
+        font-size: 40px;
+    }
+}

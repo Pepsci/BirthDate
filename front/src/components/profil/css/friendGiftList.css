@@ -1,0 +1,401 @@
+/* FriendGiftList.css - Style identique à la wishlist */
+
+.friend-gift-container {
+        width: 400px;
+        max-height: 500px;
+        padding: 1rem;
+        border: 3px solid black;
+        border-radius: 12px;
+        z-index: 0;
+        background-color: var(--gray-800);
+        overflow: auto;
+        scrollbar-width: none;
+        margin-bottom: 1rem;
+}
+
+/* Header */
+.friend-gift-header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.friend-gift-header h2 {
+    color: #fff;
+    font-size: 24px;
+    margin-bottom: 8px;
+}
+
+.friend-gift-count {
+    color: #adb5bd;
+    font-size: 14px;
+}
+
+/* Bouton ajouter */
+.btn-add-gift {
+    width: 100%;
+    margin-bottom: 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-add-gift:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+/* Formulaire card */
+.friend-gift-form-card {
+    background: rgba(45, 55, 72, 0.6);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.friend-gift-form-card h3 {
+    color: #fff;
+    font-size: 18px;
+    margin-bottom: 16px;
+    text-align: center;
+}
+
+.friend-gift-form-card .form-input {
+    /* width: 100%; */
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 12px 16px;
+    color: #fff;
+    font-size: 14px;
+    margin-bottom: 12px;
+    transition: all 0.3s ease;
+}
+
+.friend-gift-form-card .form-input:focus {
+    outline: none;
+    border-color: #667eea;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.friend-gift-form-card .form-input::placeholder {
+    color: #adb5bd;
+}
+
+.friend-gift-form-card select.form-input {
+    cursor: pointer;
+}
+
+/* Boutons formulaire */
+.friend-gift-form-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+}
+
+.friend-gift-form-buttons .btn-profil {
+    flex: 1;
+}
+
+/* Liste vide */
+.friend-gift-empty {
+    text-align: center;
+    color: #adb5bd;
+    padding: 40px 20px;
+    font-size: 16px;
+}
+
+/* Items de gift */
+.friend-gift-items {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-height: 500px;
+    overflow-y: auto;
+    padding-right: 8px;
+    scrollbar-width: none;
+}
+
+/* Scrollbar styling */
+.friend-gift-items::-webkit-scrollbar {
+    width: 6px;
+}
+
+.friend-gift-items::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+}
+
+.friend-gift-items::-webkit-scrollbar-thumb {
+    background: rgba(102, 126, 234, 0.5);
+    border-radius: 3px;
+}
+
+.friend-gift-items::-webkit-scrollbar-thumb:hover {
+    background: rgba(102, 126, 234, 0.7);
+}
+
+/* Card item */
+.friend-gift-item-card {
+    background: rgba(45, 55, 72, 0.6);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 16px;
+    transition: all 0.3s ease;
+}
+
+.friend-gift-item-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Header de l'item */
+.friend-gift-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+    gap: 12px;
+}
+
+.friend-gift-item-title {
+    color: #fff;
+    font-size: 16px;
+    font-weight: 500;
+    margin: 0;
+    flex: 1;
+    word-break: break-word;
+}
+
+/* Badge acheté/à acheter */
+.friend-gift-item-badge {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.friend-gift-item-badge.purchased {
+    background: rgba(16, 185, 129, 0.2);
+    color: #10b981;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.friend-gift-item-badge.pending {
+    background: rgba(251, 191, 36, 0.2);
+    color: #fbbf24;
+    border: 1px solid rgba(251, 191, 36, 0.3);
+}
+
+/* Meta info */
+.friend-gift-item-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    font-size: 14px;
+}
+
+.friend-gift-occasion {
+    color: #667eea;
+    font-weight: 500;
+}
+
+.friend-gift-year {
+    color: #adb5bd;
+}
+
+/* Actions */
+.friend-gift-item-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.btn-gift {
+    flex: 1;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: rgba(255, 255, 255, 0.05);
+    color: #fff;
+}
+
+.btn-gift:hover {
+    transform: translateY(-1px);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.btn-gift.btn-toggle {
+    background: rgba(16, 185, 129, 0.2);
+}
+
+.btn-gift.btn-toggle:hover {
+    background: rgba(16, 185, 129, 0.3);
+}
+
+.btn-gift.btn-edit {
+    background: rgba(59, 130, 246, 0.2);
+}
+
+.btn-gift.btn-edit:hover {
+    background: rgba(59, 130, 246, 0.3);
+}
+
+.btn-gift.btn-delete {
+    background: rgba(239, 68, 68, 0.2);
+}
+
+.btn-gift.btn-delete:hover {
+    background: rgba(239, 68, 68, 0.3);
+}
+
+/* ========================================
+   MODE CONFIRMATION DE SUPPRESSION
+   ======================================== */
+
+.friend-gift-delete-confirm {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 24px 16px;
+    min-height: 200px;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.delete-confirm-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+    animation: pulse 1s ease-in-out infinite;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+.delete-confirm-title {
+    color: #fff;
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 12px;
+}
+
+.delete-confirm-text {
+    color: #667eea;
+    font-size: 16px;
+    margin-bottom: 8px;
+    word-break: break-word;
+}
+
+.delete-confirm-warning {
+    color: #ef4444;
+    font-size: 13px;
+    margin-bottom: 20px;
+    font-weight: 500;
+}
+
+.delete-confirm-buttons {
+    display: flex;
+    gap: 12px;
+    width: 100%;
+    max-width: 300px;
+}
+
+.delete-confirm-buttons .btn-profil {
+    flex: 1;
+    margin: 0;
+}
+
+.delete-confirm-buttons .btn-profilGrey:hover {
+    background-color: rgb(90, 95, 95);
+    transform: translateY(-2px);
+}
+
+.delete-confirm-buttons .btn-delete:hover {
+    background-color: #c82333;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+}
+
+.friend-gift-item-card:has(.friend-gift-delete-confirm) {
+    border-color: rgba(239, 68, 68, 0.3);
+    background: rgba(239, 68, 68, 0.05);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .friend-gift-container {
+        width: 330px;
+        padding: 5px;
+        margin-top: 10px;
+        background-color:transparent;
+        border:none;
+    }
+
+    .friend-gift-header h2 {
+        font-size: 20px;
+    }
+
+    .friend-gift-item-title {
+        font-size: 15px;
+    }
+
+    .friend-gift-form-buttons {
+        flex-direction: column;
+    }
+
+    .delete-confirm-buttons {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .delete-confirm-icon {
+        font-size: 40px;
+    }
+
+    .delete-confirm-title {
+        font-size: 16px;
+    }
+
+    /* Réduire la hauteur max sur mobile */
+    .friend-gift-items {
+        max-height: 400px;
+    }
+}

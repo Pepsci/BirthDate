@@ -78,21 +78,41 @@ router.patch("/:id", async (req, res, next) => {
   }
 });
 
+// 👇 ROUTE CORRIGÉE - Ajouter un cadeau
 router.patch("/:id/gifts", async (req, res, next) => {
   try {
     if (!mongoose.isValidObjectId(req.params.id)) {
       return res.status(400).json({ message: "Invalid Date ID" });
     }
-    const { giftName, purchased } = req.body;
+
+    // ✅ Ajout de occasion et year
+    const { giftName, occasion, year, purchased } = req.body;
+
+    console.log("📥 Backend - Données reçues:", req.body);
+
     const updatedDate = await dateModel.findByIdAndUpdate(
       req.params.id,
-      { $push: { gifts: { giftName, purchased } } },
+      {
+        $push: {
+          gifts: {
+            giftName,
+            occasion, // ✅ AJOUTÉ
+            year, // ✅ AJOUTÉ
+            purchased,
+          },
+        },
+      },
       { new: true }
     );
+
     if (!updatedDate) {
       return res.status(404).json({ message: "Date not found" });
     }
-    console.log("Updated Date:", updatedDate); // Ajoutez ceci
+
+    console.log(
+      "✅ Backend - Cadeau ajouté:",
+      updatedDate.gifts[updatedDate.gifts.length - 1]
+    );
     res.status(200).json(updatedDate);
   } catch (error) {
     console.error("Error updating date:", error);
@@ -100,6 +120,7 @@ router.patch("/:id/gifts", async (req, res, next) => {
   }
 });
 
+// 👇 ROUTE CORRIGÉE - Modifier un cadeau
 router.patch("/:id/gifts/:giftId", async (req, res, next) => {
   try {
     if (
@@ -108,17 +129,30 @@ router.patch("/:id/gifts/:giftId", async (req, res, next) => {
     ) {
       return res.status(400).json({ message: "Invalid Date ID or Gift ID" });
     }
-    const { giftName, purchased } = req.body;
+
+    // ✅ Ajout de occasion et year
+    const { giftName, occasion, year, purchased } = req.body;
+
+    console.log("📥 Backend - Modification cadeau:", req.body);
+
     const updatedDate = await dateModel.findOneAndUpdate(
       { _id: req.params.id, "gifts._id": req.params.giftId },
       {
-        $set: { "gifts.$.giftName": giftName, "gifts.$.purchased": purchased },
+        $set: {
+          "gifts.$.giftName": giftName,
+          "gifts.$.occasion": occasion, // ✅ AJOUTÉ
+          "gifts.$.year": year, // ✅ AJOUTÉ
+          "gifts.$.purchased": purchased,
+        },
       },
       { new: true }
     );
+
     if (!updatedDate) {
       return res.status(404).json({ message: "Date or Gift not found" });
     }
+
+    console.log("✅ Backend - Cadeau modifié");
     res.status(200).json(updatedDate);
   } catch (error) {
     console.error("Error updating gift:", error);

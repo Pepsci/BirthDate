@@ -154,7 +154,7 @@ const Wishlist = () => {
 
       {showForm && (
         <div className="wishlist-form-card">
-          <h3>{editingItem ? "Modifier l'item" : "Nouvel item"}</h3>
+          <h3>{editingItem ? "Modifier l'idée" : "Nouvel idée"}</h3>
           <form className="form-connect wishlist-form" onSubmit={handleSubmit}>
             <input
               type="text"
@@ -281,7 +281,7 @@ const Wishlist = () => {
                 /* 👇 MODE SUPPRESSION */
                 <div className="wishlist-delete-confirm">
                   <div className="delete-confirm-icon">⚠️</div>
-                  <h4 className="delete-confirm-title">Supprimer cet item ?</h4>
+                  <h4 className="delete-confirm-title">Supprimer cet idée ?</h4>
                   <p className="delete-confirm-text">
                     <strong>{item.title}</strong>
                   </p>
