@@ -4,7 +4,7 @@ import FriendGiftList from "./FriendGiftList";
 import apiHandler from "../../api/apiHandler";
 import "./css/notifications.css";
 import "./css/friendProfile.css";
-import "./css/friendCarousel.css";
+import "./css/friendcarousel.css";
 
 const FriendProfile = ({ date, onCancel }) => {
   const [currentDate, setCurrentDate] = useState(date);
