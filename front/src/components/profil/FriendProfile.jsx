@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import Countdown from "../dashboard/Countdown";
 import FriendGiftList from "./FriendGiftList";
 import apiHandler from "../../api/apiHandler";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import "./css/notifications.css";
 import "./css/friendProfile.css";
 import "./css/friendCarousel.css";
