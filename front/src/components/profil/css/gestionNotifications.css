@@ -383,15 +383,16 @@ input:disabled + .slider {
 /* Responsive pour les notifications */
 @media (max-width: 600px) {
     .simple-notification-manager {
-        width: 330px;
+        width: 320px;
         height: 500px;
         padding: 5px;
-        margin-top: 10px;
+        /* margin-top: 10px; */
+        margin: auto;
+        background-color: transparent;
+        border: none;
     }
 
     .notification-item {
-        /* flex-direction: row;
-        align-items: flex-start; */
         justify-content: space-between !important;
         gap: 16px;
         height: 42px;

@@ -249,10 +249,13 @@ const ProfilDetails = () => {
               </div>
             )}
             <div className="profil-btn" style={{ marginTop: "20px" }}>
-              <button className="btn-profil" onClick={handleEditMode}>
+              <button
+                className="btn-profil btn-carousel"
+                onClick={handleEditMode}
+              >
                 Modifier
               </button>
-              <button className="btn-profil" onClick={logOut}>
+              <button className="btn-profil btn-carousel" onClick={logOut}>
                 LogOut
               </button>
             </div>

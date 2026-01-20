@@ -266,7 +266,7 @@ const FriendGiftList = ({ currentDate, onUpdate }) => {
                             : "Marquer comme acheté"
                         }
                       >
-                        {gift.purchased ? "⭕" : "✅"}
+                        {gift.purchased ? "✅" : "⭕"}
                       </button>
                       <button
                         className="btn-gift btn-edit"

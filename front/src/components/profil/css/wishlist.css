@@ -369,12 +369,18 @@
 /* Responsive */
 @media (max-width: 768px) {
   .wishlist-container {
-      width: 300px;
-      margin: 0.25rem;
-      padding: 0.75rem;
-      height: 480px ;
+    margin: 0;
+    padding: 10px;
+    height: 480px ;
+    width: 320px;
+    background-color: transparent;
+    border: none;
 
   }
+  
+  .wishlist-header{
+    margin-bottom: 5px;
+ }
 
   .wishlist-header h2 {
     font-size: 20px;

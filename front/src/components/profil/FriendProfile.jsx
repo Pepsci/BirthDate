@@ -36,7 +36,7 @@ const FriendProfile = ({ date, onCancel }) => {
   const carouselSections = [
     { id: "info", title: "Infos", icon: "👤" },
     { id: "notifications", title: "Notifications", icon: "🔔" },
-    { id: "gifts", title: "Cadeaux", icon: "💝" },
+    { id: "gifts", title: "Cadeaux", icon: "🎁" },
   ];
 
   useEffect(() => {

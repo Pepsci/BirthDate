@@ -27,7 +27,7 @@
 
 /* Container du carrousel */
 .mobile-carousel-container {
-    width: 330px;
+    width: 360px;
     max-width: 600px;
     margin: 20px auto;
     padding: 0 16px;
@@ -154,37 +154,20 @@
     border-top: 1px solid var(--gray-700);
 }
 
-/* .mobile-carousel__counter {
-    color: var(--gray-400);
-    font-size: 14px;
-    font-weight: 500;
-} */
-
 .mobile-carousel__quick-buttons {
     display: flex;
     gap: 1rem;
 }
 
 .mobile-carousel__quick-btn {
-    /* width: 36px;
-    height: 36px;
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    font-size: 50px;
+    border: none;
+    border-radius: 12px;
+    background-color: #fff;
+    color: #495057;
     cursor: pointer;
-    transition: all 0.3s ease;
-    font-size: 18px; */
+    transition: all .2s ease;
     padding: 4px 8px;
-        font-size: 50px;
-        border: none;
-        border-radius: 12px;
-        background-color: #fff;
-        color: #495057;
-        cursor: pointer;
-        transition: all .2s ease;
 }
 
 .mobile-carousel__quick-btn:hover {
@@ -226,8 +209,9 @@
 /* Responsive mobile */
 @media (max-width: 600px) {
     .mobile-carousel__content {
-        padding: 10px 12px;
+        padding: 10px 0 10px 10px;
         min-height: 350px;
+        background: rgba(0, 0, 0, 0.2);
     }
 
     .mobile-carousel__nav-btn {
@@ -248,5 +232,9 @@
 
     .mobile-section .age {
         font-size: 40px;
+    }
+
+    .btn-carousel{
+        margin-bottom: 10px;
     }
 }
