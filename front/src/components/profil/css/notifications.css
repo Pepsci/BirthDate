@@ -110,7 +110,7 @@ input:checked+.slider:before {
 /* Media queries pour mobile */
 @media (max-width: 600px) {
     .notificationPreferences {
-        padding: 12px;
+        padding: 20px;
         margin-bottom: 15px;
     }
 

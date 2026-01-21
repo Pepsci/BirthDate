@@ -34,6 +34,7 @@
 .btn-add-gift {
     width: 100%;
     margin-bottom: 20px;
+    margin-top: 0;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     border: none;
     color: white;
@@ -463,7 +464,8 @@
     
     /* Réduire la hauteur max sur mobile */
     .friend-gift-items {
-        max-height: 400px;
+        max-height: 340px;
+        margin-bottom: 12px;
     }
     
     .friend-gift-filters{
