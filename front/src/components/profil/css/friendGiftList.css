@@ -5,7 +5,7 @@
         max-height: 500px;
         padding: 1rem;
         border: 2px solid var(--gray-700);
-        /* border-radius: 12px; */
+        border-radius: 12px;
         z-index: 0;
         background-color: var(--gray-800);
         overflow: auto;
@@ -359,6 +359,71 @@
     background: rgba(239, 68, 68, 0.05);
 }
 
+/* ========================================
+   FILTRES
+   ======================================== */
+
+.friend-gift-filters {
+    background: rgba(45, 55, 72, 0.4);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 20px;
+}
+
+.filter-title {
+    color: #adb5bd;
+    font-size: 13px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+}
+
+.filter-buttons {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.filter-btn {
+    padding: 8px 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    color: #adb5bd;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.filter-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-1px);
+}
+
+.filter-btn.active {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.3) 0%, rgba(118, 75, 162, 0.3) 100%);
+    border-color: rgba(102, 126, 234, 0.5);
+    color: #fff;
+}
+
+.filter-arrow {
+    font-size: 15px;
+    transition: transform 0.3s ease;
+    /* color: #adb5bd; */
+    display: inline-block;
+}
+
+.filter-arrow.open {
+    transform: rotate(180deg);
+}
+
+
 /* Responsive */
 @media (max-width: 768px) {
     .friend-gift-container {
@@ -366,36 +431,53 @@
         padding: 5px;
         background-color:transparent;
         border:none;
-        margin-bottom: 0;
+        margin: 0;
+        border-radius: 0;
     }
 
+    
     .friend-gift-header h2 {
         font-size: 20px;
     }
-
+    
     .friend-gift-item-title {
         font-size: 15px;
     }
-
+    
     .friend-gift-form-buttons {
         flex-direction: column;
     }
-
+    
     .delete-confirm-buttons {
         flex-direction: column;
         gap: 8px;
     }
-
+    
     .delete-confirm-icon {
         font-size: 40px;
     }
-
+    
     .delete-confirm-title {
         font-size: 16px;
     }
-
+    
     /* Réduire la hauteur max sur mobile */
     .friend-gift-items {
         max-height: 400px;
+    }
+    
+    .friend-gift-filters{
+        padding: 10px;
+        margin-bottom: 12px;
+    }
+     
+    .filter-btn{
+        width: 60px;
+        font-size: 20px;
+        padding: 3px;
+    }
+
+    .btn-toggle-filters{
+
     }
 }

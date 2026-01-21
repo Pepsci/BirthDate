@@ -7,6 +7,11 @@ const FriendGiftList = ({ currentDate, onUpdate }) => {
   const [editingGift, setEditingGift] = useState(null);
   const [deletingGiftId, setDeletingGiftId] = useState(null);
 
+  // États pour les filtres
+  const [showFilters, setShowFilters] = useState(false); // 👈 Toggle filtres
+  const [filterOccasion, setFilterOccasion] = useState("all");
+  const [filterStatus, setFilterStatus] = useState("all");
+
   // Formulaire
   const [formData, setFormData] = useState({
     giftName: "",
@@ -32,7 +37,6 @@ const FriendGiftList = ({ currentDate, onUpdate }) => {
 
     try {
       if (editingGift) {
-        // Modification
         const response = await apiHandler.patch(
           `/date/${currentDate._id}/gifts/${editingGift._id}`,
           {
@@ -44,7 +48,6 @@ const FriendGiftList = ({ currentDate, onUpdate }) => {
         );
         onUpdate(response.data);
       } else {
-        // Création
         const response = await apiHandler.patch(
           `/date/${currentDate._id}/gifts`,
           {
@@ -57,7 +60,6 @@ const FriendGiftList = ({ currentDate, onUpdate }) => {
         onUpdate(response.data);
       }
 
-      // Réinitialiser
       setFormData({
         giftName: "",
         occasion: "birthday",
@@ -150,14 +152,26 @@ const FriendGiftList = ({ currentDate, onUpdate }) => {
   const gifts = currentDate.gifts || [];
   const validGifts = gifts.filter((gift) => gift && gift.giftName && gift._id);
 
+  // Filtrer les cadeaux
+  const filteredGifts = validGifts.filter((gift) => {
+    const matchesOccasion =
+      filterOccasion === "all" || gift.occasion === filterOccasion;
+    const matchesStatus =
+      filterStatus === "all" ||
+      (filterStatus === "purchased" && gift.purchased) ||
+      (filterStatus === "pending" && !gift.purchased);
+    return matchesOccasion && matchesStatus;
+  });
+
+  // Compter les filtres actifs
+  const activeFiltersCount =
+    (filterOccasion !== "all" ? 1 : 0) + (filterStatus !== "all" ? 1 : 0);
+
   return (
     <div className="friend-gift-container">
-      {/* <div className="friend-gift-header">
-        <h2>💝 Vos idées de cadeaux</h2>
-        <p className="friend-gift-count">
-          {validGifts.length} idée{validGifts.length > 1 ? "s" : ""}
-        </p>
-      </div> */}
+      <div className="friend-gift-header">
+        <h2>🎁 Vos idées de cadeaux</h2>
+      </div>
 
       {!showForm && (
         <button
@@ -171,7 +185,7 @@ const FriendGiftList = ({ currentDate, onUpdate }) => {
       {showForm && (
         <div className="friend-gift-form-card">
           <h3>{editingGift ? "Modifier l'idée" : "Nouvelle idée"}</h3>
-          <form className="form-connect wishlist-form" onSubmit={handleSubmit}>
+          <form onSubmit={handleSubmit}>
             <input
               type="text"
               name="giftName"
@@ -221,13 +235,100 @@ const FriendGiftList = ({ currentDate, onUpdate }) => {
         </div>
       )}
 
+      {/* 👇 BOUTON TOGGLE FILTRES */}
+      <button
+        className="btn-toggle-filters btn-add-gift"
+        onClick={() => setShowFilters(!showFilters)}
+      >
+        🔍 Filtres
+        {activeFiltersCount > 0 && (
+          <span className="filter-badge">{activeFiltersCount}</span>
+        )}
+        <span className={`filter-arrow ${showFilters ? "open" : ""}`}> ▼</span>
+      </button>
+
+      {/* 👇 FILTRES (conditionnels) */}
+      {showFilters && (
+        <div className="friend-gift-filters">
+          <div className="filter-group">
+            <h4 className="filter-title">Occasion</h4>
+            <div className="filter-buttons">
+              <button
+                className={`filter-btn ${
+                  filterOccasion === "all" ? "active" : ""
+                }`}
+                onClick={() => setFilterOccasion("all")}
+              >
+                Tous
+              </button>
+              <button
+                className={`filter-btn ${
+                  filterOccasion === "birthday" ? "active" : ""
+                }`}
+                onClick={() => setFilterOccasion("birthday")}
+              >
+                🎂
+              </button>
+              <button
+                className={`filter-btn ${
+                  filterOccasion === "christmas" ? "active" : ""
+                }`}
+                onClick={() => setFilterOccasion("christmas")}
+              >
+                🎄
+              </button>
+              <button
+                className={`filter-btn ${
+                  filterOccasion === "other" ? "active" : ""
+                }`}
+                onClick={() => setFilterOccasion("other")}
+              >
+                🎁
+              </button>
+            </div>
+          </div>
+
+          <div className="filter-group">
+            <h4 className="filter-title">Statut</h4>
+            <div className="filter-buttons">
+              <button
+                className={`filter-btn ${
+                  filterStatus === "all" ? "active" : ""
+                }`}
+                onClick={() => setFilterStatus("all")}
+              >
+                Tous
+              </button>
+              <button
+                className={`filter-btn ${
+                  filterStatus === "pending" ? "active" : ""
+                }`}
+                onClick={() => setFilterStatus("pending")}
+              >
+                ⭕
+              </button>
+              <button
+                className={`filter-btn ${
+                  filterStatus === "purchased" ? "active" : ""
+                }`}
+                onClick={() => setFilterStatus("purchased")}
+              >
+                ✅
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="friend-gift-items">
-        {validGifts.length === 0 ? (
+        {filteredGifts.length === 0 ? (
           <p className="friend-gift-empty">
-            Aucune idée de cadeau pour le moment 💡
+            {filterOccasion !== "all" || filterStatus !== "all"
+              ? "Aucun cadeau ne correspond aux filtres sélectionnés"
+              : "Aucune idée de cadeau pour le moment 💡"}
           </p>
         ) : (
-          validGifts.map((gift) => {
+          filteredGifts.map((gift) => {
             const occasionDisplay = getOccasionDisplay(gift.occasion);
 
             return (

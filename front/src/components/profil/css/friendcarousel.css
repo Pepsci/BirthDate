@@ -209,7 +209,7 @@
 /* Responsive mobile */
 @media (max-width: 600px) {
     .mobile-carousel__content {
-        padding: 10px 0 10px 10px;
+        padding: 0px 10px 0px 14px;
         min-height: 350px;
         background: rgba(0, 0, 0, 0.2);
     }
