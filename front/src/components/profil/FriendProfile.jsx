@@ -249,7 +249,7 @@ const FriendProfile = ({ date, onCancel }) => {
             <div className="notificationPreferences">
               <h2>Préférences de notification</h2>
 
-              <div className="notification-toggle">
+              <div className="notification-toggle friend-notification-toggle">
                 <label className="switch">
                   <input
                     type="checkbox"

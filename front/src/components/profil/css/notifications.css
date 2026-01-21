@@ -126,6 +126,10 @@ input:checked+.slider:before {
         color: #f8f9fa;
     }
 
+    .friend-notification-toggle{
+        padding: 20px;
+    }
+
     .notification-toggle {
         font-size: 14px;
     }
