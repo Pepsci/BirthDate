@@ -436,6 +436,23 @@
         border-radius: 0;
     }
 
+        .friend-gift-wrapper {
+            max-height: 100%;
+            overflow-y: auto;
+            scrollbar-width: none;
+        }
+    
+        .friend-gift-items {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-height: none;
+            /* 👈 CHANGÉ de "500px" à "none" */
+            overflow-y: visible;
+            /* 👈 CHANGÉ de "auto" à "visible" */
+            scrollbar-width: none;
+        }
+
     
     .friend-gift-header h2 {
         font-size: 20px;
