@@ -326,9 +326,9 @@ const FriendProfile = ({ date, onCancel }) => {
 
   return (
     <div className="friendProfil">
-      {/* <h1 className="name-profilFriend font-profilFriend">
+      <h1 className="name-profilFriend font-profilFriend">
         {currentDate.name} {currentDate.surname}
-      </h1> */}
+      </h1>
 
       {/* 👇 CARROUSEL MOBILE */}
       <div className="mobile-carousel-container">

@@ -69,7 +69,7 @@
 }
 
 .friend-gift-form-card .form-input {
-    /* width: 100%; */
+    width: 80%;
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 8px;

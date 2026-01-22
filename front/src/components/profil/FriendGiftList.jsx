@@ -82,6 +82,13 @@ const FriendGiftList = ({ currentDate, onUpdate }) => {
     });
     setShowForm(true);
     setDeletingGiftId(null);
+
+    setTimeout(() => {
+      const container = document.querySelector(".friend-gift-container");
+      if (container) {
+        container.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    }, 100);
   };
 
   const handleDeleteClick = (giftId) => {

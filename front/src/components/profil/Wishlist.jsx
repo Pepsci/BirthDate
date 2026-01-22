@@ -88,7 +88,14 @@ const Wishlist = () => {
       isShared: item.isShared,
     });
     setShowForm(true);
-    setDeletingItemId(null); // 👈 Annuler la suppression si active
+    setDeletingItemId(null);
+
+    setTimeout(() => {
+      const container = document.querySelector(".wishlist-container");
+      if (container) {
+        container.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    }, 100);
   };
 
   // 👇 NOUVEAU : Activer le mode suppression
