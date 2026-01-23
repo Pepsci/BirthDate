@@ -19,7 +19,7 @@ const DateList = ({ onEditDate, onViewFriendProfile }) => {
   const [isFormVisible, setIsFormVisible] = useState(false);
   const [isFilterVisible, setIsFilterVisible] = useState(false);
   const [itemsPerPage, setItemsPerPage] = useState(
-    window.innerWidth <= 600 ? ITEMS_PER_PAGE_MOBILE : ITEMS_PER_PAGE
+    window.innerWidth <= 600 ? ITEMS_PER_PAGE_MOBILE : ITEMS_PER_PAGE,
   );
 
   const calculateCurrentAge = (birthDate) => {
@@ -103,10 +103,8 @@ const DateList = ({ onEditDate, onViewFriendProfile }) => {
     return () => window.removeEventListener("resize", handleResize);
   }, [itemsPerPage]);
 
-  // Gestion des boutons
   const toggleFormVisibility = () => {
     setIsFormVisible(!isFormVisible);
-    // Fermer le filtre si on ouvre le formulaire
     if (!isFormVisible) {
       setIsFilterVisible(false);
     }
@@ -116,13 +114,11 @@ const DateList = ({ onEditDate, onViewFriendProfile }) => {
     const newVisibility = !isFilterVisible;
     setIsFilterVisible(newVisibility);
 
-    // Si on ferme le filtre, réinitialiser les dates filtrées
     if (!newVisibility) {
       setDates(allDates);
       setCurrentPage(1);
     }
 
-    // Fermer le formulaire si on ouvre le filtre
     if (newVisibility) {
       setIsFormVisible(false);
     }
@@ -142,12 +138,12 @@ const DateList = ({ onEditDate, onViewFriendProfile }) => {
     }
     if (newName) {
       filteredDates = filteredDates.filter((date) =>
-        date.name.toLowerCase().startsWith(newName.toLowerCase())
+        date.name.toLowerCase().startsWith(newName.toLowerCase()),
       );
     }
     if (newSurname) {
       filteredDates = filteredDates.filter((date) =>
-        date.surname.toLowerCase().startsWith(newSurname.toLowerCase())
+        date.surname.toLowerCase().startsWith(newSurname.toLowerCase()),
       );
     }
     setDates(filteredDates);
@@ -169,7 +165,6 @@ const DateList = ({ onEditDate, onViewFriendProfile }) => {
         <div className="dateList-tiltle">
           <h1 className="titleFont">Vos BirthDates</h1>
         </div>
-        {/* Boutons */}
         <div className="dateListHeader-btn">
           <button
             className={`btnSwitch ${isFilterVisible ? "active" : ""}`}
@@ -190,16 +185,13 @@ const DateList = ({ onEditDate, onViewFriendProfile }) => {
           </button>
         </div>
 
-        {/* Zone des formulaires sous les boutons */}
         <div className="forms-container">
-          {/* Formulaire de filtre */}
           {isFilterVisible && (
             <div className="form-section filter-section">
               <DateFilter onFilterChange={handleFilterChange} />
             </div>
           )}
 
-          {/* Formulaire d'ajout de date */}
           {isFormVisible && (
             <div className="form-section add-date-section">
               <CreateDate onDateAdded={handleDateAdded} />
@@ -208,7 +200,6 @@ const DateList = ({ onEditDate, onViewFriendProfile }) => {
         </div>
       </div>
 
-      {/* Contenu principal */}
       {dates.length === 0 ? (
         <div className="no-results">
           Aucun résultat trouvé pour cette recherche
@@ -221,24 +212,21 @@ const DateList = ({ onEditDate, onViewFriendProfile }) => {
             const today = new Date();
             const birthDate = new Date(date.date);
 
-            // Obtenir la date d'anniversaire pour cette année
             const thisYearBirthday = new Date(
               today.getFullYear(),
               birthDate.getMonth(),
-              birthDate.getDate()
+              birthDate.getDate(),
             );
 
-            // Si l'anniversaire de cette année est déjà passé, prendre l'année suivante
             let nextBirthday = thisYearBirthday;
             if (thisYearBirthday < today) {
               nextBirthday = new Date(
                 today.getFullYear() + 1,
                 birthDate.getMonth(),
-                birthDate.getDate()
+                birthDate.getDate(),
               );
             }
 
-            // Calculer la différence en jours
             const diffTime = nextBirthday.getTime() - today.getTime();
             const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
@@ -246,23 +234,28 @@ const DateList = ({ onEditDate, onViewFriendProfile }) => {
               today.getDate() === birthDate.getDate() &&
               today.getMonth() === birthDate.getMonth();
 
-            const isThisWeek = diffDays <= 7 && diffDays > 0; // Exclu aujourd'hui
+            const isThisWeek = diffDays <= 7 && diffDays > 0;
             const hasGifts = date.gifts && date.gifts.length > 0;
             const isFamily = date.family === true;
+            const isFriend = !!date.linkedUser; // 👈 NOUVEAU
 
+            // 👇 MODIFIÉ - Ajout de la classe friend-date
             const cardClassName = `
     birthCard titleFont 
     ${isToday ? "today" : ""} 
     ${isThisWeek ? "thisWeek" : ""} 
     ${hasGifts ? "has-gifts" : ""} 
     ${isFamily ? "family" : ""}
-  `;
+    ${isFriend ? "friend-date" : ""}
+  `.trim();
 
             return (
               <div className={cardClassName} key={date._id + "date"}>
                 <div className="birthCardName">
                   <span className="birthCard-name">
                     <b>{date.name}</b>
+                    {/* 👇 NOUVEAU - Badge AMI */}
+                    {isFriend && <span className="friend-badge">👥 AMI</span>}
                   </span>
                   <span>
                     <b>{date.surname}</b>
@@ -284,12 +277,15 @@ const DateList = ({ onEditDate, onViewFriendProfile }) => {
                     <Countdown birthdate={date.date} />
                   </span>
                   <div className="button-group">
-                    <button
-                      onClick={() => onEditDate(date)}
-                      className="btn-edit"
-                    >
-                      Modifier
-                    </button>
+                    {/* 👇 MODIFIÉ - Pas de bouton Modifier pour les amis */}
+                    {!isFriend && (
+                      <button
+                        onClick={() => onEditDate(date)}
+                        className="btn-edit"
+                      >
+                        Modifier
+                      </button>
+                    )}
                     <button
                       onClick={() => onViewFriendProfile(date)}
                       className="btn-view"
@@ -304,7 +300,6 @@ const DateList = ({ onEditDate, onViewFriendProfile }) => {
         </div>
       )}
 
-      {/* Pagination existante */}
       {viewMode === "card" && dates.length > 0 && (
         <div className="pagination">
           <button
@@ -348,14 +343,14 @@ const DateList = ({ onEditDate, onViewFriendProfile }) => {
                   data-page="1"
                 >
                   1
-                </button>
+                </button>,
               );
 
               if (startPage > 2) {
                 pages.push(
                   <span key="ellipsis-start" className="ellipsis">
                     ...
-                  </span>
+                  </span>,
                 );
               }
             }
@@ -369,7 +364,7 @@ const DateList = ({ onEditDate, onViewFriendProfile }) => {
                   data-page={i}
                 >
                   {i}
-                </button>
+                </button>,
               );
             }
 
@@ -378,7 +373,7 @@ const DateList = ({ onEditDate, onViewFriendProfile }) => {
                 pages.push(
                   <span key="ellipsis-end" className="ellipsis">
                     ...
-                  </span>
+                  </span>,
                 );
               }
 
@@ -390,7 +385,7 @@ const DateList = ({ onEditDate, onViewFriendProfile }) => {
                   data-page={totalPages}
                 >
                   {totalPages}
-                </button>
+                </button>,
               );
             }
 
@@ -401,7 +396,7 @@ const DateList = ({ onEditDate, onViewFriendProfile }) => {
             key="next"
             onClick={() =>
               setCurrentPage((prev) =>
-                Math.min(prev + 1, Math.ceil(dates.length / itemsPerPage))
+                Math.min(prev + 1, Math.ceil(dates.length / itemsPerPage)),
               )
             }
             disabled={currentPage === Math.ceil(dates.length / itemsPerPage)}

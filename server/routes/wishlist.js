@@ -7,7 +7,7 @@ const mongoose = require("mongoose");
 // GET /api/wishlist - Obtenir MA wishlist complète
 router.get("/", async (req, res, next) => {
   try {
-    const userId = req.query.userId; // Récupérer userId depuis les query params
+    const userId = req.query.userId;
 
     if (!userId) {
       return res.status(400).json({ message: "userId requis" });
@@ -21,6 +21,44 @@ router.get("/", async (req, res, next) => {
     res.status(200).json({
       success: true,
       count: items.length,
+      data: items,
+    });
+  } catch (error) {
+    console.error("Erreur lors de la récupération de la wishlist:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
+// 👇 ROUTE MODIFIÉE - Voir la wishlist d'un ami (DÉPLACÉE AVANT /:id)
+router.get("/user/:userId", async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+
+    if (!mongoose.isValidObjectId(userId)) {
+      return res.status(400).json({ message: "Invalid User ID" });
+    }
+
+    // Vérifier que l'utilisateur existe
+    const targetUser = await UserModel.findById(userId).select(
+      "name surname avatar",
+    );
+
+    if (!targetUser) {
+      return res.status(404).json({ message: "Utilisateur non trouvé" });
+    }
+
+    // Récupérer TOUS les items de l'ami (pas seulement partagés)
+    // Car si c'est un ami, on peut voir sa wishlist complète
+    const items = await WishlistModel.find({
+      userId,
+    })
+      .populate("purchasedBy", "name surname avatar")
+      .sort({ isPurchased: 1, createdAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      count: items.length,
+      user: targetUser,
       data: items,
     });
   } catch (error) {
@@ -52,44 +90,6 @@ router.post("/", async (req, res, next) => {
     });
   } catch (error) {
     console.error("Erreur lors de la création de l'item:", error);
-    res.status(500).json({ message: "Internal Server Error" });
-  }
-});
-
-// GET /api/wishlist/user/:userId - Voir la wishlist d'un ami
-router.get("/user/:userId", async (req, res, next) => {
-  try {
-    const { userId } = req.params;
-
-    if (!mongoose.isValidObjectId(userId)) {
-      return res.status(400).json({ message: "Invalid User ID" });
-    }
-
-    // Vérifier que l'utilisateur existe
-    const targetUser = await UserModel.findById(userId).select(
-      "name surname avatar"
-    );
-
-    if (!targetUser) {
-      return res.status(404).json({ message: "Utilisateur non trouvé" });
-    }
-
-    // Récupérer seulement les items partagés
-    const items = await WishlistModel.find({
-      userId,
-      isShared: true,
-    })
-      .populate("purchasedBy", "name surname avatar")
-      .sort({ isPurchased: 1, createdAt: -1 });
-
-    res.status(200).json({
-      success: true,
-      count: items.length,
-      user: targetUser,
-      data: items,
-    });
-  } catch (error) {
-    console.error("Erreur lors de la récupération de la wishlist:", error);
     res.status(500).json({ message: "Internal Server Error" });
   }
 });
@@ -129,7 +129,7 @@ router.patch("/:id", async (req, res, next) => {
     const updatedItem = await WishlistModel.findByIdAndUpdate(
       req.params.id,
       { title, price, url, isShared },
-      { new: true }
+      { new: true },
     );
 
     if (!updatedItem) {
@@ -216,10 +216,6 @@ router.post("/:id/purchase", async (req, res, next) => {
 
     if (!item) {
       return res.status(404).json({ message: "Item non trouvé" });
-    }
-
-    if (!item.isShared) {
-      return res.status(403).json({ message: "Cet item n'est pas partagé" });
     }
 
     if (item.isPurchased) {

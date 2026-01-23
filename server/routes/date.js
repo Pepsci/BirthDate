@@ -8,8 +8,14 @@ router.get("/", async (req, res, next) => {
   try {
     const ownerId = req.query.owner;
     const dateList = ownerId
-      ? await dateModel.find({ owner: ownerId }).populate("owner")
-      : await dateModel.find().populate("owner");
+      ? await dateModel
+          .find({ owner: ownerId })
+          .populate("owner")
+          .populate("linkedUser", "name surname email avatar birthDate") // 👈 AJOUTÉ
+      : await dateModel
+          .find()
+          .populate("owner")
+          .populate("linkedUser", "name surname email avatar birthDate"); // 👈 AJOUTÉ
     res.status(200).json(dateList);
   } catch (error) {
     console.error("Error fetching date list:", error);
@@ -18,7 +24,7 @@ router.get("/", async (req, res, next) => {
 });
 
 router.post("/", async (req, res, next) => {
-  const { date, owner, name, surname, family } = req.body;
+  const { date, owner, name, surname, family, linkedUser } = req.body; // 👈 AJOUTÉ linkedUser
   try {
     const newDate = await dateModel.create({
       date,
@@ -26,6 +32,7 @@ router.post("/", async (req, res, next) => {
       name,
       surname,
       family,
+      linkedUser, // 👈 AJOUTÉ
     });
     res.status(201).json(newDate);
   } catch (error) {
@@ -39,7 +46,10 @@ router.get("/:id", async (req, res, next) => {
     if (!mongoose.isValidObjectId(req.params.id)) {
       return res.status(400).json({ message: "Invalid Date ID" });
     }
-    const date = await dateModel.findById(req.params.id).populate("owner");
+    const date = await dateModel
+      .findById(req.params.id)
+      .populate("owner")
+      .populate("linkedUser", "name surname email avatar birthDate"); // 👈 AJOUTÉ
     if (!date) {
       return res.status(404).json({ message: "Date not found" });
     }
@@ -55,6 +65,22 @@ router.patch("/:id", async (req, res, next) => {
     if (!mongoose.isValidObjectId(req.params.id)) {
       return res.status(400).json({ message: "Invalid Date ID" });
     }
+
+    // 👇 MODIFIÉ : Empêcher la modification si c'est une date ami
+    const existingDate = await dateModel.findById(req.params.id);
+
+    if (!existingDate) {
+      return res.status(404).json({ message: "Date not found" });
+    }
+
+    // Si c'est une date liée à un ami, on ne peut pas la modifier directement
+    if (existingDate.linkedUser) {
+      return res.status(403).json({
+        message:
+          "Impossible de modifier une date liée à un ami. Les modifications doivent se faire via le profil de l'ami.",
+      });
+    }
+
     const { date, owner, name, surname, family, giftName, purchased } =
       req.body;
     const updateFields = { date, owner, name, surname, family };
@@ -66,11 +92,9 @@ router.patch("/:id", async (req, res, next) => {
     const updatedDate = await dateModel.findByIdAndUpdate(
       req.params.id,
       updateFields,
-      { new: true }
+      { new: true },
     );
-    if (!updatedDate) {
-      return res.status(404).json({ message: "Date not found" });
-    }
+
     res.status(200).json(updatedDate);
   } catch (error) {
     console.error("Error updating date:", error);
@@ -85,7 +109,6 @@ router.patch("/:id/gifts", async (req, res, next) => {
       return res.status(400).json({ message: "Invalid Date ID" });
     }
 
-    // ✅ Ajout de occasion et year
     const { giftName, occasion, year, purchased } = req.body;
 
     console.log("📥 Backend - Données reçues:", req.body);
@@ -96,13 +119,13 @@ router.patch("/:id/gifts", async (req, res, next) => {
         $push: {
           gifts: {
             giftName,
-            occasion, // ✅ AJOUTÉ
-            year, // ✅ AJOUTÉ
+            occasion,
+            year,
             purchased,
           },
         },
       },
-      { new: true }
+      { new: true },
     );
 
     if (!updatedDate) {
@@ -111,7 +134,7 @@ router.patch("/:id/gifts", async (req, res, next) => {
 
     console.log(
       "✅ Backend - Cadeau ajouté:",
-      updatedDate.gifts[updatedDate.gifts.length - 1]
+      updatedDate.gifts[updatedDate.gifts.length - 1],
     );
     res.status(200).json(updatedDate);
   } catch (error) {
@@ -130,7 +153,6 @@ router.patch("/:id/gifts/:giftId", async (req, res, next) => {
       return res.status(400).json({ message: "Invalid Date ID or Gift ID" });
     }
 
-    // ✅ Ajout de occasion et year
     const { giftName, occasion, year, purchased } = req.body;
 
     console.log("📥 Backend - Modification cadeau:", req.body);
@@ -140,12 +162,12 @@ router.patch("/:id/gifts/:giftId", async (req, res, next) => {
       {
         $set: {
           "gifts.$.giftName": giftName,
-          "gifts.$.occasion": occasion, // ✅ AJOUTÉ
-          "gifts.$.year": year, // ✅ AJOUTÉ
+          "gifts.$.occasion": occasion,
+          "gifts.$.year": year,
           "gifts.$.purchased": purchased,
         },
       },
-      { new: true }
+      { new: true },
     );
 
     if (!updatedDate) {
@@ -171,7 +193,7 @@ router.delete("/:id/gifts/:giftId", async (req, res, next) => {
     const updatedDate = await dateModel.findByIdAndUpdate(
       req.params.id,
       { $pull: { gifts: { _id: req.params.giftId } } },
-      { new: true }
+      { new: true },
     );
     if (!updatedDate) {
       return res.status(404).json({ message: "Date or Gift not found" });
@@ -188,10 +210,22 @@ router.delete("/:id", async (req, res, next) => {
     if (!mongoose.isValidObjectId(req.params.id)) {
       return res.status(400).json({ message: "Invalid Date ID" });
     }
-    const deleteDate = await dateModel.findByIdAndDelete(req.params.id);
-    if (!deleteDate) {
+
+    // 👇 MODIFIÉ : Empêcher la suppression si c'est une date ami
+    const existingDate = await dateModel.findById(req.params.id);
+
+    if (!existingDate) {
       return res.status(404).json({ message: "Date not found" });
     }
+
+    if (existingDate.linkedUser) {
+      return res.status(403).json({
+        message:
+          "Impossible de supprimer une date liée à un ami. Supprimez l'ami de votre liste d'amis pour retirer sa date.",
+      });
+    }
+
+    const deleteDate = await dateModel.findByIdAndDelete(req.params.id);
     res.status(200).json(deleteDate);
   } catch (error) {
     next(error);
@@ -204,11 +238,10 @@ router.put("/:id/notifications", async (req, res, next) => {
     const { receiveNotifications } = req.body;
     const dateId = req.params.id;
 
-    // Trouver et mettre à jour la date
     const updatedDate = await dateModel.findByIdAndUpdate(
       dateId,
       { receiveNotifications },
-      { new: true } // Retourne le document mis à jour
+      { new: true },
     );
 
     if (!updatedDate) {
@@ -219,7 +252,7 @@ router.put("/:id/notifications", async (req, res, next) => {
   } catch (error) {
     console.error(
       "Erreur lors de la mise à jour des préférences de notification:",
-      error
+      error,
     );
     res.status(500).json({ message: "Erreur serveur", error: error.message });
   }
@@ -231,14 +264,13 @@ router.put("/:id/notification-preferences", async (req, res, next) => {
     const { timings, notifyOnBirthday } = req.body;
     const dateId = req.params.id;
 
-    // Trouver et mettre à jour la date
     const updatedDate = await dateModel.findByIdAndUpdate(
       dateId,
       {
         "notificationPreferences.timings": timings,
         "notificationPreferences.notifyOnBirthday": notifyOnBirthday,
       },
-      { new: true } // Retourne le document mis à jour
+      { new: true },
     );
 
     if (!updatedDate) {
@@ -249,7 +281,7 @@ router.put("/:id/notification-preferences", async (req, res, next) => {
   } catch (error) {
     console.error(
       "Erreur lors de la mise à jour des préférences de timing:",
-      error
+      error,
     );
     res.status(500).json({ message: "Erreur serveur", error: error.message });
   }

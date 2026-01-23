@@ -9,7 +9,8 @@ import PasswordInput from "../connect/PasswordInput";
 import Countdown from "../dashboard/Countdown";
 import GestionNotification from "./GestionNotifications";
 import Wishlist from "./Wishlist";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import FriendsSection from "../friends/FriendsSection"; // 👈 IMPORT
+import FriendsMobileView from "../friends/FriendsMobileView"; // 👈 IMPORT
 
 const ProfilDetails = () => {
   const navigate = useNavigate();
@@ -53,6 +54,7 @@ const ProfilDetails = () => {
   const carouselSections = [
     { id: "personal", title: "Infos Personnelles", icon: "👤" },
     { id: "notifications", title: "Notifications", icon: "🔔" },
+    { id: "friends", title: "Mes Amis", icon: "👥" },
     { id: "wishlist", title: "Ma Wishlist", icon: "🎁" },
   ];
 
@@ -116,7 +118,7 @@ const ProfilDetails = () => {
   const handleConfirmDelete = async () => {
     if (deleteConfirmText.toLowerCase() !== "supprimer") {
       setErrorMessage(
-        "Veuillez taper 'supprimer' pour confirmer la suppression de votre compte."
+        "Veuillez taper 'supprimer' pour confirmer la suppression de votre compte.",
       );
       setShowErrorMessage(true);
       return;
@@ -140,7 +142,7 @@ const ProfilDetails = () => {
         setErrorMessage("Compte introuvable.");
       } else {
         setErrorMessage(
-          "Une erreur est survenue lors de la suppression du compte. Veuillez réessayer."
+          "Une erreur est survenue lors de la suppression du compte. Veuillez réessayer.",
         );
       }
       setShowErrorMessage(true);
@@ -184,7 +186,7 @@ const ProfilDetails = () => {
           headers: {
             "content-type": "multipart/form-data",
           },
-        }
+        },
       );
       storeToken(dbResponse.data.authToken);
       authenticateUser();
@@ -208,7 +210,7 @@ const ProfilDetails = () => {
     setCurrentCarouselIndex(
       currentCarouselIndex > 0
         ? currentCarouselIndex - 1
-        : carouselSections.length - 1
+        : carouselSections.length - 1,
     );
   };
 
@@ -216,7 +218,7 @@ const ProfilDetails = () => {
     setCurrentCarouselIndex(
       currentCarouselIndex < carouselSections.length - 1
         ? currentCarouselIndex + 1
-        : 0
+        : 0,
     );
   };
 
@@ -269,6 +271,13 @@ const ProfilDetails = () => {
           </div>
         );
 
+      case "friends":
+        return (
+          <div className="mobile-section">
+            <FriendsMobileView currentUser={currentUser} />
+          </div>
+        );
+
       case "wishlist":
         return (
           <div className="mobile-section">
@@ -285,7 +294,6 @@ const ProfilDetails = () => {
 
   return (
     <div>
-      {/* Modals (inchangées) */}
       {showDeleteModal && (
         <div className="delete-modal-overlay" onClick={handleCancelDelete}>
           <div className="delete-modal" onClick={(e) => e.stopPropagation()}>
@@ -358,7 +366,6 @@ const ProfilDetails = () => {
       )}
 
       {isEditing ? (
-        // Mode édition (inchangé)
         <div className="formEdit form-connect">
           <div className="peel">
             <form className="formEditProfile form" onSubmit={sendForm}>
@@ -474,36 +481,10 @@ const ProfilDetails = () => {
         </div>
       ) : (
         <div className="profile">
-          {/* 👇 CARROUSEL MOBILE */}
           <div className="mobile-carousel-container">
             <div className="mobile-carousel">
-              {/* <div className="mobile-carousel__header">
-                <span className="mobile-carousel__icon">
-                  {carouselSections[currentCarouselIndex].icon}
-                </span>
-                <h3 className="mobile-carousel__title">
-                  {carouselSections[currentCarouselIndex].title}
-                </h3>
-              </div> */}
-
               <div className="mobile-carousel__content">
                 {renderMobileSection()}
-
-                {/* <button
-                  onClick={goToPrevious}
-                  className="mobile-carousel__nav-btn mobile-carousel__nav-btn--prev"
-                  aria-label="Section précédente"
-                >
-                  <ChevronLeft size={20} color="#495057" />
-                </button> */}
-
-                {/* <button
-                  onClick={goToNext}
-                  className="mobile-carousel__nav-btn mobile-carousel__nav-btn--next"
-                  aria-label="Section suivante"
-                >
-                  <ChevronRight size={20} color="#495057" />
-                </button> */}
               </div>
 
               <div className="mobile-carousel__indicators">
@@ -522,9 +503,6 @@ const ProfilDetails = () => {
               </div>
 
               <div className="mobile-carousel__quick-nav">
-                {/* <span className="mobile-carousel__counter">
-                  {currentCarouselIndex + 1} / {carouselSections.length}
-                </span> */}
                 <div className="mobile-carousel__quick-buttons">
                   {carouselSections.map((section, index) => (
                     <button
@@ -545,7 +523,6 @@ const ProfilDetails = () => {
             </div>
           </div>
 
-          {/* 👇 AFFICHAGE DESKTOP - MAINTENANT VISIBLE */}
           <div className="profileWrapper">
             <div className="profile_info">
               <h2>Vos données</h2>
@@ -583,7 +560,10 @@ const ProfilDetails = () => {
               <GestionNotification />
             </div>
 
-            {/* 👇 NOUVELLE SECTION WISHLIST POUR DESKTOP */}
+            <div className="friends-desktop">
+              <FriendsSection currentUser={currentUser} />
+            </div>
+
             <div className="wishlist-desktop">
               <Wishlist />
             </div>

@@ -1,0 +1,527 @@
+/* ========================================
+   FRIENDS MANAGER - STRUCTURE GÉNÉRALE
+   ======================================== */
+
+.friends-manager,
+.friends-manager-mobile {
+    background: rgba(30, 41, 59, 0.8);
+    border-radius: 20px;
+    padding: 24px;
+    border: 1px solid rgba(148, 163, 184, 0.1);
+    height: fit-content;
+}
+
+.friends-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.friends-header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    color: white;
+}
+
+.friends-count {
+    background: rgba(99, 102, 241, 0.2);
+    color: #818cf8;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+/* ========================================
+   ONGLETS
+   ======================================== */
+
+.friends-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    border-bottom: 2px solid rgba(148, 163, 184, 0.1);
+}
+
+.friends-tabs .tab {
+    background: none;
+    border: none;
+    color: #94a3b8;
+    padding: 12px 16px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 500;
+    position: relative;
+    transition: color 0.2s;
+}
+
+.friends-tabs .tab:hover {
+    color: white;
+}
+
+.friends-tabs .tab.active {
+    color: #818cf8;
+}
+
+.friends-tabs .tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: #818cf8;
+}
+
+.friends-tabs .badge {
+    background: #ef4444;
+    color: white;
+    font-size: 0.75rem;
+    padding: 2px 6px;
+    border-radius: 10px;
+    margin-left: 6px;
+}
+
+/* ========================================
+   LISTE D'AMIS
+   ======================================== */
+
+.friends-content,
+.friends-content-mobile {
+    min-height: 200px;
+}
+
+.friends-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-height: 400px;
+    overflow-y: auto;
+    margin-bottom: 16px;
+    padding-right: 4px;
+}
+
+.friend-card,
+.request-card {
+    background: rgba(51, 65, 85, 0.5);
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: transform 0.2s, background 0.2s;
+}
+
+.friend-card:hover,
+.request-card:hover {
+    background: rgba(51, 65, 85, 0.7);
+    transform: translateY(-2px);
+}
+
+.friend-info,
+.request-info {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex: 1;
+}
+
+.friend-avatar,
+.request-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.friend-avatar img,
+.request-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatar-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-size: 1.5rem;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.friend-details,
+.request-details {
+    flex: 1;
+    min-width: 0;
+}
+
+.friend-details h4,
+.request-details h4 {
+    margin: 0 0 4px 0;
+    color: white;
+    font-size: 1rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.friend-email,
+.request-email {
+    color: #94a3b8;
+    font-size: 0.875rem;
+    margin: 0 0 4px 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.friend-birth {
+    color: #fbbf24;
+    font-size: 0.875rem;
+    margin: 0;
+}
+
+.request-date {
+    color: #64748b;
+    font-size: 0.8rem;
+    margin: 0;
+}
+
+/* ========================================
+   ACTIONS
+   ======================================== */
+
+.delete-friend-btn {
+    background: rgba(239, 68, 68, 0.1);
+    border: none;
+    color: #ef4444;
+    padding: 8px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1.2rem;
+    transition: background 0.2s;
+    flex-shrink: 0;
+}
+
+.delete-friend-btn:hover {
+    background: rgba(239, 68, 68, 0.2);
+}
+
+.request-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.btn-accept,
+.btn-reject {
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.btn-accept {
+    background: rgba(34, 197, 94, 0.2);
+    color: #22c55e;
+}
+
+.btn-accept:hover {
+    background: rgba(34, 197, 94, 0.3);
+}
+
+.btn-reject {
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+}
+
+.btn-reject:hover {
+    background: rgba(239, 68, 68, 0.3);
+}
+
+/* ========================================
+   BOUTON AJOUTER AMI
+   ======================================== */
+
+.add-friend-btn {
+    width: 100%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 14px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.add-friend-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+}
+
+/* ========================================
+   ÉTAT VIDE
+   ======================================== */
+
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: #94a3b8;
+}
+
+.empty-state p:first-child {
+    font-size: 2rem;
+    margin: 0 0 8px 0;
+}
+
+.empty-subtitle {
+    font-size: 0.875rem;
+    margin: 0;
+    color: #64748b;
+}
+
+/* ========================================
+   MODAL
+   ======================================== */
+
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    backdrop-filter: blur(4px);
+}
+
+.modal-content {
+    background: #1e293b;
+    border-radius: 16px;
+    padding: 24px;
+    width: 90%;
+    max-width: 450px;
+    border: 1px solid rgba(148, 163, 184, 0.1);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: white;
+    font-size: 1.25rem;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    color: #94a3b8;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 4px 8px;
+    line-height: 1;
+    transition: color 0.2s;
+}
+
+.close-btn:hover {
+    color: white;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    color: #e2e8f0;
+    margin-bottom: 8px;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.error-message-friend {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #ef4444;
+    padding: 12px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    font-size: 0.875rem;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-top: 20px;
+}
+
+/* ========================================
+   SCROLLBAR CUSTOM
+   ======================================== */
+
+.friends-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.friends-list::-webkit-scrollbar-track {
+    background: rgba(51, 65, 85, 0.3);
+    border-radius: 3px;
+}
+
+.friends-list::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.3);
+    border-radius: 3px;
+}
+
+.friends-list::-webkit-scrollbar-thumb:hover {
+    background: rgba(148, 163, 184, 0.5);
+}
+
+/* ========================================
+   RESPONSIVE MOBILE
+   ======================================== */
+
+@media (max-width: 768px) {
+    .friends-manager-mobile {
+        padding: 16px;
+    }
+
+    .friends-header h2 {
+        font-size: 1.25rem;
+    }
+
+    .friend-card,
+    .request-card {
+        padding: 12px;
+    }
+
+    .friend-avatar,
+    .request-avatar {
+        width: 40px;
+        height: 40px;
+    }
+
+    .avatar-placeholder {
+        font-size: 1.2rem;
+    }
+
+    .friend-details h4,
+    .request-details h4 {
+        font-size: 0.95rem;
+    }
+
+    .friend-email,
+    .request-email {
+        font-size: 0.8rem;
+    }
+
+    .friends-tabs .tab {
+        padding: 10px 12px;
+        font-size: 0.875rem;
+    }
+
+    .request-actions {
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .btn-accept,
+    .btn-reject {
+        padding: 6px 12px;
+        font-size: 0.8rem;
+        white-space: nowrap;
+    }
+
+    .friends-list {
+        max-height: 300px;
+    }
+}
+
+/* ========================================
+   DESKTOP - LAYOUT DANS PROFILEWRAPPER
+   ======================================== */
+
+@media (min-width: 769px) {
+    .friends-desktop {
+        grid-column: 1 / -1;
+        margin-top: 20px;
+    }
+
+    .friends-manager {
+        max-width: 100%;
+    }
+
+    .friends-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 12px;
+    }
+
+    .friend-card,
+    .request-card {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .friend-info,
+    .request-info {
+        width: 100%;
+        margin-bottom: 12px;
+    }
+
+    .delete-friend-btn {
+        width: 100%;
+    }
+
+    .request-actions {
+        width: 100%;
+    }
+
+    .btn-accept,
+    .btn-reject {
+        flex: 1;
+    }
+}
+
+/* ========================================
+   ANIMATIONS
+   ======================================== */
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.friend-card,
+.request-card {
+    animation: slideIn 0.3s ease-out;
+}
+
+.modal-content {
+    animation: slideIn 0.2s ease-out;
+}

@@ -17,6 +17,7 @@ const usersRouter = require("./routes/users");
 const verifyRouter = require("./routes/verify");
 const unsubscribeRouter = require("./routes/unsubscribe");
 const wishlistRouter = require("./routes/wishlist");
+const friendRouter = require("./routes/friends");
 
 const app = express();
 
@@ -53,6 +54,7 @@ app.use("/api/date", dateRouter);
 app.use("/api/verify-email", verifyRouter);
 app.use("/api/unsubscribe", unsubscribeRouter);
 app.use("/api/wishlist", wishlistRouter);
+app.use("/api/friends", friendRouter);
 
 // IMPORTANT : Cette route doit rester AVANT le wildcard
 app.use("/api/*", (req, res, next) => {

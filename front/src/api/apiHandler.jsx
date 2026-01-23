@@ -97,6 +97,66 @@ const apiHandler = {
       .then((res) => res.data)
       .catch(errorHandler);
   },
+
+  // ========================================
+  // 👇 FRIENDS API - NOUVEAU
+  // ========================================
+
+  // Obtenir tous les amis d'un utilisateur
+  getFriends(userId) {
+    return service
+      .get(`/friends?userId=${userId}`)
+      .then((res) => res.data)
+      .catch(errorHandler);
+  },
+
+  // Obtenir les demandes d'amitié en attente
+  getFriendRequests(userId) {
+    return service
+      .get(`/friends/requests?userId=${userId}`)
+      .then((res) => res.data)
+      .catch(errorHandler);
+  },
+
+  // Envoyer une demande d'amitié
+  sendFriendRequest(userId, friendEmail) {
+    return service
+      .post("/friends/request", { userId, friendEmail })
+      .then((res) => res.data)
+      .catch(errorHandler);
+  },
+
+  // Accepter une demande d'amitié
+  acceptFriendRequest(friendshipId, userId) {
+    return service
+      .patch(`/friends/${friendshipId}/accept`, { userId })
+      .then((res) => res.data)
+      .catch(errorHandler);
+  },
+
+  // Refuser une demande d'amitié
+  rejectFriendRequest(friendshipId, userId) {
+    return service
+      .patch(`/friends/${friendshipId}/reject`, { userId })
+      .then((res) => res.data)
+      .catch(errorHandler);
+  },
+
+  // Lier un ami à une date
+  linkFriendToDate(friendshipId, dateId) {
+    return service
+      .patch(`/friends/${friendshipId}/link-date`, { dateId })
+      .then((res) => res.data)
+      .catch(errorHandler);
+  },
+
+  // Supprimer un ami
+  deleteFriend(friendshipId) {
+    return service
+      .delete(`/friends/${friendshipId}`)
+      .then((res) => res.data)
+      .catch(errorHandler);
+  },
 };
 
 export default apiHandler;
