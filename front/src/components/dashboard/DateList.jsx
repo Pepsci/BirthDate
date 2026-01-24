@@ -5,7 +5,7 @@ import CreateDate from "./CreateDate";
 import Agenda from "./Agenda";
 import DateFilter from "./DateFilter";
 import Countdown from "./Countdown";
-import ManualMergeModal from "./ManualMergeModal";
+import ManualMergeModal from "./ManuelMergeModal";
 import "./css/dateList.css";
 import "./css/birthcard.css";
 
