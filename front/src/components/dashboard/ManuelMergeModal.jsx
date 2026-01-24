@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import useAuth from "../../context/useAuth";
 import apiHandler from "../../api/apiHandler";
-import "./css/ManualMergeModal.css";
+import "./css/manualmergemodal.css";
 
 const ManualMergeModal = ({ sourceCard, onClose, onMergeSuccess }) => {
   const { currentUser } = useAuth();
