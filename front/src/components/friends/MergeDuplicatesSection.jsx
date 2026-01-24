@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import useAuth from "../../context/useAuth";
 import apiHandler from "../../api/apiHandler";
-import "./css/mergeDuplicatesSection.css";
+import "./css/mergeduplicatessection.css";
 
 const MergeDuplicatesSection = () => {
   const { currentUser } = useAuth();
