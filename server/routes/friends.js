@@ -2,8 +2,11 @@ const express = require("express");
 const router = express.Router();
 const Friend = require("../models/friend.model");
 const User = require("../models/user.model");
-const DateModel = require("../models/date.model"); // 👈 AJOUTÉ
+const DateModel = require("../models/date.model");
 const mongoose = require("mongoose");
+const {
+  sendFriendRequestNotification,
+} = require("../services/emailTemplates/friendRequestEmailService");
 
 // ========================================
 // GET - Obtenir tous les amis d'un utilisateur
@@ -141,9 +144,37 @@ router.post("/request", async (req, res) => {
       status: "pending",
     });
 
-    console.log(
-      `📧 Email à envoyer à ${friend.email}: ${user.name} veut être votre ami`,
-    );
+    // 🆕 NOUVEAU : Envoyer l'email de notification
+    try {
+      // Vérifier si le destinataire veut recevoir des emails de demandes d'ami
+      const shouldReceiveEmail = friend.receiveFriendRequestEmails !== false;
+
+      if (shouldReceiveEmail && friend.email) {
+        console.log(`📧 Envoi email de demande d'ami à ${friend.email}`);
+
+        const emailResult = await sendFriendRequestNotification(
+          friend.email,
+          user.name,
+          friend._id.toString(),
+        );
+
+        if (emailResult.success) {
+          console.log("✅ Email envoyé avec succès");
+        } else {
+          console.log("⚠️ Email non envoyé:", emailResult.error);
+        }
+      } else {
+        console.log(
+          `ℹ️ Email non envoyé : utilisateur a désactivé les notifications ou pas d'email`,
+        );
+      }
+    } catch (emailError) {
+      // Logger l'erreur mais ne pas faire échouer la requête
+      console.error(
+        "❌ Erreur lors de l'envoi de l'email de notification:",
+        emailError,
+      );
+    }
 
     const populatedFriendship = await Friend.findById(newFriendship._id)
       .populate("user", "name email")

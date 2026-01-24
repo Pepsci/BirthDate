@@ -5,6 +5,7 @@ import CreateDate from "./CreateDate";
 import Agenda from "./Agenda";
 import DateFilter from "./DateFilter";
 import Countdown from "./Countdown";
+import ManualMergeModal from "./Manualmergemodal "; // 👈 AJOUTÉ
 import "./css/dateList.css";
 import "./css/birthcard.css";
 
@@ -21,6 +22,10 @@ const DateList = ({ onEditDate, onViewFriendProfile }) => {
   const [itemsPerPage, setItemsPerPage] = useState(
     window.innerWidth <= 600 ? ITEMS_PER_PAGE_MOBILE : ITEMS_PER_PAGE,
   );
+
+  // 👇 AJOUTÉ - État pour le modal de fusion
+  const [showMergeModal, setShowMergeModal] = useState(false);
+  const [cardToMerge, setCardToMerge] = useState(null);
 
   const calculateCurrentAge = (birthDate) => {
     const today = new Date();
@@ -80,7 +85,8 @@ const DateList = ({ onEditDate, onViewFriendProfile }) => {
     });
   };
 
-  useEffect(() => {
+  // 👇 AJOUTÉ - Fonction pour recharger les dates après fusion
+  const loadDates = () => {
     apiHandler
       .get(`/date?owner=${currentUser._id}`)
       .then((dbResponse) => {
@@ -89,6 +95,10 @@ const DateList = ({ onEditDate, onViewFriendProfile }) => {
         setDates(sortedDates);
       })
       .catch((e) => console.error(e));
+  };
+
+  useEffect(() => {
+    loadDates();
   }, [currentUser]);
 
   useEffect(() => {
@@ -148,6 +158,12 @@ const DateList = ({ onEditDate, onViewFriendProfile }) => {
     }
     setDates(filteredDates);
     setCurrentPage(1);
+  };
+
+  // 👇 AJOUTÉ - Handler pour ouvrir le modal de fusion
+  const handleOpenMergeModal = (date) => {
+    setCardToMerge(date);
+    setShowMergeModal(true);
   };
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
@@ -237,9 +253,8 @@ const DateList = ({ onEditDate, onViewFriendProfile }) => {
             const isThisWeek = diffDays <= 7 && diffDays > 0;
             const hasGifts = date.gifts && date.gifts.length > 0;
             const isFamily = date.family === true;
-            const isFriend = !!date.linkedUser; // 👈 NOUVEAU
+            const isFriend = !!date.linkedUser;
 
-            // 👇 MODIFIÉ - Ajout de la classe friend-date
             const cardClassName = `
     birthCard titleFont 
     ${isToday ? "today" : ""} 
@@ -254,7 +269,6 @@ const DateList = ({ onEditDate, onViewFriendProfile }) => {
                 <div className="birthCardName">
                   <span className="birthCard-name">
                     <b>{date.name}</b>
-                    {/* 👇 NOUVEAU - Badge AMI */}
                     {isFriend && <span className="friend-badge">👥 AMI</span>}
                   </span>
                   <span>
@@ -277,14 +291,23 @@ const DateList = ({ onEditDate, onViewFriendProfile }) => {
                     <Countdown birthdate={date.date} />
                   </span>
                   <div className="button-group">
-                    {/* 👇 MODIFIÉ - Pas de bouton Modifier pour les amis */}
+                    {/* 👇 MODIFIÉ - Ajout du bouton Fusionner pour les cartes manuelles */}
                     {!isFriend && (
-                      <button
-                        onClick={() => onEditDate(date)}
-                        className="btn-edit"
-                      >
-                        Modifier
-                      </button>
+                      <>
+                        <button
+                          onClick={() => onEditDate(date)}
+                          className="btn-edit"
+                        >
+                          Modifier
+                        </button>
+                        <button
+                          onClick={() => handleOpenMergeModal(date)}
+                          className="btn-merge-manual"
+                          title="Fusionner avec une carte ami"
+                        >
+                          🔄 Fusionner
+                        </button>
+                      </>
                     )}
                     <button
                       onClick={() => onViewFriendProfile(date)}
@@ -404,6 +427,20 @@ const DateList = ({ onEditDate, onViewFriendProfile }) => {
             Suivant
           </button>
         </div>
+      )}
+
+      {/* 👇 AJOUTÉ - Modal de fusion manuelle */}
+      {showMergeModal && cardToMerge && (
+        <ManualMergeModal
+          sourceCard={cardToMerge}
+          onClose={() => {
+            setShowMergeModal(false);
+            setCardToMerge(null);
+          }}
+          onMergeSuccess={() => {
+            loadDates(); // Recharger la liste après fusion
+          }}
+        />
       )}
     </div>
   );

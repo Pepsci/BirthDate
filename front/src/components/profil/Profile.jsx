@@ -9,8 +9,9 @@ import PasswordInput from "../connect/PasswordInput";
 import Countdown from "../dashboard/Countdown";
 import GestionNotification from "./GestionNotifications";
 import Wishlist from "./Wishlist";
-import FriendsSection from "../friends/FriendsSection"; // 👈 IMPORT
-import FriendsMobileView from "../friends/FriendsMobileView"; // 👈 IMPORT
+import FriendsSection from "../friends/FriendsSection";
+import FriendsMobileView from "../friends/FriendsMobileView";
+import MergeDuplicatesSection from "../friends/MergeDuplicatesSection"; // 👈 AJOUTÉ
 
 const ProfilDetails = () => {
   const navigate = useNavigate();
@@ -51,10 +52,12 @@ const ProfilDetails = () => {
 
   const avatarRef = useRef();
 
+  // 👇 MODIFIÉ : Ajout de la section "merge"
   const carouselSections = [
     { id: "personal", title: "Infos Personnelles", icon: "👤" },
     { id: "notifications", title: "Notifications", icon: "🔔" },
     { id: "friends", title: "Mes Amis", icon: "👥" },
+    { id: "merge", title: "Fusion", icon: "🔄" },
     { id: "wishlist", title: "Ma Wishlist", icon: "🎁" },
   ];
 
@@ -222,6 +225,7 @@ const ProfilDetails = () => {
     );
   };
 
+  // 👇 MODIFIÉ : Ajout du cas "merge"
   const renderMobileSection = () => {
     const currentSection = carouselSections[currentCarouselIndex];
 
@@ -275,6 +279,13 @@ const ProfilDetails = () => {
         return (
           <div className="mobile-section">
             <FriendsMobileView currentUser={currentUser} />
+          </div>
+        );
+
+      case "merge":
+        return (
+          <div className="mobile-section">
+            <MergeDuplicatesSection />
           </div>
         );
 
@@ -562,6 +573,11 @@ const ProfilDetails = () => {
 
             <div className="friends-desktop">
               <FriendsSection currentUser={currentUser} />
+            </div>
+
+            {/* 👇 AJOUTÉ : Section de fusion des doublons */}
+            <div className="merge-desktop">
+              <MergeDuplicatesSection />
             </div>
 
             <div className="wishlist-desktop">

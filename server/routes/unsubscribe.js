@@ -1,4 +1,6 @@
 // routes/unsubscribe.js
+// Ajouter cette logique dans ta route GET existante
+
 const express = require("express");
 const router = express.Router();
 const userModel = require("../models/user.model");
@@ -7,10 +9,9 @@ const dateModel = require("../models/date.model");
 // Route GET pour le désabonnement via email
 router.get("/", async (req, res, next) => {
   try {
-    const { email, dateid } = req.query;
+    const { email, dateid, type } = req.query; // 🆕 Ajouter 'type' dans les paramètres
 
     if (!email) {
-      // Renvoyer une page HTML d'erreur
       return res.send(`
         <html>
           <head>
@@ -35,19 +36,71 @@ router.get("/", async (req, res, next) => {
       `);
     }
 
-    // Log pour debug
     console.log("Tentative de désabonnement pour l'email:", email);
+    console.log("Type de désabonnement:", type || "anniversaire");
     if (dateid) {
       console.log("Désabonnement spécifique pour la date:", dateid);
     }
 
     try {
+      // 🆕 NOUVEAU : Gérer le désabonnement des demandes d'ami
+      if (type === "friend_requests") {
+        const userBefore = await userModel.findOne({
+          email: { $regex: new RegExp("^" + email + "$", "i") },
+        });
+
+        if (!userBefore) {
+          console.log("Utilisateur non trouvé avec cet email:", email);
+          throw new Error("Utilisateur non trouvé");
+        }
+
+        console.log(
+          "État avant mise à jour (friend requests):",
+          userBefore.receiveFriendRequestEmails,
+        );
+
+        const result = await userModel.findOneAndUpdate(
+          { email: { $regex: new RegExp("^" + email + "$", "i") } },
+          { receiveFriendRequestEmails: false },
+          { new: true },
+        );
+
+        console.log(
+          "État après mise à jour (friend requests):",
+          result.receiveFriendRequestEmails,
+        );
+        console.log("Utilisateur désabonné des demandes d'ami:", result.email);
+
+        return res.send(`
+          <html>
+            <head>
+              <title>Désabonnement réussi</title>
+              <style>
+                body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 30px; text-align: center; }
+                .success { color: #2ecc71; }
+                .container { border: 1px solid #ddd; border-radius: 8px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+                a { color: #3498db; text-decoration: none; }
+                a:hover { text-decoration: underline; }
+              </style>
+            </head>
+            <body>
+              <div class="container">
+                <h1>Gestion des notifications</h1>
+                <h2 class="success">Succès !</h2>
+                <p>Vous ne recevrez plus d'emails pour les nouvelles demandes d'ami.</p>
+                <p>Vous pouvez toujours gérer vos préférences en <a href="${process.env.FRONTEND_URL}/login">vous connectant</a>.</p>
+              </div>
+            </body>
+          </html>
+        `);
+      }
+
       // Si dateid est spécifié, désabonner d'un anniversaire spécifique
       if (dateid) {
         const date = await dateModel.findByIdAndUpdate(
           dateid,
           { receiveNotifications: false },
-          { new: true }
+          { new: true },
         );
 
         if (!date) {
@@ -56,10 +109,9 @@ router.get("/", async (req, res, next) => {
         }
 
         console.log(
-          `Notifications désactivées pour l'anniversaire de ${date.name} ${date.surname}`
+          `Notifications désactivées pour l'anniversaire de ${date.name} ${date.surname}`,
         );
 
-        // Renvoyer une page HTML de succès spécifique à cet anniversaire
         return res.send(`
           <html>
             <head>
@@ -95,23 +147,18 @@ router.get("/", async (req, res, next) => {
 
         console.log(
           "État avant mise à jour:",
-          userBefore.receiveBirthdayEmails
+          userBefore.receiveBirthdayEmails,
         );
 
-        // Faire la mise à jour
         const result = await userModel.findOneAndUpdate(
           { email: { $regex: new RegExp("^" + email + "$", "i") } },
           { receiveBirthdayEmails: false },
-          { new: true }
+          { new: true },
         );
 
         console.log("État après mise à jour:", result.receiveBirthdayEmails);
         console.log("Utilisateur désabonné avec succès:", result.email);
-      }
 
-      // Si on arrive ici, c'est pour le désabonnement général
-      if (!dateid) {
-        // Renvoyer une page HTML de succès
         res.send(`
           <html>
             <head>
@@ -138,7 +185,6 @@ router.get("/", async (req, res, next) => {
     } catch (error) {
       console.error("Erreur lors du désabonnement:", error);
 
-      // Renvoyer une page HTML d'erreur
       res.status(404).send(`
         <html>
           <head>
@@ -183,11 +229,6 @@ router.get("/", async (req, res, next) => {
       </html>
     `);
   }
-});
-
-// Conserver la route POST si vous l'utilisez ailleurs
-router.post("/", async (req, res, next) => {
-  // Code pour la route POST (si nécessaire)
 });
 
 module.exports = router;

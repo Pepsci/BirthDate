@@ -65,18 +65,12 @@ const FriendProfile = ({ date, onCancel }) => {
       // 👇 CORRECTION : Extraire l'ID correctement
       const userId = date.linkedUser?._id || date.linkedUser;
 
-      console.log("🔍 linkedUser brut:", date.linkedUser);
-      console.log("📍 userId extrait:", userId);
-
       if (!userId) {
-        console.error("❌ Pas de userId valide");
         setWishlistLoading(false);
         return;
       }
 
       const response = await apiHandler.get(`/wishlist/user/${userId}`);
-
-      console.log("📥 Réponse:", response.data);
 
       // Gérer différentes structures de réponse
       let items = [];
@@ -87,12 +81,8 @@ const FriendProfile = ({ date, onCancel }) => {
         items = response.data;
       }
 
-      console.log("📋 Total items:", items.length);
-
       // Filtrer les items partagés
       const publicItems = items.filter((item) => item.isShared === true);
-
-      console.log("🎁 Items publics:", publicItems.length);
 
       setWishlist(publicItems);
       setHasPublicWishlist(publicItems.length > 0);

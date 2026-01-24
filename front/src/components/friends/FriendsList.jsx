@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 const FriendsList = ({ friends, onDelete, onAddClick }) => {
   if (friends.length === 0) {
     return (
@@ -69,6 +71,9 @@ const FriendsList = ({ friends, onDelete, onAddClick }) => {
       <button className="add-friend-btn" onClick={onAddClick}>
         + Ajouter un ami
       </button>
+      <Link to="/merge-duplicates">
+        <button className="add-friend-btn">🔄 Fusionner les doublons</button>
+      </Link>
     </>
   );
 };

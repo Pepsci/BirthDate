@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import apiHandler from "../../api/apiHandler";
 import { AuthContext } from "../../context/auth.context";
 import "./form.css";
@@ -13,12 +13,16 @@ const Login = () => {
   const [errorMessage, setErrorMessage] = useState(undefined);
 
   const navigate = useNavigate();
+  const location = useLocation(); // 👈 AJOUTÉ
   const { storeToken, authenticateUser, isLoggedIn } = useContext(AuthContext);
+
+  // 👇 AJOUTÉ : Récupérer la page d'origine (ou /home par défaut)
+  const from = location.state?.from?.pathname || "/home";
 
   useEffect(() => {
     authenticateUser();
-    if (isLoggedIn) navigate("/home");
-  }, [isLoggedIn, navigate]);
+    if (isLoggedIn) navigate(from); // 👈 MODIFIÉ : utilise 'from' au lieu de '/home'
+  }, [isLoggedIn, navigate, from]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -33,7 +37,7 @@ const Login = () => {
         console.log("Login successful");
         storeToken(response.authToken);
         authenticateUser();
-        navigate("/home");
+        navigate(from); // 👈 MODIFIÉ : utilise 'from' au lieu de '/home'
       } else {
         setErrorMessage("No authToken in response");
       }
@@ -43,11 +47,32 @@ const Login = () => {
     }
   };
 
+  // 👇 AJOUTÉ : Afficher un message si l'utilisateur vient de /friends
+  const isFromFriends = location.state?.from?.pathname === "/friends";
+
   return (
     <div className="form-connect">
       <div className="peel">
         <form action="" className="form" onSubmit={handleSubmit}>
           <h1 className="form-title-font">Connexion</h1>
+
+          {/* 👇 AJOUTÉ : Message d'info si l'utilisateur vient de l'email */}
+          {isFromFriends && (
+            <div
+              style={{
+                padding: "10px",
+                marginBottom: "15px",
+                backgroundColor: "#e3f2fd",
+                border: "1px solid #2196F3",
+                borderRadius: "5px",
+                color: "#1976d2",
+                fontSize: "0.9rem",
+              }}
+            >
+              ℹ️ Connectez-vous pour voir votre demande d'ami
+            </div>
+          )}
+
           <input
             type="text"
             name="email"

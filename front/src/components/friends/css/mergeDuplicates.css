@@ -1,0 +1,357 @@
+/* pages/css/MergeDuplicates.css */
+
+.merge-duplicates-page {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.merge-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.merge-header h1 {
+    font-size: 2rem;
+    color: #2c3e50;
+}
+
+.btn-back {
+    padding: 10px 20px;
+    background-color: #6c757d;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+}
+
+.btn-back:hover {
+    background-color: #5a6268;
+}
+
+/* Summary */
+.merge-summary {
+    background: #e3f2fd;
+    border-left: 4px solid #2196F3;
+    padding: 20px;
+    margin-bottom: 30px;
+    border-radius: 5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.merge-summary p {
+    margin: 0;
+    font-size: 1.1rem;
+    color: #1976d2;
+}
+
+.btn-merge-all {
+    padding: 10px 20px;
+    background-color: #ff9800;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: bold;
+}
+
+.btn-merge-all:hover {
+    background-color: #f57c00;
+}
+
+.btn-merge-all:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+/* Empty state */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.empty-state h2 {
+    color: #4CAF50;
+    font-size: 2rem;
+    margin-bottom: 10px;
+}
+
+.empty-state p {
+    color: #666;
+    font-size: 1.1rem;
+}
+
+/* Duplicates list */
+.duplicates-list {
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+}
+
+.duplicate-group {
+    background: white;
+    border-radius: 8px;
+    padding: 30px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.group-title {
+    font-size: 1.5rem;
+    color: #2c3e50;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #e0e0e0;
+}
+
+/* Cards comparison */
+.cards-comparison {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 20px;
+    align-items: start;
+}
+
+.merge-arrow {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.merge-arrow span {
+    font-size: 3rem;
+    color: #4CAF50;
+}
+
+.merge-arrow p {
+    margin-top: 10px;
+    color: #666;
+    font-weight: bold;
+}
+
+/* Card preview */
+.card-preview {
+    background: #fafafa;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 20px;
+    position: relative;
+}
+
+.friend-card {
+    border-color: #4CAF50;
+    background: #f1f8f4;
+}
+
+.manual-card {
+    border-color: #ff9800;
+    background: #fff8f0;
+}
+
+.card-badge {
+    position: absolute;
+    top: -12px;
+    left: 20px;
+    background: #fff;
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: bold;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.friend-card .card-badge {
+    background: #4CAF50;
+    color: white;
+}
+
+.manual-card .card-badge {
+    background: #ff9800;
+    color: white;
+}
+
+.card-preview h4 {
+    margin: 15px 0 10px 0;
+    font-size: 1.3rem;
+    color: #2c3e50;
+}
+
+.card-date {
+    color: #666;
+    font-size: 0.95rem;
+    margin-bottom: 15px;
+}
+
+/* Card details */
+.card-details {
+    margin-top: 15px;
+}
+
+.detail-section {
+    margin-bottom: 15px;
+    padding: 10px;
+    background: white;
+    border-radius: 5px;
+}
+
+.detail-section h5 {
+    margin: 0 0 10px 0;
+    color: #2c3e50;
+    font-size: 1rem;
+}
+
+.detail-section ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.detail-section li {
+    padding: 5px 0;
+    color: #555;
+    font-size: 0.9rem;
+}
+
+.detail-section li.more {
+    color: #999;
+    font-style: italic;
+}
+
+.detail-section .empty {
+    color: #999;
+    font-style: italic;
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+/* Manual cards container */
+.manual-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+/* Merge button */
+.btn-merge {
+    width: 100%;
+    padding: 12px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: bold;
+    margin-top: 15px;
+    transition: all 0.3s ease;
+}
+
+.btn-merge:hover {
+    background-color: #45a049;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.btn-merge:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Loading & Error */
+.loading-state,
+.error-state {
+    text-align: center;
+    padding: 60px 20px;
+}
+
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid #f3f3f3;
+    border-top: 5px solid #4CAF50;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 20px;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.btn-retry {
+    padding: 10px 20px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+    margin-top: 20px;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .cards-comparison {
+        grid-template-columns: 1fr;
+        gap: 30px;
+    }
+
+    .merge-arrow {
+        transform: rotate(90deg);
+    }
+
+    .manual-cards {
+        order: 3;
+    }
+
+    .friend-card {
+        order: 1;
+    }
+
+    .merge-arrow {
+        order: 2;
+    }
+}
+
+@media (max-width: 768px) {
+    .merge-header {
+        flex-direction: column;
+        gap: 15px;
+        align-items: flex-start;
+    }
+
+    .merge-summary {
+        flex-direction: column;
+        gap: 15px;
+        align-items: flex-start;
+    }
+
+    .btn-merge-all {
+        width: 100%;
+    }
+
+    .duplicate-group {
+        padding: 15px;
+    }
+
+    .group-title {
+        font-size: 1.2rem;
+    }
+}

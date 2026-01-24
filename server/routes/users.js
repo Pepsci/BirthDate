@@ -1,6 +1,8 @@
 const express = require("express");
 const router = express.Router();
 const userModel = require("../models/user.model");
+const Friend = require("../models/friend.model"); // 👈 AJOUTÉ
+const DateModel = require("../models/date.model"); // 👈 AJOUTÉ
 const { isAuthenticated } = require("../middleware/jwt.middleware");
 const uploader = require("../config/cloudinary");
 const jwt = require("jsonwebtoken");
@@ -67,11 +69,16 @@ router.patch(
         return res.status(404).json({ message: "User not found" });
       }
 
+      // 👇 AJOUTÉ : Sauvegarder les anciennes valeurs pour détecter les changements
+      const oldName = user.name;
+      const oldSurname = user.surname;
+      const oldBirthDate = user.birthDate;
+
       // Vérifie le mot de passe actuel
       if (currentPassword && newPassword) {
         const passwordCorrect = bcrypt.compareSync(
           currentPassword,
-          user.password
+          user.password,
         );
         if (!passwordCorrect) {
           return res
@@ -88,6 +95,8 @@ router.patch(
 
       user.username = req.body.username || user.username;
       user.name = req.body.name || user.name;
+      user.surname =
+        req.body.surname !== undefined ? req.body.surname : user.surname; // 👈 MODIFIÉ pour gérer surname vide
       user.email = req.body.email || user.email;
       user.birthDate = req.body.birthDate || user.birthDate;
       if (avatar) {
@@ -100,6 +109,67 @@ router.patch(
       }
 
       const updatedUser = await user.save();
+
+      // 👇 AJOUTÉ : Synchroniser avec les amis si nom/prénom/date ont changé
+      const nameChanged = oldName !== updatedUser.name;
+      const surnameChanged = oldSurname !== updatedUser.surname;
+      const birthDateChanged =
+        oldBirthDate?.toString() !== updatedUser.birthDate?.toString();
+
+      if (nameChanged || surnameChanged || birthDateChanged) {
+        console.log(`🔄 Synchronisation nécessaire pour ${updatedUser.name}`);
+
+        try {
+          // Trouver toutes les amitiés acceptées
+          const friendships = await Friend.find({
+            $or: [
+              { user: updatedUser._id, status: "accepted" },
+              { friend: updatedUser._id, status: "accepted" },
+            ],
+          });
+
+          console.log(`👥 ${friendships.length} amis trouvés`);
+
+          let syncCount = 0;
+          for (const friendship of friendships) {
+            // Déterminer qui est l'ami (celui qui possède la date à mettre à jour)
+            const friendId =
+              friendship.user.toString() === updatedUser._id.toString()
+                ? friendship.friend
+                : friendship.user;
+
+            // Préparer les données de mise à jour
+            const updateData = {};
+            if (nameChanged) updateData.name = updatedUser.name;
+            if (surnameChanged) updateData.surname = updatedUser.surname || "";
+            if (birthDateChanged) updateData.date = updatedUser.birthDate;
+
+            // Mettre à jour la date liée chez cet ami
+            const result = await DateModel.findOneAndUpdate(
+              {
+                owner: friendId,
+                linkedUser: updatedUser._id,
+              },
+              updateData,
+              { new: true },
+            );
+
+            if (result) {
+              syncCount++;
+              console.log(`✅ Synchronisé chez l'ami ${friendId}`);
+            } else {
+              console.log(`⚠️  Aucune date trouvée chez l'ami ${friendId}`);
+            }
+          }
+
+          console.log(
+            `✅ ${syncCount}/${friendships.length} dates synchronisées`,
+          );
+        } catch (syncError) {
+          console.error("❌ Erreur lors de la synchronisation:", syncError);
+          // Ne pas faire échouer la requête si la sync échoue
+        }
+      }
 
       const payload = {
         _id: updatedUser._id,
@@ -120,7 +190,7 @@ router.patch(
     } catch (error) {
       next(error);
     }
-  }
+  },
 );
 
 /* DELETE user account */

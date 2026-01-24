@@ -1,0 +1,332 @@
+/* components/friends/css/MergeDuplicatesSection.css */
+
+.merge-section {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    margin-top: 20px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.merge-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.merge-section h3 {
+    margin: 0 0 15px 0;
+    color: #2c3e50;
+    font-size: 1.3rem;
+}
+
+.duplicate-count {
+    background: #ff9800;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: bold;
+}
+
+/* Compact list */
+.duplicates-compact-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.duplicate-item-compact {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 15px;
+    background: #fafafa;
+}
+
+.duplicate-info h4 {
+    margin: 0 0 10px 0;
+    color: #2c3e50;
+    font-size: 1.1rem;
+}
+
+.duplicate-details,
+.manual-details {
+    color: #666;
+    font-size: 0.9rem;
+    margin: 5px 0;
+}
+
+.manual-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #e0e0e0;
+}
+
+/* Buttons */
+.btn-merge-all-compact {
+    width: 100%;
+    padding: 10px;
+    background-color: #ff9800;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: bold;
+    margin-bottom: 15px;
+}
+
+.btn-merge-all-compact:hover {
+    background-color: #f57c00;
+}
+
+.btn-merge-compact {
+    padding: 8px 16px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: bold;
+}
+
+.btn-merge-compact:hover {
+    background-color: #45a049;
+}
+
+.btn-merge-compact:disabled,
+.btn-merge-all-compact:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+/* Empty & Loading states */
+.empty-state-small {
+    text-align: center;
+    padding: 20px;
+    color: #4CAF50;
+}
+
+.loading-state {
+    text-align: center;
+    padding: 20px;
+}
+
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #4CAF50;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 10px;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.error-state {
+    text-align: center;
+    padding: 20px;
+    color: #e74c3c;
+}
+
+.btn-retry {
+    padding: 8px 16px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+/* Modal */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 12px;
+    max-width: 600px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.modal-content h3 {
+    margin: 0;
+    padding: 20px;
+    background: #4CAF50;
+    color: white;
+    border-radius: 12px 12px 0 0;
+    font-size: 1.3rem;
+}
+
+.modal-body {
+    padding: 20px;
+}
+
+.modal-body>p {
+    font-size: 1.1rem;
+    margin-bottom: 20px;
+    text-align: center;
+    color: #2c3e50;
+    font-weight: bold;
+}
+
+.modal-section {
+    background: #f5f5f5;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+}
+
+.modal-section.highlight {
+    background: #fff8f0;
+    border: 2px solid #ff9800;
+}
+
+.modal-section h4 {
+    margin: 0 0 10px 0;
+    color: #2c3e50;
+    font-size: 1rem;
+}
+
+.modal-section ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.modal-section li {
+    padding: 5px 0;
+    color: #555;
+}
+
+.modal-arrow {
+    text-align: center;
+    font-size: 2rem;
+    color: #4CAF50;
+    margin: 10px 0;
+}
+
+.gifts-preview {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.gift-tag {
+    background: #ff9800;
+    color: white;
+    padding: 4px 12px;
+    border-radius: 15px;
+    font-size: 0.85rem;
+}
+
+.modal-info {
+    background: #e3f2fd;
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 4px solid #2196F3;
+    margin-top: 15px;
+}
+
+.modal-info p {
+    margin: 5px 0;
+    color: #1976d2;
+    font-size: 0.9rem;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 10px;
+    padding: 20px;
+    border-top: 1px solid #e0e0e0;
+}
+
+.btn-cancel,
+.btn-confirm {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: bold;
+    transition: all 0.3s ease;
+}
+
+.btn-cancel {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-cancel:hover {
+    background: #5a6268;
+}
+
+.btn-confirm {
+    background: #4CAF50;
+    color: white;
+}
+
+.btn-confirm:hover {
+    background: #45a049;
+}
+
+.btn-cancel:disabled,
+.btn-confirm:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .manual-info {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .btn-merge-compact {
+        width: 100%;
+    }
+
+    .modal-content {
+        margin: 0;
+        max-height: 95vh;
+        border-radius: 8px;
+    }
+
+    .modal-content h3 {
+        font-size: 1.1rem;
+        padding: 15px;
+    }
+}

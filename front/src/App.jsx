@@ -13,6 +13,8 @@ import Unsubscribe from "./components/dashboard/Unsubscribe";
 import UnsubscribeSuccess from "./components/dashboard/UnsubscribeSuccess";
 import LandingPage from "./components/Accueil/LandingPage";
 import BirthdayView from "./components/dashboard/BirthdayView";
+import Friends from "./components/friends/Friends";
+import MergeDuplicates from "./components/friends/MergeDuplicates";
 
 function App() {
   return (
@@ -60,6 +62,8 @@ function App() {
             <Route path="/profile" element={<Profile />} />
             <Route path="/birthday/:id" element={<BirthdayView />} />
             <Route path="/update-date/:id" element={<UpdateDate />} />
+            <Route path="/friends" element={<Friends />} />
+            <Route path="/merge-duplicates" element={<MergeDuplicates />} />
           </Route>
         </Routes>
       </div>
