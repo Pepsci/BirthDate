@@ -2,9 +2,11 @@ import React, { useState, useEffect } from "react";
 import apiHandler from "../../api/apiHandler";
 import "./css/updateDate.css";
 
-const UpdateDate = ({ date, onCancel }) => {
+const UpdateDate = ({ date, onCancel, onMerge }) => {
   const [dateToUpdate, setDateToUpdate] = useState(date);
-  const [showConfirm, setShowConfirm] = useState(false); // État pour gérer l'affichage de la confirmation
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  const isFriend = !!date.linkedUser; // 👈 AJOUTÉ
 
   useEffect(() => {
     apiHandler
@@ -89,12 +91,7 @@ const UpdateDate = ({ date, onCancel }) => {
           />
           <span>?</span>
         </label>
-        {/* <textarea
-          name="comment"
-          placeholder="Add a comment"
-          value={dateToUpdate.comment}
-          onChange={handleInputChange}
-        /> */}
+
         <div className="btn-updateContainer">
           <button className="btn-update btn-updateGreen" type="submit">
             Update
@@ -106,7 +103,19 @@ const UpdateDate = ({ date, onCancel }) => {
           >
             Annuler
           </button>
+          {/* 👇 AJOUTÉ : Bouton Fusionner pour les cartes manuelles */}
+          {!isFriend && (
+            <button
+              className="btn-update btn-updateOrange"
+              type="button"
+              onClick={() => onMerge(date)}
+              title="Fusionner avec une carte ami"
+            >
+              🔄 Fusionner avec un ami
+            </button>
+          )}
         </div>
+
         {showConfirm ? (
           <div className="btn-updateContainer">
             <p>Êtes-vous sûr de vouloir supprimer cette date ?</p>

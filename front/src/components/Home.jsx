@@ -4,6 +4,7 @@ import DateList from "./dashboard/DateList";
 import ProfilDetails from "./profil/Profile";
 import UpdateDate from "./dashboard/UpdateDate";
 import FriendProfile from "./profil/FriendProfile";
+import ManualMergeModal from "./dashboard/ManuelMergeModal"; // 👈 AJOUTÉ
 import "./dashboard/css/homePage.css";
 import Logo from "./dashboard/images/LogoNomCouleur.png";
 
@@ -14,11 +15,14 @@ const Home = () => {
   const [editingDate, setEditingDate] = useState(null);
   const [viewingFriendProfile, setViewingFriendProfile] = useState(null);
 
+  // 👇 AJOUTÉ - État pour le modal de fusion
+  const [showMergeModal, setShowMergeModal] = useState(false);
+  const [cardToMerge, setCardToMerge] = useState(null);
+
   const handleShowProfile = () => {
-    // Quand on clique sur son profil, on ferme tout le reste
     setShowProfile(true);
-    setViewingFriendProfile(null); // Fermer le profil d'ami
-    setEditingDate(null); // Fermer l'édition
+    setViewingFriendProfile(null);
+    setEditingDate(null);
   };
 
   const handleHideProfile = () => {
@@ -27,8 +31,9 @@ const Home = () => {
 
   const handleEditDate = (date) => {
     setEditingDate(date);
-    setShowProfile(false); // Fermer le profil
-    setViewingFriendProfile(null); // Fermer le profil d'ami
+    setShowProfile(false);
+    setViewingFriendProfile(null);
+    setShowMergeModal(false); // 👈 AJOUTÉ
   };
 
   const handleCancelEdit = () => {
@@ -37,18 +42,31 @@ const Home = () => {
 
   const handleViewFriendProfile = (date) => {
     setViewingFriendProfile(date);
-    setShowProfile(false); // Fermer notre profil
-    setEditingDate(null); // Fermer l'édition
+    setShowProfile(false);
+    setEditingDate(null);
+    setShowMergeModal(false); // 👈 AJOUTÉ
   };
 
   const handleCancelViewProfile = () => {
     setViewingFriendProfile(null);
   };
 
+  // 👇 AJOUTÉ - Handler pour ouvrir le modal de fusion
+  const handleOpenMergeModal = (date) => {
+    setCardToMerge(date);
+    setShowMergeModal(true);
+    setEditingDate(null); // Fermer l'édition
+  };
+
+  // 👇 AJOUTÉ - Handler pour fermer le modal et recharger
+  const handleCloseMergeModal = () => {
+    setShowMergeModal(false);
+    setCardToMerge(null);
+  };
+
   return (
     <div className="homePageRoot">
       <div className="headerApp homePageHeader">
-        {/* <h1 className="titleFont titleFontSize">BirthReminder</h1> */}
         <img src={Logo} className="logoHeader" alt="BirthReminder" />
         {isLoggedIn && (
           <div className="homePageUser">
@@ -71,38 +89,60 @@ const Home = () => {
       {isLoggedIn && (
         <>
           {/* Afficher le profil utilisateur */}
-          {showProfile && !editingDate && !viewingFriendProfile && (
-            <>
-              <ProfilDetails />
-              <div className="profil-btn">
-                <button
-                  onClick={handleHideProfile}
-                  className="btnBackToDateList"
-                >
-                  Back to Date List
-                </button>
-              </div>
-            </>
-          )}
+          {showProfile &&
+            !editingDate &&
+            !viewingFriendProfile &&
+            !showMergeModal && (
+              <>
+                <ProfilDetails />
+                <div className="profil-btn">
+                  <button
+                    onClick={handleHideProfile}
+                    className="btnBackToDateList"
+                  >
+                    Back to Date List
+                  </button>
+                </div>
+              </>
+            )}
 
           {/* Afficher la liste des dates */}
-          {!showProfile && !editingDate && !viewingFriendProfile && (
-            <DateList
-              onEditDate={handleEditDate}
-              onViewFriendProfile={handleViewFriendProfile}
+          {!showProfile &&
+            !editingDate &&
+            !viewingFriendProfile &&
+            !showMergeModal && (
+              <DateList
+                onEditDate={handleEditDate}
+                onViewFriendProfile={handleViewFriendProfile}
+              />
+            )}
+
+          {/* Afficher l'édition de date */}
+          {editingDate && !showMergeModal && (
+            <UpdateDate
+              date={editingDate}
+              onCancel={handleCancelEdit}
+              onMerge={handleOpenMergeModal} // 👈 AJOUTÉ
             />
           )}
 
-          {/* Afficher l'édition de date */}
-          {editingDate && (
-            <UpdateDate date={editingDate} onCancel={handleCancelEdit} />
-          )}
-
           {/* Afficher le profil d'ami */}
-          {viewingFriendProfile && (
+          {viewingFriendProfile && !showMergeModal && (
             <FriendProfile
               date={viewingFriendProfile}
               onCancel={handleCancelViewProfile}
+            />
+          )}
+
+          {/* 👇 AJOUTÉ - Modal de fusion */}
+          {showMergeModal && cardToMerge && (
+            <ManualMergeModal
+              sourceCard={cardToMerge}
+              onClose={handleCloseMergeModal}
+              onMergeSuccess={() => {
+                handleCloseMergeModal();
+                // La liste se rechargera automatiquement
+              }}
             />
           )}
         </>
