@@ -1,18 +1,16 @@
 import React, { useState } from "react";
 import apiHandler from "../../api/apiHandler";
-import "./css/friendGiftList.css";
+import "../UI/css/gifts-common.css";
 
 const FriendGiftList = ({ currentDate, onUpdate }) => {
   const [showForm, setShowForm] = useState(false);
   const [editingGift, setEditingGift] = useState(null);
   const [deletingGiftId, setDeletingGiftId] = useState(null);
 
-  // États pour les filtres
-  const [showFilters, setShowFilters] = useState(false); // 👈 Toggle filtres
+  const [showFilters, setShowFilters] = useState(false);
   const [filterOccasion, setFilterOccasion] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
 
-  // Formulaire
   const [formData, setFormData] = useState({
     giftName: "",
     occasion: "birthday",
@@ -44,7 +42,7 @@ const FriendGiftList = ({ currentDate, onUpdate }) => {
             occasion: formData.occasion,
             year: parseInt(formData.year),
             purchased: editingGift.purchased,
-          }
+          },
         );
         onUpdate(response.data);
       } else {
@@ -55,7 +53,7 @@ const FriendGiftList = ({ currentDate, onUpdate }) => {
             occasion: formData.occasion,
             year: parseInt(formData.year),
             purchased: false,
-          }
+          },
         );
         onUpdate(response.data);
       }
@@ -84,7 +82,7 @@ const FriendGiftList = ({ currentDate, onUpdate }) => {
     setDeletingGiftId(null);
 
     setTimeout(() => {
-      const container = document.querySelector(".friend-gift-container");
+      const container = document.querySelector(".gift-container");
       if (container) {
         container.scrollTo({ top: 0, behavior: "smooth" });
       }
@@ -106,7 +104,7 @@ const FriendGiftList = ({ currentDate, onUpdate }) => {
 
     try {
       const response = await apiHandler.delete(
-        `/date/${currentDate._id}/gifts/${deletingGiftId}`
+        `/date/${currentDate._id}/gifts/${deletingGiftId}`,
       );
       onUpdate(response.data);
       setDeletingGiftId(null);
@@ -125,7 +123,7 @@ const FriendGiftList = ({ currentDate, onUpdate }) => {
           occasion: gift.occasion,
           year: gift.year,
           purchased: !gift.purchased,
-        }
+        },
       );
       onUpdate(response.data);
     } catch (error) {
@@ -159,7 +157,6 @@ const FriendGiftList = ({ currentDate, onUpdate }) => {
   const gifts = currentDate.gifts || [];
   const validGifts = gifts.filter((gift) => gift && gift.giftName && gift._id);
 
-  // Filtrer les cadeaux
   const filteredGifts = validGifts.filter((gift) => {
     const matchesOccasion =
       filterOccasion === "all" || gift.occasion === filterOccasion;
@@ -170,19 +167,18 @@ const FriendGiftList = ({ currentDate, onUpdate }) => {
     return matchesOccasion && matchesStatus;
   });
 
-  // Compter les filtres actifs
   const activeFiltersCount =
     (filterOccasion !== "all" ? 1 : 0) + (filterStatus !== "all" ? 1 : 0);
 
   return (
-    <div className="friend-gift-container">
-      <div className="friend-gift-header">
+    <div className="gift-container">
+      <div className="gift-header">
         <h2>🎁 Vos idées de cadeaux</h2>
       </div>
 
       {!showForm && (
         <button
-          className="btn-profil btn-add-gift"
+          className="btn-profil btn-add-item"
           onClick={() => setShowForm(true)}
         >
           + Ajouter une idée
@@ -190,7 +186,7 @@ const FriendGiftList = ({ currentDate, onUpdate }) => {
       )}
 
       {showForm && (
-        <div className="friend-gift-form-card">
+        <div className="gift-form-card">
           <h3>{editingGift ? "Modifier l'idée" : "Nouvelle idée"}</h3>
           <form onSubmit={handleSubmit}>
             <input
@@ -226,7 +222,7 @@ const FriendGiftList = ({ currentDate, onUpdate }) => {
               required
             />
 
-            <div className="friend-gift-form-buttons">
+            <div className="gift-form-buttons">
               <button type="submit" className="btn-profil btn-profilGreen">
                 {editingGift ? "Enregistrer" : "Ajouter"}
               </button>
@@ -242,9 +238,8 @@ const FriendGiftList = ({ currentDate, onUpdate }) => {
         </div>
       )}
 
-      {/* 👇 BOUTON TOGGLE FILTRES */}
       <button
-        className="btn-toggle-filters btn-add-gift"
+        className="btn-toggle-filters"
         onClick={() => setShowFilters(!showFilters)}
       >
         🔍 Filtres
@@ -254,9 +249,8 @@ const FriendGiftList = ({ currentDate, onUpdate }) => {
         <span className={`filter-arrow ${showFilters ? "open" : ""}`}> ▼</span>
       </button>
 
-      {/* 👇 FILTRES (conditionnels) */}
       {showFilters && (
-        <div className="friend-gift-filters">
+        <div className="gift-filters">
           <div className="filter-group">
             <h4 className="filter-title">Occasion</h4>
             <div className="filter-buttons">
@@ -327,9 +321,9 @@ const FriendGiftList = ({ currentDate, onUpdate }) => {
         </div>
       )}
 
-      <div className="friend-gift-items">
+      <div className="gift-items">
         {filteredGifts.length === 0 ? (
-          <p className="friend-gift-empty">
+          <p className="gift-empty">
             {filterOccasion !== "all" || filterStatus !== "all"
               ? "Aucun cadeau ne correspond aux filtres sélectionnés"
               : "Aucune idée de cadeau pour le moment 💡"}
@@ -339,15 +333,13 @@ const FriendGiftList = ({ currentDate, onUpdate }) => {
             const occasionDisplay = getOccasionDisplay(gift.occasion);
 
             return (
-              <div key={gift._id} className="friend-gift-item-card">
+              <div key={gift._id} className="gift-item-card">
                 {deletingGiftId !== gift._id ? (
                   <>
-                    <div className="friend-gift-item-header">
-                      <h4 className="friend-gift-item-title">
-                        {gift.giftName}
-                      </h4>
+                    <div className="gift-item-header">
+                      <h4 className="gift-item-title">{gift.giftName}</h4>
                       <span
-                        className={`friend-gift-item-badge ${
+                        className={`gift-item-badge ${
                           gift.purchased ? "purchased" : "pending"
                         }`}
                       >
@@ -355,16 +347,16 @@ const FriendGiftList = ({ currentDate, onUpdate }) => {
                       </span>
                     </div>
 
-                    <div className="friend-gift-item-meta">
-                      <span className="friend-gift-occasion">
+                    <div className="gift-item-meta">
+                      <span className="gift-occasion">
                         {occasionDisplay.emoji} {occasionDisplay.label}
                       </span>
-                      <span className="friend-gift-year">
+                      <span className="gift-year">
                         {gift.year || new Date().getFullYear()}
                       </span>
                     </div>
 
-                    <div className="friend-gift-item-actions">
+                    <div className="gift-item-actions">
                       <button
                         className="btn-gift btn-toggle"
                         onClick={() => handleTogglePurchased(gift)}
@@ -391,7 +383,7 @@ const FriendGiftList = ({ currentDate, onUpdate }) => {
                     </div>
                   </>
                 ) : (
-                  <div className="friend-gift-delete-confirm">
+                  <div className="gift-delete-confirm">
                     <div className="delete-confirm-icon">⚠️</div>
                     <h4 className="delete-confirm-title">
                       Supprimer cette idée ?

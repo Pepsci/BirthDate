@@ -2,19 +2,19 @@ import React, { useState, useRef, useEffect, useContext } from "react";
 import { AuthContext } from "../../context/auth.context";
 import apiHandler from "../../api/apiHandler";
 import useAuth from "../../context/useAuth";
-import { useNavigate } from "react-router-dom";
-import "./css/profile.css";
-import "./css/carousel.css";
 import PasswordInput from "../connect/PasswordInput";
 import Countdown from "../dashboard/Countdown";
 import GestionNotification from "./GestionNotifications";
 import Wishlist from "./Wishlist";
 import FriendsSection from "../friends/FriendsSection";
 import FriendsMobileView from "../friends/FriendsMobileView";
-import MergeDuplicatesSection from "../friends/MergeDuplicatesSection"; // 👈 AJOUTÉ
+import MergeDuplicatesSection from "../friends/MergeDuplicatesSection";
+import "../UI/css/carousel-common.css";
+import "../UI/css/containerInfo.css";
+import "./css/profile.css";
+import "./css/profileDesktop.css"; // 👈 NOUVEAU - Pour la nav desktop
 
 const ProfilDetails = () => {
-  const navigate = useNavigate();
   const { logOut } = useContext(AuthContext);
   const { currentUser, isLoggedin, removeUser, storeToken, authenticateUser } =
     useAuth();
@@ -44,21 +44,29 @@ const ProfilDetails = () => {
   const [isDeleting, setIsDeleting] = useState(false);
 
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
-
   const [showErrorMessage, setShowErrorMessage] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
+  // 👇 États pour mobile et desktop
   const [currentCarouselIndex, setCurrentCarouselIndex] = useState(0);
+  const [activeDesktopSection, setActiveDesktopSection] = useState("personal");
+
+  const [loadedSections, setLoadedSections] = useState({
+    personal: false,
+    notifications: false,
+    friends: false,
+    merge: false,
+    wishlist: false,
+  });
 
   const avatarRef = useRef();
 
-  // 👇 MODIFIÉ : Ajout de la section "merge"
-  const carouselSections = [
-    { id: "personal", title: "Infos Personnelles", icon: "👤" },
+  const sections = [
+    { id: "personal", title: "Profil", icon: "👤" },
     { id: "notifications", title: "Notifications", icon: "🔔" },
-    { id: "friends", title: "Mes Amis", icon: "👥" },
-    { id: "merge", title: "Fusion", icon: "🔄" },
-    { id: "wishlist", title: "Ma Wishlist", icon: "🎁" },
+    { id: "friends", title: "Amis", icon: "👥" },
+    { id: "merge", title: "Doublons", icon: "🔄" },
+    { id: "wishlist", title: "Ma wishlist", icon: "🎁" },
   ];
 
   useEffect(() => {
@@ -70,6 +78,7 @@ const ProfilDetails = () => {
           if (isMounted) {
             setUserToUpdate(dbResponse.data);
             setReceiveEmails(dbResponse.data.receiveBirthdayEmails);
+            setLoadedSections((prev) => ({ ...prev, personal: true }));
           }
         })
         .catch((error) => {
@@ -80,6 +89,21 @@ const ProfilDetails = () => {
       isMounted = false;
     };
   }, [isLoggedin, currentUser]);
+
+  // Lazy loading pour mobile
+  useEffect(() => {
+    const currentSection = sections[currentCarouselIndex];
+    if (!loadedSections[currentSection.id]) {
+      setLoadedSections((prev) => ({ ...prev, [currentSection.id]: true }));
+    }
+  }, [currentCarouselIndex]);
+
+  // Lazy loading pour desktop
+  useEffect(() => {
+    if (!loadedSections[activeDesktopSection]) {
+      setLoadedSections((prev) => ({ ...prev, [activeDesktopSection]: true }));
+    }
+  }, [activeDesktopSection]);
 
   useEffect(() => {
     let timer;
@@ -209,30 +233,20 @@ const ProfilDetails = () => {
     }
   };
 
-  const goToPrevious = () => {
-    setCurrentCarouselIndex(
-      currentCarouselIndex > 0
-        ? currentCarouselIndex - 1
-        : carouselSections.length - 1,
-    );
-  };
+  // 👇 Rendu du contenu selon la section (partagé mobile/desktop)
+  const renderSectionContent = (sectionId, isLoaded) => {
+    if (!isLoaded) {
+      return (
+        <div className="loading">
+          <p>Chargement...</p>
+        </div>
+      );
+    }
 
-  const goToNext = () => {
-    setCurrentCarouselIndex(
-      currentCarouselIndex < carouselSections.length - 1
-        ? currentCarouselIndex + 1
-        : 0,
-    );
-  };
-
-  // 👇 MODIFIÉ : Ajout du cas "merge"
-  const renderMobileSection = () => {
-    const currentSection = carouselSections[currentCarouselIndex];
-
-    switch (currentSection.id) {
+    switch (sectionId) {
       case "personal":
         return (
-          <div className="mobile-section">
+          <div>
             <h2>Vos données</h2>
             <p className="profile_info_details">
               <b>
@@ -269,42 +283,39 @@ const ProfilDetails = () => {
         );
 
       case "notifications":
-        return (
-          <div className="mobile-section">
-            <GestionNotification />
-          </div>
-        );
+        return <GestionNotification />;
 
       case "friends":
-        return (
-          <div className="mobile-section">
-            <FriendsMobileView currentUser={currentUser} />
-          </div>
-        );
+        return <FriendsMobileView currentUser={currentUser} />;
 
       case "merge":
-        return (
-          <div className="mobile-section">
-            <MergeDuplicatesSection />
-          </div>
-        );
+        return <MergeDuplicatesSection />;
 
       case "wishlist":
-        return (
-          <div className="mobile-section">
-            <Wishlist />
-          </div>
-        );
+        return <Wishlist />;
 
       default:
         return null;
     }
   };
 
+  // 👇 Rendu mobile (carrousel)
+  const renderMobileSection = () => {
+    const currentSection = sections[currentCarouselIndex];
+    const isLoaded = loadedSections[currentSection.id];
+
+    return (
+      <div className="mobile-section">
+        {renderSectionContent(currentSection.id, isLoaded)}
+      </div>
+    );
+  };
+
   if (!currentUser) return <p>Chargement...</p>;
 
   return (
     <div>
+      {/* Modals */}
       {showDeleteModal && (
         <div className="delete-modal-overlay" onClick={handleCancelDelete}>
           <div className="delete-modal" onClick={(e) => e.stopPropagation()}>
@@ -376,6 +387,7 @@ const ProfilDetails = () => {
         </div>
       )}
 
+      {/* Mode édition */}
       {isEditing ? (
         <div className="formEdit form-connect">
           <div className="peel">
@@ -492,6 +504,7 @@ const ProfilDetails = () => {
         </div>
       ) : (
         <div className="profile">
+          {/* 📱 CARROUSEL MOBILE (inchangé) */}
           <div className="mobile-carousel-container">
             <div className="mobile-carousel">
               <div className="mobile-carousel__content">
@@ -499,7 +512,7 @@ const ProfilDetails = () => {
               </div>
 
               <div className="mobile-carousel__indicators">
-                {carouselSections.map((_, index) => (
+                {sections.map((_, index) => (
                   <button
                     key={index}
                     onClick={() => setCurrentCarouselIndex(index)}
@@ -515,7 +528,7 @@ const ProfilDetails = () => {
 
               <div className="mobile-carousel__quick-nav">
                 <div className="mobile-carousel__quick-buttons">
-                  {carouselSections.map((section, index) => (
+                  {sections.map((section, index) => (
                     <button
                       key={section.id}
                       onClick={() => setCurrentCarouselIndex(index)}
@@ -534,55 +547,31 @@ const ProfilDetails = () => {
             </div>
           </div>
 
-          <div className="profileWrapper">
-            <div className="profile_info">
-              <h2>Vos données</h2>
-              <p className="profile_info_details">
-                <b>
-                  {currentUser && currentUser.name}{" "}
-                  {currentUser && currentUser.surname}
-                </b>
-              </p>
-              <p className="profile_info_details">
-                <b>{currentUser && currentUser.email}</b>
-              </p>
-              <p className="profile_info_details">
-                <b>Date de naissance:</b>{" "}
-                {userToUpdate.birthDate
-                  ? new Date(userToUpdate.birthDate).toLocaleDateString()
-                  : "N/A"}
-              </p>
-              {userToUpdate.birthDate && (
-                <div className="profil-countdown">
-                  <Countdown birthdate={userToUpdate.birthDate} />
-                </div>
+          {/* 💻 NAVIGATION DESKTOP (nouveau) */}
+          <div className="desktop-profile-container">
+            {/* Menu latéral gauche */}
+            <aside className="desktop-sidebar">
+              {sections.map((section) => (
+                <button
+                  key={section.id}
+                  onClick={() => setActiveDesktopSection(section.id)}
+                  className={`sidebar-btn ${
+                    activeDesktopSection === section.id ? "active" : ""
+                  }`}
+                >
+                  <span className="sidebar-icon">{section.icon}</span>
+                  <span className="sidebar-text">{section.title}</span>
+                </button>
+              ))}
+            </aside>
+
+            {/* Contenu principal */}
+            <main className="desktop-content containerInfo">
+              {renderSectionContent(
+                activeDesktopSection,
+                loadedSections[activeDesktopSection],
               )}
-              <div className="profil-btn">
-                <button className="btn-profil" onClick={handleEditMode}>
-                  Modifier
-                </button>
-                <button className="btn-profil" onClick={logOut}>
-                  LogOut
-                </button>
-              </div>
-            </div>
-
-            <div className="notification">
-              <GestionNotification />
-            </div>
-
-            <div className="friends-desktop">
-              <FriendsSection currentUser={currentUser} />
-            </div>
-
-            {/* 👇 AJOUTÉ : Section de fusion des doublons */}
-            <div className="merge-desktop">
-              <MergeDuplicatesSection />
-            </div>
-
-            <div className="wishlist-desktop">
-              <Wishlist />
-            </div>
+            </main>
           </div>
         </div>
       )}

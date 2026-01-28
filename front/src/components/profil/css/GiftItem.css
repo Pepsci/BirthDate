@@ -66,7 +66,7 @@
 
 @media (max-width: 600px) {
     .giftList-giftItem {
-    gap: 10px;
+        gap: 10px;
         padding: 8px;
         margin-bottom: 8px;
     }

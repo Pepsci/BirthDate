@@ -322,7 +322,6 @@ const FriendsMobileView = ({ currentUser }) => {
         currentUserId={currentUser?._id}
         onFriendAdded={handleFriendAdded}
       />
-
       <DeleteFriendModal
         isOpen={showDeleteModal}
         friendName={friendToDelete?.name}

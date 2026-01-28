@@ -4,7 +4,7 @@ import DateList from "./dashboard/DateList";
 import ProfilDetails from "./profil/Profile";
 import UpdateDate from "./dashboard/UpdateDate";
 import FriendProfile from "./profil/FriendProfile";
-import ManualMergeModal from "./dashboard/ManuelMergeModal"; // 👈 AJOUTÉ
+import ManualMergeModal from "./dashboard/ManuelMergeModal";
 import "./dashboard/css/homePage.css";
 import Logo from "./dashboard/images/LogoNomCouleur.png";
 
@@ -15,7 +15,6 @@ const Home = () => {
   const [editingDate, setEditingDate] = useState(null);
   const [viewingFriendProfile, setViewingFriendProfile] = useState(null);
 
-  // 👇 AJOUTÉ - État pour le modal de fusion
   const [showMergeModal, setShowMergeModal] = useState(false);
   const [cardToMerge, setCardToMerge] = useState(null);
 
@@ -33,7 +32,7 @@ const Home = () => {
     setEditingDate(date);
     setShowProfile(false);
     setViewingFriendProfile(null);
-    setShowMergeModal(false); // 👈 AJOUTÉ
+    setShowMergeModal(false);
   };
 
   const handleCancelEdit = () => {
@@ -44,21 +43,19 @@ const Home = () => {
     setViewingFriendProfile(date);
     setShowProfile(false);
     setEditingDate(null);
-    setShowMergeModal(false); // 👈 AJOUTÉ
+    setShowMergeModal(false);
   };
 
   const handleCancelViewProfile = () => {
     setViewingFriendProfile(null);
   };
 
-  // 👇 AJOUTÉ - Handler pour ouvrir le modal de fusion
   const handleOpenMergeModal = (date) => {
     setCardToMerge(date);
     setShowMergeModal(true);
-    setEditingDate(null); // Fermer l'édition
+    setEditingDate(null);
   };
 
-  // 👇 AJOUTÉ - Handler pour fermer le modal et recharger
   const handleCloseMergeModal = () => {
     setShowMergeModal(false);
     setCardToMerge(null);
@@ -88,21 +85,21 @@ const Home = () => {
 
       {isLoggedIn && (
         <>
-          {/* Afficher le profil utilisateur */}
+          {/* 👇 MODIFIÉ : Bouton en haut du profil */}
           {showProfile &&
             !editingDate &&
             !viewingFriendProfile &&
             !showMergeModal && (
               <>
-                <ProfilDetails />
                 <div className="profil-btn">
                   <button
                     onClick={handleHideProfile}
                     className="btnBackToDateList"
                   >
-                    Back to Date List
+                    ← Retour à la liste
                   </button>
                 </div>
+                <ProfilDetails />
               </>
             )}
 
@@ -122,7 +119,7 @@ const Home = () => {
             <UpdateDate
               date={editingDate}
               onCancel={handleCancelEdit}
-              onMerge={handleOpenMergeModal} // 👈 AJOUTÉ
+              onMerge={handleOpenMergeModal}
             />
           )}
 
@@ -134,14 +131,13 @@ const Home = () => {
             />
           )}
 
-          {/* 👇 AJOUTÉ - Modal de fusion */}
+          {/* Modal de fusion */}
           {showMergeModal && cardToMerge && (
             <ManualMergeModal
               sourceCard={cardToMerge}
               onClose={handleCloseMergeModal}
               onMergeSuccess={() => {
                 handleCloseMergeModal();
-                // La liste se rechargera automatiquement
               }}
             />
           )}

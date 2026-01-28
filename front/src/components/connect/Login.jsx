@@ -13,15 +13,15 @@ const Login = () => {
   const [errorMessage, setErrorMessage] = useState(undefined);
 
   const navigate = useNavigate();
-  const location = useLocation(); // 👈 AJOUTÉ
+  const location = useLocation();
   const { storeToken, authenticateUser, isLoggedIn } = useContext(AuthContext);
 
-  // 👇 AJOUTÉ : Récupérer la page d'origine (ou /home par défaut)
+  // Récupérer la page d'origine (ou /home par défaut)
   const from = location.state?.from?.pathname || "/home";
 
   useEffect(() => {
     authenticateUser();
-    if (isLoggedIn) navigate(from); // 👈 MODIFIÉ : utilise 'from' au lieu de '/home'
+    if (isLoggedIn) navigate(from);
   }, [isLoggedIn, navigate, from]);
 
   const handleSubmit = async (event) => {
@@ -37,7 +37,7 @@ const Login = () => {
         console.log("Login successful");
         storeToken(response.authToken);
         authenticateUser();
-        navigate(from); // 👈 MODIFIÉ : utilise 'from' au lieu de '/home'
+        navigate(from);
       } else {
         setErrorMessage("No authToken in response");
       }
@@ -47,7 +47,7 @@ const Login = () => {
     }
   };
 
-  // 👇 AJOUTÉ : Afficher un message si l'utilisateur vient de /friends
+  // Afficher un message si l'utilisateur vient de /friends
   const isFromFriends = location.state?.from?.pathname === "/friends";
 
   return (
@@ -56,7 +56,7 @@ const Login = () => {
         <form action="" className="form" onSubmit={handleSubmit}>
           <h1 className="form-title-font">Connexion</h1>
 
-          {/* 👇 AJOUTÉ : Message d'info si l'utilisateur vient de l'email */}
+          {/* Message d'info si l'utilisateur vient de l'email */}
           {isFromFriends && (
             <div
               style={{
@@ -100,7 +100,7 @@ const Login = () => {
       </div>
 
       <div className="form-connect-message font fontErrorMessage">
-        {errorMessage && <p className="error-message ">{errorMessage}</p>}
+        {errorMessage && <span className="error-message ">{errorMessage}</span>}
         <div className="btnLogin">
           <Link to={"/forgot-password"}>
             <button className="btnAcount">Mot de passe oublié ?</button>

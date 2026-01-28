@@ -4,7 +4,7 @@ import useAuth from "../../context/useAuth";
 import apiHandler from "../../api/apiHandler";
 import PendingRequests from "./PendingRequests";
 import SentRequests from "./SentRequests";
-import "./css/friend.css"; // Crée ce fichier CSS si besoin
+import "./css/friend.css";
 
 const Friends = () => {
   const { currentUser } = useAuth();

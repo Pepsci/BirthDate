@@ -27,7 +27,9 @@
 
 /* Container du carrousel */
 .mobile-carousel-container {
-    max-width: 600px;
+    max-width: 400px;
+    max-height: 500px;
+    min-width: 330px;
     padding: 0 16px 0 16px;
     margin-bottom: 2rem;
 }
@@ -155,7 +157,7 @@
 
 .mobile-carousel__quick-buttons {
     display: flex;
-    gap: 1rem;
+    gap: 0.5rem;
 }
 
 .mobile-carousel__quick-btn {
@@ -208,8 +210,9 @@
 /* Responsive mobile */
 @media (max-width: 600px) {
     .mobile-carousel__content {
-        padding: 0px 10px 0px 14px;
-        min-height: 400px;
+        /* padding: 0px 10px 0px 14px; */
+        min-height: 450px;
+        max-height: 450px;
         background: rgba(0, 0, 0, 0.2);
     }
 
@@ -220,7 +223,7 @@
 
     .mobile-carousel__quick-btn {
         padding: 4px 8px;
-        font-size: 50px;
+        font-size: 30px;
         border: none;
         border-radius: 12px;
         background-color: #fff;
@@ -233,7 +236,7 @@
         font-size: 40px;
     }
 
-    .btn-carousel{
+    .btn-carousel {
         margin-bottom: 10px;
     }
 }

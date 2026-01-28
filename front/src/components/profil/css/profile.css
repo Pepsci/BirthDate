@@ -7,21 +7,6 @@
     flex-wrap: nowrap;
 }
 
-.profile_info {
-    margin-top: 2rem;
-    position: relative;
-    width: 400px;
-    max-height: 650px;
-    padding: 1rem;
-    margin: 2rem;
-    border: 3px solid black;
-    margin-bottom: -10px;
-    border-radius: 12px;
-    z-index: 0;
-    background-color: var(--gray-800);
-    flex-shrink: 0;
-}
-
 .notification {
     margin-top: 2rem;
     flex-shrink: 0;
@@ -155,13 +140,6 @@
         display: none;
     }
 
-    .profile_info {
-        width: 300px;
-        height: 600px;
-        margin: 0.25rem;
-        padding: 0.75rem;
-    }
-
     .profile_info_details {
         margin: 0 !important;
         padding: .5rem;
@@ -174,13 +152,6 @@
 
     .profil-btn {
         /* margin: 0 1em 1em; */
-    }
-
-    .simple-notification-manager {
-        width: 280px;
-        margin: 0.25rem;
-        max-width: calc(50vw - 1rem);
-        padding: 0.75rem;
     }
 
     .profile_info:nth-child(2) {

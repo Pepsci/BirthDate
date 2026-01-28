@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import apiHandler from "../../api/apiHandler";
 import useAuth from "../../context/useAuth";
-import "./css/wishlist.css";
+import "../UI/css/gifts-common.css";
 
 const Wishlist = () => {
   const { currentUser } = useAuth();
@@ -9,9 +9,8 @@ const Wishlist = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
-  const [deletingItemId, setDeletingItemId] = useState(null); // 👈 NOUVEAU
+  const [deletingItemId, setDeletingItemId] = useState(null);
 
-  // Formulaire
   const [formData, setFormData] = useState({
     title: "",
     price: "",
@@ -19,7 +18,6 @@ const Wishlist = () => {
     isShared: false,
   });
 
-  // Charger la wishlist au montage
   useEffect(() => {
     if (currentUser) {
       fetchWishlist();
@@ -30,7 +28,7 @@ const Wishlist = () => {
     try {
       setIsLoading(true);
       const response = await apiHandler.get(
-        `/wishlist?userId=${currentUser._id}`
+        `/wishlist?userId=${currentUser._id}`,
       );
       setWishlistItems(response.data.data || []);
     } catch (error) {
@@ -58,17 +56,14 @@ const Wishlist = () => {
 
     try {
       if (editingItem) {
-        // Modification
         await apiHandler.patch(`/wishlist/${editingItem._id}`, formData);
       } else {
-        // Création
         await apiHandler.post("/wishlist", {
           ...formData,
           userId: currentUser._id,
         });
       }
 
-      // Réinitialiser et recharger
       setFormData({ title: "", price: "", url: "", isShared: false });
       setShowForm(false);
       setEditingItem(null);
@@ -91,26 +86,23 @@ const Wishlist = () => {
     setDeletingItemId(null);
 
     setTimeout(() => {
-      const container = document.querySelector(".wishlist-container");
+      const container = document.querySelector(".gift-container");
       if (container) {
         container.scrollTo({ top: 0, behavior: "smooth" });
       }
     }, 100);
   };
 
-  // 👇 NOUVEAU : Activer le mode suppression
   const handleDeleteClick = (itemId) => {
     setDeletingItemId(itemId);
-    setShowForm(false); // Fermer le formulaire si ouvert
+    setShowForm(false);
     setEditingItem(null);
   };
 
-  // 👇 NOUVEAU : Annuler la suppression
   const handleCancelDelete = () => {
     setDeletingItemId(null);
   };
 
-  // 👇 NOUVEAU : Confirmer la suppression
   const handleConfirmDelete = async (itemId) => {
     try {
       await apiHandler.delete(`/wishlist/${itemId}`);
@@ -138,16 +130,13 @@ const Wishlist = () => {
   };
 
   if (isLoading) {
-    return <p style={{ textAlign: "center", color: "#fff" }}>Chargement...</p>;
+    return <p className="loading">Chargement...</p>;
   }
 
   return (
-    <div className="wishlist-container">
-      <div className="wishlist-header">
+    <div className="gift-container">
+      <div className="gift-header">
         <h2>🎁 Ma Wishlist</h2>
-        <p className="wishlist-count">
-          {wishlistItems.length} idée{wishlistItems.length > 1 ? "s" : ""}
-        </p>
       </div>
 
       {!showForm && (
@@ -160,9 +149,9 @@ const Wishlist = () => {
       )}
 
       {showForm && (
-        <div className="wishlist-form-card">
+        <div className="gift-form-card">
           <h3>{editingItem ? "Modifier l'idée" : "Nouvel idée"}</h3>
-          <form className="form-connect wishlist-form" onSubmit={handleSubmit}>
+          <form className="form-connect" onSubmit={handleSubmit}>
             <input
               type="text"
               name="title"
@@ -190,7 +179,7 @@ const Wishlist = () => {
               value={formData.url}
               onChange={handleInputChange}
             />
-            <div className="wishlist-share-toggle">
+            <div className="gift-share-toggle">
               <label className="toggle-label">
                 <input
                   type="checkbox"
@@ -205,7 +194,7 @@ const Wishlist = () => {
                 </span>
               </label>
             </div>
-            <div className="wishlist-form-buttons">
+            <div className="gift-form-buttons">
               <button type="submit" className="btn-profil btn-profilGreen">
                 {editingItem ? "Enregistrer" : "Ajouter"}
               </button>
@@ -221,21 +210,20 @@ const Wishlist = () => {
         </div>
       )}
 
-      <div className="wishlist-items">
+      <div className="gift-items">
         {wishlistItems.length === 0 ? (
-          <p className="wishlist-empty">
+          <p className="gift-empty">
             Votre wishlist est vide. Ajoutez vos envies ! 🎁
           </p>
         ) : (
           wishlistItems.map((item) => (
-            <div key={item._id} className="wishlist-item-card">
-              {/* 👇 MODE NORMAL */}
+            <div key={item._id} className="gift-item-card">
               {deletingItemId !== item._id ? (
                 <>
-                  <div className="wishlist-item-header">
-                    <h4 className="wishlist-item-title">{item.title}</h4>
+                  <div className="gift-item-header">
+                    <h4 className="gift-item-title">{item.title}</h4>
                     <span
-                      className={`wishlist-item-badge ${
+                      className={`gift-item-badge ${
                         item.isShared ? "shared" : "private"
                       }`}
                     >
@@ -244,7 +232,7 @@ const Wishlist = () => {
                   </div>
 
                   {item.price && (
-                    <p className="wishlist-item-price">{item.price} €</p>
+                    <p className="gift-item-price">{item.price} €</p>
                   )}
 
                   {item.url && (
@@ -252,32 +240,32 @@ const Wishlist = () => {
                       href={item.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="wishlist-item-link"
+                      className="gift-item-link"
                     >
                       🔗 Voir le lien
                     </a>
                   )}
 
                   {item.isPurchased && (
-                    <p className="wishlist-item-purchased">✅ Acheté</p>
+                    <p className="gift-item-purchased">✅ Acheté</p>
                   )}
 
-                  <div className="wishlist-item-actions">
+                  <div className="gift-item-actions">
                     <button
-                      className="btn-wishlist btn-toggle"
+                      className="btn-gift btn-toggle"
                       onClick={() => handleToggleSharing(item)}
                       title={item.isShared ? "Rendre privé" : "Partager"}
                     >
                       {item.isShared ? "🔒" : "🔓"}
                     </button>
                     <button
-                      className="btn-wishlist btn-edit"
+                      className="btn-gift btn-edit"
                       onClick={() => handleEdit(item)}
                     >
                       ✏️
                     </button>
                     <button
-                      className="btn-wishlist btn-delete"
+                      className="btn-gift btn-delete"
                       onClick={() => handleDeleteClick(item._id)}
                     >
                       🗑️
@@ -285,8 +273,7 @@ const Wishlist = () => {
                   </div>
                 </>
               ) : (
-                /* 👇 MODE SUPPRESSION */
-                <div className="wishlist-delete-confirm">
+                <div className="gift-delete-confirm">
                   <div className="delete-confirm-icon">⚠️</div>
                   <h4 className="delete-confirm-title">Supprimer cet idée ?</h4>
                   <p className="delete-confirm-text">

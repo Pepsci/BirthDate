@@ -2,9 +2,10 @@ import React, { useState, useEffect } from "react";
 import Countdown from "../dashboard/Countdown";
 import FriendGiftList from "./FriendGiftList";
 import apiHandler from "../../api/apiHandler";
+import "../UI/css/gifts-common.css";
+import "../UI/css/carousel-common.css";
 import "./css/notifications.css";
 import "./css/friendProfile.css";
-import "./css/friendcarousel.css";
 
 const FriendProfile = ({ date, onCancel }) => {
   const [currentDate, setCurrentDate] = useState(date);
@@ -13,15 +14,12 @@ const FriendProfile = ({ date, onCancel }) => {
   const [notifyOnBirthday, setNotifyOnBirthday] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // 👇 NOUVEAU - États pour la wishlist
   const [wishlist, setWishlist] = useState([]);
   const [wishlistLoading, setWishlistLoading] = useState(false);
   const [hasPublicWishlist, setHasPublicWishlist] = useState(false);
 
-  // État pour le carrousel mobile
   const [currentCarouselIndex, setCurrentCarouselIndex] = useState(0);
 
-  // Nouveaux états pour gérer les changements
   const [originalPreferences, setOriginalPreferences] = useState({
     timings: [1],
     notifyOnBirthday: false,
@@ -37,12 +35,11 @@ const FriendProfile = ({ date, onCancel }) => {
     { value: 30, label: "1 mois avant" },
   ];
 
-  // 👇 MODIFIÉ - Ajout de la section wishlist
   const carouselSections = date.linkedUser
     ? [
         { id: "info", title: "Infos", icon: "👤" },
         { id: "notifications", title: "Notifications", icon: "🔔" },
-        { id: "wishlist", title: "Wishlist", icon: "🎁" }, // 👈 NOUVEAU
+        { id: "wishlist", title: "Wishlist", icon: "🎁" },
         { id: "gifts", title: "Mes Cadeaux", icon: "📦" },
       ]
     : [
@@ -51,7 +48,6 @@ const FriendProfile = ({ date, onCancel }) => {
         { id: "gifts", title: "Cadeaux", icon: "🎁" },
       ];
 
-  // 👇 NOUVEAU - Charger la wishlist de l'ami
   useEffect(() => {
     if (date.linkedUser) {
       loadFriendWishlist();
@@ -62,7 +58,6 @@ const FriendProfile = ({ date, onCancel }) => {
     try {
       setWishlistLoading(true);
 
-      // 👇 CORRECTION : Extraire l'ID correctement
       const userId = date.linkedUser?._id || date.linkedUser;
 
       if (!userId) {
@@ -72,7 +67,6 @@ const FriendProfile = ({ date, onCancel }) => {
 
       const response = await apiHandler.get(`/wishlist/user/${userId}`);
 
-      // Gérer différentes structures de réponse
       let items = [];
 
       if (response.data.success && Array.isArray(response.data.data)) {
@@ -81,7 +75,6 @@ const FriendProfile = ({ date, onCancel }) => {
         items = response.data;
       }
 
-      // Filtrer les items partagés
       const publicItems = items.filter((item) => item.isShared === true);
 
       setWishlist(publicItems);
@@ -263,29 +256,10 @@ const FriendProfile = ({ date, onCancel }) => {
 
   const buttonConfig = getButtonConfig();
 
-  // 👇 Navigation carrousel
-  const goToPrevious = () => {
-    setCurrentCarouselIndex(
-      currentCarouselIndex > 0
-        ? currentCarouselIndex - 1
-        : carouselSections.length - 1,
-    );
-  };
-
-  const goToNext = () => {
-    setCurrentCarouselIndex(
-      currentCarouselIndex < carouselSections.length - 1
-        ? currentCarouselIndex + 1
-        : 0,
-    );
-  };
-
-  // 👇 NOUVEAU - Rendu de la wishlist
   const renderWishlistSection = () => {
     if (wishlistLoading) {
       return (
-        <div className="wishlist-loading">
-          <div className="spinner"></div>
+        <div className="loading">
           <p>Chargement de la wishlist...</p>
         </div>
       );
@@ -293,7 +267,7 @@ const FriendProfile = ({ date, onCancel }) => {
 
     if (!hasPublicWishlist) {
       return (
-        <div className="wishlist-empty">
+        <div className="gift-empty">
           <div className="empty-icon">🔒</div>
           <h4>Wishlist privée</h4>
           <p>{currentDate.name} n'a pas partagé sa wishlist publiquement.</p>
@@ -302,13 +276,13 @@ const FriendProfile = ({ date, onCancel }) => {
     }
 
     return (
-      <div className="wishlist-items">
+      <div className="gift-items">
         {wishlist.map((item) => (
-          <div key={item._id} className="wishlist-item">
-            <div className="wishlist-item-header">
-              <h4>{item.title}</h4>
+          <div key={item._id} className="gift-item-card">
+            <div className="gift-item-header">
+              <h4 className="gift-item-title">{item.title}</h4>
               {item.price && (
-                <span className="wishlist-price">{item.price}€</span>
+                <span className="gift-item-price">{item.price}€</span>
               )}
             </div>
 
@@ -317,14 +291,14 @@ const FriendProfile = ({ date, onCancel }) => {
                 href={item.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="wishlist-link"
+                className="gift-item-link"
               >
                 🔗 Voir le produit
               </a>
             )}
 
             {item.isPurchased && (
-              <div className="purchased-badge">✓ Déjà acheté</div>
+              <div className="gift-item-badge purchased">✓ Déjà acheté</div>
             )}
           </div>
         ))}
@@ -332,7 +306,6 @@ const FriendProfile = ({ date, onCancel }) => {
     );
   };
 
-  // 👇 MODIFIÉ - Ajout du case wishlist
   const renderMobileSection = () => {
     const currentSection = carouselSections[currentCarouselIndex];
 
@@ -416,7 +389,6 @@ const FriendProfile = ({ date, onCancel }) => {
           </div>
         );
 
-      // 👇 NOUVEAU CASE
       case "wishlist":
         return (
           <div className="mobile-section">
@@ -446,13 +418,11 @@ const FriendProfile = ({ date, onCancel }) => {
     <div className="friendProfil">
       <h1 className="name-profilFriend font-profilFriend">
         {currentDate.name} {currentDate.surname}
-        {/* 👇 NOUVEAU - Badge AMI */}
         {date.linkedUser && (
           <span className="friend-badge-profile">👥 AMI</span>
         )}
       </h1>
 
-      {/* 👇 CARROUSEL MOBILE */}
       <div className="mobile-carousel-container">
         <div className="mobile-carousel">
           <div className="mobile-carousel__content">
@@ -495,9 +465,8 @@ const FriendProfile = ({ date, onCancel }) => {
         </div>
       </div>
 
-      {/* 👇 AFFICHAGE DESKTOP CLASSIQUE */}
       <div className="grid-friendProfil desktop-view">
-        <div className="info-friendProfil grid1-friendProfil">
+        <div className="info-friendProfil grid1-friendProfil ">
           <div className="birthCardAge">
             <span className="age">{calculateAge(currentDate.date)} Ans</span>
             <div className="date-profilFriend font-profilFriend">
@@ -507,7 +476,7 @@ const FriendProfile = ({ date, onCancel }) => {
           </div>
         </div>
 
-        <div className="notificationPreferences grid2-friendProfil">
+        <div className="notificationPreferences grid2-friendProfil ">
           <h2>Préférences de notification</h2>
 
           <div className="notification-toggle">
@@ -568,15 +537,14 @@ const FriendProfile = ({ date, onCancel }) => {
           </div>
         </div>
 
-        {/* 👇 NOUVEAU - Section wishlist desktop */}
         {date.linkedUser && (
-          <div className="wishlist-desktop grid4-friendProfil">
+          <div className="wishlist-desktop grid4-friendProfil ">
             <h2>🎁 Sa Wishlist</h2>
             {renderWishlistSection()}
           </div>
         )}
 
-        <div className="gift-friendProfil grid3-friendProfil">
+        <div className="gift-friendProfil grid3-friendProfil ">
           <FriendGiftList
             currentDate={currentDate}
             onUpdate={handleGiftUpdated}

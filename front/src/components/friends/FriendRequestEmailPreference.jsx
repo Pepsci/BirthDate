@@ -1,6 +1,3 @@
-// components/notifications/FriendRequestEmailPreference.jsx
-// Composant optionnel à ajouter dans ta page Notifications
-
 import React, { useState } from "react";
 import apiHandler from "../../api/apiHandler";
 

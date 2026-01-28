@@ -1,0 +1,132 @@
+/* profileDesktop.css - Navigation latérale desktop */
+
+/* ========================================
+   CONTAINER DESKTOP
+   ======================================== */
+
+.desktop-profile-container {
+    display: none;
+    /* Caché par défaut (mobile) */
+}
+
+@media (min-width: 768px) {
+    .desktop-profile-container {
+        display: flex;
+        gap: 2rem;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+}
+
+/* ========================================
+   SIDEBAR (MENU GAUCHE)
+   ======================================== */
+
+.desktop-sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-width: 200px;
+    max-width: 200px;
+    margin-top: 100px;
+}
+
+.sidebar-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    background: var(--gray-800);
+    border: 2px solid var(--gray-700);
+    border-radius: 12px;
+    color: var(--gray-300);
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: left;
+    white-space: nowrap;
+}
+
+.sidebar-btn:hover {
+    background: var(--gray-700);
+    border-color: var(--gray-600);
+    transform: translateX(4px);
+}
+
+.sidebar-btn.active {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
+    border-color: #667eea;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.sidebar-icon {
+    font-size: 24px;
+    flex-shrink: 0;
+}
+
+.sidebar-text {
+    flex: 1;
+}
+
+/* ========================================
+   CONTENT (CONTENU PRINCIPAL)
+   ======================================== */
+
+.desktop-content {
+    flex: 1;
+    min-height: 500px;
+    max-height: 650px;
+    overflow-y: auto;
+    scrollbar-width: none;
+}
+
+.desktop-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+/* .desktop-content::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+} */
+
+/* .desktop-content::-webkit-scrollbar-thumb {
+    background: rgba(102, 126, 234, 0.5);
+    border-radius: 3px;
+} */
+
+/* .desktop-content::-webkit-scrollbar-thumb:hover {
+    background: rgba(102, 126, 234, 0.7);
+} */
+
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+
+@media (max-width: 767px) {
+
+    /* Cacher complètement le desktop sur mobile */
+    .desktop-profile-container {
+        display: none !important;
+    }
+}
+
+@media (min-width: 768px) and (max-width: 1024px) {
+
+    /* Tablette : sidebar plus compact */
+    .desktop-sidebar {
+        min-width: 160px;
+        max-width: 160px;
+    }
+
+    .sidebar-btn {
+        padding: 12px 16px;
+        font-size: 14px;
+    }
+
+    .sidebar-icon {
+        font-size: 20px;
+    }
+}

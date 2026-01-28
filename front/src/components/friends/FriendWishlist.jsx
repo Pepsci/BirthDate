@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import apiHandler from "../../api/apiHandler";
-import "./css/friendWishlist.css";
+import "../UI/css/gifts-common.css";
 
 const FriendWishlist = ({ friendUserId, friendName, onClose }) => {
   const [wishlist, setWishlist] = useState([]);
@@ -14,7 +14,6 @@ const FriendWishlist = ({ friendUserId, friendName, onClose }) => {
   const loadFriendWishlist = async () => {
     try {
       setLoading(true);
-      // Récupérer la wishlist de l'ami
       const response = await apiHandler.get(`/wishlist/user/${friendUserId}`);
       setWishlist(response.data);
       setLoading(false);
@@ -27,8 +26,11 @@ const FriendWishlist = ({ friendUserId, friendName, onClose }) => {
 
   if (loading) {
     return (
-      <div className="friend-wishlist-modal">
-        <div className="friend-wishlist-content">
+      <div className="gift-modal" onClick={onClose}>
+        <div
+          className="gift-modal-content"
+          onClick={(e) => e.stopPropagation()}
+        >
           <div className="loading">Chargement...</div>
         </div>
       </div>
@@ -36,75 +38,56 @@ const FriendWishlist = ({ friendUserId, friendName, onClose }) => {
   }
 
   return (
-    <div className="friend-wishlist-modal" onClick={onClose}>
-      <div
-        className="friend-wishlist-content"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="friend-wishlist-header">
+    <div className="gift-modal" onClick={onClose}>
+      <div className="gift-modal-content" onClick={(e) => e.stopPropagation()}>
+        <div className="gift-modal-header">
           <h2>🎁 Wishlist de {friendName}</h2>
           <button className="close-btn" onClick={onClose}>
             ✕
           </button>
         </div>
 
-        <div className="friend-wishlist-body">
+        <div className="gift-modal-body">
           {error && <div className="error-message">{error}</div>}
 
           {wishlist.length === 0 ? (
-            <div className="empty-wishlist">
-              <p>🎈 {friendName} n'a pas encore d'idées de cadeaux</p>
+            <div className="gift-empty">
+              <p>🎈 {friendName} n'a pas encore d'idées de cadeaux partagées</p>
             </div>
           ) : (
-            <div className="wishlist-items">
+            <div className="gift-items">
               {wishlist.map((item) => (
-                <div key={item._id} className="wishlist-item">
-                  <div className="wishlist-item-header">
-                    <h3>{item.title}</h3>
-                    {item.price && (
-                      <span className="wishlist-price">{item.price}€</span>
+                <div key={item._id} className="gift-item-card">
+                  <div className="gift-item-header">
+                    <h4 className="gift-item-title">{item.title}</h4>
+                    {item.isPurchased && (
+                      <span className="gift-item-badge purchased">
+                        ✅ Acheté
+                      </span>
                     )}
                   </div>
 
-                  {item.description && (
-                    <p className="wishlist-description">{item.description}</p>
+                  {item.price && (
+                    <p className="gift-item-price">{item.price} €</p>
                   )}
 
-                  {item.link && (
+                  {item.url && (
                     <a
-                      href={item.link}
+                      href={item.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="wishlist-link"
+                      className="gift-item-link"
                     >
                       🔗 Voir le produit
                     </a>
                   )}
-
-                  {item.image && (
-                    <img
-                      src={item.image}
-                      alt={item.title}
-                      className="wishlist-image"
-                    />
-                  )}
-
-                  <div className="wishlist-item-footer">
-                    {item.priority && (
-                      <span className={`priority priority-${item.priority}`}>
-                        {item.priority === "high" && "🔥 Priorité haute"}
-                        {item.priority === "medium" && "⭐ Priorité moyenne"}
-                        {item.priority === "low" && "💡 Idée"}
-                      </span>
-                    )}
-                  </div>
                 </div>
               ))}
             </div>
           )}
         </div>
 
-        <div className="friend-wishlist-footer">
+        <div className="gift-modal-footer">
           <button className="btn-close" onClick={onClose}>
             Fermer
           </button>

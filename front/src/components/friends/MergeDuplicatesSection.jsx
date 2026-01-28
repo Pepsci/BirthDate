@@ -101,38 +101,50 @@ const MergeDuplicatesSection = () => {
 
   if (loading) {
     return (
-      <div className="merge-section">
-        <h3>🔄 Fusion des doublons</h3>
-        <div className="loading-state">
-          <div className="loading-spinner"></div>
-          <p>Détection des doublons...</p>
+      <>
+        <div className="merge-title">
+          <h3>🔄 Fusion des doublons</h3>
         </div>
-      </div>
+        <div className="merge-section">
+          <div className="loading-state">
+            <div className="loading-spinner"></div>
+            <p>Détection des doublons...</p>
+          </div>
+        </div>
+      </>
     );
   }
 
   if (error) {
     return (
-      <div className="merge-section">
-        <h3>🔄 Fusion des doublons</h3>
-        <div className="error-state">
-          <p>{error}</p>
-          <button onClick={loadDuplicates} className="btn-retry">
-            Réessayer
-          </button>
+      <>
+        <div className="merge-title">
+          <h3>🔄 Fusion des doublons</h3>
         </div>
-      </div>
+        <div className="merge-section">
+          <div className="error-state">
+            <p>{error}</p>
+            <button onClick={loadDuplicates} className="btn-retry">
+              Réessayer
+            </button>
+          </div>
+        </div>
+      </>
     );
   }
 
   if (duplicates.length === 0) {
     return (
-      <div className="merge-section">
-        <h3>🔄 Fusion des doublons</h3>
-        <div className="empty-state-small">
-          <p>✅ Aucun doublon détecté</p>
+      <>
+        <div className="merge-title">
+          <h3>🔄 Fusion des doublons</h3>
         </div>
-      </div>
+        <div className="merge-section">
+          <div className="empty-state-small">
+            <p>✅ Aucun doublon détecté</p>
+          </div>
+        </div>
+      </>
     );
   }
 

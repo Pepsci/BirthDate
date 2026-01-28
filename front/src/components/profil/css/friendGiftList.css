@@ -427,32 +427,29 @@
 
 /* Responsive */
 @media (max-width: 768px) {
+    
     .friend-gift-container {
-        width: 330px;
-        padding: 5px;
+        /* width: 330px; */
+        /* padding: 5px; */
         background-color:transparent;
         border:none;
         margin: 0;
         border-radius: 0;
     }
 
-        .friend-gift-wrapper {
-            max-height: 100%;
-            overflow-y: auto;
-            scrollbar-width: none;
-        }
-    
-        .friend-gift-items {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            max-height: none;
-            /* 👈 CHANGÉ de "500px" à "none" */
-            overflow-y: visible;
-            /* 👈 CHANGÉ de "auto" à "visible" */
-            scrollbar-width: none;
-        }
-
+    .friend-gift-wrapper {
+        overflow-y: auto;
+        scrollbar-width: none;
+        max-height: 100%;
+    }
+    .friend-gift-items {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        max-height: none;
+        overflow-y: visible;
+        scrollbar-width: none;
+    }
     
     .friend-gift-header h2 {
         font-size: 20px;
@@ -479,7 +476,6 @@
         font-size: 16px;
     }
     
-    /* Réduire la hauteur max sur mobile */
     .friend-gift-items {
         max-height: 340px;
         margin-bottom: 12px;
