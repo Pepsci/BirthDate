@@ -1,242 +1,240 @@
-/* friendCarousel.css - Style carrousel mobile pour FriendProfile */
+/* carousel-mobile-unified.css - Style harmonisé pour Profile et FriendProfile mobile */
 
 /* ========================================
-   MOBILE CAROUSEL
+   STRUCTURE COMMUNE MOBILE
    ======================================== */
 
-/* Cacher le carrousel sur desktop, afficher sur mobile */
-@media (min-width: 901px) {
+@media (max-width: 767px) {
+
+    /* Container principal */
     .mobile-carousel-container {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        max-width: 400px;
+        margin: 0 auto;
+        padding: 0;
+    }
+
+    /* Header au-dessus du carrousel */
+    .mobile-carousel-header {
+        padding: 16px;
+        text-align: center;
+        background: var(--gray-900);
+        border-bottom: 1px solid var(--gray-700);
+    }
+
+    .mobile-carousel-title {
+        color: #fff;
+        font-size: 20px;
+        font-weight: 600;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .friend-badge-inline {
+        font-size: 16px;
+    }
+
+    /* Carrousel avec hauteur fixe */
+    .mobile-carousel {
+        background: var(--gray-800);
+        border: 1px solid var(--gray-700);
+        border-radius: 0 0 16px 16px;
+        overflow: hidden;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        display: flex;
+        flex-direction: column;
+        height: 540px;
+        /* 👈 Hauteur totale fixe */
+    }
+
+    /* Contenu - hauteur fixe */
+    .mobile-carousel__content {
+        flex: 1;
+        /* Prend l'espace disponible */
+        min-height: 0;
+        /* Important pour le flex */
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: 16px;
+        background-color: var(--gray-900);
+        scrollbar-width: thin;
+    }
+
+    .mobile-carousel__content::-webkit-scrollbar {
+        width: 4px;
+    }
+
+    .mobile-carousel__content::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    .mobile-carousel__content::-webkit-scrollbar-thumb {
+        background: rgba(102, 126, 234, 0.5);
+        border-radius: 2px;
+    }
+
+    /* Section mobile */
+    .mobile-section {
+        animation: fadeIn 0.3s ease;
+        min-height: 100%;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateX(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
+    /* Indicateurs - hauteur fixe */
+    .mobile-carousel__indicators {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+        padding: 12px;
+        background-color: var(--gray-900);
+        border-top: 1px solid var(--gray-700);
+        flex-shrink: 0;
+        /* Ne se compresse pas */
+        height: 48px;
+        /* Hauteur fixe */
+    }
+
+    .mobile-carousel__indicator {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        padding: 0;
+    }
+
+    .mobile-carousel__indicator--active {
+        width: 24px;
+        border-radius: 4px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    /* Navigation rapide - hauteur fixe */
+    .mobile-carousel__quick-nav {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 12px 16px;
+        background: rgba(0, 0, 0, 0.2);
+        border-top: 1px solid var(--gray-700);
+        flex-shrink: 0;
+        /* Ne se compresse pas */
+        height: 80px;
+        /* Hauteur fixe */
+    }
+
+    .mobile-carousel__quick-buttons {
+        display: flex;
+        gap: 8px;
+        justify-content: center;
+        flex-wrap: nowrap;
+    }
+
+    .mobile-carousel__quick-btn {
+        font-size: 32px;
+        border: none;
+        border-radius: 12px;
+        background-color: #fff;
+        color: #495057;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        padding: 8px 12px;
+        min-width: 48px;
+        min-height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .mobile-carousel__quick-btn:hover {
+        background: rgba(255, 255, 255, 0.8);
+        transform: scale(1.05);
+    }
+
+    .mobile-carousel__quick-btn--active {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.3) 0%, rgba(118, 75, 162, 0.3) 100%);
+        border: 2px solid rgba(102, 126, 234, 0.5);
+        transform: scale(1.1);
+    }
+
+    /* Cacher le desktop sur mobile */
+    .desktop-view,
+    .desktop-title,
+    .desktop-profile-container {
+        display: none !important;
+    }
+
+    /* Ajustements pour les composants internes */
+    .mobile-section .gift-container {
+        padding: 0;
+        max-width: 100%;
+        background: transparent;
+        border: none;
+        margin: 0;
+        max-height: none;
+    }
+
+    .mobile-section .simple-notification-manager {
+        padding: 0;
+        background: transparent;
+        border: none;
+        margin: 0;
+        max-height: none;
+    }
+
+    .mobile-section .notificationPreferences {
+        background: transparent;
+        border: none;
+        padding: 0;
+        max-width: 100%;
+    }
+
+    /* Loader uniforme */
+    .loading {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 300px;
+        color: #adb5bd;
+        font-size: 16px;
+    }
+}
+
+/* ========================================
+   DESKTOP - Cacher carrousel, afficher grille
+   ======================================== */
+
+@media (min-width: 768px) {
+
+    .mobile-carousel-container,
+    .mobile-carousel-header {
         display: none !important;
     }
 
     .desktop-view {
         display: grid !important;
     }
-}
 
-@media (max-width: 900px) {
-    .mobile-carousel-container {
-        display: block;
-    }
-
-    .desktop-view {
-        display: none !important;
-    }
-}
-
-/* Container du carrousel */
-.mobile-carousel-container {
-    max-width: 400px;
-    max-height: 500px;
-    min-width: 330px;
-    padding: 0 16px 0 16px;
-    margin-bottom: 2rem;
-}
-
-.mobile-carousel {
-    background: var(--gray-800);
-    border: 1px solid var(--gray-700);
-    border-radius: 16px;
-    overflow: hidden;
-    box-shadow: var(--card-shadow);
-}
-
-/* Header du carrousel */
-.mobile-carousel__header {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    padding: 20px;
-    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
-    border-bottom: 1px solid var(--gray-700);
-}
-
-.mobile-carousel__icon {
-    font-size: 28px;
-}
-
-.mobile-carousel__title {
-    color: var(--gray-100);
-    font-size: 20px;
-    font-weight: 500;
-    margin: 0;
-}
-
-/* Content avec navigation */
-.mobile-carousel__content {
-    position: relative;
-    padding: 24px 16px;
-    min-height: 400px;
-}
-
-.mobile-section {
-    animation: fadeIn 0.3s ease;
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateX(10px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
-}
-
-/* Boutons de navigation */
-.mobile-carousel__nav-btn {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 50%;
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    z-index: 10;
-}
-
-.mobile-carousel__nav-btn:hover {
-    background: rgba(255, 255, 255, 0.2);
-    transform: translateY(-50%) scale(1.1);
-}
-
-.mobile-carousel__nav-btn--prev {
-    left: 8px;
-}
-
-.mobile-carousel__nav-btn--next {
-    right: 8px;
-}
-
-/* Indicateurs */
-.mobile-carousel__indicators {
-    display: flex;
-    justify-content: center;
-    gap: 8px;
-    padding: 16px;
-    border-top: 1px solid var(--gray-700);
-}
-
-.mobile-carousel__indicator {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.2);
-    border: none;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    padding: 0;
-}
-
-.mobile-carousel__indicator--active {
-    width: 24px;
-    border-radius: 4px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-
-/* Navigation rapide */
-.mobile-carousel__quick-nav {
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
-    padding: 12px 16px;
-    background: rgba(0, 0, 0, 0.2);
-    border-top: 1px solid var(--gray-700);
-}
-
-.mobile-carousel__quick-buttons {
-    display: flex;
-    gap: 0.5rem;
-}
-
-.mobile-carousel__quick-btn {
-    font-size: 50px;
-    border: none;
-    border-radius: 12px;
-    background-color: #fff;
-    color: #495057;
-    cursor: pointer;
-    transition: all .2s ease;
-    padding: 4px 8px;
-}
-
-.mobile-carousel__quick-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
-    transform: translateY(-2px);
-}
-
-.mobile-carousel__quick-btn--active {
-    background: linear-gradient(135deg, rgba(102, 126, 234, 0.3) 0%, rgba(118, 75, 162, 0.3) 100%);
-    border-color: rgba(102, 126, 234, 0.5);
-}
-
-/* Ajustements pour les sections mobiles */
-.mobile-section .birthCardAge {
-    text-align: center;
-    padding: 20px;
-}
-
-.mobile-section .age {
-    display: block;
-    font-size: 48px;
-    color: #667eea;
-    font-weight: bold;
-    margin-bottom: 16px;
-}
-
-.mobile-section .notificationPreferences {
-    background: transparent;
-    border: none;
-    padding: 0;
-    max-width: 100%;
-}
-
-.mobile-section .friend-gift-container {
-    padding: 0;
-    max-width: 99%;
-}
-
-/* Responsive mobile */
-@media (max-width: 600px) {
-    .mobile-carousel__content {
-        /* padding: 0px 10px 0px 14px; */
-        min-height: 450px;
-        max-height: 450px;
-        background: rgba(0, 0, 0, 0.2);
-    }
-
-    .mobile-carousel__nav-btn {
-        width: 36px;
-        height: 36px;
-    }
-
-    .mobile-carousel__quick-btn {
-        padding: 4px 8px;
-        font-size: 30px;
-        border: none;
-        border-radius: 12px;
-        background-color: #fff;
-        color: #495057;
-        cursor: pointer;
-        transition: all .2s ease;
-    }
-
-    .mobile-section .age {
-        font-size: 40px;
-    }
-
-    .btn-carousel {
-        margin-bottom: 10px;
+    .desktop-title {
+        display: block !important;
     }
 }

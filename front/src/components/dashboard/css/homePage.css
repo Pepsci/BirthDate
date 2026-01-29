@@ -79,8 +79,8 @@ img{
 
 .profil-btn{
     display: flex;
-    justify-content: center;
-    margin-top: 1rem;
+    justify-content: left;
+    margin: 0 0 1rem 1rem;
 }
 
 .btnBackToDateList{
