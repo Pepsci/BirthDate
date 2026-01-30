@@ -1,138 +1,70 @@
 import React, { useState, useEffect } from "react";
-import useAuth from "../../context/useAuth";
 import apiHandler from "../../api/apiHandler";
-import DateFilter from "../dashboard/DateFilter";
 import "./css/gestionNotifications.css";
 
-const Notifications = () => {
-  const { currentUser, setCurrentUser } = useAuth();
+const GestionNotification = () => {
+  // ✅ Plus besoin de currentUser - le backend gère tout
+
   const [dates, setDates] = useState([]);
-  const [filteredDates, setFilteredDates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [updatingIds, setUpdatingIds] = useState(new Set());
-  const [updatingUserPref, setUpdatingUserPref] = useState(false);
+  const [updatingDates, setUpdatingDates] = useState(new Set());
 
-  // État local pour les préférences utilisateur
-  const [userReceivesEmails, setUserReceivesEmails] = useState(
-    currentUser?.receiveBirthdayEmails !== false
-  );
+  // 👇 MODIFIÉ : false pour que la liste soit cachée par défaut
+  const [isListExpanded, setIsListExpanded] = useState(false);
+
+  const [userEmailPreference, setUserEmailPreference] = useState(true);
+  const [loadingUserPref, setLoadingUserPref] = useState(false);
 
   useEffect(() => {
+    // ✅ Plus besoin de vérifier currentUser
+    // Le backend gère l'authentification
     loadDates();
-  }, [currentUser]);
-
-  useEffect(() => {
-    setUserReceivesEmails(currentUser?.receiveBirthdayEmails !== false);
-  }, [currentUser]);
+    loadUserEmailPreference();
+  }, []);
 
   const loadDates = async () => {
     try {
       setLoading(true);
-      const response = await apiHandler.get(`/date?owner=${currentUser._id}`);
-
-      const sortedDates = response.data.sort((a, b) => {
-        const nameA = `${a.name} ${a.surname}`.toLowerCase();
-        const nameB = `${b.name} ${b.surname}`.toLowerCase();
-        return nameA.localeCompare(nameB);
-      });
-
-      setDates(sortedDates);
-      setFilteredDates(sortedDates);
+      // ✅ SIMPLIFIÉ : Le backend filtre automatiquement par utilisateur authentifié
+      // Plus besoin de passer l'ID en paramètre
+      const response = await apiHandler.get("/date");
+      setDates(response.data);
+      setError(null);
     } catch (err) {
-      setError("Erreur lors du chargement des dates");
-      console.error(err);
+      console.error("Erreur chargement dates:", err);
+      setError("Impossible de charger les anniversaires");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleFilterChange = (
-    nameSearch,
-    surnameSearch,
-    isFamilyFilterActive
-  ) => {
-    let filtered = dates;
-
-    if (nameSearch.trim()) {
-      filtered = filtered.filter((date) =>
-        date.name.toLowerCase().startsWith(nameSearch.toLowerCase())
-      );
-    }
-
-    if (surnameSearch.trim()) {
-      filtered = filtered.filter((date) =>
-        date.surname.toLowerCase().startsWith(surnameSearch.toLowerCase())
-      );
-    }
-
-    if (isFamilyFilterActive) {
-      filtered = filtered.filter((date) => date.family === true);
-    }
-
-    setFilteredDates(filtered);
-  };
-
-  // Fonction pour toggle les emails de l'utilisateur
-  const toggleUserEmails = async () => {
-    setUpdatingUserPref(true);
-    const newValue = !userReceivesEmails;
-
+  const loadUserEmailPreference = async () => {
     try {
-      const response = await apiHandler.patch(`/users/${currentUser._id}`, {
-        receiveBirthdayEmails: newValue,
-      });
-
-      setUserReceivesEmails(newValue);
-
-      if (setCurrentUser) {
-        setCurrentUser((prev) => ({
-          ...prev,
-          receiveBirthdayEmails: newValue,
-        }));
-      }
-    } catch (error) {
-      console.error("Erreur lors de la modification des emails:", error);
-      setError("Erreur lors de la modification. Veuillez réessayer.");
-      setTimeout(() => setError(null), 3000);
-    } finally {
-      setUpdatingUserPref(false);
+      // ✅ Le backend sait qui est l'utilisateur via le token JWT
+      const response = await apiHandler.get("/users/me");
+      setUserEmailPreference(response.data.receiveBirthdayEmails !== false);
+    } catch (err) {
+      console.error("Erreur chargement préférences:", err);
     }
   };
 
-  const toggleNotifications = async (dateId, currentStatus) => {
-    setUpdatingIds((prev) => new Set(prev).add(dateId));
+  const handleToggleNotification = async (dateId, currentValue) => {
+    setUpdatingDates((prev) => new Set(prev).add(dateId));
 
     try {
-      const newValue = !currentStatus;
       const updatedDate = await apiHandler.toggleDateNotifications(
         dateId,
-        newValue
+        !currentValue,
       );
 
-      setDates((prevDates) => {
-        const newDates = prevDates.map((date) =>
-          date._id === dateId ? { ...date, ...updatedDate } : date
-        );
-
-        const currentFilters = getCurrentFilters();
-        applyFilters(newDates, currentFilters);
-
-        return newDates;
-      });
-
-      setFilteredDates((prevFilteredDates) =>
-        prevFilteredDates.map((date) =>
-          date._id === dateId ? { ...date, ...updatedDate } : date
-        )
+      setDates((prevDates) =>
+        prevDates.map((d) => (d._id === dateId ? updatedDate : d)),
       );
-    } catch (error) {
-      console.error("Failed to update notification preference:", error);
-      loadDates();
-      setError("Erreur lors de la mise à jour. Données rechargées.");
-      setTimeout(() => setError(null), 3000);
+    } catch (err) {
+      console.error("Erreur toggle notification:", err);
     } finally {
-      setUpdatingIds((prev) => {
+      setUpdatingDates((prev) => {
         const newSet = new Set(prev);
         newSet.delete(dateId);
         return newSet;
@@ -140,111 +72,53 @@ const Notifications = () => {
     }
   };
 
-  const getCurrentFilters = () => {
-    return { nameSearch: "", surnameSearch: "", isFamilyFilterActive: false };
-  };
-
-  const applyFilters = (datesToFilter, filters) => {
-    handleFilterChange(
-      filters.nameSearch,
-      filters.surnameSearch,
-      filters.isFamilyFilterActive
-    );
-  };
-
-  const enableAllNotifications = async () => {
-    const datesToUpdate = dates.filter(
-      (date) => date.receiveNotifications === false
-    );
-
-    if (datesToUpdate.length === 0) return;
-
-    const idsToUpdate = datesToUpdate.map((date) => date._id);
-    setUpdatingIds(new Set(idsToUpdate));
-
+  const handleEnableAll = async () => {
     try {
-      const promises = datesToUpdate.map((date) =>
-        apiHandler.toggleDateNotifications(date._id, true)
-      );
+      const dateIds = dates.map((d) => d._id);
+      setUpdatingDates(new Set(dateIds));
 
-      const results = await Promise.all(promises);
-
-      setDates((prevDates) => {
-        const newDates = prevDates.map((date) => {
-          const updatedResult = results.find(
-            (result) => result._id === date._id
-          );
-          return updatedResult ? { ...date, ...updatedResult } : date;
-        });
-
-        const currentFilters = getCurrentFilters();
-        applyFilters(newDates, currentFilters);
-
-        return newDates;
-      });
-
-      setFilteredDates((prevFilteredDates) =>
-        prevFilteredDates.map((date) => {
-          const updatedResult = results.find(
-            (result) => result._id === date._id
-          );
-          return updatedResult ? { ...date, ...updatedResult } : date;
-        })
-      );
+      await apiHandler.bulkUpdateNotifications(dateIds, true);
+      await loadDates();
     } catch (err) {
-      console.error("Erreur lors de l'activation globale:", err);
-      loadDates();
+      console.error("Erreur activation:", err);
     } finally {
-      setUpdatingIds(new Set());
+      setUpdatingDates(new Set());
     }
   };
 
-  const disableAllNotifications = async () => {
-    const datesToUpdate = dates.filter(
-      (date) => date.receiveNotifications !== false
-    );
-
-    if (datesToUpdate.length === 0) return;
-
-    const idsToUpdate = datesToUpdate.map((date) => date._id);
-    setUpdatingIds(new Set(idsToUpdate));
-
+  const handleDisableAll = async () => {
     try {
-      const promises = datesToUpdate.map((date) =>
-        apiHandler.toggleDateNotifications(date._id, false)
-      );
+      const dateIds = dates.map((d) => d._id);
+      setUpdatingDates(new Set(dateIds));
 
-      const results = await Promise.all(promises);
-
-      setDates((prevDates) => {
-        const newDates = prevDates.map((date) => {
-          const updatedResult = results.find(
-            (result) => result._id === date._id
-          );
-          return updatedResult ? { ...date, ...updatedResult } : date;
-        });
-
-        const currentFilters = getCurrentFilters();
-        applyFilters(newDates, currentFilters);
-
-        return newDates;
-      });
-
-      setFilteredDates((prevFilteredDates) =>
-        prevFilteredDates.map((date) => {
-          const updatedResult = results.find(
-            (result) => result._id === date._id
-          );
-          return updatedResult ? { ...date, ...updatedResult } : date;
-        })
-      );
+      await apiHandler.bulkUpdateNotifications(dateIds, false);
+      await loadDates();
     } catch (err) {
-      console.error("Erreur lors de la désactivation globale:", err);
-      loadDates();
+      console.error("Erreur désactivation:", err);
     } finally {
-      setUpdatingIds(new Set());
+      setUpdatingDates(new Set());
     }
   };
+
+  const handleToggleUserEmailPreference = async (newValue) => {
+    setLoadingUserPref(true);
+    try {
+      // ✅ Le backend sait qui est l'utilisateur
+      await apiHandler.patch("/users/me", {
+        receiveBirthdayEmails: newValue,
+      });
+      setUserEmailPreference(newValue);
+    } catch (err) {
+      console.error("Erreur mise à jour préférence email:", err);
+    } finally {
+      setLoadingUserPref(false);
+    }
+  };
+
+  const activeCount = dates.filter(
+    (d) => d.receiveNotifications !== false,
+  ).length;
+  const totalCount = dates.length;
 
   if (loading) {
     return (
@@ -262,7 +136,7 @@ const Notifications = () => {
       <div className="simple-notification-manager">
         <div className="error-state">
           <p>{error}</p>
-          <button onClick={loadDates} className="retry-button">
+          <button className="retry-button" onClick={loadDates}>
             Réessayer
           </button>
         </div>
@@ -270,142 +144,184 @@ const Notifications = () => {
     );
   }
 
-  const activeCount = filteredDates.filter(
-    (date) => date.receiveNotifications !== false
-  ).length;
-  const totalCount = filteredDates.length;
-  const totalOriginalCount = dates.length;
-
   return (
     <div className="simple-notification-manager">
-      {/* En-tête avec statistiques */}
+      {/* Header */}
       <div className="notification-header">
+        <h2>Gestion des notifications</h2>
         <div className="notification-summary">
           <span className="summary-text">
             {activeCount} sur {totalCount} de notifications activé
-            {totalCount !== totalOriginalCount && (
-              <span className="filter-info">
-                {" "}
-                (sur {totalOriginalCount} au total)
-              </span>
-            )}
           </span>
         </div>
       </div>
 
-      {/* Section des préférences globales des emails - Design simplifié */}
+      {/* Préférences globales email */}
       <div className="user-email-preferences-simple">
         <div className="user-pref-toggle-simple">
           <div className="toggle-info">
             <span className="toggle-label">
               Recevoir les emails de notifications
             </span>
-            {/* <span className="toggle-sublabel">
-              {userReceivesEmails ? "Actif" : "Désactivé"}
-            </span> */}
           </div>
           <label className="switch">
             <input
               type="checkbox"
-              checked={userReceivesEmails}
-              onChange={toggleUserEmails}
-              disabled={updatingUserPref}
+              checked={userEmailPreference}
+              onChange={(e) =>
+                handleToggleUserEmailPreference(e.target.checked)
+              }
+              disabled={loadingUserPref}
             />
             <span className="slider round"></span>
           </label>
         </div>
 
-        {!userReceivesEmails && (
+        {!userEmailPreference && (
           <div className="warning-simple">
-            Les notifications individuelles ci-dessous ne fonctionneront pas
-            tant que cette option est désactivée
+            ⚠️ Les emails sont désactivés. Vous ne recevrez aucune notification
+            par email, même pour les anniversaires activés ci-dessous.
           </div>
         )}
       </div>
 
-      {/* Composant de filtrage */}
-      <DateFilter onFilterChange={handleFilterChange} />
-
-      {/* Actions globales */}
-      <div className="global-actions">
+      {/* Bouton toggle pour replier/déplier */}
+      <div className="list-toggle-section">
         <button
-          onClick={enableAllNotifications}
-          className="btn-profil enable-all"
-          disabled={activeCount === totalCount || updatingIds.size > 0}
+          className="toggle-list-btn"
+          onClick={() => setIsListExpanded(!isListExpanded)}
         >
-          ✅ Activer tout
-        </button>
-        <button
-          onClick={disableAllNotifications}
-          className="btn-profil disable-all"
-          disabled={activeCount === 0 || updatingIds.size > 0}
-        >
-          ❌ Désactiver tout
+          <span className="toggle-icon">{isListExpanded ? "▼" : "▶"}</span>
+          <span className="toggle-text">
+            {isListExpanded ? "Masquer la liste" : "Afficher la liste"}
+          </span>
+          <span className="toggle-count">({totalCount})</span>
         </button>
       </div>
 
-      {/* Liste des personnes */}
-      <div className="notification-list">
-        {filteredDates.length === 0 ? (
-          <div className="empty-state">
-            <p>
-              {dates.length === 0
-                ? "Aucune date d'anniversaire trouvée"
-                : "Aucune date ne correspond aux critères de filtrage"}
-            </p>
+      {/* Contenu collapsible (filtre + actions + liste) */}
+      {isListExpanded && (
+        <div className="collapsible-content">
+          {/* Filtres */}
+          <div className="filter-section">
+            <h3>Filtrer les anniversaires</h3>
+            <div className="filter-inputs">
+              <input
+                type="text"
+                placeholder="Prénom..."
+                className="filter-input"
+              />
+              <input
+                type="text"
+                placeholder="Nom..."
+                className="filter-input"
+              />
+            </div>
+            <div className="filter-buttons">
+              <button className="filter-btn">Famille uniquement</button>
+              <button className="filter-btn">Effacer les filtres</button>
+            </div>
           </div>
-        ) : (
-          filteredDates.map((date) => {
-            const isUpdating = updatingIds.has(date._id);
-            const isEnabled = date.receiveNotifications !== false;
 
-            return (
-              <div
-                key={date._id}
-                className={`notification-item ${
-                  isEnabled ? "enabled" : "disabled"
-                } ${isUpdating ? "updating" : ""} ${
-                  !userReceivesEmails ? "user-disabled" : ""
-                }`}
-              >
-                <div className="person-info">
-                  <div className="person-name">
-                    <span className="name">{date.name}</span>
-                    <span className="surname">{date.surname}</span>
-                  </div>
-                  <div className="person-details">
-                    <span className="birth-date">
-                      {new Date(date.date).toLocaleDateString("fr-FR")}
-                    </span>
-                  </div>
-                </div>
+          {/* Actions globales */}
+          <div className="global-actions">
+            <button
+              className="action-button enable-all"
+              onClick={handleEnableAll}
+              disabled={updatingDates.size > 0}
+            >
+              ✓ Activer tout
+            </button>
+            <button
+              className="action-button disable-all"
+              onClick={handleDisableAll}
+              disabled={updatingDates.size > 0}
+            >
+              ✕ Désactiver tout
+            </button>
+          </div>
 
-                <div className="notification-toggle">
-                  <label className="switch">
-                    <input
-                      type="checkbox"
-                      checked={isEnabled}
-                      onChange={() => toggleNotifications(date._id, isEnabled)}
-                      disabled={isUpdating || !userReceivesEmails}
-                    />
-                    <span className="slider round"></span>
-                  </label>
-                </div>
+          {/* Liste des notifications */}
+          <div className="notification-list">
+            {dates.length === 0 ? (
+              <div className="empty-state">
+                <p>Aucun anniversaire à afficher</p>
               </div>
-            );
-          })
-        )}
-      </div>
+            ) : (
+              dates.map((date) => {
+                const isUpdating = updatingDates.has(date._id);
+                const isEnabled = date.receiveNotifications !== false;
+                const isUserDisabled = !userEmailPreference;
 
-      {/* Footer avec informations */}
+                return (
+                  <div
+                    key={date._id}
+                    className={`notification-item ${
+                      isEnabled ? "enabled" : "disabled"
+                    } ${isUpdating ? "updating" : ""} ${
+                      isUserDisabled ? "user-disabled" : ""
+                    }`}
+                  >
+                    <div className="person-info">
+                      <div className="person-name">
+                        <span className="name">{date.name}</span>
+                        <span className="surname">{date.surname}</span>
+                      </div>
+                      <div className="person-details">
+                        <span className="birth-date">
+                          {new Date(date.date).toLocaleDateString("fr-FR")}
+                        </span>
+                        {date.famille && (
+                          <span className="family-badge">Famille</span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="notification-toggle">
+                      {isUpdating ? (
+                        <div className="updating-text">
+                          <div className="mini-spinner"></div>
+                          <span>Mise à jour...</span>
+                        </div>
+                      ) : (
+                        <>
+                          <label className="switch">
+                            <input
+                              type="checkbox"
+                              checked={isEnabled}
+                              onChange={() =>
+                                handleToggleNotification(date._id, isEnabled)
+                              }
+                              disabled={isUserDisabled}
+                            />
+                            <span className="slider round"></span>
+                          </label>
+                          <span
+                            className={`status-text ${
+                              isEnabled ? "enabled" : "disabled"
+                            }`}
+                          >
+                            {isEnabled ? "Activé" : "Désactivé"}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Footer */}
       <div className="notification-footer">
         <p className="info-text">
-          💡 Les notifications vous rappelleront les anniversaires à venir selon
-          vos préférences.
+          Les notifications actives recevront des rappels par email.
         </p>
       </div>
     </div>
   );
 };
 
-export default Notifications;
+export default GestionNotification;

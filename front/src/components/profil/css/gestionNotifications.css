@@ -390,6 +390,7 @@ input:disabled + .slider {
         margin: auto;
         background-color: transparent;
         border: none;
+        width: 100%;
     }
 
     .notification-item {

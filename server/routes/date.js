@@ -4,36 +4,49 @@ const dateModel = require("./../models/date.model");
 const mongoose = require("mongoose");
 const userModel = require("../models/user.model");
 
-router.get("/", async (req, res, next) => {
+// 👇 CORRIGÉ : middleware au lieu de middlewares
+const { isAuthenticated } = require("../middleware/jwt.middleware");
+
+// ========================================
+// GET / - Liste des dates
+// 🔒 SÉCURISÉ : Ne renvoie QUE les dates de l'utilisateur connecté
+// ========================================
+router.get("/", isAuthenticated, async (req, res, next) => {
   try {
-    const ownerId = req.query.owner;
-    const dateList = ownerId
-      ? await dateModel
-          .find({ owner: ownerId })
-          .populate("owner")
-          .populate("linkedUser", "name surname email avatar birthDate") // 👈 AJOUTÉ
-      : await dateModel
-          .find()
-          .populate("owner")
-          .populate("linkedUser", "name surname email avatar birthDate"); // 👈 AJOUTÉ
+    // ✅ Utiliser UNIQUEMENT l'ID de l'utilisateur authentifié
+    // Ignorer complètement req.query.owner
+    const userId = req.payload._id; // Depuis le middleware JWT
+
+    const dateList = await dateModel
+      .find({ owner: userId })
+      .populate("owner")
+      .populate("linkedUser", "name surname email avatar birthDate");
+
     res.status(200).json(dateList);
   } catch (error) {
     console.error("Error fetching date list:", error);
-    res.status(500).json({ message: "internal Server Error" });
+    res.status(500).json({ message: "Internal Server Error" });
   }
 });
 
-router.post("/", async (req, res, next) => {
-  const { date, owner, name, surname, family, linkedUser } = req.body; // 👈 AJOUTÉ linkedUser
+// ========================================
+// POST / - Créer une date
+// 🔒 SÉCURISÉ : Force le owner à être l'utilisateur connecté
+// ========================================
+router.post("/", isAuthenticated, async (req, res, next) => {
+  const { date, name, surname, family, linkedUser } = req.body;
+
   try {
+    // ✅ Forcer le owner à être l'utilisateur connecté
     const newDate = await dateModel.create({
       date,
-      owner,
+      owner: req.payload._id, // 👈 Toujours l'utilisateur connecté
       name,
       surname,
       family,
-      linkedUser, // 👈 AJOUTÉ
+      linkedUser,
     });
+
     res.status(201).json(newDate);
   } catch (error) {
     console.error("Error creating date:", error);
@@ -41,18 +54,28 @@ router.post("/", async (req, res, next) => {
   }
 });
 
-router.get("/:id", async (req, res, next) => {
+// ========================================
+// GET /:id - Obtenir une date spécifique
+// 🔒 SÉCURISÉ : Vérifie que la date appartient à l'utilisateur
+// ========================================
+router.get("/:id", isAuthenticated, async (req, res, next) => {
   try {
     if (!mongoose.isValidObjectId(req.params.id)) {
       return res.status(400).json({ message: "Invalid Date ID" });
     }
+
     const date = await dateModel
-      .findById(req.params.id)
+      .findOne({
+        _id: req.params.id,
+        owner: req.payload._id, // 👈 Vérifier le propriétaire
+      })
       .populate("owner")
-      .populate("linkedUser", "name surname email avatar birthDate"); // 👈 AJOUTÉ
+      .populate("linkedUser", "name surname email avatar birthDate");
+
     if (!date) {
       return res.status(404).json({ message: "Date not found" });
     }
+
     res.status(200).json(date);
   } catch (error) {
     console.error("Error fetching date:", error);
@@ -60,20 +83,27 @@ router.get("/:id", async (req, res, next) => {
   }
 });
 
-router.patch("/:id", async (req, res, next) => {
+// ========================================
+// PATCH /:id - Modifier une date
+// 🔒 SÉCURISÉ : Vérifie le propriétaire avant modification
+// ========================================
+router.patch("/:id", isAuthenticated, async (req, res, next) => {
   try {
     if (!mongoose.isValidObjectId(req.params.id)) {
       return res.status(400).json({ message: "Invalid Date ID" });
     }
 
-    // 👇 MODIFIÉ : Empêcher la modification si c'est une date ami
-    const existingDate = await dateModel.findById(req.params.id);
+    // Vérifier que la date appartient à l'utilisateur
+    const existingDate = await dateModel.findOne({
+      _id: req.params.id,
+      owner: req.payload._id, // 👈 Vérification du propriétaire
+    });
 
     if (!existingDate) {
       return res.status(404).json({ message: "Date not found" });
     }
 
-    // Si c'est une date liée à un ami, on ne peut pas la modifier directement
+    // Si c'est une date liée à un ami, on ne peut pas la modifier
     if (existingDate.linkedUser) {
       return res.status(403).json({
         message:
@@ -81,9 +111,8 @@ router.patch("/:id", async (req, res, next) => {
       });
     }
 
-    const { date, owner, name, surname, family, giftName, purchased } =
-      req.body;
-    const updateFields = { date, owner, name, surname, family };
+    const { date, name, surname, family, giftName, purchased } = req.body;
+    const updateFields = { date, name, surname, family };
 
     if (giftName && purchased !== undefined) {
       updateFields.$push = { gifts: { giftName, purchased } };
@@ -102,8 +131,11 @@ router.patch("/:id", async (req, res, next) => {
   }
 });
 
-// 👇 ROUTE CORRIGÉE - Ajouter un cadeau
-router.patch("/:id/gifts", async (req, res, next) => {
+// ========================================
+// PATCH /:id/gifts - Ajouter un cadeau
+// 🔒 SÉCURISÉ
+// ========================================
+router.patch("/:id/gifts", isAuthenticated, async (req, res, next) => {
   try {
     if (!mongoose.isValidObjectId(req.params.id)) {
       return res.status(400).json({ message: "Invalid Date ID" });
@@ -111,10 +143,12 @@ router.patch("/:id/gifts", async (req, res, next) => {
 
     const { giftName, occasion, year, purchased } = req.body;
 
-    console.log("📥 Backend - Données reçues:", req.body);
-
-    const updatedDate = await dateModel.findByIdAndUpdate(
-      req.params.id,
+    // Vérifier le propriétaire avant modification
+    const updatedDate = await dateModel.findOneAndUpdate(
+      {
+        _id: req.params.id,
+        owner: req.payload._id, // 👈 Vérification du propriétaire
+      },
       {
         $push: {
           gifts: {
@@ -129,13 +163,11 @@ router.patch("/:id/gifts", async (req, res, next) => {
     );
 
     if (!updatedDate) {
-      return res.status(404).json({ message: "Date not found" });
+      return res
+        .status(404)
+        .json({ message: "Date not found or unauthorized" });
     }
 
-    console.log(
-      "✅ Backend - Cadeau ajouté:",
-      updatedDate.gifts[updatedDate.gifts.length - 1],
-    );
     res.status(200).json(updatedDate);
   } catch (error) {
     console.error("Error updating date:", error);
@@ -143,8 +175,11 @@ router.patch("/:id/gifts", async (req, res, next) => {
   }
 });
 
-// 👇 ROUTE CORRIGÉE - Modifier un cadeau
-router.patch("/:id/gifts/:giftId", async (req, res, next) => {
+// ========================================
+// PATCH /:id/gifts/:giftId - Modifier un cadeau
+// 🔒 SÉCURISÉ
+// ========================================
+router.patch("/:id/gifts/:giftId", isAuthenticated, async (req, res, next) => {
   try {
     if (
       !mongoose.isValidObjectId(req.params.id) ||
@@ -155,10 +190,12 @@ router.patch("/:id/gifts/:giftId", async (req, res, next) => {
 
     const { giftName, occasion, year, purchased } = req.body;
 
-    console.log("📥 Backend - Modification cadeau:", req.body);
-
     const updatedDate = await dateModel.findOneAndUpdate(
-      { _id: req.params.id, "gifts._id": req.params.giftId },
+      {
+        _id: req.params.id,
+        owner: req.payload._id, // 👈 Vérification du propriétaire
+        "gifts._id": req.params.giftId,
+      },
       {
         $set: {
           "gifts.$.giftName": giftName,
@@ -171,10 +208,11 @@ router.patch("/:id/gifts/:giftId", async (req, res, next) => {
     );
 
     if (!updatedDate) {
-      return res.status(404).json({ message: "Date or Gift not found" });
+      return res
+        .status(404)
+        .json({ message: "Date or Gift not found or unauthorized" });
     }
 
-    console.log("✅ Backend - Cadeau modifié");
     res.status(200).json(updatedDate);
   } catch (error) {
     console.error("Error updating gift:", error);
@@ -182,7 +220,11 @@ router.patch("/:id/gifts/:giftId", async (req, res, next) => {
   }
 });
 
-router.delete("/:id/gifts/:giftId", async (req, res, next) => {
+// ========================================
+// DELETE /:id/gifts/:giftId - Supprimer un cadeau
+// 🔒 SÉCURISÉ
+// ========================================
+router.delete("/:id/gifts/:giftId", isAuthenticated, async (req, res, next) => {
   try {
     if (
       !mongoose.isValidObjectId(req.params.id) ||
@@ -190,14 +232,22 @@ router.delete("/:id/gifts/:giftId", async (req, res, next) => {
     ) {
       return res.status(400).json({ message: "Invalid Date ID or Gift ID" });
     }
-    const updatedDate = await dateModel.findByIdAndUpdate(
-      req.params.id,
+
+    const updatedDate = await dateModel.findOneAndUpdate(
+      {
+        _id: req.params.id,
+        owner: req.payload._id, // 👈 Vérification du propriétaire
+      },
       { $pull: { gifts: { _id: req.params.giftId } } },
       { new: true },
     );
+
     if (!updatedDate) {
-      return res.status(404).json({ message: "Date or Gift not found" });
+      return res
+        .status(404)
+        .json({ message: "Date or Gift not found or unauthorized" });
     }
+
     res.status(200).json(updatedDate);
   } catch (error) {
     console.error("Error deleting gift:", error);
@@ -205,17 +255,25 @@ router.delete("/:id/gifts/:giftId", async (req, res, next) => {
   }
 });
 
-router.delete("/:id", async (req, res, next) => {
+// ========================================
+// DELETE /:id - Supprimer une date
+// 🔒 SÉCURISÉ
+// ========================================
+router.delete("/:id", isAuthenticated, async (req, res, next) => {
   try {
     if (!mongoose.isValidObjectId(req.params.id)) {
       return res.status(400).json({ message: "Invalid Date ID" });
     }
 
-    // 👇 MODIFIÉ : Empêcher la suppression si c'est une date ami
-    const existingDate = await dateModel.findById(req.params.id);
+    const existingDate = await dateModel.findOne({
+      _id: req.params.id,
+      owner: req.payload._id, // 👈 Vérification du propriétaire
+    });
 
     if (!existingDate) {
-      return res.status(404).json({ message: "Date not found" });
+      return res
+        .status(404)
+        .json({ message: "Date not found or unauthorized" });
     }
 
     if (existingDate.linkedUser) {
@@ -232,20 +290,28 @@ router.delete("/:id", async (req, res, next) => {
   }
 });
 
-// Route pour activer/désactiver les notifications pour une date spécifique
-router.put("/:id/notifications", async (req, res, next) => {
+// ========================================
+// PUT /:id/notifications - Toggle notifications
+// 🔒 SÉCURISÉ
+// ========================================
+router.put("/:id/notifications", isAuthenticated, async (req, res, next) => {
   try {
     const { receiveNotifications } = req.body;
     const dateId = req.params.id;
 
-    const updatedDate = await dateModel.findByIdAndUpdate(
-      dateId,
+    const updatedDate = await dateModel.findOneAndUpdate(
+      {
+        _id: dateId,
+        owner: req.payload._id, // 👈 Vérification du propriétaire
+      },
       { receiveNotifications },
       { new: true },
     );
 
     if (!updatedDate) {
-      return res.status(404).json({ message: "Date non trouvée" });
+      return res
+        .status(404)
+        .json({ message: "Date non trouvée ou non autorisée" });
     }
 
     res.status(200).json(updatedDate);
@@ -258,33 +324,45 @@ router.put("/:id/notifications", async (req, res, next) => {
   }
 });
 
-// Route pour mettre à jour les préférences de timing des notifications
-router.put("/:id/notification-preferences", async (req, res, next) => {
-  try {
-    const { timings, notifyOnBirthday } = req.body;
-    const dateId = req.params.id;
+// ========================================
+// PUT /:id/notification-preferences - Préférences de timing
+// 🔒 SÉCURISÉ
+// ========================================
+router.put(
+  "/:id/notification-preferences",
+  isAuthenticated,
+  async (req, res, next) => {
+    try {
+      const { timings, notifyOnBirthday } = req.body;
+      const dateId = req.params.id;
 
-    const updatedDate = await dateModel.findByIdAndUpdate(
-      dateId,
-      {
-        "notificationPreferences.timings": timings,
-        "notificationPreferences.notifyOnBirthday": notifyOnBirthday,
-      },
-      { new: true },
-    );
+      const updatedDate = await dateModel.findOneAndUpdate(
+        {
+          _id: dateId,
+          owner: req.payload._id, // 👈 Vérification du propriétaire
+        },
+        {
+          "notificationPreferences.timings": timings,
+          "notificationPreferences.notifyOnBirthday": notifyOnBirthday,
+        },
+        { new: true },
+      );
 
-    if (!updatedDate) {
-      return res.status(404).json({ message: "Date non trouvée" });
+      if (!updatedDate) {
+        return res
+          .status(404)
+          .json({ message: "Date non trouvée ou non autorisée" });
+      }
+
+      res.status(200).json(updatedDate);
+    } catch (error) {
+      console.error(
+        "Erreur lors de la mise à jour des préférences de timing:",
+        error,
+      );
+      res.status(500).json({ message: "Erreur serveur", error: error.message });
     }
-
-    res.status(200).json(updatedDate);
-  } catch (error) {
-    console.error(
-      "Erreur lors de la mise à jour des préférences de timing:",
-      error,
-    );
-    res.status(500).json({ message: "Erreur serveur", error: error.message });
-  }
-});
+  },
+);
 
 module.exports = router;

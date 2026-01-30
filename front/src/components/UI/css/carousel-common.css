@@ -10,7 +10,7 @@
     .mobile-carousel-container {
         display: flex;
         flex-direction: column;
-        width: 100%;
+        width: 95%;
         max-width: 400px;
         margin: 0 auto;
         padding: 0;
@@ -48,8 +48,7 @@
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
         display: flex;
         flex-direction: column;
-        height: 540px;
-        /* 👈 Hauteur totale fixe */
+        height: 580px;
     }
 
     /* Contenu - hauteur fixe */
@@ -105,9 +104,7 @@
         background-color: var(--gray-900);
         border-top: 1px solid var(--gray-700);
         flex-shrink: 0;
-        /* Ne se compresse pas */
-        height: 48px;
-        /* Hauteur fixe */
+        height: 10px;
     }
 
     .mobile-carousel__indicator {
@@ -137,7 +134,7 @@
         border-top: 1px solid var(--gray-700);
         flex-shrink: 0;
         /* Ne se compresse pas */
-        height: 80px;
+        height: 65px;
         /* Hauteur fixe */
     }
 
@@ -149,7 +146,7 @@
     }
 
     .mobile-carousel__quick-btn {
-        font-size: 32px;
+        font-size: 28px;
         border: none;
         border-radius: 12px;
         background-color: #fff;
