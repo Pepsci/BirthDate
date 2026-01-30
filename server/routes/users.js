@@ -24,6 +24,7 @@ router.get("/", isAuthenticated, async (req, res, next) => {
       avatar: user.avatar,
       birthDate: user.birthDate,
       receiveBirthdayEmails: user.receiveBirthdayEmails,
+      receiveFriendRequestEmails: user.receiveFriendRequestEmails, // 👈 AJOUTÉ
     };
     res.status(200).json(userToFront);
   } catch (error) {
@@ -31,7 +32,7 @@ router.get("/", isAuthenticated, async (req, res, next) => {
   }
 });
 
-/* 👇 AJOUTÉ : GET /users/me - Alias pour l'utilisateur connecté */
+/* GET /users/me - Alias pour l'utilisateur connecté */
 router.get("/me", isAuthenticated, async (req, res, next) => {
   try {
     console.log("GET /users/me - User ID:", req.payload._id);
@@ -47,6 +48,7 @@ router.get("/me", isAuthenticated, async (req, res, next) => {
       avatar: user.avatar,
       birthDate: user.birthDate,
       receiveBirthdayEmails: user.receiveBirthdayEmails,
+      receiveFriendRequestEmails: user.receiveFriendRequestEmails, // 👈 AJOUTÉ
     };
     res.status(200).json(userToFront);
   } catch (error) {
@@ -54,7 +56,7 @@ router.get("/me", isAuthenticated, async (req, res, next) => {
   }
 });
 
-/* 👇 AJOUTÉ : PATCH /users/me - Modifier l'utilisateur connecté */
+/* PATCH /users/me - Modifier l'utilisateur connecté */
 router.patch(
   "/me",
   uploader.single("avatar"),
@@ -66,7 +68,6 @@ router.patch(
     try {
       console.log("PATCH /users/me - User ID:", req.payload._id);
 
-      // Utiliser req.payload._id au lieu de req.params.id
       const user = await userModel.findById(req.payload._id);
       if (!user) {
         return res.status(404).json({ message: "User not found" });
@@ -103,8 +104,13 @@ router.patch(
         user.avatar = avatar;
       }
 
+      // 👇 MODIFIÉ : Gérer les deux préférences email
       if (req.body.receiveBirthdayEmails !== undefined) {
         user.receiveBirthdayEmails = req.body.receiveBirthdayEmails;
+      }
+
+      if (req.body.receiveFriendRequestEmails !== undefined) {
+        user.receiveFriendRequestEmails = req.body.receiveFriendRequestEmails;
       }
 
       const updatedUser = await user.save();
@@ -173,6 +179,7 @@ router.patch(
         avatar: updatedUser.avatar,
         birthDate: updatedUser.birthDate,
         receiveBirthdayEmails: updatedUser.receiveBirthdayEmails,
+        receiveFriendRequestEmails: updatedUser.receiveFriendRequestEmails, // 👈 AJOUTÉ
       };
 
       const authToken = jwt.sign(payload, process.env.TOKEN_SECRET, {
@@ -203,6 +210,7 @@ router.get("/:id", isAuthenticated, async (req, res, next) => {
       avatar: user.avatar,
       birthDate: user.birthDate,
       receiveBirthdayEmails: user.receiveBirthdayEmails,
+      receiveFriendRequestEmails: user.receiveFriendRequestEmails, // 👈 AJOUTÉ
     };
     res.status(200).json(userToFront);
   } catch (error) {
@@ -262,8 +270,13 @@ router.patch(
         user.avatar = avatar;
       }
 
+      // 👇 MODIFIÉ : Gérer les deux préférences email
       if (req.body.receiveBirthdayEmails !== undefined) {
         user.receiveBirthdayEmails = req.body.receiveBirthdayEmails;
+      }
+
+      if (req.body.receiveFriendRequestEmails !== undefined) {
+        user.receiveFriendRequestEmails = req.body.receiveFriendRequestEmails;
       }
 
       const updatedUser = await user.save();
@@ -331,6 +344,7 @@ router.patch(
         avatar: updatedUser.avatar,
         birthDate: updatedUser.birthDate,
         receiveBirthdayEmails: updatedUser.receiveBirthdayEmails,
+        receiveFriendRequestEmails: updatedUser.receiveFriendRequestEmails, // 👈 AJOUTÉ
       };
 
       const authToken = jwt.sign(payload, process.env.TOKEN_SECRET, {

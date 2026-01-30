@@ -16,6 +16,16 @@ const GestionNotification = () => {
   const [userEmailPreference, setUserEmailPreference] = useState(true);
   const [loadingUserPref, setLoadingUserPref] = useState(false);
 
+  // 👇 AJOUTÉ : État pour les notifications d'amis
+  const [receiveFriendRequestEmails, setReceiveFriendRequestEmails] =
+    useState(true);
+  const [loadingFriendPref, setLoadingFriendPref] = useState(false);
+
+  // 👇 AJOUTÉ : États pour les filtres
+  const [filterPrenom, setFilterPrenom] = useState("");
+  const [filterNom, setFilterNom] = useState("");
+  const [filterFamille, setFilterFamille] = useState(false);
+
   useEffect(() => {
     // ✅ Plus besoin de vérifier currentUser
     // Le backend gère l'authentification
@@ -44,6 +54,10 @@ const GestionNotification = () => {
       // ✅ Le backend sait qui est l'utilisateur via le token JWT
       const response = await apiHandler.get("/users/me");
       setUserEmailPreference(response.data.receiveBirthdayEmails !== false);
+      // 👇 AJOUTÉ : Charger aussi la préférence des demandes d'amis
+      setReceiveFriendRequestEmails(
+        response.data.receiveFriendRequestEmails !== false,
+      );
     } catch (err) {
       console.error("Erreur chargement préférences:", err);
     }
@@ -115,7 +129,61 @@ const GestionNotification = () => {
     }
   };
 
-  const activeCount = dates.filter(
+  // 👇 AJOUTÉ : Fonction pour gérer les notifications de demandes d'amis
+  const handleToggleFriendRequestEmails = async (newValue) => {
+    setLoadingFriendPref(true);
+    try {
+      await apiHandler.patch("/users/me", {
+        receiveFriendRequestEmails: newValue,
+      });
+      setReceiveFriendRequestEmails(newValue);
+    } catch (err) {
+      console.error("Erreur mise à jour préférence emails amis:", err);
+    } finally {
+      setLoadingFriendPref(false);
+    }
+  };
+
+  // 👇 CORRIGÉ : Fonction pour filtrer les dates
+  const getFilteredDates = () => {
+    return dates.filter((date) => {
+      // Filtre par prénom (name en BDD = prénom affiché)
+      // Filtre par première lettre si 1 caractère, sinon includes
+      const matchPrenom = filterPrenom
+        ? filterPrenom.length === 1
+          ? date.name?.toLowerCase().startsWith(filterPrenom.toLowerCase())
+          : date.name?.toLowerCase().includes(filterPrenom.toLowerCase())
+        : true;
+
+      // Filtre par nom (surname en BDD = nom de famille affiché)
+      // Filtre par première lettre si 1 caractère, sinon includes
+      const matchNom = filterNom
+        ? filterNom.length === 1
+          ? date.surname?.toLowerCase().startsWith(filterNom.toLowerCase())
+          : date.surname?.toLowerCase().includes(filterNom.toLowerCase())
+        : true;
+
+      // Filtre famille uniquement
+      const matchFamille = filterFamille ? date.famille === true : true;
+
+      return matchPrenom && matchNom && matchFamille;
+    });
+  };
+
+  // 👇 AJOUTÉ : Fonctions pour gérer les filtres
+  const handleClearFilters = () => {
+    setFilterPrenom("");
+    setFilterNom("");
+    setFilterFamille(false);
+  };
+
+  const handleToggleFamille = () => {
+    setFilterFamille(!filterFamille);
+  };
+
+  // 👇 MODIFIÉ : Utiliser les dates filtrées
+  const filteredDates = getFilteredDates();
+  const activeCount = filteredDates.filter(
     (d) => d.receiveNotifications !== false,
   ).length;
   const totalCount = dates.length;
@@ -158,10 +226,11 @@ const GestionNotification = () => {
 
       {/* Préférences globales email */}
       <div className="user-email-preferences-simple">
+        {/* Toggle emails anniversaires */}
         <div className="user-pref-toggle-simple">
           <div className="toggle-info">
             <span className="toggle-label">
-              Recevoir les emails de notifications
+              Recevoir les emails de notifications d'anniversaires
             </span>
           </div>
           <label className="switch">
@@ -181,6 +250,33 @@ const GestionNotification = () => {
           <div className="warning-simple">
             ⚠️ Les emails sont désactivés. Vous ne recevrez aucune notification
             par email, même pour les anniversaires activés ci-dessous.
+          </div>
+        )}
+
+        {/* 👇 AJOUTÉ : Toggle emails demandes d'amis */}
+        <div className="user-pref-toggle-simple" style={{ marginTop: "1rem" }}>
+          <div className="toggle-info">
+            <span className="toggle-label">
+              👥 Recevoir les emails de demandes d'amis
+            </span>
+          </div>
+          <label className="switch">
+            <input
+              type="checkbox"
+              checked={receiveFriendRequestEmails}
+              onChange={(e) =>
+                handleToggleFriendRequestEmails(e.target.checked)
+              }
+              disabled={loadingFriendPref}
+            />
+            <span className="slider round"></span>
+          </label>
+        </div>
+
+        {!receiveFriendRequestEmails && (
+          <div className="warning-simple">
+            ⚠️ Vous ne recevrez pas d'email quand quelqu'un vous envoie une
+            demande d'ami.
           </div>
         )}
       </div>
@@ -210,16 +306,27 @@ const GestionNotification = () => {
                 type="text"
                 placeholder="Prénom..."
                 className="filter-input"
+                value={filterPrenom}
+                onChange={(e) => setFilterPrenom(e.target.value)}
               />
               <input
                 type="text"
                 placeholder="Nom..."
                 className="filter-input"
+                value={filterNom}
+                onChange={(e) => setFilterNom(e.target.value)}
               />
             </div>
             <div className="filter-buttons">
-              <button className="filter-btn">Famille uniquement</button>
-              <button className="filter-btn">Effacer les filtres</button>
+              <button
+                className={`filter-btn ${filterFamille ? "active" : ""}`}
+                onClick={handleToggleFamille}
+              >
+                {filterFamille ? "✓ " : ""}Famille uniquement
+              </button>
+              <button className="filter-btn" onClick={handleClearFilters}>
+                Effacer les filtres
+              </button>
             </div>
           </div>
 
@@ -243,12 +350,16 @@ const GestionNotification = () => {
 
           {/* Liste des notifications */}
           <div className="notification-list">
-            {dates.length === 0 ? (
+            {filteredDates.length === 0 ? (
               <div className="empty-state">
-                <p>Aucun anniversaire à afficher</p>
+                <p>
+                  {dates.length === 0
+                    ? "Aucun anniversaire à afficher"
+                    : "Aucun anniversaire ne correspond aux filtres"}
+                </p>
               </div>
             ) : (
-              dates.map((date) => {
+              filteredDates.map((date) => {
                 const isUpdating = updatingDates.has(date._id);
                 const isEnabled = date.receiveNotifications !== false;
                 const isUserDisabled = !userEmailPreference;

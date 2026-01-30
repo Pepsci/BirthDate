@@ -420,3 +420,206 @@ input:disabled + .slider {
     }
 
 }
+
+/* Ajout au fichier gestionNotifications.css */
+
+/* ========================================
+   BOUTON TOGGLE LISTE
+   ======================================== */
+
+.list-toggle-section {
+    margin: 16px 0;
+    text-align: center;
+}
+
+.toggle-list-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 24px;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+    border: 2px solid rgba(102, 126, 234, 0.3);
+    border-radius: 12px;
+    color: var(--gray-100);
+    font-weight: 600;
+    font-size: 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: 100%;
+    justify-content: center;
+}
+
+.toggle-list-btn:hover {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
+    border-color: rgba(102, 126, 234, 0.5);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+}
+
+.toggle-list-btn:active {
+    transform: translateY(0);
+}
+
+.toggle-icon {
+    font-size: 12px;
+    color: #667eea;
+    transition: transform 0.3s ease;
+}
+
+.toggle-list-btn:hover .toggle-icon {
+    transform: scale(1.2);
+}
+
+.toggle-text {
+    flex: 1;
+}
+
+.toggle-count {
+    font-size: 13px;
+    color: var(--gray-400);
+    background: rgba(255, 255, 255, 0.05);
+    padding: 2px 8px;
+    border-radius: 8px;
+}
+
+/* Animation d'expansion/collapse */
+.collapsible-content {
+    animation: slideDown 0.3s ease;
+}
+
+.notification-list {
+    /* Retirer l'animation d'ici, elle est sur le parent */
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        max-height: 0;
+        overflow: hidden;
+    }
+
+    to {
+        opacity: 1;
+        max-height: 2000px;
+        overflow: visible;
+    }
+}
+
+/* ========================================
+   SECTION FILTRES
+   ======================================== */
+
+.filter-section {
+    margin-bottom: 20px;
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--gray-700);
+    border-radius: 12px;
+}
+
+.filter-section h3 {
+    color: var(--gray-100);
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0 0 12px 0;
+    text-align: center;
+}
+
+.filter-inputs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.filter-input {
+    flex: 1;
+    padding: 8px 12px;
+    background: var(--gray-800);
+    border: 1px solid var(--gray-600);
+    border-radius: 8px;
+    color: var(--gray-100);
+    font-size: 14px;
+    transition: all 0.2s ease;
+    box-sizing: border-box;
+    /* 👈 AJOUTÉ - Critique pour éviter le débordement */
+    min-width: 0;
+    /* 👈 AJOUTÉ - Permet au flex de réduire l'input */
+}
+
+.filter-input:focus {
+    outline: none;
+    border-color: #667eea;
+    background: var(--gray-700);
+}
+
+.filter-input::placeholder {
+    color: var(--gray-500);
+}
+
+.filter-buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.filter-btn {
+    flex: 1;
+    padding: 8px 12px;
+    background: var(--gray-700);
+    border: 1px solid var(--gray-600);
+    border-radius: 8px;
+    color: var(--gray-200);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.filter-btn:hover {
+    background: var(--gray-600);
+    border-color: var(--gray-500);
+}
+
+.filter-btn:active {
+    transform: scale(0.98);
+}
+
+/* 👇 AJOUTÉ : Style pour le bouton actif */
+.filter-btn.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-color: #667eea;
+    color: #fff;
+    font-weight: 600;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    .toggle-list-btn {
+        padding: 10px 16px;
+        font-size: 14px;
+    }
+
+    .toggle-count {
+        font-size: 12px;
+    }
+
+    .filter-section {
+        padding: 12px;
+    }
+
+    .filter-section h3 {
+        font-size: 15px;
+    }
+
+    .filter-inputs {
+        flex-direction: column;
+    }
+
+    .filter-buttons {
+        flex-direction: column;
+    }
+
+    .filter-input,
+    .filter-btn {
+        font-size: 13px;
+    }
+}

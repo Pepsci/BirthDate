@@ -165,7 +165,7 @@ router.post("/request", async (req, res) => {
         }
       } else {
         console.log(
-          `ℹ️ Email non envoyé : utilisateur a désactivé les notifications ou pas d'email`,
+          `🔕 Email non envoyé : ${friend.name} a désactivé les notifications de demandes d'amis`,
         );
       }
     } catch (emailError) {
@@ -388,7 +388,7 @@ router.patch("/:friendshipId/link-date", async (req, res) => {
 
 // ========================================
 // DELETE - Supprimer un ami
-// MODIFIÉ pour supprimer aussi la date liée
+// CORRIGÉ pour supprimer les dates liées des DEUX côtés
 // ========================================
 router.delete("/:friendshipId", async (req, res) => {
   try {
@@ -404,25 +404,52 @@ router.delete("/:friendshipId", async (req, res) => {
       return res.status(404).json({ message: "Amitié non trouvée" });
     }
 
-    // 👇 NOUVEAU : Supprimer la date liée si elle existe
-    if (friendship.linkedDate) {
-      try {
-        await DateModel.findByIdAndDelete(friendship.linkedDate);
-        console.log(`🗑️ Date liée supprimée: ${friendship.linkedDate}`);
-      } catch (error) {
-        console.error("Erreur suppression date liée:", error);
-        // On continue même si la suppression de la date échoue
+    // 👇 CORRIGÉ : Supprimer les dates liées des DEUX côtés
+    try {
+      const user1Id = friendship.user;
+      const user2Id = friendship.friend;
+
+      // 1️⃣ Supprimer la date de user1 qui pointe vers user2
+      const deletedDate1 = await DateModel.findOneAndDelete({
+        owner: user1Id,
+        linkedUser: user2Id,
+      });
+
+      if (deletedDate1) {
+        console.log(`🗑️ Date supprimée pour user ${user1Id} (ami: ${user2Id})`);
       }
+
+      // 2️⃣ Supprimer la date de user2 qui pointe vers user1
+      const deletedDate2 = await DateModel.findOneAndDelete({
+        owner: user2Id,
+        linkedUser: user1Id,
+      });
+
+      if (deletedDate2) {
+        console.log(`🗑️ Date supprimée pour user ${user2Id} (ami: ${user1Id})`);
+      }
+
+      // 3️⃣ Supprimer aussi l'ancienne date liée si elle existe (legacy)
+      if (friendship.linkedDate) {
+        await DateModel.findByIdAndDelete(friendship.linkedDate);
+        console.log(
+          `🗑️ Ancienne date liée supprimée: ${friendship.linkedDate}`,
+        );
+      }
+    } catch (error) {
+      console.error("❌ Erreur suppression dates liées:", error);
+      // On continue même si la suppression de dates échoue
     }
 
+    // 4️⃣ Supprimer la friendship
     await Friend.findByIdAndDelete(friendshipId);
 
     res.status(200).json({
-      message: "Ami supprimé",
+      message: "Ami et dates associées supprimés",
       friendship,
     });
   } catch (error) {
-    console.error("Erreur lors de la suppression:", error);
+    console.error("❌ Erreur lors de la suppression:", error);
     res.status(500).json({ message: "Erreur serveur", error: error.message });
   }
 });
