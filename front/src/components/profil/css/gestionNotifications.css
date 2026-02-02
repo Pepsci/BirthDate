@@ -5,15 +5,10 @@
     max-width: 400px;
     max-height: 650px;
     padding: 1rem;
-    margin: 1.5rem;
-    border: 3px solid black;
-    margin-bottom: -10px;
-    border-radius: 12px;
-    background-color: var(--gray-800);
     overflow: auto;
     scrollbar-width: none;
     -ms-overflow-style: none;
-    margin-top: 0;
+    margin: auto;
 }
 
 .simple-notification-manager::-webkit-scrollbar {

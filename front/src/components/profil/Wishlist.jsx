@@ -151,7 +151,7 @@ const Wishlist = () => {
       {showForm && (
         <div className="gift-form-card">
           <h3>{editingItem ? "Modifier l'idée" : "Nouvel idée"}</h3>
-          <form className="form-connect" onSubmit={handleSubmit}>
+          <form className="" onSubmit={handleSubmit}>
             <input
               type="text"
               name="title"
