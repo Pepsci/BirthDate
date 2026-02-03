@@ -190,7 +190,7 @@ const DateList = ({ onEditDate, onViewFriendProfile, onMerge }) => {
           )}
 
           {isFormVisible && (
-            <div className="form-section add-date-section">
+            <div className="filter-section">
               <CreateDate onDateAdded={handleDateAdded} />
             </div>
           )}

@@ -54,7 +54,7 @@ const CreateDate = ({ onDateAdded }) => {
   useEffect(() => {
     if (!currentUserID) return;
     setFilteredDates(
-      dates.filter((c) => c.owner && c.owner._id === currentUserID)
+      dates.filter((c) => c.owner && c.owner._id === currentUserID),
     );
   }, [addedDate, dates, currentUserID]);
 
@@ -123,11 +123,11 @@ const CreateDate = ({ onDateAdded }) => {
       <div className="formAddDAte">
         <h3 className="title-filter">Ajouter une date d'anniversaires</h3>
         <form className="form-date" onSubmit={handleClick}>
-          <div className="form-date-input1">
+          <div className="filter-inputs">
             <input
               type="text"
               name="name"
-              className="form-date-input formAddInput"
+              className="filter-input"
               placeholder="Enter a name"
               value={date.name}
               onChange={(e) => setDate({ ...date, name: e.target.value })}
@@ -137,20 +137,20 @@ const CreateDate = ({ onDateAdded }) => {
             <input
               type="text"
               name="surname"
-              className="form-date-input formAddInput"
+              className="filter-input"
               placeholder="Enter a surname"
               value={date.surname}
               onChange={(e) => setDate({ ...date, surname: e.target.value })}
             />
-            <div className="form-date-input2">
-              <input
-                className="form-date-input addDate-inputDate formAddInput"
-                type="date"
-                name="date"
-                value={date.date}
-                onChange={(e) => setDate({ ...date, date: e.target.value })}
-              />
-              <label className="form-date-labelDate" htmlFor="family">
+            <input
+              className="filter-input form-input-date"
+              type="date"
+              name="date"
+              value={date.date}
+              onChange={(e) => setDate({ ...date, date: e.target.value })}
+            />
+            <div className="form-date-checkbox">
+              <label className="form-date-label" htmlFor="family">
                 Family
               </label>
               <input
@@ -162,10 +162,11 @@ const CreateDate = ({ onDateAdded }) => {
               />
             </div>
           </div>
-
-          <button className="btnSwitch" type="submit">
-            Ajouter
-          </button>
+          <div className="filter-buttons">
+            <button className="filter-btn" type="submit">
+              Ajouter
+            </button>
+          </div>
         </form>
       </div>
     </div>

@@ -524,6 +524,7 @@ input:disabled + .slider {
     display: flex;
     gap: 8px;
     margin-bottom: 12px;
+
 }
 
 .filter-input {
@@ -536,9 +537,8 @@ input:disabled + .slider {
     font-size: 14px;
     transition: all 0.2s ease;
     box-sizing: border-box;
-    /* 👈 AJOUTÉ - Critique pour éviter le débordement */
     min-width: 0;
-    /* 👈 AJOUTÉ - Permet au flex de réduire l'input */
+    height: 40px;
 }
 
 .filter-input:focus {
