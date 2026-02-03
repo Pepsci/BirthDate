@@ -416,6 +416,11 @@ const FriendProfile = ({ date, onCancel }) => {
 
   return (
     <div className="friendProfil">
+      <div className="btnRLD">
+        <button type="button" onClick={onCancel} className="btnBack">
+          Retour à la liste des dates
+        </button>
+      </div>
       <h1 className="name-profilFriend font-profilFriend">
         {currentDate.name} {currentDate.surname}
         {date.linkedUser && (
@@ -550,12 +555,6 @@ const FriendProfile = ({ date, onCancel }) => {
             onUpdate={handleGiftUpdated}
           />
         </div>
-      </div>
-
-      <div className="btnRLD">
-        <button type="button" onClick={onCancel} className="btnBack">
-          Retour à la liste des dates
-        </button>
       </div>
     </div>
   );

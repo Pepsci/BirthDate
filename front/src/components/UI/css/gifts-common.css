@@ -78,6 +78,14 @@
     margin-right: auto;
 }
 
+.gift-form-input{
+    display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+        margin: auto;
+}
+
 .gift-form-card h3 {
     color: #fff;
     font-size: 18px;
@@ -97,6 +105,11 @@
     margin-bottom: 12px;
     transition: all 0.3s ease;
     box-sizing: border-box;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    display: block;
+    max-width: 100%;
 }
 
 .gift-form-card .form-input:focus {

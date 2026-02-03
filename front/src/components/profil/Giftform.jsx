@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import apiHandler from "../../api/apiHandler";
-import "./css/giftForm.css";
+import "../UI/css/gifts-common.css";
 
 const GiftForm = ({ dateId, onGiftAdded }) => {
   const [giftName, setGiftName] = useState("");
@@ -18,22 +18,13 @@ const GiftForm = ({ dateId, onGiftAdded }) => {
       purchased,
     };
 
-    console.log("📤 Envoi du cadeau:", giftData);
-
     try {
       const response = await apiHandler.patch(
         `/date/${dateId}/gifts`,
-        giftData
+        giftData,
       );
-      console.log("✅ Réponse serveur:", response.data);
-      console.log(
-        "🎁 Dernier cadeau ajouté:",
-        response.data.gifts[response.data.gifts.length - 1]
-      );
-
       onGiftAdded(response.data);
 
-      // Réinitialiser le formulaire
       setGiftName("");
       setOccasion("birthday");
       setYear(new Date().getFullYear());
@@ -44,44 +35,48 @@ const GiftForm = ({ dateId, onGiftAdded }) => {
   };
 
   return (
-    <form className="formGift-friendProfil" onSubmit={handleAddGift}>
-      <input
-        className="inputGift-friendProfil"
-        type="text"
-        placeholder="Nom du cadeau"
-        value={giftName}
-        onChange={(e) => setGiftName(e.target.value)}
-        required
-      />
+    <div className="gift-form-card">
+      <h3>Nouvelle idée</h3>
+      <form onSubmit={handleAddGift}>
+        <div className="gift-form-input">
+          <input
+            className="form-input"
+            type="text"
+            placeholder="Nom du cadeau *"
+            value={giftName}
+            onChange={(e) => setGiftName(e.target.value)}
+            required
+          />
 
-      <select
-        className="inputGift-friendProfil select-gift"
-        value={occasion}
-        onChange={(e) => {
-          console.log("🎯 Occasion changée:", e.target.value);
-          setOccasion(e.target.value);
-        }}
-      >
-        <option value="birthday">🎂 Anniversaire</option>
-        <option value="christmas">🎄 Noël</option>
-        <option value="other">🎁 Autre occasion</option>
-      </select>
+          <select
+            className="form-input"
+            value={occasion}
+            onChange={(e) => setOccasion(e.target.value)}
+          >
+            <option value="birthday">🎂 Anniversaire</option>
+            <option value="christmas">🎄 Noël</option>
+            <option value="other">🎁 Autre occasion</option>
+          </select>
 
-      <input
-        className="inputGift-friendProfil"
-        type="number"
-        placeholder="Année"
-        value={year}
-        onChange={(e) => setYear(e.target.value)}
-        min="2000"
-        max="2100"
-        required
-      />
+          <input
+            className="form-input"
+            type="number"
+            placeholder="Année"
+            value={year}
+            onChange={(e) => setYear(e.target.value)}
+            min="2000"
+            max="2100"
+            required
+          />
+        </div>
 
-      <button className="addGift-friendProfil" type="submit">
-        Ajouter un cadeau
-      </button>
-    </form>
+        <div className="gift-form-buttons">
+          <button type="submit" className="btn-profil btn-profilGreen">
+            Ajouter
+          </button>
+        </div>
+      </form>
+    </div>
   );
 };
 

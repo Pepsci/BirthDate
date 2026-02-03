@@ -82,10 +82,14 @@ const FriendGiftList = ({ currentDate, onUpdate }) => {
     setDeletingGiftId(null);
 
     setTimeout(() => {
-      const container = document.querySelector(".gift-container");
-      if (container) {
-        container.scrollTo({ top: 0, behavior: "smooth" });
-      }
+      const targets = [
+        document.querySelector(".gift-container"),
+        document.querySelector(".mobile-carousel__content"),
+        document.querySelector(".desktop-content"),
+      ];
+      targets.forEach((el) => {
+        if (el) el.scrollTo({ top: 0, behavior: "smooth" });
+      });
     }, 100);
   };
 
@@ -189,39 +193,40 @@ const FriendGiftList = ({ currentDate, onUpdate }) => {
         <div className="gift-form-card">
           <h3>{editingGift ? "Modifier l'idée" : "Nouvelle idée"}</h3>
           <form onSubmit={handleSubmit}>
-            <input
-              type="text"
-              name="giftName"
-              className="form-input"
-              placeholder="Nom du cadeau *"
-              value={formData.giftName}
-              onChange={handleInputChange}
-              required
-            />
+            <div className="gift-form-input">
+              <input
+                type="text"
+                name="giftName"
+                className="form-input"
+                placeholder="Nom du cadeau *"
+                value={formData.giftName}
+                onChange={handleInputChange}
+                required
+              />
 
-            <select
-              name="occasion"
-              className="form-input"
-              value={formData.occasion}
-              onChange={handleInputChange}
-            >
-              <option value="birthday">🎂 Anniversaire</option>
-              <option value="christmas">🎄 Noël</option>
-              <option value="other">🎁 Autre occasion</option>
-            </select>
+              <select
+                name="occasion"
+                className="form-input"
+                value={formData.occasion}
+                onChange={handleInputChange}
+              >
+                <option value="birthday">🎂 Anniversaire</option>
+                <option value="christmas">🎄 Noël</option>
+                <option value="other">🎁 Autre occasion</option>
+              </select>
 
-            <input
-              type="number"
-              name="year"
-              className="form-input"
-              placeholder="Année"
-              value={formData.year}
-              onChange={handleInputChange}
-              min="2000"
-              max="2100"
-              required
-            />
-
+              <input
+                type="number"
+                name="year"
+                className="form-input"
+                placeholder="Année"
+                value={formData.year}
+                onChange={handleInputChange}
+                min="2000"
+                max="2100"
+                required
+              />
+            </div>
             <div className="gift-form-buttons">
               <button type="submit" className="btn-profil btn-profilGreen">
                 {editingGift ? "Enregistrer" : "Ajouter"}

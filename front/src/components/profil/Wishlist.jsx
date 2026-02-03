@@ -86,10 +86,14 @@ const Wishlist = () => {
     setDeletingItemId(null);
 
     setTimeout(() => {
-      const container = document.querySelector(".gift-container");
-      if (container) {
-        container.scrollTo({ top: 0, behavior: "smooth" });
-      }
+      const targets = [
+        document.querySelector(".gift-container"),
+        document.querySelector(".mobile-carousel__content"),
+        document.querySelector(".desktop-content"),
+      ];
+      targets.forEach((el) => {
+        if (el) el.scrollTo({ top: 0, behavior: "smooth" });
+      });
     }, 100);
   };
 
@@ -152,33 +156,35 @@ const Wishlist = () => {
         <div className="gift-form-card">
           <h3>{editingItem ? "Modifier l'idée" : "Nouvel idée"}</h3>
           <form className="" onSubmit={handleSubmit}>
-            <input
-              type="text"
-              name="title"
-              className="form-input"
-              placeholder="Titre *"
-              value={formData.title}
-              onChange={handleInputChange}
-              required
-            />
-            <input
-              type="number"
-              name="price"
-              className="form-input"
-              placeholder="Prix (€)"
-              value={formData.price}
-              onChange={handleInputChange}
-              step="0.01"
-              min="0"
-            />
-            <input
-              type="url"
-              name="url"
-              className="form-input"
-              placeholder="Lien (URL)"
-              value={formData.url}
-              onChange={handleInputChange}
-            />
+            <div className="gift-form-input">
+              <input
+                type="text"
+                name="title"
+                className="form-input"
+                placeholder="Titre *"
+                value={formData.title}
+                onChange={handleInputChange}
+                required
+              />
+              <input
+                type="number"
+                name="price"
+                className="form-input"
+                placeholder="Prix (€)"
+                value={formData.price}
+                onChange={handleInputChange}
+                step="0.01"
+                min="0"
+              />
+              <input
+                type="url"
+                name="url"
+                className="form-input"
+                placeholder="Lien (URL)"
+                value={formData.url}
+                onChange={handleInputChange}
+              />
+            </div>
             <div className="gift-share-toggle">
               <label className="toggle-label">
                 <input

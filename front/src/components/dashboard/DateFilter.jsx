@@ -40,34 +40,32 @@ const DateFilter = ({ onFilterChange }) => {
     <div className="date-filter">
       <h3 className="title-filter">Filtrer les anniversaires</h3>
       <div className="filter-options">
-        <div className="filter-input">
+        <div className="filter-inputs">
           <input
             type="text"
             placeholder=" Prénom..."
             value={nameSearch}
             onChange={handleNameChange}
-            className="inputFilter"
+            className="filter-input"
           />
           <input
             type="text"
             placeholder=" Nom..."
             value={surnameSearch}
             onChange={handleSurnameChange}
-            className="inputFilter"
+            className="filter-input"
           />
         </div>
-        <div className="btnFilter">
+        <div className="filter-buttons">
           <button
-            className={`btn ${
-              isFamilyFilterActive ? "active" : ""
-            },btn-filter btnSwitch`}
+            className={`filter-btn ${isFamilyFilterActive ? "active" : ""}`}
             onClick={toggleFamilyFilter}
           >
             {isFamilyFilterActive
               ? "Afficher toutes les dates"
               : "Famille uniquement"}
           </button>
-          <button className="btn-filter, btnSwitch" onClick={clearFilters}>
+          <button className="filter-btn" onClick={clearFilters}>
             Effacer les filtres
           </button>
         </div>
