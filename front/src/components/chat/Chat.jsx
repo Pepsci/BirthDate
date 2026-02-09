@@ -69,7 +69,7 @@ function Chat() {
 
   const loadConversations = async (token) => {
     try {
-      const response = await fetch("http://localhost:4000/api/conversations", {
+      const response = await fetch("/api/conversations", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -164,15 +164,12 @@ function Chat() {
     if (conversation.unreadCount > 0) {
       try {
         const token = localStorage.getItem("authToken");
-        await fetch(
-          `http://localhost:4000/api/conversations/${conversation._id}/read`,
-          {
-            method: "PUT",
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
+        await fetch(`/api/conversations/${conversation._id}/read`, {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
           },
-        );
+        });
 
         socketService.emit("messages:read", {
           conversationId: conversation._id,
