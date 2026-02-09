@@ -20,7 +20,7 @@ class SocketService {
     // Construction de l'URL API selon l'environnement
     const apiUrl = isDev
       ? "http://localhost:4000"
-      : `${window.location.protocol}//${window.location.hostname}`;
+      : "https://birthreminder.com";
 
     console.log("🔌 Connecting to:", apiUrl);
 
