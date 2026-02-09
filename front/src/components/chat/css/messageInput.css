@@ -112,6 +112,7 @@
     justify-content: center;
     transition: all 0.2s;
     flex-shrink: 0;
+    margin: auto;
 }
 
 .send-button:hover:not(:disabled) {
@@ -127,6 +128,7 @@
     background: #ccc;
     cursor: not-allowed;
     opacity: 0.6;
+    margin: auto;
 }
 
 /* Mobile */
