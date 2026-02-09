@@ -1,0 +1,153 @@
+/* messageInput.css */
+
+.message-input-container {
+    border-top: 1px solid #e0e0e0;
+    background: white;
+    flex-shrink: 0;
+}
+
+/* Barre d'édition */
+.editing-indicator {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    background: linear-gradient(135deg, #e7f3ff 0%, #d4ebff 100%);
+    border-bottom: 2px solid #007bff;
+    font-size: 13px;
+    color: #0056b3;
+    font-weight: 500;
+    animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.editing-indicator span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.cancel-edit-btn {
+    background: none;
+    border: none;
+    color: #0056b3;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: all 0.2s;
+    line-height: 1;
+}
+
+.cancel-edit-btn:hover {
+    background: rgba(0, 86, 179, 0.15);
+    transform: scale(1.1);
+}
+
+.cancel-edit-btn:active {
+    transform: scale(0.95);
+}
+
+/* Formulaire */
+.message-input-form {
+    display: flex;
+    padding: 15px;
+    gap: 10px;
+    align-items: flex-end;
+    width: 95%;
+}
+
+.message-input-form textarea {
+    flex: 1;
+    min-height: 45px;
+    max-height: 150px;
+    padding: 12px 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 22px;
+    font-size: 15px;
+    font-family: inherit;
+    resize: none;
+    outline: none;
+    transition: all 0.2s;
+    }
+
+.message-input-form textarea:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+}
+
+/* Mode édition */
+.message-input-form textarea.editing {
+    border: 2px solid #007bff;
+    background: #f0f8ff;
+}
+
+.message-input-form textarea::placeholder {
+    color: #999;
+}
+
+/* Bouton envoi */
+.send-button {
+    width: 45px;
+    height: 45px;
+    border: none;
+    background: #007bff;
+    color: white;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+
+.send-button:hover:not(:disabled) {
+    background: #0056b3;
+    transform: scale(1.05);
+}
+
+.send-button:active:not(:disabled) {
+    transform: scale(0.95);
+}
+
+.send-button:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+    .message-input-form {
+        padding: 12px;
+    }
+
+    .editing-indicator {
+        padding: 8px 12px;
+        font-size: 12px;
+    }
+
+    .message-input-form textarea {
+        min-height: 42px;
+        font-size: 14px;
+    }
+
+    .send-button {
+        width: 42px;
+        height: 42px;
+        font-size: 16px;
+    }
+}

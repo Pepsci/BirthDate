@@ -173,6 +173,8 @@ justify-content: center;
     font-weight: 600;
 }
 
+
+
 /* --------------------------------
    Media Queries - Responsive
 -------------------------------- */
@@ -209,6 +211,9 @@ justify-content: center;
         min-width: 1.5rem;
         height: 2.25rem;
         font-size: 0.8rem;
+    }
+    .chat-in-datelist {
+        height: 500px;
     }
 }
 

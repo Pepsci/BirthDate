@@ -18,6 +18,7 @@ const verifyRouter = require("./routes/verify");
 const unsubscribeRouter = require("./routes/unsubscribe");
 const wishlistRouter = require("./routes/wishlist");
 const friendRouter = require("./routes/friends");
+const conversationsRouter = require("./routes/conversations");
 const mergeDatesRouter = require("./routes/mergeDates");
 
 const app = express();
@@ -56,6 +57,7 @@ app.use("/api/verify-email", verifyRouter);
 app.use("/api/unsubscribe", unsubscribeRouter);
 app.use("/api/wishlist", wishlistRouter);
 app.use("/api/friends", friendRouter);
+app.use("/api/conversations", conversationsRouter);
 app.use("/api/merge-dates", mergeDatesRouter);
 
 // IMPORTANT : Cette route doit rester AVANT le wildcard

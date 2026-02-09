@@ -39,8 +39,8 @@ const Home = () => {
     setEditingDate(null);
   };
 
-  const handleViewFriendProfile = (date) => {
-    setViewingFriendProfile(date);
+  const handleViewFriendProfile = (date, initialSection = "info") => {
+    setViewingFriendProfile({ date, initialSection });
     setShowProfile(false);
     setEditingDate(null);
     setShowMergeModal(false);
@@ -102,7 +102,6 @@ const Home = () => {
                 <ProfilDetails />
               </>
             )}
-
           {/* Afficher la liste des dates */}
           {!showProfile &&
             !editingDate &&
@@ -113,7 +112,6 @@ const Home = () => {
                 onViewFriendProfile={handleViewFriendProfile}
               />
             )}
-
           {/* Afficher l'édition de date */}
           {editingDate && !showMergeModal && (
             <UpdateDate
@@ -122,15 +120,14 @@ const Home = () => {
               onMerge={handleOpenMergeModal}
             />
           )}
-
           {/* Afficher le profil d'ami */}
           {viewingFriendProfile && !showMergeModal && (
             <FriendProfile
-              date={viewingFriendProfile}
+              date={viewingFriendProfile.date}
+              initialSection={viewingFriendProfile.initialSection}
               onCancel={handleCancelViewProfile}
             />
           )}
-
           {/* Modal de fusion */}
           {showMergeModal && cardToMerge && (
             <ManualMergeModal

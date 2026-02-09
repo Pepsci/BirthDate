@@ -4,6 +4,7 @@ const Friend = require("../models/friend.model");
 const User = require("../models/user.model");
 const DateModel = require("../models/date.model");
 const mongoose = require("mongoose");
+const { isAuthenticated } = require("../middleware/jwt.middleware");
 const {
   sendFriendRequestNotification,
 } = require("../services/emailTemplates/friendRequestEmailService");
@@ -11,9 +12,10 @@ const {
 // ========================================
 // GET - Obtenir tous les amis d'un utilisateur
 // ========================================
-router.get("/", async (req, res) => {
+router.get("/", isAuthenticated, async (req, res) => {
   try {
-    const userId = req.query.userId;
+    // Récupérer l'userId depuis le JWT
+    const userId = req.payload._id;
 
     if (!userId || !mongoose.isValidObjectId(userId)) {
       return res.status(400).json({ message: "User ID invalide" });
@@ -31,9 +33,10 @@ router.get("/", async (req, res) => {
 // ========================================
 // GET - Obtenir les demandes d'amitié en attente
 // ========================================
-router.get("/requests", async (req, res) => {
+router.get("/requests", isAuthenticated, async (req, res) => {
   try {
-    const userId = req.query.userId;
+    // Récupérer l'userId depuis le JWT
+    const userId = req.payload._id;
 
     if (!userId || !mongoose.isValidObjectId(userId)) {
       return res.status(400).json({ message: "User ID invalide" });
@@ -51,9 +54,10 @@ router.get("/requests", async (req, res) => {
 // ========================================
 // GET - Obtenir les demandes d'amitié envoyées
 // ========================================
-router.get("/sent", async (req, res) => {
+router.get("/sent", isAuthenticated, async (req, res) => {
   try {
-    const userId = req.query.userId;
+    // Récupérer l'userId depuis le JWT
+    const userId = req.payload._id;
 
     if (!userId || !mongoose.isValidObjectId(userId)) {
       return res.status(400).json({ message: "User ID invalide" });

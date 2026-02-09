@@ -7,6 +7,7 @@ const app = require("../app");
 const debug = require("debug")("server:server");
 const https = require("https");
 const http = require("http");
+const { Server } = require("socket.io");
 
 // Définition du port
 const port = normalizePort(process.env.PORT || "3000");
@@ -21,10 +22,10 @@ if (isProduction) {
   try {
     const options = {
       key: fs.readFileSync(
-        "/etc/letsencrypt/live/birthreminder.com/privkey.pem"
+        "/etc/letsencrypt/live/birthreminder.com/privkey.pem",
       ),
       cert: fs.readFileSync(
-        "/etc/letsencrypt/live/birthreminder.com/fullchain.pem"
+        "/etc/letsencrypt/live/birthreminder.com/fullchain.pem",
       ),
     };
     server = https.createServer(options, app);
@@ -38,13 +39,43 @@ if (isProduction) {
   console.log("✅ Serveur HTTP en local");
 }
 
+// Configuration Socket.io
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://birthreminder.com",
+  "https://www.birthreminder.com",
+];
+
+const io = new Server(server, {
+  cors: {
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    methods: ["GET", "POST"],
+    credentials: true,
+  },
+});
+
+// Middleware d'authentification Socket.io
+const socketAuthMiddleware = require("../middleware/socketAuth");
+io.use(socketAuthMiddleware);
+
+// Gestion des événements Socket.io
+const setupSocketHandlers = require("../sockets/chatHandlers");
+setupSocketHandlers(io);
+
 // Démarrer le serveur
 server.listen(port, () => {
   console.log(
     `✅ Serveur en cours d'exécution sur ${
       isProduction ? "HTTPS" : "HTTP"
-    } sur le port ${port}`
+    } sur le port ${port}`,
   );
+  console.log(`📡 Socket.io ready`);
 });
 
 server.on("error", onError);

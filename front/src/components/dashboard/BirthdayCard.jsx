@@ -1,8 +1,19 @@
 import React from "react";
+import useNotifications from "../../context/useNotifications";
 import Countdown from "./Countdown";
 import "./css/birthcard.css";
 
 const BirthdayCard = ({ date, onEdit, onViewProfile }) => {
+  const { conversationUnreads } = useNotifications();
+
+  const isFriend = !!date.linkedUser;
+
+  // Maintenant c'est simple : juste récupérer le count pour cette conversation
+  const unreadForFriend =
+    isFriend && date.conversationId
+      ? conversationUnreads[date.conversationId] || 0
+      : 0;
+
   const calculateCurrentAge = (birthDate) => {
     const today = new Date();
     const birth = new Date(birthDate);
@@ -18,6 +29,10 @@ const BirthdayCard = ({ date, onEdit, onViewProfile }) => {
     }
 
     return age;
+  };
+
+  const handleMessageClick = async () => {
+    onViewProfile(date, "chat");
   };
 
   const today = new Date();
@@ -48,7 +63,6 @@ const BirthdayCard = ({ date, onEdit, onViewProfile }) => {
   const isThisWeek = diffDays <= 7 && diffDays > 0;
   const hasGifts = date.gifts && date.gifts.length > 0;
   const isFamily = date.family === true;
-  const isFriend = !!date.linkedUser;
 
   const cardClassName = `
     birthCard titleFont 
@@ -97,6 +111,16 @@ const BirthdayCard = ({ date, onEdit, onViewProfile }) => {
           <button onClick={() => onViewProfile(date)} className="btn-view">
             Voir Profil
           </button>
+          {isFriend && (
+            <button onClick={handleMessageClick} className="btn-message">
+              💬 Messages
+              {unreadForFriend > 0 && (
+                <span className="notification-badge-inline">
+                  {unreadForFriend}
+                </span>
+              )}
+            </button>
+          )}
         </div>
       </div>
     </div>

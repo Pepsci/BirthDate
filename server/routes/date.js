@@ -1,28 +1,59 @@
 const express = require("express");
 const router = express.Router();
 const dateModel = require("./../models/date.model");
+const Conversation = require("./../models/conversation.model"); // Ajoute ce require
 const mongoose = require("mongoose");
 const userModel = require("../models/user.model");
 
-// 👇 CORRIGÉ : middleware au lieu de middlewares
 const { isAuthenticated } = require("../middleware/jwt.middleware");
 
 // ========================================
-// GET / - Liste des dates
+// GET / - Liste des dates avec conversationId
 // 🔒 SÉCURISÉ : Ne renvoie QUE les dates de l'utilisateur connecté
 // ========================================
 router.get("/", isAuthenticated, async (req, res, next) => {
   try {
-    // ✅ Utiliser UNIQUEMENT l'ID de l'utilisateur authentifié
-    // Ignorer complètement req.query.owner
-    const userId = req.payload._id; // Depuis le middleware JWT
+    const userId = req.payload._id;
 
     const dateList = await dateModel
       .find({ owner: userId })
       .populate("owner")
       .populate("linkedUser", "name surname email avatar birthDate");
 
-    res.status(200).json(dateList);
+    // Récupérer toutes les conversations de l'utilisateur
+    const conversations = await Conversation.find({
+      participants: userId,
+    }).select("_id participants");
+
+    console.log("📅 Found conversations:", conversations.length);
+
+    // Enrichir chaque date avec le conversationId si c'est un ami
+    const enrichedDates = dateList.map((date) => {
+      const dateObj = date.toObject();
+
+      if (dateObj.linkedUser) {
+        const linkedUserId = dateObj.linkedUser._id || dateObj.linkedUser;
+        const conversation = conversations.find((conv) =>
+          conv.participants.some(
+            (p) => p.toString() === linkedUserId.toString(),
+          ),
+        );
+
+        if (conversation) {
+          console.log(
+            `✅ Found conversation for ${dateObj.name}:`,
+            conversation._id,
+          );
+          dateObj.conversationId = conversation._id;
+        } else {
+          console.log(`❌ No conversation found for ${dateObj.name}`);
+        }
+      }
+
+      return dateObj;
+    });
+
+    res.status(200).json(enrichedDates);
   } catch (error) {
     console.error("Error fetching date list:", error);
     res.status(500).json({ message: "Internal Server Error" });
@@ -37,10 +68,9 @@ router.post("/", isAuthenticated, async (req, res, next) => {
   const { date, name, surname, family, linkedUser } = req.body;
 
   try {
-    // ✅ Forcer le owner à être l'utilisateur connecté
     const newDate = await dateModel.create({
       date,
-      owner: req.payload._id, // 👈 Toujours l'utilisateur connecté
+      owner: req.payload._id,
       name,
       surname,
       family,
@@ -67,7 +97,7 @@ router.get("/:id", isAuthenticated, async (req, res, next) => {
     const date = await dateModel
       .findOne({
         _id: req.params.id,
-        owner: req.payload._id, // 👈 Vérifier le propriétaire
+        owner: req.payload._id,
       })
       .populate("owner")
       .populate("linkedUser", "name surname email avatar birthDate");
@@ -93,17 +123,15 @@ router.patch("/:id", isAuthenticated, async (req, res, next) => {
       return res.status(400).json({ message: "Invalid Date ID" });
     }
 
-    // Vérifier que la date appartient à l'utilisateur
     const existingDate = await dateModel.findOne({
       _id: req.params.id,
-      owner: req.payload._id, // 👈 Vérification du propriétaire
+      owner: req.payload._id,
     });
 
     if (!existingDate) {
       return res.status(404).json({ message: "Date not found" });
     }
 
-    // Si c'est une date liée à un ami, on ne peut pas la modifier
     if (existingDate.linkedUser) {
       return res.status(403).json({
         message:
@@ -143,11 +171,10 @@ router.patch("/:id/gifts", isAuthenticated, async (req, res, next) => {
 
     const { giftName, occasion, year, purchased } = req.body;
 
-    // Vérifier le propriétaire avant modification
     const updatedDate = await dateModel.findOneAndUpdate(
       {
         _id: req.params.id,
-        owner: req.payload._id, // 👈 Vérification du propriétaire
+        owner: req.payload._id,
       },
       {
         $push: {
@@ -193,7 +220,7 @@ router.patch("/:id/gifts/:giftId", isAuthenticated, async (req, res, next) => {
     const updatedDate = await dateModel.findOneAndUpdate(
       {
         _id: req.params.id,
-        owner: req.payload._id, // 👈 Vérification du propriétaire
+        owner: req.payload._id,
         "gifts._id": req.params.giftId,
       },
       {
@@ -236,7 +263,7 @@ router.delete("/:id/gifts/:giftId", isAuthenticated, async (req, res, next) => {
     const updatedDate = await dateModel.findOneAndUpdate(
       {
         _id: req.params.id,
-        owner: req.payload._id, // 👈 Vérification du propriétaire
+        owner: req.payload._id,
       },
       { $pull: { gifts: { _id: req.params.giftId } } },
       { new: true },
@@ -267,7 +294,7 @@ router.delete("/:id", isAuthenticated, async (req, res, next) => {
 
     const existingDate = await dateModel.findOne({
       _id: req.params.id,
-      owner: req.payload._id, // 👈 Vérification du propriétaire
+      owner: req.payload._id,
     });
 
     if (!existingDate) {
@@ -302,7 +329,7 @@ router.put("/:id/notifications", isAuthenticated, async (req, res, next) => {
     const updatedDate = await dateModel.findOneAndUpdate(
       {
         _id: dateId,
-        owner: req.payload._id, // 👈 Vérification du propriétaire
+        owner: req.payload._id,
       },
       { receiveNotifications },
       { new: true },
@@ -339,7 +366,7 @@ router.put(
       const updatedDate = await dateModel.findOneAndUpdate(
         {
           _id: dateId,
-          owner: req.payload._id, // 👈 Vérification du propriétaire
+          owner: req.payload._id,
         },
         {
           "notificationPreferences.timings": timings,

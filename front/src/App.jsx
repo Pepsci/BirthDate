@@ -15,6 +15,7 @@ import LandingPage from "./components/Accueil/LandingPage";
 import BirthdayView from "./components/dashboard/BirthdayView";
 import Friends from "./components/friends/Friends";
 import MergeDuplicates from "./components/friends/MergeDuplicates";
+import Chat from "./components/chat/Chat";
 
 function App() {
   return (
@@ -64,6 +65,7 @@ function App() {
             <Route path="/update-date/:id" element={<UpdateDate />} />
             <Route path="/friends" element={<Friends />} />
             <Route path="/merge-duplicates" element={<MergeDuplicates />} />
+            <Route path="/chat" element={<Chat />} />
           </Route>
         </Routes>
       </div>

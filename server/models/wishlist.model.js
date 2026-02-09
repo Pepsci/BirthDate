@@ -5,7 +5,7 @@ const wishlistSchema = Schema({
   // À qui appartient cet item
   userId: {
     type: Schema.Types.ObjectId,
-    ref: "user",
+    ref: "User",
     required: true,
   },
 
@@ -46,7 +46,7 @@ const wishlistSchema = Schema({
   // Qui l'a acheté
   purchasedBy: {
     type: Schema.Types.ObjectId,
-    ref: "user",
+    ref: "User",
     default: null,
   },
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import apiHandler from "../../api/apiHandler";
 import useAuth from "../../context/useAuth";
 import CreateDate from "./CreateDate";
@@ -6,23 +6,28 @@ import Agenda from "./Agenda";
 import DateFilter from "./DateFilter";
 import BirthdayCard from "./BirthdayCard";
 import ManualMergeModal from "./ManuelMergeModal";
+import Chat from "../chat/Chat";
+import useNotifications from "../../context/useNotifications";
 import "./css/dateList.css";
 import "./css/birthcard.css";
+import "../UI/css/badge-notification.css";
 
 const ITEMS_PER_PAGE = 10;
 const ITEMS_PER_PAGE_MOBILE = 6;
 
 const DateList = ({ onEditDate, onViewFriendProfile, onMerge }) => {
-  // 👈 Ajout de onMerge
   const { currentUser } = useAuth();
   const [dates, setDates] = useState([]);
   const [allDates, setAllDates] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [isFormVisible, setIsFormVisible] = useState(false);
   const [isFilterVisible, setIsFilterVisible] = useState(false);
+  const [isChatVisible, setIsChatVisible] = useState(false);
   const [itemsPerPage, setItemsPerPage] = useState(
     window.innerWidth <= 600 ? ITEMS_PER_PAGE_MOBILE : ITEMS_PER_PAGE,
   );
+  const filterInputRef = useRef(null);
+  const { unreadCount, loadUnreadCount, resetUnreadCount } = useNotifications();
 
   const [showMergeModal, setShowMergeModal] = useState(false);
   const [cardToMerge, setCardToMerge] = useState(null);
@@ -95,10 +100,16 @@ const DateList = ({ onEditDate, onViewFriendProfile, onMerge }) => {
     return () => window.removeEventListener("resize", handleResize);
   }, [itemsPerPage]);
 
+  // Charger le nombre de messages non lus au montage
+  useEffect(() => {
+    loadUnreadCount();
+  }, []);
+
   const toggleFormVisibility = () => {
     setIsFormVisible(!isFormVisible);
     if (!isFormVisible) {
       setIsFilterVisible(false);
+      setIsChatVisible(false);
     }
   };
 
@@ -113,6 +124,22 @@ const DateList = ({ onEditDate, onViewFriendProfile, onMerge }) => {
 
     if (newVisibility) {
       setIsFormVisible(false);
+      setIsChatVisible(false);
+      // Focus sur l'input après un court délai pour que le DOM soit rendu
+      setTimeout(() => {
+        filterInputRef.current?.focus();
+      }, 100);
+    }
+  };
+
+  const toggleChatVisibility = () => {
+    const newVisibility = !isChatVisible;
+    setIsChatVisible(newVisibility);
+
+    if (newVisibility) {
+      setIsFormVisible(false);
+      setIsFilterVisible(false);
+      resetUnreadCount();
     }
   };
 
@@ -153,8 +180,10 @@ const DateList = ({ onEditDate, onViewFriendProfile, onMerge }) => {
   const currentItems = dates.slice(indexOfFirstItem, indexOfLastItem);
 
   const [viewMode, setViewMode] = useState("card");
-  const toggleViewMode = () =>
+  const toggleViewMode = () => {
     setViewMode(viewMode === "card" ? "agenda" : "card");
+    setIsChatVisible(false); // Ferme le chat quand on change de vue
+  };
 
   return (
     <div className="dateList">
@@ -175,6 +204,16 @@ const DateList = ({ onEditDate, onViewFriendProfile, onMerge }) => {
           </button>
 
           <button
+            className={`btnSwitch ${isChatVisible ? "active" : ""}`}
+            onClick={toggleChatVisibility}
+          >
+            💬 Chat
+            {unreadCount > 0 && (
+              <span className="notification-badge">{unreadCount}</span>
+            )}
+          </button>
+
+          <button
             className={`btnSwitch ${isFormVisible ? "active" : ""}`}
             onClick={toggleFormVisibility}
           >
@@ -185,7 +224,10 @@ const DateList = ({ onEditDate, onViewFriendProfile, onMerge }) => {
         <div className="forms-container">
           {isFilterVisible && (
             <div className="form-section filter-section">
-              <DateFilter onFilterChange={handleFilterChange} />
+              <DateFilter
+                onFilterChange={handleFilterChange}
+                inputRef={filterInputRef}
+              />
             </div>
           )}
 
@@ -197,7 +239,12 @@ const DateList = ({ onEditDate, onViewFriendProfile, onMerge }) => {
         </div>
       </div>
 
-      {dates.length === 0 ? (
+      {/* Afficher le chat si actif */}
+      {isChatVisible ? (
+        <div className="chat-in-datelist">
+          <Chat />
+        </div>
+      ) : dates.length === 0 ? (
         <div className="no-results">
           Aucun résultat trouvé pour cette recherche
         </div>
@@ -205,7 +252,6 @@ const DateList = ({ onEditDate, onViewFriendProfile, onMerge }) => {
         <Agenda dates={dates} />
       ) : (
         <div className="birthDeck">
-          {/* 👇 MODIFIÉ : Suppression de onMerge */}
           {currentItems.map((date) => (
             <BirthdayCard
               key={date._id}
@@ -217,7 +263,8 @@ const DateList = ({ onEditDate, onViewFriendProfile, onMerge }) => {
         </div>
       )}
 
-      {viewMode === "card" && dates.length > 0 && (
+      {/* Pagination seulement si pas de chat et mode card */}
+      {!isChatVisible && viewMode === "card" && dates.length > 0 && (
         <div className="pagination">
           <button
             key="prev"

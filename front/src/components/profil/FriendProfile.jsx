@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import Countdown from "../dashboard/Countdown";
 import FriendGiftList from "./FriendGiftList";
+import DirectChat from "../chat/DirectChat";
 import apiHandler from "../../api/apiHandler";
 import "../UI/css/gifts-common.css";
 import "../UI/css/carousel-common.css";
 import "./css/notifications.css";
 import "./css/friendProfile.css";
 
-const FriendProfile = ({ date, onCancel }) => {
+const FriendProfile = ({ date, onCancel, initialSection = "info" }) => {
+  const navigate = useNavigate();
   const [currentDate, setCurrentDate] = useState(date);
   const [receiveNotifications, setReceiveNotifications] = useState(true);
   const [notificationTimings, setNotificationTimings] = useState([1]);
@@ -18,7 +21,11 @@ const FriendProfile = ({ date, onCancel }) => {
   const [wishlistLoading, setWishlistLoading] = useState(false);
   const [hasPublicWishlist, setHasPublicWishlist] = useState(false);
 
+  // Pour mobile
   const [currentCarouselIndex, setCurrentCarouselIndex] = useState(0);
+
+  // Pour desktop
+  const [activeSection, setActiveSection] = useState(initialSection);
 
   const [originalPreferences, setOriginalPreferences] = useState({
     timings: [1],
@@ -35,18 +42,69 @@ const FriendProfile = ({ date, onCancel }) => {
     { value: 30, label: "1 mois avant" },
   ];
 
-  const carouselSections = date.linkedUser
+  const menuSections = date.linkedUser
     ? [
         { id: "info", title: "Infos", icon: "👤" },
         { id: "notifications", title: "Notifications", icon: "🔔" },
-        { id: "wishlist", title: "Wishlist", icon: "🎁" },
+        { id: "wishlist", title: "Sa Wishlist", icon: "🎁" },
         { id: "gifts", title: "Mes Cadeaux", icon: "📦" },
+        { id: "chat", title: "Messages", icon: "💬" },
       ]
     : [
         { id: "info", title: "Infos", icon: "👤" },
         { id: "notifications", title: "Notifications", icon: "🔔" },
         { id: "gifts", title: "Cadeaux", icon: "🎁" },
       ];
+
+  // Fonction pour ouvrir le chat dans la section
+  const handleOpenChatInSection = () => {
+    setActiveSection("chat");
+    // Pour mobile, trouve l'index de la section chat
+    const chatIndex = menuSections.findIndex(
+      (section) => section.id === "chat",
+    );
+    if (chatIndex !== -1) {
+      setCurrentCarouselIndex(chatIndex);
+    }
+  };
+
+  // Fonction pour ouvrir le chat dans une nouvelle page (depuis les cartes)
+  const handleOpenChatNewPage = async () => {
+    try {
+      const token = localStorage.getItem("authToken");
+      const friendId = date.linkedUser?._id || date.linkedUser;
+
+      const response = await fetch(
+        "http://localhost:4000/api/conversations/start",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ friendId }),
+        },
+      );
+
+      if (response.ok) {
+        const conversation = await response.json();
+        navigate("/chat", { state: { selectedConversation: conversation } });
+      }
+    } catch (error) {
+      console.error("Error starting conversation:", error);
+    }
+  };
+
+  useEffect(() => {
+    if (initialSection === "chat") {
+      const chatIndex = menuSections.findIndex(
+        (section) => section.id === "chat",
+      );
+      if (chatIndex !== -1) {
+        setCurrentCarouselIndex(chatIndex);
+      }
+    }
+  }, [initialSection]);
 
   useEffect(() => {
     if (date.linkedUser) {
@@ -82,7 +140,6 @@ const FriendProfile = ({ date, onCancel }) => {
       setWishlistLoading(false);
     } catch (error) {
       console.error("❌ Erreur chargement wishlist:", error);
-      console.error("❌ Détails:", error.response?.data);
       setWishlistLoading(false);
     }
   };
@@ -256,6 +313,81 @@ const FriendProfile = ({ date, onCancel }) => {
 
   const buttonConfig = getButtonConfig();
 
+  // SECTIONS DE CONTENU
+  const renderInfoSection = () => (
+    <div className="profile_info">
+      <h2>Informations</h2>
+      <div className="birthCardAge">
+        <span className="age">{calculateAge(currentDate.date)} Ans</span>
+        <div className="date-profilFriend font-profilFriend">
+          {new Date(currentDate.date).toLocaleDateString("fr-FR")}
+        </div>
+        <Countdown birthdate={currentDate.date} />
+      </div>
+    </div>
+  );
+
+  const renderNotificationsSection = () => (
+    <div className="notification">
+      <h2>Préférences de notification</h2>
+
+      <div className="notification-toggle">
+        <label className="switch">
+          <input
+            type="checkbox"
+            checked={receiveNotifications}
+            onChange={handleReceiveNotificationsChange}
+            disabled={isLoading}
+          />
+          <span className="slider round"></span>
+        </label>
+        <span>
+          {receiveNotifications
+            ? "Notifications activées pour cet anniversaire"
+            : "Notifications désactivées pour cet anniversaire"}
+        </span>
+      </div>
+
+      <div className="notificationFrequency-friendProfil">
+        <h3>Quand souhaitez-vous être notifié ?</h3>
+
+        <div className="timing-option">
+          <label>
+            <input
+              type="checkbox"
+              checked={notifyOnBirthday}
+              onChange={handleNotifyOnBirthdayChange}
+              disabled={isLoading || !receiveNotifications}
+            />
+            Le jour même
+          </label>
+        </div>
+
+        {reminderOptions.map((option) => (
+          <div key={option.value} className="timing-option">
+            <label>
+              <input
+                type="checkbox"
+                checked={notificationTimings.includes(option.value)}
+                onChange={() => handleTimingChange(option.value)}
+                disabled={isLoading || !receiveNotifications}
+              />
+              {option.label}
+            </label>
+          </div>
+        ))}
+
+        <button
+          className={buttonConfig.className}
+          onClick={handleSaveNotificationPreferences}
+          disabled={buttonConfig.disabled || isLoading || !receiveNotifications}
+        >
+          {buttonConfig.text}
+        </button>
+      </div>
+    </div>
+  );
+
   const renderWishlistSection = () => {
     if (wishlistLoading) {
       return (
@@ -276,139 +408,84 @@ const FriendProfile = ({ date, onCancel }) => {
     }
 
     return (
-      <div className="gift-items">
-        {wishlist.map((item) => (
-          <div key={item._id} className="gift-item-card">
-            <div className="gift-item-header">
-              <h4 className="gift-item-title">{item.title}</h4>
-              {item.price && (
-                <span className="gift-item-price">{item.price}€</span>
+      <div className="wishlist-section">
+        <h2>🎁 Sa Wishlist</h2>
+        <div className="gift-items">
+          {wishlist.map((item) => (
+            <div key={item._id} className="gift-item-card">
+              <div className="gift-item-header">
+                <h4 className="gift-item-title">{item.title}</h4>
+                {item.price && (
+                  <span className="gift-item-price">{item.price}€</span>
+                )}
+              </div>
+
+              {item.url && (
+                <a
+                  href={item.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="gift-item-link"
+                >
+                  🔗 Voir le produit
+                </a>
+              )}
+
+              {item.isPurchased && (
+                <div className="gift-item-badge purchased">✓ Déjà acheté</div>
               )}
             </div>
-
-            {item.url && (
-              <a
-                href={item.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="gift-item-link"
-              >
-                🔗 Voir le produit
-              </a>
-            )}
-
-            {item.isPurchased && (
-              <div className="gift-item-badge purchased">✓ Déjà acheté</div>
-            )}
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     );
   };
 
+  const renderGiftsSection = () => (
+    <FriendGiftList currentDate={currentDate} onUpdate={handleGiftUpdated} />
+  );
+
+  // Section chat avec DirectChat
+  const renderChatSection = () => {
+    const friendId = date.linkedUser?._id || date.linkedUser;
+    return <DirectChat friendId={friendId} />;
+  };
+
+  // Rendu de la section active (desktop)
+  const renderDesktopContent = () => {
+    switch (activeSection) {
+      case "info":
+        return renderInfoSection();
+      case "notifications":
+        return renderNotificationsSection();
+      case "wishlist":
+        return renderWishlistSection();
+      case "gifts":
+        return renderGiftsSection();
+      case "chat":
+        return renderChatSection();
+      default:
+        return renderInfoSection();
+    }
+  };
+
+  // Rendu mobile (carousel)
   const renderMobileSection = () => {
-    const currentSection = carouselSections[currentCarouselIndex];
+    const currentSection = menuSections[currentCarouselIndex];
 
     switch (currentSection.id) {
       case "info":
-        return (
-          <div className="mobile-section">
-            <div className="birthCardAge">
-              <span className="age">{calculateAge(currentDate.date)} Ans</span>
-              <div className="date-profilFriend font-profilFriend">
-                {new Date(currentDate.date).toLocaleDateString("fr-FR")}
-              </div>
-              <Countdown birthdate={currentDate.date} />
-            </div>
-          </div>
-        );
-
+        return <div className="mobile-section">{renderInfoSection()}</div>;
       case "notifications":
         return (
-          <div className="mobile-section">
-            <div className="notificationPreferences">
-              <h2>Préférences de notification</h2>
-
-              <div className="notification-toggle friend-notification-toggle">
-                <label className="switch">
-                  <input
-                    type="checkbox"
-                    checked={receiveNotifications}
-                    onChange={handleReceiveNotificationsChange}
-                    disabled={isLoading}
-                  />
-                  <span className="slider round"></span>
-                </label>
-                <span>
-                  {receiveNotifications
-                    ? "Notifications activées"
-                    : "Notifications désactivées"}
-                </span>
-              </div>
-
-              <div className="notificationFrequency-friendProfil">
-                <h3>Quand souhaitez-vous être notifié ?</h3>
-
-                <div className="timing-option">
-                  <label>
-                    <input
-                      type="checkbox"
-                      checked={notifyOnBirthday}
-                      onChange={handleNotifyOnBirthdayChange}
-                      disabled={isLoading || !receiveNotifications}
-                    />
-                    Le jour même
-                  </label>
-                </div>
-
-                {reminderOptions.map((option) => (
-                  <div key={option.value} className="timing-option">
-                    <label>
-                      <input
-                        type="checkbox"
-                        checked={notificationTimings.includes(option.value)}
-                        onChange={() => handleTimingChange(option.value)}
-                        disabled={isLoading || !receiveNotifications}
-                      />
-                      {option.label}
-                    </label>
-                  </div>
-                ))}
-
-                <button
-                  className={buttonConfig.className}
-                  onClick={handleSaveNotificationPreferences}
-                  disabled={
-                    buttonConfig.disabled || isLoading || !receiveNotifications
-                  }
-                >
-                  {buttonConfig.text}
-                </button>
-              </div>
-            </div>
-          </div>
+          <div className="mobile-section">{renderNotificationsSection()}</div>
         );
-
       case "wishlist":
-        return (
-          <div className="mobile-section">
-            <div className="wishlist-section">
-              <h2>🎁 Sa Wishlist</h2>
-              {renderWishlistSection()}
-            </div>
-          </div>
-        );
-
+        return <div className="mobile-section">{renderWishlistSection()}</div>;
       case "gifts":
-        return (
-          <div className="mobile-section">
-            <FriendGiftList
-              currentDate={currentDate}
-              onUpdate={handleGiftUpdated}
-            />
-          </div>
-        );
-
+        return <div className="mobile-section">{renderGiftsSection()}</div>;
+      case "chat":
+        return <div className="mobile-section">{renderChatSection()}</div>;
       default:
         return null;
     }
@@ -418,9 +495,10 @@ const FriendProfile = ({ date, onCancel }) => {
     <div className="friendProfil">
       <div className="btnRLD">
         <button type="button" onClick={onCancel} className="btnBack">
-          Retour à la liste des dates
+          ← Retour à la liste
         </button>
       </div>
+
       <h1 className="name-profilFriend font-profilFriend">
         {currentDate.name} {currentDate.surname}
         {date.linkedUser && (
@@ -428,6 +506,7 @@ const FriendProfile = ({ date, onCancel }) => {
         )}
       </h1>
 
+      {/* MOBILE : Carousel */}
       <div className="mobile-carousel-container">
         <div className="mobile-carousel">
           <div className="mobile-carousel__content">
@@ -435,7 +514,7 @@ const FriendProfile = ({ date, onCancel }) => {
           </div>
 
           <div className="mobile-carousel__indicators">
-            {carouselSections.map((_, index) => (
+            {menuSections.map((_, index) => (
               <button
                 key={index}
                 onClick={() => setCurrentCarouselIndex(index)}
@@ -451,7 +530,7 @@ const FriendProfile = ({ date, onCancel }) => {
 
           <div className="mobile-carousel__quick-nav">
             <div className="mobile-carousel__quick-buttons">
-              {carouselSections.map((section, index) => (
+              {menuSections.map((section, index) => (
                 <button
                   key={section.id}
                   onClick={() => setCurrentCarouselIndex(index)}
@@ -470,91 +549,22 @@ const FriendProfile = ({ date, onCancel }) => {
         </div>
       </div>
 
-      <div className="grid-friendProfil desktop-view">
-        <div className="info-friendProfil grid1-friendProfil ">
-          <div className="birthCardAge">
-            <span className="age">{calculateAge(currentDate.date)} Ans</span>
-            <div className="date-profilFriend font-profilFriend">
-              {new Date(currentDate.date).toLocaleDateString("fr-FR")}
-            </div>
-            <Countdown birthdate={currentDate.date} />
-          </div>
-        </div>
-
-        <div className="notificationPreferences grid2-friendProfil ">
-          <h2>Préférences de notification</h2>
-
-          <div className="notification-toggle">
-            <label className="switch">
-              <input
-                type="checkbox"
-                checked={receiveNotifications}
-                onChange={handleReceiveNotificationsChange}
-                disabled={isLoading}
-              />
-              <span className="slider round"></span>
-            </label>
-            <span>
-              {receiveNotifications
-                ? "Notifications activées pour cet anniversaire"
-                : "Notifications désactivées pour cet anniversaire"}
-            </span>
-          </div>
-
-          <div className="notificationFrequency-friendProfil">
-            <h3>Quand souhaitez-vous être notifié ?</h3>
-
-            <div className="timing-option">
-              <label>
-                <input
-                  type="checkbox"
-                  checked={notifyOnBirthday}
-                  onChange={handleNotifyOnBirthdayChange}
-                  disabled={isLoading || !receiveNotifications}
-                />
-                Le jour même
-              </label>
-            </div>
-
-            {reminderOptions.map((option) => (
-              <div key={option.value} className="timing-option">
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={notificationTimings.includes(option.value)}
-                    onChange={() => handleTimingChange(option.value)}
-                    disabled={isLoading || !receiveNotifications}
-                  />
-                  {option.label}
-                </label>
-              </div>
-            ))}
-
+      {/* DESKTOP : Sidebar + Content */}
+      <div className="desktop-profile-container">
+        <div className="desktop-sidebar">
+          {menuSections.map((section) => (
             <button
-              className={buttonConfig.className}
-              onClick={handleSaveNotificationPreferences}
-              disabled={
-                buttonConfig.disabled || isLoading || !receiveNotifications
-              }
+              key={section.id}
+              onClick={() => setActiveSection(section.id)}
+              className={`sidebar-btn ${activeSection === section.id ? "active" : ""}`}
             >
-              {buttonConfig.text}
+              <span className="sidebar-icon">{section.icon}</span>
+              <span className="sidebar-text">{section.title}</span>
             </button>
-          </div>
+          ))}
         </div>
 
-        {date.linkedUser && (
-          <div className="wishlist-desktop grid4-friendProfil ">
-            <h2>🎁 Sa Wishlist</h2>
-            {renderWishlistSection()}
-          </div>
-        )}
-
-        <div className="gift-friendProfil grid3-friendProfil ">
-          <FriendGiftList
-            currentDate={currentDate}
-            onUpdate={handleGiftUpdated}
-          />
-        </div>
+        <div className="desktop-content">{renderDesktopContent()}</div>
       </div>
     </div>
   );

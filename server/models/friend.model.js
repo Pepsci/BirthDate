@@ -7,14 +7,14 @@ const friendSchema = new Schema(
     // L'utilisateur qui a envoyé/reçu la demande
     user: {
       type: Schema.Types.ObjectId,
-      ref: "user",
+      ref: "User",
       required: true,
     },
 
     // L'ami (l'autre utilisateur)
     friend: {
       type: Schema.Types.ObjectId,
-      ref: "user",
+      ref: "User",
       required: true,
     },
 
@@ -28,7 +28,7 @@ const friendSchema = new Schema(
     // Qui a initié la demande
     requestedBy: {
       type: Schema.Types.ObjectId,
-      ref: "user",
+      ref: "User",
       required: true,
     },
 

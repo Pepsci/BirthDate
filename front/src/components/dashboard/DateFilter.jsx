@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import "./css/dateFilter.css";
-const DateFilter = ({ onFilterChange }) => {
+
+const DateFilter = ({ onFilterChange, inputRef }) => {
+  // Reçoit inputRef en props
   const [nameSearch, setNameSearch] = useState("");
   const [surnameSearch, setSurnameSearch] = useState("");
   const [isFamilyFilterActive, setIsFamilyFilterActive] = useState(false);
@@ -42,6 +44,7 @@ const DateFilter = ({ onFilterChange }) => {
       <div className="filter-options">
         <div className="filter-inputs">
           <input
+            ref={inputRef} // Utilise la ref reçue
             type="text"
             placeholder=" Prénom..."
             value={nameSearch}

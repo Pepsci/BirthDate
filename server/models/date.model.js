@@ -5,7 +5,7 @@ const dateSchema = Schema({
   date: { type: Date, required: true },
   name: String,
   surname: String,
-  owner: { type: Schema.Types.ObjectId, ref: "user" },
+  owner: { type: Schema.Types.ObjectId, ref: "User" },
   family: { type: Boolean, default: false },
 
   receiveNotifications: {
@@ -54,7 +54,7 @@ const dateSchema = Schema({
   // Pour lier à un utilisateur inscrit (plus tard)
   linkedUser: {
     type: Schema.Types.ObjectId,
-    ref: "user",
+    ref: "User",
     default: null,
   },
 });
