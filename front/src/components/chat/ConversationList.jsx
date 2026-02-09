@@ -1,8 +1,7 @@
-// src/components/Chat/ConversationList.jsx
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import socketService from "../services/socket.service";
-import "./css/conversationList.css";
+import "./css/ConversationList.css";
 
 function ConversationList({
   conversations,
