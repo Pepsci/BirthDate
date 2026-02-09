@@ -12,7 +12,19 @@ class SocketService {
       return this.socket;
     }
 
-    this.socket = io(import.meta.env.VITE_API_URL || "http://localhost:4000", {
+    // Détection automatique de l'environnement
+    const isDev =
+      window.location.hostname === "localhost" ||
+      window.location.hostname === "127.0.0.1";
+
+    // Construction de l'URL API selon l'environnement
+    const apiUrl = isDev
+      ? "http://localhost:4000"
+      : `${window.location.protocol}//${window.location.hostname}`;
+
+    console.log("🔌 Connecting to:", apiUrl);
+
+    this.socket = io(apiUrl, {
       auth: {
         token: token,
       },
