@@ -16,6 +16,8 @@ import BirthdayView from "./components/dashboard/BirthdayView";
 import Friends from "./components/friends/Friends";
 import MergeDuplicates from "./components/friends/MergeDuplicates";
 import Chat from "./components/chat/Chat";
+import CookieBanner from "./components/layout/CookieBanner";
+import CookiesPolicy from "./components/pages/CookiesPolicy";
 
 function App() {
   return (
@@ -23,6 +25,7 @@ function App() {
       <div className="routeContent">
         <Routes>
           <Route path="/" element={<LandingPage />} />
+          <Route path="/cookies" element={<CookiesPolicy />} />
           <Route
             path="/signup"
             element={
@@ -68,6 +71,7 @@ function App() {
             <Route path="/chat" element={<Chat />} />
           </Route>
         </Routes>
+        <CookieBanner />
       </div>
     </div>
   );
