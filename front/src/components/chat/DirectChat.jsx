@@ -112,8 +112,22 @@ function DirectChat({ friendId }) {
     );
   }
 
+  console.log(
+    "🎬 DirectChat - Rendering ChatWindow with conversation:",
+    conversation,
+  );
+
   return (
-    <div className="direct-chat-container">
+    <div
+      className="direct-chat-container"
+      style={{
+        border: "2px solid red", // 👈 Pour voir si le conteneur s'affiche
+        minHeight: "400px",
+      }}
+    >
+      <h2 style={{ color: "white" }}>
+        DEBUG: Conversation ID: {conversation._id}
+      </h2>
       <ChatWindow conversation={conversation} />
     </div>
   );
