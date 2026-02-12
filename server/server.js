@@ -4,7 +4,9 @@ require("./config/mongoDb");
 
 // Attendre que la connexion soit établie avant de charger le service
 setTimeout(() => {
-  require("./services/birthdayEmailService");
+  const birthdayEmailCron = require("./jobs/sendBirthdayEmails");
+  birthdayEmailCron.start();
+  console.log("📧 Birthday email cron job started");
 }, 2000);
 
 const http = require("http");
