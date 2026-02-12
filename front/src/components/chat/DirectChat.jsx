@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import socketService from "../services/socket.service";
 import useNotifications from "../../context/useNotifications";
-import apiHandler from "../../api/apiHandler"; // 👈 AJOUTÉ
+import apiHandler from "../../api/apiHandler";
 import ChatWindow from "./ChatWindow";
 import "./css/chat.css";
 
@@ -11,7 +11,13 @@ function DirectChat({ friendId }) {
   const [error, setError] = useState(null);
   const { markAsRead } = useNotifications();
 
+  // 👇 IMPORTANT: Utilise useRef pour éviter les re-renders
+  const hasLoadedRef = useRef(false);
+
   useEffect(() => {
+    // 👇 Ne charger qu'une seule fois
+    if (hasLoadedRef.current) return;
+
     if (!friendId) {
       setLoading(false);
       setError("Aucun ami sélectionné");
@@ -25,7 +31,7 @@ function DirectChat({ friendId }) {
       return;
     }
 
-    // Connexion socket AVANT de charger la conversation
+    hasLoadedRef.current = true; // 👈 Marquer comme chargé
     socketService.connect(token);
     loadConversation();
 
@@ -36,7 +42,7 @@ function DirectChat({ friendId }) {
         });
       }
     };
-  }, [friendId]);
+  }, [friendId]); // 👈 Seulement friendId en dépendance
 
   const loadConversation = async () => {
     try {
@@ -48,7 +54,6 @@ function DirectChat({ friendId }) {
         friendId,
       );
 
-      // 👇 UTILISE apiHandler AU LIEU DE fetch
       const response = await apiHandler.post("/conversations/start", {
         friendId,
       });
@@ -57,17 +62,14 @@ function DirectChat({ friendId }) {
 
       const conv = response.data;
       setConversation(conv);
-
-      // Marquer comme lu
       markAsRead(conv._id);
 
-      // Rejoindre la room socket
       socketService.emit("conversation:join", {
         conversationId: conv._id,
       });
     } catch (error) {
       console.error("❌ DirectChat - Error loading conversation:", error);
-      setError(error.message || "Erreur de chargement");
+      setError(error.response?.data?.message || "Erreur de chargement");
     } finally {
       setLoading(false);
     }
@@ -86,7 +88,13 @@ function DirectChat({ friendId }) {
       <div className="direct-chat-container">
         <div className="error-message">
           <p>{error}</p>
-          <button onClick={loadConversation} className="btn-retry">
+          <button
+            onClick={() => {
+              hasLoadedRef.current = false; // 👈 Reset pour retry
+              loadConversation();
+            }}
+            className="btn-retry"
+          >
             Réessayer
           </button>
         </div>

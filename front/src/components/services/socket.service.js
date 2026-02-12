@@ -1,4 +1,3 @@
-// src/services/socket.service.js
 import { io } from "socket.io-client";
 
 class SocketService {
@@ -12,17 +11,20 @@ class SocketService {
       return this.socket;
     }
 
-    // Détection automatique de l'environnement
-    const isDev =
-      window.location.hostname === "localhost" ||
-      window.location.hostname === "127.0.0.1";
+    // 👇 CORRECTION: Utilise la même logique que apiHandler
+    const isLocal = window.location.hostname === "localhost";
 
-    // Construction de l'URL API selon l'environnement
-    const apiUrl = isDev
+    const apiUrl = isLocal
       ? "http://localhost:4000"
       : "https://birthreminder.com";
 
-    console.log("🔌 Connecting to:", apiUrl);
+    console.log(
+      "🔌 Connecting to:",
+      apiUrl,
+      "(hostname:",
+      window.location.hostname,
+      ")",
+    );
 
     this.socket = io(apiUrl, {
       auth: {
@@ -51,9 +53,9 @@ class SocketService {
 
   disconnect() {
     if (this.socket) {
+      console.log("🔌 Disconnecting socket (user logged out)");
       this.socket.disconnect();
       this.socket = null;
-      console.log("🔌 Socket.io disconnected manually");
     }
   }
 
@@ -61,23 +63,20 @@ class SocketService {
     return this.socket;
   }
 
-  // Émettre un événement
   emit(event, data) {
     if (this.socket) {
       this.socket.emit(event, data);
     } else {
-      console.error("Socket not connected");
+      console.error("❌ Socket not connected, cannot emit:", event);
     }
   }
 
-  // Écouter un événement
   on(event, callback) {
     if (this.socket) {
       this.socket.on(event, callback);
     }
   }
 
-  // Arrêter d'écouter un événement
   off(event, callback) {
     if (this.socket) {
       this.socket.off(event, callback);
@@ -85,6 +84,5 @@ class SocketService {
   }
 }
 
-// Instance unique (singleton)
 const socketService = new SocketService();
 export default socketService;
