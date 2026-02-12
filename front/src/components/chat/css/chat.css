@@ -92,5 +92,8 @@
             width: 90%;
             margin: auto;
         }
+        .direct-chat-container{
+            height: 423px;
+        }
 
 }

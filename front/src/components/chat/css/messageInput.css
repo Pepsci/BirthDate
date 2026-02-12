@@ -134,7 +134,7 @@
 /* Mobile */
 @media (max-width: 768px) {
     .message-input-form {
-        padding: 12px;
+        padding: 10px;
     }
 
     .editing-indicator {
@@ -143,7 +143,7 @@
     }
 
     .message-input-form textarea {
-        min-height: 42px;
+        min-height: 4px;
         font-size: 14px;
     }
 
