@@ -1,6 +1,7 @@
 // src/components/Chat/ChatWindow.jsx
 import { useState, useEffect, useRef } from "react";
 import socketService from "../services/socket.service";
+import apiHandler from "../../api/apiHandler";
 import { useOnlineStatus } from "../../context/OnlineStatusContext";
 import MessageInput from "./MessageInput";
 import "./css/chatWindow.css";
@@ -105,49 +106,42 @@ function ChatWindow({ conversation, onBack }) {
   const loadMessages = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem("authToken");
-      const response = await fetch(
-        `http://localhost:4000/api/conversations/${conversation._id}/messages`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
+      // 👇 UTILISE apiHandler au lieu de fetch
+      const response = await apiHandler.get(
+        `/conversations/${conversation._id}/messages`,
       );
 
-      if (response.ok) {
-        const data = await response.json();
-        setMessages(data);
+      const data = response.data;
+      setMessages(data);
 
-        const firstUnread = data.find(
-          (msg) =>
-            msg.sender._id !== currentUserId &&
-            !msg.readBy?.some((r) => r.user === currentUserId),
-        );
+      const firstUnread = data.find(
+        (msg) =>
+          msg.sender._id !== currentUserId &&
+          !msg.readBy?.some((r) => r.user === currentUserId),
+      );
 
-        if (firstUnread) {
-          setFirstUnreadId(firstUnread._id);
-          setShowUnreadSeparator(true);
+      if (firstUnread) {
+        setFirstUnreadId(firstUnread._id);
+        setShowUnreadSeparator(true);
 
-          setTimeout(() => {
-            const el = document.getElementById(`msg-${firstUnread._id}`);
-            if (el) {
-              el.scrollIntoView({ behavior: "smooth", block: "center" });
-            }
-          }, 100);
-        } else {
-          setTimeout(scrollToBottom, 100);
-        }
+        setTimeout(() => {
+          const el = document.getElementById(`msg-${firstUnread._id}`);
+          if (el) {
+            el.scrollIntoView({ behavior: "smooth", block: "center" });
+          }
+        }, 100);
+      } else {
+        setTimeout(scrollToBottom, 100);
+      }
 
-        if (!hasJoinedRef.current) {
-          socketService.emit("conversation:join", {
-            conversationId: conversation._id,
-          });
-          hasJoinedRef.current = true;
-        }
+      if (!hasJoinedRef.current) {
+        socketService.emit("conversation:join", {
+          conversationId: conversation._id,
+        });
+        hasJoinedRef.current = true;
       }
     } catch (error) {
-      console.error("Error loading messages:", error);
+      console.error("❌ Error loading messages:", error);
     } finally {
       setLoading(false);
     }
@@ -155,16 +149,7 @@ function ChatWindow({ conversation, onBack }) {
 
   const markAsRead = async () => {
     try {
-      const token = localStorage.getItem("authToken");
-      await fetch(
-        `http://localhost:4000/api/conversations/${conversation._id}/read`,
-        {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        },
-      );
+      await apiHandler.put(`/conversations/${conversation._id}/read`);
 
       socketService.emit("messages:read", {
         conversationId: conversation._id,
@@ -177,7 +162,7 @@ function ChatWindow({ conversation, onBack }) {
         setFirstUnreadId(null);
       }, 400);
     } catch (error) {
-      console.error("Error marking as read:", error);
+      console.error("❌ Error marking as read:", error);
     }
   };
 
