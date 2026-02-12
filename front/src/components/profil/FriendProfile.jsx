@@ -72,24 +72,13 @@ const FriendProfile = ({ date, onCancel, initialSection = "info" }) => {
   // Fonction pour ouvrir le chat dans une nouvelle page (depuis les cartes)
   const handleOpenChatNewPage = async () => {
     try {
-      const token = localStorage.getItem("authToken");
       const friendId = date.linkedUser?._id || date.linkedUser;
+      const response = await apiHandler.post("/conversations/start", {
+        friendId,
+      });
 
-      const response = await fetch(
-        "http://localhost:4000/api/conversations/start",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ friendId }),
-        },
-      );
-
-      if (response.ok) {
-        const conversation = await response.json();
-        navigate("/chat", { state: { selectedConversation: conversation } });
+      if (response.data) {
+        navigate("/chat", { state: { selectedConversation: response.data } });
       }
     } catch (error) {
       console.error("Error starting conversation:", error);

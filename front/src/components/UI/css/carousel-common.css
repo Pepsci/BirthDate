@@ -80,7 +80,7 @@
     /* Section mobile */
     .mobile-section {
         animation: fadeIn 0.3s ease;
-        min-height: 100%;
+        /* min-height: 100%; */
     }
 
     @keyframes fadeIn {

@@ -35,30 +35,20 @@ function DirectChat({ friendId }) {
     try {
       setLoading(true);
 
-      const response = await fetch(
-        "http://localhost:4000/api/conversations/start",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ friendId }),
-        },
-      );
+      const response = await apiHandler.post("/conversations/start", {
+        friendId,
+      });
+      const conv = response.data;
 
-      if (response.ok) {
-        const conv = await response.json();
-        setConversation(conv);
+      setConversation(conv);
 
-        // Marquer comme lu dans le contexte
-        markAsRead(conv._id);
+      // Marquer comme lu dans le contexte
+      markAsRead(conv._id);
 
-        // Rejoindre la conversation via socket (le marquage comme lu se fait automatiquement)
-        socketService.emit("conversation:join", {
-          conversationId: conv._id,
-        });
-      }
+      // Rejoindre la conversation via socket
+      socketService.emit("conversation:join", {
+        conversationId: conv._id,
+      });
     } catch (error) {
       console.error("Error loading conversation:", error);
     } finally {

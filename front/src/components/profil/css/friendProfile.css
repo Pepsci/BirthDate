@@ -153,6 +153,19 @@
         width: 150px;
     }        
 
+        .friend-notification h2,
+        h3 {
+            color: var(--gray-300);
+            margin: 1rem;}
+
+
+    .friend-notification{
+        padding: 0;
+        background-color: transparent;
+        min-height: 0;
+        max-height: 0;
+
+    }
 
 
 
