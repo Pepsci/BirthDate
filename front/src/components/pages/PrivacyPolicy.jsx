@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import "./css/LegalPages.css";
+import "./css/legalPages.css";
 
 export default function PrivacyPolicy() {
   return (
