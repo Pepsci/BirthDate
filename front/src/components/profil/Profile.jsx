@@ -12,7 +12,7 @@ import MergeDuplicatesSection from "../friends/MergeDuplicatesSection";
 import "../UI/css/carousel-common.css";
 import "../UI/css/containerInfo.css";
 import "./css/profile.css";
-import "./css/profileDesktop.css"; // 👈 NOUVEAU - Pour la nav desktop
+import "./css/profileDesktop.css";
 
 const ProfilDetails = () => {
   const { logOut } = useContext(AuthContext);

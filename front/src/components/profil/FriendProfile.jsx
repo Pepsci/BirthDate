@@ -6,8 +6,9 @@ import DirectChat from "../chat/DirectChat";
 import apiHandler from "../../api/apiHandler";
 import "../UI/css/gifts-common.css";
 import "../UI/css/carousel-common.css";
-import "./css/notifications.css";
+import "./css/friendNotifications.css";
 import "./css/friendProfile.css";
+import "./css/profileDesktop.css";
 
 const FriendProfile = ({ date, onCancel, initialSection = "info" }) => {
   const navigate = useNavigate();
@@ -316,7 +317,12 @@ const FriendProfile = ({ date, onCancel, initialSection = "info" }) => {
   // SECTIONS DE CONTENU
   const renderInfoSection = () => (
     <div className="profile_info">
-      <h2>Informations</h2>
+      <h1 className="name-profilFriend font-profilFriend">
+        {currentDate.name} {currentDate.surname}
+        {date.linkedUser && (
+          <span className="friend-badge-profile">👥 AMI</span>
+        )}
+      </h1>
       <div className="birthCardAge">
         <span className="age">{calculateAge(currentDate.date)} Ans</span>
         <div className="date-profilFriend font-profilFriend">
@@ -328,10 +334,10 @@ const FriendProfile = ({ date, onCancel, initialSection = "info" }) => {
   );
 
   const renderNotificationsSection = () => (
-    <div className="notification">
+    <div className="friend-notification">
       <h2>Préférences de notification</h2>
 
-      <div className="notification-toggle">
+      <div className="friend-notification-toggle">
         <label className="switch">
           <input
             type="checkbox"
@@ -341,17 +347,17 @@ const FriendProfile = ({ date, onCancel, initialSection = "info" }) => {
           />
           <span className="slider round"></span>
         </label>
-        <span>
+        <span className="friend-notification-span">
           {receiveNotifications
             ? "Notifications activées pour cet anniversaire"
             : "Notifications désactivées pour cet anniversaire"}
         </span>
       </div>
 
-      <div className="notificationFrequency-friendProfil">
+      <div className="friend-notification-frequency">
         <h3>Quand souhaitez-vous être notifié ?</h3>
 
-        <div className="timing-option">
+        <div className="friend-notification-timing-option">
           <label>
             <input
               type="checkbox"
@@ -364,7 +370,7 @@ const FriendProfile = ({ date, onCancel, initialSection = "info" }) => {
         </div>
 
         {reminderOptions.map((option) => (
-          <div key={option.value} className="timing-option">
+          <div key={option.value} className="friend-notification-timing-option">
             <label>
               <input
                 type="checkbox"
@@ -499,13 +505,6 @@ const FriendProfile = ({ date, onCancel, initialSection = "info" }) => {
         </button>
       </div>
 
-      <h1 className="name-profilFriend font-profilFriend">
-        {currentDate.name} {currentDate.surname}
-        {date.linkedUser && (
-          <span className="friend-badge-profile">👥 AMI</span>
-        )}
-      </h1>
-
       {/* MOBILE : Carousel */}
       <div className="mobile-carousel-container">
         <div className="mobile-carousel">
@@ -564,7 +563,9 @@ const FriendProfile = ({ date, onCancel, initialSection = "info" }) => {
           ))}
         </div>
 
-        <div className="desktop-content">{renderDesktopContent()}</div>
+        <div className="desktop-content containerInfo">
+          {renderDesktopContent()}
+        </div>
       </div>
     </div>
   );

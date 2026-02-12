@@ -1,4 +1,4 @@
-.notificationPreferences {
+.friend-notification {
     background-color: #f8f9fa;
     padding: 15px;
     border-radius: 8px;
@@ -6,24 +6,31 @@
     font-family: 'Roboto', sans-serif;
     border-radius: 12px;
     background: var(--gray-800);
-    border: 2px solid var(--gray-700);
     color:#f8f9fa;
     max-width: 400px;
     min-height: 500px;
     max-height: 500px;
+    margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
 }
 
-.notificationPreferences h2,h3 {
+.friend-notification h2, h3 {
     color:var(--gray-300);
+    margin: 2rem;
 }
 
+.friend-notification-span{
+    color: var(--gray-300);
+}
 
-
-.notification-toggle {
+.friend-notification-toggle {
     display: flex;
     align-items: center;
     margin-bottom: 15px;
-    gap: 10px;
+    gap: 1rem;
 }
 
 .notification-timing {
@@ -32,15 +39,16 @@
     margin-top: 10px;
 }
 
-.timing-option {
-    margin-bottom: 8px;
+.friend-notification-timing-option {
+    margin: 1rem;
 }
 
-.timing-option label {
+.friend-notification-timing-option label {
     display: flex;
     align-items: center;
     gap: 8px;
     cursor: pointer;
+    columns: var(--gray-300);
 }
 
 .save-preferences-btn {

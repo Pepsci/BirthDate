@@ -196,7 +196,7 @@ const DateList = ({ onEditDate, onViewFriendProfile, onMerge }) => {
             className={`btnSwitch ${isFilterVisible ? "active" : ""}`}
             onClick={toggleFilterVisibility}
           >
-            Filtre
+            {isFilterVisible ? "Cacher le filtre" : "Filtre"}
           </button>
 
           <button className="btnSwitch" onClick={toggleViewMode}>
@@ -207,8 +207,8 @@ const DateList = ({ onEditDate, onViewFriendProfile, onMerge }) => {
             className={`btnSwitch ${isChatVisible ? "active" : ""}`}
             onClick={toggleChatVisibility}
           >
-            💬 Chat
-            {unreadCount > 0 && (
+            {isChatVisible ? "Cacher le chat" : "💬 Chat"}
+            {!isChatVisible && unreadCount > 0 && (
               <span className="notification-badge">{unreadCount}</span>
             )}
           </button>
