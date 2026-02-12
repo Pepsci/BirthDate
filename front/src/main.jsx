@@ -5,6 +5,7 @@ import App from "./App";
 import { BrowserRouter } from "react-router-dom";
 import { AuthProviderWrapper } from "./context/auth.context";
 import { NotificationProvider } from "./context/notification.context";
+import { OnlineStatusProvider } from "./context/OnlineStatusContext";
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 
@@ -13,7 +14,9 @@ root.render(
     <BrowserRouter>
       <AuthProviderWrapper>
         <NotificationProvider>
-          <App />
+          <OnlineStatusProvider>
+            <App />
+          </OnlineStatusProvider>
         </NotificationProvider>
       </AuthProviderWrapper>
     </BrowserRouter>

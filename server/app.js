@@ -1,9 +1,5 @@
 require("dotenv").config();
 require("./config/mongoDb"); // Charger MongoDB EN PREMIER
-// Attendre que la connexion soit établie avant de charger le service
-setTimeout(() => {
-  require("./services/birthdayEmailService");
-}, 2000);
 
 const express = require("express");
 const path = require("path");
@@ -20,6 +16,10 @@ const wishlistRouter = require("./routes/wishlist");
 const friendRouter = require("./routes/friends");
 const conversationsRouter = require("./routes/conversations");
 const mergeDatesRouter = require("./routes/mergeDates");
+
+// Charger les cron jobs
+const purgeDeletedAccounts = require("./jobs/purgeDeletedAccounts");
+const sendBirthdayEmails = require("./jobs/sendBirthdayEmails");
 
 const app = express();
 
@@ -44,6 +44,11 @@ app.use(
   }),
 );
 
+app.use((req, res, next) => {
+  console.log(`📨 ${req.method} ${req.url}`);
+  next();
+});
+
 app.use(logger("dev"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -59,6 +64,13 @@ app.use("/api/wishlist", wishlistRouter);
 app.use("/api/friends", friendRouter);
 app.use("/api/conversations", conversationsRouter);
 app.use("/api/merge-dates", mergeDatesRouter);
+
+// Démarrer les cron jobs
+purgeDeletedAccounts.start();
+sendBirthdayEmails.start();
+console.log("🤖 Cron jobs activés :");
+console.log("   ✅ Purge comptes supprimés (tous les jours à 3h)");
+console.log("   ✅ Emails anniversaires (tous les jours à minuit)");
 
 // IMPORTANT : Cette route doit rester AVANT le wildcard
 app.use("/api/*", (req, res, next) => {

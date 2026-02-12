@@ -1,10 +1,13 @@
 // src/components/Chat/ChatWindow.jsx
 import { useState, useEffect, useRef } from "react";
 import socketService from "../services/socket.service";
+import { useOnlineStatus } from "../../context/OnlineStatusContext";
 import MessageInput from "./MessageInput";
 import "./css/chatWindow.css";
 
 function ChatWindow({ conversation, onBack }) {
+  const { isUserOnline } = useOnlineStatus(); // ⭐ NOUVEAU
+  console.log("🔍 useOnlineStatus hook:", isUserOnline);
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isTyping, setIsTyping] = useState(false);
@@ -326,7 +329,10 @@ function ChatWindow({ conversation, onBack }) {
   };
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop =
+        messagesContainerRef.current.scrollHeight;
+    }
   };
 
   const getOtherParticipant = () => {
@@ -341,6 +347,11 @@ function ChatWindow({ conversation, onBack }) {
   };
 
   const otherUser = getOtherParticipant();
+  const isOnline = otherUser ? isUserOnline(otherUser._id) : false;
+
+  console.log("🔍 Other user:", otherUser?._id);
+  console.log("🔍 Is online?", isOnline);
+  console.log("🔍 Online users in state:", isUserOnline);
 
   if (loading) {
     return (
@@ -367,7 +378,11 @@ function ChatWindow({ conversation, onBack }) {
             <span className="chat-name">
               {otherUser?.name || otherUser?.email || "Utilisateur"}
             </span>
-            <span className="chat-user-status">En ligne</span>
+            {isOnline ? (
+              <span className="chat-user-status online">En ligne</span>
+            ) : (
+              <span className="chat-user-status offline">Hors ligne</span>
+            )}
           </div>
         </div>
       </div>

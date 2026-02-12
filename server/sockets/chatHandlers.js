@@ -15,6 +15,15 @@ module.exports = (io) => {
     // Notifier les amis que l'utilisateur est en ligne
     socket.broadcast.emit("user:online", { userId: socket.userId });
 
+    socket.on("users:getOnline", () => {
+      const onlineUserIds = Array.from(connectedUsers.keys());
+      socket.emit("users:online", { userIds: onlineUserIds });
+      console.log(
+        `📋 Sent online users list to ${socket.userId}:`,
+        onlineUserIds,
+      );
+    });
+
     // Rejoindre les rooms des conversations de l'utilisateur
     socket.on("conversations:join", async () => {
       try {

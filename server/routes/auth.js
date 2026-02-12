@@ -3,6 +3,7 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const userModel = require("./../models/user.model");
+const Log = require("../models/log.model");
 const { isAuthenticated } = require("../middleware/jwt.middleware");
 
 const router = express.Router();
@@ -104,6 +105,23 @@ router.post("/signup", async (req, res, next) => {
       isVerified: false,
     });
 
+    // 📊 LOG : Inscription
+    try {
+      const ipAddress =
+        req.headers["x-forwarded-for"]?.split(",")[0].trim() ||
+        req.connection.remoteAddress;
+
+      await Log.create({
+        userId: newUser._id,
+        action: "signup",
+        ipAddress,
+        userAgent: req.headers["user-agent"],
+      });
+    } catch (logError) {
+      console.error("❌ Erreur logging:", logError);
+      // Continue même si le log échoue
+    }
+
     await sendVerificationEmail(newUser.email, newUser.verificationToken);
 
     res
@@ -131,6 +149,13 @@ router.post("/login", async (req, res, next) => {
       return;
     }
 
+    // Vérifier si le compte est supprimé
+    if (foundUser.deletedAt) {
+      return res.status(401).json({
+        message: "Ce compte a été supprimé.",
+      });
+    }
+
     const passwordCorrect = bcrypt.compareSync(password, foundUser.password);
     if (!foundUser.isVerified) {
       //vérification du temps de l'envoi entre chaque email de vérification
@@ -150,7 +175,6 @@ router.post("/login", async (req, res, next) => {
       // L'email n'est pas vérifié, on envoie un email de vérification
       const verificationToken = generateVerificationToken();
       await sendVerificationEmail(foundUser.email, verificationToken);
-      // On peut mettre à jour le token de vérification dans la base de données (si nécessaire)
       foundUser.verificationToken = verificationToken;
       foundUser.lastVerificationEmailSent = now;
       await foundUser.save();
@@ -162,6 +186,23 @@ router.post("/login", async (req, res, next) => {
     }
 
     if (passwordCorrect) {
+      // 📊 LOG : Connexion réussie (maintenant qu'on a l'utilisateur)
+      try {
+        const ipAddress =
+          req.headers["x-forwarded-for"]?.split(",")[0].trim() ||
+          req.connection.remoteAddress;
+
+        await Log.create({
+          userId: foundUser._id,
+          action: "login",
+          ipAddress,
+          userAgent: req.headers["user-agent"],
+        });
+      } catch (logError) {
+        console.error("❌ Erreur logging:", logError);
+        // Continue même si le log échoue
+      }
+
       const { _id, email, name, surname } = foundUser;
       const payload = { _id, email, name, surname };
       const authToken = jwt.sign(payload, process.env.TOKEN_SECRET, {
@@ -219,26 +260,42 @@ router.post("/reset/:token", async (req, res, next) => {
     });
   }
 
-  userModel
-    .findOne({ resetToken: token })
-    .then(async (user) => {
-      if (!user || user.resetTokenExpires < Date.now()) {
-        return res.status(400).json({ message: "Invalid or expired token" });
-      }
+  try {
+    const user = await userModel.findOne({ resetToken: token });
 
-      const salt = bcrypt.genSaltSync(saltRounds);
-      const hashedPassword = bcrypt.hashSync(newPassword, salt);
-      user.password = hashedPassword;
-      user.resetToken = null;
-      user.resetTokenExpires = null;
-      await user.save();
+    if (!user || user.resetTokenExpires < Date.now()) {
+      return res.status(400).json({ message: "Invalid or expired token" });
+    }
 
-      res.status(200).json({ message: "Password has been reset" });
-    })
-    .catch((e) => {
-      console.error(e);
-      res.status(500).json({ message: "Internal server error" });
-    });
+    const salt = bcrypt.genSaltSync(saltRounds);
+    const hashedPassword = bcrypt.hashSync(newPassword, salt);
+    user.password = hashedPassword;
+    user.resetToken = null;
+    user.resetTokenExpires = null;
+    await user.save();
+
+    // 📊 LOG : Réinitialisation mot de passe
+    try {
+      const ipAddress =
+        req.headers["x-forwarded-for"]?.split(",")[0].trim() ||
+        req.connection.remoteAddress;
+
+      await Log.create({
+        userId: user._id,
+        action: "password_reset",
+        ipAddress,
+        userAgent: req.headers["user-agent"],
+      });
+    } catch (logError) {
+      console.error("❌ Erreur logging:", logError);
+      // Continue même si le log échoue
+    }
+
+    res.status(200).json({ message: "Password has been reset" });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: "Internal server error" });
+  }
 });
 
 module.exports = router;

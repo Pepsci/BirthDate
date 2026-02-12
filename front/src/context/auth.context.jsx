@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import apiHandler from "../api/apiHandler";
+import socketService from "../components/services/socket.service";
 
 const AuthContext = React.createContext();
 
@@ -13,6 +14,20 @@ function AuthProviderWrapper({ children }) {
   useEffect(() => {
     authenticateUser();
   }, []);
+
+  // ⭐ NOUVEAU - Connecter le socket automatiquement quand l'utilisateur est authentifié
+  useEffect(() => {
+    const token = localStorage.getItem("authToken");
+
+    if (auth.isLoggedIn && token) {
+      console.log("🔌 Auto-connecting socket from AuthContext");
+      socketService.connect(token);
+    } else if (!auth.isLoggedIn) {
+      // Déconnecter le socket si l'utilisateur se déconnecte
+      console.log("🔌 Disconnecting socket (user logged out)");
+      socketService.disconnect();
+    }
+  }, [auth.isLoggedIn]);
 
   const authenticateUser = () => {
     const storedToken = localStorage.getItem("authToken");

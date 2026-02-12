@@ -56,6 +56,17 @@
   height: 60px;
 }
 
+
+.App {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.routeContent {
+  flex: 1;
+}
+
 @media (max-width:600px){
 
   .titleFontSize {

@@ -18,6 +18,10 @@ import MergeDuplicates from "./components/friends/MergeDuplicates";
 import Chat from "./components/chat/Chat";
 import CookieBanner from "./components/layout/CookieBanner";
 import CookiesPolicy from "./components/pages/CookiesPolicy";
+import MentionsLegales from "./components/pages/MentionsLegales";
+import PrivacyPolicy from "./components/pages/PrivacyPolicy";
+import CGU from "./components/pages/CGU";
+import Footer from "./components/layout/Footer";
 
 function App() {
   return (
@@ -26,6 +30,10 @@ function App() {
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/cookies" element={<CookiesPolicy />} />
+          <Route path="/mentions-legales" element={<MentionsLegales />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
+          <Route path="/cgu" element={<CGU />} />
+
           <Route
             path="/signup"
             element={
@@ -66,12 +74,11 @@ function App() {
             <Route path="/profile" element={<Profile />} />
             <Route path="/birthday/:id" element={<BirthdayView />} />
             <Route path="/update-date/:id" element={<UpdateDate />} />
-            <Route path="/friends" element={<Friends />} />
             <Route path="/merge-duplicates" element={<MergeDuplicates />} />
-            <Route path="/chat" element={<Chat />} />
           </Route>
         </Routes>
         <CookieBanner />
+        <Footer />
       </div>
     </div>
   );

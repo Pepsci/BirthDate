@@ -4,6 +4,7 @@ const userModel = require("../models/user.model");
 const Friend = require("../models/friend.model");
 const DateModel = require("../models/date.model");
 const { isAuthenticated } = require("../middleware/jwt.middleware");
+const { logAction } = require("../middleware/logger.middleware");
 const uploader = require("../config/cloudinary");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
@@ -24,7 +25,7 @@ router.get("/", isAuthenticated, async (req, res, next) => {
       avatar: user.avatar,
       birthDate: user.birthDate,
       receiveBirthdayEmails: user.receiveBirthdayEmails,
-      receiveFriendRequestEmails: user.receiveFriendRequestEmails, // 👈 AJOUTÉ
+      receiveFriendRequestEmails: user.receiveFriendRequestEmails,
     };
     res.status(200).json(userToFront);
   } catch (error) {
@@ -48,7 +49,7 @@ router.get("/me", isAuthenticated, async (req, res, next) => {
       avatar: user.avatar,
       birthDate: user.birthDate,
       receiveBirthdayEmails: user.receiveBirthdayEmails,
-      receiveFriendRequestEmails: user.receiveFriendRequestEmails, // 👈 AJOUTÉ
+      receiveFriendRequestEmails: user.receiveFriendRequestEmails,
     };
     res.status(200).json(userToFront);
   } catch (error) {
@@ -61,6 +62,7 @@ router.patch(
   "/me",
   uploader.single("avatar"),
   isAuthenticated,
+  logAction("account_update"),
   async (req, res, next) => {
     const { currentPassword, newPassword } = req.body;
     const avatar = req.file?.path || undefined;
@@ -104,7 +106,6 @@ router.patch(
         user.avatar = avatar;
       }
 
-      // 👇 MODIFIÉ : Gérer les deux préférences email
       if (req.body.receiveBirthdayEmails !== undefined) {
         user.receiveBirthdayEmails = req.body.receiveBirthdayEmails;
       }
@@ -179,7 +180,7 @@ router.patch(
         avatar: updatedUser.avatar,
         birthDate: updatedUser.birthDate,
         receiveBirthdayEmails: updatedUser.receiveBirthdayEmails,
-        receiveFriendRequestEmails: updatedUser.receiveFriendRequestEmails, // 👈 AJOUTÉ
+        receiveFriendRequestEmails: updatedUser.receiveFriendRequestEmails,
       };
 
       const authToken = jwt.sign(payload, process.env.TOKEN_SECRET, {
@@ -210,7 +211,7 @@ router.get("/:id", isAuthenticated, async (req, res, next) => {
       avatar: user.avatar,
       birthDate: user.birthDate,
       receiveBirthdayEmails: user.receiveBirthdayEmails,
-      receiveFriendRequestEmails: user.receiveFriendRequestEmails, // 👈 AJOUTÉ
+      receiveFriendRequestEmails: user.receiveFriendRequestEmails,
     };
     res.status(200).json(userToFront);
   } catch (error) {
@@ -223,6 +224,7 @@ router.patch(
   "/:id",
   uploader.single("avatar"),
   isAuthenticated,
+  logAction("account_update"),
   async (req, res, next) => {
     const { currentPassword, newPassword } = req.body;
     const avatar = req.file?.path || undefined;
@@ -270,7 +272,6 @@ router.patch(
         user.avatar = avatar;
       }
 
-      // 👇 MODIFIÉ : Gérer les deux préférences email
       if (req.body.receiveBirthdayEmails !== undefined) {
         user.receiveBirthdayEmails = req.body.receiveBirthdayEmails;
       }
@@ -344,7 +345,7 @@ router.patch(
         avatar: updatedUser.avatar,
         birthDate: updatedUser.birthDate,
         receiveBirthdayEmails: updatedUser.receiveBirthdayEmails,
-        receiveFriendRequestEmails: updatedUser.receiveFriendRequestEmails, // 👈 AJOUTÉ
+        receiveFriendRequestEmails: updatedUser.receiveFriendRequestEmails,
       };
 
       const authToken = jwt.sign(payload, process.env.TOKEN_SECRET, {
@@ -359,30 +360,63 @@ router.patch(
   },
 );
 
-/* DELETE user account */
-router.delete("/:id", isAuthenticated, async (req, res, next) => {
-  try {
-    // Vérifie que l'utilisateur supprime bien son propre compte
-    if (req.payload._id.toString() !== req.params.id) {
-      return res.status(403).json({
-        message: "Vous ne pouvez supprimer que votre propre compte",
+/* DELETE user account - Soft delete avec anonymisation (RGPD) */
+router.delete(
+  "/:id",
+  isAuthenticated,
+  logAction("account_delete"),
+  async (req, res, next) => {
+    try {
+      // Vérifie que l'utilisateur supprime bien son propre compte
+      if (req.payload._id.toString() !== req.params.id) {
+        return res.status(403).json({
+          message: "Vous ne pouvez supprimer que votre propre compte",
+        });
+      }
+
+      const user = await userModel.findById(req.params.id);
+      if (!user) {
+        return res.status(404).json({ message: "Utilisateur non trouvé" });
+      }
+
+      // Vérifier si déjà supprimé
+      if (user.deletedAt) {
+        return res
+          .status(400)
+          .json({ message: "Ce compte a déjà été supprimé" });
+      }
+
+      // ✅ SOFT DELETE avec anonymisation (RGPD - 2 temps)
+      const anonymizedEmail = `deleted_${user._id}@birthreminder.deleted`;
+
+      await userModel.findByIdAndUpdate(req.params.id, {
+        deletedAt: new Date(), // Marque comme supprimé
+        email: anonymizedEmail, // Anonymise l'email
+        name: "Utilisateur supprimé",
+        surname: "",
+        avatar: null,
+        password: "DELETED", // Empêche toute connexion
+        receiveBirthdayEmails: false,
+        receiveFriendRequestEmails: false,
       });
+
+      // Supprimer les dates d'anniversaire de cet utilisateur
+      await DateModel.deleteMany({ owner: req.params.id });
+
+      // Supprimer les relations d'amitié
+      await Friend.deleteMany({
+        $or: [{ user: req.params.id }, { friend: req.params.id }],
+      });
+
+      res.status(200).json({
+        message:
+          "Compte désactivé avec succès. Vos données seront définitivement supprimées sous 30 jours.",
+      });
+    } catch (error) {
+      console.error("Erreur lors de la suppression:", error);
+      next(error);
     }
-
-    const user = await userModel.findById(req.params.id);
-    if (!user) {
-      return res.status(404).json({ message: "Utilisateur non trouvé" });
-    }
-
-    await userModel.findByIdAndDelete(req.params.id);
-
-    res.status(200).json({
-      message: "Compte supprimé avec succès",
-    });
-  } catch (error) {
-    console.error("Erreur lors de la suppression:", error);
-    next(error);
-  }
-});
+  },
+);
 
 module.exports = router;

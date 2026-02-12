@@ -10,8 +10,10 @@ const Friend = require("../models/friend.model");
 // Récupérer toutes les conversations de l'utilisateur
 router.get("/", isAuthenticated, async (req, res) => {
   try {
+    console.log("🔍 GET /conversations - User ID:", req.payload._id);
     const userId = req.payload._id;
 
+    console.log("📊 Recherche des conversations...");
     const conversations = await Conversation.find({
       participants: userId,
     })
@@ -24,6 +26,8 @@ router.get("/", isAuthenticated, async (req, res) => {
         },
       })
       .sort({ lastMessageAt: -1 });
+
+    console.log(`✅ ${conversations.length} conversation(s) trouvée(s)`);
 
     // Pour chaque conversation, compter les messages non lus
     const conversationsWithUnread = await Promise.all(
@@ -41,10 +45,13 @@ router.get("/", isAuthenticated, async (req, res) => {
       }),
     );
 
+    console.log("✅ Envoi des conversations au frontend");
     res.json(conversationsWithUnread);
   } catch (error) {
-    console.error("Error fetching conversations:", error);
-    res.status(500).json({ message: "Error fetching conversations" });
+    console.error("❌ Error fetching conversations:", error);
+    res
+      .status(500)
+      .json({ message: "Error fetching conversations", error: error.message });
   }
 });
 
@@ -182,7 +189,7 @@ router.get("/:conversationId", isAuthenticated, async (req, res) => {
   }
 });
 
-// ⭐ NOUVELLE ROUTE - Marquer les messages comme lus
+// Marquer les messages comme lus
 router.put("/:conversationId/read", isAuthenticated, async (req, res) => {
   try {
     const userId = req.payload._id;
@@ -227,6 +234,77 @@ router.put("/:conversationId/read", isAuthenticated, async (req, res) => {
   }
 });
 
+// Modifier un message
+router.put("/messages/:messageId", isAuthenticated, async (req, res) => {
+  try {
+    const userId = req.payload._id;
+    const { messageId } = req.params;
+    const { content } = req.body;
+
+    if (!content || content.trim().length === 0) {
+      return res.status(400).json({ message: "Content cannot be empty" });
+    }
+
+    if (content.trim().length > 2000) {
+      return res
+        .status(400)
+        .json({ message: "Content too long (max 2000 characters)" });
+    }
+
+    // Trouver le message
+    const message = await Message.findById(messageId);
+
+    if (!message) {
+      return res.status(404).json({ message: "Message not found" });
+    }
+
+    // Vérifier que l'utilisateur est bien l'auteur
+    if (message.sender.toString() !== userId) {
+      return res
+        .status(403)
+        .json({ message: "You can only edit your own messages" });
+    }
+
+    // Vérifier le délai (5 minutes = 300000ms)
+    const EDIT_TIME_LIMIT = 5 * 60 * 1000; // 5 minutes
+    const messageAge = Date.now() - new Date(message.createdAt).getTime();
+
+    if (messageAge > EDIT_TIME_LIMIT) {
+      return res.status(403).json({
+        message: "Cannot edit messages older than 5 minutes",
+      });
+    }
+
+    // Vérifier que l'utilisateur fait partie de la conversation
+    const conversation = await Conversation.findOne({
+      _id: message.conversation,
+      participants: userId,
+    });
+
+    if (!conversation) {
+      return res.status(404).json({ message: "Conversation not found" });
+    }
+
+    // Mettre à jour le message
+    message.content = content.trim();
+    message.edited = true;
+    message.editedAt = new Date();
+    await message.save();
+
+    // Populer les infos du sender
+    await message.populate("sender", "name surname email");
+
+    res.json({
+      success: true,
+      message: "Message updated",
+      updatedMessage: message,
+    });
+  } catch (error) {
+    console.error("Error updating message:", error);
+    res.status(500).json({ message: "Error updating message" });
+  }
+});
+
 // Supprimer un message
 router.delete("/messages/:messageId", isAuthenticated, async (req, res) => {
   try {
@@ -259,110 +337,6 @@ router.delete("/messages/:messageId", isAuthenticated, async (req, res) => {
 
     const conversationId = message.conversation;
 
-    // Modifier un message
-    router.put("/messages/:messageId", isAuthenticated, async (req, res) => {
-      try {
-        const userId = req.payload._id;
-        const { messageId } = req.params;
-        const { content } = req.body;
-
-        if (!content || content.trim().length === 0) {
-          return res.status(400).json({ message: "Content cannot be empty" });
-        }
-
-        if (content.trim().length > 2000) {
-          return res
-            .status(400)
-            .json({ message: "Content too long (max 2000 characters)" });
-        }
-
-        // Trouver le message
-        const message = await Message.findById(messageId);
-
-        if (!message) {
-          return res.status(404).json({ message: "Message not found" });
-        }
-
-        // Vérifier que l'utilisateur est bien l'auteur
-        if (message.sender.toString() !== userId) {
-          return res
-            .status(403)
-            .json({ message: "You can only edit your own messages" });
-        }
-
-        // Vérifier le délai (5 minutes = 300000ms)
-        const EDIT_TIME_LIMIT = 5 * 60 * 1000; // 5 minutes
-        const messageAge = Date.now() - new Date(message.createdAt).getTime();
-
-        if (messageAge > EDIT_TIME_LIMIT) {
-          return res.status(403).json({
-            message: "Cannot edit messages older than 5 minutes",
-          });
-        }
-
-        // Vérifier que l'utilisateur fait partie de la conversation
-        const conversation = await Conversation.findOne({
-          _id: message.conversation,
-          participants: userId,
-        });
-
-        if (!conversation) {
-          return res.status(404).json({ message: "Conversation not found" });
-        }
-
-        // Mettre à jour le message
-        message.content = content.trim();
-        message.edited = true;
-        message.editedAt = new Date();
-        await message.save();
-
-        // Populer les infos du sender
-        await message.populate("sender", "name surname email");
-
-        res.json({
-          success: true,
-          message: "Message updated",
-          updatedMessage: message,
-        });
-      } catch (error) {
-        console.error("Error updating message:", error);
-        res.status(500).json({ message: "Error updating message" });
-      }
-    });
-
-    // Supprimer une conversation
-    router.delete("/:conversationId", isAuthenticated, async (req, res) => {
-      try {
-        const userId = req.payload._id;
-        const { conversationId } = req.params;
-
-        // Vérifier que l'utilisateur fait partie de la conversation
-        const conversation = await Conversation.findOne({
-          _id: conversationId,
-          participants: userId,
-        });
-
-        if (!conversation) {
-          return res.status(404).json({ message: "Conversation not found" });
-        }
-
-        // Supprimer tous les messages de la conversation
-        await Message.deleteMany({ conversation: conversationId });
-
-        // Supprimer la conversation
-        await Conversation.findByIdAndDelete(conversationId);
-
-        res.json({
-          success: true,
-          message: "Conversation deleted",
-          conversationId,
-        });
-      } catch (error) {
-        console.error("Error deleting conversation:", error);
-        res.status(500).json({ message: "Error deleting conversation" });
-      }
-    });
-
     // Supprimer le message
     await Message.findByIdAndDelete(messageId);
 
@@ -393,6 +367,39 @@ router.delete("/messages/:messageId", isAuthenticated, async (req, res) => {
   } catch (error) {
     console.error("Error deleting message:", error);
     res.status(500).json({ message: "Error deleting message" });
+  }
+});
+
+// Supprimer une conversation
+router.delete("/:conversationId", isAuthenticated, async (req, res) => {
+  try {
+    const userId = req.payload._id;
+    const { conversationId } = req.params;
+
+    // Vérifier que l'utilisateur fait partie de la conversation
+    const conversation = await Conversation.findOne({
+      _id: conversationId,
+      participants: userId,
+    });
+
+    if (!conversation) {
+      return res.status(404).json({ message: "Conversation not found" });
+    }
+
+    // Supprimer tous les messages de la conversation
+    await Message.deleteMany({ conversation: conversationId });
+
+    // Supprimer la conversation
+    await Conversation.findByIdAndDelete(conversationId);
+
+    res.json({
+      success: true,
+      message: "Conversation deleted",
+      conversationId,
+    });
+  } catch (error) {
+    console.error("Error deleting conversation:", error);
+    res.status(500).json({ message: "Error deleting conversation" });
   }
 });
 

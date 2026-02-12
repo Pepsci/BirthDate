@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import socketService from "../services/socket.service";
+import { useOnlineStatus } from "../../context/OnlineStatusContext"; // ⭐ NOUVEAU
 import "./css/ConversationList.css";
 
 function ConversationList({
@@ -8,10 +9,11 @@ function ConversationList({
   selectedConversation,
   onSelectConversation,
 }) {
+  const { isUserOnline } = useOnlineStatus(); // ⭐ NOUVEAU
   const [friends, setFriends] = useState([]);
   const [showNewChat, setShowNewChat] = useState(false);
   const [localConversations, setLocalConversations] = useState(conversations);
-  const [deleteConfirmId, setDeleteConfirmId] = useState(null); // ⭐ NOUVEAU
+  const [deleteConfirmId, setDeleteConfirmId] = useState(null);
   const navigate = useNavigate();
 
   const currentUserId = JSON.parse(
@@ -133,13 +135,11 @@ function ConversationList({
     }
   };
 
-  // ⭐ NOUVEAU - Afficher la confirmation
   const handleRequestDelete = (e, conversationId) => {
     e.stopPropagation();
     setDeleteConfirmId(conversationId);
   };
 
-  // ⭐ NOUVEAU - Confirmer la suppression
   const handleConfirmDelete = (e, conversationId) => {
     e.stopPropagation();
 
@@ -151,7 +151,6 @@ function ConversationList({
     }
   };
 
-  // ⭐ NOUVEAU - Annuler la suppression
   const handleCancelDelete = (e) => {
     e.stopPropagation();
     setDeleteConfirmId(null);
@@ -230,6 +229,7 @@ function ConversationList({
             ) : (
               friends.map((friend) => {
                 const friendUser = friend.friendUser;
+                const friendIsOnline = isUserOnline(friendUser._id); // ⭐ NOUVEAU
 
                 return (
                   <div
@@ -239,11 +239,17 @@ function ConversationList({
                   >
                     <div className="friend-avatar">
                       {friendUser.name?.charAt(0).toUpperCase()}
+                      {/* ⭐ NOUVEAU - Badge en ligne dans la liste d'amis */}
+                      {friendIsOnline && <span className="online-dot"></span>}
                     </div>
                     <div className="friend-info">
                       <span className="friend-name">
                         {friendUser.name} {friendUser.surname}
                       </span>
+                      {/* ⭐ NOUVEAU - Texte "En ligne" */}
+                      {friendIsOnline && (
+                        <span className="online-text">En ligne</span>
+                      )}
                     </div>
                   </div>
                 );
@@ -268,6 +274,9 @@ function ConversationList({
           localConversations.map((conversation) => {
             const otherUser = getOtherParticipant(conversation);
             const showConfirm = deleteConfirmId === conversation._id;
+            const userIsOnline = otherUser
+              ? isUserOnline(otherUser._id)
+              : false; // ⭐ NOUVEAU
 
             return (
               <div key={conversation._id}>
@@ -279,6 +288,11 @@ function ConversationList({
                 >
                   <div className="conversation-avatar">
                     {otherUser?.name?.charAt(0).toUpperCase() || "?"}
+                    {userIsOnline ? (
+                      <span className="online-indicator"></span>
+                    ) : (
+                      <span className="offline-indicator"></span>
+                    )}
                   </div>
 
                   <div className="conversation-info">
@@ -306,7 +320,6 @@ function ConversationList({
                     </div>
                   </div>
 
-                  {/* Icône corbeille */}
                   {!showConfirm && (
                     <button
                       className="delete-conversation-btn"
@@ -318,7 +331,6 @@ function ConversationList({
                   )}
                 </div>
 
-                {/* ⭐ NOUVEAU - Confirmation élégante */}
                 {showConfirm && (
                   <div className="delete-confirmation">
                     <span className="delete-confirmation-text">

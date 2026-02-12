@@ -1,6 +1,7 @@
 // src/components/Chat/Chat.jsx
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+import apiHandler from "../../api/apiHandler";
 import socketService from "../services/socket.service";
 import useNotifications from "../../context/useNotifications";
 import ConversationList from "./ConversationList";
@@ -39,7 +40,7 @@ function Chat() {
 
     const socket = socketService.connect(token);
     socket.emit("conversations:join");
-    loadConversations(token);
+    loadConversations();
 
     socket.on("message:new", handleNewMessage);
     socket.on("messages:read", handleMessagesRead);
@@ -65,22 +66,18 @@ function Chat() {
       activeConversationRef.current = newConversationId;
       setActiveConversation(newConversationId);
     }
-  }, [selectedConversation]);
+  }, [selectedConversation, setActiveConversation]);
 
-  const loadConversations = async (token) => {
+  const loadConversations = async () => {
     try {
-      const response = await fetch("/api/conversations", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setConversations(data);
-      }
+      console.log("🔍 Chargement des conversations...");
+      const response = await apiHandler.get("/conversations");
+      console.log("✅ Conversations chargées:", response.data);
+      setConversations(response.data);
     } catch (error) {
-      console.error("Error loading conversations:", error);
+      console.error("❌ Error loading conversations:", error);
+      // Ne pas bloquer l'interface si le chargement échoue
+      setConversations([]);
     } finally {
       setLoading(false);
     }
@@ -163,13 +160,7 @@ function Chat() {
     // Marquer comme lu sur le serveur
     if (conversation.unreadCount > 0) {
       try {
-        const token = localStorage.getItem("authToken");
-        await fetch(`/api/conversations/${conversation._id}/read`, {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        await apiHandler.put(`/conversations/${conversation._id}/read`);
 
         socketService.emit("messages:read", {
           conversationId: conversation._id,

@@ -1,14 +1,13 @@
-// Importation de AWS SDK v3 pour SES
-const { SESClient, SendEmailCommand } = require("@aws-sdk/client-ses");
+const cron = require("node-cron");
+const { SESClient } = require("@aws-sdk/client-ses");
 const nodemailer = require("nodemailer");
 const dateModel = require("../models/date.model");
-const schedule = require("node-schedule");
 
-// NOUVEAU : Import des templates HTML et texte
+// Import des templates HTML et texte
 const {
   getBirthdayReminderTemplate,
   getBirthdayReminderTextVersion,
-} = require("./emailTemplates/birthdayReminder");
+} = require("../services/emailTemplates/birthdayReminder");
 
 // Création du client SES avec AWS SDK v3
 const sesClient = new SESClient({
@@ -19,9 +18,8 @@ const sesClient = new SESClient({
   },
 });
 
-// Création d'un transporteur personnalisé avec une fonction send pour utiliser SES v3
+// Création d'un transporteur personnalisé avec SES v3
 const transporter = nodemailer.createTransport({
-  // Fonction d'envoi personnalisée qui utilise directement l'API SES v3
   send: async (mail, callback) => {
     try {
       const message = await new Promise((resolve, reject) => {
@@ -34,7 +32,6 @@ const transporter = nodemailer.createTransport({
         });
       });
 
-      // Importer dynamiquement SendRawEmailCommand pour éviter les conflits
       const { SendRawEmailCommand } = require("@aws-sdk/client-ses");
       const command = new SendRawEmailCommand({
         RawMessage: { Data: message },
@@ -65,19 +62,23 @@ function isBirthdayInXDays(birthday, daysFromNow) {
 // Fonction principale pour vérifier et envoyer des emails
 async function checkAndSendBirthdayEmails() {
   try {
+    console.log("🎂 [CRON] Vérification des anniversaires...");
+
     // Récupérer toutes les dates avec leurs propriétaires
     const dateList = await dateModel.find().populate("owner");
 
+    let emailsSent = 0;
+
     // Pour chaque date, vérifier si nous devons envoyer une notification
     for (const dateItem of dateList) {
-      // Vérifier si l'utilisateur existe, a une adresse email, et accepte les notifications par email
+      // Vérifier si l'utilisateur existe, a une adresse email, et accepte les notifications
       if (
         !dateItem.owner ||
         !dateItem.owner.email ||
         dateItem.owner.receiveBirthdayEmails === false ||
         dateItem.receiveNotifications === false
       ) {
-        continue; // Passer à la date suivante
+        continue;
       }
 
       const birthday = new Date(dateItem.date);
@@ -94,10 +95,11 @@ async function checkAndSendBirthdayEmails() {
           dateItem.name,
           dateItem.surname,
           0,
-          dateItem._id // L'ID de la date pour créer le lien
+          dateItem._id,
         );
+        emailsSent++;
         console.log(
-          `Email envoyé pour ${dateItem.name} ${dateItem.surname} (jour même)`
+          `✅ Email envoyé pour ${dateItem.name} ${dateItem.surname} (jour même)`,
         );
       }
 
@@ -109,40 +111,41 @@ async function checkAndSendBirthdayEmails() {
             dateItem.name,
             dateItem.surname,
             daysBeforeBirthday,
-            dateItem._id // L'ID de la date pour créer le lien
+            dateItem._id,
           );
+          emailsSent++;
           console.log(
-            `Email envoyé pour ${dateItem.name} ${dateItem.surname} (${daysBeforeBirthday} jours avant)`
+            `✅ Email envoyé pour ${dateItem.name} ${dateItem.surname} (${daysBeforeBirthday} jours avant)`,
           );
         }
       }
     }
 
-    console.log("Vérification des anniversaires terminée");
+    console.log(
+      `🎂 [CRON] Vérification terminée - ${emailsSent} email(s) envoyé(s)`,
+    );
   } catch (error) {
-    console.error("Erreur lors de la vérification des anniversaires:", error);
+    console.error(
+      "❌ [CRON] Erreur lors de la vérification des anniversaires:",
+      error,
+    );
   }
 }
 
-// FONCTION MODIFIÉE : Envoi d'email avec le nouveau template HTML et le lien vers la page birthday
+// Envoi d'email avec template HTML
 async function sendReminderEmail(
   email,
   name,
   surname,
   daysBeforeBirthday,
-  dateId
+  dateId,
 ) {
-  // Création des liens
   const encodedEmail = encodeURIComponent(email);
-
-  // NOUVEAU : Lien vers la page de l'anniversaire spécifique
   const birthdayLink = `${process.env.FRONTEND_URL}/birthday/${dateId}`;
-
-  // Liens de désabonnement
   const unsubscribeAllLink = `${process.env.FRONTEND_URL}/api/unsubscribe?email=${encodedEmail}`;
   const unsubscribeSpecificLink = `${process.env.FRONTEND_URL}/api/unsubscribe?email=${encodedEmail}&dateid=${dateId}`;
 
-  // Définir le sujet de l'email selon le délai
+  // Définir le sujet selon le délai
   let subject;
   if (daysBeforeBirthday === 0) {
     subject = `C'est aujourd'hui l'anniversaire de ${name} ${surname} ! 🎉`;
@@ -152,7 +155,6 @@ async function sendReminderEmail(
     subject = `Rappel: Anniversaire dans ${daysBeforeBirthday} jours 📅`;
   }
 
-  // Préparer les données pour le template
   const templateData = {
     name,
     surname,
@@ -162,39 +164,43 @@ async function sendReminderEmail(
     unsubscribeSpecificLink,
   };
 
-  // NOUVEAU : Générer le contenu HTML et texte à partir des templates
   const htmlContent = getBirthdayReminderTemplate(templateData);
   const textContent = getBirthdayReminderTextVersion(templateData);
 
-  // Configuration de l'email
   const mailOptions = {
     from: `Birthday <${process.env.EMAIL_BRTHDAY}>`,
     to: email,
     subject: subject,
-    text: textContent, // Version texte brut
-    html: htmlContent, // Version HTML stylisée
+    text: textContent,
+    html: htmlContent,
     headers: {
       "List-Unsubscribe": `<${unsubscribeAllLink}>`,
       "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
     },
   };
 
-  // Envoi de l'email via le transporteur
   return new Promise((resolve, reject) => {
     transporter.sendMail(mailOptions, (error, info) => {
       if (error) {
         console.error("Erreur lors de l'envoi de l'email:", error);
         reject(error);
       } else {
-        console.log("Email envoyé:", info.response);
         resolve(info);
       }
     });
   });
 }
 
-// Planification de la tâche quotidienne (tous les jours à minuit)
-schedule.scheduleJob("0 0 * * *", checkAndSendBirthdayEmails);
-// schedule.scheduleJob("*/1 * * * *", checkAndSendBirthdayEmails);
+// Planification : tous les jours à minuit (0h)
+const birthdayEmailCron = cron.schedule(
+  "0 0 * * *",
+  checkAndSendBirthdayEmails,
+  {
+    scheduled: false, // Important : ne démarre PAS automatiquement
+  },
+);
 
-module.exports = { checkAndSendBirthdayEmails };
+// Pour tester : décommenter la ligne ci-dessous (toutes les minutes)
+// const birthdayEmailCron = cron.schedule("*/1 * * * *", checkAndSendBirthdayEmails, { scheduled: false });
+
+module.exports = birthdayEmailCron;

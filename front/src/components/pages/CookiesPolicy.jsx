@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import "./css/cookiesPolicy.css";
+import "./css/legalPages.css";
 
 export default function CookiesPolicy() {
   const handleManagePreferences = () => {
@@ -9,8 +9,8 @@ export default function CookiesPolicy() {
   };
 
   return (
-    <div className="cookies-policy-container">
-      <div className="cookies-policy-content">
+    <div className="legal-page-container">
+      <div className="legal-page-content">
         <Link to="/home" className="back-link">
           ← Retour à l'accueil
         </Link>
