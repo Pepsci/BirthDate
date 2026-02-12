@@ -443,6 +443,17 @@ const FriendProfile = ({ date, onCancel, initialSection = "info" }) => {
   // Section chat avec DirectChat
   const renderChatSection = () => {
     const friendId = date.linkedUser?._id || date.linkedUser;
+
+    console.log("🎯 Rendering chat section for:", friendId); // 👈 DEBUG
+
+    if (!friendId) {
+      return (
+        <div className="error-message">
+          Cet utilisateur n'est pas lié à un compte ami
+        </div>
+      );
+    }
+
     return <DirectChat friendId={friendId} />;
   };
 
