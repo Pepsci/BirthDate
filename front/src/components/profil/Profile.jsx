@@ -9,6 +9,7 @@ import Wishlist from "./Wishlist";
 import FriendsSection from "../friends/FriendsSection";
 import FriendsMobileView from "../friends/FriendsMobileView";
 import MergeDuplicatesSection from "../friends/MergeDuplicatesSection";
+import ThemeToggle from "./ThemeToggle";
 import "../UI/css/carousel-common.css";
 import "../UI/css/containerInfo.css";
 import "./css/profile.css";
@@ -247,7 +248,6 @@ const ProfilDetails = () => {
       case "personal":
         return (
           <div>
-            <h2>Vos données</h2>
             <p className="profile_info_details">
               <b>
                 {currentUser && currentUser.name}{" "}
@@ -268,6 +268,7 @@ const ProfilDetails = () => {
                 <Countdown birthdate={userToUpdate.birthDate} />
               </div>
             )}
+            <ThemeToggle />
             <div className="profil-btn" style={{ marginTop: "20px" }}>
               <button
                 className="btn-profil btn-carousel"

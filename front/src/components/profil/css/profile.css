@@ -13,18 +13,20 @@
 }
 
 .profile h2 {
-    color: var(--gray-100) !important;
+    color: var(--text-primary) !important;
     font-family: 'Roboto', sans-serif;
     font-size: xx-large;
     margin-bottom: 3rem;
+    transition: color 0.3s ease;
 }
 
 .profile_info_details {
     margin: 1rem !important;
-    color: var(--gray-300) !important;
+    color: var(--text-secondary) !important;
     font-family: 'Roboto', sans-serif;
     font-size: 1.8rem;
     text-align: center;
+    transition: color 0.3s ease;
 }
 
 .profil-btn {
@@ -42,27 +44,37 @@
     margin: 8px 0;
     box-sizing: border-box;
     border: none;
-    border-radius: 4px;
-    background-color: #2196f3;
+    border-radius: 8px;
+    background-color: var(--primary);
     color: white;
     font-size: 16px;
+    font-weight: 600;
     cursor: pointer;
-    transition: background-color 0.3s ease;
+    transition: all 0.3s ease;
     width: 100%;
 }
 
-.btn-profilGreen {
-    background-color: rgb(35, 206, 149);
-    margin: 0;
-    padding: 8px;
-    margin-top: 8px;    
+.btn-profil:hover {
+    opacity: 0.9;
+    transform: translateY(-2px);
 }
 
-.btn-profilGrey {
-    background-color: rgb(73, 77, 77);
+.btn-profilGreen {
+    background-color: var(--success);
     margin: 0;
     padding: 8px;
     margin-top: 8px;
+}
+
+.btn-profilGrey {
+    background-color: var(--gray-600);
+    margin: 0;
+    padding: 8px;
+    margin-top: 8px;
+}
+
+.btn-profilGrey:hover {
+    background-color: var(--gray-700);
 }
 
 .btn-profilEditContainer {
@@ -73,19 +85,20 @@
 }
 
 .profil-countdown {
-    margin: 5rem auto 4rem;
+    margin: 2rem auto 3rem;
 }
 
 /* Bouton supprimer */
 .btn-delete {
-    background-color: #dc3545;
+    background-color: var(--danger);
     color: white;
     border: none;
     padding: 10px;
     margin: 8px 0;
     box-sizing: border-box;
-    border-radius: 4px;
+    border-radius: 8px;
     font-size: 16px;
+    font-weight: 600;
     cursor: pointer;
     transition: all 0.3s ease;
     width: 100%;
@@ -103,7 +116,7 @@
 }
 
 .btn-delete:disabled {
-    background-color: #6c757d;
+    background-color: var(--gray-600);
     cursor: not-allowed;
     opacity: 0.6;
 }
@@ -127,15 +140,6 @@
 }
 
 @media (max-width: 600px) {
-
-    .profileWrapper {
-        margin: 2rem;
-        background-color: blue;
-        display: flex;
-        flex-direction: row;
-        justify-content: space-around;
-    }
-
     .mobile-section h2 {
         display: none;
     }
@@ -143,19 +147,16 @@
     .profile_info_details {
         margin: 0 !important;
         padding: .5rem;
+        font-size: 1.5rem;
     }
 
     .profil-countdown {
         width: 90%;
-        margin: 5rem auto 4rem;
+        margin: 0 auto 0.5rem;
     }
 
     .profil-btn {
-        /* margin: 0 1em 1em; */
-    }
-
-    .profile_info:nth-child(2) {
-        color: beige;
+        margin: -1px 0 0rem 1rem;
     }
 
     .btn-profilEditContainer .btn-profil,

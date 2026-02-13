@@ -1,8 +1,8 @@
-img{
+img {
     height: 50px;
 }
 
-.logoHeader{
+.logoHeader {
     height: 100px;
     margin: 2em;
     margin-top: 3rem;
@@ -10,32 +10,18 @@ img{
 
 .homePageRoot {
     margin-top: 110px;
+    background-color: var(--bg-secondary);
+    min-height: 100vh;
+    transition: background-color 0.3s ease;
 }
 
-.homePageCurrentuser{
+.homePageCurrentuser {
     display: flex;
     flex-direction: column;
-    background-color: rgb(255, 255, 255);
 }
 
-.homePageUser{
+.homePageUser {
     display: flex;
-}
-
-.homePageHeader{
-    display: flex;
-    align-items: center;
-    top: 200;
-}
-
-.homePageHeader, .test{
-    position: fixed;
-    top: 80;
-    width: 100%;
-    height: 80px;
-    background-color: white;
-    z-index: 1;
-    
 }
 
 .homePageHeader {
@@ -46,11 +32,13 @@ img{
     top: 0;
     width: 100%;
     height: 80px;
-    background-color: rgb(255, 255, 255);
+    background-color: var(--bg-primary);
+    border-bottom: 1px solid var(--border-color);
+    z-index: 1000;
+    transition: all 0.3s ease;
 }
 
-
-.btn-currentName{
+.btn-currentName {
     display: flex;
     flex-direction: row;
     align-items: center;
@@ -58,6 +46,8 @@ img{
     font-size: 3ch;
     padding-left: 1rem;
     font-family: 'Roboto', sans-serif;
+    color: var(--text-primary);
+    transition: color 0.3s ease;
 }
 
 .avatar {
@@ -67,53 +57,75 @@ img{
     margin-right: 10px;
 }
 
-.btnProfile{
-    border: none;
+.btnProfile {
+    background-color: rgba(59, 130, 246, 0.1);
+    color: var(--text-primary);
+    border: 1px solid var(--primary);
     border-radius: 5px;
     cursor: pointer;
     margin-right: 1rem;
-    background-color: var(--gray-700);
-    color: white;
-    border-color: var(--gray-600);
+    padding: 0.5rem 1rem;
+    transition: all 0.3s ease;
 }
 
-.profil-btn{
+.btnProfile:hover {
+    background-color: var(--primary);
+    color: white;
+}
+
+.profil-btn {
     display: flex;
     justify-content: center;
     margin: 0 0 1rem 1rem;
 }
 
-.btnBackToDateList{
-    padding: 0.6rem;
-    font-size: 0.8rem;
-    background-color: var(--gray-800);
-    color: var(--gray-300);
-    border-color: var(--gray-700);
+.btnBackToDateList {
+    padding: 0.6rem 1.2rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
     margin-top: 2rem;
     border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
 }
 
+.btnBackToDateList:hover {
+    background-color: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+/* ================================
+   Media Queries - Mobile
+================================ */
 @media (max-width: 600px) {
+    .homeTest {
+        height: 80px;
+    }
 
-.homeTest{
-    height: 80px;
-}
+    .titleFontSize {
+        font-size: 2.2em !important;
+    }
 
-.titleFontSize{
-    font-size: 2.2em !important;
-}
+    .logoHeader {
+        height: 70px;
+        margin: 0.5em;
+        margin-top: 0rem;
+    }
 
-.logoHeader {
-    height: 70px;
-    margin: 0.5em;
-    margin-top: 0rem;
-}
-.homePageRoot{
-    margin-top: 130px;
-}
+    .homePageRoot {
+        margin-top: 130px;
+    }
 
-.profil-btn{
-    justify-content: flex-start;
-}
+    .profil-btn {
+        justify-content: flex-start;
+    }
 
+    .btn-currentName {
+        font-size: 2.5ch;
+        padding-left: 0.5rem;
+    }
 }

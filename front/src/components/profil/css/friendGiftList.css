@@ -1,36 +1,49 @@
-/* FriendGiftList.css - Style identique à la wishlist */
+/* FriendGiftList.css - Style identique à la wishlist avec adaptation dark mode */
+
+/* ========================================
+   CONTAINER PRINCIPAL
+   ======================================== */
 
 .friend-gift-container {
-        width: 400px;
-        max-height: 500px;
-        padding: 1rem;
-        border: 2px solid var(--gray-700);
-        border-radius: 12px;
-        z-index: 0;
-        background-color: var(--gray-800);
-        overflow: auto;
-        scrollbar-width: none;
-        margin-bottom: 1rem;
+    width: 400px;
+    max-height: 500px;
+    padding: 1rem;
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    z-index: 0;
+    background-color: var(--bg-primary);
+    overflow: auto;
+    scrollbar-width: none;
+    margin-bottom: 1rem;
+    transition: all 0.3s ease;
 }
 
-/* Header */
+/* ========================================
+   HEADER
+   ======================================== */
+
 .friend-gift-header {
     text-align: center;
     margin-bottom: 20px;
 }
 
 .friend-gift-header h2 {
-    color: #fff;
+    color: var(--text-primary);
     font-size: 24px;
     margin-bottom: 8px;
+    transition: color 0.3s ease;
 }
 
 .friend-gift-count {
-    color: #adb5bd;
+    color: var(--text-secondary);
     font-size: 14px;
+    transition: color 0.3s ease;
 }
 
-/* Bouton ajouter */
+/* ========================================
+   BOUTON AJOUTER
+   ======================================== */
+
 .btn-add-gift {
     width: 100%;
     margin-bottom: 20px;
@@ -51,30 +64,34 @@
     box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
 }
 
-/* Formulaire card */
+/* ========================================
+   FORMULAIRE CARD
+   ======================================== */
+
 .friend-gift-form-card {
-    background: rgba(45, 55, 72, 0.6);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
     border-radius: 12px;
     padding: 20px;
     margin-bottom: 20px;
+    transition: all 0.3s ease;
 }
 
 .friend-gift-form-card h3 {
-    color: #fff;
+    color: var(--text-primary);
     font-size: 18px;
     margin-bottom: 16px;
     text-align: center;
+    transition: color 0.3s ease;
 }
 
 .friend-gift-form-card .form-input {
     width: 80%;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
     border-radius: 8px;
     padding: 12px 16px;
-    color: #fff;
+    color: var(--text-primary);
     font-size: 14px;
     margin-bottom: 12px;
     transition: all 0.3s ease;
@@ -82,19 +99,22 @@
 
 .friend-gift-form-card .form-input:focus {
     outline: none;
-    border-color: #667eea;
-    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--primary);
+    background: var(--bg-secondary);
 }
 
 .friend-gift-form-card .form-input::placeholder {
-    color: #adb5bd;
+    color: var(--text-tertiary);
 }
 
 .friend-gift-form-card select.form-input {
     cursor: pointer;
 }
 
-/* Boutons formulaire */
+/* ========================================
+   BOUTONS FORMULAIRE
+   ======================================== */
+
 .friend-gift-form-buttons {
     display: flex;
     gap: 10px;
@@ -105,22 +125,28 @@
     flex: 1;
 }
 
-/* Liste vide */
+/* ========================================
+   LISTE VIDE
+   ======================================== */
+
 .friend-gift-empty {
     text-align: center;
-    color: #adb5bd;
+    color: var(--text-tertiary);
     padding: 40px 20px;
     font-size: 16px;
+    transition: color 0.3s ease;
 }
 
-/* Items de gift */
+/* ========================================
+   ITEMS DE GIFT
+   ======================================== */
+
 .friend-gift-items {
     display: flex;
     flex-direction: column;
     gap: 12px;
     max-height: 500px;
     overflow-y: auto;
-    /* padding-right: 8px; */
     scrollbar-width: none;
 }
 
@@ -130,24 +156,25 @@
 }
 
 .friend-gift-items::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 3px;
+    background: transparent;
 }
 
 .friend-gift-items::-webkit-scrollbar-thumb {
-    background: rgba(102, 126, 234, 0.5);
+    background: var(--primary);
     border-radius: 3px;
 }
 
 .friend-gift-items::-webkit-scrollbar-thumb:hover {
-    background: rgba(102, 126, 234, 0.7);
+    background: var(--primary-light);
 }
 
-/* Card item */
+/* ========================================
+   CARD ITEM
+   ======================================== */
+
 .friend-gift-item-card {
-    background: rgba(45, 55, 72, 0.6);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
     border-radius: 12px;
     padding: 16px;
     transition: all 0.3s ease;
@@ -155,11 +182,14 @@
 
 .friend-gift-item-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: var(--card-shadow-hover);
+    border-color: var(--border-color-hover);
 }
 
-/* Header de l'item */
+/* ========================================
+   HEADER DE L'ITEM
+   ======================================== */
+
 .friend-gift-item-header {
     display: flex;
     justify-content: space-between;
@@ -169,15 +199,19 @@
 }
 
 .friend-gift-item-title {
-    color: #fff;
+    color: var(--text-primary);
     font-size: 16px;
     font-weight: 500;
     margin: 0;
     flex: 1;
     word-break: break-word;
+    transition: color 0.3s ease;
 }
 
-/* Badge acheté/à acheter */
+/* ========================================
+   BADGE ACHETÉ/À ACHETER
+   ======================================== */
+
 .friend-gift-item-badge {
     padding: 4px 10px;
     border-radius: 12px;
@@ -188,7 +222,7 @@
 
 .friend-gift-item-badge.purchased {
     background: rgba(16, 185, 129, 0.2);
-    color: #10b981;
+    color: var(--success);
     border: 1px solid rgba(16, 185, 129, 0.3);
 }
 
@@ -198,7 +232,10 @@
     border: 1px solid rgba(251, 191, 36, 0.3);
 }
 
-/* Meta info */
+/* ========================================
+   META INFO
+   ======================================== */
+
 .friend-gift-item-meta {
     display: flex;
     justify-content: space-between;
@@ -208,21 +245,26 @@
 }
 
 .friend-gift-occasion {
-    color: #667eea;
+    color: var(--primary);
     font-weight: 500;
 }
 
 .friend-gift-year {
-    color: #adb5bd;
+    color: var(--text-tertiary);
+    transition: color 0.3s ease;
 }
 
-/* Actions */
+/* ========================================
+   ACTIONS
+   ======================================== */
+
 .friend-gift-item-actions {
     display: flex;
     gap: 8px;
     margin-top: 12px;
     padding-top: 12px;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 1px solid var(--border-color);
+    transition: border-color 0.3s ease;
 }
 
 .btn-gift {
@@ -233,13 +275,13 @@
     font-size: 16px;
     cursor: pointer;
     transition: all 0.3s ease;
-    background: rgba(255, 255, 255, 0.05);
-    color: #fff;
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
 }
 
 .btn-gift:hover {
     transform: translateY(-1px);
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--bg-secondary);
 }
 
 .btn-gift.btn-toggle {
@@ -312,21 +354,22 @@
 }
 
 .delete-confirm-title {
-    color: #fff;
+    color: var(--text-primary);
     font-size: 18px;
     font-weight: 600;
     margin-bottom: 12px;
+    transition: color 0.3s ease;
 }
 
 .delete-confirm-text {
-    color: #667eea;
+    color: var(--primary);
     font-size: 16px;
     margin-bottom: 8px;
     word-break: break-word;
 }
 
 .delete-confirm-warning {
-    color: #ef4444;
+    color: var(--danger);
     font-size: 13px;
     margin-bottom: 20px;
     font-weight: 500;
@@ -345,7 +388,7 @@
 }
 
 .delete-confirm-buttons .btn-profilGrey:hover {
-    background-color: rgb(90, 95, 95);
+    background-color: var(--gray-700);
     transform: translateY(-2px);
 }
 
@@ -365,21 +408,22 @@
    ======================================== */
 
 .friend-gift-filters {
-    background: rgba(45, 55, 72, 0.4);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
     border-radius: 12px;
     padding: 16px;
     margin-bottom: 20px;
+    transition: all 0.3s ease;
 }
 
 .filter-title {
-    color: #adb5bd;
+    color: var(--text-secondary);
     font-size: 13px;
     font-weight: 500;
     text-transform: uppercase;
     letter-spacing: 0.5px;
     margin-bottom: 10px;
+    transition: color 0.3s ease;
 }
 
 .filter-buttons {
@@ -390,10 +434,10 @@
 
 .filter-btn {
     padding: 8px 16px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 1px solid var(--border-color);
     border-radius: 8px;
-    background: rgba(255, 255, 255, 0.05);
-    color: #adb5bd;
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
     font-size: 14px;
     font-weight: 500;
     cursor: pointer;
@@ -402,37 +446,130 @@
 }
 
 .filter-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.2);
+    background: var(--bg-primary);
+    border-color: var(--border-color-hover);
     transform: translateY(-1px);
 }
 
 .filter-btn.active {
     background: linear-gradient(135deg, rgba(102, 126, 234, 0.3) 0%, rgba(118, 75, 162, 0.3) 100%);
-    border-color: rgba(102, 126, 234, 0.5);
-    color: #fff;
+    border-color: var(--primary);
+    color: var(--text-primary);
+    font-weight: 600;
 }
 
 .filter-arrow {
     font-size: 15px;
     transition: transform 0.3s ease;
-    /* color: #adb5bd; */
     display: inline-block;
+    color: var(--text-secondary);
 }
 
 .filter-arrow.open {
     transform: rotate(180deg);
 }
 
+/* ========================================
+   FRIEND PROFILE GRID
+   ======================================== */
 
-/* Responsive */
+.grid-friendProfil {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(1, 1fr);
+    gap: 1.6rem;
+    margin: auto;
+    max-width: 900px;
+}
+
+.grid1-friendProfil {
+    grid-area: 1 / 1 / 2 / 3;
+    height: 120px;
+    margin-bottom: 1rem;
+}
+
+.grid2-friendProfil {
+    grid-area: 2 / 2 / 4 / 3;
+}
+
+.grid3-friendProfil {
+    grid-area: 2 / 1 / 4 / 2;
+    max-width: 400px;
+}
+
+.font-profilFriend {
+    font-family: 'Roboto', sans-serif;
+    color: var(--text-primary);
+    transition: color 0.3s ease;
+}
+
+.giftTiltle-friendProfil {
+    color: var(--text-primary);
+    font-family: 'Roboto', sans-serif;
+    transition: color 0.3s ease;
+}
+
+.friendProfil {
+    border-radius: 16px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: var(--card-shadow);
+    height: 100%;
+    transition: box-shadow 0.3s ease;
+}
+
+.info-friendProfil {
+    margin: auto;
+    width: 500px;
+}
+
+.age {
+    width: 100%;
+    text-align: center;
+}
+
+.date-profilFriend {
+    text-align: center;
+    margin: 2rem;
+}
+
+.btnRLD {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: left;
+}
+
+.btnRLD button {
+    padding: 0.6rem;
+    font-size: 0.8rem;
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    margin-left: 1rem;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btnRLD button:hover {
+    background-color: var(--bg-secondary);
+    border-color: var(--primary);
+}
+
+.name-profilFriend {
+    text-align: center;
+    margin: 3rem;
+}
+
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+
 @media (max-width: 768px) {
-    
     .friend-gift-container {
-        /* width: 330px; */
-        /* padding: 5px; */
-        background-color:transparent;
-        border:none;
+        background-color: transparent;
+        border: none;
         margin: 0;
         border-radius: 0;
     }
@@ -442,6 +579,7 @@
         scrollbar-width: none;
         max-height: 100%;
     }
+
     .friend-gift-items {
         display: flex;
         flex-direction: column;
@@ -450,49 +588,74 @@
         overflow-y: visible;
         scrollbar-width: none;
     }
-    
+
     .friend-gift-header h2 {
         font-size: 20px;
     }
-    
+
     .friend-gift-item-title {
         font-size: 15px;
     }
-    
+
     .friend-gift-form-buttons {
         flex-direction: column;
     }
-    
+
     .delete-confirm-buttons {
         flex-direction: column;
         gap: 8px;
     }
-    
+
     .delete-confirm-icon {
         font-size: 40px;
     }
-    
+
     .delete-confirm-title {
         font-size: 16px;
     }
-    
+
     .friend-gift-items {
         max-height: 340px;
         margin-bottom: 12px;
     }
-    
-    .friend-gift-filters{
+
+    .friend-gift-filters {
         padding: 10px;
         margin-bottom: 12px;
     }
-     
-    .filter-btn{
+
+    .filter-btn {
         width: 60px;
         font-size: 20px;
         padding: 3px;
     }
+}
 
-    .btn-toggle-filters{
+@media (max-width: 600px) {
+    .grid-friendProfil {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        grid-template-rows: repeat(1, 1fr);
+        gap: 0.6rem;
+        margin: 0 0.6rem;
+    }
 
+    .info-friendProfil {
+        margin: auto;
+        width: 250px;
+    }
+
+    .friend-notification h2,
+    .friend-notification h3 {
+        color: var(--text-secondary);
+        margin: 1rem;
+        transition: color 0.3s ease;
+    }
+
+    .friend-notification {
+        padding: 0;
+        background-color: transparent;
+        min-height: 0;
+        max-height: 0;
     }
 }

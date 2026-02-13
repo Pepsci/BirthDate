@@ -1,4 +1,4 @@
-.btn-updateContainer{
+.btn-updateContainer {
     display: flex;
     flex-direction: column;
     margin-top: 1rem;
@@ -11,34 +11,41 @@
     box-sizing: border-box;
     border: none;
     border-radius: 4px;
-    background-color: #2196f3;
+    background-color: var(--primary);
     color: white;
     font-size: 16px;
     cursor: pointer;
-    transition: background-color 0.3s ease;
+    transition: all 0.3s ease;
     width: 200px;
 }
 
-.btn-updateGreen{
-    background-color: rgb(35, 206, 149);
+.btn-update:hover {
+    opacity: 0.9;
+    transform: translateY(-2px);
 }
 
-.btn-updateGrey{
-    background-color: rgb(73, 77, 77);
+.btn-updateGreen {
+    background-color: var(--success);
 }
 
-.btn-updateRed{
-    background-color: brown;
+.btn-updateGrey {
+    background-color: var(--gray-600);
 }
 
-.formUpdate{
-    color: var(--gray-300);
+.btn-updateRed {
+    background-color: var(--danger);
 }
 
-.btn-updateContainer, p{
-    color: var(--gray-300);
+.formUpdate {
+    color: var(--text-secondary);
+    transition: color 0.3s ease;
 }
 
-.updateLbel{
+.btn-updateContainer p {
+    color: var(--text-secondary);
+    transition: color 0.3s ease;
+}
+
+.updateLbel {
     margin-left: 16px;
 }

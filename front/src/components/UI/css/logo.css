@@ -1,0 +1,15 @@
+.logo {
+    height: 60px;
+    transition: opacity 0.3s ease;
+    cursor: pointer;
+}
+
+.logo:hover {
+    opacity: 0.85;
+}
+
+@media (max-width: 600px) {
+    .logo {
+        height: 50px;
+    }
+}

@@ -1,12 +1,12 @@
 /* front/src/components/layout/Footer.css */
 
 .site-footer {
-    background: #0f172a;
-    border-top: 1px solid #1e293b;
+    background: var(--bg-primary);
+    border-top: 1px solid var(--border-color);
     padding: 40px 20px 20px;
     margin-top: auto;
-    /* Pousse le footer en bas */
-    color: #cbd5e1;
+    color: var(--text-secondary);
+    transition: all 0.3s ease;
 }
 
 .footer-container {
@@ -26,10 +26,11 @@
 .footer-title {
     font-size: 16px;
     font-weight: 600;
-    color: #fff;
+    color: var(--text-primary);
     margin-bottom: 16px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    transition: color 0.3s ease;
 }
 
 .footer-links {
@@ -47,7 +48,7 @@
 }
 
 .footer-links a {
-    color: #94a3b8;
+    color: var(--text-secondary);
     text-decoration: none;
     font-size: 14px;
     transition: color 0.2s ease;
@@ -55,14 +56,15 @@
 }
 
 .footer-links a:hover {
-    color: #60a5fa;
+    color: var(--primary);
 }
 
 .footer-divider {
     max-width: 1200px;
     margin: 0 auto 24px;
     height: 1px;
-    background: #1e293b;
+    background: var(--border-color);
+    transition: background 0.3s ease;
 }
 
 .footer-bottom {
@@ -76,14 +78,16 @@
 
 .footer-copyright {
     font-size: 14px;
-    color: #64748b;
+    color: var(--text-tertiary);
     margin: 0;
+    transition: color 0.3s ease;
 }
 
 .footer-legal-notice {
     font-size: 12px;
-    color: #475569;
+    color: var(--text-tertiary);
     margin: 0;
+    transition: color 0.3s ease;
 }
 
 /* Mobile responsive */
@@ -93,22 +97,42 @@
     }
 
     .footer-container {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 32px;
+        grid-template-columns: 1fr;
+        gap: 24px;
+        text-align: center;
+    }
+
+    .footer-column {
+        align-items: center;
     }
 
     .footer-title {
         font-size: 14px;
     }
 
+    .footer-links {
+        align-items: center;
+    }
+
     .footer-links a {
         font-size: 13px;
+    }
+
+    .footer-bottom {
+        gap: 12px;
     }
 }
 
 @media (max-width: 480px) {
     .footer-container {
-        grid-template-columns: 1fr;
-        gap: 24px;
+        gap: 20px;
+    }
+
+    .footer-title {
+        margin-bottom: 12px;
+    }
+
+    .footer-links {
+        gap: 10px;
     }
 }

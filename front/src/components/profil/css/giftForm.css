@@ -1,4 +1,6 @@
-/* GiftForm.css */
+/* ========================================
+   GIFT FORM
+   ======================================== */
 
 .formGift-friendProfil {
     display: flex;
@@ -13,20 +15,22 @@
     max-width: 300px;
     padding: 10px;
     box-sizing: border-box;
-    border: 1px solid var(--gray-700);
+    border: 1px solid var(--border-color);
     border-radius: 8px;
-    background-color: var(--gray-800);
-    color: var(--gray-100);
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
     font-size: 14px;
+    transition: all 0.3s ease;
 }
 
 .inputGift-friendProfil::placeholder {
-    color: var(--gray-500);
+    color: var(--text-tertiary);
 }
 
 .inputGift-friendProfil:focus {
     outline: none;
-    border-color: #2196f3;
+    border-color: var(--primary);
+    background: var(--bg-secondary);
 }
 
 .select-gift {
@@ -52,16 +56,17 @@
     box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
 }
 
-/* GiftItem.css - Version enrichie */
+/* ========================================
+   GIFT ITEM
+   ======================================== */
 
 .gift-item-wrapper {
     margin-bottom: 12px;
 }
 
 .giftList-giftItem {
-    background: rgba(45, 55, 72, 0.6);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
     border-radius: 12px;
     padding: 12px 16px;
     transition: all 0.3s ease;
@@ -69,13 +74,13 @@
 
 .giftList-giftItem:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: var(--card-shadow-hover);
+    border-color: var(--border-color-hover);
 }
 
 .giftList-giftItem.editing {
-    border-color: #667eea;
-    background: rgba(102, 126, 234, 0.1);
+    border-color: var(--primary);
+    background: var(--bg-secondary);
 }
 
 /* Header du gift avec nom + meta */
@@ -88,11 +93,12 @@
 }
 
 .gift-name {
-    color: #fff;
+    color: var(--text-primary);
     font-size: 16px;
     font-weight: 500;
     flex: 1;
     word-break: break-word;
+    transition: color 0.3s ease;
 }
 
 .gift-meta {
@@ -104,13 +110,14 @@
 
 .gift-occasion {
     font-size: 13px;
-    color: #667eea;
+    color: var(--primary);
     font-weight: 500;
 }
 
 .gift-year {
     font-size: 12px;
-    color: #adb5bd;
+    color: var(--text-tertiary);
+    transition: color 0.3s ease;
 }
 
 /* Section actions */
@@ -119,7 +126,8 @@
     justify-content: space-between;
     align-items: center;
     padding-top: 12px;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 1px solid var(--border-color);
+    transition: border-color 0.3s ease;
 }
 
 .giftList-checkbox {
@@ -127,15 +135,16 @@
     align-items: center;
     gap: 8px;
     cursor: pointer;
-    color: var(--gray-300);
+    color: var(--text-secondary);
     font-size: 14px;
+    transition: color 0.3s ease;
 }
 
 .giftList-checkbox input[type="checkbox"] {
     width: 18px;
     height: 18px;
     cursor: pointer;
-    accent-color: #10b981;
+    accent-color: var(--success);
 }
 
 .checkbox-label {
@@ -155,12 +164,13 @@
     font-size: 16px;
     cursor: pointer;
     transition: all 0.3s ease;
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
 }
 
 .giftList-btn:hover {
     transform: translateY(-1px);
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--bg-secondary);
 }
 
 .btn-edit {
@@ -181,7 +191,7 @@
 
 .btn-save {
     background: rgba(16, 185, 129, 0.2);
-    color: #10b981;
+    color: var(--success);
 }
 
 .btn-save:hover {
@@ -189,12 +199,12 @@
 }
 
 .btn-cancel {
-    background: rgba(107, 114, 128, 0.2);
-    color: #9ca3af;
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
 }
 
 .btn-cancel:hover {
-    background: rgba(107, 114, 128, 0.3);
+    background: var(--bg-secondary);
 }
 
 /* Mode édition */
@@ -204,19 +214,20 @@
     width: 100%;
     padding: 8px;
     margin-bottom: 8px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
     border-radius: 6px;
-    color: #fff;
+    color: var(--text-primary);
     font-size: 14px;
+    transition: all 0.3s ease;
 }
 
 .gift-input-edit:focus,
 .gift-select-edit:focus,
 .gift-input-year:focus {
     outline: none;
-    border-color: #667eea;
-    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--primary);
+    background: var(--bg-secondary);
 }
 
 .gift-select-edit {
@@ -227,7 +238,47 @@
     max-width: 100px;
 }
 
-/* Responsive */
+/* ========================================
+   GIFT LIST CONTAINER
+   ======================================== */
+
+.gift-friendProfil {
+    padding: 12px;
+    height: 450px;
+    border-radius: 12px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    transition: all 0.3s ease;
+}
+
+.giftList-friendProfil {
+    overflow-y: auto;
+    height: 280px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--primary) transparent;
+}
+
+.giftList-friendProfil::-webkit-scrollbar {
+    width: 6px;
+}
+
+.giftList-friendProfil::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.giftList-friendProfil::-webkit-scrollbar-thumb {
+    background: var(--primary);
+    border-radius: 3px;
+}
+
+.giftList-name {
+    width: 100%;
+}
+
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+
 @media (max-width: 600px) {
     .gift-header {
         flex-direction: column;
@@ -262,5 +313,16 @@
     .inputGift-friendProfil,
     .addGift-friendProfil {
         max-width: 100%;
+    }
+
+    .giftList-giftItem {
+        gap: 10px;
+        padding: 8px;
+        margin-bottom: 8px;
+    }
+
+    .giftList-btn {
+        font-size: 0.7em;
+        padding: 3px 6px;
     }
 }

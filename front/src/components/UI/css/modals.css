@@ -35,18 +35,19 @@
 }
 
 .delete-modal {
-    background: var(--gray-800, #2d3748);
+    background: var(--bg-primary);
+    border: 3px solid var(--danger);
     padding: 2rem;
     border-radius: 12px;
     max-width: 500px;
     width: 90%;
-    border: 3px solid #dc3545;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
     animation: slideUp 0.3s ease-in-out;
+    transition: all 0.3s ease;
 }
 
 .delete-modal h2 {
-    color: #dc3545;
+    color: var(--danger);
     margin-bottom: 1rem;
     font-size: 1.5rem;
     font-family: 'Roboto', sans-serif;
@@ -55,14 +56,15 @@
 
 .delete-modal p {
     margin-bottom: 1rem;
-    color: var(--gray-300, #cbd5e0);
+    color: var(--text-secondary);
     line-height: 1.6;
     font-family: 'Roboto', sans-serif;
     text-align: center;
+    transition: color 0.3s ease;
 }
 
 .delete-modal strong {
-    color: #dc3545;
+    color: var(--danger);
     font-weight: 600;
 }
 
@@ -70,18 +72,19 @@
     width: 100%;
     margin: 1rem 0;
     padding: 12px;
-    border: 2px solid var(--gray-600, #4a5568);
+    border: 2px solid var(--border-color);
     border-radius: 4px;
-    background-color: var(--gray-700, #1a202c);
-    color: var(--gray-100, #f7fafc);
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
     font-size: 16px;
     font-family: 'Roboto', sans-serif;
     box-sizing: border-box;
+    transition: all 0.3s ease;
 }
 
 .delete-modal input:focus {
     outline: none;
-    border-color: #dc3545;
+    border-color: var(--danger);
 }
 
 .delete-modal-buttons {
@@ -117,21 +120,22 @@
 }
 
 .success-message {
-    background: var(--gray-800, #2d3748);
+    background: var(--bg-primary);
+    border: 3px solid var(--success);
     padding: 2.5rem 2rem;
     border-radius: 12px;
     max-width: 400px;
     width: 90%;
-    border: 3px solid rgb(35, 206, 149);
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
     animation: slideUp 0.3s ease-in-out;
     text-align: center;
+    transition: all 0.3s ease;
 }
 
 .success-icon {
     width: 70px;
     height: 70px;
-    background: rgb(35, 206, 149);
+    background: var(--success);
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -143,16 +147,17 @@
 }
 
 .success-message h2 {
-    color: rgb(35, 206, 149);
+    color: var(--success);
     margin-bottom: 1rem;
     font-size: 1.5rem;
     font-family: 'Roboto', sans-serif;
 }
 
 .success-message p {
-    color: var(--gray-300, #cbd5e0);
+    color: var(--text-secondary);
     font-family: 'Roboto', sans-serif;
     font-size: 1rem;
+    transition: color 0.3s ease;
 }
 
 /* ========================================
@@ -174,20 +179,21 @@
 }
 
 .error-message {
-    background: var(--gray-800, #2d3748);
+    background: var(--bg-primary);
+    border: 3px solid var(--danger);
     padding: 2.5rem 2rem;
     border-radius: 12px;
     max-width: 400px;
-    border: 3px solid #dc3545;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
     animation: slideUp 0.3s ease-in-out;
     text-align: center;
+    transition: all 0.3s ease;
 }
 
 .error-icon {
     width: 70px;
     height: 70px;
-    background: #dc3545;
+    background: var(--danger);
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -199,21 +205,22 @@
 }
 
 .error-message h2 {
-    color: #dc3545;
+    color: var(--danger);
     margin-bottom: 1rem;
     font-size: 1.5rem;
     font-family: 'Roboto', sans-serif;
 }
 
 .error-message p {
-    color: var(--gray-300, #cbd5e0);
+    color: var(--text-secondary);
     font-family: 'Roboto', sans-serif;
     font-size: 1rem;
     margin-bottom: 1.5rem;
+    transition: color 0.3s ease;
 }
 
 .error-message-button {
-    background-color: #dc3545;
+    background-color: var(--danger);
     color: white;
     border: none;
     padding: 12px 32px;

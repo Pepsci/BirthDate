@@ -20,12 +20,13 @@
     .mobile-carousel-header {
         padding: 16px;
         text-align: center;
-        background: var(--gray-900);
-        border-bottom: 1px solid var(--gray-700);
+        background: var(--bg-primary);
+        border-bottom: 1px solid var(--border-color);
+        transition: all 0.3s ease;
     }
 
     .mobile-carousel-title {
-        color: #fff;
+        color: var(--text-primary);
         font-size: 20px;
         font-weight: 600;
         margin: 0;
@@ -33,6 +34,7 @@
         align-items: center;
         justify-content: center;
         gap: 8px;
+        transition: color 0.3s ease;
     }
 
     .friend-badge-inline {
@@ -41,27 +43,28 @@
 
     /* Carrousel avec hauteur fixe */
     .mobile-carousel {
-        background: var(--gray-800);
-        border: 1px solid var(--gray-700);
+        background: var(--bg-primary);
+        border: 1px solid var(--border-color);
         border-radius: 0 0 16px 16px;
         overflow: hidden;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        box-shadow: var(--card-shadow);
         display: flex;
         flex-direction: column;
         height: 580px;
+        transition: all 0.3s ease;
     }
 
     /* Contenu - hauteur fixe */
     .mobile-carousel__content {
         flex: 1;
-        /* Prend l'espace disponible */
         min-height: 0;
-        /* Important pour le flex */
         overflow-y: auto;
         overflow-x: hidden;
         padding: 16px;
-        background-color: var(--gray-900);
+        background-color: var(--bg-secondary);
         scrollbar-width: thin;
+        scrollbar-color: var(--primary) transparent;
+        transition: background-color 0.3s ease;
     }
 
     .mobile-carousel__content::-webkit-scrollbar {
@@ -69,18 +72,21 @@
     }
 
     .mobile-carousel__content::-webkit-scrollbar-track {
-        background: rgba(255, 255, 255, 0.05);
+        background: transparent;
     }
 
     .mobile-carousel__content::-webkit-scrollbar-thumb {
-        background: rgba(102, 126, 234, 0.5);
+        background: var(--primary);
         border-radius: 2px;
+    }
+
+    .mobile-carousel__content::-webkit-scrollbar-thumb:hover {
+        background: var(--primary-light);
     }
 
     /* Section mobile */
     .mobile-section {
         animation: fadeIn 0.3s ease;
-        /* min-height: 100%; */
     }
 
     @keyframes fadeIn {
@@ -101,18 +107,19 @@
         justify-content: center;
         gap: 8px;
         padding: 12px;
-        background-color: var(--gray-900);
-        border-top: 1px solid var(--gray-700);
+        background-color: var(--bg-secondary);
+        border-top: 1px solid var(--border-color);
         flex-shrink: 0;
         height: 10px;
+        transition: all 0.3s ease;
     }
 
     .mobile-carousel__indicator {
         width: 8px;
         height: 8px;
         border-radius: 50%;
-        background: rgba(255, 255, 255, 0.2);
-        border: none;
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border-color);
         cursor: pointer;
         transition: all 0.3s ease;
         padding: 0;
@@ -122,6 +129,7 @@
         width: 24px;
         border-radius: 4px;
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-color: #667eea;
     }
 
     /* Navigation rapide - hauteur fixe */
@@ -130,12 +138,11 @@
         justify-content: center;
         align-items: center;
         padding: 12px 16px;
-        background: rgba(0, 0, 0, 0.2);
-        border-top: 1px solid var(--gray-700);
+        background: var(--bg-tertiary);
+        border-top: 1px solid var(--border-color);
         flex-shrink: 0;
-        /* Ne se compresse pas */
         height: 65px;
-        /* Hauteur fixe */
+        transition: all 0.3s ease;
     }
 
     .mobile-carousel__quick-buttons {
@@ -147,10 +154,10 @@
 
     .mobile-carousel__quick-btn {
         font-size: 28px;
-        border: none;
+        border: 1px solid var(--border-color);
         border-radius: 12px;
-        background-color: #fff;
-        color: #495057;
+        background-color: var(--bg-primary);
+        color: var(--text-primary);
         cursor: pointer;
         transition: all 0.2s ease;
         padding: 8px 12px;
@@ -162,13 +169,14 @@
     }
 
     .mobile-carousel__quick-btn:hover {
-        background: rgba(255, 255, 255, 0.8);
+        background: var(--bg-secondary);
+        border-color: var(--primary);
         transform: scale(1.05);
     }
 
     .mobile-carousel__quick-btn--active {
-        background: linear-gradient(135deg, rgba(102, 126, 234, 0.3) 0%, rgba(118, 75, 162, 0.3) 100%);
-        border: 2px solid rgba(102, 126, 234, 0.5);
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.2) 0%, rgba(59, 130, 246, 0.3) 100%);
+        border: 2px solid var(--primary);
         transform: scale(1.1);
     }
 
@@ -211,8 +219,9 @@
         align-items: center;
         justify-content: center;
         min-height: 300px;
-        color: #adb5bd;
+        color: var(--text-tertiary);
         font-size: 16px;
+        transition: color 0.3s ease;
     }
 }
 

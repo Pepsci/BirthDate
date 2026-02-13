@@ -1,11 +1,9 @@
-
 /* ========================================
    CONTAINER DESKTOP
    ======================================== */
 
 .desktop-profile-container {
     display: none;
-    /* Caché par défaut (mobile) */
 }
 
 @media (min-width: 768px) {
@@ -36,10 +34,10 @@
     align-items: center;
     gap: 12px;
     padding: 16px 20px;
-    background: var(--gray-800);
-    border: 2px solid var(--gray-700);
+    background: var(--bg-primary);
+    border: 2px solid var(--border-color);
     border-radius: 12px;
-    color: var(--gray-300);
+    color: var(--text-primary);
     font-size: 16px;
     font-weight: 500;
     cursor: pointer;
@@ -49,16 +47,16 @@
 }
 
 .sidebar-btn:hover {
-    background: var(--gray-700);
-    border-color: var(--gray-600);
+    background: var(--bg-secondary);
+    border-color: var(--primary);
     transform: translateX(4px);
 }
 
 .sidebar-btn.active {
-    background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
-    border-color: #667eea;
-    color: #fff;
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(59, 130, 246, 0.25) 100%);
+    border-color: var(--primary);
+    color: var(--primary);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
 .sidebar-icon {
@@ -79,42 +77,38 @@
     min-height: 550px;
     max-height: 550px;
     overflow-y: auto;
-    scrollbar-width: none;
+    scrollbar-width: thin;
+    scrollbar-color: var(--primary) transparent;
 }
 
 .desktop-content::-webkit-scrollbar {
     width: 6px;
 }
 
-/* .desktop-content::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 3px;
-} */
+.desktop-content::-webkit-scrollbar-track {
+    background: transparent;
+}
 
-/* .desktop-content::-webkit-scrollbar-thumb {
-    background: rgba(102, 126, 234, 0.5);
+.desktop-content::-webkit-scrollbar-thumb {
+    background: var(--primary);
     border-radius: 3px;
-} */
+}
 
-/* .desktop-content::-webkit-scrollbar-thumb:hover {
-    background: rgba(102, 126, 234, 0.7);
-} */
+.desktop-content::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-light);
+}
 
 /* ========================================
    RESPONSIVE
    ======================================== */
 
 @media (max-width: 767px) {
-
-    /* Cacher complètement le desktop sur mobile */
     .desktop-profile-container {
         display: none !important;
     }
 }
 
 @media (min-width: 768px) and (max-width: 1024px) {
-
-    /* Tablette : sidebar plus compact */
     .desktop-sidebar {
         min-width: 160px;
         max-width: 160px;

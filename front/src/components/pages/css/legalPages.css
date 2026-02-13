@@ -2,22 +2,25 @@
 
 .legal-page-container {
     min-height: 100vh;
-    background: #0f172a;
+    background: var(--bg-secondary);
     padding: 40px 20px;
-    color: #e2e8f0;
+    color: var(--text-primary);
+    transition: all 0.3s ease;
 }
 
 .legal-page-content {
     max-width: 900px;
     margin: 0 auto;
-    background: #1e293b;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
     padding: 40px;
     border-radius: 12px;
+    transition: all 0.3s ease;
 }
 
 .back-link {
     display: inline-block;
-    color: #60a5fa;
+    color: var(--primary);
     text-decoration: none;
     margin-bottom: 24px;
     font-size: 14px;
@@ -26,35 +29,39 @@
 
 .back-link:hover {
     text-decoration: underline;
-    color: #93c5fd;
+    color: var(--primary-light);
 }
 
 .legal-page-content h1 {
     font-size: 32px;
     margin-bottom: 24px;
-    color: #fff;
+    color: var(--text-primary);
+    transition: color 0.3s ease;
 }
 
 .legal-page-content h2 {
     font-size: 24px;
     margin-top: 32px;
     margin-bottom: 16px;
-    color: #fff;
-    border-bottom: 2px solid #334155;
+    color: var(--text-primary);
+    border-bottom: 2px solid var(--border-color);
     padding-bottom: 8px;
+    transition: all 0.3s ease;
 }
 
 .legal-page-content h3 {
     font-size: 18px;
     margin-top: 24px;
     margin-bottom: 12px;
-    color: #f1f5f9;
+    color: var(--text-primary);
+    transition: color 0.3s ease;
 }
 
 .legal-page-content p {
     line-height: 1.7;
     margin-bottom: 16px;
-    color: #cbd5e1;
+    color: var(--text-secondary);
+    transition: color 0.3s ease;
 }
 
 .legal-page-content section {
@@ -71,14 +78,15 @@
     padding: 8px 0;
     padding-left: 24px;
     position: relative;
-    color: #cbd5e1;
+    color: var(--text-secondary);
+    transition: color 0.3s ease;
 }
 
 .legal-page-content ul li::before {
     content: "→";
     position: absolute;
     left: 0;
-    color: #60a5fa;
+    color: var(--primary);
 }
 
 .legal-page-content ol {
@@ -88,43 +96,49 @@
 
 .legal-page-content ol li {
     padding: 8px 0;
-    color: #cbd5e1;
+    color: var(--text-secondary);
+    transition: color 0.3s ease;
 }
 
 .legal-page-content a {
-    color: #60a5fa;
+    color: var(--primary);
     text-decoration: underline;
     transition: color 0.2s;
 }
 
 .legal-page-content a:hover {
-    color: #93c5fd;
+    color: var(--primary-light);
 }
 
 .note {
-    background: #1e40af;
+    background: rgba(59, 130, 246, 0.1);
+    border: 1px solid var(--primary);
     padding: 16px;
-    border-left: 4px solid #3b82f6;
+    border-left: 4px solid var(--primary);
     border-radius: 4px;
     font-size: 14px;
     margin: 16px 0;
+    transition: all 0.3s ease;
 }
 
 .warning {
-    background: #b91c1c;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid var(--danger);
     padding: 16px;
-    border-left: 4px solid #ef4444;
+    border-left: 4px solid var(--danger);
     border-radius: 4px;
     font-size: 14px;
     margin: 16px 0;
+    transition: all 0.3s ease;
 }
 
 .last-update {
     font-style: italic;
-    color: #94a3b8;
+    color: var(--text-tertiary);
     margin-top: 40px;
     padding-top: 24px;
-    border-top: 1px solid #334155;
+    border-top: 1px solid var(--border-color);
+    transition: all 0.3s ease;
 }
 
 /* Tables */
@@ -132,34 +146,38 @@
     width: 100%;
     border-collapse: collapse;
     margin: 16px 0;
-    background: #334155;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
     border-radius: 8px;
     overflow: hidden;
+    transition: all 0.3s ease;
 }
 
 .legal-page-content thead {
-    background: #475569;
+    background: var(--bg-secondary);
 }
 
 .legal-page-content th {
     text-align: left;
     padding: 12px;
     font-weight: 600;
-    color: #fff;
+    color: var(--text-primary);
+    transition: color 0.3s ease;
 }
 
 .legal-page-content td {
     padding: 12px;
-    border-top: 1px solid #1e293b;
-    color: #cbd5e1;
+    border-top: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    transition: all 0.3s ease;
 }
 
 .legal-page-content code {
-    background: #0f172a;
+    background: var(--bg-tertiary);
     padding: 2px 6px;
     border-radius: 4px;
     font-family: 'Courier New', monospace;
-    color: #60a5fa;
+    color: var(--primary);
 }
 
 /* Mobile */

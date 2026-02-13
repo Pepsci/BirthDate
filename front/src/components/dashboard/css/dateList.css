@@ -1,26 +1,25 @@
-/* --------------------------------
+/* ================================
    Header
--------------------------------- */
-.dateList{
+================================ */
+.dateList {
     margin-top: 120px;
 }
 
-.dateListHeader{
+.dateListHeader {
     display: flex;
     flex-direction: column;
 }
 
-.dateList-tiltle{
-display: flex;
-justify-content: center;
+.dateList-tiltle {
+    display: flex;
+    justify-content: center;
 }
-
 
 .dateListHeader-btn {
     display: flex;
     justify-content: center;
     align-items: center;
-    margin: 1rem
+    margin: 1rem;
 }
 
 .dateListHeader-btn .btnSwitch {
@@ -35,37 +34,38 @@ justify-content: center;
 
 .titleFont {
     font-size: 1.75rem;
-    color: var(--gray-800);
+    color: var(--text-primary);
     margin-bottom: 1.5rem;
+    transition: color 0.3s ease;
 }
 
 .btnSwitch {
     padding: 0.65rem 1.25rem;
-    background-color: var(--gray-100);
-    color: var(--gray-700);
-    border: 1px solid var(--gray-200);
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
     border-radius: 8px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;
     font-size: 0.9rem;
-    margin: 0 1rem 0 1rem;
+    margin: 0 1rem;
 }
 
 .btnSwitch:hover {
-    background-color: var(--gray-200);
+    background-color: var(--bg-secondary);
+    border-color: var(--border-color-hover);
 }
 
 .btnSwitch.active {
     background-color: var(--primary);
     color: white;
-    border-color: var(--primary); 
+    border-color: var(--primary);
 }
 
-
-/* --------------------------------
+/* ================================
    Container des formulaires
--------------------------------- */
+================================ */
 .forms-container {
     width: 100%;
     max-width: 800px;
@@ -74,17 +74,17 @@ justify-content: center;
 }
 
 .form-section {
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-color);
     border-radius: 12px;
     padding: 0.8rem;
     margin: 1rem;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    border: 1px solid var(--gray-200);
-
-    /* Animation d'apparition */
+    box-shadow: var(--card-shadow);
     animation: slideDown 0.3s ease-out;
     opacity: 1;
     transform: translateY(0);
     text-align: center;
+    transition: all 0.3s ease;
 }
 
 /* Animation d'apparition */
@@ -97,23 +97,12 @@ justify-content: center;
     to {
         opacity: 1;
         transform: translateY(0);
-    } 
+    }
 }
 
-/* --------------------------------
-   Formulaire de création de date
--------------------------------- */
-
-.form-section{
-    background-color: var(--gray-900);
-    
-}
-
-
-/* --------------------------------
+/* ================================
    Pagination
--------------------------------- */
-
+================================ */
 .pagination {
     display: flex;
     justify-content: center;
@@ -128,8 +117,9 @@ justify-content: center;
     min-width: 2.5rem;
     height: 2.5rem;
     padding: 0 0.75rem;
-    border: 1px solid var(--gray-200);
-    background-color: white;
+    border: 1px solid var(--border-color);
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
     border-radius: 8px;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -137,12 +127,11 @@ justify-content: center;
     align-items: center;
     justify-content: center;
     font-weight: 500;
-    color: var(--gray-700);
 }
 
 .pagination button:hover:not([disabled]) {
-    background-color: var(--gray-100);
-    color: var(--gray-900);
+    background-color: var(--bg-secondary);
+    border-color: var(--border-color-hover);
 }
 
 .pagination button.active {
@@ -161,11 +150,10 @@ justify-content: center;
     align-items: center;
     justify-content: center;
     min-width: 2rem;
-    color: var(--gray-500);
+    color: var(--text-tertiary);
     font-weight: bold;
 }
 
-/* Styles spécifiques pour les boutons "Précédent" et "Suivant" */
 .pagination button:first-child,
 .pagination button:last-child {
     min-width: auto;
@@ -173,12 +161,9 @@ justify-content: center;
     font-weight: 600;
 }
 
-
-
-/* --------------------------------
+/* ================================
    Media Queries - Responsive
--------------------------------- */
-
+================================ */
 @media (max-width: 768px) {
     .dateListHeader-btn {
         gap: 0.75rem;
@@ -212,32 +197,28 @@ justify-content: center;
         height: 2.25rem;
         font-size: 0.8rem;
     }
+
     .chat-in-datelist {
         height: 500px;
     }
 }
 
-/* Styles pour mobile */
 @media (max-width: 600px) {
-    
-    .dateListHeader{
-        /* margin: 0.2rem; */
+    .dateListHeader-btn {
+        margin: 1rem;
+        gap: 0.2rem;
     }
 
-    .dateListHeader-btn{
-    margin:1rem;
-    gap: 0.2rem;
-    }
-  .dateListHeader-btn .btnSwitch {
-    width: 130px;  
-    height: 60px;
+    .dateListHeader-btn .btnSwitch {
+        width: 130px;
+        height: 60px;
     }
 
-    .btnSwitch{
-    margin: 0.2rem;
-    padding: 0.4rem 0.1rem 0.4rem 0.1rem;
-    width: 143px;
-     }   
+    .btnSwitch {
+        margin: 0.2rem;
+        padding: 0.4rem 0.1rem;
+        width: 143px;
+    }
 
     .pagination {
         flex-wrap: wrap;
@@ -256,19 +237,3 @@ justify-content: center;
         flex: 1;
     }
 }
-
-/* Mode sombre */
-@media (prefers-color-scheme: dark) {
-    .pagination button {
-        background-color: var(--gray-800);
-        color: var(--gray-300);
-        border-color: var(--gray-700);
-    }
-
-    .pagination button:hover:not([disabled]) {
-        background-color: var(--gray-700);
-    }
-
-    .pagination .ellipsis {
-        color: var(--gray-400);
-    } }

@@ -1,0 +1,119 @@
+.theme-toggle-container {
+    padding: 0.5rem;
+    background: var(--gray-50);
+    border-radius: 12px;
+    border: 1px solid var(--gray-200);
+    margin-bottom: 1.5rem;
+}
+
+.theme-toggle-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--gray-800);
+    margin: 0.5rem;
+}
+
+.theme-toggle-subtitle {
+    font-size: 0.875rem;
+    color: var(--gray-600);
+    margin-bottom: 1rem;
+}
+
+.theme-toggle-buttons {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: space-between;
+}
+
+.theme-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem 0.5rem;
+    background: white;
+    border: 2px solid var(--gray-200);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.theme-btn:hover {
+    border-color: var(--primary);
+    background: var(--gray-50);
+    transform: translateY(-2px);
+}
+
+.theme-btn.active {
+    border-color: var(--primary);
+    background: var(--primary);
+    color: white;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.theme-btn-icon {
+    font-size: 1.75rem;
+}
+
+.theme-btn.active .theme-btn-icon {
+    transform: scale(1.1);
+}
+
+.theme-btn-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.theme-btn.active .theme-btn-label {
+    color: white;
+}
+
+/* Dark mode */
+.dark .theme-toggle-container {
+    background: var(--gray-800);
+    border-color: var(--gray-700);
+}
+
+.dark .theme-toggle-title {
+    color: var(--gray-100);
+}
+
+.dark .theme-toggle-subtitle {
+    color: var(--gray-400);
+}
+
+.dark .theme-btn {
+    background: var(--gray-900);
+    border-color: var(--gray-700);
+    color: var(--gray-300);
+}
+
+.dark .theme-btn:hover {
+    background: var(--gray-800);
+    border-color: var(--primary);
+}
+
+.dark .theme-btn.active {
+    background: var(--primary);
+    color: white;
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+    .theme-toggle-buttons {
+        flex-direction: row;
+    }
+
+    .theme-btn {
+        padding: 0.75rem 0.5rem;
+    }
+
+    .theme-btn-icon {
+        font-size: 1.5rem;
+    }
+
+    .theme-btn-label {
+        font-size: 0.75rem;
+    }
+}

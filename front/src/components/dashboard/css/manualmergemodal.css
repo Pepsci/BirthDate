@@ -15,14 +15,16 @@
 }
 
 .manual-merge-modal {
-    background: white;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
     border-radius: 12px;
     max-width: 600px;
     width: 100%;
     max-height: 80vh;
     display: flex;
     flex-direction: column;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    transition: all 0.3s ease;
 }
 
 .manual-merge-header {
@@ -30,7 +32,7 @@
     justify-content: space-between;
     align-items: center;
     padding: 20px;
-    background: #4CAF50;
+    background: var(--success);
     color: white;
     border-radius: 12px 12px 0 0;
 }
@@ -73,26 +75,30 @@
 .source-card-info h4,
 .target-selection h4 {
     margin: 0 0 10px 0;
-    color: #2c3e50;
+    color: var(--text-primary);
     font-size: 1rem;
+    transition: color 0.3s ease;
 }
 
 .card-preview-small {
-    background: #fff8f0;
-    border: 2px solid #ff9800;
+    background: var(--bg-tertiary);
+    border: 2px solid var(--warning);
     border-radius: 8px;
     padding: 15px;
+    transition: all 0.3s ease;
 }
 
 .card-preview-small p {
     margin: 5px 0;
-    color: #555;
+    color: var(--text-secondary);
+    transition: color 0.3s ease;
 }
 
 .arrow-down {
     text-align: center;
     font-size: 2rem;
     margin: 15px 0;
+    color: var(--text-tertiary);
 }
 
 .target-selection {
@@ -101,7 +107,7 @@
 
 .no-cards {
     text-align: center;
-    color: #999;
+    color: var(--text-tertiary);
     padding: 20px;
     font-style: italic;
 }
@@ -115,8 +121,8 @@
 }
 
 .card-option {
-    background: #f5f5f5;
-    border: 2px solid #e0e0e0;
+    background: var(--bg-secondary);
+    border: 2px solid var(--border-color);
     border-radius: 8px;
     padding: 15px;
     cursor: pointer;
@@ -128,15 +134,15 @@
 }
 
 .card-option:hover {
-    border-color: #4CAF50;
-    background: #f1f8f4;
+    border-color: var(--success);
+    background: var(--bg-tertiary);
     transform: translateX(5px);
 }
 
 .card-option.selected {
-    border-color: #4CAF50;
-    background: #e8f5e9;
-    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+    border-color: var(--success);
+    background: rgba(16, 185, 129, 0.1);
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
 }
 
 .card-option-info {
@@ -145,21 +151,23 @@
 
 .card-option-name {
     margin: 0 0 5px 0;
-    color: #2c3e50;
+    color: var(--text-primary);
     font-size: 1.1rem;
+    transition: color 0.3s ease;
 }
 
 .card-option-date,
 .card-option-gifts {
     margin: 3px 0;
-    color: #666;
+    color: var(--text-secondary);
     font-size: 0.9rem;
+    transition: color 0.3s ease;
 }
 
 .selected-check {
     width: 30px;
     height: 30px;
-    background: #4CAF50;
+    background: var(--success);
     color: white;
     border-radius: 50%;
     display: flex;
@@ -173,7 +181,8 @@
     display: flex;
     gap: 10px;
     padding: 20px;
-    border-top: 1px solid #e0e0e0;
+    border-top: 1px solid var(--border-color);
+    transition: border-color 0.3s ease;
 }
 
 .btn-cancel,
@@ -189,26 +198,26 @@
 }
 
 .btn-cancel {
-    background: #6c757d;
+    background: var(--gray-600);
     color: white;
 }
 
 .btn-cancel:hover {
-    background: #5a6268;
+    background: var(--gray-700);
 }
 
 .btn-merge {
-    background: #4CAF50;
+    background: var(--success);
     color: white;
 }
 
 .btn-merge:hover:not(:disabled) {
-    background: #45a049;
+    background: #059669;
 }
 
 .btn-merge:disabled,
 .btn-cancel:disabled {
-    background: #ccc;
+    background: var(--gray-400);
     cursor: not-allowed;
     opacity: 0.6;
 }
@@ -219,17 +228,17 @@
 }
 
 .cards-list::-webkit-scrollbar-track {
-    background: #f1f1f1;
+    background: var(--bg-tertiary);
     border-radius: 10px;
 }
 
 .cards-list::-webkit-scrollbar-thumb {
-    background: #888;
+    background: var(--gray-500);
     border-radius: 10px;
 }
 
 .cards-list::-webkit-scrollbar-thumb:hover {
-    background: #555;
+    background: var(--gray-600);
 }
 
 /* Responsive */

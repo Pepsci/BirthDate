@@ -15,7 +15,10 @@
     display: none;
 }
 
-/* En-tête */
+/* ========================================
+   EN-TÊTE
+   ======================================== */
+
 .notification-header {
     margin-bottom: 24px;
     text-align: center;
@@ -23,25 +26,33 @@
 
 .notification-header h2 {
     margin: 0 0 8px 0;
-    color: var(--gray-100);
+    color: var(--text-primary);
     font-size: 1.2em;
     font-weight: 600;
     font-family: 'Roboto', sans-serif;
+    transition: color 0.3s ease;
 }
 
 .notification-summary {
     padding: 8px 16px;
     border-radius: 8px;
     display: inline-block;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    transition: all 0.3s ease;
 }
 
 .summary-text {
-    color: var(--gray-300);
+    color: var(--text-secondary);
     font-size: 0.9rem;
     font-weight: 500;
+    transition: color 0.3s ease;
 }
 
-/* Actions globales */
+/* ========================================
+   ACTIONS GLOBALES
+   ======================================== */
+
 .global-actions {
     display: flex;
     gap: 12px;
@@ -65,7 +76,7 @@
 }
 
 .enable-all {
-    background-color: #10b981 !important;
+    background-color: var(--success) !important;
     color: white;
 }
 
@@ -75,7 +86,7 @@
 }
 
 .disable-all {
-    background-color: #ef4444 !important;
+    background-color: var(--danger) !important;
     color: white;
 }
 
@@ -84,7 +95,10 @@
     transform: translateY(-2px);
 }
 
-/* Liste des notifications */
+/* ========================================
+   LISTE DES NOTIFICATIONS
+   ======================================== */
+
 .notification-list {
     display: flex;
     flex-direction: column;
@@ -96,21 +110,21 @@
     justify-content: space-between;
     align-items: center;
     padding: 12px 16px;
-    background-color: var(--gray-700);
+    background-color: var(--bg-primary);
     border-radius: 12px;
-    border: 2px solid transparent;
+    border: 2px solid var(--border-color);
     transition: all 0.3s ease;
     min-height: 60px;
 }
 
 .notification-item.enabled {
-    border-color: #059669;
-    background-color: rgba(16, 185, 129, 0.1);
+    border-color: var(--success);
+    background: rgba(16, 185, 129, 0.1);
 }
 
 .notification-item.disabled {
-    border-color: #dc2626;
-    background-color: rgba(239, 68, 68, 0.1);
+    border-color: var(--danger);
+    background: rgba(239, 68, 68, 0.1);
 }
 
 .notification-item.updating {
@@ -118,7 +132,10 @@
     transform: scale(0.98);
 }
 
-/* Informations de la personne */
+/* ========================================
+   INFORMATIONS DE LA PERSONNE
+   ======================================== */
+
 .person-info {
     flex: 1;
 }
@@ -131,14 +148,16 @@
 
 .person-name .name {
     font-weight: 700;
-    color: var(--gray-100);
+    color: var(--text-primary);
     font-size: 1.1rem;
+    transition: color 0.3s ease;
 }
 
 .person-name .surname {
     font-weight: 600;
-    color: var(--gray-300);
+    color: var(--text-secondary);
     font-size: 1.1rem;
+    transition: color 0.3s ease;
 }
 
 .person-details {
@@ -148,27 +167,31 @@
 }
 
 .birth-date {
-    color: var(--gray-400);
+    color: var(--text-tertiary);
     font-size: 0.9rem;
+    transition: color 0.3s ease;
 }
 
 .family-badge {
-    background-color: #ddd6fe;
+    background-color: rgba(124, 58, 237, 0.2);
     color: #7c3aed;
     padding: 2px 8px;
     border-radius: 12px;
     font-size: 0.8rem;
     font-weight: 500;
+    border: 1px solid rgba(124, 58, 237, 0.3);
 }
 
-/* Toggle switch */
+/* ========================================
+   TOGGLE SWITCH
+   ======================================== */
+
 .notification-toggle {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 12px;
     min-width: 120px;
-    /* Largeur minimale pour le toggle */
 }
 
 .switch {
@@ -177,7 +200,6 @@
     width: 60px;
     height: 34px;
     flex-shrink: 0;
-    /* Empêche la compression */
 }
 
 .switch input {
@@ -193,7 +215,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: #ccc;
+    background-color: var(--gray-400);
     transition: 0.4s;
 }
 
@@ -208,15 +230,15 @@
     transition: 0.4s;
 }
 
-input:checked + .slider {
-    background-color: #10b981;
+input:checked+.slider {
+    background-color: var(--success);
 }
 
-input:checked + .slider:before {
+input:checked+.slider:before {
     transform: translateX(26px);
 }
 
-input:disabled + .slider {
+input:disabled+.slider {
     opacity: 0.6;
     cursor: not-allowed;
 }
@@ -229,7 +251,10 @@ input:disabled + .slider {
     border-radius: 50%;
 }
 
-/* Texte de statut */
+/* ========================================
+   TEXTE DE STATUT
+   ======================================== */
+
 .status-text {
     font-weight: 600;
     font-size: 0.9rem;
@@ -237,21 +262,24 @@ input:disabled + .slider {
 }
 
 .status-text.enabled {
-    color: #059669;
+    color: var(--success);
 }
 
 .status-text.disabled {
-    color: #dc2626;
+    color: var(--danger);
 }
 
 .updating-text {
     display: flex;
     align-items: center;
     gap: 6px;
-    color: #6366f1;
+    color: var(--primary);
 }
 
-/* États de chargement et d'erreur */
+/* ========================================
+   ÉTATS DE CHARGEMENT ET D'ERREUR
+   ======================================== */
+
 .loading-state,
 .error-state {
     text-align: center;
@@ -261,8 +289,8 @@ input:disabled + .slider {
 .loading-spinner {
     width: 40px;
     height: 40px;
-    border: 4px solid #f3f3f3;
-    border-top: 4px solid #3b82f6;
+    border: 4px solid var(--bg-tertiary);
+    border-top: 4px solid var(--primary);
     border-radius: 50%;
     animation: spin 1s linear infinite;
     margin: 0 auto 16px;
@@ -271,65 +299,84 @@ input:disabled + .slider {
 .mini-spinner {
     width: 12px;
     height: 12px;
-    border: 2px solid #e5e7eb;
-    border-top: 2px solid #6366f1;
+    border: 2px solid var(--border-color);
+    border-top: 2px solid var(--primary);
     border-radius: 50%;
     animation: spin 1s linear infinite;
     display: inline-block;
 }
 
 @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
 }
 
 .error-state p {
-    color: #ef4444;
+    color: var(--danger);
     margin-bottom: 16px;
 }
 
 .retry-button {
-    background-color: #3b82f6;
+    background-color: var(--primary);
     color: white;
     border: none;
     padding: 10px 20px;
     border-radius: 8px;
     cursor: pointer;
     font-weight: 600;
+    transition: all 0.3s ease;
 }
 
 .retry-button:hover {
-    background-color: #2563eb;
+    background-color: var(--primary-light);
+    transform: translateY(-2px);
 }
 
-/* État vide */
+/* ========================================
+   ÉTAT VIDE
+   ======================================== */
+
 .empty-state {
     text-align: center;
     padding: 40px 20px;
-    color: var(--gray-400);
+    color: var(--text-tertiary);
 }
 
-/* Footer */
+/* ========================================
+   FOOTER
+   ======================================== */
+
 .notification-footer {
     margin-top: 24px;
     padding-top: 20px;
-    border-top: 1px solid var(--gray-600);
+    border-top: 1px solid var(--border-color);
+    transition: border-color 0.3s ease;
 }
 
 .info-text {
     text-align: center;
-    color: var(--gray-400);
+    color: var(--text-tertiary);
     font-size: 0.9rem;
     margin: 0;
+    transition: color 0.3s ease;
 }
 
-/* Section des préférences globales - Design simplifié */
+/* ========================================
+   PRÉFÉRENCES GLOBALES
+   ======================================== */
+
 .user-email-preferences-simple {
     margin: 20px 0;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
     border-radius: 12px;
     padding: 10px;
+    transition: all 0.3s ease;
 }
 
 .user-pref-toggle-simple {
@@ -348,21 +395,23 @@ input:disabled + .slider {
 .toggle-label {
     font-size: 12px;
     font-weight: 500;
-    color: #e2e8f0;
+    color: var(--text-primary);
+    transition: color 0.3s ease;
 }
 
 .toggle-sublabel {
     font-size: 13px;
-    color: #a0aec0;
+    color: var(--text-secondary);
+    transition: color 0.3s ease;
 }
 
 .warning-simple {
     margin-top: 15px;
     padding: 12px 16px;
-    background: rgba(245, 101, 101, 0.1);
-    border-left: 3px solid #f56565;
+    background: rgba(239, 68, 68, 0.1);
+    border-left: 3px solid var(--danger);
     border-radius: 6px;
-    color: #fc8181;
+    color: var(--danger);
     font-size: 12px;
     line-height: 1.5;
 }
@@ -374,49 +423,6 @@ input:disabled + .slider {
 .notification-item.user-disabled .switch {
     pointer-events: none;
 }
-
-/* Responsive pour les notifications */
-@media (max-width: 600px) {
-    .simple-notification-manager {
-        width: 320px;
-        height: 500px;
-        padding: 5px;
-        /* margin-top: 10px; */
-        margin: auto;
-        background-color: transparent;
-        border: none;
-        width: 100%;
-    }
-
-    .notification-item {
-        justify-content: space-between !important;
-        gap: 16px;
-        height: 42px;
-        padding: 12px;
-        min-height: 40px;
-    }
-
-    .notification-toggle {
-        align-self: flex-end;
-    }
-
-    .global-actions {
-        flex-direction: column;
-    }
-
-    .action-button {
-        width: 100%;
-    }
-
-    .person-details {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 8px;
-    }
-
-}
-
-/* Ajout au fichier gestionNotifications.css */
 
 /* ========================================
    BOUTON TOGGLE LISTE
@@ -432,10 +438,10 @@ input:disabled + .slider {
     align-items: center;
     gap: 12px;
     padding: 12px 24px;
-    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
-    border: 2px solid rgba(102, 126, 234, 0.3);
+    background: var(--bg-tertiary);
+    border: 2px solid var(--border-color);
     border-radius: 12px;
-    color: var(--gray-100);
+    color: var(--text-primary);
     font-weight: 600;
     font-size: 15px;
     cursor: pointer;
@@ -445,10 +451,10 @@ input:disabled + .slider {
 }
 
 .toggle-list-btn:hover {
-    background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
-    border-color: rgba(102, 126, 234, 0.5);
+    background: var(--bg-secondary);
+    border-color: var(--primary);
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
 }
 
 .toggle-list-btn:active {
@@ -457,7 +463,7 @@ input:disabled + .slider {
 
 .toggle-icon {
     font-size: 12px;
-    color: #667eea;
+    color: var(--primary);
     transition: transform 0.3s ease;
 }
 
@@ -471,19 +477,19 @@ input:disabled + .slider {
 
 .toggle-count {
     font-size: 13px;
-    color: var(--gray-400);
-    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-tertiary);
+    background: var(--bg-secondary);
     padding: 2px 8px;
     border-radius: 8px;
+    transition: all 0.3s ease;
 }
 
-/* Animation d'expansion/collapse */
+/* ========================================
+   ANIMATION D'EXPANSION/COLLAPSE
+   ======================================== */
+
 .collapsible-content {
     animation: slideDown 0.3s ease;
-}
-
-.notification-list {
-    /* Retirer l'animation d'ici, elle est sur le parent */
 }
 
 @keyframes slideDown {
@@ -507,33 +513,34 @@ input:disabled + .slider {
 .filter-section {
     margin-bottom: 20px;
     padding: 16px;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid var(--gray-700);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
     border-radius: 12px;
+    transition: all 0.3s ease;
 }
 
 .filter-section h3 {
-    color: var(--gray-100);
+    color: var(--text-primary);
     font-size: 16px;
     font-weight: 600;
     margin: 0 0 12px 0;
     text-align: center;
+    transition: color 0.3s ease;
 }
 
 .filter-inputs {
     display: flex;
     gap: 8px;
     margin-bottom: 12px;
-
 }
 
 .filter-input {
     flex: 1;
     padding: 8px 12px;
-    background: var(--gray-800);
-    border: 1px solid var(--gray-600);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
     border-radius: 8px;
-    color: var(--gray-100);
+    color: var(--text-primary);
     font-size: 14px;
     transition: all 0.2s ease;
     box-sizing: border-box;
@@ -543,12 +550,12 @@ input:disabled + .slider {
 
 .filter-input:focus {
     outline: none;
-    border-color: #667eea;
-    background: var(--gray-700);
+    border-color: var(--primary);
+    background: var(--bg-primary);
 }
 
 .filter-input::placeholder {
-    color: var(--gray-500);
+    color: var(--text-tertiary);
 }
 
 .filter-buttons {
@@ -559,10 +566,10 @@ input:disabled + .slider {
 .filter-btn {
     flex: 1;
     padding: 8px 12px;
-    background: var(--gray-700);
-    border: 1px solid var(--gray-600);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
     border-radius: 8px;
-    color: var(--gray-200);
+    color: var(--text-secondary);
     font-size: 13px;
     font-weight: 500;
     cursor: pointer;
@@ -570,15 +577,14 @@ input:disabled + .slider {
 }
 
 .filter-btn:hover {
-    background: var(--gray-600);
-    border-color: var(--gray-500);
+    background: var(--bg-primary);
+    border-color: var(--border-color-hover);
 }
 
 .filter-btn:active {
     transform: scale(0.98);
 }
 
-/* 👇 AJOUTÉ : Style pour le bouton actif */
 .filter-btn.active {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     border-color: #667eea;
@@ -586,8 +592,46 @@ input:disabled + .slider {
     font-weight: 600;
 }
 
-/* Responsive */
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+
 @media (max-width: 600px) {
+    .simple-notification-manager {
+        width: 100%;
+        height: 500px;
+        padding: 5px;
+        margin: auto;
+        background-color: transparent;
+        border: none;
+    }
+
+    .notification-item {
+        justify-content: space-between !important;
+        gap: 16px;
+        height: 42px;
+        padding: 12px;
+        min-height: 60px;
+    }
+
+    .notification-toggle {
+        align-self: flex-end;
+    }
+
+    .global-actions {
+        flex-direction: column;
+    }
+
+    .action-button {
+        width: 100%;
+    }
+
+    .person-details {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
     .toggle-list-btn {
         padding: 10px 16px;
         font-size: 14px;

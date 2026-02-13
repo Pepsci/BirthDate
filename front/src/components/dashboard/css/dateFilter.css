@@ -1,4 +1,4 @@
-.date-filter{
+.date-filter {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -9,47 +9,50 @@
     gap: 1rem;
 }
 
-.filter-input{
-    margin-bottom: .6rem
+.filter-input {
+    margin-bottom: .6rem;
 }
 
-.title-filter{
+.title-filter {
     margin: 0;
     font-size: 1.5rem;
-    color: white;
+    color: var(--text-primary);
     font-family: 'Roboto', sans-serif;
+    transition: color 0.3s ease;
 }
 
-.inputFilter{
-    background: transparent;
-    border: transparent;
-    border-bottom: 1px solid grey;
-    color: aliceblue;
+.inputFilter {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 0.5rem;
+    color: var(--text-primary);
     width: 170px;
     margin: 0 1rem 0 0rem;
+    transition: all 0.3s ease;
 }
 
-.inputFilter:focus{
+.inputFilter:focus {
     outline: none;
+    border-color: var(--primary);
+    background: var(--bg-secondary);
 }
 
-.inputFilter::placeholder{
-color: white;
+.inputFilter::placeholder {
+    color: var(--text-tertiary);
 }
 
 @media (max-width: 600px) {
-    
-    .btn-filter{
+    .btn-filter {
         padding: 0.65rem 1rem;
     }
-    
-    .inputFilter{
+
+    .inputFilter {
         width: 130px;
         margin: 0.4rem;
     }
 
-    .title-filter{
+    .title-filter {
         font-size: 1.3em;
     }
 }
-    

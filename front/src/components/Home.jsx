@@ -6,7 +6,7 @@ import UpdateDate from "./dashboard/UpdateDate";
 import FriendProfile from "./profil/FriendProfile";
 import ManualMergeModal from "./dashboard/ManuelMergeModal";
 import "./dashboard/css/homePage.css";
-import Logo from "./dashboard/images/LogoNomCouleur.png";
+import Logo from "./UI/Logo";
 
 const Home = () => {
   const { isLoggedIn, currentUser } = useContext(AuthContext);
@@ -64,7 +64,7 @@ const Home = () => {
   return (
     <div className="homePageRoot">
       <div className="headerApp homePageHeader">
-        <img src={Logo} className="logoHeader" alt="BirthReminder" />
+        <Logo className="logoHeader" />
         {isLoggedIn && (
           <div className="homePageUser">
             <div className="homePageCurrentUser">
