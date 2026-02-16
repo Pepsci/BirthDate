@@ -1,19 +1,26 @@
-/* conversationList.css */
+/* ================================
+   CONVERSATION LIST - Phase 2 Polish
+================================ */
 
 .conversation-list {
     width: 100%;
     max-width: 380px;
-    background: white;
-    border-right: 1px solid #e0e0e0;
+    background: var(--bg-primary);
+    border-right: 1px solid var(--border-color);
     display: flex;
     flex-direction: column;
     height: 100%;
+    transition: background-color 0.3s ease;
 }
+
+/* ================================
+   HEADER
+================================ */
 
 .conversation-list-header {
     padding: 20px;
-    border-bottom: 1px solid #e0e0e0;
-    background: white;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-primary);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -24,11 +31,11 @@
     margin: 0;
     font-size: 24px;
     font-weight: 600;
-    color: #333;
+    color: var(--text-primary);
 }
 
 .new-chat-button {
-    background: #007bff;
+    background: var(--primary);
     color: white;
     border: none;
     width: 40px;
@@ -40,21 +47,27 @@
     align-items: center;
     justify-content: center;
     transition: all 0.2s;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
 }
 
 .new-chat-button:hover {
-    background: #0056b3;
+    background: var(--primary-dark);
     transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
 }
 
 .new-chat-button:active {
     transform: scale(0.95);
 }
 
+/* ================================
+   CONVERSATIONS LIST
+================================ */
+
 .conversations {
     flex: 1;
     overflow-y: auto;
-    background: white;
+    background: var(--bg-primary);
 }
 
 .conversations::-webkit-scrollbar {
@@ -62,45 +75,61 @@
 }
 
 .conversations::-webkit-scrollbar-track {
-    background: #f1f1f1;
+    background: transparent;
 }
 
 .conversations::-webkit-scrollbar-thumb {
-    background: #888;
+    background: var(--border-color);
     border-radius: 4px;
+    transition: background 0.2s;
 }
 
 .conversations::-webkit-scrollbar-thumb:hover {
-    background: #555;
+    background: var(--border-color-hover);
 }
+
+/* ================================
+   CONVERSATION ITEM
+================================ */
 
 .conversation-item {
     position: relative;
     display: flex;
-    padding: 15px;
+    padding: 16px;
     cursor: pointer;
     transition: all 0.2s;
-    border-bottom: 1px solid #f0f0f0;
+    border-bottom: 1px solid var(--border-color);
 }
 
 .conversation-item:hover {
-    background: #f8f9fa;
+    background: var(--bg-secondary);
 }
 
 .conversation-item:hover .delete-conversation-btn {
     opacity: 1;
 }
 
-/* ⭐ NOUVEAU - État en cours de suppression */
 .conversation-item.deleting {
-    background: #fff3cd;
+    background: #fef3c7;
     cursor: default;
 }
 
-.conversation-item.active {
-    background: #e7f3ff;
-    border-left: 4px solid #007bff;
+.dark .conversation-item.deleting {
+    background: rgba(245, 158, 11, 0.15);
 }
+
+.conversation-item.active {
+    background: rgba(59, 130, 246, 0.1);
+    border-left: 4px solid var(--primary);
+}
+
+.dark .conversation-item.active {
+    background: rgba(59, 130, 246, 0.15);
+}
+
+/* ================================
+   CONVERSATION AVATAR & INFO
+================================ */
 
 .conversation-avatar {
     width: 50px;
@@ -115,6 +144,7 @@
     font-size: 20px;
     margin-right: 12px;
     flex-shrink: 0;
+    position: relative;
 }
 
 .conversation-info {
@@ -135,7 +165,7 @@
 .conversation-name {
     font-weight: 600;
     font-size: 15px;
-    color: #333;
+    color: var(--text-primary);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -143,7 +173,7 @@
 
 .conversation-time {
     font-size: 12px;
-    color: #999;
+    color: var(--text-tertiary);
     white-space: nowrap;
     flex-shrink: 0;
 }
@@ -157,27 +187,31 @@
 .last-message {
     flex: 1;
     font-size: 14px;
-    color: #666;
+    color: var(--text-secondary);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
 .unread-badge {
-    background: #007bff;
+    background: var(--primary);
     color: white;
     font-size: 12px;
     font-weight: 600;
-    padding: 2px 8px;
+    padding: 3px 8px;
     border-radius: 12px;
     min-width: 20px;
     text-align: center;
     flex-shrink: 0;
 }
 
+/* ================================
+   DELETE BUTTON & CONFIRMATION
+================================ */
+
 .delete-conversation-btn {
     position: absolute;
-    right: 15px;
+    right: 16px;
     top: 50%;
     transform: translateY(-50%);
     background: none;
@@ -187,12 +221,14 @@
     opacity: 0;
     transition: all 0.2s;
     padding: 8px;
-    border-radius: 4px;
+    border-radius: 6px;
     z-index: 10;
+    color: var(--text-secondary);
 }
 
 .delete-conversation-btn:hover {
-    background: #fee;
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--danger);
     transform: translateY(-50%) scale(1.15);
 }
 
@@ -200,15 +236,19 @@
     transform: translateY(-50%) scale(0.95);
 }
 
-/* ⭐ NOUVEAU - Confirmation élégante */
 .delete-confirmation {
-    background: #fff3cd;
-    border-left: 4px solid #ffc107;
+    background: #fef3c7;
+    border-left: 4px solid var(--warning);
     padding: 15px;
     display: flex;
     flex-direction: column;
     gap: 12px;
     animation: slideDown 0.2s ease-out;
+}
+
+.dark .delete-confirmation {
+    background: rgba(245, 158, 11, 0.15);
+    border-left-color: var(--warning);
 }
 
 @keyframes slideDown {
@@ -220,15 +260,19 @@
 
     to {
         opacity: 1;
-        max-height: 100px;
+        max-height: 120px;
         padding: 15px;
     }
 }
 
 .delete-confirmation-text {
     font-size: 14px;
-    color: #856404;
+    color: #92400e;
     font-weight: 500;
+}
+
+.dark .delete-confirmation-text {
+    color: var(--warning);
 }
 
 .delete-confirmation-actions {
@@ -249,14 +293,14 @@
 }
 
 .confirm-delete-btn {
-    background: #dc3545;
+    background: var(--danger);
     color: white;
 }
 
 .confirm-delete-btn:hover {
-    background: #c82333;
+    background: #dc2626;
     transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
 }
 
 .confirm-delete-btn:active {
@@ -264,19 +308,23 @@
 }
 
 .cancel-delete-btn {
-    background: #6c757d;
+    background: var(--gray-500);
     color: white;
 }
 
 .cancel-delete-btn:hover {
-    background: #5a6268;
+    background: var(--gray-600);
     transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(108, 117, 125, 0.3);
+    box-shadow: 0 2px 8px rgba(107, 114, 128, 0.3);
 }
 
 .cancel-delete-btn:active {
     transform: translateY(0);
 }
+
+/* ================================
+   EMPTY STATE
+================================ */
 
 .no-conversations {
     display: flex;
@@ -286,28 +334,33 @@
     height: 100%;
     padding: 40px;
     text-align: center;
-    color: #666;
+    color: var(--text-secondary);
 }
 
 .no-conversations p {
     margin: 10px 0;
+    color: var(--text-primary);
 }
 
 .no-conversations .hint {
     font-size: 14px;
-    color: #999;
+    color: var(--text-tertiary);
 }
 
-/* Modal nouvelle conversation */
+/* ================================
+   MODAL NOUVELLE CONVERSATION
+================================ */
+
 .new-chat-modal {
     position: fixed;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background: white;
+    background: var(--bg-primary);
     padding: 30px;
     border-radius: 12px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    box-shadow: var(--card-shadow-hover);
+    border: 1px solid var(--border-color);
     z-index: 1000;
     min-width: 400px;
     max-width: 90%;
@@ -331,13 +384,17 @@
 .new-chat-modal h3 {
     margin: 0 0 20px 0;
     font-size: 20px;
-    color: #333;
+    color: var(--text-primary);
 }
+
+/* ================================
+   FRIENDS LIST
+================================ */
 
 .friends-list {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
     margin-bottom: 20px;
 }
 
@@ -351,7 +408,7 @@
 }
 
 .friend-item:hover {
-    background: #f0f0f0;
+    background: var(--bg-secondary);
 }
 
 .friend-avatar {
@@ -366,27 +423,31 @@
     font-weight: 600;
     font-size: 16px;
     margin-right: 12px;
+    position: relative;
 }
 
 .friend-info {
     flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
 }
 
 .friend-name {
     font-weight: 500;
-    color: #333;
+    color: var(--text-primary);
 }
 
 .no-friends {
     text-align: center;
-    color: #999;
+    color: var(--text-tertiary);
     padding: 20px;
 }
 
 .close-modal {
     width: 100%;
     padding: 12px;
-    background: #6c757d;
+    background: var(--gray-500);
     color: white;
     border: none;
     border-radius: 6px;
@@ -397,14 +458,21 @@
 }
 
 .close-modal:hover {
-    background: #5a6268;
+    background: var(--gray-600);
 }
 
-/* Mobile */
+/* ================================
+   RESPONSIVE - MOBILE
+================================ */
+
 @media (max-width: 768px) {
     .conversation-list {
         max-width: 100%;
         border-right: none;
+    }
+
+    .conversation-item {
+        padding: 14px;
     }
 
     .delete-conversation-btn {
@@ -414,6 +482,7 @@
     .new-chat-modal {
         min-width: auto;
         width: 90%;
+        padding: 20px;
     }
 
     .delete-confirmation {

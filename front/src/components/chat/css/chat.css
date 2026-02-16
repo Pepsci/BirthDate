@@ -1,14 +1,26 @@
-/* src/components/Chat/chat.css */
+/* ================================
+   CHAT CONTAINER - Phase 2 Polish
+================================ */
+
 .chat-container {
     display: flex;
     height: 600px;
     max-width: 1400px;
     margin: 20px auto;
-    background: white;
+    background: var(--bg-primary);
     border-radius: 12px;
     overflow: hidden;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--card-shadow);
+    transition: all 0.3s ease;
 }
+
+.dark .chat-container {
+    box-shadow: var(--card-shadow-hover);
+}
+
+/* ================================
+   LOADING STATE
+================================ */
 
 .loading {
     display: flex;
@@ -16,21 +28,30 @@
     justify-content: center;
     height: 100%;
     font-size: 18px;
-    color: #666;
+    color: var(--text-secondary);
 }
+
+/* ================================
+   NO CONVERSATION SELECTED
+================================ */
 
 .no-conversation-selected {
     flex: 1;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #f8f9fa;
+    background: var(--bg-secondary);
+    transition: background-color 0.3s ease;
 }
 
 .no-conversation-selected p {
-    color: #999;
+    color: var(--text-tertiary);
     font-size: 18px;
 }
+
+/* ================================
+   DIRECT CHAT CONTAINER
+================================ */
 
 .direct-chat-container {
     height: 100%;
@@ -42,19 +63,27 @@
     height: 100%;
 }
 
+/* ================================
+   CHAT IN DATELIST
+================================ */
+
 .chat-in-datelist {
     width: 100%;
     height: 620px;
     border-radius: 12px;
     overflow: hidden;
+    box-shadow: var(--card-shadow);
 }
 
-/* Séparateur "Messages non lus" */
+/* ================================
+   UNREAD SEPARATOR (duplicate pour compatibilité)
+================================ */
+
 .unread-separator {
     text-align: center;
     margin: 20px 0;
     font-size: 13px;
-    color: #007bff;
+    color: var(--primary);
     font-weight: 600;
     position: relative;
     opacity: 0;
@@ -69,7 +98,6 @@
     }
 }
 
-/* Animation pour disparaître */
 .unread-separator.fade-out {
     animation: fadeSlideOut 0.4s forwards;
 }
@@ -81,19 +109,25 @@
     }
 }
 
+/* ================================
+   RESPONSIVE - MOBILE
+================================ */
+
 @media (max-width: 768px) {
     .chat-container {
         height: 500px;
         margin: 0;
         border-radius: 0;
+        box-shadow: none;
     }
-        .chat-in-datelist {
-            height: 500px;
-            width: 90%;
-            margin: auto;
-        }
-        .direct-chat-container{
-            height: 423px;
-        }
 
+    .chat-in-datelist {
+        height: 500px;
+        width: 90%;
+        margin: auto;
+    }
+
+    .direct-chat-container {
+        height: 423px;
+    }
 }
