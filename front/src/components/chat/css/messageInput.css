@@ -172,6 +172,7 @@
     .message-input-form {
         padding: 12px;
         gap: 10px;
+        /* padding-bottom: env(safe-area-inset-bottom); */
     }
     
     .editing-indicator {

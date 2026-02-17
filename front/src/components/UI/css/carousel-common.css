@@ -87,6 +87,7 @@
     /* Section mobile */
     .mobile-section {
         animation: fadeIn 0.3s ease;
+        height: 500px;
     }
 
     @keyframes fadeIn {
