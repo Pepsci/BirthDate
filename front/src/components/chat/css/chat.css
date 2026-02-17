@@ -72,7 +72,6 @@
     height: 620px;
     border-radius: 12px;
     overflow: hidden;
-    box-shadow: var(--card-shadow);
 }
 
 /* ================================
@@ -128,6 +127,6 @@
     }
 
     .direct-chat-container {
-        height: 423px;
+        height: 455px;
     }
 }

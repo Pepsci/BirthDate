@@ -644,8 +644,7 @@
     }
 
     .messages-container {
-        padding: 16px;
-        padding-bottom: 100px;
+        padding: 1rem;
     }
 
     .edit-button-mobile,

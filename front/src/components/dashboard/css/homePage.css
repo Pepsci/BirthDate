@@ -5,7 +5,7 @@ img {
 .logoHeader {
     height: 100px;
     margin: 2em;
-    margin-top: 3rem;
+    /* margin-top: 3rem; */
 }
 
 .homePageRoot {
@@ -117,7 +117,7 @@ img {
     }
 
     .homePageRoot {
-        margin-top: 130px;
+        margin-top: 100px;
     }
 
     .profil-btn {
