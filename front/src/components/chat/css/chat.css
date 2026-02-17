@@ -114,19 +114,25 @@
 
 @media (max-width: 768px) {
     .chat-container {
-        height: 500px;
-        margin: 0;
-        border-radius: 0;
-        box-shadow: none;
+            height: 100dvh;
+            margin: 0;
+            border-radius: 0;
+            box-shadow: none;
+    }
+
+    .chat-window{
+        height: 515px;
     }
 
     .chat-in-datelist {
-        height: 500px;
+        height: 100%;
         width: 90%;
         margin: auto;
     }
 
-    .direct-chat-container {
-        height: 455px;
-    }
+.direct-chat-container {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
 }

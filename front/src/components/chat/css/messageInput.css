@@ -173,12 +173,12 @@
         padding: 12px;
         gap: 10px;
     }
-
+    
     .editing-indicator {
         padding: 8px 12px;
         font-size: 12px;
     }
-
+    
     .message-input-form textarea {
         min-height: 42px;
         font-size: 14px;
@@ -190,4 +190,6 @@
         height: 44px;
         font-size: 16px;
     }
+
+    
 }

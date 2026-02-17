@@ -173,9 +173,17 @@ function ConversationList({
 
       if (response.ok) {
         const conversation = await response.json();
+
+        // Ajouter la conversation à la liste locale si elle n'existe pas déjà
+        setLocalConversations((prev) => {
+          const exists = prev.find((c) => c._id === conversation._id);
+          if (exists) return prev;
+          return [conversation, ...prev];
+        });
+
         onSelectConversation(conversation);
         setShowNewChat(false);
-        window.location.reload();
+        // 👆 Plus de window.location.reload() !
       }
     } catch (error) {
       console.error("Error starting conversation:", error);
