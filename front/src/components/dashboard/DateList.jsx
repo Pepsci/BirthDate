@@ -7,6 +7,8 @@ import DateFilter from "./DateFilter";
 import BirthdayCard from "./BirthdayCard";
 import ManualMergeModal from "./ManuelMergeModal";
 import Chat from "../chat/Chat";
+import ChatModal from "../chat/ChatModal"; // 👈 NOUVEAU
+import DirectChat from "../chat/DirectChat"; // 👈 NOUVEAU
 import useNotifications from "../../context/useNotifications";
 import "./css/dateList.css";
 import "./css/birthcard.css";
@@ -31,6 +33,11 @@ const DateList = ({ onEditDate, onViewFriendProfile, onMerge }) => {
 
   const [showMergeModal, setShowMergeModal] = useState(false);
   const [cardToMerge, setCardToMerge] = useState(null);
+
+  // 👇 NOUVEAUX ÉTATS pour la modal chat
+  const [isChatModalOpen, setIsChatModalOpen] = useState(false);
+  const [selectedFriendId, setSelectedFriendId] = useState(null);
+  const [selectedFriendName, setSelectedFriendName] = useState("");
 
   const sortDates = (datesArray) => {
     const today = new Date();
@@ -174,6 +181,13 @@ const DateList = ({ onEditDate, onViewFriendProfile, onMerge }) => {
     setShowMergeModal(true);
   };
 
+  // 👇 NOUVELLE FONCTION pour ouvrir la modal chat
+  const handleOpenChatModal = (friendId, friendName) => {
+    setSelectedFriendId(friendId);
+    setSelectedFriendName(friendName);
+    setIsChatModalOpen(true);
+  };
+
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -258,6 +272,7 @@ const DateList = ({ onEditDate, onViewFriendProfile, onMerge }) => {
               date={date}
               onEdit={onEditDate}
               onViewProfile={onViewFriendProfile}
+              onOpenChat={handleOpenChatModal} // 👈 AJOUTÉ
             />
           ))}
         </div>
@@ -370,6 +385,7 @@ const DateList = ({ onEditDate, onViewFriendProfile, onMerge }) => {
         </div>
       )}
 
+      {/* Modal merge existante */}
       {showMergeModal && cardToMerge && (
         <ManualMergeModal
           sourceCard={cardToMerge}
@@ -381,6 +397,21 @@ const DateList = ({ onEditDate, onViewFriendProfile, onMerge }) => {
             loadDates();
           }}
         />
+      )}
+
+      {/* 👇 NOUVELLE MODAL CHAT */}
+      {selectedFriendId && (
+        <ChatModal
+          isOpen={isChatModalOpen}
+          onClose={() => {
+            setIsChatModalOpen(false);
+            setSelectedFriendId(null);
+            setSelectedFriendName("");
+          }}
+          title={selectedFriendName}
+        >
+          <DirectChat friendId={selectedFriendId} />
+        </ChatModal>
       )}
     </div>
   );

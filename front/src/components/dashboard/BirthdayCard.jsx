@@ -3,7 +3,8 @@ import useNotifications from "../../context/useNotifications";
 import Countdown from "./Countdown";
 import "./css/birthcard.css";
 
-const BirthdayCard = ({ date, onEdit, onViewProfile }) => {
+const BirthdayCard = ({ date, onEdit, onViewProfile, onOpenChat }) => {
+  // 👈 AJOUT onOpenChat
   const { conversationUnreads } = useNotifications();
 
   const isFriend = !!date.linkedUser;
@@ -31,8 +32,15 @@ const BirthdayCard = ({ date, onEdit, onViewProfile }) => {
     return age;
   };
 
-  const handleMessageClick = async () => {
-    onViewProfile(date, "chat");
+  // 👇 MODIFIER cette fonction
+  const handleMessageClick = () => {
+    const friendId = date.linkedUser?._id || date.linkedUser;
+    const friendName = `${date.name} ${date.surname}`;
+
+    // Appeler la fonction passée en prop pour ouvrir la modal
+    if (onOpenChat) {
+      onOpenChat(friendId, friendName);
+    }
   };
 
   const today = new Date();

@@ -6,6 +6,7 @@ import socketService from "../services/socket.service";
 import useNotifications from "../../context/useNotifications";
 import ConversationList from "./ConversationList";
 import ChatWindow from "./ChatWindow";
+import ChatModal from "./ChatModal"; // 👈 AJOUTER
 import "./css/chat.css";
 
 function Chat() {
@@ -20,7 +21,9 @@ function Chat() {
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const activeConversationRef = useRef(null);
 
-  // Détecter le resize pour mobile/desktop
+  // 👇 AJOUTER cet état pour la modal de conversation
+  const [isChatWindowOpen, setIsChatWindowOpen] = useState(false);
+
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth <= 768);
@@ -57,11 +60,9 @@ function Chat() {
     };
   }, [navigate]);
 
-  // Mettre à jour la conversation active quand elle change
   useEffect(() => {
     const newConversationId = selectedConversation?._id || null;
 
-    // Ne mettre à jour que si ça a vraiment changé
     if (activeConversationRef.current !== newConversationId) {
       activeConversationRef.current = newConversationId;
       setActiveConversation(newConversationId);
@@ -76,7 +77,6 @@ function Chat() {
       setConversations(response.data);
     } catch (error) {
       console.error("❌ Error loading conversations:", error);
-      // Ne pas bloquer l'interface si le chargement échoue
       setConversations([]);
     } finally {
       setLoading(false);
@@ -89,7 +89,6 @@ function Chat() {
         if (conv._id === conversationId) {
           const isSelected = selectedConversation?._id === conversationId;
 
-          // Vérifier si sender est un objet ou un ID
           const senderId =
             typeof message.sender === "object"
               ? message.sender._id
@@ -154,10 +153,13 @@ function Chat() {
   const handleSelectConversation = async (conversation) => {
     setSelectedConversation(conversation);
 
-    // Marquer comme lu dans le contexte de notifications
+    // 👇 Sur mobile, ouvrir la modal
+    if (isMobile) {
+      setIsChatWindowOpen(true);
+    }
+
     markAsRead(conversation._id);
 
-    // Marquer comme lu sur le serveur
     if (conversation.unreadCount > 0) {
       try {
         await apiHandler.put(`/conversations/${conversation._id}/read`);
@@ -179,6 +181,7 @@ function Chat() {
 
   const handleBackToList = () => {
     setSelectedConversation(null);
+    setIsChatWindowOpen(false); // 👈 Fermer la modal
   };
 
   if (loading) {
@@ -189,22 +192,44 @@ function Chat() {
     );
   }
 
+  // 👇 Obtenir le nom de l'utilisateur pour le titre de la modal
+  const getOtherParticipant = (conversation) => {
+    const currentUserId = JSON.parse(
+      atob(localStorage.getItem("authToken").split(".")[1]),
+    )._id;
+    return conversation.participants.find((p) => p._id !== currentUserId);
+  };
+
+  const otherUser = selectedConversation
+    ? getOtherParticipant(selectedConversation)
+    : null;
+
   return (
     <div className="chat-container">
-      {/* MOBILE: Afficher soit la liste SOIT la conversation */}
+      {/* MOBILE: Afficher seulement la liste */}
       {isMobile ? (
         <>
-          {!selectedConversation ? (
-            <ConversationList
-              conversations={conversations}
-              selectedConversation={selectedConversation}
-              onSelectConversation={handleSelectConversation}
-            />
-          ) : (
-            <ChatWindow
-              conversation={selectedConversation}
-              onBack={handleBackToList}
-            />
+          <ConversationList
+            conversations={conversations}
+            selectedConversation={selectedConversation}
+            onSelectConversation={handleSelectConversation}
+          />
+
+          {/* 👇 NOUVELLE MODAL pour le chat sur mobile */}
+          {selectedConversation && (
+            <ChatModal
+              isOpen={isChatWindowOpen}
+              onClose={handleBackToList}
+              title={
+                `${otherUser?.name || ""} ${otherUser?.surname || ""}`.trim() ||
+                "Chat"
+              }
+            >
+              <ChatWindow
+                conversation={selectedConversation}
+                onBack={handleBackToList}
+              />
+            </ChatModal>
           )}
         </>
       ) : (

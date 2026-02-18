@@ -4,6 +4,7 @@ import Countdown from "../dashboard/Countdown";
 import FriendGiftList from "./FriendGiftList";
 import DirectChat from "../chat/DirectChat";
 import apiHandler from "../../api/apiHandler";
+import ChatModal from "../chat/ChatModal";
 import "../UI/css/gifts-common.css";
 import "../UI/css/carousel-common.css";
 import "./css/friendNotifications.css";
@@ -21,6 +22,7 @@ const FriendProfile = ({ date, onCancel, initialSection = "info" }) => {
   const [wishlist, setWishlist] = useState([]);
   const [wishlistLoading, setWishlistLoading] = useState(false);
   const [hasPublicWishlist, setHasPublicWishlist] = useState(false);
+  const [isChatModalOpen, setIsChatModalOpen] = useState(false);
 
   // Pour mobile
   const [currentCarouselIndex, setCurrentCarouselIndex] = useState(0);
@@ -57,18 +59,6 @@ const FriendProfile = ({ date, onCancel, initialSection = "info" }) => {
         { id: "gifts", title: "Cadeaux", icon: "🎁" },
       ];
 
-  // Fonction pour ouvrir le chat dans la section
-  const handleOpenChatInSection = () => {
-    setActiveSection("chat");
-    // Pour mobile, trouve l'index de la section chat
-    const chatIndex = menuSections.findIndex(
-      (section) => section.id === "chat",
-    );
-    if (chatIndex !== -1) {
-      setCurrentCarouselIndex(chatIndex);
-    }
-  };
-
   // Fonction pour ouvrir le chat dans une nouvelle page (depuis les cartes)
   const handleOpenChatNewPage = async () => {
     try {
@@ -84,17 +74,6 @@ const FriendProfile = ({ date, onCancel, initialSection = "info" }) => {
       console.error("Error starting conversation:", error);
     }
   };
-
-  useEffect(() => {
-    if (initialSection === "chat") {
-      const chatIndex = menuSections.findIndex(
-        (section) => section.id === "chat",
-      );
-      if (chatIndex !== -1) {
-        setCurrentCarouselIndex(chatIndex);
-      }
-    }
-  }, [initialSection]);
 
   useEffect(() => {
     if (date.linkedUser) {
@@ -440,11 +419,9 @@ const FriendProfile = ({ date, onCancel, initialSection = "info" }) => {
     <FriendGiftList currentDate={currentDate} onUpdate={handleGiftUpdated} />
   );
 
-  // Section chat avec DirectChat
+  // Section chat avec DirectChat (desktop uniquement)
   const renderChatSection = () => {
     const friendId = date.linkedUser?._id || date.linkedUser;
-
-    console.log("🎯 Rendering chat section for:", friendId); // 👈 DEBUG
 
     if (!friendId) {
       return (
@@ -454,7 +431,11 @@ const FriendProfile = ({ date, onCancel, initialSection = "info" }) => {
       );
     }
 
-    return <DirectChat friendId={friendId} />;
+    return (
+      <div className="chat-section-desktop">
+        <DirectChat friendId={friendId} />
+      </div>
+    );
   };
 
   // Rendu de la section active (desktop)
@@ -475,7 +456,7 @@ const FriendProfile = ({ date, onCancel, initialSection = "info" }) => {
     }
   };
 
-  // Rendu mobile (carousel)
+  // Rendu mobile (carousel) - Le chat n'apparaît pas ici
   const renderMobileSection = () => {
     const currentSection = menuSections[currentCarouselIndex];
 
@@ -491,7 +472,8 @@ const FriendProfile = ({ date, onCancel, initialSection = "info" }) => {
       case "gifts":
         return <div className="mobile-section">{renderGiftsSection()}</div>;
       case "chat":
-        return <div className="mobile-section">{renderChatSection()}</div>;
+        // Le chat ne s'affiche pas dans le carousel, uniquement dans la modal
+        return null;
       default:
         return null;
     }
@@ -512,31 +494,44 @@ const FriendProfile = ({ date, onCancel, initialSection = "info" }) => {
             {renderMobileSection()}
           </div>
 
+          {/* Indicateurs - Sans le chat */}
           <div className="mobile-carousel__indicators">
-            {menuSections.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setCurrentCarouselIndex(index)}
-                className={`mobile-carousel__indicator ${
-                  index === currentCarouselIndex
-                    ? "mobile-carousel__indicator--active"
-                    : ""
-                }`}
-                aria-label={`Aller à la section ${index + 1}`}
-              />
-            ))}
+            {menuSections
+              .filter((section) => section.id !== "chat")
+              .map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentCarouselIndex(index)}
+                  className={`mobile-carousel__indicator ${
+                    index === currentCarouselIndex
+                      ? "mobile-carousel__indicator--active"
+                      : ""
+                  }`}
+                  aria-label={`Aller à la section ${index + 1}`}
+                />
+              ))}
           </div>
 
+          {/* Menu rapide en bas */}
           <div className="mobile-carousel__quick-nav">
             <div className="mobile-carousel__quick-buttons">
               {menuSections.map((section, index) => (
                 <button
                   key={section.id}
-                  onClick={() => setCurrentCarouselIndex(index)}
+                  onClick={() => {
+                    if (section.id === "chat") {
+                      // Ouvrir la modal au lieu de naviguer
+                      setIsChatModalOpen(true);
+                    } else {
+                      setCurrentCarouselIndex(index);
+                    }
+                  }}
                   className={`mobile-carousel__quick-btn ${
-                    index === currentCarouselIndex
+                    section.id === "chat" && isChatModalOpen
                       ? "mobile-carousel__quick-btn--active"
-                      : ""
+                      : index === currentCarouselIndex && section.id !== "chat"
+                        ? "mobile-carousel__quick-btn--active"
+                        : ""
                   }`}
                   aria-label={section.title}
                 >
@@ -567,6 +562,21 @@ const FriendProfile = ({ date, onCancel, initialSection = "info" }) => {
           {renderDesktopContent()}
         </div>
       </div>
+
+      {/* MODAL CHAT - Mobile uniquement */}
+      {date.linkedUser && (
+        <ChatModal
+          isOpen={isChatModalOpen}
+          onClose={() => {
+            setIsChatModalOpen(false);
+            setCurrentCarouselIndex(0); // Retour à la section Info
+            setActiveSection("info"); // Pour desktop aussi
+          }}
+          title={`${date.name} ${date.surname}`}
+        >
+          <DirectChat friendId={date.linkedUser?._id || date.linkedUser} />
+        </ChatModal>
+      )}
     </div>
   );
 };

@@ -114,6 +114,58 @@
 }
 
 /* --------------------------------
+   Chat section responsive
+-------------------------------- */
+
+.chat-section-mobile-trigger {
+    display: none;
+}
+
+.chat-section-desktop {
+    display: block;
+    height: 100%;
+}
+
+.btn-open-chat-modal {
+    width: 100%;
+    padding: 16px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s;
+}
+
+.btn-open-chat-modal:hover {
+    background: var(--primary-dark);
+    transform: translateY(-2px);
+}
+
+.btn-open-chat-modal:active {
+    transform: translateY(0);
+}
+
+@media (max-width: 768px) {
+    .chat-section-mobile-trigger {
+        display: block;
+        padding: 20px;
+    }
+
+    .chat-section-desktop {
+        display: none;
+    }
+}
+
+
+
+/* --------------------------------
    Media Queries - Responsive
 -------------------------------- */
 
