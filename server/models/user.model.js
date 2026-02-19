@@ -17,14 +17,8 @@ const userSchema = new Schema({
   isVerified: { type: Boolean, default: false },
   lastVerificationEmailSent: Date,
   receiveBirthdayEmails: { type: Boolean, default: true },
-  receiveBirthdayEmails: {
-    type: Boolean,
-    default: true,
-  },
-  receiveFriendRequestEmails: {
-    type: Boolean,
-    default: true,
-  },
+  receiveFriendRequestEmails: { type: Boolean, default: true },
+  deletedAt: Date,
 });
 
 const UserModel = model("User", userSchema);

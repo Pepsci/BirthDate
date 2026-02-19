@@ -12,11 +12,12 @@ const Signup = () => {
     surname: "",
     email: "",
     password: "",
+    birthDate: "",
   });
 
   const [confirmPassword, setConfirmPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState(undefined);
-  const [successMessage, setSuccessMessage] = useState(undefined); // État pour le message de succès
+  const [successMessage, setSuccessMessage] = useState(undefined);
   const { authenticateUser, isLoggedIn } = useContext(AuthContext);
 
   useEffect(() => {
@@ -39,7 +40,6 @@ const Signup = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validation de l'email au frontend
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(user.email)) {
       setErrorMessage("Veuillez fournir une adresse e-mail valide.");
@@ -51,15 +51,20 @@ const Signup = () => {
       return;
     }
 
+    if (!user.birthDate) {
+      setErrorMessage("Veuillez renseigner votre date de naissance.");
+      return;
+    }
+
     try {
-      const response = await apiHandler.signup(user); // Utilise la méthode signup d'apiHandler
+      await apiHandler.signup(user);
       setSuccessMessage(
         "Compte créé avec succès ! Un email de confirmation vous a été envoyé, veuillez vérifier votre boîte mail avant de vous connecter. 📧",
       );
       setErrorMessage(undefined);
       setTimeout(() => {
         navigate("/login");
-      }, 3000);
+      }, 4000);
     } catch (err) {
       if (err.message) {
         setErrorMessage(err.message);
@@ -94,9 +99,7 @@ const Signup = () => {
             className="form-input"
             placeholder=" Nom"
             value={user.surname}
-            onChange={(e) => {
-              setUser({ ...user, surname: e.target.value });
-            }}
+            onChange={(e) => setUser({ ...user, surname: e.target.value })}
           />
           <input
             type="text"
@@ -105,10 +108,24 @@ const Signup = () => {
             className="form-input"
             placeholder=" Votre Email"
             value={user.email}
-            onChange={(e) => {
-              setUser({ ...user, email: e.target.value });
-            }}
+            onChange={(e) => setUser({ ...user, email: e.target.value })}
           />
+
+          {/* ✅ Champ date de naissance */}
+          <div className="form-group">
+            <label htmlFor="birthDate" className="form-label">
+              Date de naissance
+            </label>
+            <input
+              type="date"
+              name="birthDate"
+              id="birthDate"
+              className="form-input"
+              value={user.birthDate}
+              onChange={(e) => setUser({ ...user, birthDate: e.target.value })}
+            />
+          </div>
+
           <PasswordInput
             type="password"
             name="password"
@@ -116,9 +133,7 @@ const Signup = () => {
             className="form-input"
             placeholder=" Mot de passe"
             value={user.password}
-            onChange={(e) => {
-              setUser({ ...user, password: e.target.value });
-            }}
+            onChange={(e) => setUser({ ...user, password: e.target.value })}
           />
           <PasswordInput
             type="password"
@@ -127,9 +142,7 @@ const Signup = () => {
             className="form-input"
             placeholder=" Confirmez le mot de passe"
             value={confirmPassword}
-            onChange={(e) => {
-              setConfirmPassword(e.target.value);
-            }}
+            onChange={(e) => setConfirmPassword(e.target.value)}
           />
           <div className="formConnectAvatar titleFont">
             <span className="form-connect-msg font">Voici votre avatar</span>
