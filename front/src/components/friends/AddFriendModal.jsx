@@ -23,7 +23,6 @@ const AddFriendModal = ({
       return;
     }
 
-    // Validation email basique
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       setError("Email invalide");
@@ -35,19 +34,25 @@ const AddFriendModal = ({
     try {
       const response = await apiHandler.sendFriendRequest(currentUserId, email);
 
-      setSuccess("Demande d'amitié envoyée ! 🎉");
-      setEmail("");
-
-      // Appeler le callback pour rafraîchir la liste
-      if (onFriendAdded) {
-        onFriendAdded(response.friendship);
+      // ✅ Message adapté selon le type de réponse
+      if (response.type === "invitation_sent") {
+        setSuccess(
+          "Invitation envoyée par email ! 📧 Votre ami sera ajouté automatiquement à son inscription.",
+        );
+      } else {
+        setSuccess("Demande d'amitié envoyée ! 🎉");
+        // ✅ Callback uniquement si c'est une demande d'amitié (pas une invitation)
+        if (onFriendAdded && response.friendship) {
+          onFriendAdded(response.friendship);
+        }
       }
 
-      // Fermer après 2 secondes
+      setEmail("");
+
       setTimeout(() => {
         onClose();
         setSuccess("");
-      }, 2000);
+      }, 2500);
     } catch (error) {
       console.error("Erreur:", error);
 
@@ -55,12 +60,6 @@ const AddFriendModal = ({
         setError(error.response.data.message);
       } else {
         setError("Erreur lors de l'envoi de la demande");
-      }
-
-      if (error.response?.data?.suggestion) {
-        setError(
-          error.response.data.message + " - " + error.response.data.suggestion,
-        );
       }
     } finally {
       setIsLoading(false);

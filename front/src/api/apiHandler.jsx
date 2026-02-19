@@ -121,7 +121,7 @@ const apiHandler = {
   // Envoyer une demande d'amitié
   sendFriendRequest(userId, friendEmail) {
     return service
-      .post("/friends/request", { userId, friendEmail })
+      .post("/friends", { email: friendEmail }) // ✅ route et body corrects
       .then((res) => res.data)
       .catch(errorHandler);
   },

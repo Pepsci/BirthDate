@@ -2,22 +2,24 @@ require("dotenv").config();
 const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const userModel = require("./../models/user.model");
-const Log = require("../models/log.model");
-const { isAuthenticated } = require("../middleware/jwt.middleware");
-
-const router = express.Router();
-const saltRounds = 10;
-
 const crypto = require("crypto");
 const nodemailer = require("nodemailer");
 const { SESClient, SendRawEmailCommand } = require("@aws-sdk/client-ses");
+
+const userModel = require("./../models/user.model");
+const Log = require("../models/log.model");
+const Invitation = require("../models/invitation.model");
+const Friend = require("../models/friend.model");
+const { isAuthenticated } = require("../middleware/jwt.middleware");
 const {
   generateVerificationToken,
   sendVerificationEmail,
 } = require("../services/verififcation");
+const { createFriendDates } = require("../utils/friendDates"); // ✅ import utilitaire
 
-// Configuration de AWS SDK v3
+const router = express.Router();
+const saltRounds = 10;
+
 const ses = new SESClient({
   region: process.env.AWS_REGION,
   credentials: {
@@ -26,23 +28,18 @@ const ses = new SESClient({
   },
 });
 
-// Création du transporteur Nodemailer avec Amazon SES
 const transporter = nodemailer.createTransport({
   SES: { ses, aws: { SendRawEmailCommand } },
 });
 
-// Fonction pour envoyer l'email de réinitialisation
 async function sendEmail(email, token) {
   try {
-    const mailOptions = {
+    await transporter.sendMail({
       from: "reset_password@birthreminder.com",
       to: email,
       subject: "Password Reset",
       text: `Cliquez ici : ${process.env.FRONTEND_URL}/auth/reset/${token}`,
-    };
-
-    console.log("Envoi de l'email...");
-    await transporter.sendMail(mailOptions);
+    });
     console.log("Email envoyé avec succès !");
   } catch (error) {
     console.error("Erreur lors de l'envoi de l'email :", error);
@@ -50,49 +47,45 @@ async function sendEmail(email, token) {
   }
 }
 
-// Validation du mot de passe avec regex
 const validatePassword = (password) => {
-  const passwordRegex = /(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,}/;
-  return passwordRegex.test(password);
+  return /(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,}/.test(password);
 };
 
+// ========================================
 // POST /auth/signup
-router.post("/signup", async (req, res, next) => {
+// ========================================
+router.post("/signup", async (req, res) => {
   const { email, password, name, surname } = req.body;
 
-  if (email === "" || password === "" || name === "" || surname === "") {
-    res
+  if (!email || !password || !name || !surname) {
+    return res
       .status(400)
       .json({ message: "Provide email, password, name and surname." });
-    return;
   }
 
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-  if (!emailRegex.test(email)) {
-    res.status(400).json({ message: "Please provide a valid email address." });
-    return;
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
+    return res
+      .status(400)
+      .json({ message: "Please provide a valid email address." });
   }
 
-  const passwordRegex = /(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,}/;
-  if (!passwordRegex.test(password)) {
-    res.status(400).json({
+  if (!validatePassword(password)) {
+    return res.status(400).json({
       message:
         "Password must have at least 6 characters and contain at least one number, one lowercase and one uppercase letter.",
     });
-    return;
   }
 
   try {
     const foundUser = await userModel.findOne({ email });
     if (foundUser) {
-      res.status(400).json({ message: "User already exists" });
-      return;
+      return res.status(400).json({ message: "User already exists" });
     }
 
-    const salt = bcrypt.genSaltSync(saltRounds);
-    const hashedPassword = bcrypt.hashSync(password, salt);
-
-    const avatar = `https://api.dicebear.com/8.x/bottts/svg?seed=${surname}`;
+    const hashedPassword = bcrypt.hashSync(
+      password,
+      bcrypt.genSaltSync(saltRounds),
+    );
     const verificationToken = generateVerificationToken();
 
     const newUser = await userModel.create({
@@ -100,17 +93,16 @@ router.post("/signup", async (req, res, next) => {
       password: hashedPassword,
       name,
       surname,
-      avatar,
+      avatar: `https://api.dicebear.com/8.x/bottts/svg?seed=${surname}`,
       verificationToken,
       isVerified: false,
     });
 
-    // 📊 LOG : Inscription
+    // 📊 LOG
     try {
       const ipAddress =
         req.headers["x-forwarded-for"]?.split(",")[0].trim() ||
         req.connection.remoteAddress;
-
       await Log.create({
         userId: newUser._id,
         action: "signup",
@@ -119,46 +111,72 @@ router.post("/signup", async (req, res, next) => {
       });
     } catch (logError) {
       console.error("❌ Erreur logging:", logError);
-      // Continue même si le log échoue
+    }
+
+    // ✅ Traitement des invitations en attente
+    try {
+      const pendingInvitations = await Invitation.find({
+        email: newUser.email,
+        status: "pending",
+      });
+
+      for (const invitation of pendingInvitations) {
+        await Friend.create({
+          user: invitation.invitedBy,
+          friend: newUser._id,
+          status: "accepted",
+          acceptedAt: Date.now(),
+        });
+
+        invitation.status = "accepted";
+        await invitation.save();
+
+        // ✅ Création des dates des deux côtés via l'utilitaire
+        const inviter = await userModel.findById(invitation.invitedBy);
+        if (inviter) {
+          await createFriendDates(inviter, newUser);
+        }
+
+        console.log(
+          `✅ Amitié + dates créées via invitation pour ${newUser.email}`,
+        );
+      }
+    } catch (invitationError) {
+      console.error("❌ Erreur traitement invitations:", invitationError);
     }
 
     await sendVerificationEmail(newUser.email, newUser.verificationToken);
 
-    res
+    return res
       .status(201)
       .json({ message: "User created. Please verify your email address." });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({ message: "Internal server error" });
   }
 });
 
+// ========================================
 // POST /auth/login
-router.post("/login", async (req, res, next) => {
+// ========================================
+router.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
-  if (email === "" || password === "") {
-    res.status(400).json({ message: "Provide email and password." });
-    return;
+  if (!email || !password) {
+    return res.status(400).json({ message: "Provide email and password." });
   }
 
   try {
     const foundUser = await userModel.findOne({ email });
     if (!foundUser) {
-      res.status(401).json({ message: "Utilisateur non trouvé." });
-      return;
+      return res.status(401).json({ message: "Utilisateur non trouvé." });
     }
 
-    // Vérifier si le compte est supprimé
     if (foundUser.deletedAt) {
-      return res.status(401).json({
-        message: "Ce compte a été supprimé.",
-      });
+      return res.status(401).json({ message: "Ce compte a été supprimé." });
     }
 
-    const passwordCorrect = bcrypt.compareSync(password, foundUser.password);
     if (!foundUser.isVerified) {
-      //vérification du temps de l'envoi entre chaque email de vérification
       const now = Date.now();
       const delay = 3600000;
 
@@ -172,7 +190,6 @@ router.post("/login", async (req, res, next) => {
         });
       }
 
-      // L'email n'est pas vérifié, on envoie un email de vérification
       const verificationToken = generateVerificationToken();
       await sendVerificationEmail(foundUser.email, verificationToken);
       foundUser.verificationToken = verificationToken;
@@ -181,52 +198,57 @@ router.post("/login", async (req, res, next) => {
 
       return res.status(401).json({
         message:
-          "Veuillez vérifier vos emails avant de vous connecter. Un nouvel email de vérification a été envoyé..",
+          "Veuillez vérifier vos emails avant de vous connecter. Un nouvel email de vérification a été envoyé.",
       });
     }
 
-    if (passwordCorrect) {
-      // 📊 LOG : Connexion réussie (maintenant qu'on a l'utilisateur)
-      try {
-        const ipAddress =
-          req.headers["x-forwarded-for"]?.split(",")[0].trim() ||
-          req.connection.remoteAddress;
-
-        await Log.create({
-          userId: foundUser._id,
-          action: "login",
-          ipAddress,
-          userAgent: req.headers["user-agent"],
-        });
-      } catch (logError) {
-        console.error("❌ Erreur logging:", logError);
-        // Continue même si le log échoue
-      }
-
-      const { _id, email, name, surname } = foundUser;
-      const payload = { _id, email, name, surname };
-      const authToken = jwt.sign(payload, process.env.TOKEN_SECRET, {
-        algorithm: "HS256",
-        expiresIn: "24h",
-      });
-
-      res.status(200).json({ authToken: authToken });
-    } else {
-      res.status(401).json({ message: "Unable to authenticate the user" });
+    const passwordCorrect = bcrypt.compareSync(password, foundUser.password);
+    if (!passwordCorrect) {
+      return res
+        .status(401)
+        .json({ message: "Unable to authenticate the user" });
     }
+
+    // 📊 LOG
+    try {
+      const ipAddress =
+        req.headers["x-forwarded-for"]?.split(",")[0].trim() ||
+        req.connection.remoteAddress;
+      await Log.create({
+        userId: foundUser._id,
+        action: "login",
+        ipAddress,
+        userAgent: req.headers["user-agent"],
+      });
+    } catch (logError) {
+      console.error("❌ Erreur logging:", logError);
+    }
+
+    const { _id, email: userEmail, name, surname } = foundUser;
+    const authToken = jwt.sign(
+      { _id, email: userEmail, name, surname },
+      process.env.TOKEN_SECRET,
+      { algorithm: "HS256", expiresIn: "24h" },
+    );
+
+    return res.status(200).json({ authToken });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({ message: "Internal server error" });
   }
 });
 
+// ========================================
 // GET /auth/verify
-router.get("/verify", isAuthenticated, (req, res, next) => {
+// ========================================
+router.get("/verify", isAuthenticated, (req, res) => {
   res.status(200).json(req.payload);
 });
 
+// ========================================
 // POST /auth/forgot-password
-router.post("/forgot-password", async (req, res, next) => {
+// ========================================
+router.post("/forgot-password", async (req, res) => {
   const { email } = req.body;
 
   try {
@@ -237,21 +259,23 @@ router.post("/forgot-password", async (req, res, next) => {
 
     const resetToken = crypto.randomBytes(20).toString("hex");
     user.resetToken = resetToken;
-    user.resetTokenExpires = Date.now() + 3600000; // 1 heure
+    user.resetTokenExpires = Date.now() + 3600000;
     await user.save();
 
     await sendEmail(email, resetToken);
-    res.status(200).json({ message: "Recovery email sent" });
+    return res.status(200).json({ message: "Recovery email sent" });
   } catch (e) {
     console.error(e);
-    res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({ message: "Internal server error" });
   }
 });
 
+// ========================================
 // POST /auth/reset/:token
-router.post("/reset/:token", async (req, res, next) => {
-  const token = req.params.token;
-  const newPassword = req.body.password;
+// ========================================
+router.post("/reset/:token", async (req, res) => {
+  const { token } = req.params;
+  const { password: newPassword } = req.body;
 
   if (!validatePassword(newPassword)) {
     return res.status(400).json({
@@ -267,19 +291,19 @@ router.post("/reset/:token", async (req, res, next) => {
       return res.status(400).json({ message: "Invalid or expired token" });
     }
 
-    const salt = bcrypt.genSaltSync(saltRounds);
-    const hashedPassword = bcrypt.hashSync(newPassword, salt);
-    user.password = hashedPassword;
+    user.password = bcrypt.hashSync(
+      newPassword,
+      bcrypt.genSaltSync(saltRounds),
+    );
     user.resetToken = null;
     user.resetTokenExpires = null;
     await user.save();
 
-    // 📊 LOG : Réinitialisation mot de passe
+    // 📊 LOG
     try {
       const ipAddress =
         req.headers["x-forwarded-for"]?.split(",")[0].trim() ||
         req.connection.remoteAddress;
-
       await Log.create({
         userId: user._id,
         action: "password_reset",
@@ -288,13 +312,12 @@ router.post("/reset/:token", async (req, res, next) => {
       });
     } catch (logError) {
       console.error("❌ Erreur logging:", logError);
-      // Continue même si le log échoue
     }
 
-    res.status(200).json({ message: "Password has been reset" });
+    return res.status(200).json({ message: "Password has been reset" });
   } catch (e) {
     console.error(e);
-    res.status(500).json({ message: "Internal server error" });
+    return res.status(500).json({ message: "Internal server error" });
   }
 });
 

@@ -53,7 +53,9 @@ const Signup = () => {
 
     try {
       const response = await apiHandler.signup(user); // Utilise la méthode signup d'apiHandler
-      setSuccessMessage("Compte créé avec succès !");
+      setSuccessMessage(
+        "Compte créé avec succès ! Un email de confirmation vous a été envoyé, veuillez vérifier votre boîte mail avant de vous connecter. 📧",
+      );
       setErrorMessage(undefined);
       setTimeout(() => {
         navigate("/login");
