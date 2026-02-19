@@ -36,7 +36,6 @@
     border-radius: 16px;
         overflow: hidden;
         position: relative;
-        box-shadow: var(--card-shadow);
         height: 100%;
 }
 

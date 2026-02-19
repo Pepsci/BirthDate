@@ -5,6 +5,7 @@ import FriendGiftList from "./FriendGiftList";
 import DirectChat from "../chat/DirectChat";
 import apiHandler from "../../api/apiHandler";
 import ChatModal from "../chat/ChatModal";
+import useAuth from "../../context/useAuth";
 import "../UI/css/gifts-common.css";
 import "../UI/css/carousel-common.css";
 import "./css/friendNotifications.css";
@@ -36,6 +37,7 @@ const FriendProfile = ({ date, onCancel, initialSection = "info" }) => {
   });
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [saveStatus, setSaveStatus] = useState("idle");
+  const { currentUser } = useAuth();
 
   const reminderOptions = [
     { value: 1, label: "1 jour avant" },
@@ -103,6 +105,17 @@ const FriendProfile = ({ date, onCancel, initialSection = "info" }) => {
       }
 
       const publicItems = items.filter((item) => item.isShared === true);
+      console.log(
+        "Items chargés:",
+        JSON.stringify(
+          publicItems.map((i) => ({
+            title: i.title,
+            reservedBy: i.reservedBy,
+            isShared: i.isShared,
+          })),
+        ),
+      );
+      setWishlist(publicItems);
 
       setWishlist(publicItems);
       setHasPublicWishlist(publicItems.length > 0);
@@ -381,38 +394,138 @@ const FriendProfile = ({ date, onCancel, initialSection = "info" }) => {
       );
     }
 
+    // Filtrer : cacher les items réservés par quelqu'un d'autre
+    const visibleItems = wishlist.filter((item) => {
+      if (!item.reservedBy) return true;
+
+      // Normaliser les deux en string pour comparer
+      const reservedById =
+        item.reservedBy?._id?.toString() || item.reservedBy?.toString();
+      const currentUserId = currentUser._id?.toString();
+
+      return reservedById === currentUserId;
+    });
+
     return (
       <div className="wishlist-section">
         <h2>🎁 Sa Wishlist</h2>
         <div className="gift-items">
-          {wishlist.map((item) => (
-            <div key={item._id} className="gift-item-card">
-              <div className="gift-item-header">
-                <h4 className="gift-item-title">{item.title}</h4>
-                {item.price && (
-                  <span className="gift-item-price">{item.price}€</span>
-                )}
+          {visibleItems.map((item) => {
+            const isReservedByMe =
+              item.reservedBy === currentUser._id ||
+              item.reservedBy?._id === currentUser._id;
+
+            return (
+              <div
+                key={item._id}
+                className={`gift-item-card ${isReservedByMe ? "gift-item-card--reserved-by-me" : ""}`}
+              >
+                <div className="gift-item-horizontal">
+                  {item.image && (
+                    <div className="gift-item-img-wrapper">
+                      <img
+                        src={item.image}
+                        alt={item.title}
+                        onError={(e) => {
+                          e.target.parentElement.style.display = "none";
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  <div className="gift-item-content">
+                    <div className="gift-item-header">
+                      <h4 className="gift-item-title">{item.title}</h4>
+                      {isReservedByMe && (
+                        <span className="gift-item-badge reserved">
+                          🎁 Réservé par moi
+                        </span>
+                      )}
+                    </div>
+
+                    {item.description && (
+                      <p className="gift-item-description">
+                        {item.description}
+                      </p>
+                    )}
+
+                    <div className="gift-item-footer">
+                      {item.price && (
+                        <span className="gift-item-price">{item.price} €</span>
+                      )}
+                      {item.url && (
+                        <a
+                          href={item.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="gift-item-link"
+                        >
+                          🔗 Voir le produit
+                        </a>
+                      )}
+                    </div>
+
+                    {/* Actions */}
+                    <div className="gift-item-actions">
+                      {!item.reservedBy ? (
+                        <button
+                          className="btn-gift btn-reserve"
+                          onClick={() => handleReserve(item._id)}
+                        >
+                          🎁 Je le réserve
+                        </button>
+                      ) : (
+                        <>
+                          <p className="gift-item-reserved-by">
+                            🧑 Réservé par{" "}
+                            {item.reservedBy?.name
+                              ? `${item.reservedBy.name}${item.reservedBy.surname ? " " + item.reservedBy.surname : ""}`
+                              : "Un ami"}
+                          </p>
+                          {/* Bouton annuler visible uniquement pour celui qui a réservé */}
+                          {item.reservedBy?._id?.toString() ===
+                            currentUser._id?.toString() && (
+                            <button
+                              className="btn-gift btn-unreserve"
+                              onClick={() => handleUnreserve(item._id)}
+                            >
+                              ↩️ Annuler ma réservation
+                            </button>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
-
-              {item.url && (
-                <a
-                  href={item.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="gift-item-link"
-                >
-                  🔗 Voir le produit
-                </a>
-              )}
-
-              {item.isPurchased && (
-                <div className="gift-item-badge purchased">✓ Déjà acheté</div>
-              )}
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     );
+  };
+
+  const handleReserve = async (itemId) => {
+    try {
+      const response = await apiHandler.post(`/wishlist/${itemId}/reserve`, {
+        userId: currentUser._id,
+      });
+      console.log("Réponse réservation:", response.data);
+      loadFriendWishlist();
+    } catch (error) {
+      console.error("Erreur réservation:", error);
+    }
+  };
+
+  const handleUnreserve = async (itemId) => {
+    try {
+      await apiHandler.post(`/wishlist/${itemId}/unreserve`, {
+        userId: currentUser._id,
+      });
+      loadFriendWishlist();
+    } catch (error) {
+      console.error("Erreur annulation réservation:", error);
+    }
   };
 
   const renderGiftsSection = () => (

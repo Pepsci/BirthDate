@@ -1,19 +1,30 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import useNotifications from "../../context/useNotifications";
 import Countdown from "./Countdown";
 import "./css/birthcard.css";
 
 const BirthdayCard = ({ date, onEdit, onViewProfile, onOpenChat }) => {
-  // 👈 AJOUT onOpenChat
   const { conversationUnreads } = useNotifications();
+
+  // 👇 AJOUTER la détection mobile/desktop
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
   const isFriend = !!date.linkedUser;
 
-  // Maintenant c'est simple : juste récupérer le count pour cette conversation
   const unreadForFriend =
     isFriend && date.conversationId
       ? conversationUnreads[date.conversationId] || 0
       : 0;
+
+  // 👇 AJOUTER useEffect pour détecter resize
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const calculateCurrentAge = (birthDate) => {
     const today = new Date();
@@ -32,14 +43,19 @@ const BirthdayCard = ({ date, onEdit, onViewProfile, onOpenChat }) => {
     return age;
   };
 
-  // 👇 MODIFIER cette fonction
+  // 👇 MODIFIER cette fonction pour gérer mobile/desktop
   const handleMessageClick = () => {
-    const friendId = date.linkedUser?._id || date.linkedUser;
-    const friendName = `${date.name} ${date.surname}`;
+    if (isMobile) {
+      // Mobile : ouvrir la modal
+      const friendId = date.linkedUser?._id || date.linkedUser;
+      const friendName = `${date.name} ${date.surname}`;
 
-    // Appeler la fonction passée en prop pour ouvrir la modal
-    if (onOpenChat) {
-      onOpenChat(friendId, friendName);
+      if (onOpenChat) {
+        onOpenChat(friendId, friendName);
+      }
+    } else {
+      // Desktop : ouvrir le profil sur la section chat
+      onViewProfile(date, "chat");
     }
   };
 

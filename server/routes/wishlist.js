@@ -1,8 +1,210 @@
 const express = require("express");
 const router = express.Router();
+const ogs = require("open-graph-scraper");
 const WishlistModel = require("../models/wishlist.model");
 const UserModel = require("../models/user.model");
 const mongoose = require("mongoose");
+const cheerio = require("cheerio");
+const axios = require("axios");
+
+// POST /api/wishlist/fetch-url - Récupérer les infos d'un produit depuis une URL
+router.post("/fetch-url", async (req, res) => {
+  try {
+    const { url } = req.body;
+
+    if (!url) {
+      return res.status(400).json({ message: "URL requise" });
+    }
+
+    // ✅ Détection sites bloqués — VERSION BACKEND
+    const blockedDomains = [
+      { domain: "amazon", name: "Amazon" },
+      { domain: "fnac", name: "Fnac" },
+      { domain: "micromania", name: "Micromania" },
+    ];
+
+    const matched = blockedDomains.find((site) =>
+      url.toLowerCase().includes(site.domain),
+    );
+
+    if (matched) {
+      return res.status(200).json({
+        success: false,
+        blocked: true,
+        message: `${matched.name} ne supporte pas le remplissage automatique — remplis les champs manuellement`,
+        data: null,
+      });
+    }
+
+    const headers = {
+      "user-agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36",
+      "accept-language": "fr-FR,fr;q=0.9",
+      accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    };
+
+    // Tentative 1 : Open Graph
+    try {
+      const { result, error } = await ogs({ url, timeout: 5000, headers });
+
+      if (!error && result.ogTitle) {
+        const rawPrice = result.ogPriceAmount || null;
+        const price = rawPrice ? parseFloat(rawPrice.replace(",", ".")) : null;
+
+        return res.status(200).json({
+          success: true,
+          data: {
+            title: result.ogTitle || result.twitterTitle || null,
+            description:
+              result.ogDescription || result.twitterDescription || null,
+            image:
+              result.ogImage?.[0]?.url || result.twitterImage?.[0]?.url || null,
+            price: isNaN(price) ? null : price,
+            currency: result.ogPriceCurrency || "EUR",
+          },
+        });
+      }
+    } catch (ogsError) {
+      console.log("OGS échoué, tentative cheerio...");
+    }
+
+    // Tentative 2 : Cheerio (Fnac, Amazon, etc.)
+    const response = await axios.get(url, { headers, timeout: 8000 });
+    const $ = cheerio.load(response.data);
+
+    // Sélecteurs pour les grands sites
+    const title =
+      $('meta[property="og:title"]').attr("content") ||
+      $('meta[name="twitter:title"]').attr("content") ||
+      $("h1").first().text().trim() ||
+      $("title").text().trim() ||
+      null;
+
+    const description =
+      $('meta[property="og:description"]').attr("content") ||
+      $('meta[name="description"]').attr("content") ||
+      null;
+
+    const image =
+      $('meta[property="og:image"]').attr("content") ||
+      $('meta[name="twitter:image"]').attr("content") ||
+      null;
+
+    // Prix : sélecteurs spécifiques Fnac / Amazon
+    const rawPrice =
+      $('meta[property="product:price:amount"]').attr("content") ||
+      $('meta[property="og:price:amount"]').attr("content") ||
+      $(".f-priceBox-price").first().text().trim() || // Fnac
+      $(".a-price-whole").first().text().trim() || // Amazon
+      $('[data-testid="price"]').first().text().trim() ||
+      null;
+
+    const cleanPrice = rawPrice
+      ? parseFloat(rawPrice.replace(/[^0-9,.]/g, "").replace(",", "."))
+      : null;
+
+    if (!title) {
+      return res.status(200).json({
+        success: false,
+        message: "Impossible de récupérer les infos de ce site",
+        data: null,
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        title,
+        description,
+        image,
+        price: isNaN(cleanPrice) ? null : cleanPrice,
+        currency: "EUR",
+      },
+    });
+  } catch (error) {
+    console.error("Erreur fetch-url:", error.message);
+    res.status(200).json({
+      success: false,
+      message: "Erreur lors de la récupération des infos",
+      data: null,
+    });
+  }
+});
+
+// POST /api/wishlist/:id/reserve - Réserver un item
+router.post("/:id/reserve", async (req, res) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.id)) {
+      return res.status(400).json({ message: "Invalid Item ID" });
+    }
+
+    const { userId } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({ message: "userId requis" });
+    }
+
+    const item = await WishlistModel.findById(req.params.id);
+
+    if (!item) {
+      return res.status(404).json({ message: "Item non trouvé" });
+    }
+
+    if (item.reservedBy) {
+      return res.status(400).json({ message: "Cet item est déjà réservé" });
+    }
+
+    item.reservedBy = userId;
+    item.reservedAt = new Date();
+    await item.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Item réservé",
+      data: item,
+    });
+  } catch (error) {
+    console.error("Erreur réservation:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
+// POST /api/wishlist/:id/unreserve - Annuler la réservation
+router.post("/:id/unreserve", async (req, res) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.id)) {
+      return res.status(400).json({ message: "Invalid Item ID" });
+    }
+
+    const { userId } = req.body;
+
+    const item = await WishlistModel.findById(req.params.id);
+
+    if (!item) {
+      return res.status(404).json({ message: "Item non trouvé" });
+    }
+
+    // Seul celui qui a réservé peut annuler
+    if (item.reservedBy?.toString() !== userId) {
+      return res
+        .status(403)
+        .json({ message: "Vous n'avez pas réservé cet item" });
+    }
+
+    item.reservedBy = null;
+    item.reservedAt = null;
+    await item.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Réservation annulée",
+      data: item,
+    });
+  } catch (error) {
+    console.error("Erreur annulation réservation:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+});
 
 // GET /api/wishlist - Obtenir MA wishlist complète
 router.get("/", async (req, res, next) => {
@@ -29,7 +231,7 @@ router.get("/", async (req, res, next) => {
   }
 });
 
-// 👇 ROUTE MODIFIÉE - Voir la wishlist d'un ami (DÉPLACÉE AVANT /:id)
+// GET /api/wishlist/user/:userId - Voir la wishlist d'un ami
 router.get("/user/:userId", async (req, res, next) => {
   try {
     const { userId } = req.params;
@@ -38,7 +240,6 @@ router.get("/user/:userId", async (req, res, next) => {
       return res.status(400).json({ message: "Invalid User ID" });
     }
 
-    // Vérifier que l'utilisateur existe
     const targetUser = await UserModel.findById(userId).select(
       "name surname avatar",
     );
@@ -47,12 +248,9 @@ router.get("/user/:userId", async (req, res, next) => {
       return res.status(404).json({ message: "Utilisateur non trouvé" });
     }
 
-    // Récupérer TOUS les items de l'ami (pas seulement partagés)
-    // Car si c'est un ami, on peut voir sa wishlist complète
-    const items = await WishlistModel.find({
-      userId,
-    })
+    const items = await WishlistModel.find({ userId })
       .populate("purchasedBy", "name surname avatar")
+      .populate("reservedBy", "name surname")
       .sort({ isPurchased: 1, createdAt: -1 });
 
     res.status(200).json({
@@ -70,7 +268,8 @@ router.get("/user/:userId", async (req, res, next) => {
 // POST /api/wishlist - Créer un nouvel item
 router.post("/", async (req, res, next) => {
   try {
-    const { userId, title, price, url, isShared } = req.body;
+    const { userId, title, description, price, url, image, isShared } =
+      req.body;
 
     if (!userId || !title) {
       return res.status(400).json({ message: "userId et title requis" });
@@ -79,8 +278,10 @@ router.post("/", async (req, res, next) => {
     const item = await WishlistModel.create({
       userId,
       title,
+      description: description || null,
       price,
       url,
+      image: image || null,
       isShared: isShared || false,
     });
 
@@ -124,11 +325,11 @@ router.patch("/:id", async (req, res, next) => {
       return res.status(400).json({ message: "Invalid Item ID" });
     }
 
-    const { title, price, url, isShared } = req.body;
+    const { title, description, price, url, image, isShared } = req.body;
 
     const updatedItem = await WishlistModel.findByIdAndUpdate(
       req.params.id,
-      { title, price, url, isShared },
+      { title, description, price, url, image, isShared },
       { new: true },
     );
 
@@ -182,7 +383,6 @@ router.post("/:id/toggle-sharing", async (req, res, next) => {
       return res.status(404).json({ message: "Item non trouvé" });
     }
 
-    // Inverser le statut de partage
     item.isShared = !item.isShared;
     await item.save();
 
@@ -206,7 +406,7 @@ router.post("/:id/purchase", async (req, res, next) => {
       return res.status(400).json({ message: "Invalid Item ID" });
     }
 
-    const { userId } = req.body; // ID de la personne qui achète
+    const { userId } = req.body;
 
     if (!userId) {
       return res.status(400).json({ message: "userId requis" });
@@ -222,7 +422,6 @@ router.post("/:id/purchase", async (req, res, next) => {
       return res.status(400).json({ message: "Cet item a déjà été acheté" });
     }
 
-    // Marquer comme acheté
     item.isPurchased = true;
     item.purchasedBy = userId;
     item.purchasedAt = new Date();
@@ -252,7 +451,6 @@ router.post("/:id/unpurchase", async (req, res, next) => {
       return res.status(404).json({ message: "Item non trouvé" });
     }
 
-    // Démarquer
     item.isPurchased = false;
     item.purchasedBy = null;
     item.purchasedAt = null;

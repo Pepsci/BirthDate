@@ -1,5 +1,5 @@
 /* ================================
-   CHAT CONTAINER - Phase 2 Polish
+   CHAT CONTAINER 
 ================================ */
 
 .chat-container {
@@ -50,89 +50,14 @@
 }
 
 /* ================================
-   DIRECT CHAT CONTAINER
-================================ */
-
-.direct-chat-container {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-}
-
-.direct-chat-container .chat-window {
-    height: 100%;
-}
-
-/* ================================
-   CHAT IN DATELIST
-================================ */
-
-.chat-in-datelist {
-    width: 100%;
-    height: 620px;
-    border-radius: 12px;
-    overflow: hidden;
-}
-
-/* ================================
-   UNREAD SEPARATOR (duplicate pour compatibilité)
-================================ */
-
-.unread-separator {
-    text-align: center;
-    margin: 20px 0;
-    font-size: 13px;
-    color: var(--primary);
-    font-weight: 600;
-    position: relative;
-    opacity: 0;
-    transform: translateY(-10px);
-    animation: fadeSlideIn 0.4s forwards;
-}
-
-@keyframes fadeSlideIn {
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.unread-separator.fade-out {
-    animation: fadeSlideOut 0.4s forwards;
-}
-
-@keyframes fadeSlideOut {
-    to {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-}
-
-/* ================================
    RESPONSIVE - MOBILE
 ================================ */
 
 @media (max-width: 768px) {
     .chat-container {
-            height: 100dvh;
-            margin: 0;
-            border-radius: 0;
-            box-shadow: none;
-    }
-
-    .chat-window{
-        height: 515px;
-    }
-
-    .chat-in-datelist {
         height: 100%;
-        width: 90%;
-        margin: auto;
+        margin: 0;
+        border-radius: 0;
+        box-shadow: none;
     }
-
-.direct-chat-container {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-}
 }

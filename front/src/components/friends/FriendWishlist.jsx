@@ -15,11 +15,15 @@ const FriendWishlist = ({ friendUserId, friendName, onClose }) => {
     try {
       setLoading(true);
       const response = await apiHandler.get(`/wishlist/user/${friendUserId}`);
-      setWishlist(response.data);
-      setLoading(false);
+
+      // Fix bug : la réponse est { success, count, user, data: [...] }
+      const items = response.data?.data || response.data || [];
+      const publicItems = items.filter((item) => item.isShared === true);
+      setWishlist(publicItems);
     } catch (error) {
       console.error("Erreur chargement wishlist:", error);
       setError("Impossible de charger la wishlist");
+    } finally {
       setLoading(false);
     }
   };
@@ -52,35 +56,68 @@ const FriendWishlist = ({ friendUserId, friendName, onClose }) => {
 
           {wishlist.length === 0 ? (
             <div className="gift-empty">
-              <p>🎈 {friendName} n'a pas encore d'idées de cadeaux partagées</p>
+              <p>🎈 {friendName} n'a pas encore d'idées partagées</p>
             </div>
           ) : (
             <div className="gift-items">
               {wishlist.map((item) => (
-                <div key={item._id} className="gift-item-card">
-                  <div className="gift-item-header">
-                    <h4 className="gift-item-title">{item.title}</h4>
-                    {item.isPurchased && (
-                      <span className="gift-item-badge purchased">
-                        ✅ Acheté
-                      </span>
+                <div
+                  key={item._id}
+                  className={`gift-item-card ${item.isPurchased ? "gift-item-card--purchased" : ""}`}
+                >
+                  <div className="gift-item-horizontal">
+                    {/* Image à gauche */}
+                    {item.image && (
+                      <div className="gift-item-img-wrapper">
+                        <img
+                          src={item.image}
+                          alt={item.title}
+                          onError={(e) => {
+                            e.target.parentElement.style.display = "none";
+                          }}
+                        />
+                        {item.isPurchased && (
+                          <div className="gift-item-img-overlay">✅</div>
+                        )}
+                      </div>
                     )}
+
+                    {/* Infos à droite */}
+                    <div className="gift-item-content">
+                      <div className="gift-item-header">
+                        <h4 className="gift-item-title">{item.title}</h4>
+                        {item.isPurchased && (
+                          <span className="gift-item-badge purchased">
+                            ✅ Réservé
+                          </span>
+                        )}
+                      </div>
+
+                      {item.description && (
+                        <p className="gift-item-description">
+                          {item.description}
+                        </p>
+                      )}
+
+                      <div className="gift-item-footer">
+                        {item.price && (
+                          <span className="gift-item-price">
+                            {item.price} €
+                          </span>
+                        )}
+                        {item.url && (
+                          <a
+                            href={item.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="gift-item-link"
+                          >
+                            🔗 Voir le produit
+                          </a>
+                        )}
+                      </div>
+                    </div>
                   </div>
-
-                  {item.price && (
-                    <p className="gift-item-price">{item.price} €</p>
-                  )}
-
-                  {item.url && (
-                    <a
-                      href={item.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="gift-item-link"
-                    >
-                      🔗 Voir le produit
-                    </a>
-                  )}
                 </div>
               ))}
             </div>

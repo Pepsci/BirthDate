@@ -1,5 +1,5 @@
 /* ================================
-   CHAT WINDOW - Phase 2 Polish
+   CHAT WINDOW - 
 ================================ */
 
 .chat-window {
@@ -10,6 +10,10 @@
     min-height: 0;
     width: 100%;
     transition: background-color 0.3s ease;
+}
+
+.direct-chat-container{
+    height: 530px;
 }
 
 /* ================================
@@ -644,7 +648,7 @@
     }
 
     .messages-container {
-        padding: 1rem;
+        padding: 16px;
     }
 
     .edit-button-mobile,

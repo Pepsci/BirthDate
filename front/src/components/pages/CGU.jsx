@@ -60,13 +60,51 @@ export default function CGU() {
 
           <h3>2.3 Conditions d'âge</h3>
           <p>
-            Le service est destiné aux personnes majeures (18 ans et plus). Les
-            mineurs de 15 à 18 ans peuvent créer un compte avec l'autorisation
-            de leurs parents ou tuteurs légaux.
+            Le service BirthReminder est conçu pour un usage familial et peut
+            être utilisé par tous les âges, sous conditions :
           </p>
+
+          <h4>Utilisateurs de 15 ans et plus</h4>
+          <p>Peuvent créer un compte et utiliser le service librement.</p>
+
+          <h4>Utilisateurs de moins de 15 ans</h4>
+          <p>Un parent ou tuteur légal doit :</p>
+          <ul>
+            <li>
+              Créer le compte au nom du mineur <strong>OU</strong>
+            </li>
+            <li>
+              Donner son consentement explicite lors de la création du compte
+            </li>
+          </ul>
+
+          <p>
+            En créant un compte pour un mineur ou en donnant votre consentement,
+            vous :
+          </p>
+          <ul>
+            <li>✓ Certifiez avoir l'autorité parentale ou tutélaire</li>
+            <li>
+              ✓ Acceptez d'être responsable de l'utilisation du service par le
+              mineur
+            </li>
+            <li>
+              ✓ Pouvez à tout moment demander la modification ou suppression du
+              compte
+            </li>
+          </ul>
+
+          <h4>Vérification du consentement parental</h4>
+          <p>
+            BirthReminder se réserve le droit de demander une preuve du
+            consentement parental à tout moment. Le compte peut être suspendu
+            jusqu'à réception de cette preuve.
+          </p>
+
           <p className="warning">
             ⚠️ Les comptes créés par des mineurs de moins de 15 ans sans
-            autorisation parentale seront supprimés immédiatement.
+            consentement parental documenté seront suspendus, puis supprimés
+            sous 30 jours en l'absence de régularisation.
           </p>
         </section>
 
