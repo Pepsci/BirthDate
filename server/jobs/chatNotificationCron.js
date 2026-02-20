@@ -1,0 +1,355 @@
+/**
+ * chatNotificationCron.js
+ *
+ * Envoie des emails de notification pour les messages chat non lus.
+ * Respecte les préférences de l'utilisateur :
+ *   - receiveChatEmails (bool)      : activer/désactiver globalement
+ *   - chatEmailFrequency            : "instant" | "daily" | "weekly"
+ *   - chatEmailDisabledFriends      : [userId] — liste d'amis exclus
+ *
+ * Trois crons :
+ *   • Instantané  → toutes les 5 minutes
+ *   • Quotidien   → chaque jour à 9h
+ *   • Hebdo       → chaque lundi à 9h
+ */
+
+const cron = require("node-cron");
+const nodemailer = require("nodemailer");
+const { SESClient, SendRawEmailCommand } = require("@aws-sdk/client-ses");
+const userModel = require("../models/user.model");
+const Message = require("../models/message.model");
+const Conversation = require("../models/conversation.model");
+
+// ── Transport SES ─────────────────────────────────────────────────────────────
+const sesClient = new SESClient({
+  region: process.env.AWS_REGION,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  },
+});
+
+const transporter = nodemailer.createTransport({
+  send: async (mail, callback) => {
+    try {
+      const message = await new Promise((resolve, reject) => {
+        mail.message.build((err, msg) => (err ? reject(err) : resolve(msg)));
+      });
+      await sesClient.send(
+        new SendRawEmailCommand({ RawMessage: { Data: message } }),
+      );
+      callback(null, {});
+    } catch (err) {
+      callback(err);
+    }
+  },
+});
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+/**
+ * Retourne la date de début de la fenêtre selon la fréquence.
+ */
+function windowStart(frequency) {
+  const now = new Date();
+  const ms = {
+    instant: 5 * 60 * 1000,
+    twice_daily: 12 * 60 * 60 * 1000,
+    daily: 24 * 60 * 60 * 1000,
+    weekly: 7 * 24 * 60 * 60 * 1000,
+  };
+  return new Date(now - (ms[frequency] || ms.daily));
+}
+
+/**
+ * Récupère les messages non lus groupés par expéditeur.
+ * Schéma réel : Conversation { participants } + Message { sender, conversation, readBy: [{ user, readAt }] }
+ */
+async function getUnreadMessages(userId, since, disabledFriends = []) {
+  // 1. Toutes les conversations de l'utilisateur
+  const conversations = await Conversation.find({
+    participants: userId,
+  })
+    .select("_id participants")
+    .lean();
+
+  if (conversations.length === 0) return [];
+
+  // 2. Filtrer les conversations dont l'autre participant est dans la liste désactivée
+  const disabledSet = new Set(disabledFriends.map(String));
+
+  const validConvIds = conversations
+    .filter((conv) => {
+      const otherId = conv.participants.find(
+        (p) => p.toString() !== userId.toString(),
+      );
+      return otherId && !disabledSet.has(otherId.toString());
+    })
+    .map((c) => c._id);
+
+  if (validConvIds.length === 0) return [];
+
+  // 3. Agréger les messages non lus par expéditeur
+  const messages = await Message.aggregate([
+    {
+      $match: {
+        conversation: { $in: validConvIds },
+        sender: { $ne: userId },
+        createdAt: { $gte: since },
+        "readBy.user": { $ne: userId },
+      },
+    },
+    {
+      $group: {
+        _id: "$sender",
+        count: { $sum: 1 },
+        lastMessage: { $last: "$createdAt" },
+      },
+    },
+    { $sort: { lastMessage: -1 } },
+  ]);
+
+  return messages; // [{ _id: senderId, count: N, lastMessage: Date }]
+}
+
+// ── Template email ────────────────────────────────────────────────────────────
+function buildChatEmailHtml({
+  userName,
+  unreadGroups,
+  appUrl,
+  unsubscribeUrl,
+}) {
+  const rows = unreadGroups
+    .map(
+      (g) => `
+      <tr>
+        <td style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.08);font-size:15px;color:rgba(255,255,255,0.9);">
+          <strong>${g.senderName}</strong>
+        </td>
+        <td style="padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.08);text-align:right;font-size:15px;color:#7c6ee6;font-weight:600;">
+          ${g.count} message${g.count > 1 ? "s" : ""}
+        </td>
+      </tr>`,
+    )
+    .join("");
+
+  const total = unreadGroups.reduce((sum, g) => sum + g.count, 0);
+
+  return `<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+</head>
+<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;background-color:#1a1a2e;color:#ffffff;">
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color:#1a1a2e;">
+    <tr>
+      <td style="padding:40px 20px;">
+
+        <!-- Carte principale -->
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%"
+          style="max-width:600px;margin:0 auto;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);border-radius:16px;overflow:hidden;box-shadow:0 10px 40px rgba(0,0,0,0.3);">
+
+          <!-- Header -->
+          <tr>
+            <td style="padding:36px 40px 16px 40px;text-align:center;">
+              <h1 style="margin:0;font-size:28px;font-weight:700;color:#fff;">💬 BirthReminder</h1>
+            </td>
+          </tr>
+
+          <!-- Badge -->
+          <tr>
+            <td style="padding:0 40px 16px 40px;text-align:center;">
+              <div style="display:inline-block;background:rgba(255,255,255,0.2);padding:7px 18px;border-radius:20px;">
+                <span style="font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:1px;">
+                  ${total} message${total > 1 ? "s" : ""} non lu${total > 1 ? "s" : ""}
+                </span>
+              </div>
+            </td>
+          </tr>
+
+          <!-- Corps -->
+          <tr>
+            <td style="padding:8px 40px 8px 40px;">
+              <p style="margin:0 0 16px 0;font-size:16px;color:rgba(255,255,255,0.9);">
+                Bonjour <strong>${userName}</strong>,<br>
+                vous avez des messages non lus sur BirthReminder :
+              </p>
+              <table width="100%" cellspacing="0" cellpadding="0"
+                style="border-top:1px solid rgba(255,255,255,0.15);">
+                ${rows}
+              </table>
+            </td>
+          </tr>
+
+          <!-- CTA -->
+          <tr>
+            <td style="padding:24px 40px 40px 40px;text-align:center;">
+              <a href="${appUrl}/home"
+                style="display:inline-block;background:#fff;color:#667eea;text-decoration:none;padding:14px 36px;border-radius:8px;font-weight:600;font-size:15px;box-shadow:0 4px 15px rgba(0,0,0,0.2);">
+                Voir mes messages →
+              </a>
+            </td>
+          </tr>
+
+        </table>
+
+        <!-- Footer -->
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%"
+          style="max-width:600px;margin:16px auto 0;">
+          <tr>
+            <td style="padding:16px;text-align:center;font-size:12px;color:#888;line-height:1.6;">
+              <a href="${unsubscribeUrl}" style="color:#7c6ee6;text-decoration:none;">
+                Ne plus recevoir d'emails pour les messages chat
+              </a>
+            </td>
+          </tr>
+        </table>
+
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
+
+// ── Logique principale ────────────────────────────────────────────────────────
+async function sendChatNotifications(frequency) {
+  console.log(`💬 [CRON-CHAT] Démarrage — fréquence : ${frequency}`);
+
+  try {
+    const users = await userModel
+      .find({
+        isVerified: true,
+        receiveChatEmails: true,
+        chatEmailFrequency: frequency,
+        deletedAt: null,
+      })
+      .lean();
+
+    console.log(`💬 [CRON-CHAT] ${users.length} utilisateur(s) à vérifier`);
+
+    let emailsSent = 0;
+
+    for (const user of users) {
+      if (!user.email) continue;
+
+      const since = windowStart(frequency);
+
+      // Mode "instant" : éviter les doublons si déjà notifié dans la fenêtre
+      if (frequency === "instant" && user.lastChatEmailSent) {
+        const lastSent = new Date(user.lastChatEmailSent);
+        if (lastSent >= since) continue;
+      }
+
+      const disabledFriends = user.chatEmailDisabledFriends || [];
+      const unreadGroups = await getUnreadMessages(
+        user._id,
+        since,
+        disabledFriends,
+      );
+
+      if (unreadGroups.length === 0) continue;
+
+      // Récupérer les noms des expéditeurs
+      const senderIds = unreadGroups.map((g) => g._id);
+      const senders = await userModel
+        .find({ _id: { $in: senderIds } }, "name surname")
+        .lean();
+      const senderMap = Object.fromEntries(
+        senders.map((s) => [s._id.toString(), s]),
+      );
+
+      const enrichedGroups = unreadGroups.map((g) => {
+        const sender = senderMap[g._id.toString()];
+        return {
+          ...g,
+          senderName: sender
+            ? `${sender.name} ${sender.surname || ""}`.trim()
+            : "Quelqu'un",
+        };
+      });
+
+      const appUrl = process.env.FRONTEND_URL;
+      const unsubscribeUrl = `${appUrl}/home?tab=notifications&section=chat`;
+
+      const html = buildChatEmailHtml({
+        userName: user.name,
+        unreadGroups: enrichedGroups,
+        appUrl,
+        unsubscribeUrl,
+      });
+
+      const total = enrichedGroups.reduce((s, g) => s + g.count, 0);
+      const subject = `💬 ${total} message${total > 1 ? "s" : ""} non lu${total > 1 ? "s" : ""} sur BirthReminder`;
+      const textBody = `Bonjour ${user.name},\n\nVous avez ${total} message(s) non lu(s) sur BirthReminder.\n\nVoir : ${appUrl}/home\n\nSe désabonner : ${unsubscribeUrl}`;
+
+      await new Promise((resolve, reject) => {
+        transporter.sendMail(
+          {
+            from: `BirthReminder <${process.env.EMAIL_BRTHDAY}>`,
+            to: user.email,
+            subject,
+            html,
+            text: textBody,
+            headers: {
+              "List-Unsubscribe": `<${unsubscribeUrl}>`,
+              "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+            },
+          },
+          (err, info) => (err ? reject(err) : resolve(info)),
+        );
+      });
+
+      // Mettre à jour lastChatEmailSent (anti-doublon mode instant)
+      await userModel.updateOne(
+        { _id: user._id },
+        { $set: { lastChatEmailSent: new Date() } },
+      );
+
+      emailsSent++;
+      console.log(`✅ [CRON-CHAT] Email envoyé à ${user.name} (${user.email})`);
+    }
+
+    console.log(`💬 [CRON-CHAT] Terminé — ${emailsSent} email(s) envoyé(s)`);
+  } catch (err) {
+    console.error("❌ [CRON-CHAT] Erreur :", err);
+  }
+}
+
+// ── Planification ─────────────────────────────────────────────────────────────
+
+// Instantané : toutes les 5 minutes
+const chatCronInstant = cron.schedule(
+  "*/5 * * * *",
+  () => sendChatNotifications("instant"),
+  { scheduled: false },
+);
+
+// Quotidien : chaque jour à 9h00
+const chatCronDaily = cron.schedule(
+  "0 9 * * *",
+  () => sendChatNotifications("daily"),
+  { scheduled: false },
+);
+
+// Hebdomadaire : chaque lundi à 9h00
+const chatCronWeekly = cron.schedule(
+  "0 9 * * 1",
+  () => sendChatNotifications("weekly"),
+  { scheduled: false },
+);
+
+// Deux fois par jour : à 9h00 et 18h00
+const chatCronTwiceDaily = cron.schedule(
+  "0 9,18 * * *",
+  () => sendChatNotifications("twice_daily"),
+  { scheduled: false },
+);
+
+module.exports = {
+  chatCronInstant,
+  chatCronTwiceDaily,
+  chatCronDaily,
+  chatCronWeekly,
+};

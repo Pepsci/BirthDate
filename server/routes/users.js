@@ -9,6 +9,26 @@ const uploader = require("../config/cloudinary");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 
+// ─── Helper : champs utilisateur à envoyer au front ──────────────────────────
+function formatUser(user) {
+  return {
+    _id: user._id,
+    name: user.name,
+    surname: user.surname,
+    email: user.email,
+    avatar: user.avatar,
+    birthDate: user.birthDate,
+    // Emails anniversaires
+    receiveBirthdayEmails: user.receiveBirthdayEmails,
+    receiveFriendRequestEmails: user.receiveFriendRequestEmails,
+    receiveOwnBirthdayEmail: user.receiveOwnBirthdayEmail,
+    // Emails chat
+    receiveChatEmails: user.receiveChatEmails,
+    chatEmailFrequency: user.chatEmailFrequency,
+    chatEmailDisabledFriends: user.chatEmailDisabledFriends,
+  };
+}
+
 /* GET current user listing */
 router.get("/", isAuthenticated, async (req, res, next) => {
   try {
@@ -17,17 +37,7 @@ router.get("/", isAuthenticated, async (req, res, next) => {
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-    const userToFront = {
-      _id: user._id,
-      name: user.name,
-      surname: user.surname,
-      email: user.email,
-      avatar: user.avatar,
-      birthDate: user.birthDate,
-      receiveBirthdayEmails: user.receiveBirthdayEmails,
-      receiveFriendRequestEmails: user.receiveFriendRequestEmails,
-    };
-    res.status(200).json(userToFront);
+    res.status(200).json(formatUser(user));
   } catch (error) {
     next(error);
   }
@@ -41,17 +51,7 @@ router.get("/me", isAuthenticated, async (req, res, next) => {
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-    const userToFront = {
-      _id: user._id,
-      name: user.name,
-      surname: user.surname,
-      email: user.email,
-      avatar: user.avatar,
-      birthDate: user.birthDate,
-      receiveBirthdayEmails: user.receiveBirthdayEmails,
-      receiveFriendRequestEmails: user.receiveFriendRequestEmails,
-    };
-    res.status(200).json(userToFront);
+    res.status(200).json(formatUser(user));
   } catch (error) {
     next(error);
   }
@@ -90,10 +90,8 @@ router.patch(
             .status(400)
             .json({ message: "Current password is incorrect" });
         }
-
         const salt = bcrypt.genSaltSync(10);
-        const hashedPassword = bcrypt.hashSync(newPassword, salt);
-        user.password = hashedPassword;
+        user.password = bcrypt.hashSync(newPassword, salt);
       }
 
       user.username = req.body.username || user.username;
@@ -102,16 +100,25 @@ router.patch(
         req.body.surname !== undefined ? req.body.surname : user.surname;
       user.email = req.body.email || user.email;
       user.birthDate = req.body.birthDate || user.birthDate;
-      if (avatar) {
-        user.avatar = avatar;
-      }
+      if (avatar) user.avatar = avatar;
 
+      // ── Préférences emails anniversaires ────────────────────────────────────
       if (req.body.receiveBirthdayEmails !== undefined) {
         user.receiveBirthdayEmails = req.body.receiveBirthdayEmails;
       }
-
       if (req.body.receiveFriendRequestEmails !== undefined) {
         user.receiveFriendRequestEmails = req.body.receiveFriendRequestEmails;
+      }
+      if (req.body.receiveOwnBirthdayEmail !== undefined) {
+        user.receiveOwnBirthdayEmail = req.body.receiveOwnBirthdayEmail;
+      }
+
+      // ── Préférences emails chat ──────────────────────────────────────────────
+      if (req.body.receiveChatEmails !== undefined) {
+        user.receiveChatEmails = req.body.receiveChatEmails;
+      }
+      if (req.body.chatEmailFrequency !== undefined) {
+        user.chatEmailFrequency = req.body.chatEmailFrequency;
       }
 
       const updatedUser = await user.save();
@@ -124,7 +131,6 @@ router.patch(
 
       if (nameChanged || surnameChanged || birthDateChanged) {
         console.log(`🔄 Synchronisation nécessaire pour ${updatedUser.name}`);
-
         try {
           const friendships = await Friend.find({
             $or: [
@@ -132,30 +138,22 @@ router.patch(
               { friend: updatedUser._id, status: "accepted" },
             ],
           });
-
           console.log(`👥 ${friendships.length} amis trouvés`);
-
           let syncCount = 0;
           for (const friendship of friendships) {
             const friendId =
               friendship.user.toString() === updatedUser._id.toString()
                 ? friendship.friend
                 : friendship.user;
-
             const updateData = {};
             if (nameChanged) updateData.name = updatedUser.name;
             if (surnameChanged) updateData.surname = updatedUser.surname || "";
             if (birthDateChanged) updateData.date = updatedUser.birthDate;
-
             const result = await DateModel.findOneAndUpdate(
-              {
-                owner: friendId,
-                linkedUser: updatedUser._id,
-              },
+              { owner: friendId, linkedUser: updatedUser._id },
               updateData,
               { new: true },
             );
-
             if (result) {
               syncCount++;
               console.log(`✅ Synchronisé chez l'ami ${friendId}`);
@@ -163,7 +161,6 @@ router.patch(
               console.log(`⚠️  Aucune date trouvée chez l'ami ${friendId}`);
             }
           }
-
           console.log(
             `✅ ${syncCount}/${friendships.length} dates synchronisées`,
           );
@@ -172,17 +169,7 @@ router.patch(
         }
       }
 
-      const payload = {
-        _id: updatedUser._id,
-        name: updatedUser.name,
-        surname: updatedUser.surname,
-        email: updatedUser.email,
-        avatar: updatedUser.avatar,
-        birthDate: updatedUser.birthDate,
-        receiveBirthdayEmails: updatedUser.receiveBirthdayEmails,
-        receiveFriendRequestEmails: updatedUser.receiveFriendRequestEmails,
-      };
-
+      const payload = formatUser(updatedUser);
       const authToken = jwt.sign(payload, process.env.TOKEN_SECRET, {
         algorithm: "HS256",
         expiresIn: "6h",
@@ -195,6 +182,38 @@ router.patch(
   },
 );
 
+/* PATCH /users/me/chat-email-prefs - Activer/désactiver emails chat par ami */
+router.patch("/me/chat-email-prefs", isAuthenticated, async (req, res) => {
+  const { friendId, enabled } = req.body;
+
+  if (!friendId || typeof enabled !== "boolean") {
+    return res
+      .status(400)
+      .json({ message: "friendId et enabled sont requis." });
+  }
+
+  try {
+    const update = enabled
+      ? { $pull: { chatEmailDisabledFriends: friendId } } // réactiver → retirer de la liste
+      : { $addToSet: { chatEmailDisabledFriends: friendId } }; // désactiver → ajouter à la liste
+
+    const user = await userModel.findByIdAndUpdate(req.payload._id, update, {
+      new: true,
+    });
+
+    if (!user)
+      return res.status(404).json({ message: "Utilisateur introuvable." });
+
+    res.json({
+      success: true,
+      chatEmailDisabledFriends: user.chatEmailDisabledFriends,
+    });
+  } catch (err) {
+    console.error("Erreur PATCH chat-email-prefs:", err);
+    res.status(500).json({ message: "Erreur serveur." });
+  }
+});
+
 /* GET user by ID */
 router.get("/:id", isAuthenticated, async (req, res, next) => {
   try {
@@ -203,17 +222,7 @@ router.get("/:id", isAuthenticated, async (req, res, next) => {
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-    const userToFront = {
-      _id: user._id,
-      name: user.name,
-      surname: user.surname,
-      email: user.email,
-      avatar: user.avatar,
-      birthDate: user.birthDate,
-      receiveBirthdayEmails: user.receiveBirthdayEmails,
-      receiveFriendRequestEmails: user.receiveFriendRequestEmails,
-    };
-    res.status(200).json(userToFront);
+    res.status(200).json(formatUser(user));
   } catch (error) {
     next(error);
   }
@@ -256,10 +265,8 @@ router.patch(
             .status(400)
             .json({ message: "Current password is incorrect" });
         }
-
         const salt = bcrypt.genSaltSync(10);
-        const hashedPassword = bcrypt.hashSync(newPassword, salt);
-        user.password = hashedPassword;
+        user.password = bcrypt.hashSync(newPassword, salt);
       }
 
       user.username = req.body.username || user.username;
@@ -268,16 +275,25 @@ router.patch(
         req.body.surname !== undefined ? req.body.surname : user.surname;
       user.email = req.body.email || user.email;
       user.birthDate = req.body.birthDate || user.birthDate;
-      if (avatar) {
-        user.avatar = avatar;
-      }
+      if (avatar) user.avatar = avatar;
 
+      // ── Préférences emails anniversaires ────────────────────────────────────
       if (req.body.receiveBirthdayEmails !== undefined) {
         user.receiveBirthdayEmails = req.body.receiveBirthdayEmails;
       }
-
       if (req.body.receiveFriendRequestEmails !== undefined) {
         user.receiveFriendRequestEmails = req.body.receiveFriendRequestEmails;
+      }
+      if (req.body.receiveOwnBirthdayEmail !== undefined) {
+        user.receiveOwnBirthdayEmail = req.body.receiveOwnBirthdayEmail;
+      }
+
+      // ── Préférences emails chat ──────────────────────────────────────────────
+      if (req.body.receiveChatEmails !== undefined) {
+        user.receiveChatEmails = req.body.receiveChatEmails;
+      }
+      if (req.body.chatEmailFrequency !== undefined) {
+        user.chatEmailFrequency = req.body.chatEmailFrequency;
       }
 
       const updatedUser = await user.save();
@@ -289,7 +305,6 @@ router.patch(
 
       if (nameChanged || surnameChanged || birthDateChanged) {
         console.log(`🔄 Synchronisation nécessaire pour ${updatedUser.name}`);
-
         try {
           const friendships = await Friend.find({
             $or: [
@@ -297,30 +312,22 @@ router.patch(
               { friend: updatedUser._id, status: "accepted" },
             ],
           });
-
           console.log(`👥 ${friendships.length} amis trouvés`);
-
           let syncCount = 0;
           for (const friendship of friendships) {
             const friendId =
               friendship.user.toString() === updatedUser._id.toString()
                 ? friendship.friend
                 : friendship.user;
-
             const updateData = {};
             if (nameChanged) updateData.name = updatedUser.name;
             if (surnameChanged) updateData.surname = updatedUser.surname || "";
             if (birthDateChanged) updateData.date = updatedUser.birthDate;
-
             const result = await DateModel.findOneAndUpdate(
-              {
-                owner: friendId,
-                linkedUser: updatedUser._id,
-              },
+              { owner: friendId, linkedUser: updatedUser._id },
               updateData,
               { new: true },
             );
-
             if (result) {
               syncCount++;
               console.log(`✅ Synchronisé chez l'ami ${friendId}`);
@@ -328,7 +335,6 @@ router.patch(
               console.log(`⚠️  Aucune date trouvée chez l'ami ${friendId}`);
             }
           }
-
           console.log(
             `✅ ${syncCount}/${friendships.length} dates synchronisées`,
           );
@@ -337,17 +343,7 @@ router.patch(
         }
       }
 
-      const payload = {
-        _id: updatedUser._id,
-        name: updatedUser.name,
-        surname: updatedUser.surname,
-        email: updatedUser.email,
-        avatar: updatedUser.avatar,
-        birthDate: updatedUser.birthDate,
-        receiveBirthdayEmails: updatedUser.receiveBirthdayEmails,
-        receiveFriendRequestEmails: updatedUser.receiveFriendRequestEmails,
-      };
-
+      const payload = formatUser(updatedUser);
       const authToken = jwt.sign(payload, process.env.TOKEN_SECRET, {
         algorithm: "HS256",
         expiresIn: "6h",
@@ -390,14 +386,15 @@ router.delete(
       const anonymizedEmail = `deleted_${user._id}@birthreminder.deleted`;
 
       await userModel.findByIdAndUpdate(req.params.id, {
-        deletedAt: new Date(), // Marque comme supprimé
-        email: anonymizedEmail, // Anonymise l'email
+        deletedAt: new Date(),
+        email: anonymizedEmail,
         name: "Utilisateur supprimé",
         surname: "",
         avatar: null,
-        password: "DELETED", // Empêche toute connexion
+        password: "DELETED",
         receiveBirthdayEmails: false,
         receiveFriendRequestEmails: false,
+        receiveChatEmails: false,
       });
 
       // Supprimer les dates d'anniversaire de cet utilisateur
