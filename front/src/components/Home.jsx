@@ -1,4 +1,5 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom"; // ✅ ajouté
 import { AuthContext } from "../context/auth.context";
 import DateList from "./dashboard/DateList";
 import ProfilDetails from "./profil/Profile";
@@ -10,22 +11,41 @@ import Logo from "./UI/Logo";
 
 const Home = () => {
   const { isLoggedIn, currentUser } = useContext(AuthContext);
+  const [searchParams] = useSearchParams(); // ✅ ajouté
   const [date] = useState([]);
   const [showProfile, setShowProfile] = useState(false);
   const [editingDate, setEditingDate] = useState(null);
   const [viewingFriendProfile, setViewingFriendProfile] = useState(null);
-
   const [showMergeModal, setShowMergeModal] = useState(false);
   const [cardToMerge, setCardToMerge] = useState(null);
+  const [profileInitialSection, setProfileInitialSection] =
+    useState("personal"); // ✅ ajouté
+
+  // ✅ Ouvrir automatiquement le profil sur l'onglet amis si ?tab=friends
+  useEffect(() => {
+    const tab = searchParams.get("tab");
+    const section = searchParams.get("section");
+
+    if (tab === "friends" && isLoggedIn) {
+      setShowProfile(true);
+      if (section === "received") {
+        setProfileInitialSection("friends");
+      } else {
+        setProfileInitialSection("friends");
+      }
+    }
+  }, [searchParams, isLoggedIn]);
 
   const handleShowProfile = () => {
     setShowProfile(true);
+    setProfileInitialSection("personal");
     setViewingFriendProfile(null);
     setEditingDate(null);
   };
 
   const handleHideProfile = () => {
     setShowProfile(false);
+    setProfileInitialSection("personal");
   };
 
   const handleEditDate = (date) => {
@@ -85,7 +105,6 @@ const Home = () => {
 
       {isLoggedIn && (
         <>
-          {/* 👇 MODIFIÉ : Bouton en haut du profil */}
           {showProfile &&
             !editingDate &&
             !viewingFriendProfile &&
@@ -99,10 +118,11 @@ const Home = () => {
                     ← Retour à la liste
                   </button>
                 </div>
-                <ProfilDetails />
+                <ProfilDetails initialSection={profileInitialSection} />{" "}
+                {/* ✅ prop ajoutée */}
               </>
             )}
-          {/* Afficher la liste des dates */}
+
           {!showProfile &&
             !editingDate &&
             !viewingFriendProfile &&
@@ -112,7 +132,7 @@ const Home = () => {
                 onViewFriendProfile={handleViewFriendProfile}
               />
             )}
-          {/* Afficher l'édition de date */}
+
           {editingDate && !showMergeModal && (
             <UpdateDate
               date={editingDate}
@@ -120,7 +140,7 @@ const Home = () => {
               onMerge={handleOpenMergeModal}
             />
           )}
-          {/* Afficher le profil d'ami */}
+
           {viewingFriendProfile && !showMergeModal && (
             <FriendProfile
               date={viewingFriendProfile.date}
@@ -128,14 +148,12 @@ const Home = () => {
               onCancel={handleCancelViewProfile}
             />
           )}
-          {/* Modal de fusion */}
+
           {showMergeModal && cardToMerge && (
             <ManualMergeModal
               sourceCard={cardToMerge}
               onClose={handleCloseMergeModal}
-              onMergeSuccess={() => {
-                handleCloseMergeModal();
-              }}
+              onMergeSuccess={handleCloseMergeModal}
             />
           )}
         </>

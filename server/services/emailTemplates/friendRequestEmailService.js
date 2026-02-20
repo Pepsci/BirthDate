@@ -1,8 +1,5 @@
-// services/emailTemplates/friendRequestEmailService.js
-
 const { SESClient, SendEmailCommand } = require("@aws-sdk/client-ses");
 
-// Création du client SES avec AWS SDK v3 (comme dans birthdayEmailService.js)
 const sesClient = new SESClient({
   region: process.env.AWS_REGION,
   credentials: {
@@ -17,156 +14,97 @@ const sendFriendRequestNotification = async (
   recipientId,
 ) => {
   const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+  const friendsLink = `${frontendUrl}/home?tab=friends&section=received`; // ✅ lien corrigé
 
   const params = {
-    Source: `BirthReminder <${process.env.EMAIL_BRTHDAY}>`, // Utilise le même email que pour les anniversaires
-    Destination: {
-      ToAddresses: [recipientEmail],
-    },
+    Source: `BirthReminder <${process.env.EMAIL_BRTHDAY}>`,
+    Destination: { ToAddresses: [recipientEmail] },
     Message: {
       Subject: {
-        Data: `${senderUsername} vous a envoyé une demande d'ami sur BirthReminder`,
+        Data: `${senderUsername} vous a envoyé une demande d'ami 👥`,
         Charset: "UTF-8",
       },
       Body: {
         Html: {
           Data: `
-            <!DOCTYPE html>
-            <html>
-              <head>
-                <meta charset="UTF-8">
-                <style>
-                  body { 
-                    font-family: Arial, sans-serif; 
-                    line-height: 1.6; 
-                    color: #333; 
-                    margin: 0; 
-                    padding: 0;
-                  }
-                  .container { 
-                    max-width: 600px; 
-                    margin: 0 auto; 
-                    padding: 20px; 
-                  }
-                  .header { 
-                    background-color: #4CAF50; 
-                    color: white; 
-                    padding: 20px; 
-                    text-align: center; 
-                    border-radius: 8px 8px 0 0;
-                  }
-                  .content { 
-                    background-color: #f9f9f9; 
-                    padding: 30px; 
-                    border-radius: 0 0 8px 8px;
-                  }
-                  .button { 
-                    display: inline-block;
-                    background-color: #4CAF50; 
-                    color: white; 
-                    padding: 12px 30px; 
-                    text-decoration: none; 
-                    border-radius: 5px; 
-                    margin: 20px 0;
-                    font-weight: bold;
-                  }
-                  .button:hover {
-                    background-color: #45a049;
-                  }
-                  .footer { 
-                    color: #666; 
-                    font-size: 14px; 
-                    margin-top: 30px; 
-                    padding-top: 20px; 
-                    border-top: 1px solid #ddd;
-                  }
-                  .unsubscribe {
-                    font-size: 12px;
-                    color: #999;
-                    margin-top: 20px;
-                    text-align: center;
-                  }
-                  .unsubscribe a {
-                    color: #999;
-                    text-decoration: underline;
-                  }
-                  ul {
-                    padding-left: 20px;
-                  }
-                  li {
-                    margin: 8px 0;
-                  }
-                </style>
-              </head>
-              <body>
-                <div class="container">
-                  <div class="header">
-                    <h1>🎉 Nouvelle demande d'ami !</h1>
-                  </div>
-                  
-                  <div class="content">
-                    <p>Bonjour,</p>
-                    
-                    <p><strong>${senderUsername}</strong> souhaite devenir votre ami sur BirthReminder.</p>
-                    
-                    <p>En acceptant cette demande, vous pourrez :</p>
-                    <ul>
-                      <li>Consulter les listes de souhaits de ${senderUsername}</li>
-                      <li>Partager vos propres listes de souhaits</li>
-                      <li>Ne plus oublier les anniversaires de vos proches</li>
-                    </ul>
-                    
-                    <div style="text-align: center; margin: 30px 0;">
-                      <a href="${frontendUrl}/friends" class="button">
-                        Voir les demandes d'ami
-                      </a>
-                    </div>
-                    
-                    <div class="footer">
-                      <p>💡 Connectez-vous à votre compte pour accepter ou refuser cette demande.</p>
-                      <p style="color: #999; font-size: 12px;">
-                        Si vous n'avez pas de compte BirthReminder ou si vous pensez avoir reçu cet email par erreur, 
-                        vous pouvez l'ignorer en toute sécurité.
-                      </p>
-                    </div>
-                    
-                    <div class="unsubscribe">
-                      <p>
-                        Vous ne souhaitez plus recevoir ces notifications ? 
-                        <a href="${frontendUrl}/api/unsubscribe?email=${encodeURIComponent(recipientEmail)}&type=friend_requests">
-                          Se désabonner
-                        </a>
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </body>
-            </html>
-          `,
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;background-color:#1a1a2e;color:#ffffff;">
+  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color:#1a1a2e;">
+    <tr>
+      <td style="padding:40px 20px;">
+
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width:600px;margin:0 auto;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);border-radius:16px;overflow:hidden;box-shadow:0 10px 40px rgba(0,0,0,0.3);">
+
+          <tr>
+            <td style="padding:40px 40px 20px 40px;text-align:center;">
+              <h1 style="margin:0;font-size:32px;font-weight:700;letter-spacing:-0.5px;color:#ffffff;">
+                🎉 BirthReminder
+              </h1>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:0 40px 20px 40px;text-align:center;">
+              <div style="display:inline-block;background-color:rgba(255,255,255,0.2);padding:8px 20px;border-radius:20px;">
+                <span style="font-size:14px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#ffffff;">
+                  Nouvelle demande d'ami 👥
+                </span>
+              </div>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:0 40px 30px 40px;text-align:center;">
+              <p style="margin:0;font-size:18px;line-height:1.6;color:rgba(255,255,255,0.95);">
+                <strong>${senderUsername}</strong> souhaite devenir votre ami sur BirthReminder !
+              </p>
+              <p style="margin:16px 0 0 0;font-size:15px;line-height:1.6;color:rgba(255,255,255,0.8);">
+                En acceptant, vous pourrez partager vos listes de souhaits et ne plus oublier vos anniversaires 🎂
+              </p>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:0 40px 40px 40px;text-align:center;">
+              <a href="${friendsLink}" style="display:inline-block;background-color:#ffffff;color:#667eea;text-decoration:none;padding:16px 40px;border-radius:8px;font-weight:600;font-size:16px;box-shadow:0 4px 15px rgba(0,0,0,0.2);">
+                Voir la demande →
+              </a>
+              <p style="margin:16px 0 0 0;font-size:12px;color:rgba(255,255,255,0.6);">
+                Connectez-vous pour accepter ou refuser cette demande.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width:600px;margin:20px auto 0 auto;">
+          <tr>
+            <td style="padding:20px;text-align:center;font-size:12px;color:#888;line-height:1.6;">
+              <p style="margin:0;">
+                Vous ne souhaitez plus recevoir ces notifications ?
+                <a href="${frontendUrl}/api/unsubscribe?email=${encodeURIComponent(recipientEmail)}&type=friend_requests" style="color:#667eea;text-decoration:none;">
+                  Se désabonner
+                </a>
+              </p>
+              <p style="margin:8px 0 0 0;">BirthReminder - Ne manquez plus jamais un anniversaire</p>
+            </td>
+          </tr>
+        </table>
+
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`,
           Charset: "UTF-8",
         },
         Text: {
-          Data: `
-Nouvelle demande d'ami sur BirthReminder
-
-Bonjour,
-
-${senderUsername} souhaite devenir votre ami sur BirthReminder.
-
-En acceptant cette demande, vous pourrez :
-- Consulter les listes de souhaits de ${senderUsername}
-- Partager vos propres listes de souhaits
-- Ne plus oublier les anniversaires de vos proches
-
-Connectez-vous à ${frontendUrl}/friends pour accepter ou refuser cette demande.
-
-Si vous n'avez pas de compte BirthReminder, vous pouvez ignorer cet email.
-
----
-Pour ne plus recevoir ces notifications : ${frontendUrl}/api/unsubscribe?email=${encodeURIComponent(recipientEmail)}&type=friend_requests
-
-BirthReminder - Ne manquez plus jamais un anniversaire
-          `,
+          Data: `${senderUsername} vous a envoyé une demande d'ami sur BirthReminder !\n\nVoir la demande : ${friendsLink}\n\n---\nSe désabonner : ${frontendUrl}/api/unsubscribe?email=${encodeURIComponent(recipientEmail)}&type=friend_requests`,
           Charset: "UTF-8",
         },
       },
@@ -177,15 +115,11 @@ BirthReminder - Ne manquez plus jamais un anniversaire
     const command = new SendEmailCommand(params);
     const result = await sesClient.send(command);
     console.log(`✅ Email de demande d'ami envoyé à ${recipientEmail}`);
-    console.log("Message ID:", result.MessageId);
     return { success: true, messageId: result.MessageId };
   } catch (error) {
     console.error("❌ Erreur envoi email demande d'ami:", error);
-    // Ne pas faire échouer la requête si l'email ne part pas
     return { success: false, error: error.message };
   }
 };
 
-module.exports = {
-  sendFriendRequestNotification,
-};
+module.exports = { sendFriendRequestNotification };

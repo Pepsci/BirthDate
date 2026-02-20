@@ -93,6 +93,7 @@ router.post("/signup", async (req, res) => {
       password: hashedPassword,
       name,
       surname,
+      birthDate: req.body.birthDate || null, // ✅ manquait
       avatar: `https://api.dicebear.com/8.x/bottts/svg?seed=${surname}`,
       verificationToken,
       isVerified: false,

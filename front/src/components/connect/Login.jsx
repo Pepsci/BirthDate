@@ -48,7 +48,7 @@ const Login = () => {
   };
 
   // Afficher un message si l'utilisateur vient de /friends
-  const isFromFriends = location.state?.from?.pathname === "/friends";
+  const isFromFriends = location.state?.from?.search?.includes("tab=friends");
 
   return (
     <div className="form-connect">

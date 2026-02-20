@@ -15,7 +15,8 @@ import "../UI/css/containerInfo.css";
 import "./css/profile.css";
 import "./css/profileDesktop.css";
 
-const ProfilDetails = () => {
+const ProfilDetails = ({ initialSection = "personal" }) => {
+  // ✅ prop ajoutée
   const { logOut } = useContext(AuthContext);
   const { currentUser, isLoggedin, removeUser, storeToken, authenticateUser } =
     useAuth();
@@ -39,28 +40,12 @@ const ProfilDetails = () => {
   const [showPasswordFields, setShowPasswordFields] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [receiveEmails, setReceiveEmails] = useState(false);
-
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
-
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [showErrorMessage, setShowErrorMessage] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-
-  // 👇 États pour mobile et desktop
-  const [currentCarouselIndex, setCurrentCarouselIndex] = useState(0);
-  const [activeDesktopSection, setActiveDesktopSection] = useState("personal");
-
-  const [loadedSections, setLoadedSections] = useState({
-    personal: false,
-    notifications: false,
-    friends: false,
-    merge: false,
-    wishlist: false,
-  });
-
-  const avatarRef = useRef();
 
   const sections = [
     { id: "personal", title: "Profil", icon: "👤" },
@@ -69,6 +54,31 @@ const ProfilDetails = () => {
     { id: "merge", title: "Doublons", icon: "🔄" },
     { id: "wishlist", title: "Ma wishlist", icon: "🎁" },
   ];
+
+  // ✅ Initialiser les sections actives avec la prop
+  const getInitialIndex = () => {
+    const index = sections.findIndex((s) => s.id === initialSection);
+    return index !== -1 ? index : 0;
+  };
+
+  const [currentCarouselIndex, setCurrentCarouselIndex] =
+    useState(getInitialIndex);
+  const [activeDesktopSection, setActiveDesktopSection] =
+    useState(initialSection);
+
+  const [loadedSections, setLoadedSections] = useState(() => {
+    const initial = {
+      personal: false,
+      notifications: false,
+      friends: false,
+      merge: false,
+      wishlist: false,
+    };
+    initial[initialSection] = true; // ✅ charger la section initiale directement
+    return initial;
+  });
+
+  const avatarRef = useRef();
 
   useEffect(() => {
     let isMounted = true;
@@ -91,7 +101,6 @@ const ProfilDetails = () => {
     };
   }, [isLoggedin, currentUser]);
 
-  // Lazy loading pour mobile
   useEffect(() => {
     const currentSection = sections[currentCarouselIndex];
     if (!loadedSections[currentSection.id]) {
@@ -99,7 +108,6 @@ const ProfilDetails = () => {
     }
   }, [currentCarouselIndex]);
 
-  // Lazy loading pour desktop
   useEffect(() => {
     if (!loadedSections[activeDesktopSection]) {
       setLoadedSections((prev) => ({ ...prev, [activeDesktopSection]: true }));
@@ -125,11 +133,7 @@ const ProfilDetails = () => {
   const handleCancelEdit = (e) => {
     e.preventDefault();
     setIsEditing(false);
-    setPasswords({
-      currentPassword: "",
-      newPassword: "",
-      confirmPassword: "",
-    });
+    setPasswords({ currentPassword: "", newPassword: "", confirmPassword: "" });
     setShowPasswordFields(false);
   };
 
@@ -137,7 +141,6 @@ const ProfilDetails = () => {
     e.preventDefault();
     setShowDeleteModal(true);
   };
-
   const handleCancelDelete = () => {
     setShowDeleteModal(false);
     setDeleteConfirmText("");
@@ -153,7 +156,6 @@ const ProfilDetails = () => {
     }
 
     setIsDeleting(true);
-
     try {
       await apiHandler.delete(`/users/${currentUser._id}`);
       setShowDeleteModal(false);
@@ -163,7 +165,6 @@ const ProfilDetails = () => {
       setIsDeleting(false);
       setShowDeleteModal(false);
       setDeleteConfirmText("");
-
       if (error.response?.status === 403) {
         setErrorMessage("Vous n'êtes pas autorisé à supprimer ce compte.");
       } else if (error.response?.status === 404) {
@@ -189,7 +190,6 @@ const ProfilDetails = () => {
     if (avatarRef.current && avatarRef.current.files[0]) {
       fd.append("avatar", avatarRef.current.files[0]);
     }
-
     if (
       showPasswordFields &&
       (passwords.currentPassword ||
@@ -203,7 +203,6 @@ const ProfilDetails = () => {
       fd.append("currentPassword", passwords.currentPassword);
       fd.append("newPassword", passwords.newPassword);
     }
-
     fd.append("receiveBirthdayEmails", receiveEmails);
 
     try {
@@ -211,14 +210,12 @@ const ProfilDetails = () => {
         `/users/${userToUpdate._id}`,
         fd,
         {
-          headers: {
-            "content-type": "multipart/form-data",
-          },
+          headers: { "content-type": "multipart/form-data" },
         },
       );
       storeToken(dbResponse.data.authToken);
       authenticateUser();
-      setUserToUpdate((prevValue) => dbResponse.data.payload);
+      setUserToUpdate(dbResponse.data.payload);
       setIsEditing(false);
       setPasswords({
         currentPassword: "",
@@ -228,21 +225,17 @@ const ProfilDetails = () => {
       setShowPasswordFields(false);
     } catch (error) {
       console.error(error);
-      if (error.response?.data?.message) {
-        alert(error.response.data.message);
-      }
+      if (error.response?.data?.message) alert(error.response.data.message);
     }
   };
 
-  // 👇 Rendu du contenu selon la section (partagé mobile/desktop)
   const renderSectionContent = (sectionId, isLoaded) => {
-    if (!isLoaded) {
+    if (!isLoaded)
       return (
         <div className="loading">
           <p>Chargement...</p>
         </div>
       );
-    }
 
     switch (sectionId) {
       case "personal":
@@ -250,12 +243,11 @@ const ProfilDetails = () => {
           <div>
             <p className="profile_info_details">
               <b>
-                {currentUser && currentUser.name}{" "}
-                {currentUser && currentUser.surname}
+                {currentUser?.name} {currentUser?.surname}
               </b>
             </p>
             <p className="profile_info_details">
-              <b>{currentUser && currentUser.email}</b>
+              <b>{currentUser?.email}</b>
             </p>
             <p className="profile_info_details">
               <b>Date de naissance:</b>{" "}
@@ -282,32 +274,27 @@ const ProfilDetails = () => {
             </div>
           </div>
         );
-
       case "notifications":
         return <GestionNotification />;
-
       case "friends":
         return <FriendsMobileView currentUser={currentUser} />;
-
       case "merge":
         return <MergeDuplicatesSection />;
-
       case "wishlist":
         return <Wishlist />;
-
       default:
         return null;
     }
   };
 
-  // 👇 Rendu mobile (carrousel)
   const renderMobileSection = () => {
     const currentSection = sections[currentCarouselIndex];
-    const isLoaded = loadedSections[currentSection.id];
-
     return (
       <div className="mobile-section">
-        {renderSectionContent(currentSection.id, isLoaded)}
+        {renderSectionContent(
+          currentSection.id,
+          loadedSections[currentSection.id],
+        )}
       </div>
     );
   };
@@ -397,38 +384,35 @@ const ProfilDetails = () => {
               <input
                 type="text"
                 className="form-input"
-                id="surname"
                 placeholder="Prénom"
                 value={userToUpdate.surname || ""}
-                onChange={(e) => {
-                  setUserToUpdate({ ...userToUpdate, surname: e.target.value });
-                }}
+                onChange={(e) =>
+                  setUserToUpdate({ ...userToUpdate, surname: e.target.value })
+                }
               />
               <input
                 type="text"
                 className="form-input"
-                id="name"
                 placeholder="Nom"
                 value={userToUpdate.name || ""}
-                onChange={(e) => {
-                  setUserToUpdate({ ...userToUpdate, name: e.target.value });
-                }}
+                onChange={(e) =>
+                  setUserToUpdate({ ...userToUpdate, name: e.target.value })
+                }
               />
               <input
                 type="date"
-                id="birthDate"
                 className="form-input"
                 value={
                   userToUpdate.birthDate
                     ? userToUpdate.birthDate.split("T")[0]
                     : ""
                 }
-                onChange={(e) => {
+                onChange={(e) =>
                   setUserToUpdate({
                     ...userToUpdate,
                     birthDate: e.target.value,
-                  });
-                }}
+                  })
+                }
               />
               <div className="profile-togglePasswordContainer">
                 <button
@@ -505,39 +489,29 @@ const ProfilDetails = () => {
         </div>
       ) : (
         <div className="profile">
-          {/* 📱 CARROUSEL MOBILE (inchangé) */}
+          {/* 📱 CARROUSEL MOBILE */}
           <div className="mobile-carousel-container">
             <div className="mobile-carousel">
               <div className="mobile-carousel__content">
                 {renderMobileSection()}
               </div>
-
               <div className="mobile-carousel__indicators">
                 {sections.map((_, index) => (
                   <button
                     key={index}
                     onClick={() => setCurrentCarouselIndex(index)}
-                    className={`mobile-carousel__indicator ${
-                      index === currentCarouselIndex
-                        ? "mobile-carousel__indicator--active"
-                        : ""
-                    }`}
+                    className={`mobile-carousel__indicator ${index === currentCarouselIndex ? "mobile-carousel__indicator--active" : ""}`}
                     aria-label={`Aller à la section ${index + 1}`}
                   />
                 ))}
               </div>
-
               <div className="mobile-carousel__quick-nav">
                 <div className="mobile-carousel__quick-buttons">
                   {sections.map((section, index) => (
                     <button
                       key={section.id}
                       onClick={() => setCurrentCarouselIndex(index)}
-                      className={`mobile-carousel__quick-btn ${
-                        index === currentCarouselIndex
-                          ? "mobile-carousel__quick-btn--active"
-                          : ""
-                      }`}
+                      className={`mobile-carousel__quick-btn ${index === currentCarouselIndex ? "mobile-carousel__quick-btn--active" : ""}`}
                       aria-label={section.title}
                     >
                       {section.icon}
@@ -548,25 +522,20 @@ const ProfilDetails = () => {
             </div>
           </div>
 
-          {/* 💻 NAVIGATION DESKTOP (nouveau) */}
+          {/* 💻 DESKTOP */}
           <div className="desktop-profile-container">
-            {/* Menu latéral gauche */}
             <aside className="desktop-sidebar">
               {sections.map((section) => (
                 <button
                   key={section.id}
                   onClick={() => setActiveDesktopSection(section.id)}
-                  className={`sidebar-btn ${
-                    activeDesktopSection === section.id ? "active" : ""
-                  }`}
+                  className={`sidebar-btn ${activeDesktopSection === section.id ? "active" : ""}`}
                 >
                   <span className="sidebar-icon">{section.icon}</span>
                   <span className="sidebar-text">{section.title}</span>
                 </button>
               ))}
             </aside>
-
-            {/* Contenu principal */}
             <main className="desktop-content containerInfo">
               {renderSectionContent(
                 activeDesktopSection,
