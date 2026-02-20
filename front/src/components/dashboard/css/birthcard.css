@@ -291,6 +291,7 @@
   }
 }
 
+
 @media (max-width: 600px) {
   .birthDeck {
     grid-template-columns: repeat(2, 1fr);
@@ -308,14 +309,9 @@
       "countdown countdown"
       "actions actions";
     min-height: unset;
-    padding: 0.75rem;
+    padding: 0.75rem 0.75rem 0 0.75rem;
     border-radius: 12px;
-  }
-
-  .birthCardCenter {
-    width: 107%;
-    margin: -0.8rem;
-    margin-right: 1rem;
+    overflow: hidden;
   }
 
   .birthCardName {
@@ -343,11 +339,15 @@
     margin: 0.3rem 0;
   }
 
+  /* ✅ Marges négatives alignées sur le padding de .birthCard pour couvrir toute la largeur */
   .birthCardCenter {
     grid-area: actions;
-    padding: 0.5rem;
-    margin-top: 0.4rem;
+    width: calc(100% + 1.5rem);
+    margin: 0.4rem -0.75rem -0.75rem -0.75rem;
+    padding: 0.5rem 0.75rem;
     border-top: 1px solid var(--border-color);
+    background-color: var(--bg-secondary);
+    border-radius: 0 0 12px 12px;
   }
 
   .birthCard-name {
@@ -366,16 +366,23 @@
   }
 
   .button-group {
+    display: flex;
     flex-direction: row;
-    gap: 0.5rem;
+    gap: 0.4rem;
+    width: 100%;
   }
 
   .btn-edit,
   .btn-view,
   .btn-message {
+    flex: 1;
     padding: 0.5rem 0;
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     border-radius: 6px;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .birthCard.today::after,
@@ -397,7 +404,7 @@
   .btn-edit,
   .btn-view,
   .btn-message {
-    font-size: 0.75rem;
+    font-size: 0.68rem;
     padding: 0.45rem 0;
   }
 
