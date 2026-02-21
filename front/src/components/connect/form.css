@@ -23,9 +23,9 @@
     position: relative;
     display: flex;
     flex-direction: column;
-    width: 250px;
+    width: 300px;
     height: auto;
-    padding: 2rem;
+    padding: 1rem;
     margin: auto;
     border: 1px solid grey;
     border-radius: 12px;
@@ -35,13 +35,15 @@
             0 4px 6px -2px rgba(0, 0, 0, 0.1);
 }
 
-.form-input{
+.form-input {
     background: transparent;
     border: transparent;
-    margin: 1rem;
+    margin: 0.6rem 1rem;
     border-bottom: 1px solid grey;
-    color: #acacac  ;
+    color: #acacac;
+    width: calc(100% - 2rem);
 }
+
 .form-input:focus{
     outline: none;
 }
@@ -60,10 +62,13 @@
     color: #4a4a4a;
 }
 
-.formConnectAvatar{
+.formConnectAvatar {
     display: flex;
     flex-direction: column;
+    align-items: center;
+    margin: 0.5rem 0;
 }
+
 .password-input-container {
     position: relative;
     display: flex;
@@ -141,7 +146,26 @@
     justify-content:space-around;
 }
 
-.avatarSignup{
+.avatarSignup {
     height: 100px;
-    margin-top: 1rem;
+    margin-top: 0.5rem;
+    display: block;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    margin: 0.5rem 1rem;
+    /* même espace horizontal que les autres inputs */
+}
+
+.form-label {
+    font-size: 0.75rem;
+    color: grey;
+    margin-bottom: 0.25rem;
+}
+
+.form-group .form-input {
+    margin: 0;
+    /* reset le margin, géré par .form-group */
 }
