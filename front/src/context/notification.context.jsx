@@ -1,6 +1,7 @@
 import { createContext, useState, useEffect, useContext } from "react";
 import socketService from "../components/services/socket.service";
 import { AuthContext } from "./auth.context";
+import apiHandler from "../api/apiHandler";
 
 export const NotificationContext = createContext();
 
@@ -19,28 +20,13 @@ export const NotificationProvider = ({ children }) => {
     const socket = socketService.connect(token);
 
     const handleNewMessage = ({ conversationId, message }) => {
-      // Vérifier si le message vient de l'utilisateur actuel
       const messageSenderId =
         typeof message.sender === "object"
           ? message.sender._id
           : message.sender;
       const isMyMessage = messageSenderId === currentUser._id;
-
-      // Vérifier si la conversation est actuellement ouverte
       const isActiveConversation = conversationId === activeConversationId;
 
-      console.log("📨 New message (NotificationContext):", {
-        conversationId,
-        senderId: messageSenderId,
-        currentUserId: currentUser._id,
-        isMyMessage,
-        activeConversationId,
-        isActiveConversation,
-      });
-
-      // N'incrémenter QUE si :
-      // 1. Ce n'est PAS mon message
-      // 2. La conversation n'est PAS actuellement ouverte
       if (!isMyMessage && !isActiveConversation) {
         setUnreadCount((prev) => prev + 1);
         setConversationUnreads((prev) => ({
@@ -51,55 +37,46 @@ export const NotificationProvider = ({ children }) => {
     };
 
     const handleMessagesRead = ({ conversationId }) => {
-      console.log(
-        "✅ Messages read event (NotificationContext):",
-        conversationId,
-      );
       markAsRead(conversationId);
+    };
+
+    // ← Reconnexion automatique sur mobile
+    const handleReconnect = () => {
+      loadUnreadCount();
     };
 
     socket.on("message:new", handleNewMessage);
     socket.on("messages:read", handleMessagesRead);
+    socket.on("connect", handleReconnect); // ← NOUVEAU
+
     loadUnreadCount();
 
     return () => {
       socket.off("message:new", handleNewMessage);
       socket.off("messages:read", handleMessagesRead);
+      socket.off("connect", handleReconnect);
     };
   }, [isLoggedIn, currentUser, activeConversationId]);
 
   const loadUnreadCount = async () => {
     try {
-      const token = localStorage.getItem("authToken");
-      if (!token) return;
+      // ✅ apiHandler gère l'URL ET le token automatiquement
+      const response = await apiHandler.get("/conversations");
+      const conversations = response.data;
 
-      const response = await fetch("http://localhost:4000/api/conversations", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      const total = conversations.reduce(
+        (sum, conv) => sum + (conv.unreadCount || 0),
+        0,
+      );
+      setUnreadCount(total);
+
+      const unreads = {};
+      conversations.forEach((conv) => {
+        if (conv.unreadCount > 0) {
+          unreads[conv._id] = conv.unreadCount;
+        }
       });
-
-      if (response.ok) {
-        const conversations = await response.json();
-
-        console.log("📊 Conversations loaded:", conversations);
-
-        const total = conversations.reduce(
-          (sum, conv) => sum + (conv.unreadCount || 0),
-          0,
-        );
-        setUnreadCount(total);
-
-        const unreads = {};
-        conversations.forEach((conv) => {
-          if (conv.unreadCount > 0) {
-            unreads[conv._id] = conv.unreadCount;
-          }
-        });
-
-        console.log("📊 Unread counts:", unreads);
-        setConversationUnreads(unreads);
-      }
+      setConversationUnreads(unreads);
     } catch (error) {
       console.error("Error loading unread count:", error);
     }

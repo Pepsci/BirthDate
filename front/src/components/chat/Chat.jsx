@@ -21,7 +21,6 @@ function Chat() {
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const activeConversationRef = useRef(null);
 
-  // 👇 AJOUTER cet état pour la modal de conversation
   const [isChatWindowOpen, setIsChatWindowOpen] = useState(false);
 
   useEffect(() => {

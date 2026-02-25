@@ -137,7 +137,7 @@ const BirthdayCard = ({ date, onEdit, onViewProfile, onOpenChat }) => {
           </button>
           {isFriend && (
             <button onClick={handleMessageClick} className="btn-message">
-              💬 Messages
+              💬 Chat
               {unreadForFriend > 0 && (
                 <span className="notification-badge-inline">
                   {unreadForFriend}
