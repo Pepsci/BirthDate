@@ -5,8 +5,6 @@ import "./css/birthcard.css";
 
 const BirthdayCard = ({ date, onEdit, onViewProfile, onOpenChat }) => {
   const { conversationUnreads } = useNotifications();
-
-  // 👇 AJOUTER la détection mobile/desktop
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
   const isFriend = !!date.linkedUser;
@@ -16,19 +14,23 @@ const BirthdayCard = ({ date, onEdit, onViewProfile, onOpenChat }) => {
       ? conversationUnreads[date.conversationId] || 0
       : 0;
 
-  // 👇 AJOUTER useEffect pour détecter resize
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth <= 768);
     };
-
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const calculateCurrentAge = (birthDate) => {
+  // ✅ Parse la date sans conversion timezone
+  const parseLocalDate = (dateStr) => {
+    const [year, month, day] = dateStr.split("T")[0].split("-");
+    return new Date(year, month - 1, day);
+  };
+
+  const calculateCurrentAge = (birthDateStr) => {
     const today = new Date();
-    const birth = new Date(birthDate);
+    const birth = parseLocalDate(birthDateStr);
 
     let age = today.getFullYear() - birth.getFullYear();
 
@@ -43,24 +45,20 @@ const BirthdayCard = ({ date, onEdit, onViewProfile, onOpenChat }) => {
     return age;
   };
 
-  // 👇 MODIFIER cette fonction pour gérer mobile/desktop
   const handleMessageClick = () => {
     if (isMobile) {
-      // Mobile : ouvrir la modal
       const friendId = date.linkedUser?._id || date.linkedUser;
       const friendName = `${date.name} ${date.surname}`;
-
       if (onOpenChat) {
         onOpenChat(friendId, friendName);
       }
     } else {
-      // Desktop : ouvrir le profil sur la section chat
       onViewProfile(date, "chat");
     }
   };
 
   const today = new Date();
-  const birthDate = new Date(date.date);
+  const birthDate = parseLocalDate(date.date); // ✅ parseLocalDate au lieu de new Date()
 
   const thisYearBirthday = new Date(
     today.getFullYear(),
@@ -117,7 +115,8 @@ const BirthdayCard = ({ date, onEdit, onViewProfile, onOpenChat }) => {
 
       <div className="birthCardDate">
         <span className="date">
-          {new Date(date.date).toLocaleDateString("fr-FR")}
+          {/* ✅ parseLocalDate au lieu de new Date() */}
+          {parseLocalDate(date.date).toLocaleDateString("fr-FR")}
         </span>
       </div>
 

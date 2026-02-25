@@ -25,10 +25,18 @@
 .notification-badge-inline {
     background: #ff4444;
     color: white;
-    border-radius: 12px;
-    padding: 2px 8px;
+    border-radius: 50%;
+    /* cercle parfait au lieu de 12px */
+    width: 20px;
+    height: 20px;
     font-size: 11px;
     font-weight: bold;
     margin-left: 8px;
-    display: inline-block;
+    display: inline-flex;
+    /* inline-flex pour centrer */
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    vertical-align: middle;
+    /* aligne avec le texte du bouton */
 }
