@@ -1,29 +1,26 @@
 .friend-notification {
-    background-color: #f8f9fa;
+    background-color: transparent;
     padding: 15px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-    font-family: 'Roboto', sans-serif;
     border-radius: 12px;
-    background: var(--gray-800);
-    color:#f8f9fa;
     max-width: 400px;
     min-height: 500px;
     max-height: 500px;
     margin: 0 auto;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    font-family: 'Roboto', sans-serif;
 }
 
-.friend-notification h2, h3 {
-    color:var(--gray-300);
+.friend-notification h2,
+.friend-notification h3 {
+    color: var(--text-primary);
     margin: 2rem;
 }
 
-.friend-notification-span{
-    color: var(--gray-300);
+.friend-notification-span {
+    color: var(--text-secondary);
 }
 
 .friend-notification-toggle {

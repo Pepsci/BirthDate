@@ -55,26 +55,49 @@
 }
 
 
-.btnRLD{
-    width: 100%;
-    height: 100%;
-    display: flex;
-    justify-content: left;
-}
 
-.btnRLD button{
-    padding:  0.6rem;
-    font-size: 0.8rem;
-    background-color: var(--gray-800);
-    color: var(--gray-300);
-    border-color: var(--gray-700);
-    margin: 0 0 0.5rem 0.5rem;
-    border-radius: 12px;
-}
-
-.name-profilFriend{
+.name-profilFriend {
     text-align: center;
     margin: 3rem;
+    color: var(--text-primary);
+}
+
+/* --------------------------------
+   Boutton Retour
+-------------------------------- */
+
+/* Bouton desktop - au dessus */
+.btnRLD {
+    display: flex;
+    justify-content: flex-start;
+    padding: 0 0 0.5rem 0.5rem;
+}
+
+.profile_info {
+    position: relative;
+}
+
+.profile_info-header {
+    display: flex;
+    justify-content: flex-start;
+    padding: 12px 12px 0 12px;
+}
+
+.btnBack {
+    padding: 0.5rem 0.8rem;
+    font-size: 0.8rem;
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    background-color: var(--bg-primary);
+    color: var(--gray-300);
+    cursor: pointer;
+    transition: background-color 0.2s;
+    margin: 0.5rem;
+}
+
+.btnBack:hover {
+    background-color: var(--gray-700);
+    color: var(--gray-100);
 }
 
 
@@ -152,6 +175,12 @@
 }
 
 @media (max-width: 768px) {
+
+        .btnRLD {
+                display: none;
+            }
+
+
     .chat-section-mobile-trigger {
         display: block;
         padding: 20px;
@@ -169,6 +198,10 @@
 -------------------------------- */
 
 @media (max-width: 600px) {
+
+        .btnRLD {
+                display: none;
+            }
 
     .grid-friendProfil {
         display: grid;

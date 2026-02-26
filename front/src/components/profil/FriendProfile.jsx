@@ -553,6 +553,11 @@ const FriendProfile = ({ date, onCancel, initialSection = "info" }) => {
       {/* MOBILE : Carousel */}
       <div className="mobile-carousel-container">
         <div className="mobile-carousel">
+          <div className="mobile-carousel__topbar">
+            <button type="button" onClick={onCancel} className="btnBack">
+              ← Retour à la liste
+            </button>
+          </div>
           <div className="mobile-carousel__content">
             {menuSections[currentCarouselIndex]?.id !== "chat" && (
               <div className="mobile-section">

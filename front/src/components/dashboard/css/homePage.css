@@ -76,7 +76,7 @@ img {
 .profil-btn {
     display: flex;
     justify-content: center;
-    margin: 0 0 1rem 1rem;
+    margin: 0 7rem 1rem 1rem;
 }
 
 .btnBackToDateList {
@@ -85,9 +85,11 @@ img {
     font-weight: 600;
     background-color: var(--bg-tertiary);
     color: var(--text-primary);
-    border: 1px solid var(--border-color);
+        border: 2px solid var(--border-color);
+            border-radius: 12px;
+            background-color: var(--bg-primary);
     margin-top: 2rem;
-    border-radius: 12px;
+   
     cursor: pointer;
     transition: all 0.3s ease;
 }
