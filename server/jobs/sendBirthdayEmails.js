@@ -61,7 +61,7 @@ async function checkAndSendUserBirthdayEmails() {
       birthDate: { $exists: true, $ne: null },
       isVerified: true,
       receiveBirthdayEmails: true,
-      receiveOwnBirthdayEmail: { $ne: true },
+      receiveOwnBirthdayEmail: true,
       deletedAt: null,
     });
 

@@ -3,14 +3,15 @@
  *
  * Envoie des emails de notification pour les messages chat non lus.
  * Respecte les préférences de l'utilisateur :
- *   - receiveChatEmails (bool)      : activer/désactiver globalement
- *   - chatEmailFrequency            : "instant" | "daily" | "weekly"
- *   - chatEmailDisabledFriends      : [userId] — liste d'amis exclus
+ *   - receiveChatEmails (bool)          : activer/désactiver globalement
+ *   - chatEmailFrequency                : "instant" | "twice_daily" | "daily" | "weekly"
+ *   - chatEmailDisabledFriends          : [userId] — liste d'amis exclus
  *
- * Trois crons :
- *   • Instantané  → toutes les 5 minutes
- *   • Quotidien   → chaque jour à 9h
- *   • Hebdo       → chaque lundi à 9h
+ * Quatre crons :
+ *   • Instantané   → toutes les 5 minutes
+ *   • 2x par jour  → à 9h et 18h
+ *   • Quotidien    → chaque jour à 9h
+ *   • Hebdo        → chaque lundi à 9h
  */
 
 const cron = require("node-cron");
@@ -47,9 +48,13 @@ const transporter = nodemailer.createTransport({
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-/**
- * Retourne la date de début de la fenêtre selon la fréquence.
- */
+const frequencyLabels = {
+  instant: "instantanée",
+  twice_daily: "2x par jour",
+  daily: "quotidienne",
+  weekly: "hebdomadaire",
+};
+
 function windowStart(frequency) {
   const now = new Date();
   const ms = {
@@ -61,21 +66,13 @@ function windowStart(frequency) {
   return new Date(now - (ms[frequency] || ms.daily));
 }
 
-/**
- * Récupère les messages non lus groupés par expéditeur.
- * Schéma réel : Conversation { participants } + Message { sender, conversation, readBy: [{ user, readAt }] }
- */
 async function getUnreadMessages(userId, since, disabledFriends = []) {
-  // 1. Toutes les conversations de l'utilisateur
-  const conversations = await Conversation.find({
-    participants: userId,
-  })
+  const conversations = await Conversation.find({ participants: userId })
     .select("_id participants")
     .lean();
 
   if (conversations.length === 0) return [];
 
-  // 2. Filtrer les conversations dont l'autre participant est dans la liste désactivée
   const disabledSet = new Set(disabledFriends.map(String));
 
   const validConvIds = conversations
@@ -89,8 +86,7 @@ async function getUnreadMessages(userId, since, disabledFriends = []) {
 
   if (validConvIds.length === 0) return [];
 
-  // 3. Agréger les messages non lus par expéditeur
-  const messages = await Message.aggregate([
+  return Message.aggregate([
     {
       $match: {
         conversation: { $in: validConvIds },
@@ -108,16 +104,16 @@ async function getUnreadMessages(userId, since, disabledFriends = []) {
     },
     { $sort: { lastMessage: -1 } },
   ]);
-
-  return messages; // [{ _id: senderId, count: N, lastMessage: Date }]
 }
 
 // ── Template email ────────────────────────────────────────────────────────────
 function buildChatEmailHtml({
   userName,
+  userEmail,
   unreadGroups,
   appUrl,
   unsubscribeUrl,
+  frequency,
 }) {
   const rows = unreadGroups
     .map(
@@ -134,6 +130,18 @@ function buildChatEmailHtml({
     .join("");
 
   const total = unreadGroups.reduce((sum, g) => sum + g.count, 0);
+  const frequencyLabel = frequencyLabels[frequency] || frequency;
+
+  // Liens de désabonnement par ami
+  const friendUnsubscribeLinks = unreadGroups
+    .map(
+      (g) =>
+        `<a href="${appUrl}/api/unsubscribe?email=${encodeURIComponent(userEmail)}&type=chat_friend&friendId=${g._id}"
+           style="display:block;color:#7c6ee6;text-decoration:none;margin-bottom:6px;">
+          Ne plus recevoir les messages de ${g.senderName}
+        </a>`,
+    )
+    .join("");
 
   return `<!DOCTYPE html>
 <html lang="fr">
@@ -194,12 +202,25 @@ function buildChatEmailHtml({
 
         </table>
 
+        <!-- Tip fréquence -->
+        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%"
+          style="max-width:600px;margin:12px auto 0;">
+          <tr>
+            <td style="padding:14px 20px;text-align:center;font-size:13px;color:#aaa;line-height:1.6;background:rgba(255,255,255,0.04);border-radius:10px;">
+              💡 Vous recevez ces emails en fréquence <strong style="color:#7c6ee6;">${frequencyLabel}</strong>.
+              Pour modifier vos préférences, rendez-vous dans votre
+              <a href="${appUrl}/home?tab=notifications&section=chat" style="color:#7c6ee6;text-decoration:none;">profil → Notifications</a>.
+            </td>
+          </tr>
+        </table>
+
         <!-- Footer -->
         <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%"
-          style="max-width:600px;margin:16px auto 0;">
+          style="max-width:600px;margin:12px auto 0;">
           <tr>
-            <td style="padding:16px;text-align:center;font-size:12px;color:#888;line-height:1.6;">
-              <a href="${unsubscribeUrl}" style="color:#7c6ee6;text-decoration:none;">
+            <td style="padding:16px;text-align:center;font-size:12px;color:#888;line-height:2;">
+              ${friendUnsubscribeLinks}
+              <a href="${unsubscribeUrl}" style="color:#888;text-decoration:none;display:block;margin-top:4px;">
                 Ne plus recevoir d'emails pour les messages chat
               </a>
             </td>
@@ -271,18 +292,34 @@ async function sendChatNotifications(frequency) {
       });
 
       const appUrl = process.env.FRONTEND_URL;
-      const unsubscribeUrl = `${appUrl}/home?tab=notifications&section=chat`;
+      const unsubscribeUrl = `${appUrl}/api/unsubscribe?email=${encodeURIComponent(user.email)}&type=chat`;
 
       const html = buildChatEmailHtml({
         userName: user.name,
+        userEmail: user.email,
         unreadGroups: enrichedGroups,
         appUrl,
         unsubscribeUrl,
+        frequency,
       });
 
       const total = enrichedGroups.reduce((s, g) => s + g.count, 0);
       const subject = `💬 ${total} message${total > 1 ? "s" : ""} non lu${total > 1 ? "s" : ""} sur BirthReminder`;
-      const textBody = `Bonjour ${user.name},\n\nVous avez ${total} message(s) non lu(s) sur BirthReminder.\n\nVoir : ${appUrl}/home\n\nSe désabonner : ${unsubscribeUrl}`;
+      const textBody = [
+        `Bonjour ${user.name},`,
+        ``,
+        `Vous avez ${total} message(s) non lu(s) sur BirthReminder.`,
+        ``,
+        `Voir : ${appUrl}/home`,
+        ``,
+        `--- Gérer les notifications ---`,
+        ...enrichedGroups.map(
+          (g) =>
+            `Ne plus recevoir les messages de ${g.senderName} : ${appUrl}/api/unsubscribe?email=${encodeURIComponent(user.email)}&type=chat_friend&friendId=${g._id}`,
+        ),
+        ``,
+        `Se désabonner de tous les emails chat : ${unsubscribeUrl}`,
+      ].join("\n");
 
       await new Promise((resolve, reject) => {
         transporter.sendMail(
@@ -301,7 +338,6 @@ async function sendChatNotifications(frequency) {
         );
       });
 
-      // Mettre à jour lastChatEmailSent (anti-doublon mode instant)
       await userModel.updateOne(
         { _id: user._id },
         { $set: { lastChatEmailSent: new Date() } },
