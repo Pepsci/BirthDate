@@ -347,6 +347,85 @@ router.patch("/:id", async (req, res, next) => {
   }
 });
 
+// ========================================
+// Marque l'item comme acheté ET l'ajoute dans les gifts de la date
+// ========================================
+router.post("/:id/gift-offered", async (req, res) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.id)) {
+      return res.status(400).json({ message: "Invalid Item ID" });
+    }
+
+    const { userId, dateId, occasion, year } = req.body;
+
+    if (!userId || !dateId) {
+      return res.status(400).json({ message: "userId et dateId requis" });
+    }
+
+    if (!mongoose.isValidObjectId(dateId)) {
+      return res.status(400).json({ message: "Invalid Date ID" });
+    }
+
+    // 1. Récupérer l'item wishlist
+    const item = await WishlistModel.findById(req.params.id);
+    if (!item) {
+      return res.status(404).json({ message: "Item non trouvé" });
+    }
+
+    if (item.isPurchased) {
+      return res.status(400).json({ message: "Cet item a déjà été acheté" });
+    }
+
+    // 2. Marquer l'item comme acheté
+    item.isPurchased = true;
+    item.purchasedBy = userId;
+    item.purchasedAt = new Date();
+    // Si l'item était réservé par cet utilisateur, on garde la réservation
+    if (!item.reservedBy) {
+      item.reservedBy = userId;
+      item.reservedAt = new Date();
+    }
+    await item.save();
+
+    // 3. Ajouter le cadeau dans les gifts de la date
+    const dateModel = require("../models/date.model");
+    const updatedDate = await dateModel.findOneAndUpdate(
+      { _id: dateId, owner: userId },
+      {
+        $push: {
+          gifts: {
+            giftName: item.title,
+            occasion: occasion || "Anniversaire",
+            year: year || new Date().getFullYear(),
+            purchased: true,
+          },
+        },
+      },
+      { new: true },
+    );
+
+    if (!updatedDate) {
+      // L'item wishlist a quand même été marqué, on retourne un warning
+      return res.status(200).json({
+        success: true,
+        warning:
+          "Item marqué comme acheté mais date introuvable ou non autorisée",
+        data: item,
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Cadeau offert enregistré !",
+      wishlistItem: item,
+      updatedDate,
+    });
+  } catch (error) {
+    console.error("Erreur gift-offered:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
 // DELETE /api/wishlist/:id - Supprimer un item
 router.delete("/:id", async (req, res, next) => {
   try {

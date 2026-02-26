@@ -2,6 +2,24 @@ import React, { useState, useEffect } from "react";
 import apiHandler from "../../api/apiHandler";
 import "./css/GiftItem.css";
 
+const OCCASIONS = [
+  { value: "Anniversaire", emoji: "🎂", label: "Anniversaire" },
+  { value: "Noël", emoji: "🎄", label: "Noël" },
+  { value: "Saint-Valentin", emoji: "💝", label: "Saint-Valentin" },
+  { value: "Fête des Mères", emoji: "💐", label: "Fête des Mères" },
+  { value: "Fête des Pères", emoji: "👔", label: "Fête des Pères" },
+  { value: "Mariage", emoji: "💍", label: "Mariage" },
+  { value: "Naissance", emoji: "👶", label: "Naissance" },
+  { value: "Diplôme", emoji: "🎓", label: "Diplôme" },
+  { value: "Crémaillère", emoji: "🏠", label: "Crémaillère" },
+  { value: "Autre", emoji: "✨", label: "Autre" },
+];
+
+const getOccasionDisplay = (value) =>
+  OCCASIONS.find((o) => o.value === value) || OCCASIONS[0];
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 const GiftItem = ({ dateId, gift, onUpdate, onDelete }) => {
   console.log("Gift Item:", gift);
 
@@ -12,32 +30,18 @@ const GiftItem = ({ dateId, gift, onUpdate, onDelete }) => {
 
   const [isEditing, setIsEditing] = useState(false);
   const [giftName, setGiftName] = useState(gift.giftName || "");
-  const [occasion, setOccasion] = useState(gift.occasion || "birthday");
+  const [occasion, setOccasion] = useState(gift.occasion || "Anniversaire");
   const [year, setYear] = useState(gift.year || new Date().getFullYear());
   const [purchased, setPurchased] = useState(gift.purchased || false);
 
   useEffect(() => {
     if (gift) {
       setGiftName(gift.giftName || "");
-      setOccasion(gift.occasion || "birthday");
+      setOccasion(gift.occasion || "Anniversaire");
       setYear(gift.year || new Date().getFullYear());
       setPurchased(gift.purchased || false);
     }
   }, [gift]);
-
-  // Fonction pour obtenir l'emoji et le label de l'occasion
-  const getOccasionDisplay = (occ) => {
-    switch (occ) {
-      case "birthday":
-        return { emoji: "🎂", label: "Anniversaire" };
-      case "christmas":
-        return { emoji: "🎄", label: "Noël" };
-      case "other":
-        return { emoji: "🎁", label: "Autre" };
-      default:
-        return { emoji: "🎁", label: "Anniversaire" };
-    }
-  };
 
   const handleUpdate = async () => {
     try {
@@ -48,7 +52,7 @@ const GiftItem = ({ dateId, gift, onUpdate, onDelete }) => {
           occasion,
           year: parseInt(year),
           purchased,
-        }
+        },
       );
       onUpdate(response.data);
       setIsEditing(false);
@@ -68,7 +72,7 @@ const GiftItem = ({ dateId, gift, onUpdate, onDelete }) => {
           occasion,
           year: parseInt(year),
           purchased: newPurchased,
-        }
+        },
       );
       onUpdate(response.data);
     } catch (error) {
@@ -79,7 +83,7 @@ const GiftItem = ({ dateId, gift, onUpdate, onDelete }) => {
   const handleDelete = async () => {
     try {
       const response = await apiHandler.delete(
-        `/date/${dateId}/gifts/${gift._id}`
+        `/date/${dateId}/gifts/${gift._id}`,
       );
       onDelete(response.data);
     } catch (error) {
@@ -106,9 +110,11 @@ const GiftItem = ({ dateId, gift, onUpdate, onDelete }) => {
             value={occasion}
             onChange={(e) => setOccasion(e.target.value)}
           >
-            <option value="birthday">🎂 Anniversaire</option>
-            <option value="christmas">🎄 Noël</option>
-            <option value="other">🎁 Autre</option>
+            {OCCASIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.emoji} {o.label}
+              </option>
+            ))}
           </select>
 
           <input

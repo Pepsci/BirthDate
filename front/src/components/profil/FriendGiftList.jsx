@@ -2,67 +2,73 @@ import React, { useState } from "react";
 import apiHandler from "../../api/apiHandler";
 import "../UI/css/gifts-common.css";
 
+const OCCASIONS = [
+  { value: "Anniversaire", emoji: "🎂", label: "Anniversaire" },
+  { value: "Noël", emoji: "🎄", label: "Noël" },
+  { value: "Saint-Valentin", emoji: "💝", label: "Saint-Valentin" },
+  { value: "Fête des Mères", emoji: "💐", label: "Fête des Mères" },
+  { value: "Fête des Pères", emoji: "👔", label: "Fête des Pères" },
+  { value: "Mariage", emoji: "💍", label: "Mariage" },
+  { value: "Naissance", emoji: "👶", label: "Naissance" },
+  { value: "Diplôme", emoji: "🎓", label: "Diplôme" },
+  { value: "Crémaillère", emoji: "🏠", label: "Crémaillère" },
+  { value: "Autre", emoji: "✨", label: "Autre" },
+];
+
+const getOccasionDisplay = (value) =>
+  OCCASIONS.find((o) => o.value === value) || {
+    emoji: "🎁",
+    label: value || "Anniversaire",
+  };
+
+const DEFAULT_FORM = {
+  giftName: "",
+  occasion: "Anniversaire",
+  year: new Date().getFullYear(),
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 const FriendGiftList = ({ currentDate, onUpdate }) => {
   const [showForm, setShowForm] = useState(false);
   const [editingGift, setEditingGift] = useState(null);
   const [deletingGiftId, setDeletingGiftId] = useState(null);
+  const [formData, setFormData] = useState(DEFAULT_FORM);
 
   const [showFilters, setShowFilters] = useState(false);
   const [filterOccasion, setFilterOccasion] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
 
-  const [formData, setFormData] = useState({
-    giftName: "",
-    occasion: "birthday",
-    year: new Date().getFullYear(),
-  });
-
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value,
-    });
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (!formData.giftName.trim()) {
       alert("Le nom du cadeau est requis");
       return;
     }
 
     try {
-      if (editingGift) {
-        const response = await apiHandler.patch(
-          `/date/${currentDate._id}/gifts/${editingGift._id}`,
-          {
-            giftName: formData.giftName,
-            occasion: formData.occasion,
-            year: parseInt(formData.year),
-            purchased: editingGift.purchased,
-          },
-        );
-        onUpdate(response.data);
-      } else {
-        const response = await apiHandler.patch(
-          `/date/${currentDate._id}/gifts`,
-          {
-            giftName: formData.giftName,
-            occasion: formData.occasion,
-            year: parseInt(formData.year),
-            purchased: false,
-          },
-        );
-        onUpdate(response.data);
-      }
+      const payload = {
+        giftName: formData.giftName,
+        occasion: formData.occasion,
+        year: parseInt(formData.year),
+        purchased: editingGift ? editingGift.purchased : false,
+      };
 
-      setFormData({
-        giftName: "",
-        occasion: "birthday",
-        year: new Date().getFullYear(),
-      });
+      const url = editingGift
+        ? `/date/${currentDate._id}/gifts/${editingGift._id}`
+        : `/date/${currentDate._id}/gifts`;
+
+      const response = editingGift
+        ? await apiHandler.patch(url, payload)
+        : await apiHandler.patch(url, payload);
+
+      onUpdate(response.data);
+      setFormData(DEFAULT_FORM);
       setShowForm(false);
       setEditingGift(null);
     } catch (error) {
@@ -75,22 +81,25 @@ const FriendGiftList = ({ currentDate, onUpdate }) => {
     setEditingGift(gift);
     setFormData({
       giftName: gift.giftName,
-      occasion: gift.occasion || "birthday",
+      occasion: gift.occasion || "Anniversaire",
       year: gift.year || new Date().getFullYear(),
     });
     setShowForm(true);
     setDeletingGiftId(null);
 
     setTimeout(() => {
-      const targets = [
+      [
         document.querySelector(".gift-container"),
         document.querySelector(".mobile-carousel__content"),
         document.querySelector(".desktop-content"),
-      ];
-      targets.forEach((el) => {
-        if (el) el.scrollTo({ top: 0, behavior: "smooth" });
-      });
+      ].forEach((el) => el?.scrollTo({ top: 0, behavior: "smooth" }));
     }, 100);
+  };
+
+  const handleCancel = () => {
+    setShowForm(false);
+    setEditingGift(null);
+    setFormData(DEFAULT_FORM);
   };
 
   const handleDeleteClick = (giftId) => {
@@ -99,13 +108,8 @@ const FriendGiftList = ({ currentDate, onUpdate }) => {
     setEditingGift(null);
   };
 
-  const handleCancelDelete = () => {
-    setDeletingGiftId(null);
-  };
-
   const handleConfirmDelete = async () => {
     if (!deletingGiftId) return;
-
     try {
       const response = await apiHandler.delete(
         `/date/${currentDate._id}/gifts/${deletingGiftId}`,
@@ -135,32 +139,8 @@ const FriendGiftList = ({ currentDate, onUpdate }) => {
     }
   };
 
-  const handleCancel = () => {
-    setShowForm(false);
-    setEditingGift(null);
-    setFormData({
-      giftName: "",
-      occasion: "birthday",
-      year: new Date().getFullYear(),
-    });
-  };
-
-  const getOccasionDisplay = (occasion) => {
-    switch (occasion) {
-      case "birthday":
-        return { emoji: "🎂", label: "Anniversaire" };
-      case "christmas":
-        return { emoji: "🎄", label: "Noël" };
-      case "other":
-        return { emoji: "🎁", label: "Autre" };
-      default:
-        return { emoji: "🎁", label: "Anniversaire" };
-    }
-  };
-
   const gifts = currentDate.gifts || [];
-  const validGifts = gifts.filter((gift) => gift && gift.giftName && gift._id);
-
+  const validGifts = gifts.filter((g) => g && g.giftName && g._id);
   const filteredGifts = validGifts.filter((gift) => {
     const matchesOccasion =
       filterOccasion === "all" || gift.occasion === filterOccasion;
@@ -210,9 +190,11 @@ const FriendGiftList = ({ currentDate, onUpdate }) => {
                 value={formData.occasion}
                 onChange={handleInputChange}
               >
-                <option value="birthday">🎂 Anniversaire</option>
-                <option value="christmas">🎄 Noël</option>
-                <option value="other">🎁 Autre occasion</option>
+                {OCCASIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.emoji} {o.label}
+                  </option>
+                ))}
               </select>
 
               <input
@@ -243,6 +225,7 @@ const FriendGiftList = ({ currentDate, onUpdate }) => {
         </div>
       )}
 
+      {/* Filtres */}
       <button
         className="btn-toggle-filters"
         onClick={() => setShowFilters(!showFilters)}
@@ -260,37 +243,21 @@ const FriendGiftList = ({ currentDate, onUpdate }) => {
             <h4 className="filter-title">Occasion</h4>
             <div className="filter-buttons">
               <button
-                className={`filter-btn ${
-                  filterOccasion === "all" ? "active" : ""
-                }`}
+                className={`filter-btn ${filterOccasion === "all" ? "active" : ""}`}
                 onClick={() => setFilterOccasion("all")}
               >
                 Tous
               </button>
-              <button
-                className={`filter-btn ${
-                  filterOccasion === "birthday" ? "active" : ""
-                }`}
-                onClick={() => setFilterOccasion("birthday")}
-              >
-                🎂
-              </button>
-              <button
-                className={`filter-btn ${
-                  filterOccasion === "christmas" ? "active" : ""
-                }`}
-                onClick={() => setFilterOccasion("christmas")}
-              >
-                🎄
-              </button>
-              <button
-                className={`filter-btn ${
-                  filterOccasion === "other" ? "active" : ""
-                }`}
-                onClick={() => setFilterOccasion("other")}
-              >
-                🎁
-              </button>
+              {OCCASIONS.map((o) => (
+                <button
+                  key={o.value}
+                  className={`filter-btn ${filterOccasion === o.value ? "active" : ""}`}
+                  onClick={() => setFilterOccasion(o.value)}
+                  title={o.label}
+                >
+                  {o.emoji}
+                </button>
+              ))}
             </div>
           </div>
 
@@ -298,25 +265,19 @@ const FriendGiftList = ({ currentDate, onUpdate }) => {
             <h4 className="filter-title">Statut</h4>
             <div className="filter-buttons">
               <button
-                className={`filter-btn ${
-                  filterStatus === "all" ? "active" : ""
-                }`}
+                className={`filter-btn ${filterStatus === "all" ? "active" : ""}`}
                 onClick={() => setFilterStatus("all")}
               >
                 Tous
               </button>
               <button
-                className={`filter-btn ${
-                  filterStatus === "pending" ? "active" : ""
-                }`}
+                className={`filter-btn ${filterStatus === "pending" ? "active" : ""}`}
                 onClick={() => setFilterStatus("pending")}
               >
                 ⭕
               </button>
               <button
-                className={`filter-btn ${
-                  filterStatus === "purchased" ? "active" : ""
-                }`}
+                className={`filter-btn ${filterStatus === "purchased" ? "active" : ""}`}
                 onClick={() => setFilterStatus("purchased")}
               >
                 ✅
@@ -326,17 +287,17 @@ const FriendGiftList = ({ currentDate, onUpdate }) => {
         </div>
       )}
 
+      {/* Liste */}
       <div className="gift-items">
         {filteredGifts.length === 0 ? (
           <p className="gift-empty">
-            {filterOccasion !== "all" || filterStatus !== "all"
+            {activeFiltersCount > 0
               ? "Aucun cadeau ne correspond aux filtres sélectionnés"
               : "Aucune idée de cadeau pour le moment 💡"}
           </p>
         ) : (
           filteredGifts.map((gift) => {
             const occasionDisplay = getOccasionDisplay(gift.occasion);
-
             return (
               <div key={gift._id} className="gift-item-card">
                 {deletingGiftId !== gift._id ? (
@@ -344,9 +305,7 @@ const FriendGiftList = ({ currentDate, onUpdate }) => {
                     <div className="gift-item-header">
                       <h4 className="gift-item-title">{gift.giftName}</h4>
                       <span
-                        className={`gift-item-badge ${
-                          gift.purchased ? "purchased" : "pending"
-                        }`}
+                        className={`gift-item-badge ${gift.purchased ? "purchased" : "pending"}`}
                       >
                         {gift.purchased ? "✅ Acheté" : "⭕ À acheter"}
                       </span>
@@ -402,7 +361,7 @@ const FriendGiftList = ({ currentDate, onUpdate }) => {
                     <div className="delete-confirm-buttons">
                       <button
                         className="btn-profil btn-profilGrey"
-                        onClick={handleCancelDelete}
+                        onClick={() => setDeletingGiftId(null)}
                       >
                         Annuler
                       </button>
