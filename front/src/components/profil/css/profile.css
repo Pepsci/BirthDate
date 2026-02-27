@@ -1,3 +1,12 @@
+/* ========================================
+   PROFILE — BASE
+   ======================================== */
+
+.profile-wrapper {
+    display: flex;
+    flex-direction: column;
+}
+
 .profile {
     display: flex;
     flex-direction: row;
@@ -5,11 +14,6 @@
     align-items: flex-start;
     gap: 1rem;
     flex-wrap: nowrap;
-}
-
-.notification {
-    margin-top: 2rem;
-    flex-shrink: 0;
 }
 
 .profile h2 {
@@ -29,14 +33,29 @@
     transition: color 0.3s ease;
 }
 
+.notification {
+    margin-top: 2rem;
+    flex-shrink: 0;
+}
+
+.profil-countdown {
+    margin: 1rem auto 2rem;
+}
+
 .profil-btn {
-    gap: 1rem;
-    margin-top: -1rem !important;
+    display: flex;
+        justify-content: center;
+        gap: 1rem;
 }
 
 .profile-togglePasswordContainer {
     text-align: center;
 }
+
+
+/* ========================================
+   BOUTONS — PROFIL
+   ======================================== */
 
 .btn-profil {
     margin-top: 1rem;
@@ -84,11 +103,12 @@
     align-items: center;
 }
 
-.profil-countdown {
-    margin: 1rem auto 2rem;
+.btn-profilEditContainer .btn-profil,
+.btn-profilEditContainer .btn-delete {
+    width: 200px;
+    margin-top: 8px;
 }
 
-/* Bouton supprimer */
 .btn-delete {
     background-color: var(--danger);
     color: white;
@@ -104,11 +124,6 @@
     width: 100%;
 }
 
-.btn-profilEditContainer .btn-delete {
-    width: 200px;
-    margin-top: 8px;
-}
-
 .btn-delete:hover:not(:disabled) {
     background-color: #c82333;
     transform: translateY(-2px);
@@ -121,8 +136,45 @@
     opacity: 0.6;
 }
 
+
 /* ========================================
-   RESPONSIVE DESIGN POUR LE PROFIL
+   BOUTON RETOUR — VISIBILITÉ PAR BREAKPOINT
+   ======================================== */
+
+/* Par défaut (desktop) : btn desktop visible, btn mobile caché */
+.desktop-back-btn {
+    display: block;
+    margin-bottom: 1rem;
+}
+
+.mobile-back-btn {
+    display: none;
+}
+
+.btnBackToDateList {
+    padding: 0.6rem 1.2rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    background-color: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 2px solid var(--border-color);
+    border-radius: 16px;
+    background-color: var(--bg-primary);
+    margin: 0 auto 0 auto;
+    width: 150px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btnBackToDateList:hover {
+    background-color: var(--primary);
+    color: white;
+    border-color: var(--primary);
+}
+
+
+/* ========================================
+   RESPONSIVE — TABLETTE (≤ 900px)
    ======================================== */
 
 @media (max-width: 900px) {
@@ -139,14 +191,29 @@
     }
 }
 
+
+/* ========================================
+   RESPONSIVE — MOBILE (≤ 600px)
+   ======================================== */
+
 @media (max-width: 600px) {
+
+    /* Inversion des boutons retour */
+    .desktop-back-btn {
+        display: none;
+    }
+
+    .mobile-back-btn {
+        display: block;
+    }
+
     .mobile-section h2 {
         display: none;
     }
 
     .profile_info_details {
-        margin: 0 !important;
-        padding: .5rem;
+        margin-top: 2rem;
+        padding: 0.5rem;
         font-size: 1.5rem;
     }
 
@@ -156,7 +223,9 @@
     }
 
     .profil-btn {
-        margin: -1px 0 0rem 1rem;
+        /* margin: -1px 0 0 1rem; */
+        margin: 0;
+        width: 100%;
     }
 
     .btn-profilEditContainer .btn-profil,

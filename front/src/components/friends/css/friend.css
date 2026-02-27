@@ -18,7 +18,7 @@
 .friends-header h2 {
     margin: 0;
     font-size: 1.5rem;
-    color: white;
+    color: var(--text-primary);
 }
 
 .friends-count {
@@ -30,58 +30,56 @@
     font-weight: 600;
 }
 
+
 /* ========================================
    ONGLETS
    ======================================== */
 
 .friends-tabs {
     display: flex;
-    gap: 8px;
-    margin-bottom: 20px;
-    border-bottom: 2px solid rgba(148, 163, 184, 0.1);
+    gap: 10px;
+    margin-bottom: 30px;
+    border-bottom: 2px solid #e0e0e0;
+    flex-direction: row;
 }
 
 .friends-tabs .tab {
+    padding: 12px 24px;
     background: none;
     border: none;
-    color: #94a3b8;
-    padding: 12px 16px;
+    border-bottom: 3px solid transparent;
     cursor: pointer;
-    font-size: 0.95rem;
-    font-weight: 500;
+    font-size: 1rem;
+    color: #666;
+    transition: all 0.3s ease;
     position: relative;
-    transition: color 0.2s;
 }
 
-.friends-tabs .tab:hover {
-    color: white;
-}
+/* .friends-tabs .tab:hover {
+    color: #4CAF50;
+    background-color: #f5f5f5;
+} */
 
 .friends-tabs .tab.active {
-    color: #818cf8;
-}
-
-.friends-tabs .tab.active::after {
-    content: '';
-    position: absolute;
-    bottom: -2px;
-    left: 0;
-    right: 0;
-    height: 2px;
-    background: #818cf8;
+    color: #4CAF50;
+    border-bottom-color: #4CAF50;
+    font-weight: bold;
 }
 
 .friends-tabs .badge {
-    background: #ef4444;
+    display: inline-block;
+    background-color: #e74c3c;
     color: white;
+    border-radius: 12px;
+    padding: 2px 8px;
     font-size: 0.75rem;
-    padding: 2px 6px;
-    border-radius: 10px;
-    margin-left: 6px;
+    margin-left: 8px;
+    font-weight: bold;
 }
 
+
 /* ========================================
-   LISTE D'AMIS
+   CONTENU
    ======================================== */
 
 .friends-content,
@@ -89,31 +87,45 @@
     min-height: 200px;
 }
 
-.friends-list {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    max-height: 400px;
-    overflow-y: auto;
-    margin-bottom: 16px;
-    padding-right: 4px;
-}
+
+/* ========================================
+   CARDS — FRIEND & REQUEST
+   ======================================== */
 
 .friend-card,
 .request-card {
-    background: rgba(51, 65, 85, 0.5);
+    background: var(--card-bg, rgba(51, 65, 85, 0.5));
+    border: 1px solid var(--card-border, rgba(148, 163, 184, 0.1));
     border-radius: 12px;
     padding: 16px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    transition: transform 0.2s, background 0.2s;
+    transition: transform 0.2s, background 0.2s, box-shadow 0.2s;
+    animation: slideIn 0.3s ease-out;
 }
 
 .friend-card:hover,
 .request-card:hover {
-    background: rgba(51, 65, 85, 0.7);
+    background: var(--card-bg-hover, rgba(51, 65, 85, 0.7));
     transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Dark mode */
+html.dark .friend-card,
+html.dark .request-card {
+    --card-bg: rgba(51, 65, 85, 0.5);
+    --card-border: rgba(148, 163, 184, 0.1);
+    --card-bg-hover: rgba(51, 65, 85, 0.7);
+}
+
+/* Light mode */
+html:not(.dark) .friend-card,
+html:not(.dark) .request-card {
+    --card-bg: #ffffff;
+    --card-border: #e2e8f0;
+    --card-bg-hover: #f8fafc;
 }
 
 .friend-info,
@@ -123,6 +135,11 @@
     align-items: center;
     flex: 1;
 }
+
+
+/* ========================================
+   AVATARS
+   ======================================== */
 
 .friend-avatar,
 .request-avatar {
@@ -153,6 +170,11 @@
     text-transform: uppercase;
 }
 
+
+/* ========================================
+   DÉTAILS
+   ======================================== */
+
 .friend-details,
 .request-details {
     flex: 1;
@@ -162,7 +184,7 @@
 .friend-details h4,
 .request-details h4 {
     margin: 0 0 4px 0;
-    color: white;
+    color: var(--text-primary);
     font-size: 1rem;
     white-space: nowrap;
     overflow: hidden;
@@ -171,7 +193,7 @@
 
 .friend-email,
 .request-email {
-    color: #94a3b8;
+    color: var(--text-secondary);
     font-size: 0.875rem;
     margin: 0 0 4px 0;
     white-space: nowrap;
@@ -185,15 +207,24 @@
     margin: 0;
 }
 
+.friend-since,
 .request-date {
-    color: #64748b;
+    color: var(--text-secondary);
     font-size: 0.8rem;
-    margin: 0;
+    margin: 4px 0 0 0;
 }
+
 
 /* ========================================
    ACTIONS
    ======================================== */
+
+.request-actions,
+.friend-actions {
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
 
 .delete-friend-btn {
     background: rgba(239, 68, 68, 0.1);
@@ -211,14 +242,10 @@
     background: rgba(239, 68, 68, 0.2);
 }
 
-.request-actions {
-    display: flex;
-    gap: 8px;
-    flex-shrink: 0;
-}
-
 .btn-accept,
-.btn-reject {
+.btn-reject,
+.btn-cancel-request,
+.btn-remove {
     border: none;
     padding: 8px 16px;
     border-radius: 8px;
@@ -246,6 +273,23 @@
     background: rgba(239, 68, 68, 0.3);
 }
 
+.btn-cancel-request,
+.btn-remove {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: transparent;
+    border: 1px solid #ef4444;
+    color: #ef4444;
+}
+
+.btn-cancel-request:hover,
+.btn-remove:hover {
+    background: #ef4444;
+    color: white;
+}
+
+
 /* ========================================
    BOUTON AJOUTER AMI
    ======================================== */
@@ -261,12 +305,35 @@
     font-size: 1rem;
     font-weight: 600;
     transition: transform 0.2s, box-shadow 0.2s;
+    margin-bottom: 1rem;
 }
 
 .add-friend-btn:hover {
     transform: translateY(-2px);
     box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
 }
+
+
+/* ========================================
+   LISTE
+   ======================================== */
+
+.friends-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-height: 400px;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.pending-requests,
+.sent-requests {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
 
 /* ========================================
    ÉTAT VIDE
@@ -275,7 +342,7 @@
 .empty-state {
     text-align: center;
     padding: 40px 20px;
-    color: #94a3b8;
+    color: var(--text-secondary);
 }
 
 .empty-state p:first-child {
@@ -286,8 +353,9 @@
 .empty-subtitle {
     font-size: 0.875rem;
     margin: 0;
-    color: #64748b;
+    color: var(--text-secondary);
 }
+
 
 /* ========================================
    MODAL
@@ -305,12 +373,13 @@
 }
 
 .modal-content {
-    background: #1e293b;
+    background: var(--bg-surface, #1e293b);
     border-radius: 16px;
     padding: 24px;
     width: 90%;
     max-width: 450px;
     border: 1px solid rgba(148, 163, 184, 0.1);
+    animation: slideIn 0.2s ease-out;
 }
 
 .modal-header {
@@ -322,14 +391,14 @@
 
 .modal-header h3 {
     margin: 0;
-    color: white;
+    color: var(--text-primary);
     font-size: 1.25rem;
 }
 
 .close-btn {
     background: none;
     border: none;
-    color: #94a3b8;
+    color: var(--text-secondary);
     font-size: 1.5rem;
     cursor: pointer;
     padding: 4px 8px;
@@ -338,7 +407,7 @@
 }
 
 .close-btn:hover {
-    color: white;
+    color: var(--text-primary);
 }
 
 .form-group {
@@ -347,7 +416,7 @@
 
 .form-group label {
     display: block;
-    color: #e2e8f0;
+    color: var(--text-primary);
     margin-bottom: 8px;
     font-size: 0.875rem;
     font-weight: 500;
@@ -369,6 +438,7 @@
     justify-content: flex-end;
     margin-top: 20px;
 }
+
 
 /* ========================================
    SCROLLBAR CUSTOM
@@ -392,8 +462,26 @@
     background: rgba(148, 163, 184, 0.5);
 }
 
+
 /* ========================================
-   RESPONSIVE MOBILE
+   ANIMATIONS
+   ======================================== */
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+
+/* ========================================
+   RESPONSIVE MOBILE (≤ 768px)
    ======================================== */
 
 @media (max-width: 768px) {
@@ -452,16 +540,12 @@
     }
 }
 
+
 /* ========================================
-   DESKTOP - LAYOUT DANS PROFILEWRAPPER
+   DESKTOP (≥ 769px)
    ======================================== */
 
 @media (min-width: 769px) {
-    .friends-desktop {
-        grid-column: 1 / -1;
-        margin-top: 20px;
-    }
-
     .friends-manager {
         max-width: 100%;
     }
@@ -470,55 +554,6 @@
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
         gap: 12px;
+        max-height: none;
     }
-
-    .friend-card,
-    .request-card {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-
-    .friend-info,
-    .request-info {
-        width: 100%;
-        margin-bottom: 12px;
-    }
-
-    .delete-friend-btn {
-        width: 100%;
-    }
-
-    .request-actions {
-        width: 100%;
-    }
-
-    .btn-accept,
-    .btn-reject {
-        flex: 1;
-    }
-}
-
-/* ========================================
-   ANIMATIONS
-   ======================================== */
-
-@keyframes slideIn {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-.friend-card,
-.request-card {
-    animation: slideIn 0.3s ease-out;
-}
-
-.modal-content {
-    animation: slideIn 0.2s ease-out;
 }

@@ -6,7 +6,7 @@ import PasswordInput from "../connect/PasswordInput";
 import Countdown from "../dashboard/Countdown";
 import GestionNotification from "./GestionNotifications";
 import Wishlist from "./Wishlist";
-import FriendsSection from "../friends/FriendsSection";
+import FriendsSection from "../friends/FriendsSection-OFF";
 import FriendsMobileView from "../friends/FriendsMobileView";
 import MergeDuplicatesSection from "../friends/MergeDuplicatesSection";
 import ThemeToggle from "./ThemeToggle";
@@ -15,8 +15,7 @@ import "../UI/css/containerInfo.css";
 import "./css/profile.css";
 import "./css/profileDesktop.css";
 
-const ProfilDetails = ({ initialSection = "personal" }) => {
-  // ✅ prop ajoutée
+const ProfilDetails = ({ initialSection = "personal", onBack }) => {
   const { logOut } = useContext(AuthContext);
   const { currentUser, isLoggedin, removeUser, storeToken, authenticateUser } =
     useAuth();
@@ -55,7 +54,6 @@ const ProfilDetails = ({ initialSection = "personal" }) => {
     { id: "wishlist", title: "Ma wishlist", icon: "🎁" },
   ];
 
-  // ✅ Initialiser les sections actives avec la prop
   const getInitialIndex = () => {
     const index = sections.findIndex((s) => s.id === initialSection);
     return index !== -1 ? index : 0;
@@ -74,7 +72,7 @@ const ProfilDetails = ({ initialSection = "personal" }) => {
       merge: false,
       wishlist: false,
     };
-    initial[initialSection] = true; // ✅ charger la section initiale directement
+    initial[initialSection] = true;
     return initial;
   });
 
@@ -141,6 +139,7 @@ const ProfilDetails = ({ initialSection = "personal" }) => {
     e.preventDefault();
     setShowDeleteModal(true);
   };
+
   const handleCancelDelete = () => {
     setShowDeleteModal(false);
     setDeleteConfirmText("");
@@ -154,7 +153,6 @@ const ProfilDetails = ({ initialSection = "personal" }) => {
       setShowErrorMessage(true);
       return;
     }
-
     setIsDeleting(true);
     try {
       await apiHandler.delete(`/users/${currentUser._id}`);
@@ -204,14 +202,11 @@ const ProfilDetails = ({ initialSection = "personal" }) => {
       fd.append("newPassword", passwords.newPassword);
     }
     fd.append("receiveBirthdayEmails", receiveEmails);
-
     try {
       const dbResponse = await apiHandler.patch(
         `/users/${userToUpdate._id}`,
         fd,
-        {
-          headers: { "content-type": "multipart/form-data" },
-        },
+        { headers: { "content-type": "multipart/form-data" } },
       );
       storeToken(dbResponse.data.authToken);
       authenticateUser();
@@ -269,7 +264,7 @@ const ProfilDetails = ({ initialSection = "personal" }) => {
                 Modifier
               </button>
               <button className="btn-profil btn-carousel" onClick={logOut}>
-                LogOut
+                Se déconnecter
               </button>
             </div>
           </div>
@@ -287,23 +282,11 @@ const ProfilDetails = ({ initialSection = "personal" }) => {
     }
   };
 
-  const renderMobileSection = () => {
-    const currentSection = sections[currentCarouselIndex];
-    return (
-      <div className="mobile-section">
-        {renderSectionContent(
-          currentSection.id,
-          loadedSections[currentSection.id],
-        )}
-      </div>
-    );
-  };
-
   if (!currentUser) return <p>Chargement...</p>;
 
   return (
     <div>
-      {/* Modals */}
+      {/* ── Modals ── */}
       {showDeleteModal && (
         <div className="delete-modal-overlay" onClick={handleCancelDelete}>
           <div className="delete-modal" onClick={(e) => e.stopPropagation()}>
@@ -375,7 +358,7 @@ const ProfilDetails = ({ initialSection = "personal" }) => {
         </div>
       )}
 
-      {/* Mode édition */}
+      {/* ── Mode édition ── */}
       {isEditing ? (
         <div className="formEdit form-connect">
           <div className="peel">
@@ -488,60 +471,96 @@ const ProfilDetails = ({ initialSection = "personal" }) => {
           </div>
         </div>
       ) : (
-        <div className="profile">
-          {/* 📱 CARROUSEL MOBILE */}
-          <div className="mobile-carousel-container">
-            <div className="mobile-carousel">
-              <div className="mobile-carousel__content">
-                {renderMobileSection()}
-              </div>
-              <div className="mobile-carousel__indicators">
-                {sections.map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setCurrentCarouselIndex(index)}
-                    className={`mobile-carousel__indicator ${index === currentCarouselIndex ? "mobile-carousel__indicator--active" : ""}`}
-                    aria-label={`Aller à la section ${index + 1}`}
-                  />
-                ))}
-              </div>
-              <div className="mobile-carousel__quick-nav">
-                <div className="mobile-carousel__quick-buttons">
-                  {sections.map((section, index) => (
+        <div className="profile-wrapper">
+          {/* ── 💻 DESKTOP : bouton au-dessus du profil, hors container ── */}
+          {onBack && (
+            <button
+              onClick={onBack}
+              className="btnBackToDateList desktop-back-btn"
+            >
+              ← Retour
+            </button>
+          )}
+
+          <div className="profile">
+            {/* ── 📱 CARROUSEL MOBILE ── */}
+            <div className="mobile-carousel-container">
+              <div className="mobile-carousel">
+                <div className="mobile-carousel__content">
+                  <div className="mobile-section">
+                    {/* Bouton retour à l'intérieur du contenu, comme profil ami */}
+                    {onBack && (
+                      <div className="mobile-back-btn">
+                        <button onClick={onBack} className="btnBackToDateList">
+                          ← Retour
+                        </button>
+                      </div>
+                    )}
+
+                    {renderSectionContent(
+                      sections[currentCarouselIndex].id,
+                      loadedSections[sections[currentCarouselIndex].id],
+                    )}
+                  </div>
+                </div>
+                <div className="mobile-carousel__indicators">
+                  {sections.map((_, index) => (
                     <button
-                      key={section.id}
+                      key={index}
                       onClick={() => setCurrentCarouselIndex(index)}
-                      className={`mobile-carousel__quick-btn ${index === currentCarouselIndex ? "mobile-carousel__quick-btn--active" : ""}`}
-                      aria-label={section.title}
-                    >
-                      {section.icon}
-                    </button>
+                      className={`mobile-carousel__indicator ${
+                        index === currentCarouselIndex
+                          ? "mobile-carousel__indicator--active"
+                          : ""
+                      }`}
+                      aria-label={`Aller à la section ${index + 1}`}
+                    />
                   ))}
+                </div>
+                <div className="mobile-carousel__quick-nav">
+                  <div className="mobile-carousel__quick-buttons">
+                    {sections.map((section, index) => (
+                      <button
+                        key={section.id}
+                        onClick={() => setCurrentCarouselIndex(index)}
+                        className={`mobile-carousel__quick-btn ${
+                          index === currentCarouselIndex
+                            ? "mobile-carousel__quick-btn--active"
+                            : ""
+                        }`}
+                        aria-label={section.title}
+                      >
+                        {section.icon}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* 💻 DESKTOP */}
-          <div className="desktop-profile-container">
-            <aside className="desktop-sidebar">
-              {sections.map((section) => (
-                <button
-                  key={section.id}
-                  onClick={() => setActiveDesktopSection(section.id)}
-                  className={`sidebar-btn ${activeDesktopSection === section.id ? "active" : ""}`}
-                >
-                  <span className="sidebar-icon">{section.icon}</span>
-                  <span className="sidebar-text">{section.title}</span>
-                </button>
-              ))}
-            </aside>
-            <main className="desktop-content containerInfo">
-              {renderSectionContent(
-                activeDesktopSection,
-                loadedSections[activeDesktopSection],
-              )}
-            </main>
+            {/* ── 💻 DESKTOP layout ── */}
+            <div className="desktop-profile-container">
+              <aside className="desktop-sidebar">
+                {sections.map((section) => (
+                  <button
+                    key={section.id}
+                    onClick={() => setActiveDesktopSection(section.id)}
+                    className={`sidebar-btn ${
+                      activeDesktopSection === section.id ? "active" : ""
+                    }`}
+                  >
+                    <span className="sidebar-icon">{section.icon}</span>
+                    <span className="sidebar-text">{section.title}</span>
+                  </button>
+                ))}
+              </aside>
+              <main className="desktop-content containerInfo">
+                {renderSectionContent(
+                  activeDesktopSection,
+                  loadedSections[activeDesktopSection],
+                )}
+              </main>
+            </div>
           </div>
         </div>
       )}

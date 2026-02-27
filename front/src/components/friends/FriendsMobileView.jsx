@@ -93,7 +93,6 @@ const FriendsMobileView = ({ currentUser }) => {
 
   const handleConfirmDelete = async () => {
     if (!friendToDelete) return;
-
     try {
       await apiHandler.delete(`/friends/${friendToDelete.id}`);
       setShowDeleteModal(false);
@@ -147,6 +146,14 @@ const FriendsMobileView = ({ currentUser }) => {
         </button>
       </div>
 
+      {/* ── Bouton toujours visible sous les tabs ── */}
+      <button
+        className="add-friend-btn btn-carousel"
+        onClick={() => setShowAddFriendModal(true)}
+      >
+        + Ajouter un ami
+      </button>
+
       <div className="friends-content-mobile">
         {activeTab === "friends" && (
           <>
@@ -157,12 +164,9 @@ const FriendsMobileView = ({ currentUser }) => {
             ) : (
               <div className="friends-list">
                 {friends.map((item) => {
-                  if (!item || !item.friendship || !item.friendUser) {
+                  if (!item || !item.friendship || !item.friendUser)
                     return null;
-                  }
-
                   const { friendship, friendUser } = item;
-
                   return (
                     <div key={friendship._id} className="friend-card">
                       <div className="friend-info">
@@ -198,12 +202,6 @@ const FriendsMobileView = ({ currentUser }) => {
                 })}
               </div>
             )}
-            <button
-              className="add-friend-btn btn-carousel"
-              onClick={() => setShowAddFriendModal(true)}
-            >
-              + Ajouter un ami
-            </button>
           </>
         )}
 
@@ -217,7 +215,6 @@ const FriendsMobileView = ({ currentUser }) => {
               <div className="pending-requests">
                 {pendingReceived.map((request) => {
                   if (!request.user) return null;
-
                   return (
                     <div key={request._id} className="request-card">
                       <div className="request-info">
@@ -272,7 +269,6 @@ const FriendsMobileView = ({ currentUser }) => {
               <div className="sent-requests">
                 {pendingSent.map((request) => {
                   if (!request.friend) return null;
-
                   return (
                     <div key={request._id} className="request-card">
                       <div className="request-info">

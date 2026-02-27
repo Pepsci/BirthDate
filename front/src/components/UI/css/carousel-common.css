@@ -50,7 +50,7 @@
         box-shadow: var(--card-shadow);
         display: flex;
         flex-direction: column;
-        height: 580px;
+        height: 700px;
         transition: all 0.3s ease;
     }
 
@@ -91,7 +91,7 @@
     /* Section mobile */
     .mobile-section {
         animation: fadeIn 0.3s ease;
-        height: 500px;
+        height: 460px;
     }
 
     @keyframes fadeIn {

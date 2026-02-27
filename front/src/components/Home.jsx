@@ -1,5 +1,5 @@
 import React, { useContext, useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom"; // ✅ ajouté
+import { useSearchParams } from "react-router-dom";
 import { AuthContext } from "../context/auth.context";
 import DateList from "./dashboard/DateList";
 import ProfilDetails from "./profil/Profile";
@@ -11,7 +11,7 @@ import Logo from "./UI/Logo";
 
 const Home = () => {
   const { isLoggedIn, currentUser } = useContext(AuthContext);
-  const [searchParams] = useSearchParams(); // ✅ ajouté
+  const [searchParams] = useSearchParams();
   const [date] = useState([]);
   const [showProfile, setShowProfile] = useState(false);
   const [editingDate, setEditingDate] = useState(null);
@@ -19,20 +19,14 @@ const Home = () => {
   const [showMergeModal, setShowMergeModal] = useState(false);
   const [cardToMerge, setCardToMerge] = useState(null);
   const [profileInitialSection, setProfileInitialSection] =
-    useState("personal"); // ✅ ajouté
+    useState("personal");
 
-  // ✅ Ouvrir automatiquement le profil sur l'onglet amis si ?tab=friends
   useEffect(() => {
     const tab = searchParams.get("tab");
     const section = searchParams.get("section");
-
     if (tab === "friends" && isLoggedIn) {
       setShowProfile(true);
-      if (section === "received") {
-        setProfileInitialSection("friends");
-      } else {
-        setProfileInitialSection("friends");
-      }
+      setProfileInitialSection("friends");
     }
   }, [searchParams, isLoggedIn]);
 
@@ -109,18 +103,10 @@ const Home = () => {
             !editingDate &&
             !viewingFriendProfile &&
             !showMergeModal && (
-              <>
-                <div className="profil-btn">
-                  <button
-                    onClick={handleHideProfile}
-                    className="btnBackToDateList"
-                  >
-                    ← Retour à la liste
-                  </button>
-                </div>
-                <ProfilDetails initialSection={profileInitialSection} />{" "}
-                {/* ✅ prop ajoutée */}
-              </>
+              <ProfilDetails
+                initialSection={profileInitialSection}
+                onBack={handleHideProfile}
+              />
             )}
 
           {!showProfile &&

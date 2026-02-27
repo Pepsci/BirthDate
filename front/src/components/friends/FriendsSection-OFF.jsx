@@ -96,7 +96,6 @@ const FriendsSection = ({ currentUser }) => {
 
   const handleConfirmDelete = async () => {
     if (!friendToDelete) return;
-
     try {
       await apiHandler.delete(`/friends/${friendToDelete.id}`);
       setShowDeleteModal(false);
@@ -150,13 +149,17 @@ const FriendsSection = ({ currentUser }) => {
         </button>
       </div>
 
+      {/* ── Bouton Ajouter un ami, toujours visible sous les tabs ── */}
+      <button
+        className="add-friend-btn"
+        onClick={() => setShowAddFriendModal(true)}
+      >
+        + Ajouter un ami
+      </button>
+
       <div className="friends-content">
         {activeTab === "friends" && (
-          <FriendsList
-            friends={friends}
-            onDelete={handleDeleteClick}
-            onAddClick={() => setShowAddFriendModal(true)}
-          />
+          <FriendsList friends={friends} onDelete={handleDeleteClick} />
         )}
 
         {activeTab === "received" && (
