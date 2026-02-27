@@ -55,11 +55,6 @@
     position: relative;
 }
 
-/* .friends-tabs .tab:hover {
-    color: #4CAF50;
-    background-color: #f5f5f5;
-} */
-
 .friends-tabs .tab.active {
     color: #4CAF50;
     border-bottom-color: #4CAF50;
@@ -91,6 +86,10 @@
 /* ========================================
    CARDS — FRIEND & REQUEST
    ======================================== */
+
+   .friend-card--clickable {
+       cursor: pointer;
+   }
 
 .friend-card,
 .request-card {

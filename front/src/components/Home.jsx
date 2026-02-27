@@ -106,6 +106,7 @@ const Home = () => {
               <ProfilDetails
                 initialSection={profileInitialSection}
                 onBack={handleHideProfile}
+                onViewFriendProfile={handleViewFriendProfile}
               />
             )}
 

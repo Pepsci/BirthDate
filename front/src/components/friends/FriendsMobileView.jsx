@@ -4,7 +4,7 @@ import AddFriendModal from "./AddFriendModal";
 import DeleteFriendModal from "./DeleteFriendModal";
 import "./css/friend.css";
 
-const FriendsMobileView = ({ currentUser }) => {
+const FriendsMobileView = ({ currentUser, onViewFriendProfile }) => {
   const [friends, setFriends] = useState([]);
   const [pendingReceived, setPendingReceived] = useState([]);
   const [pendingSent, setPendingSent] = useState([]);
@@ -112,6 +112,25 @@ const FriendsMobileView = ({ currentUser }) => {
     loadSentRequests();
   };
 
+  // Construit un objet date compatible avec FriendProfile depuis un friendUser
+  const buildDateFromFriend = (friendship, friendUser) => ({
+    _id: friendship._id,
+    name: friendUser.name || "",
+    surname: friendUser.surname || "",
+    date: friendUser.birthDate || new Date().toISOString(),
+    linkedUser: friendUser._id,
+    conversationId: friendship.conversationId || null,
+  });
+
+  const handleCardClick = (e, friendship, friendUser) => {
+    // Empêche le clic sur le bouton supprimer de déclencher la navigation
+    if (e.target.closest(".delete-friend-btn")) return;
+    if (onViewFriendProfile) {
+      const dateObj = buildDateFromFriend(friendship, friendUser);
+      onViewFriendProfile(dateObj, "info");
+    }
+  };
+
   return (
     <div className="friends-manager-mobile">
       <div className="friends-header">
@@ -168,7 +187,13 @@ const FriendsMobileView = ({ currentUser }) => {
                     return null;
                   const { friendship, friendUser } = item;
                   return (
-                    <div key={friendship._id} className="friend-card">
+                    <div
+                      key={friendship._id}
+                      className="friend-card friend-card--clickable"
+                      onClick={(e) =>
+                        handleCardClick(e, friendship, friendUser)
+                      }
+                    >
                       <div className="friend-info">
                         <div className="friend-avatar">
                           {friendUser.avatar ? (
@@ -191,9 +216,10 @@ const FriendsMobileView = ({ currentUser }) => {
                       </div>
                       <button
                         className="delete-friend-btn"
-                        onClick={() =>
-                          handleDeleteClick(friendship._id, friendUser.name)
-                        }
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteClick(friendship._id, friendUser.name);
+                        }}
                       >
                         🗑️
                       </button>

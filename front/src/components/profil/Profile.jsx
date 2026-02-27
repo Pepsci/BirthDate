@@ -6,7 +6,7 @@ import PasswordInput from "../connect/PasswordInput";
 import Countdown from "../dashboard/Countdown";
 import GestionNotification from "./GestionNotifications";
 import Wishlist from "./Wishlist";
-import FriendsSection from "../friends/FriendsSection-OFF";
+// import FriendsSection from "../friends/";
 import FriendsMobileView from "../friends/FriendsMobileView";
 import MergeDuplicatesSection from "../friends/MergeDuplicatesSection";
 import ThemeToggle from "./ThemeToggle";
@@ -15,7 +15,11 @@ import "../UI/css/containerInfo.css";
 import "./css/profile.css";
 import "./css/profileDesktop.css";
 
-const ProfilDetails = ({ initialSection = "personal", onBack }) => {
+const ProfilDetails = ({
+  initialSection = "personal",
+  onBack,
+  onViewFriendProfile,
+}) => {
   const { logOut } = useContext(AuthContext);
   const { currentUser, isLoggedin, removeUser, storeToken, authenticateUser } =
     useAuth();
@@ -264,7 +268,7 @@ const ProfilDetails = ({ initialSection = "personal", onBack }) => {
                 Modifier
               </button>
               <button className="btn-profil btn-carousel" onClick={logOut}>
-                Se déconnecter
+                LogOut
               </button>
             </div>
           </div>
@@ -272,7 +276,12 @@ const ProfilDetails = ({ initialSection = "personal", onBack }) => {
       case "notifications":
         return <GestionNotification />;
       case "friends":
-        return <FriendsMobileView currentUser={currentUser} />;
+        return (
+          <FriendsMobileView
+            currentUser={currentUser}
+            onViewFriendProfile={onViewFriendProfile}
+          />
+        );
       case "merge":
         return <MergeDuplicatesSection />;
       case "wishlist":
@@ -478,7 +487,7 @@ const ProfilDetails = ({ initialSection = "personal", onBack }) => {
               onClick={onBack}
               className="btnBackToDateList desktop-back-btn"
             >
-              ← Retour
+              ← Retour à la liste
             </button>
           )}
 
@@ -492,7 +501,7 @@ const ProfilDetails = ({ initialSection = "personal", onBack }) => {
                     {onBack && (
                       <div className="mobile-back-btn">
                         <button onClick={onBack} className="btnBackToDateList">
-                          ← Retour
+                          ← Retour à la liste
                         </button>
                       </div>
                     )}
