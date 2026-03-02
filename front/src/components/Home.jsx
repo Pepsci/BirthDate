@@ -1,4 +1,5 @@
 import React, { useContext, useState, useEffect } from "react";
+import useNotifications from "../context/useNotifications";
 import { useSearchParams } from "react-router-dom";
 import { AuthContext } from "../context/auth.context";
 import DateList from "./dashboard/DateList";
@@ -11,6 +12,7 @@ import Logo from "./UI/Logo";
 
 const Home = () => {
   const { isLoggedIn, currentUser } = useContext(AuthContext);
+  const { friendRequestCount } = useNotifications();
   const [searchParams] = useSearchParams();
   const [date] = useState([]);
   const [showProfile, setShowProfile] = useState(false);
@@ -90,6 +92,11 @@ const Home = () => {
                     alt="avatar"
                     className="avatar"
                   />
+                  {friendRequestCount > 0 && (
+                    <span className="notification-badge-profile">
+                      {friendRequestCount}
+                    </span>
+                  )}
                 </div>
               </button>
             </div>

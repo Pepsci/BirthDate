@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useContext } from "react";
+import useNotifications from "../../context/useNotifications";
 import { AuthContext } from "../../context/auth.context";
 import apiHandler from "../../api/apiHandler";
 import useAuth from "../../context/useAuth";
@@ -6,7 +7,6 @@ import PasswordInput from "../connect/PasswordInput";
 import Countdown from "../dashboard/Countdown";
 import GestionNotification from "./GestionNotifications";
 import Wishlist from "./Wishlist";
-// import FriendsSection from "../friends/";
 import FriendsMobileView from "../friends/FriendsMobileView";
 import MergeDuplicatesSection from "../friends/MergeDuplicatesSection";
 import ThemeToggle from "./ThemeToggle";
@@ -14,6 +14,7 @@ import "../UI/css/carousel-common.css";
 import "../UI/css/containerInfo.css";
 import "./css/profile.css";
 import "./css/profileDesktop.css";
+import "../friends/css/friend.css";
 
 const ProfilDetails = ({
   initialSection = "personal",
@@ -21,6 +22,7 @@ const ProfilDetails = ({
   onViewFriendProfile,
 }) => {
   const { logOut } = useContext(AuthContext);
+  const { friendRequestCount, clearFriendRequestCount } = useNotifications();
   const { currentUser, isLoggedin, removeUser, storeToken, authenticateUser } =
     useAuth();
 
@@ -108,12 +110,14 @@ const ProfilDetails = ({
     if (!loadedSections[currentSection.id]) {
       setLoadedSections((prev) => ({ ...prev, [currentSection.id]: true }));
     }
+    if (currentSection.id === "friends") clearFriendRequestCount();
   }, [currentCarouselIndex]);
 
   useEffect(() => {
     if (!loadedSections[activeDesktopSection]) {
       setLoadedSections((prev) => ({ ...prev, [activeDesktopSection]: true }));
     }
+    if (activeDesktopSection === "friends") clearFriendRequestCount();
   }, [activeDesktopSection]);
 
   useEffect(() => {
@@ -540,6 +544,13 @@ const ProfilDetails = ({
                         aria-label={section.title}
                       >
                         {section.icon}
+
+                        {/* 🔔 Badge mobile */}
+                        {section.id === "friends" && friendRequestCount > 0 && (
+                          <span className="notification-badge-quick">
+                            {friendRequestCount}
+                          </span>
+                        )}
                       </button>
                     ))}
                   </div>
@@ -560,6 +571,13 @@ const ProfilDetails = ({
                   >
                     <span className="sidebar-icon">{section.icon}</span>
                     <span className="sidebar-text">{section.title}</span>
+
+                    {/* 🔔 Badge notifications amis */}
+                    {section.id === "friends" && friendRequestCount > 0 && (
+                      <span className="sidebar-notification-badge notification-badge-profile">
+                        {friendRequestCount}
+                      </span>
+                    )}
                   </button>
                 ))}
               </aside>

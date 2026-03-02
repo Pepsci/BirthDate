@@ -10,6 +10,7 @@ export const NotificationProvider = ({ children }) => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [conversationUnreads, setConversationUnreads] = useState({});
   const [activeConversationId, setActiveConversationId] = useState(null);
+  const [friendRequestCount, setFriendRequestCount] = useState(0); // ✅ nouveau
 
   useEffect(() => {
     if (!isLoggedIn || !currentUser) return;
@@ -40,27 +41,41 @@ export const NotificationProvider = ({ children }) => {
       markAsRead(conversationId);
     };
 
-    // ← Reconnexion automatique sur mobile
     const handleReconnect = () => {
       loadUnreadCount();
+      loadFriendRequestCount();
+    };
+
+    // ✅ Écoute les nouvelles demandes d'ami en temps réel
+    const handleFriendRequest = () => {
+      setFriendRequestCount((prev) => prev + 1);
+    };
+
+    // ✅ Écoute l'acceptation d'une demande (décrémente chez l'expéditeur)
+    const handleFriendRequestAccepted = () => {
+      loadFriendRequestCount();
     };
 
     socket.on("message:new", handleNewMessage);
     socket.on("messages:read", handleMessagesRead);
-    socket.on("connect", handleReconnect); // ← NOUVEAU
+    socket.on("connect", handleReconnect);
+    socket.on("friend:request", handleFriendRequest); // ✅
+    socket.on("friend:request:accepted", handleFriendRequestAccepted); // ✅
 
     loadUnreadCount();
+    loadFriendRequestCount(); // ✅
 
     return () => {
       socket.off("message:new", handleNewMessage);
       socket.off("messages:read", handleMessagesRead);
       socket.off("connect", handleReconnect);
+      socket.off("friend:request", handleFriendRequest);
+      socket.off("friend:request:accepted", handleFriendRequestAccepted);
     };
   }, [isLoggedIn, currentUser, activeConversationId]);
 
   const loadUnreadCount = async () => {
     try {
-      // ✅ apiHandler gère l'URL ET le token automatiquement
       const response = await apiHandler.get("/conversations");
       const conversations = response.data;
 
@@ -82,9 +97,24 @@ export const NotificationProvider = ({ children }) => {
     }
   };
 
-  const markAsRead = (conversationId) => {
-    console.log("✅ Marking as read (NotificationContext):", conversationId);
+  // ✅ Charge le nombre de demandes d'ami reçues en attente
+  const loadFriendRequestCount = async () => {
+    try {
+      const response = await apiHandler.get(
+        `/friends/requests?userId=${currentUser._id}`,
+      );
+      setFriendRequestCount(response.data?.length || 0);
+    } catch (error) {
+      console.error("Error loading friend requests:", error);
+    }
+  };
 
+  // ✅ À appeler quand l'utilisateur consulte l'onglet Amis
+  const clearFriendRequestCount = () => {
+    setFriendRequestCount(0);
+  };
+
+  const markAsRead = (conversationId) => {
     setConversationUnreads((prev) => {
       const newUnreads = { ...prev };
       const count = newUnreads[conversationId] || 0;
@@ -95,10 +125,7 @@ export const NotificationProvider = ({ children }) => {
   };
 
   const setActiveConversation = (conversationId) => {
-    console.log("🎯 Active conversation set:", conversationId);
     setActiveConversationId(conversationId);
-
-    // Marquer comme lu dès qu'on ouvre
     if (conversationId) {
       markAsRead(conversationId);
     }
@@ -119,6 +146,9 @@ export const NotificationProvider = ({ children }) => {
         loadUnreadCount,
         markAsRead,
         resetUnreadCount,
+        friendRequestCount, // ✅
+        loadFriendRequestCount, // ✅
+        clearFriendRequestCount, // ✅
       }}
     >
       {children}

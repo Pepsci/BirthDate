@@ -37,39 +37,52 @@
 
 .friends-tabs {
     display: flex;
-    gap: 10px;
-    margin-bottom: 30px;
-    border-bottom: 2px solid #e0e0e0;
-    flex-direction: row;
+    gap: 8px;
+    margin-bottom: 20px;
+    border-bottom: 2px solid rgba(148, 163, 184, 0.1);
 }
 
 .friends-tabs .tab {
-    padding: 12px 24px;
     background: none;
     border: none;
-    border-bottom: 3px solid transparent;
+    color: var(--text-secondary);
+    padding: 12px 16px;
     cursor: pointer;
-    font-size: 1rem;
-    color: #666;
-    transition: all 0.3s ease;
+    font-size: 0.95rem;
+    font-weight: 500;
     position: relative;
+    transition: color 0.2s;
+}
+
+.friends-tabs .tab:hover {
+    color: var(--text-primary);
 }
 
 .friends-tabs .tab.active {
-    color: #4CAF50;
-    border-bottom-color: #4CAF50;
-    font-weight: bold;
+    color: #818cf8;
+}
+
+.friends-tabs .tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: #818cf8;
 }
 
 .friends-tabs .badge {
-    display: inline-block;
-    background-color: #e74c3c;
+    background: #ef4444;
     color: white;
-    border-radius: 12px;
-    padding: 2px 8px;
     font-size: 0.75rem;
-    margin-left: 8px;
-    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 10px;
+    margin-left: 6px;
+}
+
+.friends-tabs .badge-sent {
+    background: #f59e0b;
 }
 
 
@@ -86,10 +99,6 @@
 /* ========================================
    CARDS — FRIEND & REQUEST
    ======================================== */
-
-   .friend-card--clickable {
-       cursor: pointer;
-   }
 
 .friend-card,
 .request-card {
@@ -555,4 +564,52 @@ html:not(.dark) .request-card {
         gap: 12px;
         max-height: none;
     }
+}
+
+
+/* ========================================
+   BADGES NOTIFICATION DEMANDES D'AMIS
+   ======================================== */
+
+/* Badge sur le btn profil dans le header */
+.notification-badge-profile {
+    position: absolute;
+    top: 3px;
+    right: 10px;
+    background: #ef4444;
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 700;
+    min-width: 18px;
+    height: 18px;
+    border-radius: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+    border: 2px solid var(--bg-primary, #0f172a);
+    pointer-events: none;
+}
+
+/* Badge sur le btn sidebar desktop (Amis) */
+
+
+/* Badge sur le quick-btn mobile carousel */
+.notification-badge-quick {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    background: #ef4444;
+    color: white;
+    font-size: 0.65rem;
+    font-weight: 700;
+    min-width: 16px;
+    height: 16px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 3px;
+    border: 2px solid var(--bg-primary, #0f172a);
+    /* pointer-events: none; */
 }
