@@ -158,6 +158,7 @@
     }
 
     .mobile-carousel__quick-btn {
+        position: relative;
         font-size: 28px;
         border: 1px solid var(--border-color);
         border-radius: 12px;

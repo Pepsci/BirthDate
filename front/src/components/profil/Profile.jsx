@@ -491,7 +491,7 @@ const ProfilDetails = ({
               onClick={onBack}
               className="btnBackToDateList desktop-back-btn"
             >
-              ← Retour à la liste
+              ← Retour
             </button>
           )}
 
@@ -505,7 +505,7 @@ const ProfilDetails = ({
                     {onBack && (
                       <div className="mobile-back-btn">
                         <button onClick={onBack} className="btnBackToDateList">
-                          ← Retour à la liste
+                          ← Retour
                         </button>
                       </div>
                     )}
