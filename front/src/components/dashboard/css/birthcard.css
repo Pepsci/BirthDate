@@ -73,6 +73,16 @@
   box-shadow: var(--card-shadow-hover);
 }
 
+
+.nameday {
+    
+    display: "block";
+      font-size: "0.85em";
+      opacity: 0.8;
+      margin-top: "4px";
+  }
+
+
 /* Bande colorée en haut de chaque carte */
 .birthCard::before {
   content: '';

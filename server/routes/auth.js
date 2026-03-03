@@ -15,7 +15,8 @@ const {
   generateVerificationToken,
   sendVerificationEmail,
 } = require("../services/verififcation");
-const { createFriendDates } = require("../utils/friendDates"); // ✅ import utilitaire
+const { createFriendDates } = require("../utils/friendDates");
+const { findNameDay } = require("../utils/namedayHelper");
 
 const router = express.Router();
 const saltRounds = 10;
@@ -88,16 +89,27 @@ router.post("/signup", async (req, res) => {
     );
     const verificationToken = generateVerificationToken();
 
+    // 🎉 AUTO-DÉTECTION de la fête du prénom
+    const nameday = findNameDay(name);
+
     const newUser = await userModel.create({
       email,
       password: hashedPassword,
       name,
       surname,
-      birthDate: req.body.birthDate || null, // ✅ manquait
+      birthDate: req.body.birthDate || null,
+      nameday, // 🎉 Auto-détecté (ou null si pas trouvé)
       avatar: `https://api.dicebear.com/8.x/bottts/svg?seed=${surname}`,
       verificationToken,
       isVerified: false,
     });
+
+    // 📝 Log optionnel de la détection
+    if (nameday) {
+      console.log(`✅ Fête détectée pour ${name}: ${nameday}`);
+    } else {
+      console.log(`ℹ️ Aucune fête trouvée pour ${name}`);
+    }
 
     // 📊 LOG
     try {

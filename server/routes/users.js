@@ -8,6 +8,7 @@ const { logAction } = require("../middleware/logger.middleware");
 const uploader = require("../config/cloudinary");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
+const { findNameDay } = require("../utils/namedayHelper");
 
 // ─── Helper : champs utilisateur à envoyer au front ──────────────────────────
 function formatUser(user) {
@@ -18,6 +19,7 @@ function formatUser(user) {
     email: user.email,
     avatar: user.avatar,
     birthDate: user.birthDate,
+    nameday: user.nameday,
     // Emails anniversaires
     receiveBirthdayEmails: user.receiveBirthdayEmails,
     receiveFriendRequestEmails: user.receiveFriendRequestEmails,
@@ -100,6 +102,12 @@ router.patch(
         req.body.surname !== undefined ? req.body.surname : user.surname;
       user.email = req.body.email || user.email;
       user.birthDate = req.body.birthDate || user.birthDate;
+
+      // 🎉 Gestion du nameday
+      if (req.body.nameday !== undefined) {
+        user.nameday = req.body.nameday || null;
+      }
+
       if (avatar) user.avatar = avatar;
 
       // ── Préférences emails anniversaires ────────────────────────────────────
@@ -181,6 +189,55 @@ router.patch(
     }
   },
 );
+
+/* PATCH /users/me/nameday - Modifier sa fête */
+router.patch("/me/nameday", isAuthenticated, async (req, res) => {
+  console.log("🎉 Route /me/nameday appelée !");
+  try {
+    const { nameday } = req.body;
+
+    // Validation du format MM-DD
+    if (nameday && !/^\d{2}-\d{2}$/.test(nameday)) {
+      return res.status(400).json({
+        message: "Invalid nameday format. Use MM-DD (e.g., 03-13)",
+      });
+    }
+
+    // Validation de la date (mois 01-12, jour 01-31)
+    if (nameday) {
+      const [month, day] = nameday.split("-").map(Number);
+      if (month < 1 || month > 12 || day < 1 || day > 31) {
+        return res.status(400).json({
+          message: "Invalid date. Month must be 01-12, day must be 01-31",
+        });
+      }
+    }
+
+    const updatedUser = await userModel
+      .findByIdAndUpdate(
+        req.payload._id,
+        { nameday: nameday || null }, // null si vide
+        { new: true, runValidators: true },
+      )
+      .select("-password");
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    console.log(
+      `✅ Nameday updated for ${updatedUser.name}: ${nameday || "removed"}`,
+    );
+
+    return res.status(200).json({
+      message: "Nameday updated successfully",
+      nameday: updatedUser.nameday,
+    });
+  } catch (error) {
+    console.error("Error updating nameday:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+});
 
 /* PATCH /users/me/chat-email-prefs - Activer/désactiver emails chat par ami */
 router.patch("/me/chat-email-prefs", isAuthenticated, async (req, res) => {
@@ -275,6 +332,12 @@ router.patch(
         req.body.surname !== undefined ? req.body.surname : user.surname;
       user.email = req.body.email || user.email;
       user.birthDate = req.body.birthDate || user.birthDate;
+
+      // 🎉 Gestion du nameday
+      if (req.body.nameday !== undefined) {
+        user.nameday = req.body.nameday || null;
+      }
+
       if (avatar) user.avatar = avatar;
 
       // ── Préférences emails anniversaires ────────────────────────────────────

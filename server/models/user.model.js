@@ -11,6 +11,17 @@ const userSchema = new Schema({
       "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/No_image_available.svg/480px-No_image_available.svg.png",
   },
   birthDate: Date,
+  nameday: {
+    type: String, // Format "MM-DD"
+    required: false,
+    validate: {
+      validator: function (v) {
+        if (!v) return true; // null/undefined OK
+        return /^\d{2}-\d{2}$/.test(v); // Format MM-DD
+      },
+      message: "Nameday must be in MM-DD format",
+    },
+  },
   resetToken: String,
   resetTokenExpires: Date,
   verificationToken: String,
@@ -20,12 +31,6 @@ const userSchema = new Schema({
   receiveFriendRequestEmails: { type: Boolean, default: true },
   receiveOwnBirthdayEmail: { type: Boolean, default: true },
   deletedAt: Date,
-
-  /**
-   * Champs à ajouter à ton schéma User Mongoose (user.model.js)
-   * ─────────────────────────────────────────────────────────────
-   * Colle ces lignes dans l'objet userSchema (aux côtés de receiveBirthdayEmails, etc.)
-   */
 
   // ── Notifications emails chat ──────────────────────────────────────────────
 

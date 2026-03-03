@@ -5,6 +5,17 @@ const dateSchema = Schema({
   date: { type: Date, required: true },
   name: String,
   surname: String,
+  nameday: {
+    type: String, // Format "MM-DD"
+    required: false,
+    validate: {
+      validator: function (v) {
+        if (!v) return true;
+        return /^\d{2}-\d{2}$/.test(v);
+      },
+      message: "Nameday must be in MM-DD format",
+    },
+  },
   owner: { type: Schema.Types.ObjectId, ref: "User" },
   family: { type: Boolean, default: false },
 
@@ -34,7 +45,6 @@ const dateSchema = Schema({
       giftName: { type: String, required: true },
       purchased: { type: Boolean, default: false },
 
-      // 👇 NOUVEAUX CHAMPS (optionnels pour rester compatible)
       occasion: {
         type: String,
         enum: ["birthday", "christmas", "other"],

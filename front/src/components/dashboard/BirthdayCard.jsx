@@ -115,9 +115,25 @@ const BirthdayCard = ({ date, onEdit, onViewProfile, onOpenChat }) => {
 
       <div className="birthCardDate">
         <span className="date">
-          {/* ✅ parseLocalDate au lieu de new Date() */}
           {parseLocalDate(date.date).toLocaleDateString("fr-FR")}
         </span>
+        {date.nameday && (
+          <span
+            className="nameday"
+            style={{
+              display: "block",
+              fontSize: "0.85em",
+              opacity: 0.8,
+              marginTop: "4px",
+            }}
+          >
+            🎂 Fête:{" "}
+            {new Date(`2000-${date.nameday}`).toLocaleDateString("fr-FR", {
+              day: "numeric",
+              month: "long",
+            })}
+          </span>
+        )}
       </div>
 
       <div className="birthCard-actions birthCardCenter">

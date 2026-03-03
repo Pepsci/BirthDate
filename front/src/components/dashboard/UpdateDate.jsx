@@ -80,6 +80,38 @@ const UpdateDate = ({ date, onCancel, onMerge }) => {
           value={dateToUpdate.date.split("T")[0]}
           onChange={handleInputChange}
         />
+        {!isFriend && (
+          <div style={{ marginTop: "10px" }}>
+            <label
+              style={{
+                display: "block",
+                marginBottom: "5px",
+                fontSize: "14px",
+              }}
+            >
+              Date de fête (optionnel)
+            </label>
+            <input
+              className="form-input"
+              type="text"
+              name="nameday"
+              placeholder="MM-JJ (ex: 03-13)"
+              value={dateToUpdate.nameday || ""}
+              onChange={handleInputChange}
+              maxLength={5}
+            />
+            <small
+              style={{
+                fontSize: "12px",
+                opacity: 0.7,
+                display: "block",
+                marginTop: "5px",
+              }}
+            >
+              Format: MM-JJ (exemple: 03-13 pour le 13 mars)
+            </small>
+          </div>
+        )}
         <label className="updateLbel">
           Family
           <input

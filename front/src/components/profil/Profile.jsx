@@ -33,6 +33,7 @@ const ProfilDetails = ({
     email: "",
     avatar: "",
     birthDate: "",
+    nameday: "",
     receiveBirthdayEmails: false,
   });
 
@@ -91,6 +92,8 @@ const ProfilDetails = ({
         .get(`/users/${currentUser._id}`)
         .then((dbResponse) => {
           if (isMounted) {
+            console.log("📊 User data received:", dbResponse.data);
+            console.log("🎉 Nameday:", dbResponse.data.nameday);
             setUserToUpdate(dbResponse.data);
             setReceiveEmails(dbResponse.data.receiveBirthdayEmails);
             setLoadedSections((prev) => ({ ...prev, personal: true }));
@@ -193,6 +196,9 @@ const ProfilDetails = ({
     if (userToUpdate.birthDate) {
       fd.append("birthDate", new Date(userToUpdate.birthDate).toISOString());
     }
+    if (userToUpdate.nameday) {
+      fd.append("nameday", userToUpdate.nameday);
+    }
     if (avatarRef.current && avatarRef.current.files[0]) {
       fd.append("avatar", avatarRef.current.files[0]);
     }
@@ -257,6 +263,24 @@ const ProfilDetails = ({
               {userToUpdate.birthDate
                 ? new Date(userToUpdate.birthDate).toLocaleDateString()
                 : "N/A"}
+            </p>
+            <p className="profile_info_details">
+              <b>Fête:</b>{" "}
+              {userToUpdate.nameday ? (
+                <>
+                  {new Date(`2000-${userToUpdate.nameday}`).toLocaleDateString(
+                    "fr-FR",
+                    {
+                      day: "numeric",
+                      month: "long",
+                    },
+                  )}
+                </>
+              ) : (
+                <span style={{ fontStyle: "italic", opacity: 0.7 }}>
+                  Non définie
+                </span>
+              )}
             </p>
             {userToUpdate.birthDate && (
               <div className="profil-countdown">
@@ -410,6 +434,46 @@ const ProfilDetails = ({
                   })
                 }
               />
+
+              <div style={{ marginTop: "10px" }}>
+                <label
+                  style={{
+                    display: "block",
+                    marginBottom: "5px",
+                    fontSize: "14px",
+                  }}
+                >
+                  Date de votre fête (optionnel)
+                </label>
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder="MM-JJ (ex: 03-13)"
+                  value={userToUpdate.nameday || ""}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    // Validation basique du format MM-DD
+                    if (value === "" || /^\d{0,2}-?\d{0,2}$/.test(value)) {
+                      setUserToUpdate({
+                        ...userToUpdate,
+                        nameday: value,
+                      });
+                    }
+                  }}
+                  maxLength={5}
+                />
+                <small
+                  style={{
+                    fontSize: "12px",
+                    opacity: 0.7,
+                    display: "block",
+                    marginTop: "5px",
+                  }}
+                >
+                  Format: MM-JJ (exemple: 03-13 pour le 13 mars)
+                </small>
+              </div>
+
               <div className="profile-togglePasswordContainer">
                 <button
                   type="button"

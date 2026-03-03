@@ -139,8 +139,17 @@ router.patch("/:id", isAuthenticated, async (req, res, next) => {
       });
     }
 
-    const { date, name, surname, family, giftName, purchased } = req.body;
-    const updateFields = { date, name, surname, family };
+    const { date, name, surname, family, nameday, giftName, purchased } =
+      req.body;
+
+    // Validation du nameday si fourni
+    if (nameday && !/^\d{2}-\d{2}$/.test(nameday)) {
+      return res.status(400).json({
+        message: "Invalid nameday format. Use MM-DD (e.g., 03-13)",
+      });
+    }
+
+    const updateFields = { date, name, surname, family, nameday };
 
     if (giftName && purchased !== undefined) {
       updateFields.$push = { gifts: { giftName, purchased } };

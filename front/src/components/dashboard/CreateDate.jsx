@@ -30,6 +30,7 @@ const CreateDate = ({ onDateAdded }) => {
     surname: "",
     family: false,
     comment: "",
+    nameday: "", // 🎉 AJOUT
     owner: currentUserID || "",
   });
 
@@ -88,6 +89,7 @@ const CreateDate = ({ onDateAdded }) => {
         surname: "",
         family: false,
         comment: "",
+        nameday: "", // 🎉 AJOUT
         owner: currentUserID,
       });
 
@@ -131,7 +133,7 @@ const CreateDate = ({ onDateAdded }) => {
               type="text"
               name="name"
               className="filter-input"
-              placeholder="Enter a name"
+              placeholder="Prenom"
               value={date.name}
               onChange={(e) => setDate({ ...date, name: e.target.value })}
               required // Validation HTML5
@@ -141,10 +143,11 @@ const CreateDate = ({ onDateAdded }) => {
               type="text"
               name="surname"
               className="filter-input"
-              placeholder="Enter a surname"
+              placeholder="Nom"
               value={date.surname}
               onChange={(e) => setDate({ ...date, surname: e.target.value })}
             />
+
             <input
               className="filter-input form-input-date"
               type="date"
@@ -152,6 +155,19 @@ const CreateDate = ({ onDateAdded }) => {
               value={date.date}
               onChange={(e) => setDate({ ...date, date: e.target.value })}
             />
+
+            <div className="nameday-wrapper">
+              <input
+                className="filter-input nameday-input"
+                type="text"
+                name="nameday"
+                placeholder="Fête (optionnel) MM-JJ"
+                value={date.nameday}
+                onChange={(e) => setDate({ ...date, nameday: e.target.value })}
+                maxLength={5}
+              />
+            </div>
+
             <div className="form-date-checkbox">
               <label className="form-date-label" htmlFor="family">
                 Family
