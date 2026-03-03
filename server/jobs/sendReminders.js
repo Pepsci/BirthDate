@@ -2,12 +2,17 @@ const cron = require("node-cron");
 const { SESClient, SendEmailCommand } = require("@aws-sdk/client-ses");
 const nodemailer = require("nodemailer");
 const dateModel = require("../models/date.model");
-const userModel = require("../models/user.model"); // ✅ ajouté
+const userModel = require("../models/user.model");
 
 const {
   getBirthdayReminderTemplate,
   getBirthdayReminderTextVersion,
 } = require("../services/emailTemplates/birthdayReminder");
+
+const {
+  getNamedayReminderTemplate,
+  getNamedayReminderTextVersion,
+} = require("../services/emailTemplates/namedayReminder");
 
 const sesClient = new SESClient({
   region: process.env.AWS_REGION,
@@ -41,6 +46,10 @@ const transporter = nodemailer.createTransport({
   name: "ses-v3-transport",
 });
 
+// ============================================================================
+// HELPERS - Vérification des dates
+// ============================================================================
+
 function isBirthdayInXDays(birthday, daysFromNow) {
   const today = new Date();
   const futureDate = new Date(today);
@@ -52,7 +61,26 @@ function isBirthdayInXDays(birthday, daysFromNow) {
   );
 }
 
-// ✅ NOUVEAU : Email d'anniversaire à l'utilisateur lui-même
+// 🎉 NOUVEAU - Vérifier si c'est la fête dans X jours
+function isNamedayInXDays(nameday, daysFromNow) {
+  if (!nameday) return false;
+
+  const today = new Date();
+  const futureDate = new Date(today);
+  futureDate.setDate(today.getDate() + daysFromNow);
+
+  // Format nameday: "MM-DD"
+  const [month, day] = nameday.split("-").map(Number);
+
+  return (
+    futureDate.getDate() === day && futureDate.getMonth() === month - 1 // Les mois JS commencent à 0
+  );
+}
+
+// ============================================================================
+// ANNIVERSAIRES UTILISATEURS (propre anniversaire)
+// ============================================================================
+
 async function checkAndSendUserBirthdayEmails() {
   try {
     console.log("🎂 [CRON] Vérification des anniversaires utilisateurs...");
@@ -92,11 +120,10 @@ async function checkAndSendUserBirthdayEmails() {
   }
 }
 
-// ✅ NOUVEAU : Template email anniversaire utilisateur
 async function sendUserBirthdayEmail(user) {
   const encodedEmail = encodeURIComponent(user.email);
   const profileLink = `${process.env.FRONTEND_URL}/home`;
-  const unsubscribeLink = `${process.env.FRONTEND_URL}/unsubscribe?email=${encodedEmail}`;
+  const unsubscribeLink = `${process.env.FRONTEND_URL}/api/unsubscribe?email=${encodedEmail}`;
 
   const htmlContent = `
 <!DOCTYPE html>
@@ -184,12 +211,13 @@ async function sendUserBirthdayEmail(user) {
   });
 }
 
-async function checkAndSendBirthdayEmails() {
-  try {
-    console.log("🎂 [CRON] Vérification des anniversaires...");
+// ============================================================================
+// ANNIVERSAIRES DES CARTES (amis/famille)
+// ============================================================================
 
-    // ✅ Vérification anniversaires utilisateurs
-    await checkAndSendUserBirthdayEmails();
+async function checkAndSendBirthdayReminders() {
+  try {
+    console.log("🎂 [CRON] Vérification des rappels d'anniversaires...");
 
     const dateList = await dateModel.find().populate("owner");
     let emailsSent = 0;
@@ -206,10 +234,11 @@ async function checkAndSendBirthdayEmails() {
       const birthday = new Date(dateItem.date);
       const preferences = dateItem.notificationPreferences || {};
       const reminders = preferences.timings || [1];
-      const notifyOnBirthday = preferences.notifyOnBirthday || false;
+      const notifyOnBirthday = preferences.notifyOnBirthday !== false;
 
+      // Jour même
       if (notifyOnBirthday && isBirthdayInXDays(birthday, 0)) {
-        await sendReminderEmail(
+        await sendBirthdayReminderEmail(
           dateItem.owner.email,
           dateItem.name,
           dateItem.surname,
@@ -218,13 +247,14 @@ async function checkAndSendBirthdayEmails() {
         );
         emailsSent++;
         console.log(
-          `✅ Email envoyé pour ${dateItem.name} ${dateItem.surname} (jour même)`,
+          `✅ Email anniversaire envoyé pour ${dateItem.name} ${dateItem.surname} (jour même)`,
         );
       }
 
+      // X jours avant
       for (const daysBeforeBirthday of reminders) {
         if (isBirthdayInXDays(birthday, daysBeforeBirthday)) {
-          await sendReminderEmail(
+          await sendBirthdayReminderEmail(
             dateItem.owner.email,
             dateItem.name,
             dateItem.surname,
@@ -233,24 +263,19 @@ async function checkAndSendBirthdayEmails() {
           );
           emailsSent++;
           console.log(
-            `✅ Email envoyé pour ${dateItem.name} ${dateItem.surname} (${daysBeforeBirthday} jours avant)`,
+            `✅ Email anniversaire envoyé pour ${dateItem.name} ${dateItem.surname} (${daysBeforeBirthday} jours avant)`,
           );
         }
       }
     }
 
-    console.log(
-      `🎂 [CRON] Vérification terminée - ${emailsSent} email(s) envoyé(s)`,
-    );
+    console.log(`🎂 [CRON] ${emailsSent} rappel(s) d'anniversaire envoyé(s)`);
   } catch (error) {
-    console.error(
-      "❌ [CRON] Erreur lors de la vérification des anniversaires:",
-      error,
-    );
+    console.error("❌ [CRON] Erreur lors des rappels d'anniversaires:", error);
   }
 }
 
-async function sendReminderEmail(
+async function sendBirthdayReminderEmail(
   email,
   name,
   surname,
@@ -302,15 +327,168 @@ async function sendReminderEmail(
   });
 }
 
-const birthdayEmailCron = cron.schedule(
-  "0 0 * * *",
-  checkAndSendBirthdayEmails,
-  {
-    scheduled: false,
-  },
-);
+// ============================================================================
+// 🎉 NOUVEAU - FÊTES (NAMEDAYS)
+// ============================================================================
 
-module.exports = birthdayEmailCron;
+async function checkAndSendNamedayReminders() {
+  try {
+    console.log("🎂 [CRON] Vérification des rappels de fêtes...");
+
+    const dateList = await dateModel
+      .find({
+        nameday: { $exists: true, $ne: null },
+      })
+      .populate("owner");
+
+    let emailsSent = 0;
+
+    for (const dateItem of dateList) {
+      if (
+        !dateItem.owner ||
+        !dateItem.owner.email ||
+        dateItem.owner.receiveBirthdayEmails === false ||
+        dateItem.receiveNotifications === false
+      )
+        continue;
+
+      const preferences = dateItem.notificationPreferences || {};
+      const reminders = preferences.timings || [1];
+      const notifyOnBirthday = preferences.notifyOnBirthday !== false;
+
+      // Jour même
+      if (notifyOnBirthday && isNamedayInXDays(dateItem.nameday, 0)) {
+        await sendNamedayReminderEmail(
+          dateItem.owner.email,
+          dateItem.name,
+          dateItem.surname,
+          0,
+          dateItem._id,
+          dateItem.nameday,
+        );
+        emailsSent++;
+        console.log(
+          `✅ Email fête envoyé pour ${dateItem.name} ${dateItem.surname} (jour même)`,
+        );
+      }
+
+      // X jours avant
+      for (const daysBeforeBirthday of reminders) {
+        if (isNamedayInXDays(dateItem.nameday, daysBeforeBirthday)) {
+          await sendNamedayReminderEmail(
+            dateItem.owner.email,
+            dateItem.name,
+            dateItem.surname,
+            daysBeforeBirthday,
+            dateItem._id,
+            dateItem.nameday,
+          );
+          emailsSent++;
+          console.log(
+            `✅ Email fête envoyé pour ${dateItem.name} ${dateItem.surname} (${daysBeforeBirthday} jours avant)`,
+          );
+        }
+      }
+    }
+
+    console.log(`🎉 [CRON] ${emailsSent} rappel(s) de fête envoyé(s)`);
+  } catch (error) {
+    console.error("❌ [CRON] Erreur lors des rappels de fêtes:", error);
+  }
+}
+
+async function sendNamedayReminderEmail(
+  email,
+  name,
+  surname,
+  daysBeforeNameday,
+  dateId,
+  nameday,
+) {
+  const encodedEmail = encodeURIComponent(email);
+  const namedayLink = `${process.env.FRONTEND_URL}/birthday/${dateId}`;
+  const unsubscribeAllLink = `${process.env.FRONTEND_URL}/api/unsubscribe?email=${encodedEmail}`;
+  const unsubscribeSpecificLink = `${process.env.FRONTEND_URL}/api/unsubscribe?email=${encodedEmail}&dateid=${dateId}`;
+
+  // Format de la date pour l'affichage
+  const [month, day] = nameday.split("-").map(Number);
+  const namedayDate = new Date(2000, month - 1, day);
+  const formattedDate = namedayDate.toLocaleDateString("fr-FR", {
+    day: "numeric",
+    month: "long",
+  });
+
+  let subject;
+  if (daysBeforeNameday === 0)
+    subject = `C'est la fête de ${name} aujourd'hui ! 🎉`;
+  else if (daysBeforeNameday === 1) subject = `Rappel: Fête demain ! 🎂`;
+  else subject = `Rappel: Fête dans ${daysBeforeNameday} jours 📅`;
+
+  const templateData = {
+    name,
+    surname,
+    daysBeforeNameday,
+    namedayLink,
+    unsubscribeAllLink,
+    unsubscribeSpecificLink,
+    formattedDate,
+  };
+
+  const htmlContent = getNamedayReminderTemplate(templateData);
+  const textContent = getNamedayReminderTextVersion(templateData);
+
+  const mailOptions = {
+    from: `BirthReminder <${process.env.EMAIL_BRTHDAY}>`,
+    to: email,
+    subject,
+    text: textContent,
+    html: htmlContent,
+    headers: {
+      "List-Unsubscribe": `<${unsubscribeAllLink}>`,
+      "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+    },
+  };
+
+  return new Promise((resolve, reject) => {
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        console.error("Erreur lors de l'envoi de l'email:", error);
+        reject(error);
+      } else resolve(info);
+    });
+  });
+}
+
+// ============================================================================
+// FONCTION PRINCIPALE - Tous les rappels
+// ============================================================================
+
+async function checkAndSendAllReminders() {
+  console.log("📧 [CRON] === Démarrage des vérifications quotidiennes ===");
+
+  // 1. Anniversaires utilisateurs (propre anniversaire)
+  await checkAndSendUserBirthdayEmails();
+
+  // 2. Anniversaires des cartes (amis/famille)
+  await checkAndSendBirthdayReminders();
+
+  // 3. 🎉 NOUVEAU - Fêtes (namedays)
+  await checkAndSendNamedayReminders();
+
+  console.log("📧 [CRON] === Vérifications terminées ===");
+}
+
+// ============================================================================
+// PLANIFICATION - Tous les jours à minuit
+// ============================================================================
+
+const remindersCron = cron.schedule("0 0 * * *", checkAndSendAllReminders, {
+  scheduled: false,
+});
 
 // Pour tester : décommenter la ligne ci-dessous (toutes les minutes)
-// const birthdayEmailCron = cron.schedule("*/1 * * * *", checkAndSendBirthdayEmails, { scheduled: false });
+// const remindersCron = cron.schedule("*/1 * * * *", checkAndSendAllReminders, {
+//   scheduled: false,
+// });
+
+module.exports = remindersCron;

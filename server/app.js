@@ -20,7 +20,7 @@ const mergeDatesRouter = require("./routes/mergeDates");
 
 // Charger les cron jobs
 const purgeDeletedAccounts = require("./jobs/purgeDeletedAccounts");
-const sendBirthdayEmails = require("./jobs/sendBirthdayEmails");
+const sendReminders = require("./jobs/sendReminders");
 const {
   chatCronInstant,
   chatCronTwiceDaily,
@@ -75,7 +75,7 @@ app.use("/api/merge-dates", mergeDatesRouter);
 
 // Démarrer les cron jobs
 purgeDeletedAccounts.start();
-sendBirthdayEmails.start();
+sendReminders.start();
 chatCronInstant.start();
 chatCronDaily.start();
 chatCronTwiceDaily.start();
@@ -83,7 +83,7 @@ chatCronWeekly.start();
 
 console.log("🤖 Cron jobs activés :");
 console.log("   ✅ Purge comptes supprimés (tous les jours à 3h)");
-console.log("   ✅ Emails anniversaires (tous les jours à minuit)");
+console.log("   ✅ Emails anniversaires & fêtes (tous les jours à minuit)");
 console.log("   ✅ Emails chat instantané (toutes les 5 minutes)");
 console.log("   ✅ Emails chat quotidien (tous les jours à 9h)");
 console.log("   ✅ Emails chat hebdomadaire (chaque lundi à 9h)");

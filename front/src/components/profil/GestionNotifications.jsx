@@ -3,7 +3,30 @@ import apiHandler from "../../api/apiHandler";
 import "./css/gestionNotifications.css";
 
 // ─────────────────────────────────────────────
-// Onglet 1 : Préférences emails (existant)
+// Composant réutilisable PrefToggle
+// ─────────────────────────────────────────────
+const PrefToggle = ({ label, checked, loading, onChange, warning }) => (
+  <div className="pref-toggle-wrapper">
+    <div className="user-pref-toggle-simple">
+      <div className="toggle-info">
+        <span className="toggle-label">{label}</span>
+      </div>
+      <label className="switch">
+        <input
+          type="checkbox"
+          checked={checked}
+          onChange={(e) => onChange(e.target.checked)}
+          disabled={loading}
+        />
+        <span className="slider round"></span>
+      </label>
+    </div>
+    {warning && <div className="warning-simple">{warning}</div>}
+  </div>
+);
+
+// ─────────────────────────────────────────────
+// Onglet 1 : Préférences emails anniversaires
 // ─────────────────────────────────────────────
 const EmailTab = ({ dates, loading }) => {
   const [updatingDates, setUpdatingDates] = useState(new Set());
@@ -329,7 +352,302 @@ const EmailTab = ({ dates, loading }) => {
 };
 
 // ─────────────────────────────────────────────
-// Onglet 2 : Notifications emails chat (nouveau)
+// Onglet 2 : Préférences emails fêtes
+// ─────────────────────────────────────────────
+const FetesTab = ({ dates, loading }) => {
+  const [updatingDates, setUpdatingDates] = useState(new Set());
+  const [isListExpanded, setIsListExpanded] = useState(false);
+
+  const [userEmailPreference, setUserEmailPreference] = useState(true);
+  const [loadingUserPref, setLoadingUserPref] = useState(false);
+
+  const [filterPrenom, setFilterPrenom] = useState("");
+  const [filterNom, setFilterNom] = useState("");
+
+  const [localDates, setLocalDates] = useState(dates);
+
+  useEffect(() => {
+    setLocalDates(dates);
+  }, [dates]);
+
+  useEffect(() => {
+    loadPreferences();
+  }, []);
+
+  const loadPreferences = async () => {
+    try {
+      const response = await apiHandler.get("/users/me");
+      setUserEmailPreference(response.data.receiveBirthdayEmails !== false);
+    } catch (err) {
+      console.error("Erreur chargement préférences:", err);
+    }
+  };
+
+  const handleToggleNotification = async (dateId, currentValue) => {
+    setUpdatingDates((prev) => new Set(prev).add(dateId));
+    try {
+      const updatedDate = await apiHandler.toggleDateNotifications(
+        dateId,
+        !currentValue,
+      );
+      setLocalDates((prev) =>
+        prev.map((d) => (d._id === dateId ? updatedDate : d)),
+      );
+    } catch (err) {
+      console.error("Erreur toggle notification:", err);
+    } finally {
+      setUpdatingDates((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(dateId);
+        return newSet;
+      });
+    }
+  };
+
+  const handleBulk = async (enable) => {
+    const dateIds = localDates.filter((d) => d.nameday).map((d) => d._id);
+    setUpdatingDates(new Set(dateIds));
+    try {
+      await apiHandler.bulkUpdateNotifications(dateIds, enable);
+      const response = await apiHandler.get("/date");
+      setLocalDates(response.data);
+    } catch (err) {
+      console.error("Erreur bulk:", err);
+    } finally {
+      setUpdatingDates(new Set());
+    }
+  };
+
+  const patchUser = async (field, value, setLoading, setState) => {
+    setLoading(true);
+    try {
+      await apiHandler.patch("/users/me", { [field]: value });
+      setState(value);
+    } catch (err) {
+      console.error("Erreur mise à jour préférence:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Filtrer uniquement les dates qui ont un nameday
+  const datesWithNameday = localDates.filter((d) => d.nameday);
+
+  const getFilteredDates = () =>
+    datesWithNameday.filter((date) => {
+      const matchPrenom = filterPrenom
+        ? date.name?.toLowerCase().includes(filterPrenom.toLowerCase())
+        : true;
+      const matchNom = filterNom
+        ? date.surname?.toLowerCase().includes(filterNom.toLowerCase())
+        : true;
+      return matchPrenom && matchNom;
+    });
+
+  const filteredDates = getFilteredDates();
+  const activeCount = filteredDates.filter(
+    (d) => d.receiveNotifications !== false,
+  ).length;
+  const totalCount = datesWithNameday.length;
+
+  return (
+    <div className="tab-content-inner">
+      {/* Résumé */}
+      <div className="notification-summary">
+        <span className="summary-text">
+          {activeCount} sur {totalCount} notifications de fêtes activées
+        </span>
+      </div>
+
+      {/* Préférence globale */}
+      <div className="user-email-preferences-simple">
+        <PrefToggle
+          label="🎉 Recevoir les emails de rappel de fêtes"
+          checked={userEmailPreference}
+          loading={loadingUserPref}
+          onChange={(v) =>
+            patchUser(
+              "receiveBirthdayEmails",
+              v,
+              setLoadingUserPref,
+              setUserEmailPreference,
+            )
+          }
+          warning={
+            !userEmailPreference
+              ? "⚠️ Les emails sont désactivés. Vous ne recevrez aucune notification de fête par email."
+              : null
+          }
+        />
+      </div>
+
+      {totalCount === 0 ? (
+        <div className="empty-state" style={{ marginTop: "2rem" }}>
+          <p>
+            Aucune fête définie. Ajoutez des dates de fêtes à vos contacts pour
+            recevoir des rappels.
+          </p>
+        </div>
+      ) : (
+        <>
+          {/* Toggle liste */}
+          <div className="list-toggle-section">
+            <button
+              className="toggle-list-btn"
+              onClick={() => setIsListExpanded(!isListExpanded)}
+            >
+              <span className="toggle-icon">{isListExpanded ? "▼" : "▶"}</span>
+              <span className="toggle-text">
+                {isListExpanded ? "Masquer la liste" : "Afficher la liste"}
+              </span>
+              <span className="toggle-count">({totalCount})</span>
+            </button>
+          </div>
+
+          {/* Liste collapsible */}
+          {isListExpanded && (
+            <div className="collapsible-content">
+              <div className="filter-section">
+                <h3>Filtrer les fêtes</h3>
+                <div className="filter-inputs">
+                  <input
+                    type="text"
+                    placeholder="Prénom..."
+                    className="filter-input"
+                    value={filterPrenom}
+                    onChange={(e) => setFilterPrenom(e.target.value)}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Nom..."
+                    className="filter-input"
+                    value={filterNom}
+                    onChange={(e) => setFilterNom(e.target.value)}
+                  />
+                </div>
+                <div className="filter-buttons">
+                  <button
+                    className="filter-btn"
+                    onClick={() => {
+                      setFilterPrenom("");
+                      setFilterNom("");
+                    }}
+                  >
+                    Effacer les filtres
+                  </button>
+                </div>
+              </div>
+
+              <div className="global-actions">
+                <button
+                  className="action-button enable-all"
+                  onClick={() => handleBulk(true)}
+                  disabled={updatingDates.size > 0}
+                >
+                  ✓ Activer tout
+                </button>
+                <button
+                  className="action-button disable-all"
+                  onClick={() => handleBulk(false)}
+                  disabled={updatingDates.size > 0}
+                >
+                  ✕ Désactiver tout
+                </button>
+              </div>
+
+              <div className="notification-list">
+                {filteredDates.length === 0 ? (
+                  <div className="empty-state">
+                    <p>Aucune fête ne correspond aux filtres</p>
+                  </div>
+                ) : (
+                  filteredDates.map((date) => {
+                    const isUpdating = updatingDates.has(date._id);
+                    const isEnabled = date.receiveNotifications !== false;
+                    const isUserDisabled = !userEmailPreference;
+
+                    // Format nameday pour affichage
+                    const [month, day] = (date.nameday || "").split("-");
+                    const namedayDate = new Date(
+                      2000,
+                      parseInt(month) - 1,
+                      parseInt(day),
+                    );
+                    const formattedNameday = namedayDate.toLocaleDateString(
+                      "fr-FR",
+                      {
+                        day: "numeric",
+                        month: "long",
+                      },
+                    );
+
+                    return (
+                      <div
+                        key={date._id}
+                        className={`notification-item ${isEnabled ? "enabled" : "disabled"} ${isUpdating ? "updating" : ""} ${isUserDisabled ? "user-disabled" : ""}`}
+                      >
+                        <div className="person-info">
+                          <div className="person-name">
+                            <span className="name">{date.name}</span>
+                            <span className="surname">{date.surname}</span>
+                          </div>
+                          <div className="person-details">
+                            <span className="birth-date">
+                              🎂 Fête: {formattedNameday}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="notification-toggle">
+                          {isUpdating ? (
+                            <div className="updating-text">
+                              <div className="mini-spinner"></div>
+                              <span>Mise à jour...</span>
+                            </div>
+                          ) : (
+                            <>
+                              <label className="switch">
+                                <input
+                                  type="checkbox"
+                                  checked={isEnabled}
+                                  onChange={() =>
+                                    handleToggleNotification(
+                                      date._id,
+                                      isEnabled,
+                                    )
+                                  }
+                                  disabled={isUserDisabled}
+                                />
+                                <span className="slider round"></span>
+                              </label>
+                              <span
+                                className={`status-text ${isEnabled ? "enabled" : "disabled"}`}
+                              >
+                                {isEnabled ? "Activé" : "Désactivé"}
+                              </span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      <div className="notification-footer">
+        <p className="info-text">
+          Les notifications actives recevront des rappels de fête par email.
+        </p>
+      </div>
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────
+// Onglet 3 : Notifications emails chat
 // ─────────────────────────────────────────────
 const ChatTab = () => {
   const [friends, setFriends] = useState([]);
@@ -365,7 +683,6 @@ const ChatTab = () => {
       setChatEmailFrequency(userRes.data.chatEmailFrequency || "daily");
 
       // Construire les prefs par ami
-      // Structure réelle de /friends : [{ friendUser: { _id, name, surname }, friendship: {...} }]
       const prefs = {};
       const rawList = friendsRes.data || [];
       const disabled = userRes.data.chatEmailDisabledFriends || [];
@@ -462,7 +779,7 @@ const ChatTab = () => {
     );
   }
 
-  // Calcul du résumé global (ici pour l'afficher avant le toggle)
+  // Calcul du résumé global
   const activeChatCount = friends.filter((f) => {
     const friendUser = f.friendUser || f;
     const friendId = (friendUser?._id || "").toString();
@@ -515,16 +832,10 @@ const ChatTab = () => {
         </div>
       )}
 
-      {/* Résumé + liste déroulante par ami */}
+      {/* Liste par ami */}
       {receiveChatEmails &&
         friends.length > 0 &&
         (() => {
-          const activeCount = friends.filter((f) => {
-            const friendUser = f.friendUser || f;
-            const friendId = (friendUser?._id || "").toString();
-            return friendPrefs[friendId] !== false;
-          }).length;
-
           const filteredFriends = friends.filter((f) => {
             const friendUser = f.friendUser || f;
             const fullName =
@@ -550,7 +861,7 @@ const ChatTab = () => {
                 </button>
               </div>
 
-              {/* Liste collapsible avec filtre */}
+              {/* Liste collapsible */}
               {isListExpanded && (
                 <div className="collapsible-content">
                   <div className="filter-section">
@@ -659,29 +970,6 @@ const ChatTab = () => {
 };
 
 // ─────────────────────────────────────────────
-// Composant réutilisable PrefToggle
-// ─────────────────────────────────────────────
-const PrefToggle = ({ label, checked, loading, onChange, warning }) => (
-  <div className="pref-toggle-wrapper">
-    <div className="user-pref-toggle-simple">
-      <div className="toggle-info">
-        <span className="toggle-label">{label}</span>
-      </div>
-      <label className="switch">
-        <input
-          type="checkbox"
-          checked={checked}
-          onChange={(e) => onChange(e.target.checked)}
-          disabled={loading}
-        />
-        <span className="slider round"></span>
-      </label>
-    </div>
-    {warning && <div className="warning-simple">{warning}</div>}
-  </div>
-);
-
-// ─────────────────────────────────────────────
 // Composant principal
 // ─────────────────────────────────────────────
 const GestionNotification = () => {
@@ -745,7 +1033,13 @@ const GestionNotification = () => {
           className={`notif-tab ${activeTab === "emails" ? "active" : ""}`}
           onClick={() => setActiveTab("emails")}
         >
-          📧 Emails
+          📧 Anniversaires
+        </button>
+        <button
+          className={`notif-tab ${activeTab === "fetes" ? "active" : ""}`}
+          onClick={() => setActiveTab("fetes")}
+        >
+          🎉 Fêtes
         </button>
         <button
           className={`notif-tab ${activeTab === "chat" ? "active" : ""}`}
@@ -759,6 +1053,8 @@ const GestionNotification = () => {
       <div className="notif-tab-content">
         {activeTab === "emails" ? (
           <EmailTab dates={dates} loading={loading} />
+        ) : activeTab === "fetes" ? (
+          <FetesTab dates={dates} loading={loading} />
         ) : (
           <ChatTab />
         )}

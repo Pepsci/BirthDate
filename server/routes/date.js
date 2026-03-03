@@ -65,7 +65,7 @@ router.get("/", isAuthenticated, async (req, res, next) => {
 // 🔒 SÉCURISÉ : Force le owner à être l'utilisateur connecté
 // ========================================
 router.post("/", isAuthenticated, async (req, res, next) => {
-  const { date, name, surname, family, linkedUser } = req.body;
+  const { date, name, surname, family, linkedUser, nameday } = req.body;
 
   try {
     const newDate = await dateModel.create({
@@ -75,6 +75,7 @@ router.post("/", isAuthenticated, async (req, res, next) => {
       surname,
       family,
       linkedUser,
+      nameday: nameday || null,
     });
 
     res.status(201).json(newDate);
