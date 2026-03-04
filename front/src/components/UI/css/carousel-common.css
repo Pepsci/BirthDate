@@ -50,7 +50,7 @@
         box-shadow: var(--card-shadow);
         display: flex;
         flex-direction: column;
-        height: 700px;
+        height: 650px;
         transition: all 0.3s ease;
     }
 

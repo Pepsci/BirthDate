@@ -1,0 +1,149 @@
+/* fetesTab.css - Styles spécifiques à l'onglet Fêtes */
+
+/* ========================================
+   SECTION FRÉQUENCE - TIMINGS FÊTES
+   ======================================== */
+.section-subtitle {
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: rgba(255, 255, 255, 0.5);
+    margin: 1.5rem 0 0.75rem 0;
+}
+
+.frequency-section {
+    margin-top: 0.5rem;
+}
+
+/* Conteneur spécial pour le jour J */
+.timing-option-special {
+    margin-bottom: 1rem;
+}
+
+/* Grille pour les autres options */
+.timing-options-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+/* Style des checkboxes comme des boutons */
+.timing-checkbox {
+    display: flex;
+    align-items: center;
+    padding: 1rem 1.25rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.timing-checkbox:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(102, 126, 234, 0.5);
+    transform: translateY(-2px);
+}
+
+/* Masquer la checkbox native */
+.timing-checkbox input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+}
+
+.timing-checkbox input[type="checkbox"]:disabled~.timing-label {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Layout du label */
+.timing-label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    cursor: pointer;
+}
+
+.timing-icon {
+    font-size: 24px;
+    transition: transform 0.3s ease;
+}
+
+.timing-text {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+}
+
+.timing-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+    transition: color 0.3s ease;
+}
+
+.timing-subtitle {
+    font-size: 13px;
+    opacity: 0.6;
+    color: rgba(255, 255, 255, 0.7);
+    transition: opacity 0.3s ease;
+}
+
+/* État actif (checked) - Style identique aux boutons de fréquence */
+.timing-checkbox:has(input[type="checkbox"]:checked) {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
+    border-color: #667eea;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.timing-checkbox:has(input[type="checkbox"]:checked) .timing-title {
+    color: #667eea;
+}
+
+.timing-checkbox:has(input[type="checkbox"]:checked) .timing-subtitle {
+    opacity: 0.9;
+    color: rgba(102, 126, 234, 0.8);
+}
+
+.timing-checkbox:has(input[type="checkbox"]:checked) .timing-icon {
+    transform: scale(1.1);
+}
+
+/* Animation au hover sur l'état actif */
+.timing-checkbox:has(input[type="checkbox"]:checked):hover {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.25) 0%, rgba(118, 75, 162, 0.25) 100%);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+/* Style spécial pour le jour J (plus visible) */
+.timing-option-special .timing-checkbox {
+    border: 2px solid rgba(102, 126, 234, 0.3);
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.timing-option-special .timing-checkbox:has(input[type="checkbox"]:checked) {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.25) 0%, rgba(118, 75, 162, 0.25) 100%);
+    border-color: #667eea;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+/* Loading indicator */
+.loading-indicator {
+    margin-top: 1rem;
+    text-align: center;
+    font-size: 14px;
+    opacity: 0.7;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}

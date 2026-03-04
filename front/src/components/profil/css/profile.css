@@ -25,7 +25,7 @@
 }
 
 .profile_info_details {
-    margin: 1rem !important;
+    margin: 0.2rem !important;
     color: var(--text-secondary) !important;
     font-family: 'Roboto', sans-serif;
     font-size: 1.8rem;

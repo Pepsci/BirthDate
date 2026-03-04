@@ -1,5 +1,8 @@
-/* gestionNotifications.css - Styles pour le composant de gestion des notifications */
+/* gestionNotifications.css - Base commune à tous les onglets */
 
+/* ========================================
+   STRUCTURE DE BASE
+   ======================================== */
 .simple-notification-manager {
     position: relative;
     max-width: 400px;
@@ -16,9 +19,8 @@
 }
 
 /* ========================================
-   EN-TÊTE
+   EN-TÊTE ET FOOTER
    ======================================== */
-
 .notification-header {
     margin-bottom: 24px;
     text-align: center;
@@ -33,6 +35,68 @@
     transition: color 0.3s ease;
 }
 
+.notification-footer {
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-color);
+    transition: border-color 0.3s ease;
+}
+
+.info-text {
+    text-align: center;
+    color: var(--text-tertiary);
+    font-size: 0.9rem;
+    margin: 0;
+    transition: color 0.3s ease;
+}
+
+/* ========================================
+   ONGLETS
+   ======================================== */
+.notif-tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.08);
+    margin-bottom: 1.5rem;
+}
+
+.notif-tab {
+    flex: 1;
+    padding: 0.75rem 1rem;
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid transparent;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: color 0.2s, border-color 0.2s;
+    margin-bottom: -2px;
+}
+
+.notif-tab:hover {
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.notif-tab.active {
+    color: #ffffff;
+    border-bottom-color: #7c6ee6;
+    font-weight: 600;
+}
+
+.notif-tab-content {
+    /* espace pour le scroll si besoin */
+}
+
+.tab-content-inner {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+/* ========================================
+   RÉSUMÉ ET ÉTATS
+   ======================================== */
 .notification-summary {
     padding: 8px 16px;
     border-radius: 8px;
@@ -49,56 +113,123 @@
     transition: color 0.3s ease;
 }
 
-/* ========================================
-   ACTIONS GLOBALES
-   ======================================== */
-
-.global-actions {
-    display: flex;
-    gap: 12px;
-    justify-content: center;
-    margin-bottom: 24px;
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-tertiary);
 }
 
-.action-button {
-    padding: 10px 20px;
+.loading-state,
+.error-state {
+    text-align: center;
+    padding: 40px 20px;
+}
+
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid var(--bg-tertiary);
+    border-top: 4px solid var(--primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 16px;
+}
+
+.mini-spinner {
+    width: 12px;
+    height: 12px;
+    border: 2px solid var(--border-color);
+    border-top: 2px solid var(--primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    display: inline-block;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+.error-state p {
+    color: var(--danger);
+    margin-bottom: 16px;
+}
+
+.retry-button {
+    background-color: var(--primary);
+    color: white;
     border: none;
+    padding: 10px 20px;
     border-radius: 8px;
-    font-weight: 600;
     cursor: pointer;
+    font-weight: 600;
     transition: all 0.3s ease;
-    font-size: 0.9rem;
 }
 
-.action-button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.enable-all {
-    background-color: var(--success) !important;
-    color: white;
-}
-
-.enable-all:hover:not(:disabled) {
-    background-color: #059669;
-    transform: translateY(-2px);
-}
-
-.disable-all {
-    background-color: var(--danger) !important;
-    color: white;
-}
-
-.disable-all:hover:not(:disabled) {
-    background-color: #dc2626;
+.retry-button:hover {
+    background-color: var(--primary-light);
     transform: translateY(-2px);
 }
 
 /* ========================================
-   LISTE DES NOTIFICATIONS
+   PRÉFÉRENCES GLOBALES (COMMUN)
    ======================================== */
+.user-email-preferences-simple {
+    margin: 20px 0;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 10px;
+    transition: all 0.3s ease;
+}
 
+.pref-toggle-wrapper {
+    margin-top: 1rem;
+}
+
+.pref-toggle-wrapper:first-child {
+    margin-top: 0;
+}
+
+.user-pref-toggle-simple {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+}
+
+.toggle-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.toggle-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-primary);
+    transition: color 0.3s ease;
+}
+
+.warning-simple {
+    margin-top: 15px;
+    padding: 12px 16px;
+    background: rgba(239, 68, 68, 0.1);
+    border-left: 3px solid var(--danger);
+    border-radius: 6px;
+    color: var(--danger);
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+/* ========================================
+   LISTE DES NOTIFICATIONS (COMMUN)
+   ======================================== */
 .notification-list {
     display: flex;
     flex-direction: column;
@@ -132,10 +263,15 @@
     transform: scale(0.98);
 }
 
-/* ========================================
-   INFORMATIONS DE LA PERSONNE
-   ======================================== */
+.notification-item.user-disabled {
+    opacity: 0.5;
+}
 
+.notification-item.user-disabled .switch {
+    pointer-events: none;
+}
+
+/* Informations personne */
 .person-info {
     flex: 1;
 }
@@ -183,9 +319,8 @@
 }
 
 /* ========================================
-   TOGGLE SWITCH
+   TOGGLE SWITCH (COMMUN)
    ======================================== */
-
 .notification-toggle {
     display: flex;
     align-items: center;
@@ -251,10 +386,6 @@ input:disabled+.slider {
     border-radius: 50%;
 }
 
-/* ========================================
-   TEXTE DE STATUT
-   ======================================== */
-
 .status-text {
     font-weight: 600;
     font-size: 0.9rem;
@@ -277,157 +408,53 @@ input:disabled+.slider {
 }
 
 /* ========================================
-   ÉTATS DE CHARGEMENT ET D'ERREUR
+   ACTIONS GLOBALES (COMMUN)
    ======================================== */
-
-.loading-state,
-.error-state {
-    text-align: center;
-    padding: 40px 20px;
+.global-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-bottom: 24px;
 }
 
-.loading-spinner {
-    width: 40px;
-    height: 40px;
-    border: 4px solid var(--bg-tertiary);
-    border-top: 4px solid var(--primary);
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin: 0 auto 16px;
-}
-
-.mini-spinner {
-    width: 12px;
-    height: 12px;
-    border: 2px solid var(--border-color);
-    border-top: 2px solid var(--primary);
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    display: inline-block;
-}
-
-@keyframes spin {
-    0% {
-        transform: rotate(0deg);
-    }
-
-    100% {
-        transform: rotate(360deg);
-    }
-}
-
-.error-state p {
-    color: var(--danger);
-    margin-bottom: 16px;
-}
-
-.retry-button {
-    background-color: var(--primary);
-    color: white;
-    border: none;
+.action-button {
     padding: 10px 20px;
+    border: none;
     border-radius: 8px;
-    cursor: pointer;
     font-weight: 600;
+    cursor: pointer;
     transition: all 0.3s ease;
+    font-size: 0.9rem;
 }
 
-.retry-button:hover {
-    background-color: var(--primary-light);
+.action-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.enable-all {
+    background-color: var(--success) !important;
+    color: white;
+}
+
+.enable-all:hover:not(:disabled) {
+    background-color: #059669;
+    transform: translateY(-2px);
+}
+
+.disable-all {
+    background-color: var(--danger) !important;
+    color: white;
+}
+
+.disable-all:hover:not(:disabled) {
+    background-color: #dc2626;
     transform: translateY(-2px);
 }
 
 /* ========================================
-   ÉTAT VIDE
+   TOGGLE LISTE ET FILTRES (COMMUN)
    ======================================== */
-
-.empty-state {
-    text-align: center;
-    padding: 40px 20px;
-    color: var(--text-tertiary);
-}
-
-/* ========================================
-   FOOTER
-   ======================================== */
-
-.notification-footer {
-    margin-top: 24px;
-    padding-top: 20px;
-    border-top: 1px solid var(--border-color);
-    transition: border-color 0.3s ease;
-}
-
-.info-text {
-    text-align: center;
-    color: var(--text-tertiary);
-    font-size: 0.9rem;
-    margin: 0;
-    transition: color 0.3s ease;
-}
-
-/* ========================================
-   PRÉFÉRENCES GLOBALES
-   ======================================== */
-
-.user-email-preferences-simple {
-    margin: 20px 0;
-    background: var(--bg-tertiary);
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
-    padding: 10px;
-    transition: all 0.3s ease;
-}
-
-.user-pref-toggle-simple {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 20px;
-}
-
-.toggle-info {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.toggle-label {
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--text-primary);
-    transition: color 0.3s ease;
-}
-
-.toggle-sublabel {
-    font-size: 13px;
-    color: var(--text-secondary);
-    transition: color 0.3s ease;
-}
-
-.warning-simple {
-    margin-top: 15px;
-    padding: 12px 16px;
-    background: rgba(239, 68, 68, 0.1);
-    border-left: 3px solid var(--danger);
-    border-radius: 6px;
-    color: var(--danger);
-    font-size: 12px;
-    line-height: 1.5;
-}
-
-.notification-item.user-disabled {
-    opacity: 0.5;
-}
-
-.notification-item.user-disabled .switch {
-    pointer-events: none;
-}
-
-/* ========================================
-   BOUTON TOGGLE LISTE
-   ======================================== */
-
 .list-toggle-section {
     margin: 16px 0;
     text-align: center;
@@ -457,10 +484,6 @@ input:disabled+.slider {
     box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
 }
 
-.toggle-list-btn:active {
-    transform: translateY(0);
-}
-
 .toggle-icon {
     font-size: 12px;
     color: var(--primary);
@@ -481,12 +504,7 @@ input:disabled+.slider {
     background: var(--bg-secondary);
     padding: 2px 8px;
     border-radius: 8px;
-    transition: all 0.3s ease;
 }
-
-/* ========================================
-   ANIMATION D'EXPANSION/COLLAPSE
-   ======================================== */
 
 .collapsible-content {
     animation: slideDown 0.3s ease;
@@ -506,17 +524,13 @@ input:disabled+.slider {
     }
 }
 
-/* ========================================
-   SECTION FILTRES
-   ======================================== */
-
+/* Filtres */
 .filter-section {
     margin-bottom: 20px;
     padding: 16px;
     background: var(--bg-tertiary);
     border: 1px solid var(--border-color);
     border-radius: 12px;
-    transition: all 0.3s ease;
 }
 
 .filter-section h3 {
@@ -525,7 +539,6 @@ input:disabled+.slider {
     font-weight: 600;
     margin: 0 0 12px 0;
     text-align: center;
-    transition: color 0.3s ease;
 }
 
 .filter-inputs {
@@ -543,7 +556,6 @@ input:disabled+.slider {
     color: var(--text-primary);
     font-size: 14px;
     transition: all 0.2s ease;
-    box-sizing: border-box;
     min-width: 0;
     height: 40px;
 }
@@ -578,11 +590,6 @@ input:disabled+.slider {
 
 .filter-btn:hover {
     background: var(--bg-primary);
-    border-color: var(--border-color-hover);
-}
-
-.filter-btn:active {
-    transform: scale(0.98);
 }
 
 .filter-btn.active {
@@ -592,177 +599,20 @@ input:disabled+.slider {
     font-weight: 600;
 }
 
-/* ─────────────────────────────────────────────
-   Onglets Emails / Chat
-───────────────────────────────────────────── */
-.notif-tabs {
-    display: flex;
-    gap: 0;
-    border-bottom: 2px solid rgba(255, 255, 255, 0.08);
-    margin-bottom: 1.5rem;
-}
-
-.notif-tab {
-    flex: 1;
-    padding: 0.75rem 1rem;
-    background: transparent;
-    border: none;
-    border-bottom: 3px solid transparent;
-    color: rgba(255, 255, 255, 0.5);
-    font-size: 0.9rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: color 0.2s, border-color 0.2s;
-    margin-bottom: -2px;
-}
-
-.notif-tab:hover {
-    color: rgba(255, 255, 255, 0.85);
-}
-
-.notif-tab.active {
-    color: #ffffff;
-    border-bottom-color: #7c6ee6;
-    /* violet de ta palette */
-    font-weight: 600;
-}
-
-.notif-tab-content {
-    /* espace pour le scroll si besoin */
-}
-
-.tab-content-inner {
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-}
-
-/* ─────────────────────────────────────────────
-   PrefToggle wrapper (harmonisation marges)
-───────────────────────────────────────────── */
-.pref-toggle-wrapper {
-    margin-top: 1rem;
-}
-
-.pref-toggle-wrapper:first-child {
-    margin-top: 0;
-}
-
-/* ─────────────────────────────────────────────
-   Section subtitle
-───────────────────────────────────────────── */
-.section-subtitle {
-    font-size: 0.85rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    color: rgba(255, 255, 255, 0.5);
-    margin: 1.5rem 0 0.75rem 0;
-}
-
-.section-subtitle-hint {
-    font-weight: 400;
-    text-transform: none;
-    letter-spacing: 0;
-    color: rgba(255, 255, 255, 0.3);
-}
-
-/* ─────────────────────────────────────────────
-   Fréquence d'envoi
-───────────────────────────────────────────── */
-.frequency-section {
-    margin-top: 0.5rem;
-}
-
-.frequency-options {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-}
-
-.frequency-btn {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.15rem;
-    padding: 0.75rem 1rem;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1.5px solid rgba(255, 255, 255, 0.08);
-    border-radius: 10px;
-    color: rgba(255, 255, 255, 0.7);
-    cursor: pointer;
-    transition: background 0.2s, border-color 0.2s, color 0.2s;
-    text-align: left;
-    width: 100%;
-}
-
-.frequency-btn:hover:not(:disabled) {
-    background: rgba(124, 110, 230, 0.12);
-    border-color: rgba(124, 110, 230, 0.4);
-    color: #fff;
-}
-
-.frequency-btn.active {
-    background: rgba(124, 110, 230, 0.18);
-    border-color: #7c6ee6;
-    color: #ffffff;
-}
-
-.frequency-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.freq-label {
-    font-size: 0.9rem;
-    font-weight: 600;
-}
-
-.freq-desc {
-    font-size: 0.78rem;
-    color: rgba(255, 255, 255, 0.45);
-}
-
-.frequency-btn.active .freq-desc {
-    color: rgba(255, 255, 255, 0.65);
-}
-
-/* ─────────────────────────────────────────────
-   Prefs par ami (chat)
-───────────────────────────────────────────── */
-.friends-chat-prefs {
-    margin-top: 0.5rem;
-}
-
-.chat-hint {
-    font-style: italic;
-    color: rgba(255, 255, 255, 0.35) !important;
-}
-
 /* ========================================
    RESPONSIVE
    ======================================== */
-
 @media (max-width: 600px) {
     .simple-notification-manager {
         width: 100%;
         height: 500px;
         padding: 5px;
-        margin: auto;
-        background-color: transparent;
-        border: none;
     }
 
     .notification-item {
-        justify-content: space-between !important;
         gap: 16px;
-        height: 42px;
         padding: 12px;
         min-height: 60px;
-    }
-
-    .notification-toggle {
-        align-self: flex-end;
     }
 
     .global-actions {
@@ -779,33 +629,11 @@ input:disabled+.slider {
         gap: 8px;
     }
 
-    .toggle-list-btn {
-        padding: 10px 16px;
-        font-size: 14px;
-    }
-
-    .toggle-count {
-        font-size: 12px;
-    }
-
-    .filter-section {
-        padding: 12px;
-    }
-
-    .filter-section h3 {
-        font-size: 15px;
-    }
-
     .filter-inputs {
         flex-direction: column;
     }
 
     .filter-buttons {
         flex-direction: column;
-    }
-
-    .filter-input,
-    .filter-btn {
-        font-size: 13px;
     }
 }
