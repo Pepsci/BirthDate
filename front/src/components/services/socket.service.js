@@ -11,29 +11,21 @@ class SocketService {
       return this.socket;
     }
 
-    // 👇 CORRECTION: Utilise la même logique que apiHandler
     const isLocal = window.location.hostname === "localhost";
 
+    // Suit automatiquement le domaine courant — pas de hardcode
     const apiUrl = isLocal
       ? "http://localhost:4000"
-      : "https://birthreminder.com";
+      : `${window.location.protocol}//${window.location.hostname}`;
 
-    console.log(
-      "🔌 Connecting to:",
-      apiUrl,
-      "(hostname:",
-      window.location.hostname,
-      ")",
-    );
+    console.log("🔌 Connecting to:", apiUrl);
 
     this.socket = io(apiUrl, {
-      auth: {
-        token: token,
-      },
+      auth: { token },
       transports: ["websocket", "polling"],
       reconnection: true,
       reconnectionDelay: 1000,
-      reconnectionAttempts: 5,
+      reconnectionAttempts: 10, // ← augmenté pour réseau mobile instable
     });
 
     this.socket.on("connect", () => {
@@ -46,6 +38,11 @@ class SocketService {
 
     this.socket.on("disconnect", (reason) => {
       console.log("👋 Socket.io disconnected:", reason);
+    });
+
+    // Écoute les erreurs d'envoi de message renvoyées par le serveur
+    this.socket.on("message:error", ({ tempId, error }) => {
+      console.error("❌ Message send failed (tempId:", tempId, "):", error);
     });
 
     return this.socket;

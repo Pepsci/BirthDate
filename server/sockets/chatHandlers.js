@@ -9,10 +9,7 @@ module.exports = (io) => {
   io.on("connection", (socket) => {
     console.log(`📱 User connected: ${socket.userId}`);
 
-    // Ajouter l'utilisateur à la map des connectés
     connectedUsers.set(socket.userId, socket.id);
-
-    // Notifier les amis que l'utilisateur est en ligne
     socket.broadcast.emit("user:online", { userId: socket.userId });
 
     socket.on("users:getOnline", () => {
@@ -46,7 +43,6 @@ module.exports = (io) => {
     // Rejoindre une conversation spécifique
     socket.on("conversation:join", async ({ conversationId }) => {
       try {
-        // Vérifier que l'utilisateur fait partie de la conversation
         const conversation = await Conversation.findOne({
           _id: conversationId,
           participants: socket.userId,
@@ -58,7 +54,6 @@ module.exports = (io) => {
             `✅ User ${socket.userId} joined conversation ${conversationId}`,
           );
 
-          // Marquer automatiquement les messages comme lus quand on rejoint
           await Message.updateMany(
             {
               conversation: conversationId,
@@ -66,16 +61,10 @@ module.exports = (io) => {
               "readBy.user": { $ne: socket.userId },
             },
             {
-              $push: {
-                readBy: {
-                  user: socket.userId,
-                  readAt: new Date(),
-                },
-              },
+              $push: { readBy: { user: socket.userId, readAt: new Date() } },
             },
           );
 
-          // Notifier les autres participants
           socket.to(`conversation:${conversationId}`).emit("messages:read", {
             conversationId,
             userId: socket.userId,
@@ -94,26 +83,30 @@ module.exports = (io) => {
       );
     });
 
-    // Envoyer un message
+    // ── Envoyer un message (avec support Optimistic UI via tempId) ──────────
     socket.on("message:send", async (data) => {
-      try {
-        const { conversationId, content } = data;
+      const { conversationId, content, tempId } = data; // ← tempId extrait
 
+      try {
         if (!content || content.trim().length === 0) {
-          return socket.emit("error", { message: "Message cannot be empty" });
+          return socket.emit("message:error", {
+            tempId,
+            error: "Le message ne peut pas être vide",
+          });
         }
 
-        // Vérifier que l'utilisateur fait partie de la conversation
         const conversation = await Conversation.findOne({
           _id: conversationId,
           participants: socket.userId,
         });
 
         if (!conversation) {
-          return socket.emit("error", { message: "Conversation not found" });
+          return socket.emit("message:error", {
+            tempId,
+            error: "Conversation introuvable",
+          });
         }
 
-        // Créer le message
         const message = new Message({
           conversation: conversationId,
           sender: socket.userId,
@@ -123,21 +116,21 @@ module.exports = (io) => {
 
         await message.save();
 
-        // Mettre à jour la conversation
         conversation.lastMessage = message._id;
         conversation.lastMessageAt = message.createdAt;
         await conversation.save();
 
-        // Populer les infos du sender
         await message.populate("sender", "name surname email");
 
-        // Envoyer le message à tous les participants de la conversation
+        // ← tempId renvoyé pour que le client remplace le message optimiste
         io.to(`conversation:${conversationId}`).emit("message:new", {
           conversationId,
-          message,
+          message: {
+            ...message.toObject(),
+            tempId,
+          },
         });
 
-        // Mettre à jour le badge de conversation pour les autres participants
         const otherParticipant = conversation.participants.find(
           (p) => p.toString() !== socket.userId,
         );
@@ -153,7 +146,11 @@ module.exports = (io) => {
         console.log(`💬 Message sent in conversation ${conversationId}`);
       } catch (error) {
         console.error("❌ Error sending message:", error);
-        socket.emit("error", { message: "Failed to send message" });
+        // ← Notifier le client que l'envoi a échoué (affiche ⚠️ dans l'UI)
+        socket.emit("message:error", {
+          tempId,
+          error: "Impossible d'envoyer le message",
+        });
       }
     });
 
@@ -173,7 +170,7 @@ module.exports = (io) => {
       });
     });
 
-    // Marquer les messages comme lus (quand l'utilisateur scroll ou focus)
+    // Marquer les messages comme lus
     socket.on("messages:read", async ({ conversationId }) => {
       try {
         const result = await Message.updateMany(
@@ -183,16 +180,10 @@ module.exports = (io) => {
             "readBy.user": { $ne: socket.userId },
           },
           {
-            $push: {
-              readBy: {
-                user: socket.userId,
-                readAt: new Date(),
-              },
-            },
+            $push: { readBy: { user: socket.userId, readAt: new Date() } },
           },
         );
 
-        // Notifier les autres participants seulement si des messages ont été marqués
         if (result.modifiedCount > 0) {
           socket.to(`conversation:${conversationId}`).emit("messages:read", {
             conversationId,
@@ -218,17 +209,14 @@ module.exports = (io) => {
           return socket.emit("error", { message: "Message not found" });
         }
 
-        // Vérifier que l'utilisateur est bien l'auteur
         if (message.sender.toString() !== socket.userId) {
           return socket.emit("error", {
             message: "You can only delete your own messages",
           });
         }
 
-        // Supprimer le message
         await Message.findByIdAndDelete(messageId);
 
-        // Notifier tous les participants de la suppression
         io.to(`conversation:${conversationId}`).emit("message:deleted", {
           messageId,
           conversationId,
@@ -252,14 +240,12 @@ module.exports = (io) => {
             return socket.emit("error", { message: "Message not found" });
           }
 
-          // Vérifier que l'utilisateur est bien l'auteur
           if (message.sender.toString() !== socket.userId) {
             return socket.emit("error", {
               message: "You can only edit your own messages",
             });
           }
 
-          // Vérifier le délai (5 minutes)
           const EDIT_TIME_LIMIT = 5 * 60 * 1000;
           const messageAge = Date.now() - new Date(message.createdAt).getTime();
 
@@ -273,16 +259,13 @@ module.exports = (io) => {
             return socket.emit("error", { message: "Content cannot be empty" });
           }
 
-          // Mettre à jour le message
           message.content = content.trim();
           message.edited = true;
           message.editedAt = new Date();
           await message.save();
 
-          // Populer les infos du sender
           await message.populate("sender", "name surname email");
 
-          // Notifier tous les participants
           io.to(`conversation:${conversationId}`).emit("message:edited", {
             messageId,
             conversationId,
@@ -311,13 +294,9 @@ module.exports = (io) => {
           return socket.emit("error", { message: "Conversation not found" });
         }
 
-        // Supprimer tous les messages
         await Message.deleteMany({ conversation: conversationId });
-
-        // Supprimer la conversation
         await Conversation.findByIdAndDelete(conversationId);
 
-        // Notifier tous les participants
         io.to(`conversation:${conversationId}`).emit("conversation:deleted", {
           conversationId,
         });
@@ -335,8 +314,6 @@ module.exports = (io) => {
     socket.on("disconnect", () => {
       console.log(`👋 User disconnected: ${socket.userId}`);
       connectedUsers.delete(socket.userId);
-
-      // Notifier les amis que l'utilisateur est hors ligne
       socket.broadcast.emit("user:offline", { userId: socket.userId });
     });
   });

@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import socketService from "../services/socket.service";
-import { useOnlineStatus } from "../../context/OnlineStatusContext"; // ⭐ NOUVEAU
+import { useOnlineStatus } from "../../context/OnlineStatusContext";
+import apiHandler from "../../api/apiHandler";
 import "./css/ConversationList.css";
 
 function ConversationList({
@@ -25,21 +26,10 @@ function ConversationList({
 
     const fetchFriends = async () => {
       try {
-        const token = localStorage.getItem("authToken");
-        const response = await fetch("http://localhost:4000/api/friends", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (response.ok && isMounted) {
-          const data = await response.json();
-          setFriends(data);
-        }
+        const res = await apiHandler.get("/friends");
+        if (isMounted) setFriends(res.data);
       } catch (error) {
-        if (isMounted) {
-          console.error("Error loading friends:", error);
-        }
+        if (isMounted) console.error("Error loading friends:", error);
       }
     };
 
@@ -158,33 +148,17 @@ function ConversationList({
 
   const startNewConversation = async (friendId) => {
     try {
-      const token = localStorage.getItem("authToken");
-      const response = await fetch(
-        "http://localhost:4000/api/conversations/start",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ friendId }),
-        },
-      );
+      const res = await apiHandler.post("/conversations/start", { friendId });
+      const conversation = res.data;
 
-      if (response.ok) {
-        const conversation = await response.json();
+      setLocalConversations((prev) => {
+        const exists = prev.find((c) => c._id === conversation._id);
+        if (exists) return prev;
+        return [conversation, ...prev];
+      });
 
-        // Ajouter la conversation à la liste locale si elle n'existe pas déjà
-        setLocalConversations((prev) => {
-          const exists = prev.find((c) => c._id === conversation._id);
-          if (exists) return prev;
-          return [conversation, ...prev];
-        });
-
-        onSelectConversation(conversation);
-        setShowNewChat(false);
-        // 👆 Plus de window.location.reload() !
-      }
+      onSelectConversation(conversation);
+      setShowNewChat(false);
     } catch (error) {
       console.error("Error starting conversation:", error);
     }

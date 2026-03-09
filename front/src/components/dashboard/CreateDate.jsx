@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import apiHandler from "../../api/apiHandler";
 import useAuth from "../../context/useAuth";
+import NamedayInput from "./Namedayinput";
+import "./css/namedayInput.css";
 import "./css/createDate.css";
 import "../UI/css/modals.css";
 
@@ -9,19 +11,12 @@ const CreateDate = ({ onDateAdded }) => {
   const currentUserID = currentUser ? currentUser._id : null;
 
   const [dates, setDates] = useState([]);
-  const [filteredDates, setFilteredDates] = useState([]);
-  const [addedDate, setAddedDate] = useState(false);
-
-  // États pour la modal d'erreur
   const [showErrorMessage, setShowErrorMessage] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
   const getTodayDate = () => {
     const today = new Date();
-    const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, "0");
-    const day = String(today.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
+    return today.toISOString().split("T")[0];
   };
 
   const [date, setDate] = useState({
@@ -30,66 +25,39 @@ const CreateDate = ({ onDateAdded }) => {
     surname: "",
     family: false,
     comment: "",
-    nameday: "", // 🎉 AJOUT
+    nameday: "",
     owner: currentUserID || "",
   });
 
-  // Mise à jour de l'owner une fois que currentUser est chargé
   useEffect(() => {
     if (currentUser) {
-      setDate((prevDate) => ({
-        ...prevDate,
+      setDate((prev) => ({
+        ...prev,
         owner: currentUser._id,
       }));
     }
   }, [currentUser]);
 
-  // Récupérer les dates depuis l'API
-  useEffect(() => {
-    apiHandler
-      .get("/date")
-      .then((dbResponse) => {
-        setDates(dbResponse.data);
-      })
-      .catch((e) => console.error(e));
-  }, [addedDate]);
-
-  // Filtrer les dates de l'utilisateur connecté
-  useEffect(() => {
-    if (!currentUserID) return;
-    setFilteredDates(
-      dates.filter((c) => c.owner && c.owner._id === currentUserID),
-    );
-  }, [addedDate, dates, currentUserID]);
-
   const handleClick = async (e) => {
     e.preventDefault();
 
-    if (!currentUserID) {
-      console.error("User not authenticated");
-      return;
-    }
-
-    // Validation : vérifier que le nom est rempli
-    if (!date.name || date.name.trim() === "") {
-      setErrorMessage("Veuillez entrer un nom avant d'ajouter une date.");
+    if (!date.name.trim()) {
+      setErrorMessage("Veuillez entrer un prénom.");
       setShowErrorMessage(true);
       return;
     }
 
     try {
       const newDate = await apiHandler.post("/date", date);
-      setDates((prevDates) => [...prevDates, newDate.data]);
-      setFilteredDates((prevDates) => [...prevDates, newDate.data]);
+      setDates((prev) => [...prev, newDate.data]);
 
-      // Réinitialiser le formulaire après l'ajout
       setDate({
         date: getTodayDate(),
         name: "",
         surname: "",
         family: false,
         comment: "",
-        nameday: "", // 🎉 AJOUT
+        nameday: "",
         owner: currentUserID,
       });
 
@@ -97,15 +65,13 @@ const CreateDate = ({ onDateAdded }) => {
         onDateAdded(newDate.data);
       }
     } catch (error) {
-      console.error(error);
-      setErrorMessage("Une erreur est survenue lors de l'ajout de la date.");
+      setErrorMessage("Erreur lors de l'ajout.");
       setShowErrorMessage(true);
     }
   };
 
   return (
     <div>
-      {/* Modal d'erreur */}
       {showErrorMessage && (
         <div
           className="error-message-overlay"
@@ -125,23 +91,22 @@ const CreateDate = ({ onDateAdded }) => {
         </div>
       )}
 
-      <div className="formAddDAte">
-        <h3 className="title-filter">Ajouter une date d'anniversaires</h3>
+      <div className="formAddDate">
+        <h3 className="title-filter">Ajouter une date</h3>
+
         <form className="form-date" onSubmit={handleClick}>
           <div className="filter-inputs">
             <input
               type="text"
-              name="name"
               className="filter-input"
-              placeholder="Prenom"
+              placeholder="Prénom"
               value={date.name}
               onChange={(e) => setDate({ ...date, name: e.target.value })}
-              required // Validation HTML5
+              required
             />
 
             <input
               type="text"
-              name="surname"
               className="filter-input"
               placeholder="Nom"
               value={date.surname}
@@ -149,31 +114,21 @@ const CreateDate = ({ onDateAdded }) => {
             />
 
             <input
-              className="filter-input form-input-date"
               type="date"
-              name="date"
+              className="filter-input"
               value={date.date}
               onChange={(e) => setDate({ ...date, date: e.target.value })}
             />
 
-            <div className="nameday-wrapper">
-              <input
-                className="filter-input nameday-input"
-                type="text"
-                name="nameday"
-                placeholder="Fête (optionnel) MM-JJ"
-                value={date.nameday}
-                onChange={(e) => setDate({ ...date, nameday: e.target.value })}
-                maxLength={5}
-              />
-            </div>
+            <NamedayInput
+              value={date.nameday}
+              onChange={(mmdd) => setDate({ ...date, nameday: mmdd })}
+              placeholder="Fête (optionnel)"
+            />
 
             <div className="form-date-checkbox">
-              <label className="form-date-label" htmlFor="family">
-                Family
-              </label>
+              <label htmlFor="family">Family</label>
               <input
-                className="form-date-input formAddInput"
                 type="checkbox"
                 id="family"
                 checked={date.family}
@@ -181,6 +136,7 @@ const CreateDate = ({ onDateAdded }) => {
               />
             </div>
           </div>
+
           <div className="filter-buttons">
             <button className="filter-btn" type="submit">
               Ajouter

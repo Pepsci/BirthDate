@@ -272,6 +272,59 @@
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
+/* ── À AJOUTER dans chatWindow.css ── */
+
+/* Meta ligne : heure + statut */
+.message-meta {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    justify-content: flex-end;
+    margin-top: 2px;
+}
+
+/* Bulle en cours d'envoi */
+.message-bubble.sending {
+    opacity: 0.55;
+}
+
+/* Bulle échouée */
+.message-bubble.failed {
+    opacity: 0.7;
+    border: 1px solid #ef4444;
+}
+
+/* Statuts */
+.msg-status {
+    font-size: 0.65rem;
+    line-height: 1;
+}
+
+.msg-status.sending {
+    color: #9ca3af;
+}
+
+.msg-status.sent {
+    color: #9ca3af;
+}
+
+.msg-status.read {
+    color: #3b82f6;
+    /* bleu = lu */
+    font-weight: 600;
+}
+
+.msg-status.failed {
+    color: #ef4444;
+    cursor: pointer;
+    font-size: 0.7rem;
+    text-decoration: underline;
+}
+
+.msg-status.failed:hover {
+    color: #dc2626;
+}
+
 /* ================================
    MESSAGE META
 ================================ */

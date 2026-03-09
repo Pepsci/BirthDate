@@ -7,8 +7,8 @@ import MessageInput from "./MessageInput";
 import "./css/chatWindow.css";
 
 function ChatWindow({ conversation, onBack }) {
-  const { isUserOnline } = useOnlineStatus(); // ⭐ NOUVEAU
-  console.log("🔍 useOnlineStatus hook:", isUserOnline);
+  const { isUserOnline } = useOnlineStatus();
+
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isTyping, setIsTyping] = useState(false);
@@ -31,6 +31,7 @@ function ChatWindow({ conversation, onBack }) {
     atob(localStorage.getItem("authToken").split(".")[1]),
   )._id;
 
+  // ─── Fermer le context menu au clic extérieur ───────────────────────────────
   useEffect(() => {
     const handleClickOutside = () => {
       setContextMenu(null);
@@ -40,6 +41,7 @@ function ChatWindow({ conversation, onBack }) {
     return () => document.removeEventListener("click", handleClickOutside);
   }, []);
 
+  // ─── Charger les messages quand la conversation change ──────────────────────
   useEffect(() => {
     if (conversation) {
       hasJoinedRef.current = false;
@@ -50,6 +52,7 @@ function ChatWindow({ conversation, onBack }) {
     setHideSeparator(false);
   }, [conversation]);
 
+  // ─── Écoutes socket ─────────────────────────────────────────────────────────
   useEffect(() => {
     const socket = socketService.getSocket();
 
@@ -64,12 +67,13 @@ function ChatWindow({ conversation, onBack }) {
       socket.off("message:new", handleNewMessage);
       socket.off("message:deleted", handleMessageDeleted);
       socket.off("message:edited", handleMessageEdited);
-      socket.off("message:start", handleTypingStart);
+      socket.off("typing:start", handleTypingStart);
       socket.off("typing:stop", handleTypingStop);
       socket.off("messages:read", handleMessagesRead);
     };
   }, [conversation]);
 
+  // ─── Auto-scroll sur nouveau message ────────────────────────────────────────
   useEffect(() => {
     if (messages.length > 0 && !loading) {
       const container = messagesContainerRef.current;
@@ -79,12 +83,11 @@ function ChatWindow({ conversation, onBack }) {
         container.scrollHeight - container.scrollTop - container.clientHeight <
         150;
 
-      if (isNearBottom) {
-        scrollToBottom();
-      }
+      if (isNearBottom) scrollToBottom();
     }
   }, [messages, loading]);
 
+  // ─── Marquer comme lu au scroll bas ─────────────────────────────────────────
   useEffect(() => {
     const container = messagesContainerRef.current;
     if (!container) return;
@@ -103,14 +106,13 @@ function ChatWindow({ conversation, onBack }) {
     return () => container.removeEventListener("scroll", handleScroll);
   }, [conversation, showUnreadSeparator]);
 
+  // ─── Chargement des messages ─────────────────────────────────────────────────
   const loadMessages = async () => {
     setLoading(true);
     try {
-      // 👇 UTILISE apiHandler au lieu de fetch
       const response = await apiHandler.get(
         `/conversations/${conversation._id}/messages`,
       );
-
       const data = response.data;
       setMessages(data);
 
@@ -123,12 +125,9 @@ function ChatWindow({ conversation, onBack }) {
       if (firstUnread) {
         setFirstUnreadId(firstUnread._id);
         setShowUnreadSeparator(true);
-
         setTimeout(() => {
           const el = document.getElementById(`msg-${firstUnread._id}`);
-          if (el) {
-            el.scrollIntoView({ behavior: "smooth", block: "center" });
-          }
+          if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
         }, 100);
       } else {
         setTimeout(scrollToBottom, 100);
@@ -147,6 +146,7 @@ function ChatWindow({ conversation, onBack }) {
     }
   };
 
+  // ─── Marquer comme lu ────────────────────────────────────────────────────────
   const markAsRead = async () => {
     try {
       await apiHandler.put(`/conversations/${conversation._id}/read`);
@@ -166,13 +166,85 @@ function ChatWindow({ conversation, onBack }) {
     }
   };
 
-  const handleNewMessage = ({ conversationId, message }) => {
-    if (conversationId === conversation._id) {
-      setMessages((prev) => [...prev, message]);
+  // ─── Envoi avec Optimistic UI ─────────────────────────────────────────────────
+  const handleSendMessage = (content) => {
+    const tempId = `temp-${Date.now()}`;
+    const tempMessage = {
+      _id: tempId,
+      content,
+      sender: { _id: currentUserId },
+      createdAt: new Date().toISOString(),
+      status: "sending",
+      readBy: [],
+    };
 
-      if (message.sender._id === currentUserId) {
-        setTimeout(scrollToBottom, 100);
+    // Affichage immédiat
+    setMessages((prev) => [...prev, tempMessage]);
+    setTimeout(scrollToBottom, 50);
+
+    // Vérifier connexion socket
+    const socket = socketService.getSocket();
+    if (!socket?.connected) {
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg._id === tempId ? { ...msg, status: "failed" } : msg,
+        ),
+      );
+      return;
+    }
+
+    socketService.emit("message:send", {
+      conversationId: conversation._id,
+      content,
+      tempId,
+    });
+  };
+
+  // ─── Réessayer un message échoué ─────────────────────────────────────────────
+  const handleRetry = (message) => {
+    // Remettre en "sending"
+    setMessages((prev) =>
+      prev.map((msg) =>
+        msg._id === message._id ? { ...msg, status: "sending" } : msg,
+      ),
+    );
+
+    const socket = socketService.getSocket();
+    if (!socket?.connected) {
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg._id === message._id ? { ...msg, status: "failed" } : msg,
+        ),
+      );
+      return;
+    }
+
+    socketService.emit("message:send", {
+      conversationId: conversation._id,
+      content: message.content,
+      tempId: message._id,
+    });
+  };
+
+  // ─── Réception d'un nouveau message ──────────────────────────────────────────
+  const handleNewMessage = ({ conversationId, message }) => {
+    if (conversationId !== conversation._id) return;
+
+    setMessages((prev) => {
+      // Si le serveur renvoie le tempId → remplacer le message optimiste
+      if (message.tempId) {
+        return prev.map((msg) =>
+          msg._id === message.tempId ? { ...message, status: "sent" } : msg,
+        );
       }
+      // Message d'un autre user → ajouter (éviter doublon)
+      const exists = prev.find((m) => m._id === message._id);
+      if (exists) return prev;
+      return [...prev, message];
+    });
+
+    if (message.sender._id === currentUserId) {
+      setTimeout(scrollToBottom, 100);
     }
   };
 
@@ -190,10 +262,19 @@ function ChatWindow({ conversation, onBack }) {
     );
   };
 
+  // ─── Messages lus par l'autre user ───────────────────────────────────────────
   const handleMessagesRead = ({ conversationId, userId }) => {
-    if (conversationId === conversation._id && userId !== currentUserId) {
-      console.log(`Messages read by user ${userId}`);
-    }
+    if (conversationId !== conversation._id) return;
+    if (userId === currentUserId) return;
+
+    // Marquer tous les messages envoyés comme "lu"
+    setMessages((prev) =>
+      prev.map((msg) => {
+        if (msg.sender._id !== currentUserId) return msg;
+        if (msg.status === "failed") return msg;
+        return { ...msg, status: "read" };
+      }),
+    );
   };
 
   const handleTypingStart = ({ conversationId, userId }) => {
@@ -208,72 +289,51 @@ function ChatWindow({ conversation, onBack }) {
     }
   };
 
-  const handleSendMessage = (content) => {
-    socketService.emit("message:send", {
-      conversationId: conversation._id,
-      content,
-    });
-  };
-
   const handleTyping = (isTyping) => {
     if (isTyping) {
       socketService.emit("typing:start", { conversationId: conversation._id });
-
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
-      }
-
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
       typingTimeoutRef.current = setTimeout(() => {
-        socketService.emit("typing:stop", { conversationId: conversation._id });
+        socketService.emit("typing:stop", {
+          conversationId: conversation._id,
+        });
       }, 3000);
     } else {
       socketService.emit("typing:stop", { conversationId: conversation._id });
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
-      }
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     }
   };
 
   const handleInputFocus = () => {
-    if (showUnreadSeparator) {
-      markAsRead();
-    }
+    if (showUnreadSeparator) markAsRead();
   };
 
+  // ─── Context menu desktop ────────────────────────────────────────────────────
   const handleContextMenu = (e, message) => {
     e.preventDefault();
     if (message.sender._id !== currentUserId) return;
-
-    setContextMenu({
-      x: e.clientX,
-      y: e.clientY,
-      message: message,
-    });
+    setContextMenu({ x: e.clientX, y: e.clientY, message });
   };
 
+  // ─── Long press mobile ───────────────────────────────────────────────────────
   const handleTouchStart = (e, message) => {
     if (message.sender._id !== currentUserId) return;
-
     longPressTimer.current = setTimeout(() => {
       setLongPressMessageId(message._id);
-      if (navigator.vibrate) {
-        navigator.vibrate(50);
-      }
+      if (navigator.vibrate) navigator.vibrate(50);
     }, 500);
   };
 
   const handleTouchEnd = () => {
-    if (longPressTimer.current) {
-      clearTimeout(longPressTimer.current);
-    }
+    if (longPressTimer.current) clearTimeout(longPressTimer.current);
   };
 
+  // ─── Suppression ─────────────────────────────────────────────────────────────
   const handleDeleteClick = (messageId) => {
     socketService.emit("message:delete", {
       messageId,
       conversationId: conversation._id,
     });
-
     setLongPressMessageId(null);
     setContextMenu(null);
   };
@@ -283,6 +343,7 @@ function ChatWindow({ conversation, onBack }) {
     handleDeleteClick(contextMenu.message._id);
   };
 
+  // ─── Édition ─────────────────────────────────────────────────────────────────
   const canEditMessage = (message) => {
     const EDIT_TIME_LIMIT = 5 * 60 * 1000;
     const messageAge = Date.now() - new Date(message.createdAt).getTime();
@@ -299,20 +360,17 @@ function ChatWindow({ conversation, onBack }) {
 
   const handleSaveEdit = (content) => {
     if (!content.trim() || !editingMessage) return;
-
     socketService.emit("message:edit", {
       messageId: editingMessage._id,
       content: content.trim(),
       conversationId: conversation._id,
     });
-
     setEditingMessage(null);
   };
 
-  const handleCancelEdit = () => {
-    setEditingMessage(null);
-  };
+  const handleCancelEdit = () => setEditingMessage(null);
 
+  // ─── Helpers ──────────────────────────────────────────────────────────────────
   const scrollToBottom = () => {
     if (messagesContainerRef.current) {
       messagesContainerRef.current.scrollTop =
@@ -320,23 +378,40 @@ function ChatWindow({ conversation, onBack }) {
     }
   };
 
-  const getOtherParticipant = () => {
-    return conversation.participants.find((p) => p._id !== currentUserId);
-  };
+  const getOtherParticipant = () =>
+    conversation.participants.find((p) => p._id !== currentUserId);
 
-  const formatMessageTime = (date) => {
-    return new Date(date).toLocaleTimeString("fr-FR", {
+  const formatMessageTime = (date) =>
+    new Date(date).toLocaleTimeString("fr-FR", {
       hour: "2-digit",
       minute: "2-digit",
     });
+
+  // ─── Indicateur de statut du message ─────────────────────────────────────────
+  const renderMessageStatus = (message) => {
+    if (message.sender._id !== currentUserId) return null;
+
+    const status = message.status;
+
+    if (status === "sending")
+      return <span className="msg-status sending">⏳</span>;
+    if (status === "failed")
+      return (
+        <span
+          className="msg-status failed"
+          onClick={() => handleRetry(message)}
+          title="Cliquer pour réessayer"
+        >
+          ⚠️ Réessayer
+        </span>
+      );
+    if (status === "read") return <span className="msg-status read">✓✓</span>;
+    // "sent" ou messages chargés depuis l'API
+    return <span className="msg-status sent">✓</span>;
   };
 
   const otherUser = getOtherParticipant();
   const isOnline = otherUser ? isUserOnline(otherUser._id) : false;
-
-  console.log("🔍 Other user:", otherUser?._id);
-  console.log("🔍 Is online?", isOnline);
-  console.log("🔍 Online users in state:", isUserOnline);
 
   if (loading) {
     return (
@@ -348,13 +423,13 @@ function ChatWindow({ conversation, onBack }) {
 
   return (
     <div className="chat-window">
+      {/* ── Header ── */}
       <div className="chat-header">
         {onBack && (
           <button className="back-button" onClick={onBack}>
             ←
           </button>
         )}
-
         <div className="chat-header-user">
           <div className="chat-avatar">
             {otherUser?.name?.charAt(0).toUpperCase() || "?"}
@@ -372,6 +447,7 @@ function ChatWindow({ conversation, onBack }) {
         </div>
       </div>
 
+      {/* ── Messages ── */}
       <div className="messages-container" ref={messagesContainerRef}>
         {messages.map((message) => {
           const isOwn = message.sender._id === currentUserId;
@@ -403,7 +479,11 @@ function ChatWindow({ conversation, onBack }) {
                 )}
 
                 <div className="message-content">
-                  <div className="message-bubble">
+                  <div
+                    className={`message-bubble ${
+                      message.status === "sending" ? "sending" : ""
+                    } ${message.status === "failed" ? "failed" : ""}`}
+                  >
                     {message.content}
                     {message.edited && (
                       <span
@@ -415,9 +495,13 @@ function ChatWindow({ conversation, onBack }) {
                       </span>
                     )}
                   </div>
-                  <span className="message-time">
-                    {formatMessageTime(message.createdAt)}
-                  </span>
+
+                  <div className="message-meta">
+                    <span className="message-time">
+                      {formatMessageTime(message.createdAt)}
+                    </span>
+                    {renderMessageStatus(message)}
+                  </div>
 
                   {isOwn && longPressMessageId === message._id && (
                     <div className="mobile-actions">
@@ -459,6 +543,7 @@ function ChatWindow({ conversation, onBack }) {
         <div ref={messagesEndRef} />
       </div>
 
+      {/* ── Context menu desktop ── */}
       {contextMenu && (
         <div
           className="context-menu"
