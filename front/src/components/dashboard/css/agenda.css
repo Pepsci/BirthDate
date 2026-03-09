@@ -1,0 +1,124 @@
+/* Variables de couleurs */
+:root {
+    /* Palette de gris */
+    --gray-50: #f9fafb;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-300: #d1d5db;
+    --gray-400: #9ca3af;
+    --gray-500: #6b7280;
+    --gray-600: #4b5563;
+    --gray-700: #374151;
+    --gray-800: #1f2937;
+    --gray-900: #111827;
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+}
+
+td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    vertical-align: top;
+    width: 14.28%;
+    color: #8dbfce;
+    overflow: auto;
+    scrollbar-width: none;
+}
+
+tr:nth-child(even) {
+    background-color: var(--gray-600);
+}
+
+td:hover {
+    background-color: #ddd;
+    color:var(--gray-600);
+}
+
+h2 {
+    text-align: center;
+    color: #333;
+}
+
+.btnAgenda {
+    background-color: #1b1b71;
+    color: white;
+    padding: 10px 24px;
+    margin: 10px;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+}
+
+.btnAgenda:hover {
+    background-color: #008cba;
+}
+
+p {
+    margin: 0;
+    color: #666;
+}
+
+.square {
+    width: 80%;
+    /* Ajustez cette valeur selon vos besoins */
+    height: 0;
+    padding-bottom: 45%;
+    /* La hauteur est définie par le padding pour créer un carré */
+    position: relative;
+}
+
+.square-content {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+}
+
+.nameAgenda{
+    text-align: end;
+}
+
+.month-navigation {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.currentMonth{
+    color: var(--gray-300);
+}
+
+.agenda-names{
+    width: 225px;
+    margin: 0.3rem;
+    font-size: smaller;
+}
+
+@media (max-width: 600px) {
+    .day-number {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .day-number strong {
+        margin-right: 4px;
+    }
+
+    .names {
+        font-size: smaller;
+        text-align: center;
+    }
+
+    td{
+        height: 80px;
+    }
+
+    table{
+        margin-top: 1rem;
+    }
+
+}
+}

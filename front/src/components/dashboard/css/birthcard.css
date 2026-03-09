@@ -1,0 +1,452 @@
+/* ================================
+   VARIABLES (déjà dans variables.css)
+================================ */
+
+/* Animation d'entrée pour les cartes */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ================================
+   Layout principal
+================================ */
+.birthDeck {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 1.5rem;
+  padding: 1.5rem;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+/* ================================
+   Style des cartes
+================================ */
+.birthCard {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: var(--card-shadow);
+  transition: transform 0.3s ease, box-shadow 0.3s ease,
+    background-color 0.3s ease, border-color 0.3s ease;
+  animation: fadeIn 0.5s ease backwards;
+  display: flex;
+  flex-direction: column;
+  min-height: 320px;
+  height: 100%;
+  z-index: 0;
+}
+
+/* Animation avec délai différent */
+.birthCard:nth-child(5n+1) {
+  animation-delay: 0.1s;
+}
+
+.birthCard:nth-child(5n+2) {
+  animation-delay: 0.2s;
+}
+
+.birthCard:nth-child(5n+3) {
+  animation-delay: 0.3s;
+}
+
+.birthCard:nth-child(5n+4) {
+  animation-delay: 0.4s;
+}
+
+.birthCard:nth-child(5n+5) {
+  animation-delay: 0.5s;
+}
+
+.birthCard:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--card-shadow-hover);
+}
+
+
+.nameday {
+    
+    display: "block";
+      font-size: "0.85em";
+      opacity: 0.8;
+      margin-top: "4px";
+  }
+
+
+/* Bande colorée en haut de chaque carte */
+.birthCard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  background: var(--gray-400);
+}
+
+.birthCard:nth-child(4n+1)::before {
+  background: var(--gray-400);
+}
+
+.birthCard:nth-child(4n+2)::before {
+  background: var(--gray-500);
+}
+
+.birthCard:nth-child(4n+3)::before {
+  background: var(--gray-600);
+}
+
+.birthCard:nth-child(4n+4)::before {
+  background: var(--primary);
+}
+
+.birthCard.family::before {
+  background: var(--gray-700);
+}
+
+/* ================================
+   Contenu des cartes
+================================ */
+.birthCardName {
+  padding: 1.25rem 1.25rem 0.5rem;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+  z-index: 1;
+}
+
+.birthCard-name {
+  font-size: 1.25rem;
+  color: var(--text-primary);
+  margin-right: 0.5rem;
+  text-align: center;
+  transition: color 0.3s ease;
+}
+
+.birthCardName span:last-child {
+  text-align: center;
+  font-size: 1rem;
+  color: var(--text-secondary);
+  transition: color 0.3s ease;
+}
+
+.birthCardAge {
+  padding: 0 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.age {
+  font-size: 2rem;
+  font-weight: bold;
+  color: var(--primary);
+  display: inline-block;
+}
+
+.birthCardDate {
+  text-align: center;
+  padding: 0 1.25rem;
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  transition: color 0.3s ease;
+}
+
+.birthCardCenter {
+  margin-top: auto;
+  padding: 1.25rem;
+  border-top: 1px solid var(--border-color);
+  background-color: var(--bg-secondary);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+}
+
+.daysUntilBirthday {
+  width: 100%;
+}
+
+/* ================================
+   Boutons
+================================ */
+.button-group {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn-edit,
+.btn-view,
+.btn-message {
+  flex: 1;
+  padding: 0.65rem 0;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+}
+
+.btn-edit {
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+.btn-view {
+  background-color: var(--primary);
+  color: white;
+}
+
+.btn-message {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.btn-edit:hover {
+  background-color: var(--bg-secondary);
+  border-color: var(--border-color-hover);
+}
+
+.btn-view:hover {
+  background-color: var(--primary-light);
+}
+
+.btn-message:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+/* ================================
+   Badges
+================================ */
+.birthCard.today::after {
+  content: "Aujourd'hui !";
+  position: absolute;
+  top: 22px;
+  right: -47px;
+  background-color: var(--gray-600);
+  color: white;
+  padding: 0.25rem 1.5rem;
+  font-size: 0.75rem;
+  font-weight: bold;
+  transform: rotate(45deg);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 1;
+  width: 110px;
+  text-align: center;
+}
+
+.birthCard.thisWeek::after {
+  content: "Cette semaine";
+  position: absolute;
+  top: 22px;
+  right: -47px;
+  background-color: var(--gray-500);
+  color: white;
+  padding: 0.25rem 1.5rem;
+  font-size: 0.75rem;
+  font-weight: bold;
+  transform: rotate(45deg);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 1;
+  width: 110px;
+  text-align: center;
+}
+
+/* Message "Aucun résultat" */
+.no-results {
+  text-align: center;
+  padding: 2rem;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+  margin: 2rem auto;
+  box-shadow: var(--card-shadow);
+  max-width: 600px;
+  transition: all 0.3s ease;
+}
+
+/* ================================
+   Media Queries - Responsive
+================================ */
+
+@media (max-width: 1400px) {
+  .birthDeck {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (max-width: 1100px) {
+  .birthDeck {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 850px) {
+  .birthDeck {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+
+@media (max-width: 600px) {
+  .birthDeck {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.8rem;
+    row-gap: 2.5rem;
+    padding: 0.8rem;
+  }
+
+  .birthCard {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      "name age"
+      "date date"
+      "countdown countdown"
+      "actions actions";
+    min-height: unset;
+    padding: 0.75rem 0.75rem 0 0.75rem;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .birthCardName {
+    grid-area: name;
+    padding: 0.3rem 0 0.3rem 0.3rem;
+  }
+
+  .birthCardAge {
+    grid-area: age;
+    text-align: right;
+    padding: 0.3rem 0.3rem 0.3rem 0;
+    margin: 0;
+  }
+
+  .birthCardDate {
+    grid-area: date;
+    text-align: center;
+    padding: 0;
+    margin: 0.25rem 0;
+    font-size: 0.8rem;
+  }
+
+  .daysUntilBirthday {
+    grid-area: countdown;
+    margin: 0.3rem 0;
+  }
+
+  /* ✅ Marges négatives alignées sur le padding de .birthCard pour couvrir toute la largeur */
+  .birthCardCenter {
+    grid-area: actions;
+    width: calc(100% + 1.5rem);
+    margin: 0.4rem -0.75rem -0.75rem -0.75rem;
+    padding: 0.5rem 0.75rem;
+    border-top: 1px solid var(--border-color);
+    background-color: var(--bg-secondary);
+    border-radius: 0 0 12px 12px;
+  }
+
+  .birthCard-name {
+    font-size: 1rem;
+    margin-right: 0;
+  }
+
+  .birthCardName span:last-child {
+    font-size: 0.8rem;
+  }
+
+  .age {
+    flex-direction: column;
+    font-size: 1.5rem;
+    display: flex;
+  }
+
+  .button-group {
+    display: flex;
+    flex-direction: row;
+    gap: 0.4rem;
+    width: 100%;
+  }
+
+  .btn-edit,
+  .btn-view,
+  .btn-message {
+    flex: 1;
+    padding: 0.5rem 0;
+    font-size: 0.75rem;
+    border-radius: 6px;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .birthCard.today::after,
+  .birthCard.thisWeek::after {
+    font-size: 0.65rem;
+    top: 19px;
+    right: -40px;
+    padding: 0.2rem 1rem;
+    width: 100px;
+  }
+}
+
+@media (max-width: 380px) {
+  .birthDeck {
+    gap: 0.6rem;
+    padding: 0.6rem;
+  }
+
+  .btn-edit,
+  .btn-view,
+  .btn-message {
+    font-size: 0.68rem;
+    padding: 0.45rem 0;
+  }
+
+  .birthCard.today::after,
+  .birthCard.thisWeek::after {
+    right: -40px;
+    font-size: 0.6rem;
+    padding: 0.15rem 0.8rem;
+    width: 90px;
+  }
+}
+
+.btn-message {
+  position: relative;
+  overflow: visible !important;
+  /* écrase le overflow:hidden mobile */
+}
+
+.notification-badge-inline {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: #ef4444;
+  color: white;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  font-size: 0.65rem;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  z-index: 2;
+}
