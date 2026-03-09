@@ -1,10 +1,5 @@
 import React, { useState, useEffect } from "react";
 
-/**
- * Input pour sélectionner une date de fête (nameday)
- * Format de sortie : "MM-DD" (ex: "03-13")
- * Année 2000 utilisée uniquement pour validation (bissextile)
- */
 const NamedayInput = ({
   value,
   onChange,
