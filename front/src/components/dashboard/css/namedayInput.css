@@ -15,7 +15,7 @@
     align-items: center;
     gap: 3px;
     position: relative;
-    border: 2px solid var(--border-color);
+    /* border: 2px solid var(--border-color); */
     border-radius: 8px;
 }
 
@@ -24,8 +24,10 @@
 .nameday-day-select {
     flex: 1;
     padding: 10px 12px;
-    background: var(--);
-    border: none;
+        background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            height: 40px;
     color: var(--text-primary);
     font-size: 14px;
     transition: all 0.2s ease;

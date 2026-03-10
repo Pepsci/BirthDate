@@ -123,25 +123,17 @@ module.exports = (io) => {
         await message.populate("sender", "name surname email");
 
         // ← tempId renvoyé pour que le client remplace le message optimiste
-        io.to(`conversation:${conversationId}`).emit("message:new", {
+        // À l'expéditeur : avec tempId pour remplacer le message optimiste
+        socket.emit("message:new", {
           conversationId,
-          message: {
-            ...message.toObject(),
-            tempId,
-          },
+          message: { ...message.toObject(), tempId },
         });
 
-        const otherParticipant = conversation.participants.find(
-          (p) => p.toString() !== socket.userId,
-        );
-
-        if (otherParticipant) {
-          io.to(`conversation:${conversationId}`).emit("conversation:updated", {
-            conversationId,
-            lastMessage: message,
-            lastMessageAt: message.createdAt,
-          });
-        }
+        // Aux autres participants : sans tempId
+        socket.to(`conversation:${conversationId}`).emit("message:new", {
+          conversationId,
+          message: message.toObject(),
+        });
 
         console.log(`💬 Message sent in conversation ${conversationId}`);
       } catch (error) {

@@ -6,7 +6,7 @@ import socketService from "../services/socket.service";
 import useNotifications from "../../context/useNotifications";
 import ConversationList from "./ConversationList";
 import ChatWindow from "./ChatWindow";
-import ChatModal from "./ChatModal"; // 👈 AJOUTER
+import ChatModal from "./ChatModal";
 import "./css/chat.css";
 
 function Chat() {
@@ -20,26 +20,20 @@ function Chat() {
   const [loading, setLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const activeConversationRef = useRef(null);
-
   const [isChatWindowOpen, setIsChatWindowOpen] = useState(false);
 
   useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth <= 768);
-    };
-
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   useEffect(() => {
     const token = localStorage.getItem("authToken");
-
     if (!token) {
       navigate("/login");
       return;
     }
-
     const socket = socketService.connect(token);
     socket.emit("conversations:join");
     loadConversations();
@@ -61,7 +55,6 @@ function Chat() {
 
   useEffect(() => {
     const newConversationId = selectedConversation?._id || null;
-
     if (activeConversationRef.current !== newConversationId) {
       activeConversationRef.current = newConversationId;
       setActiveConversation(newConversationId);
@@ -70,9 +63,7 @@ function Chat() {
 
   const loadConversations = async () => {
     try {
-      console.log("🔍 Chargement des conversations...");
       const response = await apiHandler.get("/conversations");
-      console.log("✅ Conversations chargées:", response.data);
       setConversations(response.data);
     } catch (error) {
       console.error("❌ Error loading conversations:", error);
@@ -85,31 +76,27 @@ function Chat() {
   const handleNewMessage = ({ conversationId, message }) => {
     setConversations((prev) =>
       prev.map((conv) => {
-        if (conv._id === conversationId) {
-          const isSelected = selectedConversation?._id === conversationId;
+        if (conv._id !== conversationId) return conv;
 
-          const senderId =
-            typeof message.sender === "object"
-              ? message.sender._id
-              : message.sender;
+        const senderId =
+          typeof message.sender === "object"
+            ? message.sender._id
+            : message.sender;
+        const currentUserId = JSON.parse(
+          atob(localStorage.getItem("authToken").split(".")[1]),
+        )._id;
+        const isOwnMessage = senderId === currentUserId;
+        const isSelected = activeConversationRef.current === conversationId;
 
-          const currentUserId = JSON.parse(
-            atob(localStorage.getItem("authToken").split(".")[1]),
-          )._id;
-
-          const isOwnMessage = senderId === currentUserId;
-
-          return {
-            ...conv,
-            lastMessage: message,
-            lastMessageAt: message.createdAt,
-            unreadCount:
-              !isOwnMessage && !isSelected
-                ? (conv.unreadCount || 0) + 1
-                : conv.unreadCount,
-          };
-        }
-        return conv;
+        return {
+          ...conv,
+          lastMessage: message,
+          lastMessageAt: message.createdAt,
+          unreadCount:
+            !isOwnMessage && !isSelected
+              ? (conv.unreadCount || 0) + 1
+              : conv.unreadCount,
+        };
       }),
     );
   };
@@ -128,45 +115,40 @@ function Chat() {
     lastMessageAt,
   }) => {
     setConversations((prev) =>
-      prev.map((conv) => {
-        if (conv._id === conversationId) {
-          return {
-            ...conv,
-            lastMessage,
-            lastMessageAt,
-          };
-        }
-        return conv;
-      }),
+      prev.map((conv) =>
+        conv._id === conversationId
+          ? { ...conv, lastMessage, lastMessageAt }
+          : conv,
+      ),
     );
   };
 
-  const handleUserOnline = ({ userId }) => {
-    console.log("User online:", userId);
-  };
-
-  const handleUserOffline = ({ userId }) => {
+  const handleUserOnline = ({ userId }) => console.log("User online:", userId);
+  const handleUserOffline = ({ userId }) =>
     console.log("User offline:", userId);
+
+  // ← Callback passée à ChatWindow pour réinitialiser le badge localement
+  const handleConversationRead = (conversationId) => {
+    setConversations((prev) =>
+      prev.map((conv) =>
+        conv._id === conversationId ? { ...conv, unreadCount: 0 } : conv,
+      ),
+    );
   };
 
   const handleSelectConversation = async (conversation) => {
     setSelectedConversation(conversation);
 
-    // 👇 Sur mobile, ouvrir la modal
-    if (isMobile) {
-      setIsChatWindowOpen(true);
-    }
+    if (isMobile) setIsChatWindowOpen(true);
 
     markAsRead(conversation._id);
 
     if (conversation.unreadCount > 0) {
       try {
         await apiHandler.put(`/conversations/${conversation._id}/read`);
-
         socketService.emit("messages:read", {
           conversationId: conversation._id,
         });
-
         setConversations((prev) =>
           prev.map((conv) =>
             conv._id === conversation._id ? { ...conv, unreadCount: 0 } : conv,
@@ -180,7 +162,7 @@ function Chat() {
 
   const handleBackToList = () => {
     setSelectedConversation(null);
-    setIsChatWindowOpen(false); // 👈 Fermer la modal
+    setIsChatWindowOpen(false);
   };
 
   if (loading) {
@@ -191,7 +173,6 @@ function Chat() {
     );
   }
 
-  // 👇 Obtenir le nom de l'utilisateur pour le titre de la modal
   const getOtherParticipant = (conversation) => {
     const currentUserId = JSON.parse(
       atob(localStorage.getItem("authToken").split(".")[1]),
@@ -205,7 +186,6 @@ function Chat() {
 
   return (
     <div className="chat-container">
-      {/* MOBILE: Afficher seulement la liste */}
       {isMobile ? (
         <>
           <ConversationList
@@ -213,8 +193,6 @@ function Chat() {
             selectedConversation={selectedConversation}
             onSelectConversation={handleSelectConversation}
           />
-
-          {/* 👇 NOUVELLE MODAL pour le chat sur mobile */}
           {selectedConversation && (
             <ChatModal
               isOpen={isChatWindowOpen}
@@ -227,21 +205,23 @@ function Chat() {
               <ChatWindow
                 conversation={selectedConversation}
                 onBack={handleBackToList}
+                onRead={() => handleConversationRead(selectedConversation._id)} // ← ajouté
               />
             </ChatModal>
           )}
         </>
       ) : (
-        /* DESKTOP: Afficher les deux côte à côte */
         <>
           <ConversationList
             conversations={conversations}
             selectedConversation={selectedConversation}
             onSelectConversation={handleSelectConversation}
           />
-
           {selectedConversation ? (
-            <ChatWindow conversation={selectedConversation} />
+            <ChatWindow
+              conversation={selectedConversation}
+              onRead={() => handleConversationRead(selectedConversation._id)} // ← ajouté
+            />
           ) : (
             <div className="no-conversation-selected">
               <p>Sélectionnez une conversation pour commencer</p>

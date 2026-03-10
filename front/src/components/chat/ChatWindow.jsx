@@ -6,7 +6,8 @@ import { useOnlineStatus } from "../../context/OnlineStatusContext";
 import MessageInput from "./MessageInput";
 import "./css/chatWindow.css";
 
-function ChatWindow({ conversation, onBack }) {
+function ChatWindow({ conversation, onBack, onRead }) {
+  // ← onRead ajouté
   const { isUserOnline } = useOnlineStatus();
 
   const [messages, setMessages] = useState([]);
@@ -26,12 +27,16 @@ function ChatWindow({ conversation, onBack }) {
   const typingTimeoutRef = useRef(null);
   const hasJoinedRef = useRef(false);
   const longPressTimer = useRef(null);
+  const conversationIdRef = useRef(conversation._id);
 
   const currentUserId = JSON.parse(
     atob(localStorage.getItem("authToken").split(".")[1]),
   )._id;
 
-  // ─── Fermer le context menu au clic extérieur ───────────────────────────────
+  useEffect(() => {
+    conversationIdRef.current = conversation._id;
+  }, [conversation._id]);
+
   useEffect(() => {
     const handleClickOutside = () => {
       setContextMenu(null);
@@ -41,7 +46,6 @@ function ChatWindow({ conversation, onBack }) {
     return () => document.removeEventListener("click", handleClickOutside);
   }, []);
 
-  // ─── Charger les messages quand la conversation change ──────────────────────
   useEffect(() => {
     if (conversation) {
       hasJoinedRef.current = false;
@@ -52,17 +56,14 @@ function ChatWindow({ conversation, onBack }) {
     setHideSeparator(false);
   }, [conversation]);
 
-  // ─── Écoutes socket ─────────────────────────────────────────────────────────
   useEffect(() => {
     const socket = socketService.getSocket();
-
     socket.on("message:new", handleNewMessage);
     socket.on("message:deleted", handleMessageDeleted);
     socket.on("message:edited", handleMessageEdited);
     socket.on("typing:start", handleTypingStart);
     socket.on("typing:stop", handleTypingStop);
     socket.on("messages:read", handleMessagesRead);
-
     return () => {
       socket.off("message:new", handleNewMessage);
       socket.off("message:deleted", handleMessageDeleted);
@@ -73,40 +74,30 @@ function ChatWindow({ conversation, onBack }) {
     };
   }, [conversation]);
 
-  // ─── Auto-scroll sur nouveau message ────────────────────────────────────────
   useEffect(() => {
     if (messages.length > 0 && !loading) {
       const container = messagesContainerRef.current;
       if (!container) return;
-
       const isNearBottom =
         container.scrollHeight - container.scrollTop - container.clientHeight <
         150;
-
       if (isNearBottom) scrollToBottom();
     }
   }, [messages, loading]);
 
-  // ─── Marquer comme lu au scroll bas ─────────────────────────────────────────
   useEffect(() => {
     const container = messagesContainerRef.current;
     if (!container) return;
-
     const handleScroll = () => {
       const isAtBottom =
         container.scrollHeight - container.scrollTop - container.clientHeight <
         50;
-
-      if (isAtBottom && conversation && showUnreadSeparator) {
-        markAsRead();
-      }
+      if (isAtBottom && conversation && showUnreadSeparator) markAsRead();
     };
-
     container.addEventListener("scroll", handleScroll);
     return () => container.removeEventListener("scroll", handleScroll);
   }, [conversation, showUnreadSeparator]);
 
-  // ─── Chargement des messages ─────────────────────────────────────────────────
   const loadMessages = async () => {
     setLoading(true);
     try {
@@ -115,18 +106,12 @@ function ChatWindow({ conversation, onBack }) {
       );
       const data = response.data;
 
-      // Calculer le statut réel depuis readBy en base
       const messagesWithStatus = data.map((msg) => {
         if (msg.sender._id !== currentUserId) return msg;
-
         const readByOther = msg.readBy?.some(
           (r) => r.user !== currentUserId && r.user !== msg.sender._id,
         );
-
-        return {
-          ...msg,
-          status: readByOther ? "read" : "sent",
-        };
+        return { ...msg, status: readByOther ? "read" : "sent" };
       });
 
       setMessages(messagesWithStatus);
@@ -170,6 +155,9 @@ function ChatWindow({ conversation, onBack }) {
         conversationId: conversation._id,
       });
 
+      // ← Notifier le parent pour réinitialiser le badge immédiatement
+      if (onRead) onRead();
+
       setHideSeparator(true);
       setTimeout(() => {
         setShowUnreadSeparator(false);
@@ -181,7 +169,6 @@ function ChatWindow({ conversation, onBack }) {
     }
   };
 
-  // ─── Envoi avec Optimistic UI ─────────────────────────────────────────────────
   const handleSendMessage = (content) => {
     const tempId = `temp-${Date.now()}`;
     const tempMessage = {
@@ -192,12 +179,9 @@ function ChatWindow({ conversation, onBack }) {
       status: "sending",
       readBy: [],
     };
-
-    // Affichage immédiat
     setMessages((prev) => [...prev, tempMessage]);
     setTimeout(scrollToBottom, 50);
 
-    // Vérifier connexion socket
     const socket = socketService.getSocket();
     if (!socket?.connected) {
       setMessages((prev) =>
@@ -207,7 +191,6 @@ function ChatWindow({ conversation, onBack }) {
       );
       return;
     }
-
     socketService.emit("message:send", {
       conversationId: conversation._id,
       content,
@@ -215,15 +198,12 @@ function ChatWindow({ conversation, onBack }) {
     });
   };
 
-  // ─── Réessayer un message échoué ─────────────────────────────────────────────
   const handleRetry = (message) => {
-    // Remettre en "sending"
     setMessages((prev) =>
       prev.map((msg) =>
         msg._id === message._id ? { ...msg, status: "sending" } : msg,
       ),
     );
-
     const socket = socketService.getSocket();
     if (!socket?.connected) {
       setMessages((prev) =>
@@ -233,7 +213,6 @@ function ChatWindow({ conversation, onBack }) {
       );
       return;
     }
-
     socketService.emit("message:send", {
       conversationId: conversation._id,
       content: message.content,
@@ -241,32 +220,25 @@ function ChatWindow({ conversation, onBack }) {
     });
   };
 
-  // ─── Réception d'un nouveau message ──────────────────────────────────────────
   const handleNewMessage = ({ conversationId, message }) => {
-    if (conversationId !== conversation._id) return;
-
+    if (conversationId !== conversationIdRef.current) return;
     setMessages((prev) => {
-      // Si le serveur renvoie le tempId → remplacer le message optimiste
       if (message.tempId) {
         return prev.map((msg) =>
           msg._id === message.tempId ? { ...message, status: "sent" } : msg,
         );
       }
-      // Message d'un autre user → ajouter (éviter doublon)
       const exists = prev.find((m) => m._id === message._id);
       if (exists) return prev;
       return [...prev, message];
     });
-
-    if (message.sender._id === currentUserId) {
-      setTimeout(scrollToBottom, 100);
-    }
+    setTimeout(scrollToBottom, 100);
+    if (message.sender._id !== currentUserId) markAsRead();
   };
 
   const handleMessageDeleted = ({ conversationId, messageId }) => {
-    if (conversationId === conversation._id) {
-      setMessages((prev) => prev.filter((msg) => msg._id !== messageId));
-    }
+    if (conversationId !== conversationIdRef.current) return;
+    setMessages((prev) => prev.filter((msg) => msg._id !== messageId));
   };
 
   const handleMessageEdited = ({ messageId, content, edited, editedAt }) => {
@@ -277,12 +249,9 @@ function ChatWindow({ conversation, onBack }) {
     );
   };
 
-  // ─── Messages lus par l'autre user ───────────────────────────────────────────
   const handleMessagesRead = ({ conversationId, userId }) => {
-    if (conversationId !== conversation._id) return;
+    if (conversationId !== conversationIdRef.current) return;
     if (userId === currentUserId) return;
-
-    // Marquer tous les messages envoyés comme "lu"
     setMessages((prev) =>
       prev.map((msg) => {
         if (msg.sender._id !== currentUserId) return msg;
@@ -293,15 +262,13 @@ function ChatWindow({ conversation, onBack }) {
   };
 
   const handleTypingStart = ({ conversationId, userId }) => {
-    if (conversationId === conversation._id && userId !== currentUserId) {
-      setIsTyping(true);
-    }
+    if (conversationId !== conversationIdRef.current) return;
+    if (userId !== currentUserId) setIsTyping(true);
   };
 
   const handleTypingStop = ({ conversationId, userId }) => {
-    if (conversationId === conversation._id && userId !== currentUserId) {
-      setIsTyping(false);
-    }
+    if (conversationId !== conversationIdRef.current) return;
+    if (userId !== currentUserId) setIsTyping(false);
   };
 
   const handleTyping = (isTyping) => {
@@ -309,9 +276,7 @@ function ChatWindow({ conversation, onBack }) {
       socketService.emit("typing:start", { conversationId: conversation._id });
       if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
       typingTimeoutRef.current = setTimeout(() => {
-        socketService.emit("typing:stop", {
-          conversationId: conversation._id,
-        });
+        socketService.emit("typing:stop", { conversationId: conversation._id });
       }, 3000);
     } else {
       socketService.emit("typing:stop", { conversationId: conversation._id });
@@ -319,18 +284,17 @@ function ChatWindow({ conversation, onBack }) {
     }
   };
 
+  // ← Sans condition : markAsRead à chaque focus input
   const handleInputFocus = () => {
-    if (showUnreadSeparator) markAsRead();
+    markAsRead();
   };
 
-  // ─── Context menu desktop ────────────────────────────────────────────────────
   const handleContextMenu = (e, message) => {
     e.preventDefault();
     if (message.sender._id !== currentUserId) return;
     setContextMenu({ x: e.clientX, y: e.clientY, message });
   };
 
-  // ─── Long press mobile ───────────────────────────────────────────────────────
   const handleTouchStart = (e, message) => {
     if (message.sender._id !== currentUserId) return;
     longPressTimer.current = setTimeout(() => {
@@ -343,7 +307,6 @@ function ChatWindow({ conversation, onBack }) {
     if (longPressTimer.current) clearTimeout(longPressTimer.current);
   };
 
-  // ─── Suppression ─────────────────────────────────────────────────────────────
   const handleDeleteClick = (messageId) => {
     socketService.emit("message:delete", {
       messageId,
@@ -358,7 +321,6 @@ function ChatWindow({ conversation, onBack }) {
     handleDeleteClick(contextMenu.message._id);
   };
 
-  // ─── Édition ─────────────────────────────────────────────────────────────────
   const canEditMessage = (message) => {
     const EDIT_TIME_LIMIT = 5 * 60 * 1000;
     const messageAge = Date.now() - new Date(message.createdAt).getTime();
@@ -385,7 +347,6 @@ function ChatWindow({ conversation, onBack }) {
 
   const handleCancelEdit = () => setEditingMessage(null);
 
-  // ─── Helpers ──────────────────────────────────────────────────────────────────
   const scrollToBottom = () => {
     if (messagesContainerRef.current) {
       messagesContainerRef.current.scrollTop =
@@ -402,12 +363,9 @@ function ChatWindow({ conversation, onBack }) {
       minute: "2-digit",
     });
 
-  // ─── Indicateur de statut du message ─────────────────────────────────────────
   const renderMessageStatus = (message) => {
     if (message.sender._id !== currentUserId) return null;
-
     const status = message.status;
-
     if (status === "sending")
       return <span className="msg-status sending">⏳</span>;
     if (status === "failed")
@@ -421,7 +379,6 @@ function ChatWindow({ conversation, onBack }) {
         </span>
       );
     if (status === "read") return <span className="msg-status read">✓✓</span>;
-    // "sent" ou messages chargés depuis l'API
     return <span className="msg-status sent">✓</span>;
   };
 
@@ -438,7 +395,6 @@ function ChatWindow({ conversation, onBack }) {
 
   return (
     <div className="chat-window">
-      {/* ── Header ── */}
       <div className="chat-header">
         {onBack && (
           <button className="back-button" onClick={onBack}>
@@ -462,12 +418,10 @@ function ChatWindow({ conversation, onBack }) {
         </div>
       </div>
 
-      {/* ── Messages ── */}
       <div className="messages-container" ref={messagesContainerRef}>
         {messages.map((message) => {
           const isOwn = message.sender._id === currentUserId;
           const isFirstUnread = message._id === firstUnreadId;
-
           return (
             <div key={message._id} id={`msg-${message._id}`}>
               {showUnreadSeparator && isFirstUnread && (
@@ -477,7 +431,6 @@ function ChatWindow({ conversation, onBack }) {
                   Messages non lus
                 </div>
               )}
-
               <div
                 className={`message ${isOwn ? "own" : "other"} ${
                   longPressMessageId === message._id ? "show-delete" : ""
@@ -492,12 +445,9 @@ function ChatWindow({ conversation, onBack }) {
                     {message.sender.name?.charAt(0).toUpperCase() || "?"}
                   </div>
                 )}
-
                 <div className="message-content">
                   <div
-                    className={`message-bubble ${
-                      message.status === "sending" ? "sending" : ""
-                    } ${message.status === "failed" ? "failed" : ""}`}
+                    className={`message-bubble ${message.status === "sending" ? "sending" : ""} ${message.status === "failed" ? "failed" : ""}`}
                   >
                     {message.content}
                     {message.edited && (
@@ -510,14 +460,12 @@ function ChatWindow({ conversation, onBack }) {
                       </span>
                     )}
                   </div>
-
                   <div className="message-meta">
                     <span className="message-time">
                       {formatMessageTime(message.createdAt)}
                     </span>
                     {renderMessageStatus(message)}
                   </div>
-
                   {isOwn && longPressMessageId === message._id && (
                     <div className="mobile-actions">
                       {canEditMessage(message) && (
@@ -554,11 +502,9 @@ function ChatWindow({ conversation, onBack }) {
             </div>
           </div>
         )}
-
         <div ref={messagesEndRef} />
       </div>
 
-      {/* ── Context menu desktop ── */}
       {contextMenu && (
         <div
           className="context-menu"
