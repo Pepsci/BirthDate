@@ -114,7 +114,22 @@ function ChatWindow({ conversation, onBack }) {
         `/conversations/${conversation._id}/messages`,
       );
       const data = response.data;
-      setMessages(data);
+
+      // Calculer le statut réel depuis readBy en base
+      const messagesWithStatus = data.map((msg) => {
+        if (msg.sender._id !== currentUserId) return msg;
+
+        const readByOther = msg.readBy?.some(
+          (r) => r.user !== currentUserId && r.user !== msg.sender._id,
+        );
+
+        return {
+          ...msg,
+          status: readByOther ? "read" : "sent",
+        };
+      });
+
+      setMessages(messagesWithStatus);
 
       const firstUnread = data.find(
         (msg) =>
