@@ -102,7 +102,7 @@ const LandingPage = () => {
           </p>
           <div className="lp-cta-row">
             <button
-              onClick={() => navigate("/register")}
+              onClick={() => navigate("/signup")}
               className="lp-btn-primary"
             >
               Créer un compte
