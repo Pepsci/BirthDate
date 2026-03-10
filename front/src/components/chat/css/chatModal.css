@@ -24,7 +24,8 @@
 }
 
 .chat-modal-container {
-    position: absolute;
+    position: fixed;
+    /* 👈 fixed au lieu de absolute */
     top: 0;
     left: 0;
     right: 0;
@@ -33,6 +34,8 @@
     display: flex;
     flex-direction: column;
     animation: modalSlideUp 0.3s ease-out;
+    z-index: 10000;
+    transform: translateZ(0);
 }
 
 @keyframes modalSlideUp {
@@ -89,9 +92,11 @@
 
 .chat-modal-content {
     flex: 1;
-    overflow: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
     display: flex;
     flex-direction: column;
+    min-height: 0;
 }
 
 /* Le chat prend toute la hauteur disponible */
