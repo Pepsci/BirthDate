@@ -18,7 +18,7 @@ service.interceptors.request.use((config) => {
 function errorHandler(error) {
   if (error.response && error.response.data) {
     console.log("Error response data:", error.response.data);
-    throw error.response.data;
+    throw error.response.data; // ← ici il throw un objet {message: "..."}
   } else {
     console.log("Error:", error);
     throw error;

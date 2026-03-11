@@ -42,7 +42,13 @@ const Login = () => {
         setErrorMessage("No authToken in response");
       }
     } catch (err) {
-      setErrorMessage(err.message || "Une erreur s'est produite.");
+      if (err.message === "Network Error") {
+        setErrorMessage("Email ou mot de passe incorrect.");
+      } else {
+        setErrorMessage(
+          err.message || err.error || "Une erreur s'est produite.",
+        );
+      }
       console.error(err);
     }
   };
