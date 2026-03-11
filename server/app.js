@@ -36,8 +36,6 @@ const allowedOrigins = [
   "https://www.birthreminder.com",
 ];
 
-app.options("*", cors());
-
 app.use(
   cors({
     credentials: true,
