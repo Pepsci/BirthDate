@@ -32,17 +32,14 @@ const FetesTab = ({ dates, loading }) => {
       const response = await apiHandler.get("/users/me");
       setUserEmailPreference(response.data.receiveBirthdayEmails !== false);
 
+      // 🎉 Charger namedayPreferences au lieu de notificationPreferences
       const firstDateWithNameday = dates.find((d) => d.nameday);
-      if (
-        firstDateWithNameday &&
-        firstDateWithNameday.notificationPreferences
-      ) {
+      if (firstDateWithNameday && firstDateWithNameday.namedayPreferences) {
         setNamedayTimings(
-          firstDateWithNameday.notificationPreferences.timings || [1],
+          firstDateWithNameday.namedayPreferences.timings || [1],
         );
         setNotifyOnNameday(
-          firstDateWithNameday.notificationPreferences.notifyOnBirthday !==
-            false,
+          firstDateWithNameday.namedayPreferences.notifyOnNameday !== false,
         );
       }
     } catch (err) {
@@ -97,6 +94,7 @@ const FetesTab = ({ dates, loading }) => {
     }
   };
 
+  // 🎉 Mettre à jour les préférences de timing pour TOUTES les fêtes
   const handleTimingChange = async (timing) => {
     const newTimings = namedayTimings.includes(timing)
       ? namedayTimings.filter((t) => t !== timing)
@@ -106,11 +104,12 @@ const FetesTab = ({ dates, loading }) => {
     try {
       const datesWithNameday = localDates.filter((d) => d.nameday);
 
+      // 🎉 Utiliser la route nameday-preferences
       await Promise.all(
         datesWithNameday.map((date) =>
-          apiHandler.put(`/date/${date._id}/notification-preferences`, {
+          apiHandler.put(`/date/${date._id}/nameday-preferences`, {
             timings: newTimings,
-            notifyOnBirthday: notifyOnNameday,
+            notifyOnNameday: notifyOnNameday,
           }),
         ),
       );
@@ -125,16 +124,18 @@ const FetesTab = ({ dates, loading }) => {
     }
   };
 
+  // 🎉 Toggle jour J (fête)
   const handleToggleNotifyOnNameday = async (value) => {
     setLoadingTimings(true);
     try {
       const datesWithNameday = localDates.filter((d) => d.nameday);
 
+      // 🎉 Utiliser la route nameday-preferences
       await Promise.all(
         datesWithNameday.map((date) =>
-          apiHandler.put(`/date/${date._id}/notification-preferences`, {
+          apiHandler.put(`/date/${date._id}/nameday-preferences`, {
             timings: namedayTimings,
-            notifyOnBirthday: value,
+            notifyOnNameday: value,
           }),
         ),
       );
