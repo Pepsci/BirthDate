@@ -1,494 +1,205 @@
 const cron = require("node-cron");
-const { SESClient, SendEmailCommand } = require("@aws-sdk/client-ses");
-const nodemailer = require("nodemailer");
 const dateModel = require("../models/date.model");
-const userModel = require("../models/user.model");
-
+const User = require("../models/user.model");
 const {
-  getBirthdayReminderTemplate,
-  getBirthdayReminderTextVersion,
+  sendBirthdayReminderEmail,
 } = require("../services/emailTemplates/birthdayReminder");
-
 const {
-  getNamedayReminderTemplate,
-  getNamedayReminderTextVersion,
+  sendNamedayReminderEmail,
 } = require("../services/emailTemplates/namedayReminder");
 
-const sesClient = new SESClient({
-  region: process.env.AWS_REGION,
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  },
-});
-
-const transporter = nodemailer.createTransport({
-  send: async (mail, callback) => {
-    try {
-      const message = await new Promise((resolve, reject) => {
-        mail.message.build((error, message) => {
-          if (error) reject(error);
-          else resolve(message);
-        });
-      });
-
-      const { SendRawEmailCommand } = require("@aws-sdk/client-ses");
-      const command = new SendRawEmailCommand({
-        RawMessage: { Data: message },
-      });
-      const response = await sesClient.send(command);
-      callback(null, response);
-    } catch (error) {
-      console.error("Erreur lors de l'envoi de l'email:", error);
-      callback(error);
-    }
-  },
-  name: "ses-v3-transport",
-});
-
-// ============================================================================
-// HELPERS - Vérification des dates
-// ============================================================================
-
-function isBirthdayInXDays(birthday, daysFromNow) {
+// ========================================
+// HELPER: Vérifier si un anniversaire est dans X jours
+// ========================================
+function isBirthdayInXDays(birthDate, daysFromNow) {
   const today = new Date();
-  const futureDate = new Date(today);
-  futureDate.setDate(today.getDate() + daysFromNow);
+  today.setHours(0, 0, 0, 0);
+
+  const targetDate = new Date(today);
+  targetDate.setDate(today.getDate() + daysFromNow);
+
+  const birth = new Date(birthDate);
+  birth.setHours(0, 0, 0, 0);
 
   return (
-    futureDate.getDate() === birthday.getDate() &&
-    futureDate.getMonth() === birthday.getMonth()
+    birth.getDate() === targetDate.getDate() &&
+    birth.getMonth() === targetDate.getMonth()
   );
 }
 
-// 🎉 NOUVEAU - Vérifier si c'est la fête dans X jours
+// ========================================
+// HELPER: Vérifier si une fête (nameday) est dans X jours
+// ========================================
 function isNamedayInXDays(nameday, daysFromNow) {
-  if (!nameday) return false;
+  if (!nameday || !nameday.match(/^\d{2}-\d{2}$/)) {
+    return false;
+  }
 
   const today = new Date();
-  const futureDate = new Date(today);
-  futureDate.setDate(today.getDate() + daysFromNow);
+  today.setHours(0, 0, 0, 0);
 
-  // Format nameday: "MM-DD"
-  const [month, day] = nameday.split("-").map(Number);
+  const targetDate = new Date(today);
+  targetDate.setDate(today.getDate() + daysFromNow);
+
+  const [month, day] = nameday.split("-");
+  const namedayThisYear = new Date(
+    targetDate.getFullYear(),
+    parseInt(month) - 1,
+    parseInt(day),
+  );
+  namedayThisYear.setHours(0, 0, 0, 0);
 
   return (
-    futureDate.getDate() === day && futureDate.getMonth() === month - 1 // Les mois JS commencent à 0
+    namedayThisYear.getDate() === targetDate.getDate() &&
+    namedayThisYear.getMonth() === targetDate.getMonth()
   );
 }
 
-// ============================================================================
-// ANNIVERSAIRES UTILISATEURS (propre anniversaire)
-// ============================================================================
-
-async function checkAndSendUserBirthdayEmails() {
+// ========================================
+// RAPPELS ANNIVERSAIRES (utilisateurs)
+// ========================================
+async function checkAndSendUserBirthdayReminders() {
   try {
-    console.log("🎂 [CRON] Vérification des anniversaires utilisateurs...");
+    console.log(
+      "🎂 [CRON] Vérification des rappels d'anniversaires utilisateurs...",
+    );
 
-    const users = await userModel.find({
+    const users = await User.find({
       birthDate: { $exists: true, $ne: null },
-      isVerified: true,
-      receiveBirthdayEmails: true,
-      receiveOwnBirthdayEmail: true,
-      deletedAt: null,
+      receiveOwnBirthdayEmail: { $ne: false },
+      receiveBirthdayEmails: { $ne: false },
     });
-
-    let emailsSent = 0;
 
     for (const user of users) {
-      if (!user.email || !user.birthDate) continue;
-
-      const birthday = new Date(user.birthDate);
-
-      if (isBirthdayInXDays(birthday, 0)) {
-        await sendUserBirthdayEmail(user);
-        emailsSent++;
-        console.log(
-          `🎉 Email d'anniversaire envoyé à ${user.name} (${user.email})`,
-        );
+      if (isBirthdayInXDays(user.birthDate, 0)) {
+        console.log(`🎉 Anniversaire de ${user.email} aujourd'hui !`);
+        await sendBirthdayReminderEmail(user, null, 0);
       }
     }
-
-    console.log(
-      `🎂 [CRON] ${emailsSent} email(s) d'anniversaire utilisateur envoyé(s)`,
-    );
   } catch (error) {
-    console.error(
-      "❌ [CRON] Erreur vérification anniversaires utilisateurs:",
-      error,
-    );
+    console.error("❌ Erreur rappels anniversaires utilisateurs:", error);
   }
 }
 
-async function sendUserBirthdayEmail(user) {
-  const encodedEmail = encodeURIComponent(user.email);
-  const profileLink = `${process.env.FRONTEND_URL}/home`;
-  const unsubscribeLink = `${process.env.FRONTEND_URL}/api/unsubscribe?email=${encodedEmail}`;
-
-  const htmlContent = `
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-</head>
-<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;background-color:#1a1a2e;color:#ffffff;">
-  <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color:#1a1a2e;">
-    <tr>
-      <td style="padding:40px 20px;">
-        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width:600px;margin:0 auto;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);border-radius:16px;overflow:hidden;box-shadow:0 10px 40px rgba(0,0,0,0.3);">
-          <tr>
-            <td style="padding:40px 40px 20px 40px;text-align:center;">
-              <h1 style="margin:0;font-size:32px;font-weight:700;color:#ffffff;">🎉 BirthReminder</h1>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding:0 40px 20px 40px;text-align:center;">
-              <div style="display:inline-block;background-color:rgba(255,255,255,0.2);padding:8px 20px;border-radius:20px;">
-                <span style="font-size:14px;font-weight:600;text-transform:uppercase;letter-spacing:1px;">
-                  Joyeux Anniversaire ! 🎂
-                </span>
-              </div>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding:0 40px 30px 40px;text-align:center;">
-              <p style="margin:0;font-size:24px;font-weight:700;color:#ffffff;">
-                Joyeux anniversaire ${user.name} ! 🎉
-              </p>
-              <p style="margin:16px 0 0 0;font-size:16px;line-height:1.6;color:rgba(255,255,255,0.9);">
-                Toute l'équipe BirthReminder vous souhaite un merveilleux anniversaire !
-              </p>
-              <p style="margin:12px 0 0 0;font-size:15px;line-height:1.6;color:rgba(255,255,255,0.8);">
-                Profitez de cette belle journée 🥳
-              </p>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding:0 40px 40px 40px;text-align:center;">
-              <a href="${profileLink}" style="display:inline-block;background-color:#ffffff;color:#667eea;text-decoration:none;padding:16px 40px;border-radius:8px;font-weight:600;font-size:16px;box-shadow:0 4px 15px rgba(0,0,0,0.2);">
-                Voir mon profil →
-              </a>
-            </td>
-          </tr>
-        </table>
-        <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width:600px;margin:20px auto 0 auto;">
-          <tr>
-            <td style="padding:20px;text-align:center;font-size:12px;color:#888;line-height:1.6;">
-              <p style="margin:0;">
-                <a href="${unsubscribeLink}" style="color:#667eea;text-decoration:none;">
-                  Ne plus recevoir ces notifications
-                </a>
-              </p>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>`;
-
-  const mailOptions = {
-    from: `BirthReminder <${process.env.EMAIL_BRTHDAY}>`,
-    to: user.email,
-    subject: `🎉 Joyeux anniversaire ${user.name} !`,
-    html: htmlContent,
-    text: `Joyeux anniversaire ${user.name} ! Toute l'équipe BirthReminder vous souhaite un merveilleux anniversaire !\n\nVoir mon profil : ${profileLink}\n\nSe désabonner : ${unsubscribeLink}`,
-    headers: {
-      "List-Unsubscribe": `<${unsubscribeLink}>`,
-      "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
-    },
-  };
-
-  return new Promise((resolve, reject) => {
-    transporter.sendMail(mailOptions, (error, info) => {
-      if (error) {
-        console.error("Erreur envoi email:", error);
-        reject(error);
-      } else resolve(info);
-    });
-  });
-}
-
-// ============================================================================
-// ANNIVERSAIRES DES CARTES (amis/famille)
-// ============================================================================
-
-async function checkAndSendBirthdayReminders() {
+// ========================================
+// RAPPELS ANNIVERSAIRES (cartes)
+// ========================================
+async function checkAndSendCardBirthdayReminders() {
   try {
-    console.log("🎂 [CRON] Vérification des rappels d'anniversaires...");
+    console.log("🎂 [CRON] Vérification des rappels d'anniversaires cartes...");
 
-    const dateList = await dateModel.find().populate("owner");
-    let emailsSent = 0;
+    const dates = await dateModel
+      .find({
+        receiveNotifications: { $ne: false },
+      })
+      .populate("owner linkedUser");
 
-    for (const dateItem of dateList) {
-      if (
-        !dateItem.owner ||
-        !dateItem.owner.email ||
-        dateItem.owner.receiveBirthdayEmails === false ||
-        dateItem.receiveNotifications === false
-      )
-        continue;
+    for (const date of dates) {
+      if (!date.owner || !date.owner.receiveBirthdayEmails) continue;
 
-      const birthday = new Date(dateItem.date);
-      const preferences = dateItem.notificationPreferences || {};
-      const reminders = preferences.timings || [1];
-      const notifyOnBirthday = preferences.notifyOnBirthday !== false;
+      // Utiliser notificationPreferences pour les ANNIVERSAIRES
+      const prefs = date.notificationPreferences || {
+        timings: [1],
+        notifyOnBirthday: true,
+      };
 
-      // Jour même
-      if (notifyOnBirthday && isBirthdayInXDays(birthday, 0)) {
-        await sendBirthdayReminderEmail(
-          dateItem.owner.email,
-          dateItem.name,
-          dateItem.surname,
-          0,
-          dateItem._id,
-        );
-        emailsSent++;
-        console.log(
-          `✅ Email anniversaire envoyé pour ${dateItem.name} ${dateItem.surname} (jour même)`,
-        );
+      const { timings = [1], notifyOnBirthday = true } = prefs;
+
+      // Jour de l'anniversaire
+      if (notifyOnBirthday && isBirthdayInXDays(date.date, 0)) {
+        await sendBirthdayReminderEmail(date.owner, date, 0);
       }
 
-      // X jours avant
-      for (const daysBeforeBirthday of reminders) {
-        if (isBirthdayInXDays(birthday, daysBeforeBirthday)) {
-          await sendBirthdayReminderEmail(
-            dateItem.owner.email,
-            dateItem.name,
-            dateItem.surname,
-            daysBeforeBirthday,
-            dateItem._id,
-          );
-          emailsSent++;
-          console.log(
-            `✅ Email anniversaire envoyé pour ${dateItem.name} ${dateItem.surname} (${daysBeforeBirthday} jours avant)`,
-          );
+      // Rappels à l'avance
+      for (const days of timings) {
+        if (isBirthdayInXDays(date.date, days)) {
+          await sendBirthdayReminderEmail(date.owner, date, days);
         }
       }
     }
-
-    console.log(`🎂 [CRON] ${emailsSent} rappel(s) d'anniversaire envoyé(s)`);
   } catch (error) {
-    console.error("❌ [CRON] Erreur lors des rappels d'anniversaires:", error);
+    console.error("❌ Erreur rappels anniversaires cartes:", error);
   }
 }
 
-async function sendBirthdayReminderEmail(
-  email,
-  name,
-  surname,
-  daysBeforeBirthday,
-  dateId,
-) {
-  const encodedEmail = encodeURIComponent(email);
-  const birthdayLink = `${process.env.FRONTEND_URL}/birthday/${dateId}`;
-  const unsubscribeAllLink = `${process.env.FRONTEND_URL}/api/unsubscribe?email=${encodedEmail}`;
-  const unsubscribeSpecificLink = `${process.env.FRONTEND_URL}/api/unsubscribe?email=${encodedEmail}&dateid=${dateId}`;
-
-  let subject;
-  if (daysBeforeBirthday === 0)
-    subject = `C'est aujourd'hui l'anniversaire de ${name} ${surname} ! 🎉`;
-  else if (daysBeforeBirthday === 1)
-    subject = `Rappel: Anniversaire demain ! 🎂`;
-  else subject = `Rappel: Anniversaire dans ${daysBeforeBirthday} jours 📅`;
-
-  const templateData = {
-    name,
-    surname,
-    daysBeforeBirthday,
-    birthdayLink,
-    unsubscribeAllLink,
-    unsubscribeSpecificLink,
-  };
-  const htmlContent = getBirthdayReminderTemplate(templateData);
-  const textContent = getBirthdayReminderTextVersion(templateData);
-
-  const mailOptions = {
-    from: `Birthday <${process.env.EMAIL_BRTHDAY}>`,
-    to: email,
-    subject,
-    text: textContent,
-    html: htmlContent,
-    headers: {
-      "List-Unsubscribe": `<${unsubscribeAllLink}>`,
-      "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
-    },
-  };
-
-  return new Promise((resolve, reject) => {
-    transporter.sendMail(mailOptions, (error, info) => {
-      if (error) {
-        console.error("Erreur lors de l'envoi de l'email:", error);
-        reject(error);
-      } else resolve(info);
-    });
-  });
-}
-
-// ============================================================================
-// 🎉 NOUVEAU - FÊTES (NAMEDAYS)
-// ============================================================================
-
+// ========================================
+// 🎉 RAPPELS FÊTES (nameday) - UTILISE namedayPreferences
+// ========================================
 async function checkAndSendNamedayReminders() {
   try {
-    console.log("🎂 [CRON] Vérification des rappels de fêtes...");
+    console.log("🎉 [CRON] Vérification des rappels de fêtes...");
 
-    const dateList = await dateModel
+    const datesWithNameday = await dateModel
       .find({
         nameday: { $exists: true, $ne: null },
+        receiveNotifications: { $ne: false },
       })
-      .populate("owner");
+      .populate("owner linkedUser");
 
-    let emailsSent = 0;
+    for (const date of datesWithNameday) {
+      if (!date.owner || !date.owner.receiveBirthdayEmails) continue;
 
-    for (const dateItem of dateList) {
-      if (
-        !dateItem.owner ||
-        !dateItem.owner.email ||
-        dateItem.owner.receiveBirthdayEmails === false ||
-        dateItem.receiveNotifications === false
-      )
-        continue;
+      // 🎉 UTILISER namedayPreferences au lieu de notificationPreferences
+      const prefs = date.namedayPreferences || {
+        timings: [1],
+        notifyOnNameday: true,
+      };
 
-      const preferences = dateItem.notificationPreferences || {};
-      const reminders = preferences.timings || [1];
-      const notifyOnBirthday = preferences.notifyOnBirthday !== false;
+      const { timings = [1], notifyOnNameday = true } = prefs;
 
-      // Jour même
-      if (notifyOnBirthday && isNamedayInXDays(dateItem.nameday, 0)) {
-        await sendNamedayReminderEmail(
-          dateItem.owner.email,
-          dateItem.name,
-          dateItem.surname,
-          0,
-          dateItem._id,
-          dateItem.nameday,
-        );
-        emailsSent++;
-        console.log(
-          `✅ Email fête envoyé pour ${dateItem.name} ${dateItem.surname} (jour même)`,
-        );
+      // Jour de la fête
+      if (notifyOnNameday && isNamedayInXDays(date.nameday, 0)) {
+        console.log(`🎉 Fête de ${date.name} aujourd'hui !`);
+        await sendNamedayReminderEmail(date, 0);
       }
 
-      // X jours avant
-      for (const daysBeforeBirthday of reminders) {
-        if (isNamedayInXDays(dateItem.nameday, daysBeforeBirthday)) {
-          await sendNamedayReminderEmail(
-            dateItem.owner.email,
-            dateItem.name,
-            dateItem.surname,
-            daysBeforeBirthday,
-            dateItem._id,
-            dateItem.nameday,
-          );
-          emailsSent++;
-          console.log(
-            `✅ Email fête envoyé pour ${dateItem.name} ${dateItem.surname} (${daysBeforeBirthday} jours avant)`,
-          );
+      // Rappels à l'avance (1 jour ou 7 jours)
+      for (const days of timings) {
+        if (isNamedayInXDays(date.nameday, days)) {
+          console.log(`📅 Rappel fête de ${date.name} dans ${days} jour(s)`);
+          await sendNamedayReminderEmail(date, days);
         }
       }
     }
-
-    console.log(`🎉 [CRON] ${emailsSent} rappel(s) de fête envoyé(s)`);
   } catch (error) {
-    console.error("❌ [CRON] Erreur lors des rappels de fêtes:", error);
+    console.error("❌ Erreur rappels fêtes:", error);
   }
 }
 
-async function sendNamedayReminderEmail(
-  email,
-  name,
-  surname,
-  daysBeforeNameday,
-  dateId,
-  nameday,
-) {
-  const encodedEmail = encodeURIComponent(email);
-  const namedayLink = `${process.env.FRONTEND_URL}/birthday/${dateId}`;
-  const unsubscribeAllLink = `${process.env.FRONTEND_URL}/api/unsubscribe?email=${encodedEmail}`;
-  const unsubscribeSpecificLink = `${process.env.FRONTEND_URL}/api/unsubscribe?email=${encodedEmail}&dateid=${dateId}`;
-
-  // Format de la date pour l'affichage
-  const [month, day] = nameday.split("-").map(Number);
-  const namedayDate = new Date(2000, month - 1, day);
-  const formattedDate = namedayDate.toLocaleDateString("fr-FR", {
-    day: "numeric",
-    month: "long",
-  });
-
-  let subject;
-  if (daysBeforeNameday === 0)
-    subject = `C'est la fête de ${name} aujourd'hui ! 🎉`;
-  else if (daysBeforeNameday === 1) subject = `Rappel: Fête demain ! 🎂`;
-  else subject = `Rappel: Fête dans ${daysBeforeNameday} jours 📅`;
-
-  const templateData = {
-    name,
-    surname,
-    daysBeforeNameday,
-    namedayLink,
-    unsubscribeAllLink,
-    unsubscribeSpecificLink,
-    formattedDate,
-  };
-
-  const htmlContent = getNamedayReminderTemplate(templateData);
-  const textContent = getNamedayReminderTextVersion(templateData);
-
-  const mailOptions = {
-    from: `BirthReminder <${process.env.EMAIL_BRTHDAY}>`,
-    to: email,
-    subject,
-    text: textContent,
-    html: htmlContent,
-    headers: {
-      "List-Unsubscribe": `<${unsubscribeAllLink}>`,
-      "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
-    },
-  };
-
-  return new Promise((resolve, reject) => {
-    transporter.sendMail(mailOptions, (error, info) => {
-      if (error) {
-        console.error("Erreur lors de l'envoi de l'email:", error);
-        reject(error);
-      } else resolve(info);
-    });
-  });
-}
-
-// ============================================================================
-// FONCTION PRINCIPALE - Tous les rappels
-// ============================================================================
-
+// ========================================
+// FONCTION PRINCIPALE
+// ========================================
 async function checkAndSendAllReminders() {
-  console.log("📧 [CRON] === Démarrage des vérifications quotidiennes ===");
-
-  // 1. Anniversaires utilisateurs (propre anniversaire)
-  await checkAndSendUserBirthdayEmails();
-
-  // 2. Anniversaires des cartes (amis/famille)
-  await checkAndSendBirthdayReminders();
-
-  // 3. 🎉 NOUVEAU - Fêtes (namedays)
+  console.log("\n📧 [CRON] Démarrage de la vérification des rappels...");
+  await checkAndSendUserBirthdayReminders();
+  await checkAndSendCardBirthdayReminders();
   await checkAndSendNamedayReminders();
-
-  console.log("📧 [CRON] === Vérifications terminées ===");
+  console.log("✅ [CRON] Vérification terminée\n");
 }
 
-// ============================================================================
-// PLANIFICATION - Tous les jours à minuit
-// ============================================================================
+// ========================================
+// PLANIFICATION : Tous les jours à minuit
+// ========================================
+const cronJob = cron.schedule(
+  "0 0 * * *",
+  async () => {
+    await checkAndSendAllReminders();
+  },
+  {
+    scheduled: false,
+    timezone: "Europe/Paris",
+  },
+);
 
-const remindersCron = cron.schedule("0 0 * * *", checkAndSendAllReminders, {
-  scheduled: false,
-});
-
-// Pour tester : décommenter la ligne ci-dessous (toutes les minutes)
-// const remindersCron = cron.schedule("*/1 * * * *", checkAndSendAllReminders, {
-//   scheduled: false,
-// });
-
-module.exports = remindersCron;
+// ========================================
+// EXPORTS
+// ========================================
+module.exports = {
+  start: () => {
+    cronJob.start();
+    console.log(
+      "✅ Emails anniversaires & fêtes planifiés (tous les jours à minuit)",
+    );
+  },
+  checkAndSendAllReminders, // Pour les tests manuels
+};

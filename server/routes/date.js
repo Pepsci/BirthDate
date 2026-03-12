@@ -327,6 +327,57 @@ router.delete("/:id", isAuthenticated, async (req, res, next) => {
   }
 });
 
+// À ajouter dans server/routes/date.js
+
+// ========================================
+// PUT /date/:id/nameday-preferences
+// Mettre à jour les préférences de notification pour les FÊTES
+// ========================================
+router.put("/:id/nameday-preferences", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { timings, notifyOnNameday } = req.body;
+
+    // Validation des timings (seulement 1 et 7 autorisés pour les fêtes)
+    if (timings && !Array.isArray(timings)) {
+      return res.status(400).json({ message: "Timings doit être un tableau" });
+    }
+
+    if (timings && !timings.every((t) => [1, 7].includes(t))) {
+      return res.status(400).json({
+        message:
+          "Les timings de fête doivent être 1 (veille) ou 7 (semaine avant)",
+      });
+    }
+
+    // Mise à jour
+    const date = await Date.findByIdAndUpdate(
+      id,
+      {
+        $set: {
+          "namedayPreferences.timings": timings,
+          "namedayPreferences.notifyOnNameday": notifyOnNameday,
+        },
+      },
+      { new: true, runValidators: true },
+    ).populate("owner linkedUser");
+
+    if (!date) {
+      return res.status(404).json({ message: "Date non trouvée" });
+    }
+
+    console.log(`✅ Préférences fête mises à jour pour ${date.name}:`, {
+      timings,
+      notifyOnNameday,
+    });
+
+    res.json(date);
+  } catch (error) {
+    console.error("❌ Erreur mise à jour préférences nameday:", error);
+    res.status(500).json({ message: "Erreur serveur", error: error.message });
+  }
+});
+
 // ========================================
 // PUT /:id/notifications - Toggle notifications
 // 🔒 SÉCURISÉ

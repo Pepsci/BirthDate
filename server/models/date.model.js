@@ -24,6 +24,7 @@ const dateSchema = Schema({
     default: true,
   },
 
+  // 🎂 PRÉFÉRENCES ANNIVERSAIRES (existantes)
   notificationPreferences: {
     timings: {
       type: [Number],
@@ -32,6 +33,25 @@ const dateSchema = Schema({
     notifyOnBirthday: {
       type: Boolean,
       default: true,
+    },
+  },
+
+  // 🎉 PRÉFÉRENCES FÊTES (NOUVELLES - ajoutées)
+  namedayPreferences: {
+    timings: {
+      type: [Number],
+      default: [1], // 1 jour avant par défaut
+      validate: {
+        validator: function (arr) {
+          return arr.every((n) => [1, 7].includes(n));
+        },
+        message:
+          "Les timings de fête doivent être 1 (veille) ou 7 (semaine avant)",
+      },
+    },
+    notifyOnNameday: {
+      type: Boolean,
+      default: true, // Notifier le jour de la fête par défaut
     },
   },
 
