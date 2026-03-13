@@ -7,6 +7,7 @@ import ProfilDetails from "./profil/Profile";
 import UpdateDate from "./dashboard/UpdateDate";
 import FriendProfile from "./profil/FriendProfile";
 import ManualMergeModal from "./dashboard/ManuelMergeModal";
+import PushNotificationManager from "../components/profil/notifications/PushNotificationManager";
 import "./dashboard/css/homePage.css";
 import Logo from "./UI/Logo";
 
@@ -103,6 +104,7 @@ const Home = () => {
           </div>
         )}
       </div>
+      <PushNotificationManager />
 
       {isLoggedIn && (
         <>

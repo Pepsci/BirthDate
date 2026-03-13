@@ -17,6 +17,7 @@ const wishlistRouter = require("./routes/wishlist");
 const friendRouter = require("./routes/friends");
 const conversationsRouter = require("./routes/conversations");
 const mergeDatesRouter = require("./routes/mergeDates");
+const pushRoutes = require("./routes/push");
 
 // Charger les cron jobs
 const purgeDeletedAccounts = require("./jobs/purgeDeletedAccounts");
@@ -72,6 +73,7 @@ app.use("/api/wishlist", wishlistRouter);
 app.use("/api/friends", friendRouter);
 app.use("/api/conversations", conversationsRouter);
 app.use("/api/merge-dates", mergeDatesRouter);
+app.use("/api/push", pushRoutes);
 
 // Démarrer les cron jobs
 purgeDeletedAccounts.start();
@@ -80,6 +82,27 @@ chatCronInstant.start();
 chatCronDaily.start();
 chatCronTwiceDaily.start();
 chatCronWeekly.start();
+
+app.get("/api/push/test-chat", async (req, res) => {
+  const { sendPushToUser } = require("./services/pushService");
+  const User = require("./models/user.model");
+
+  const user = await User.findOne({ email: "jossfilippi@gmail.com" });
+  console.log("pushEnabled:", user.pushEnabled);
+
+  const PushSubscription = require("./models/PushSubscription.model");
+  const subs = await PushSubscription.find({ user: user._id });
+  console.log("subscriptions:", subs.length);
+
+  await sendPushToUser(user._id, {
+    title: "💬 Test push",
+    body: "Test direct !",
+    url: "/home",
+    tag: "test",
+  });
+
+  res.json({ pushEnabled: user.pushEnabled, subs: subs.length });
+});
 
 console.log("🤖 Cron jobs activés :");
 console.log("   ✅ Purge comptes supprimés (tous les jours à 3h)");

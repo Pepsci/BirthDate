@@ -1,6 +1,7 @@
 const Conversation = require("../models/conversation.model");
 const Message = require("../models/message.model");
 const User = require("../models/user.model");
+const { sendPushToUser } = require("../services/pushService");
 
 // Map pour suivre les utilisateurs connectés
 const connectedUsers = new Map();
@@ -85,7 +86,7 @@ module.exports = (io) => {
 
     // ── Envoyer un message (avec support Optimistic UI via tempId) ──────────
     socket.on("message:send", async (data) => {
-      const { conversationId, content, tempId } = data; // ← tempId extrait
+      const { conversationId, content, tempId } = data;
 
       try {
         if (!content || content.trim().length === 0) {
@@ -120,9 +121,30 @@ module.exports = (io) => {
         conversation.lastMessageAt = message.createdAt;
         await conversation.save();
 
+        // ── Push si le destinataire est hors ligne ──────────────────────────
+        const recipientId = conversation.participants.find(
+          (p) => p.toString() !== socket.userId,
+        );
+
+        if (recipientId && !connectedUsers.has(recipientId.toString())) {
+          const sender = await User.findById(socket.userId, "name surname");
+          const senderName = sender
+            ? `${sender.name} ${sender.surname || ""}`.trim()
+            : "Quelqu'un";
+
+          sendPushToUser(recipientId, {
+            title: `💬 ${senderName}`,
+            body: content.trim().slice(0, 100),
+            url: "/home",
+            tag: `chat-${conversationId}`,
+            type: "chat",
+            friendId: socket.userId,
+          }).catch((err) => console.error("❌ Push chat error:", err));
+        }
+        // ───────────────────────────────────────────────────────────────────
+
         await message.populate("sender", "name surname email");
 
-        // ← tempId renvoyé pour que le client remplace le message optimiste
         // À l'expéditeur : avec tempId pour remplacer le message optimiste
         socket.emit("message:new", {
           conversationId,
@@ -138,7 +160,6 @@ module.exports = (io) => {
         console.log(`💬 Message sent in conversation ${conversationId}`);
       } catch (error) {
         console.error("❌ Error sending message:", error);
-        // ← Notifier le client que l'envoi a échoué (affiche ⚠️ dans l'UI)
         socket.emit("message:error", {
           tempId,
           error: "Impossible d'envoyer le message",

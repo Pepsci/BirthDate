@@ -1,6 +1,7 @@
 const cron = require("node-cron");
 const dateModel = require("../models/date.model");
 const User = require("../models/user.model");
+const { sendPushToUser } = require("../services/pushService");
 const {
   sendBirthdayReminderEmail,
 } = require("../services/emailTemplates/birthdayReminder");
@@ -56,6 +57,40 @@ function isNamedayInXDays(nameday, daysFromNow) {
 }
 
 // ========================================
+// HELPER: Construire le message push anniversaire
+// ========================================
+function buildBirthdayPushPayload(date, daysFromNow) {
+  const firstName = date.name || "Quelqu'un";
+
+  if (daysFromNow === 0) {
+    return {
+      title: `🎂 C'est l'anniversaire de ${firstName} !`,
+      body: `Pensez à lui souhaiter un joyeux anniversaire 🎉`,
+      url: "/home",
+      tag: `birthday-${date._id}-today`,
+    };
+  }
+
+  const dayLabel =
+    daysFromNow === 1
+      ? "demain"
+      : daysFromNow === 7
+        ? "dans 1 semaine"
+        : daysFromNow === 14
+          ? "dans 2 semaines"
+          : daysFromNow === 30
+            ? "dans 1 mois"
+            : `dans ${daysFromNow} jours`;
+
+  return {
+    title: `🎂 Anniversaire de ${firstName} ${dayLabel}`,
+    body: `N'oubliez pas de préparer quelque chose !`,
+    url: "/home",
+    tag: `birthday-${date._id}-${daysFromNow}`,
+  };
+}
+
+// ========================================
 // RAPPELS ANNIVERSAIRES (utilisateurs)
 // ========================================
 async function checkAndSendUserBirthdayReminders() {
@@ -97,7 +132,6 @@ async function checkAndSendCardBirthdayReminders() {
     for (const date of dates) {
       if (!date.owner || !date.owner.receiveBirthdayEmails) continue;
 
-      // Utiliser notificationPreferences pour les ANNIVERSAIRES
       const prefs = date.notificationPreferences || {
         timings: [1],
         notifyOnBirthday: true,
@@ -105,15 +139,40 @@ async function checkAndSendCardBirthdayReminders() {
 
       const { timings = [1], notifyOnBirthday = true } = prefs;
 
+      const owner = date.owner;
+
+      // ── Push : vérifier les préférences une seule fois par owner ──
+      const pushOk =
+        owner.pushEnabled === true && owner.pushEvents?.birthdays !== false;
+
+      const pushTimings = owner.pushBirthdayTimings || [1, 0];
+
       // Jour de l'anniversaire
       if (notifyOnBirthday && isBirthdayInXDays(date.date, 0)) {
-        await sendBirthdayReminderEmail(date.owner, date, 0);
+        await sendBirthdayReminderEmail(owner, date, 0);
+
+        if (pushOk && pushTimings.includes(0)) {
+          await sendPushToUser(owner._id, buildBirthdayPushPayload(date, 0));
+          console.log(
+            `🔔 [PUSH] Anniversaire J de ${date.name} → ${owner.email}`,
+          );
+        }
       }
 
       // Rappels à l'avance
       for (const days of timings) {
         if (isBirthdayInXDays(date.date, days)) {
-          await sendBirthdayReminderEmail(date.owner, date, days);
+          await sendBirthdayReminderEmail(owner, date, days);
+
+          if (pushOk && pushTimings.includes(days)) {
+            await sendPushToUser(
+              owner._id,
+              buildBirthdayPushPayload(date, days),
+            );
+            console.log(
+              `🔔 [PUSH] Anniversaire J-${days} de ${date.name} → ${owner.email}`,
+            );
+          }
         }
       }
     }
@@ -123,7 +182,7 @@ async function checkAndSendCardBirthdayReminders() {
 }
 
 // ========================================
-// 🎉 RAPPELS FÊTES (nameday) - UTILISE namedayPreferences
+// RAPPELS FÊTES (nameday)
 // ========================================
 async function checkAndSendNamedayReminders() {
   try {
@@ -139,7 +198,6 @@ async function checkAndSendNamedayReminders() {
     for (const date of datesWithNameday) {
       if (!date.owner || !date.owner.receiveBirthdayEmails) continue;
 
-      // 🎉 UTILISER namedayPreferences au lieu de notificationPreferences
       const prefs = date.namedayPreferences || {
         timings: [1],
         notifyOnNameday: true,
@@ -153,7 +211,7 @@ async function checkAndSendNamedayReminders() {
         await sendNamedayReminderEmail(date, 0);
       }
 
-      // Rappels à l'avance (1 jour ou 7 jours)
+      // Rappels à l'avance
       for (const days of timings) {
         if (isNamedayInXDays(date.nameday, days)) {
           console.log(`📅 Rappel fête de ${date.name} dans ${days} jour(s)`);
@@ -201,5 +259,5 @@ module.exports = {
       "✅ Emails anniversaires & fêtes planifiés (tous les jours à minuit)",
     );
   },
-  checkAndSendAllReminders, // Pour les tests manuels
+  checkAndSendAllReminders,
 };

@@ -28,6 +28,10 @@ function formatUser(user) {
     receiveChatEmails: user.receiveChatEmails,
     chatEmailFrequency: user.chatEmailFrequency,
     chatEmailDisabledFriends: user.chatEmailDisabledFriends,
+    //Push
+    pushEnabled: user.pushEnabled,
+    pushEvents: user.pushEvents,
+    pushBirthdayTimings: user.pushBirthdayTimings,
   };
 }
 
@@ -127,6 +131,17 @@ router.patch(
       }
       if (req.body.chatEmailFrequency !== undefined) {
         user.chatEmailFrequency = req.body.chatEmailFrequency;
+      }
+
+      // ── Préférences push ──────────────────────────────────────────────────────────
+      if (req.body.pushEnabled !== undefined) {
+        user.pushEnabled = req.body.pushEnabled;
+      }
+      if (req.body.pushEvents !== undefined) {
+        user.pushEvents = req.body.pushEvents;
+      }
+      if (req.body.pushBirthdayTimings !== undefined) {
+        user.pushBirthdayTimings = req.body.pushBirthdayTimings;
       }
 
       const updatedUser = await user.save();
@@ -357,6 +372,17 @@ router.patch(
       }
       if (req.body.chatEmailFrequency !== undefined) {
         user.chatEmailFrequency = req.body.chatEmailFrequency;
+      }
+
+      // ── Préférences push ──────────────────────────────────────────────────────────
+      if (req.body.pushEnabled !== undefined) {
+        user.pushEnabled = req.body.pushEnabled;
+      }
+      if (req.body.pushEvents !== undefined) {
+        user.pushEvents = req.body.pushEvents;
+      }
+      if (req.body.pushBirthdayTimings !== undefined) {
+        user.pushBirthdayTimings = req.body.pushBirthdayTimings;
       }
 
       const updatedUser = await user.save();

@@ -66,6 +66,28 @@ const userSchema = new Schema({
     type: Date,
     default: null,
   },
+
+  /** Notifications push activées globalement */
+  pushEnabled: {
+    type: Boolean,
+    default: false,
+  },
+
+  /** Événements déclenchant une push notification */
+  pushEvents: {
+    birthdays: { type: Boolean, default: true },
+    chat: { type: Boolean, default: true },
+    friends: { type: Boolean, default: true },
+    gifts: { type: Boolean, default: true },
+  },
+
+  /** Timings de rappel pour les anniversaires (en jours avant)
+   *  0 = jour J, 1 = veille, 3, 7, 30
+   */
+  pushBirthdayTimings: {
+    type: [Number],
+    default: [1, 0],
+  },
 });
 
 const UserModel = model("User", userSchema);

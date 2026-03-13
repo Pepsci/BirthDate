@@ -1,17 +1,13 @@
 /**
  * chatNotificationCron.js
  *
- * Envoie des emails de notification pour les messages chat non lus.
+ * Envoie des emails + push notifications pour les messages chat non lus.
  * Respecte les préférences de l'utilisateur :
- *   - receiveChatEmails (bool)          : activer/désactiver globalement
+ *   - receiveChatEmails (bool)          : activer/désactiver emails globalement
  *   - chatEmailFrequency                : "instant" | "twice_daily" | "daily" | "weekly"
- *   - chatEmailDisabledFriends          : [userId] — liste d'amis exclus
- *
- * Quatre crons :
- *   • Instantané   → toutes les 5 minutes
- *   • 2x par jour  → à 9h et 18h
- *   • Quotidien    → chaque jour à 9h
- *   • Hebdo        → chaque lundi à 9h
+ *   - chatEmailDisabledFriends          : [userId] — liste d'amis exclus emails
+ *   - pushEnabled (bool)                : activer/désactiver push globalement
+ *   - pushEvents.chat (bool)            : push pour les messages chat
  */
 
 const cron = require("node-cron");
@@ -20,6 +16,7 @@ const { SESClient, SendRawEmailCommand } = require("@aws-sdk/client-ses");
 const userModel = require("../models/user.model");
 const Message = require("../models/message.model");
 const Conversation = require("../models/conversation.model");
+const { sendPushToUser } = require("../services/pushService");
 
 // ── Transport SES ─────────────────────────────────────────────────────────────
 const sesClient = new SESClient({
@@ -132,7 +129,6 @@ function buildChatEmailHtml({
   const total = unreadGroups.reduce((sum, g) => sum + g.count, 0);
   const frequencyLabel = frequencyLabels[frequency] || frequency;
 
-  // Liens de désabonnement par ami
   const friendUnsubscribeLinks = unreadGroups
     .map(
       (g) =>
@@ -153,30 +149,22 @@ function buildChatEmailHtml({
   <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background-color:#1a1a2e;">
     <tr>
       <td style="padding:40px 20px;">
-
-        <!-- Carte principale -->
         <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%"
           style="max-width:600px;margin:0 auto;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);border-radius:16px;overflow:hidden;box-shadow:0 10px 40px rgba(0,0,0,0.3);">
-
-          <!-- Header -->
           <tr>
             <td style="padding:36px 40px 16px 40px;text-align:center;">
               <h1 style="margin:0;font-size:28px;font-weight:700;color:#fff;">💬 BirthReminder</h1>
             </td>
           </tr>
-
-          <!-- Badge -->
           <tr>
             <td style="padding:0 40px 16px 40px;text-align:center;">
               <div style="display:inline-block;background:rgba(255,255,255,0.2);padding:7px 18px;border-radius:20px;">
                 <span style="font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:1px;">
-                  ${total} message${total > 1 ? "s" : ""} non lu${total > 1 ? "s" : ""}
+                  ${unreadGroups.reduce((s, g) => s + g.count, 0)} message${unreadGroups.reduce((s, g) => s + g.count, 0) > 1 ? "s" : ""} non lu${unreadGroups.reduce((s, g) => s + g.count, 0) > 1 ? "s" : ""}
                 </span>
               </div>
             </td>
           </tr>
-
-          <!-- Corps -->
           <tr>
             <td style="padding:8px 40px 8px 40px;">
               <p style="margin:0 0 16px 0;font-size:16px;color:rgba(255,255,255,0.9);">
@@ -189,8 +177,6 @@ function buildChatEmailHtml({
               </table>
             </td>
           </tr>
-
-          <!-- CTA -->
           <tr>
             <td style="padding:24px 40px 40px 40px;text-align:center;">
               <a href="${appUrl}/home"
@@ -199,10 +185,8 @@ function buildChatEmailHtml({
               </a>
             </td>
           </tr>
-
         </table>
 
-        <!-- Tip fréquence -->
         <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%"
           style="max-width:600px;margin:12px auto 0;">
           <tr>
@@ -214,7 +198,6 @@ function buildChatEmailHtml({
           </tr>
         </table>
 
-        <!-- Footer -->
         <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%"
           style="max-width:600px;margin:12px auto 0;">
           <tr>
@@ -226,7 +209,6 @@ function buildChatEmailHtml({
             </td>
           </tr>
         </table>
-
       </td>
     </tr>
   </table>
@@ -239,26 +221,37 @@ async function sendChatNotifications(frequency) {
   console.log(`💬 [CRON-CHAT] Démarrage — fréquence : ${frequency}`);
 
   try {
+    // Récupère tous les users concernés par les emails OU les push
     const users = await userModel
       .find({
         isVerified: true,
-        receiveChatEmails: true,
-        chatEmailFrequency: frequency,
         deletedAt: null,
+        $or: [
+          // Veut des emails chat
+          { receiveChatEmails: true, chatEmailFrequency: frequency },
+          // Veut des push chat (instantané uniquement côté push)
+          { pushEnabled: true, "pushEvents.chat": true },
+        ],
       })
       .lean();
 
     console.log(`💬 [CRON-CHAT] ${users.length} utilisateur(s) à vérifier`);
 
     let emailsSent = 0;
+    let pushSent = 0;
 
     for (const user of users) {
       if (!user.email) continue;
 
+      // ── Fenêtre temporelle pour cet user ──
       const since = windowStart(frequency);
 
-      // Mode "instant" : éviter les doublons si déjà notifié dans la fenêtre
-      if (frequency === "instant" && user.lastChatEmailSent) {
+      // ── Anti-doublon email mode instant ──
+      const wantsEmail =
+        user.receiveChatEmails === true &&
+        user.chatEmailFrequency === frequency;
+
+      if (wantsEmail && frequency === "instant" && user.lastChatEmailSent) {
         const lastSent = new Date(user.lastChatEmailSent);
         if (lastSent >= since) continue;
       }
@@ -272,7 +265,7 @@ async function sendChatNotifications(frequency) {
 
       if (unreadGroups.length === 0) continue;
 
-      // Récupérer les noms des expéditeurs
+      // ── Enrichir avec les noms des expéditeurs ──
       const senderIds = unreadGroups.map((g) => g._id);
       const senders = await userModel
         .find({ _id: { $in: senderIds } }, "name surname")
@@ -291,63 +284,83 @@ async function sendChatNotifications(frequency) {
         };
       });
 
-      const appUrl = process.env.FRONTEND_URL;
-      const unsubscribeUrl = `${appUrl}/api/unsubscribe?email=${encodeURIComponent(user.email)}&type=chat`;
+      // ── Envoi email ──
+      if (wantsEmail) {
+        const appUrl = process.env.FRONTEND_URL;
+        const unsubscribeUrl = `${appUrl}/api/unsubscribe?email=${encodeURIComponent(user.email)}&type=chat`;
+        const total = enrichedGroups.reduce((s, g) => s + g.count, 0);
 
-      const html = buildChatEmailHtml({
-        userName: user.name,
-        userEmail: user.email,
-        unreadGroups: enrichedGroups,
-        appUrl,
-        unsubscribeUrl,
-        frequency,
-      });
+        const html = buildChatEmailHtml({
+          userName: user.name,
+          userEmail: user.email,
+          unreadGroups: enrichedGroups,
+          appUrl,
+          unsubscribeUrl,
+          frequency,
+        });
 
-      const total = enrichedGroups.reduce((s, g) => s + g.count, 0);
-      const subject = `💬 ${total} message${total > 1 ? "s" : ""} non lu${total > 1 ? "s" : ""} sur BirthReminder`;
-      const textBody = [
-        `Bonjour ${user.name},`,
-        ``,
-        `Vous avez ${total} message(s) non lu(s) sur BirthReminder.`,
-        ``,
-        `Voir : ${appUrl}/home`,
-        ``,
-        `--- Gérer les notifications ---`,
-        ...enrichedGroups.map(
-          (g) =>
-            `Ne plus recevoir les messages de ${g.senderName} : ${appUrl}/api/unsubscribe?email=${encodeURIComponent(user.email)}&type=chat_friend&friendId=${g._id}`,
-        ),
-        ``,
-        `Se désabonner de tous les emails chat : ${unsubscribeUrl}`,
-      ].join("\n");
+        const subject = `💬 ${total} message${total > 1 ? "s" : ""} non lu${total > 1 ? "s" : ""} sur BirthReminder`;
+        const textBody = [
+          `Bonjour ${user.name},`,
+          ``,
+          `Vous avez ${total} message(s) non lu(s) sur BirthReminder.`,
+          ``,
+          `Voir : ${process.env.FRONTEND_URL}/home`,
+          ``,
+          `Se désabonner : ${unsubscribeUrl}`,
+        ].join("\n");
 
-      await new Promise((resolve, reject) => {
-        transporter.sendMail(
-          {
-            from: `BirthReminder <${process.env.EMAIL_BRTHDAY}>`,
-            to: user.email,
-            subject,
-            html,
-            text: textBody,
-            headers: {
-              "List-Unsubscribe": `<${unsubscribeUrl}>`,
-              "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+        await new Promise((resolve, reject) => {
+          transporter.sendMail(
+            {
+              from: `BirthReminder <${process.env.EMAIL_BRTHDAY}>`,
+              to: user.email,
+              subject,
+              html,
+              text: textBody,
+              headers: {
+                "List-Unsubscribe": `<${unsubscribeUrl}>`,
+                "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+              },
             },
-          },
-          (err, info) => (err ? reject(err) : resolve(info)),
+            (err, info) => (err ? reject(err) : resolve(info)),
+          );
+        });
+
+        await userModel.updateOne(
+          { _id: user._id },
+          { $set: { lastChatEmailSent: new Date() } },
         );
-      });
 
-      await userModel.updateOne(
-        { _id: user._id },
-        { $set: { lastChatEmailSent: new Date() } },
-      );
+        emailsSent++;
+        console.log(
+          `✅ [CRON-CHAT] Email envoyé à ${user.name} (${user.email})`,
+        );
+      }
 
-      emailsSent++;
-      console.log(`✅ [CRON-CHAT] Email envoyé à ${user.name} (${user.email})`);
+      // ── Envoi push ──
+      const wantsPush =
+        user.pushEnabled === true && user.pushEvents?.chat !== false;
+
+      if (wantsPush) {
+        const total = enrichedGroups.reduce((s, g) => s + g.count, 0);
+        const senderNames = enrichedGroups.map((g) => g.senderName).join(", ");
+
+        await sendPushToUser(user._id, {
+          title: `💬 ${total} message${total > 1 ? "s" : ""} non lu${total > 1 ? "s" : ""}`,
+          body: `De : ${senderNames}`,
+          url: "/home",
+          tag: "birthreminder-chat",
+        });
+
+        pushSent++;
+        console.log(`🔔 [PUSH-CHAT] Push envoyée à ${user.name}`);
+      }
     }
 
-    console.log(`💬 [CRON-CHAT] Terminé — ${emailsSent} email(s) envoyé(s)`);
+    console.log(
+      `💬 [CRON-CHAT] Terminé — ${emailsSent} email(s), ${pushSent} push envoyée(s)`,
+    );
   } catch (err) {
     console.error("❌ [CRON-CHAT] Erreur :", err);
   }
@@ -355,28 +368,24 @@ async function sendChatNotifications(frequency) {
 
 // ── Planification ─────────────────────────────────────────────────────────────
 
-// Instantané : toutes les 5 minutes
 const chatCronInstant = cron.schedule(
   "*/5 * * * *",
   () => sendChatNotifications("instant"),
   { scheduled: false },
 );
 
-// Quotidien : chaque jour à 9h00
 const chatCronDaily = cron.schedule(
   "0 9 * * *",
   () => sendChatNotifications("daily"),
   { scheduled: false },
 );
 
-// Hebdomadaire : chaque lundi à 9h00
 const chatCronWeekly = cron.schedule(
   "0 9 * * 1",
   () => sendChatNotifications("weekly"),
   { scheduled: false },
 );
 
-// Deux fois par jour : à 9h00 et 18h00
 const chatCronTwiceDaily = cron.schedule(
   "0 9,18 * * *",
   () => sendChatNotifications("twice_daily"),
@@ -388,4 +397,5 @@ module.exports = {
   chatCronTwiceDaily,
   chatCronDaily,
   chatCronWeekly,
+  sendChatNotifications,
 };

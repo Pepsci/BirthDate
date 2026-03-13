@@ -1,41 +1,83 @@
 import React, { useState } from "react";
 import "./css/dateFilter.css";
 
-const DateFilter = ({ onFilterChange, inputRef }) => {
-  // Reçoit inputRef en props
+const DateFilter = ({ onFilterChange, inputRef, friendIds }) => {
   const [nameSearch, setNameSearch] = useState("");
   const [surnameSearch, setSurnameSearch] = useState("");
   const [isFamilyFilterActive, setIsFamilyFilterActive] = useState(false);
+  const [isFriendFilterActive, setIsFriendFilterActive] = useState(false);
 
-  const handleFilterChange = (newName, newSurname, familyFilter) => {
-    onFilterChange(newName, newSurname, familyFilter);
+  const handleFilterChange = (
+    newName,
+    newSurname,
+    familyFilter,
+    friendFilter,
+  ) => {
+    onFilterChange(newName, newSurname, familyFilter, friendFilter);
   };
 
   const handleNameChange = (event) => {
     const newName = event.target.value;
     setNameSearch(newName);
-    handleFilterChange(newName, surnameSearch, isFamilyFilterActive);
+    onFilterChange(
+      newName,
+      surnameSearch,
+      isFamilyFilterActive,
+      isFriendFilterActive,
+    );
   };
 
   const handleSurnameChange = (event) => {
     const newSurname = event.target.value;
     setSurnameSearch(newSurname);
-    handleFilterChange(nameSearch, newSurname, isFamilyFilterActive);
+    onFilterChange(
+      nameSearch,
+      newSurname,
+      isFamilyFilterActive,
+      isFriendFilterActive,
+    );
   };
 
   const toggleFamilyFilter = () => {
-    setIsFamilyFilterActive((prev) => {
-      const newFilterState = !prev;
-      handleFilterChange(nameSearch, surnameSearch, newFilterState);
-      return newFilterState;
-    });
+    const newFamily = !isFamilyFilterActive;
+    setIsFamilyFilterActive(newFamily);
+    // Si on active famille, on désactive amis
+    if (newFamily) {
+      setIsFriendFilterActive(false);
+      onFilterChange(nameSearch, surnameSearch, newFamily, false);
+    } else {
+      onFilterChange(
+        nameSearch,
+        surnameSearch,
+        newFamily,
+        isFriendFilterActive,
+      );
+    }
+  };
+
+  const toggleFriendFilter = () => {
+    const newFriend = !isFriendFilterActive;
+    setIsFriendFilterActive(newFriend);
+    // Si on active amis, on désactive famille
+    if (newFriend) {
+      setIsFamilyFilterActive(false);
+      onFilterChange(nameSearch, surnameSearch, false, newFriend);
+    } else {
+      onFilterChange(
+        nameSearch,
+        surnameSearch,
+        isFamilyFilterActive,
+        newFriend,
+      );
+    }
   };
 
   const clearFilters = () => {
     setNameSearch("");
     setSurnameSearch("");
     setIsFamilyFilterActive(false);
-    handleFilterChange("", "", false);
+    setIsFriendFilterActive(false);
+    onFilterChange("", "", false, false);
   };
 
   return (
@@ -44,7 +86,7 @@ const DateFilter = ({ onFilterChange, inputRef }) => {
       <div className="filter-options">
         <div className="filter-inputs">
           <input
-            ref={inputRef} // Utilise la ref reçue
+            ref={inputRef}
             type="text"
             placeholder=" Prénom..."
             value={nameSearch}
@@ -67,6 +109,18 @@ const DateFilter = ({ onFilterChange, inputRef }) => {
             {isFamilyFilterActive
               ? "Afficher toutes les dates"
               : "Famille uniquement"}
+          </button>
+          <button
+            className={`filter-btn ${isFriendFilterActive ? "active" : ""}`}
+            onClick={toggleFriendFilter}
+            disabled={friendIds?.length === 0}
+            title={
+              friendIds?.length === 0 ? "Vous n'avez pas encore d'amis" : ""
+            }
+          >
+            {isFriendFilterActive
+              ? "Afficher toutes les dates"
+              : "Amis uniquement"}
           </button>
           <button className="filter-btn" onClick={clearFilters}>
             Effacer les filtres

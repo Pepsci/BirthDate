@@ -3,6 +3,7 @@ import apiHandler from "../../api/apiHandler";
 import EmailTab from "./notifications/EmailTab";
 import FetesTab from "./notifications/FetesTab";
 import ChatTab from "./notifications/ChatTab";
+import PushTab from "./notifications/Pushtab";
 import "./css/gestionNotifications.css";
 
 const GestionNotification = () => {
@@ -80,6 +81,12 @@ const GestionNotification = () => {
         >
           💬 Messages Chat
         </button>
+        <button
+          className={`notif-tab ${activeTab === "push" ? "active" : ""}`}
+          onClick={() => setActiveTab("push")}
+        >
+          🔔 Push
+        </button>
       </div>
 
       {/* Contenu des onglets */}
@@ -88,8 +95,10 @@ const GestionNotification = () => {
           <EmailTab dates={dates} loading={loading} />
         ) : activeTab === "fetes" ? (
           <FetesTab dates={dates} loading={loading} />
-        ) : (
+        ) : activeTab === "chat" ? (
           <ChatTab />
+        ) : (
+          <PushTab />
         )}
       </div>
     </div>

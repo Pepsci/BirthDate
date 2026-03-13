@@ -33,6 +33,7 @@
     "nodemailer-ses-transport": "^1.5.1",
     "open-graph-scraper": "^6.11.0",
     "react-router-dom": "^6.24.0",
-    "socket.io": "^4.8.3"
+    "socket.io": "^4.8.3",
+    "web-push": "^3.6.7"
   }
 }

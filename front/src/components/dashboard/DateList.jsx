@@ -21,6 +21,7 @@ const DateList = ({ onEditDate, onViewFriendProfile, onMerge }) => {
   const { currentUser } = useAuth();
   const [dates, setDates] = useState([]);
   const [allDates, setAllDates] = useState([]);
+  const [friendIds, setFriendIds] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [isFormVisible, setIsFormVisible] = useState(false);
   const [isFilterVisible, setIsFilterVisible] = useState(false);
@@ -150,6 +151,18 @@ const DateList = ({ onEditDate, onViewFriendProfile, onMerge }) => {
     }
   };
 
+  useEffect(() => {
+    apiHandler
+      .get("/friends")
+      .then((res) => {
+        console.log("=== AMIS REÇUS ===", res.data);
+        const ids = res.data.map((f) => f.friendUser._id.toString());
+        console.log("=== FRIEND IDS ===", ids);
+        setFriendIds(ids);
+      })
+      .catch((e) => console.error(e));
+  }, [currentUser]);
+
   const handleDateAdded = (newDate) => {
     const updatedDates = sortDates([...allDates, newDate]);
     setAllDates(updatedDates);
@@ -157,10 +170,21 @@ const DateList = ({ onEditDate, onViewFriendProfile, onMerge }) => {
     setIsFormVisible(true);
   };
 
-  const handleFilterChange = (newName, newSurname, familyFilter) => {
+  const handleFilterChange = (
+    newName,
+    newSurname,
+    familyFilter,
+    friendFilter,
+  ) => {
     let filteredDates = [...allDates];
     if (familyFilter) {
       filteredDates = filteredDates.filter((date) => date.family === true);
+    }
+    if (friendFilter) {
+      filteredDates = filteredDates.filter(
+        (date) =>
+          date.linkedUser && friendIds.includes(date.linkedUser._id.toString()),
+      );
     }
     if (newName) {
       filteredDates = filteredDates.filter((date) =>
@@ -241,6 +265,7 @@ const DateList = ({ onEditDate, onViewFriendProfile, onMerge }) => {
               <DateFilter
                 onFilterChange={handleFilterChange}
                 inputRef={filterInputRef}
+                friendIds={friendIds}
               />
             </div>
           )}
