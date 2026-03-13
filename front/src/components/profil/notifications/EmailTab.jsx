@@ -23,7 +23,6 @@ const EmailTab = ({ dates, loading }) => {
   useEffect(() => {
     setLocalDates(dates);
   }, [dates]);
-
   useEffect(() => {
     loadPreferences();
   }, []);
@@ -110,14 +109,12 @@ const EmailTab = ({ dates, loading }) => {
 
   return (
     <div className="tab-content-inner">
-      {/* Résumé */}
       <div className="notification-summary">
         <span className="summary-text">
           {activeCount} sur {totalCount} notifications activées
         </span>
       </div>
 
-      {/* Préférences globales */}
       <div className="user-email-preferences-simple">
         <PrefToggle
           label="🎂 Recevoir les emails de rappel d'anniversaires"
@@ -175,7 +172,6 @@ const EmailTab = ({ dates, loading }) => {
         />
       </div>
 
-      {/* Toggle liste */}
       <div className="list-toggle-section">
         <button
           className="toggle-list-btn"
@@ -189,7 +185,6 @@ const EmailTab = ({ dates, loading }) => {
         </button>
       </div>
 
-      {/* Liste collapsible */}
       {isListExpanded && (
         <div className="collapsible-content">
           <div className="filter-section">

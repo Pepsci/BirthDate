@@ -2,8 +2,6 @@ import React, { useState, useEffect, useRef } from "react";
 import apiHandler from "../../../api/apiHandler";
 import PrefToggle from "./PrefToggle";
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
 function urlBase64ToUint8Array(base64String) {
   const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
@@ -12,31 +10,52 @@ function urlBase64ToUint8Array(base64String) {
 }
 
 function getPermissionState() {
-  if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+  if (!("serviceWorker" in navigator) || !("PushManager" in window))
     return "unsupported";
-  }
-  return Notification.permission; // 'default' | 'granted' | 'denied'
+  return Notification.permission;
 }
 
 const TIMING_OPTIONS = [
-  { value: 30, label: "1 mois avant" },
-  { value: 14, label: "2 semaines avant" },
-  { value: 7, label: "1 semaine avant" },
-  { value: 3, label: "3 jours avant" },
-  { value: 1, label: "1 jour avant" },
-  { value: 0, label: "Le jour même" },
+  { value: 0, icon: "🎂", label: "Le jour même", desc: "Rappel le jour J" },
+  {
+    value: 1,
+    icon: "🔔",
+    label: "1 jour avant",
+    desc: "La veille de l'anniversaire",
+  },
+  {
+    value: 3,
+    icon: "⏰",
+    label: "3 jours avant",
+    desc: "3 jours avant l'anniversaire",
+  },
+  {
+    value: 7,
+    icon: "🗓️",
+    label: "1 semaine avant",
+    desc: "7 jours avant l'anniversaire",
+  },
+  {
+    value: 14,
+    icon: "📆",
+    label: "2 semaines avant",
+    desc: "14 jours avant l'anniversaire",
+  },
+  {
+    value: 30,
+    icon: "📅",
+    label: "1 mois avant",
+    desc: "30 jours avant l'anniversaire",
+  },
 ];
-
-// ── Composant ─────────────────────────────────────────────────────────────────
 
 const PushTab = () => {
   const [permState, setPermState] = useState(getPermissionState());
   const [loading, setLoading] = useState(false);
   const [saveLoading, setSaveLoading] = useState(false);
-  const [saveStatus, setSaveStatus] = useState(null); // 'saved' | 'error'
-  const isSubscribing = useRef(false); // protection double render
+  const [saveStatus, setSaveStatus] = useState(null);
+  const isSubscribing = useRef(false);
 
-  // Préférences chargées depuis la DB
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushEvents, setPushEvents] = useState({
     birthdays: true,
@@ -46,7 +65,6 @@ const PushTab = () => {
   });
   const [pushTimings, setPushTimings] = useState([1, 0]);
 
-  // ── Chargement des préférences ──────────────────────────────────────────────
   useEffect(() => {
     loadPrefs();
   }, []);
@@ -55,11 +73,9 @@ const PushTab = () => {
     try {
       const res = await apiHandler.get("/users/me");
       const u = res.data;
-
       if (u.pushEvents) setPushEvents(u.pushEvents);
       if (u.pushBirthdayTimings) setPushTimings(u.pushBirthdayTimings);
 
-      // Source de vérité : la subscription navigateur prime sur la DB
       let isActuallySubscribed = false;
       if (
         Notification.permission === "granted" &&
@@ -72,10 +88,7 @@ const PushTab = () => {
           isActuallySubscribed = !!sub;
         }
       }
-
       setPushEnabled(isActuallySubscribed);
-
-      // Resync DB si désynchronisé
       if (isActuallySubscribed && !u.pushEnabled) {
         await apiHandler.patch("/users/me", { pushEnabled: true });
       }
@@ -84,7 +97,6 @@ const PushTab = () => {
     }
   };
 
-  // ── Activer les push ────────────────────────────────────────────────────────
   const handleActivate = async () => {
     if (isSubscribing.current) return;
     isSubscribing.current = true;
@@ -92,22 +104,17 @@ const PushTab = () => {
     try {
       const registration = await navigator.serviceWorker.register("/sw.js");
       await navigator.serviceWorker.ready;
-
       const res = await apiHandler.get("/push/vapid-public-key");
       const convertedKey = urlBase64ToUint8Array(res.data.publicKey);
-
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: convertedKey,
       });
-
       await apiHandler.post("/push/subscribe", {
         subscription: subscription.toJSON(),
         userAgent: navigator.userAgent,
       });
-
       await apiHandler.patch("/users/me", { pushEnabled: true });
-
       setPushEnabled(true);
       setPermState("granted");
     } catch (err) {
@@ -119,9 +126,7 @@ const PushTab = () => {
     }
   };
 
-  // ── Désactiver les push ─────────────────────────────────────────────────────
   const handleDeactivate = async () => {
-    console.trace("🔴 handleDeactivate appelé depuis :");
     setLoading(true);
     try {
       const registration =
@@ -144,7 +149,6 @@ const PushTab = () => {
     }
   };
 
-  // ── Sauvegarder les préférences événements + timings ───────────────────────
   const handleSave = async () => {
     setSaveLoading(true);
     setSaveStatus(null);
@@ -168,8 +172,6 @@ const PushTab = () => {
       prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value],
     );
   };
-
-  // ── Rendu selon l'état de permission ───────────────────────────────────────
 
   if (permState === "unsupported") {
     return (
@@ -217,7 +219,6 @@ const PushTab = () => {
 
   return (
     <div className="tab-content-inner">
-      {/* ── Section A : Activation ── */}
       <div className="push-activation-section">
         <div className="push-status-row">
           <div className="push-status-info">
@@ -257,10 +258,8 @@ const PushTab = () => {
         )}
       </div>
 
-      {/* ── Sections B & C visibles seulement si push actif ── */}
       {pushEnabled && permState === "granted" && (
         <>
-          {/* ── Section B : Événements ── */}
           <div className="push-section">
             <h3 className="push-section-title">
               Recevoir des notifications pour
@@ -297,28 +296,45 @@ const PushTab = () => {
             </div>
           </div>
 
-          {/* ── Section C : Timing anniversaires ── */}
           {pushEvents.birthdays && (
             <div className="push-section">
               <h3 className="push-section-title">
                 Quand être notifié pour les anniversaires ?
               </h3>
-              <div className="push-timings">
-                {TIMING_OPTIONS.map(({ value, label }) => (
-                  <label key={value} className="push-timing-option">
+              <div
+                className="timing-options-grid"
+                style={{ gridTemplateColumns: "1fr" }}
+              >
+                {TIMING_OPTIONS.map(({ value, icon, label, desc }) => (
+                  <label
+                    key={value}
+                    className="timing-checkbox"
+                    onClick={() => toggleTiming(value)}
+                  >
                     <input
                       type="checkbox"
                       checked={pushTimings.includes(value)}
                       onChange={() => toggleTiming(value)}
+                      style={{
+                        position: "absolute",
+                        opacity: 0,
+                        width: 0,
+                        height: 0,
+                      }}
                     />
-                    <span>{label}</span>
+                    <span className="timing-label">
+                      <span className="timing-icon">{icon}</span>
+                      <div className="timing-text">
+                        <span className="timing-title">{label}</span>
+                        <span className="timing-subtitle">{desc}</span>
+                      </div>
+                    </span>
                   </label>
                 ))}
               </div>
             </div>
           )}
 
-          {/* ── Bouton sauvegarder ── */}
           <div className="push-save-row">
             <button
               className="push-btn push-btn--save"

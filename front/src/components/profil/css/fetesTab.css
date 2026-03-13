@@ -8,7 +8,7 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    color: rgba(255, 255, 255, 0.5);
+    color: var(--text-tertiary);
     margin: 1.5rem 0 0.75rem 0;
 }
 
@@ -34,16 +34,16 @@
     display: flex;
     align-items: center;
     padding: 1rem 1.25rem;
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--bg-tertiary);
     border-radius: 12px;
-    border: 2px solid rgba(255, 255, 255, 0.1);
+    border: 2px solid var(--border-color);
     cursor: pointer;
     transition: all 0.3s ease;
     position: relative;
 }
 
 .timing-checkbox:hover {
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--bg-secondary);
     border-color: rgba(102, 126, 234, 0.5);
     transform: translateY(-2px);
 }
@@ -86,22 +86,21 @@
 .timing-title {
     font-size: 15px;
     font-weight: 600;
-    color: rgba(255, 255, 255, 0.9);
+    color: var(--text-primary);
     transition: color 0.3s ease;
 }
 
 .timing-subtitle {
     font-size: 13px;
-    opacity: 0.6;
-    color: rgba(255, 255, 255, 0.7);
+    color: var(--text-tertiary);
     transition: opacity 0.3s ease;
 }
 
-/* État actif (checked) - Style identique aux boutons de fréquence */
+/* État actif (checked) */
 .timing-checkbox:has(input[type="checkbox"]:checked) {
-    background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
+    background: rgba(102, 126, 234, 0.12);
     border-color: #667eea;
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
 }
 
 .timing-checkbox:has(input[type="checkbox"]:checked) .timing-title {
@@ -109,7 +108,6 @@
 }
 
 .timing-checkbox:has(input[type="checkbox"]:checked) .timing-subtitle {
-    opacity: 0.9;
     color: rgba(102, 126, 234, 0.8);
 }
 
@@ -119,21 +117,21 @@
 
 /* Animation au hover sur l'état actif */
 .timing-checkbox:has(input[type="checkbox"]:checked):hover {
-    background: linear-gradient(135deg, rgba(102, 126, 234, 0.25) 0%, rgba(118, 75, 162, 0.25) 100%);
+    background: rgba(102, 126, 234, 0.18);
     transform: translateY(-3px);
-    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
 }
 
-/* Style spécial pour le jour J (plus visible) */
+/* Style spécial pour le jour J */
 .timing-option-special .timing-checkbox {
-    border: 2px solid rgba(102, 126, 234, 0.3);
-    background: rgba(255, 255, 255, 0.04);
+    border: 2px solid rgba(102, 126, 234, 0.25);
+    background: var(--bg-tertiary);
 }
 
 .timing-option-special .timing-checkbox:has(input[type="checkbox"]:checked) {
-    background: linear-gradient(135deg, rgba(102, 126, 234, 0.25) 0%, rgba(118, 75, 162, 0.25) 100%);
+    background: rgba(102, 126, 234, 0.15);
     border-color: #667eea;
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
 }
 
 /* Loading indicator */
@@ -141,7 +139,7 @@
     margin-top: 1rem;
     text-align: center;
     font-size: 14px;
-    opacity: 0.7;
+    color: var(--text-secondary);
     display: flex;
     align-items: center;
     justify-content: center;

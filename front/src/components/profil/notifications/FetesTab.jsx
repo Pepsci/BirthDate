@@ -1,28 +1,22 @@
 import React, { useState, useEffect } from "react";
 import apiHandler from "../../../api/apiHandler";
 import PrefToggle from "./PrefToggle";
-import "../css/fetesTab.css";
 
 const FetesTab = ({ dates, loading }) => {
   const [updatingDates, setUpdatingDates] = useState(new Set());
   const [isListExpanded, setIsListExpanded] = useState(false);
-
   const [userEmailPreference, setUserEmailPreference] = useState(true);
   const [loadingUserPref, setLoadingUserPref] = useState(false);
-
   const [namedayTimings, setNamedayTimings] = useState([1]);
   const [notifyOnNameday, setNotifyOnNameday] = useState(true);
   const [loadingTimings, setLoadingTimings] = useState(false);
-
   const [filterPrenom, setFilterPrenom] = useState("");
   const [filterNom, setFilterNom] = useState("");
-
   const [localDates, setLocalDates] = useState(dates);
 
   useEffect(() => {
     setLocalDates(dates);
   }, [dates]);
-
   useEffect(() => {
     loadPreferences();
   }, []);
@@ -31,8 +25,6 @@ const FetesTab = ({ dates, loading }) => {
     try {
       const response = await apiHandler.get("/users/me");
       setUserEmailPreference(response.data.receiveBirthdayEmails !== false);
-
-      // 🎉 Charger namedayPreferences au lieu de notificationPreferences
       const firstDateWithNameday = dates.find((d) => d.nameday);
       if (firstDateWithNameday && firstDateWithNameday.namedayPreferences) {
         setNamedayTimings(
@@ -94,26 +86,21 @@ const FetesTab = ({ dates, loading }) => {
     }
   };
 
-  // 🎉 Mettre à jour les préférences de timing pour TOUTES les fêtes
   const handleTimingChange = async (timing) => {
     const newTimings = namedayTimings.includes(timing)
       ? namedayTimings.filter((t) => t !== timing)
       : [...namedayTimings, timing];
-
     setLoadingTimings(true);
     try {
       const datesWithNameday = localDates.filter((d) => d.nameday);
-
-      // 🎉 Utiliser la route nameday-preferences
       await Promise.all(
         datesWithNameday.map((date) =>
           apiHandler.put(`/date/${date._id}/nameday-preferences`, {
             timings: newTimings,
-            notifyOnNameday: notifyOnNameday,
+            notifyOnNameday,
           }),
         ),
       );
-
       setNamedayTimings(newTimings);
       const response = await apiHandler.get("/date");
       setLocalDates(response.data);
@@ -124,13 +111,10 @@ const FetesTab = ({ dates, loading }) => {
     }
   };
 
-  // 🎉 Toggle jour J (fête)
   const handleToggleNotifyOnNameday = async (value) => {
     setLoadingTimings(true);
     try {
       const datesWithNameday = localDates.filter((d) => d.nameday);
-
-      // 🎉 Utiliser la route nameday-preferences
       await Promise.all(
         datesWithNameday.map((date) =>
           apiHandler.put(`/date/${date._id}/nameday-preferences`, {
@@ -139,7 +123,6 @@ const FetesTab = ({ dates, loading }) => {
           }),
         ),
       );
-
       setNotifyOnNameday(value);
       const response = await apiHandler.get("/date");
       setLocalDates(response.data);
@@ -252,17 +235,9 @@ const FetesTab = ({ dates, loading }) => {
           </div>
 
           {loadingTimings && (
-            <div
-              className="loading-indicator"
-              style={{ marginTop: "1rem", textAlign: "center" }}
-            >
-              <div
-                className="mini-spinner"
-                style={{ display: "inline-block", marginRight: "8px" }}
-              ></div>
-              <span style={{ fontSize: "14px", opacity: 0.7 }}>
-                Mise à jour en cours...
-              </span>
+            <div className="loading-indicator">
+              <div className="mini-spinner"></div>
+              <span>Mise à jour en cours...</span>
             </div>
           )}
         </div>
@@ -350,7 +325,6 @@ const FetesTab = ({ dates, loading }) => {
                     const isUpdating = updatingDates.has(date._id);
                     const isEnabled = date.receiveNotifications !== false;
                     const isUserDisabled = !userEmailPreference;
-
                     const [month, day] = (date.nameday || "").split("-");
                     const namedayDate = new Date(
                       2000,

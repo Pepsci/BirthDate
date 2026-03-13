@@ -1,20 +1,16 @@
 import React, { useState, useEffect } from "react";
 import apiHandler from "../../../api/apiHandler";
 import PrefToggle from "./PrefToggle";
-import "../css/chatTab.css";
 
 const ChatTab = () => {
   const [friends, setFriends] = useState([]);
   const [loading, setLoading] = useState(true);
-
   const [receiveChatEmails, setReceiveChatEmails] = useState(true);
   const [loadingGlobal, setLoadingGlobal] = useState(false);
   const [chatEmailFrequency, setChatEmailFrequency] = useState("daily");
   const [loadingFreq, setLoadingFreq] = useState(false);
-
   const [friendPrefs, setFriendPrefs] = useState({});
   const [updatingFriends, setUpdatingFriends] = useState(new Set());
-
   const [isListExpanded, setIsListExpanded] = useState(false);
   const [filterName, setFilterName] = useState("");
 
@@ -29,19 +25,16 @@ const ChatTab = () => {
         apiHandler.get("/users/me"),
         apiHandler.get("/friends"),
       ]);
-
       setReceiveChatEmails(userRes.data.receiveChatEmails !== false);
       setChatEmailFrequency(userRes.data.chatEmailFrequency || "daily");
 
       const prefs = {};
       const rawList = friendsRes.data || [];
       const disabled = userRes.data.chatEmailDisabledFriends || [];
-
       rawList.forEach((f) => {
         const friendId = f.friendUser?._id?.toString();
-        if (friendId) {
+        if (friendId)
           prefs[friendId] = !disabled.map(String).includes(friendId);
-        }
       });
       setFriendPrefs(prefs);
       setFriends(rawList);
@@ -98,22 +91,26 @@ const ChatTab = () => {
   const FREQUENCY_OPTIONS = [
     {
       value: "instant",
-      label: "⚡ Instantané",
+      icon: "⚡",
+      label: "Instantané",
       desc: "Dès qu'un message arrive",
     },
     {
       value: "twice_daily",
-      label: "🕑 Deux fois par jour",
+      icon: "🕑",
+      label: "Deux fois par jour",
       desc: "À 9h et à 18h",
     },
     {
       value: "daily",
-      label: "📅 Résumé quotidien",
+      icon: "📅",
+      label: "Résumé quotidien",
       desc: "Une fois par jour à 9h",
     },
     {
       value: "weekly",
-      label: "📆 Résumé hebdomadaire",
+      icon: "📆",
+      label: "Résumé hebdomadaire",
       desc: "Chaque lundi matin",
     },
   ];
@@ -138,7 +135,7 @@ const ChatTab = () => {
   return (
     <div className="tab-content-inner">
       {friends.length > 0 && (
-        <div className="notification-summary" style={{ marginBottom: "1rem" }}>
+        <div className="notification-summary">
           <span className="summary-text">
             {activeChatCount} sur {friends.length} notifications activées
           </span>
@@ -162,17 +159,37 @@ const ChatTab = () => {
       {receiveChatEmails && (
         <div className="frequency-section">
           <h3 className="section-subtitle">Fréquence d'envoi</h3>
-          <div className="frequency-options">
+          <div
+            className="timing-options-grid"
+            style={{ gridTemplateColumns: "1fr" }}
+          >
             {FREQUENCY_OPTIONS.map((opt) => (
-              <button
+              <label
                 key={opt.value}
-                className={`frequency-btn ${chatEmailFrequency === opt.value ? "active" : ""}`}
+                className="timing-checkbox"
                 onClick={() => handleFrequencyChange(opt.value)}
-                disabled={loadingFreq}
+                style={{ cursor: "pointer" }}
               >
-                <span className="freq-label">{opt.label}</span>
-                <span className="freq-desc">{opt.desc}</span>
-              </button>
+                <input
+                  type="radio"
+                  checked={chatEmailFrequency === opt.value}
+                  onChange={() => handleFrequencyChange(opt.value)}
+                  disabled={loadingFreq}
+                  style={{
+                    position: "absolute",
+                    opacity: 0,
+                    width: 0,
+                    height: 0,
+                  }}
+                />
+                <span className="timing-label">
+                  <span className="timing-icon">{opt.icon}</span>
+                  <div className="timing-text">
+                    <span className="timing-title">{opt.label}</span>
+                    <span className="timing-subtitle">{opt.desc}</span>
+                  </div>
+                </span>
+              </label>
             ))}
           </div>
         </div>
@@ -244,8 +261,6 @@ const ChatTab = () => {
                           f.friendship?._id ||
                           index
                         ).toString();
-                        const friendName = friendUser?.name || "Ami";
-                        const friendSurname = friendUser?.surname || "";
                         const isEnabled = friendPrefs[friendId] !== false;
                         const isUpdating = updatingFriends.has(friendId);
 
@@ -256,8 +271,12 @@ const ChatTab = () => {
                           >
                             <div className="person-info">
                               <div className="person-name">
-                                <span className="name">{friendName}</span>
-                                <span className="surname">{friendSurname}</span>
+                                <span className="name">
+                                  {friendUser?.name || "Ami"}
+                                </span>
+                                <span className="surname">
+                                  {friendUser?.surname || ""}
+                                </span>
                               </div>
                               <div className="person-details">
                                 <span className="birth-date chat-hint">

@@ -1,4 +1,4 @@
-/* gestionNotifications.css - Base commune à tous les onglets */
+/* notificationTabs.css - Styles communs à tous les onglets de notification */
 
 /* ========================================
    STRUCTURE DE BASE
@@ -32,14 +32,12 @@
     font-size: 1.2em;
     font-weight: 600;
     font-family: 'Roboto', sans-serif;
-    transition: color 0.3s ease;
 }
 
 .notification-footer {
     margin-top: 24px;
     padding-top: 20px;
     border-top: 1px solid var(--border-color);
-    transition: border-color 0.3s ease;
 }
 
 .info-text {
@@ -47,7 +45,6 @@
     color: var(--text-tertiary);
     font-size: 0.9rem;
     margin: 0;
-    transition: color 0.3s ease;
 }
 
 /* ========================================
@@ -62,16 +59,17 @@
 
 .notif-tab {
     flex: 1;
-    padding: 0.75rem 1rem;
+    padding: 0.75rem 0.5rem;
     background: transparent;
     border: none;
     border-bottom: 3px solid transparent;
     color: var(--text-secondary);
-    font-size: 0.9rem;
+    font-size: 0.82rem;
     font-weight: 500;
     cursor: pointer;
     transition: color 0.2s, border-color 0.2s;
     margin-bottom: -2px;
+    white-space: nowrap;
 }
 
 .notif-tab:hover {
@@ -82,10 +80,6 @@
     color: var(--text-primary);
     border-bottom-color: #7c6ee6;
     font-weight: 600;
-}
-
-.notif-tab-content {
-    /* espace pour le scroll si besoin */
 }
 
 .tab-content-inner {
@@ -103,14 +97,22 @@
     display: inline-block;
     background: var(--bg-tertiary);
     border: 1px solid var(--border-color);
-    transition: all 0.3s ease;
+    margin-bottom: 1rem;
 }
 
 .summary-text {
     color: var(--text-secondary);
     font-size: 0.9rem;
     font-weight: 500;
-    transition: color 0.3s ease;
+}
+
+.section-subtitle {
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-tertiary);
+    margin: 1.5rem 0 0.75rem 0;
 }
 
 .empty-state {
@@ -176,8 +178,19 @@
     transform: translateY(-2px);
 }
 
+.loading-indicator {
+    margin-top: 1rem;
+    text-align: center;
+    font-size: 14px;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
 /* ========================================
-   PRÉFÉRENCES GLOBALES (COMMUN)
+   PRÉFÉRENCES GLOBALES
    ======================================== */
 .user-email-preferences-simple {
     margin: 20px 0;
@@ -185,7 +198,6 @@
     border: 1px solid var(--border-color);
     border-radius: 12px;
     padding: 10px;
-    transition: all 0.3s ease;
 }
 
 .pref-toggle-wrapper {
@@ -213,7 +225,6 @@
     font-size: 12px;
     font-weight: 500;
     color: var(--text-primary);
-    transition: color 0.3s ease;
 }
 
 .warning-simple {
@@ -228,7 +239,7 @@
 }
 
 /* ========================================
-   LISTE DES NOTIFICATIONS (COMMUN)
+   LISTE DES NOTIFICATIONS
    ======================================== */
 .notification-list {
     display: flex;
@@ -271,7 +282,6 @@
     pointer-events: none;
 }
 
-/* Informations personne */
 .person-info {
     flex: 1;
 }
@@ -286,14 +296,12 @@
     font-weight: 700;
     color: var(--text-primary);
     font-size: 1.1rem;
-    transition: color 0.3s ease;
 }
 
 .person-name .surname {
     font-weight: 600;
     color: var(--text-secondary);
     font-size: 1.1rem;
-    transition: color 0.3s ease;
 }
 
 .person-details {
@@ -305,7 +313,6 @@
 .birth-date {
     color: var(--text-tertiary);
     font-size: 0.9rem;
-    transition: color 0.3s ease;
 }
 
 .family-badge {
@@ -319,7 +326,7 @@
 }
 
 /* ========================================
-   TOGGLE SWITCH (COMMUN)
+   TOGGLE SWITCH
    ======================================== */
 .notification-toggle {
     display: flex;
@@ -408,7 +415,7 @@ input:disabled+.slider {
 }
 
 /* ========================================
-   ACTIONS GLOBALES (COMMUN)
+   ACTIONS GLOBALES
    ======================================== */
 .global-actions {
     display: flex;
@@ -453,7 +460,7 @@ input:disabled+.slider {
 }
 
 /* ========================================
-   TOGGLE LISTE ET FILTRES (COMMUN)
+   TOGGLE LISTE ET FILTRES
    ======================================== */
 .list-toggle-section {
     margin: 16px 0;
@@ -524,7 +531,6 @@ input:disabled+.slider {
     }
 }
 
-/* Filtres */
 .filter-section {
     margin-bottom: 20px;
     padding: 16px;
@@ -601,6 +607,407 @@ input:disabled+.slider {
 }
 
 /* ========================================
+   FRÉQUENCE (Chat)
+   ======================================== */
+.frequency-section {
+    margin-top: 0.5rem;
+}
+
+.frequency-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.frequency-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.15rem;
+    padding: 0.75rem 1rem;
+    background: var(--bg-tertiary);
+    border: 1.5px solid var(--border-color);
+    border-radius: 10px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s, color 0.2s;
+    text-align: left;
+    width: 100%;
+}
+
+.frequency-btn:hover:not(:disabled) {
+    background: rgba(124, 110, 230, 0.1);
+    border-color: rgba(124, 110, 230, 0.4);
+    color: var(--text-primary);
+}
+
+.frequency-btn.active {
+    background: rgba(124, 110, 230, 0.15);
+    border-color: #7c6ee6;
+    color: var(--text-primary);
+}
+
+.frequency-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.freq-label {
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.freq-desc {
+    font-size: 0.78rem;
+    color: var(--text-tertiary);
+}
+
+.frequency-btn.active .freq-desc {
+    color: var(--text-secondary);
+}
+
+.friends-chat-prefs {
+    margin-top: 0.5rem;
+}
+
+.chat-hint {
+    font-style: italic;
+    color: var(--text-tertiary) !important;
+}
+
+/* ========================================
+   TIMINGS FÊTES
+   ======================================== */
+.timing-option-special {
+    margin-bottom: 1rem;
+}
+
+.timing-options-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.timing-checkbox {
+    display: flex;
+    align-items: center;
+    padding: 1rem 1.25rem;
+    background: var(--bg-tertiary);
+    border-radius: 12px;
+    border: 2px solid var(--border-color);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.timing-checkbox:hover {
+    background: var(--bg-secondary);
+    border-color: rgba(102, 126, 234, 0.5);
+    transform: translateY(-2px);
+}
+
+.timing-checkbox input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+}
+
+.timing-checkbox input[type="checkbox"]:disabled~.timing-label {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.timing-label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+    cursor: pointer;
+}
+
+.timing-icon {
+    font-size: 24px;
+    transition: transform 0.3s ease;
+}
+
+.timing-text {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+}
+
+.timing-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.timing-subtitle {
+    font-size: 13px;
+    color: var(--text-tertiary);
+}
+
+.timing-checkbox:has(input[type="checkbox"]:checked),
+.timing-checkbox:has(input[type="radio"]:checked) {
+    background: rgba(102, 126, 234, 0.12);
+    border-color: #667eea;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+}
+
+.timing-checkbox:has(input[type="checkbox"]:checked) .timing-title,
+.timing-checkbox:has(input[type="radio"]:checked) .timing-title {
+    color: #667eea;
+}
+
+.timing-checkbox:has(input[type="checkbox"]:checked) .timing-subtitle,
+.timing-checkbox:has(input[type="radio"]:checked) .timing-subtitle {
+    color: rgba(102, 126, 234, 0.8);
+}
+
+.timing-checkbox:has(input[type="checkbox"]:checked) .timing-icon,
+.timing-checkbox:has(input[type="radio"]:checked) .timing-icon {
+    transform: scale(1.1);
+}
+
+.timing-checkbox:has(input[type="checkbox"]:checked):hover,
+.timing-checkbox:has(input[type="radio"]:checked):hover {
+    background: rgba(102, 126, 234, 0.18);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
+}
+
+.timing-option-special .timing-checkbox {
+    border: 2px solid rgba(102, 126, 234, 0.25);
+}
+
+.timing-option-special .timing-checkbox:has(input[type="checkbox"]:checked) {
+    background: rgba(102, 126, 234, 0.15);
+    border-color: #667eea;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+/* ========================================
+   PUSH NOTIFICATIONS
+   ======================================== */
+.push-activation-section {
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.push-status-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.push-status-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.push-status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.push-status-dot.active {
+    background: var(--success);
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
+}
+
+.push-status-dot.inactive {
+    background: var(--gray-400);
+}
+
+.push-status-label {
+    font-size: 15px;
+    color: var(--text-primary);
+}
+
+.push-hint {
+    margin: 12px 0 0 0;
+    font-size: 13px;
+    color: var(--text-tertiary);
+}
+
+.push-btn {
+    padding: 9px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: opacity 0.2s, transform 0.1s;
+    white-space: nowrap;
+}
+
+.push-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.push-btn:not(:disabled):active {
+    transform: scale(0.97);
+}
+
+.push-btn--activate {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: #fff;
+}
+
+.push-btn--activate:not(:disabled):hover {
+    opacity: 0.9;
+}
+
+.push-btn--deactivate {
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+}
+
+.push-btn--deactivate:not(:disabled):hover {
+    border-color: var(--danger);
+    color: var(--danger);
+}
+
+.push-btn--save {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: #fff;
+    width: 100%;
+    padding: 12px;
+    font-size: 15px;
+}
+
+.push-section {
+    margin-bottom: 20px;
+}
+
+.push-section-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin: 0 0 14px 0;
+}
+
+.push-timings {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.push-timing-option {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    padding: 10px 14px;
+    border-radius: 8px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    transition: background 0.15s;
+    font-size: 14px;
+    color: var(--text-primary);
+}
+
+.push-timing-option:hover {
+    background: var(--bg-secondary);
+}
+
+.push-timing-option input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: #667eea;
+    cursor: pointer;
+}
+
+.push-save-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-top: 8px;
+    margin-bottom: 20px;
+}
+
+.push-save-status {
+    font-size: 14px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.push-save-status.success {
+    color: var(--success);
+}
+
+.push-save-status.error {
+    color: var(--danger);
+}
+
+.push-unsupported,
+.push-denied {
+    text-align: center;
+    padding: 40px 20px;
+}
+
+.push-icon {
+    font-size: 48px;
+    display: block;
+    margin-bottom: 16px;
+}
+
+.push-unsupported h3,
+.push-denied h3 {
+    font-size: 18px;
+    margin: 0 0 12px 0;
+    color: var(--text-primary);
+}
+
+.push-unsupported p,
+.push-denied p {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin: 0 0 16px 0;
+}
+
+.push-instructions {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 16px 0;
+    text-align: left;
+    display: inline-block;
+}
+
+.push-instructions li {
+    font-size: 14px;
+    color: var(--text-secondary);
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-color);
+    line-height: 1.5;
+}
+
+.push-instructions li:last-child {
+    border-bottom: none;
+}
+
+.push-reload-hint {
+    font-size: 13px;
+    color: var(--text-tertiary);
+    font-style: italic;
+}
+
+/* ========================================
    RESPONSIVE
    ======================================== */
 @media (max-width: 600px) {
@@ -636,5 +1043,9 @@ input:disabled+.slider {
 
     .filter-buttons {
         flex-direction: column;
+    }
+
+    .timing-options-grid {
+        grid-template-columns: 1fr;
     }
 }

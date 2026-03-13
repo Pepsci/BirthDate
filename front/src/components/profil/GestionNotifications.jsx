@@ -4,7 +4,7 @@ import EmailTab from "./notifications/EmailTab";
 import FetesTab from "./notifications/FetesTab";
 import ChatTab from "./notifications/ChatTab";
 import PushTab from "./notifications/Pushtab";
-import "./css/gestionNotifications.css";
+import "./css/notificationTabs.css";
 
 const GestionNotification = () => {
   const [activeTab, setActiveTab] = useState("emails");
@@ -56,12 +56,10 @@ const GestionNotification = () => {
 
   return (
     <div className="simple-notification-manager">
-      {/* Header */}
       <div className="notification-header">
         <h2>Gestion des notifications</h2>
       </div>
 
-      {/* Onglets */}
       <div className="notif-tabs">
         <button
           className={`notif-tab ${activeTab === "emails" ? "active" : ""}`}
@@ -79,7 +77,7 @@ const GestionNotification = () => {
           className={`notif-tab ${activeTab === "chat" ? "active" : ""}`}
           onClick={() => setActiveTab("chat")}
         >
-          💬 Messages Chat
+          💬 Messages
         </button>
         <button
           className={`notif-tab ${activeTab === "push" ? "active" : ""}`}
@@ -89,7 +87,6 @@ const GestionNotification = () => {
         </button>
       </div>
 
-      {/* Contenu des onglets */}
       <div className="notif-tab-content">
         {activeTab === "emails" ? (
           <EmailTab dates={dates} loading={loading} />

@@ -7,6 +7,15 @@
     margin-top: 0.5rem;
 }
 
+.section-subtitle {
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-tertiary);
+    margin: 1.5rem 0 0.75rem 0;
+}
+
 .frequency-options {
     display: flex;
     flex-direction: column;
@@ -19,10 +28,10 @@
     align-items: flex-start;
     gap: 0.15rem;
     padding: 0.75rem 1rem;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1.5px solid rgba(255, 255, 255, 0.08);
+    background: var(--bg-tertiary);
+    border: 1.5px solid var(--border-color);
     border-radius: 10px;
-    color: rgba(255, 255, 255, 0.7);
+    color: var(--text-secondary);
     cursor: pointer;
     transition: background 0.2s, border-color 0.2s, color 0.2s;
     text-align: left;
@@ -30,15 +39,15 @@
 }
 
 .frequency-btn:hover:not(:disabled) {
-    background: rgba(124, 110, 230, 0.12);
+    background: rgba(124, 110, 230, 0.1);
     border-color: rgba(124, 110, 230, 0.4);
-    color: #fff;
+    color: var(--text-primary);
 }
 
 .frequency-btn.active {
-    background: rgba(124, 110, 230, 0.18);
+    background: rgba(124, 110, 230, 0.15);
     border-color: #7c6ee6;
-    color: #ffffff;
+    color: var(--text-primary);
 }
 
 .frequency-btn:disabled {
@@ -53,11 +62,11 @@
 
 .freq-desc {
     font-size: 0.78rem;
-    color: rgba(255, 255, 255, 0.45);
+    color: var(--text-tertiary);
 }
 
 .frequency-btn.active .freq-desc {
-    color: rgba(255, 255, 255, 0.65);
+    color: var(--text-secondary);
 }
 
 /* ========================================
@@ -69,5 +78,5 @@
 
 .chat-hint {
     font-style: italic;
-    color: rgba(255, 255, 255, 0.35) !important;
+    color: var(--text-tertiary) !important;
 }
