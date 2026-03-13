@@ -5,6 +5,7 @@ import FetesTab from "./notifications/FetesTab";
 import ChatTab from "./notifications/ChatTab";
 import PushTab from "./notifications/Pushtab";
 import "./css/notificationTabs.css";
+import "./css/gestionNotifications.css";
 
 const GestionNotification = () => {
   const [activeTab, setActiveTab] = useState("emails");
