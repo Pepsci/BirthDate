@@ -111,7 +111,7 @@ const EmailTab = ({ dates, loading }) => {
     <div className="tab-content-inner">
       <div className="notification-summary">
         <span className="summary-text">
-          {activeCount} sur {totalCount} notifications activées
+          {activeCount} sur {totalCount} notifications emails activées
         </span>
       </div>
 
