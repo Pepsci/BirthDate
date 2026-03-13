@@ -17,7 +17,12 @@ import "../UI/css/badge-notification.css";
 const ITEMS_PER_PAGE = 10;
 const ITEMS_PER_PAGE_MOBILE = 6;
 
-const DateList = ({ onEditDate, onViewFriendProfile, onMerge }) => {
+const DateList = ({
+  onEditDate,
+  onViewFriendProfile,
+  onMerge,
+  onResetChat,
+}) => {
   const { currentUser } = useAuth();
   const [dates, setDates] = useState([]);
   const [allDates, setAllDates] = useState([]);
@@ -111,6 +116,17 @@ const DateList = ({ onEditDate, onViewFriendProfile, onMerge }) => {
   // Charger le nombre de messages non lus au montage
   useEffect(() => {
     loadUnreadCount();
+  }, []);
+
+  useEffect(() => {
+    if (onResetChat) {
+      onResetChat(() => {
+        setIsChatVisible(false);
+        setIsChatModalOpen(false);
+        setSelectedFriendId(null);
+        setSelectedFriendName("");
+      });
+    }
   }, []);
 
   const toggleFormVisibility = () => {

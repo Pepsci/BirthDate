@@ -1,6 +1,6 @@
-import React, { useContext, useState, useEffect } from "react";
+import React, { useContext, useState, useEffect, useRef } from "react";
 import useNotifications from "../context/useNotifications";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/auth.context";
 import DateList from "./dashboard/DateList";
 import ProfilDetails from "./profil/Profile";
@@ -15,6 +15,9 @@ const Home = () => {
   const { isLoggedIn, currentUser } = useContext(AuthContext);
   const { friendRequestCount } = useNotifications();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const resetChatRef = useRef(null);
+
   const [date] = useState([]);
   const [showProfile, setShowProfile] = useState(false);
   const [editingDate, setEditingDate] = useState(null);
@@ -51,12 +54,14 @@ const Home = () => {
   }, [searchParams, isLoggedIn]);
 
   const handleLogoClick = () => {
+    if (resetChatRef.current) resetChatRef.current();
     setShowProfile(false);
     setEditingDate(null);
     setViewingFriendProfile(null);
     setShowMergeModal(false);
     setCardToMerge(null);
     setProfileInitialSection("personal");
+    navigate("/home");
   };
 
   const handleShowProfile = () => {
@@ -157,6 +162,9 @@ const Home = () => {
               <DateList
                 onEditDate={handleEditDate}
                 onViewFriendProfile={handleViewFriendProfile}
+                onResetChat={(fn) => {
+                  resetChatRef.current = fn;
+                }}
               />
             )}
 
