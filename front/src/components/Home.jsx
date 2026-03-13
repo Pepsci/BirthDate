@@ -29,13 +29,13 @@ const Home = () => {
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [showProfile, editingDate, viewingFriendProfile, showMergeModal]);
+
   useEffect(() => {
     if (!isLoggedIn || !currentUser) return;
     const localDone = localStorage.getItem("onboardingDone") === "true";
     if (!localDone && !currentUser.onboardingDone) {
       setShowOnboarding(true);
     } else {
-      // Sync cache local si DB dit que c'est fait
       if (currentUser.onboardingDone) {
         localStorage.setItem("onboardingDone", "true");
       }
@@ -44,12 +44,20 @@ const Home = () => {
 
   useEffect(() => {
     const tab = searchParams.get("tab");
-    const section = searchParams.get("section");
     if (tab === "friends" && isLoggedIn) {
       setShowProfile(true);
       setProfileInitialSection("friends");
     }
   }, [searchParams, isLoggedIn]);
+
+  const handleLogoClick = () => {
+    setShowProfile(false);
+    setEditingDate(null);
+    setViewingFriendProfile(null);
+    setShowMergeModal(false);
+    setCardToMerge(null);
+    setProfileInitialSection("personal");
+  };
 
   const handleShowProfile = () => {
     setShowProfile(true);
@@ -99,7 +107,9 @@ const Home = () => {
   return (
     <div className="homePageRoot">
       <div className="headerApp homePageHeader">
-        <Logo className="logoHeader" />
+        <button onClick={handleLogoClick} className="logoHeaderBtn">
+          <Logo className="logoHeader" />
+        </button>
         {isLoggedIn && (
           <div className="homePageUser">
             <div className="homePageCurrentUser">
