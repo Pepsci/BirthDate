@@ -20,6 +20,8 @@ function formatUser(user) {
     avatar: user.avatar,
     birthDate: user.birthDate,
     nameday: user.nameday,
+    // Onboarding
+    onboardingDone: user.onboardingDone,
     // Emails anniversaires
     receiveBirthdayEmails: user.receiveBirthdayEmails,
     receiveFriendRequestEmails: user.receiveFriendRequestEmails,
@@ -28,7 +30,7 @@ function formatUser(user) {
     receiveChatEmails: user.receiveChatEmails,
     chatEmailFrequency: user.chatEmailFrequency,
     chatEmailDisabledFriends: user.chatEmailDisabledFriends,
-    //Push
+    // Push
     pushEnabled: user.pushEnabled,
     pushEvents: user.pushEvents,
     pushBirthdayTimings: user.pushBirthdayTimings,
@@ -107,12 +109,17 @@ router.patch(
       user.email = req.body.email || user.email;
       user.birthDate = req.body.birthDate || user.birthDate;
 
-      // 🎉 Gestion du nameday
+      // Nameday
       if (req.body.nameday !== undefined) {
         user.nameday = req.body.nameday || null;
       }
 
       if (avatar) user.avatar = avatar;
+
+      // ── Onboarding ──────────────────────────────────────────────────────────
+      if (req.body.onboardingDone !== undefined) {
+        user.onboardingDone = req.body.onboardingDone;
+      }
 
       // ── Préférences emails anniversaires ────────────────────────────────────
       if (req.body.receiveBirthdayEmails !== undefined) {
@@ -133,7 +140,7 @@ router.patch(
         user.chatEmailFrequency = req.body.chatEmailFrequency;
       }
 
-      // ── Préférences push ──────────────────────────────────────────────────────────
+      // ── Préférences push ─────────────────────────────────────────────────────
       if (req.body.pushEnabled !== undefined) {
         user.pushEnabled = req.body.pushEnabled;
       }
@@ -211,14 +218,12 @@ router.patch("/me/nameday", isAuthenticated, async (req, res) => {
   try {
     const { nameday } = req.body;
 
-    // Validation du format MM-DD
     if (nameday && !/^\d{2}-\d{2}$/.test(nameday)) {
       return res.status(400).json({
         message: "Invalid nameday format. Use MM-DD (e.g., 03-13)",
       });
     }
 
-    // Validation de la date (mois 01-12, jour 01-31)
     if (nameday) {
       const [month, day] = nameday.split("-").map(Number);
       if (month < 1 || month > 12 || day < 1 || day > 31) {
@@ -231,7 +236,7 @@ router.patch("/me/nameday", isAuthenticated, async (req, res) => {
     const updatedUser = await userModel
       .findByIdAndUpdate(
         req.payload._id,
-        { nameday: nameday || null }, // null si vide
+        { nameday: nameday || null },
         { new: true, runValidators: true },
       )
       .select("-password");
@@ -266,8 +271,8 @@ router.patch("/me/chat-email-prefs", isAuthenticated, async (req, res) => {
 
   try {
     const update = enabled
-      ? { $pull: { chatEmailDisabledFriends: friendId } } // réactiver → retirer de la liste
-      : { $addToSet: { chatEmailDisabledFriends: friendId } }; // désactiver → ajouter à la liste
+      ? { $pull: { chatEmailDisabledFriends: friendId } }
+      : { $addToSet: { chatEmailDisabledFriends: friendId } };
 
     const user = await userModel.findByIdAndUpdate(req.payload._id, update, {
       new: true,
@@ -316,7 +321,6 @@ router.patch(
         return res.status(404).json({ message: "User not found" });
       }
 
-      // 🔒 SÉCURITÉ : Vérifier que l'utilisateur modifie son propre compte
       if (req.payload._id.toString() !== req.params.id) {
         return res.status(403).json({
           message: "Vous ne pouvez modifier que votre propre compte",
@@ -348,12 +352,16 @@ router.patch(
       user.email = req.body.email || user.email;
       user.birthDate = req.body.birthDate || user.birthDate;
 
-      // 🎉 Gestion du nameday
       if (req.body.nameday !== undefined) {
         user.nameday = req.body.nameday || null;
       }
 
       if (avatar) user.avatar = avatar;
+
+      // ── Onboarding ──────────────────────────────────────────────────────────
+      if (req.body.onboardingDone !== undefined) {
+        user.onboardingDone = req.body.onboardingDone;
+      }
 
       // ── Préférences emails anniversaires ────────────────────────────────────
       if (req.body.receiveBirthdayEmails !== undefined) {
@@ -374,7 +382,7 @@ router.patch(
         user.chatEmailFrequency = req.body.chatEmailFrequency;
       }
 
-      // ── Préférences push ──────────────────────────────────────────────────────────
+      // ── Préférences push ─────────────────────────────────────────────────────
       if (req.body.pushEnabled !== undefined) {
         user.pushEnabled = req.body.pushEnabled;
       }
@@ -401,7 +409,6 @@ router.patch(
               { friend: updatedUser._id, status: "accepted" },
             ],
           });
-          console.log(`👥 ${friendships.length} amis trouvés`);
           let syncCount = 0;
           for (const friendship of friendships) {
             const friendId =
@@ -452,7 +459,6 @@ router.delete(
   logAction("account_delete"),
   async (req, res, next) => {
     try {
-      // Vérifie que l'utilisateur supprime bien son propre compte
       if (req.payload._id.toString() !== req.params.id) {
         return res.status(403).json({
           message: "Vous ne pouvez supprimer que votre propre compte",
@@ -464,14 +470,12 @@ router.delete(
         return res.status(404).json({ message: "Utilisateur non trouvé" });
       }
 
-      // Vérifier si déjà supprimé
       if (user.deletedAt) {
         return res
           .status(400)
           .json({ message: "Ce compte a déjà été supprimé" });
       }
 
-      // ✅ SOFT DELETE avec anonymisation (RGPD - 2 temps)
       const anonymizedEmail = `deleted_${user._id}@birthreminder.deleted`;
 
       await userModel.findByIdAndUpdate(req.params.id, {
@@ -486,10 +490,7 @@ router.delete(
         receiveChatEmails: false,
       });
 
-      // Supprimer les dates d'anniversaire de cet utilisateur
       await DateModel.deleteMany({ owner: req.params.id });
-
-      // Supprimer les relations d'amitié
       await Friend.deleteMany({
         $or: [{ user: req.params.id }, { friend: req.params.id }],
       });

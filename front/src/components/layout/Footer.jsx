@@ -26,6 +26,9 @@ export default function Footer() {
           <h3 className="footer-title">Support</h3>
           <ul className="footer-links">
             <li>
+              <Link to="/guide">📖 Guide d'utilisation</Link>
+            </li>
+            <li>
               <a href="mailto:contact@birthreminder.com">Contact</a>
             </li>
             <li>
@@ -85,10 +88,8 @@ export default function Footer() {
         </div>
       </div>
 
-      {/* Séparateur */}
       <div className="footer-divider"></div>
 
-      {/* Copyright */}
       <div className="footer-bottom">
         <p className="footer-copyright">
           © 2026 BirthReminder • Fait avec ❤️ par Joss Filippi

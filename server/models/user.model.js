@@ -16,8 +16,8 @@ const userSchema = new Schema({
     required: false,
     validate: {
       validator: function (v) {
-        if (!v) return true; // null/undefined OK
-        return /^\d{2}-\d{2}$/.test(v); // Format MM-DD
+        if (!v) return true;
+        return /^\d{2}-\d{2}$/.test(v);
       },
       message: "Nameday must be in MM-DD format",
     },
@@ -32,58 +32,31 @@ const userSchema = new Schema({
   receiveOwnBirthdayEmail: { type: Boolean, default: true },
   deletedAt: Date,
 
+  // ── Onboarding ─────────────────────────────────────────────────────────────
+  /** true une fois que l'utilisateur a vu ou passé le guide d'onboarding */
+  onboardingDone: { type: Boolean, default: false },
+
   // ── Notifications emails chat ──────────────────────────────────────────────
-
-  /** Activer/désactiver les emails de notification de messages chat */
-  receiveChatEmails: {
-    type: Boolean,
-    default: true,
-  },
-
-  /**
-   * Fréquence d'envoi des emails chat */
+  receiveChatEmails: { type: Boolean, default: true },
   chatEmailFrequency: {
     type: String,
     enum: ["instant", "twice_daily", "daily", "weekly"],
     default: "daily",
   },
-
-  /**
-   * Liste des IDs d'amis pour lesquels les emails chat sont désactivés.
-   * Si un friendId est dans ce tableau, aucun email ne sera envoyé
-   * pour ses messages, même si receiveChatEmails est true.
-   */
   chatEmailDisabledFriends: {
     type: [{ type: Schema.Types.ObjectId, ref: "User" }],
     default: [],
   },
+  lastChatEmailSent: { type: Date, default: null },
 
-  /**
-   * Timestamp du dernier email de notification chat envoyé.
-   * Utilisé pour éviter les doublons en mode "instant".
-   */
-  lastChatEmailSent: {
-    type: Date,
-    default: null,
-  },
-
-  /** Notifications push activées globalement */
-  pushEnabled: {
-    type: Boolean,
-    default: false,
-  },
-
-  /** Événements déclenchant une push notification */
+  // ── Push notifications ─────────────────────────────────────────────────────
+  pushEnabled: { type: Boolean, default: false },
   pushEvents: {
     birthdays: { type: Boolean, default: true },
     chat: { type: Boolean, default: true },
     friends: { type: Boolean, default: true },
     gifts: { type: Boolean, default: true },
   },
-
-  /** Timings de rappel pour les anniversaires (en jours avant)
-   *  0 = jour J, 1 = veille, 3, 7, 30
-   */
   pushBirthdayTimings: {
     type: [Number],
     default: [1, 0],

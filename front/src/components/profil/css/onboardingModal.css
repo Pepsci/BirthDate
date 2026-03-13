@@ -1,0 +1,402 @@
+/* ── Onboarding Modal ─────────────────────────────────────────────────────── */
+
+.onb-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    animation: onb-fade-in 0.3s ease;
+}
+
+@keyframes onb-fade-in {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.onb-modal {
+    background: var(--bg-card, #1e1e2e);
+    border: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+    border-radius: 24px;
+    width: 100%;
+    max-width: 440px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 32px 80px rgba(0, 0, 0, 0.5);
+    animation: onb-slide-up 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes onb-slide-up {
+    from {
+        transform: translateY(40px) scale(0.96);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+}
+
+/* ── Header ──────────────────────────────────────────────────────────────── */
+
+.onb-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px 0;
+}
+
+.onb-steps-dots {
+    display: flex;
+    gap: 6px;
+}
+
+.onb-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    border: none;
+    background: var(--border, rgba(255, 255, 255, 0.15));
+    cursor: pointer;
+    transition: all 0.25s ease;
+    padding: 0;
+}
+
+.onb-dot.done {
+    background: var(--primary, #667eea);
+    opacity: 0.5;
+    width: 16px;
+    border-radius: 4px;
+}
+
+.onb-dot.active {
+    background: var(--primary, #667eea);
+    width: 24px;
+    border-radius: 4px;
+}
+
+.onb-skip {
+    background: none;
+    border: none;
+    color: var(--text-muted, rgba(255, 255, 255, 0.35));
+    font-size: 0.72rem;
+    cursor: pointer;
+    padding: 4px 0;
+    transition: color 0.2s;
+    white-space: nowrap;
+}
+
+.onb-skip:hover {
+    color: var(--text-muted, rgba(255, 255, 255, 0.6));
+}
+
+/* ── Content ─────────────────────────────────────────────────────────────── */
+
+.onb-content {
+    padding: 28px 28px 24px;
+    text-align: center;
+    min-height: 320px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+}
+
+/* Animations de transition */
+.onb-content.entering {
+    animation: onb-enter 0.25s ease forwards;
+}
+
+.onb-content.leaving-next {
+    animation: onb-leave-next 0.2s ease forwards;
+}
+
+.onb-content.leaving-prev {
+    animation: onb-leave-prev 0.2s ease forwards;
+}
+
+@keyframes onb-enter {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes onb-leave-next {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+
+    to {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+}
+
+@keyframes onb-leave-prev {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+
+    to {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+}
+
+/* Emoji */
+.onb-emoji-wrap {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.onb-emoji {
+    font-size: 3rem;
+    line-height: 1;
+    position: relative;
+    z-index: 1;
+}
+
+.onb-emoji-ring {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: var(--primary, #667eea);
+    opacity: 0.12;
+}
+
+/* Step counter */
+.onb-step-counter {
+    font-size: 0.72rem;
+    color: var(--primary, #667eea);
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+/* Title */
+.onb-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text, #fff);
+    margin: 0;
+    line-height: 1.3;
+}
+
+/* Description */
+.onb-desc {
+    font-size: 0.9rem;
+    color: var(--text-secondary, rgba(255, 255, 255, 0.65));
+    line-height: 1.6;
+    margin: 0;
+    max-width: 340px;
+}
+
+/* Highlight */
+.onb-highlight {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(102, 126, 234, 0.12);
+    border: 1px solid rgba(102, 126, 234, 0.25);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 0.84rem;
+    color: var(--text, #fff);
+    width: 100%;
+    text-align: left;
+}
+
+.onb-highlight-icon {
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+/* iOS guide */
+.onb-ios-guide {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    text-align: left;
+}
+
+.onb-ios-step {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.85rem;
+    color: var(--text, #fff);
+}
+
+.onb-ios-num {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--primary, #667eea);
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.onb-ios-share {
+    display: inline-block;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 4px;
+    padding: 1px 5px;
+    font-size: 1rem;
+}
+
+/* Tip */
+.onb-tip {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    background: rgba(255, 193, 7, 0.08);
+    border: 1px solid rgba(255, 193, 7, 0.2);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 0.82rem;
+    color: var(--text-secondary, rgba(255, 255, 255, 0.7));
+    width: 100%;
+    text-align: left;
+    line-height: 1.5;
+}
+
+.onb-tip-icon {
+    font-size: 1rem;
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+
+/* Info note dernière étape */
+.onb-info-note {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 0.82rem;
+    color: var(--text-secondary, rgba(255, 255, 255, 0.55));
+    width: 100%;
+    text-align: left;
+}
+
+/* ── Footer ──────────────────────────────────────────────────────────────── */
+
+.onb-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px 24px;
+    gap: 12px;
+}
+
+.onb-btn-prev {
+    background: none;
+    border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
+    color: var(--text-secondary, rgba(255, 255, 255, 0.5));
+    border-radius: 10px;
+    padding: 10px 16px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.onb-btn-prev:hover:not(:disabled) {
+    border-color: var(--primary, #667eea);
+    color: var(--text, #fff);
+}
+
+.onb-btn-prev:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.onb-btn-next {
+    flex: 1;
+    background: var(--primary, #667eea);
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    padding: 12px 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.35);
+}
+
+.onb-btn-next:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+}
+
+.onb-btn-next:active {
+    transform: translateY(0);
+}
+
+/* ── Progress bar ────────────────────────────────────────────────────────── */
+
+.onb-progress-bar {
+    height: 3px;
+    background: var(--border, rgba(255, 255, 255, 0.06));
+}
+
+.onb-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #667eea, #764ba2);
+    transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── Mobile ──────────────────────────────────────────────────────────────── */
+
+@media (max-width: 480px) {
+    .onb-modal {
+        border-radius: 20px 20px 0 0;
+        max-width: 100%;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+    }
+
+    .onb-overlay {
+        align-items: flex-end;
+        padding: 0;
+    }
+
+    .onb-content {
+        min-height: 280px;
+        padding: 20px 20px 16px;
+    }
+}

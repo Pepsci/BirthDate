@@ -7,7 +7,7 @@ import ProfilDetails from "./profil/Profile";
 import UpdateDate from "./dashboard/UpdateDate";
 import FriendProfile from "./profil/FriendProfile";
 import ManualMergeModal from "./dashboard/ManuelMergeModal";
-import PushNotificationManager from "../components/profil/notifications/PushNotificationManager";
+import OnboardingModal from "./profil/notifications/OnboardingModal";
 import "./dashboard/css/homePage.css";
 import Logo from "./UI/Logo";
 
@@ -23,6 +23,24 @@ const Home = () => {
   const [cardToMerge, setCardToMerge] = useState(null);
   const [profileInitialSection, setProfileInitialSection] =
     useState("personal");
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  // Scroll en haut à chaque changement de vue
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [showProfile, editingDate, viewingFriendProfile, showMergeModal]);
+  useEffect(() => {
+    if (!isLoggedIn || !currentUser) return;
+    const localDone = localStorage.getItem("onboardingDone") === "true";
+    if (!localDone && !currentUser.onboardingDone) {
+      setShowOnboarding(true);
+    } else {
+      // Sync cache local si DB dit que c'est fait
+      if (currentUser.onboardingDone) {
+        localStorage.setItem("onboardingDone", "true");
+      }
+    }
+  }, [isLoggedIn, currentUser]);
 
   useEffect(() => {
     const tab = searchParams.get("tab");
@@ -104,7 +122,10 @@ const Home = () => {
           </div>
         )}
       </div>
-      <PushNotificationManager />
+
+      {showOnboarding && (
+        <OnboardingModal onClose={() => setShowOnboarding(false)} />
+      )}
 
       {isLoggedIn && (
         <>

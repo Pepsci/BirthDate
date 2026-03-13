@@ -22,17 +22,21 @@ import MentionsLegales from "./components/pages/MentionsLegales";
 import PrivacyPolicy from "./components/pages/PrivacyPolicy";
 import CGU from "./components/pages/CGU";
 import Footer from "./components/layout/Footer";
+import GuidePage from "./components/pages/GuidePage";
+import ScrollToTop from "./components/layout/ScrollToTop";
 
 function App() {
   return (
     <div className="App">
       <div className="routeContent">
+        <ScrollToTop />
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/cookies" element={<CookiesPolicy />} />
           <Route path="/mentions-legales" element={<MentionsLegales />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/cgu" element={<CGU />} />
+          <Route path="/guide" element={<GuidePage />} />
 
           <Route
             path="/signup"
