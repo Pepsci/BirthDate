@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import apiHandler from "../../api/apiHandler";
 import { AuthContext } from "../../context/auth.context";
 import PasswordInput from "./PasswordInput";
-import "./authPage.css";
+import "./authpage.css";
 
 const AuthPage = () => {
   const [panel, setPanel] = useState("login"); // "login" | "signup" | "forgot"
