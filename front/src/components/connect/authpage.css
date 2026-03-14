@@ -328,6 +328,17 @@
     opacity: 0.75;
 }
 
+.auth-input--date {
+    color: var(--text-secondary);
+    min-height: 36px;
+}
+
+/* iOS force la couleur en -webkit */
+.auth-input--date::-webkit-date-and-time-value {
+    color: var(--text-secondary);
+    text-align: left;
+}
+
 /* ── RESPONSIVE ── */
 @media (max-width: 480px) {
     .auth-page {

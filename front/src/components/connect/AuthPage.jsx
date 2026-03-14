@@ -171,7 +171,7 @@ const AuthPage = () => {
               <div className="auth-field">
                 <label className="auth-label">Email</label>
                 <input
-                  type="text"
+                  type="email"
                   className="auth-input"
                   placeholder="vous@exemple.com"
                   value={loginData.email}
@@ -262,7 +262,7 @@ const AuthPage = () => {
               <div className="auth-field">
                 <label className="auth-label">Email</label>
                 <input
-                  type="text"
+                  type="email"
                   className="auth-input"
                   placeholder="vous@exemple.com"
                   value={signupData.email}
