@@ -8,6 +8,7 @@ const FriendsMobileView = ({ currentUser, onViewFriendProfile }) => {
   const [friends, setFriends] = useState([]);
   const [pendingReceived, setPendingReceived] = useState([]);
   const [pendingSent, setPendingSent] = useState([]);
+  const [pendingInvitations, setPendingInvitations] = useState([]);
   const [showAddFriendModal, setShowAddFriendModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [friendToDelete, setFriendToDelete] = useState(null);
@@ -48,7 +49,8 @@ const FriendsMobileView = ({ currentUser, onViewFriendProfile }) => {
       const response = await apiHandler.get(
         `/friends/sent?userId=${currentUser._id}`,
       );
-      setPendingSent(response.data);
+      setPendingSent(response.data.requests || []);
+      setPendingInvitations(response.data.invitations || []);
     } catch (error) {
       console.error("Erreur chargement demandes envoyées:", error);
     }
@@ -112,7 +114,6 @@ const FriendsMobileView = ({ currentUser, onViewFriendProfile }) => {
     loadSentRequests();
   };
 
-  // Construit un objet date compatible avec FriendProfile depuis un friendUser
   const buildDateFromFriend = (friendship, friendUser) => ({
     _id: friendship._id,
     name: friendUser.name || "",
@@ -123,13 +124,14 @@ const FriendsMobileView = ({ currentUser, onViewFriendProfile }) => {
   });
 
   const handleCardClick = (e, friendship, friendUser) => {
-    // Empêche le clic sur le bouton supprimer de déclencher la navigation
     if (e.target.closest(".delete-friend-btn")) return;
     if (onViewFriendProfile) {
       const dateObj = buildDateFromFriend(friendship, friendUser);
       onViewFriendProfile(dateObj, "info");
     }
   };
+
+  const sentTotal = pendingSent.length + pendingInvitations.length;
 
   return (
     <div className="friends-manager-mobile">
@@ -159,13 +161,12 @@ const FriendsMobileView = ({ currentUser, onViewFriendProfile }) => {
           onClick={() => setActiveTab("sent")}
         >
           Envoyées{" "}
-          {pendingSent.length > 0 && (
-            <span className="badge badge-sent">{pendingSent.length}</span>
+          {sentTotal > 0 && (
+            <span className="badge badge-sent">{sentTotal}</span>
           )}
         </button>
       </div>
 
-      {/* ── Bouton toujours visible sous les tabs ── */}
       <button
         className="add-friend-btn btn-carousel"
         onClick={() => setShowAddFriendModal(true)}
@@ -174,6 +175,7 @@ const FriendsMobileView = ({ currentUser, onViewFriendProfile }) => {
       </button>
 
       <div className="friends-content-mobile">
+        {/* ── AMIS ── */}
         {activeTab === "friends" && (
           <>
             {friends.length === 0 ? (
@@ -231,6 +233,7 @@ const FriendsMobileView = ({ currentUser, onViewFriendProfile }) => {
           </>
         )}
 
+        {/* ── DEMANDES REÇUES ── */}
         {activeTab === "received" && (
           <>
             {pendingReceived.length === 0 ? (
@@ -285,53 +288,95 @@ const FriendsMobileView = ({ currentUser, onViewFriendProfile }) => {
           </>
         )}
 
+        {/* ── DEMANDES ENVOYÉES + INVITATIONS ── */}
         {activeTab === "sent" && (
           <>
-            {pendingSent.length === 0 ? (
+            {sentTotal === 0 ? (
               <div className="empty-state">
                 <p>📤 Aucune demande envoyée</p>
               </div>
             ) : (
               <div className="sent-requests">
-                {pendingSent.map((request) => {
-                  if (!request.friend) return null;
-                  return (
-                    <div key={request._id} className="request-card">
-                      <div className="request-info">
-                        <div className="request-avatar">
-                          {request.friend.avatar ? (
-                            <img
-                              src={request.friend.avatar}
-                              alt={request.friend.name}
-                            />
-                          ) : (
-                            <div className="avatar-placeholder">
-                              {request.friend.name
-                                ? request.friend.name[0].toUpperCase()
-                                : "?"}
+                {/* Demandes vers inscrits */}
+                {pendingSent.length > 0 && (
+                  <>
+                    {pendingInvitations.length > 0 && (
+                      <p className="sent-section-label">Demandes en attente</p>
+                    )}
+                    {pendingSent.map((request) => {
+                      if (!request.friend) return null;
+                      return (
+                        <div key={request._id} className="request-card">
+                          <div className="request-info">
+                            <div className="request-avatar">
+                              {request.friend.avatar ? (
+                                <img
+                                  src={request.friend.avatar}
+                                  alt={request.friend.name}
+                                />
+                              ) : (
+                                <div className="avatar-placeholder">
+                                  {request.friend.name
+                                    ? request.friend.name[0].toUpperCase()
+                                    : "?"}
+                                </div>
+                              )}
                             </div>
-                          )}
+                            <div className="request-details">
+                              <h4>
+                                {request.friend.name || "Utilisateur inconnu"}
+                              </h4>
+                              <p className="request-email">
+                                {request.friend.email}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="request-actions">
+                            <button
+                              className="btn-cancel-request"
+                              onClick={() => handleCancelRequest(request._id)}
+                            >
+                              ✕ Annuler
+                            </button>
+                          </div>
                         </div>
-                        <div className="request-details">
-                          <h4>
-                            {request.friend.name || "Utilisateur inconnu"}
-                          </h4>
-                          <p className="request-email">
-                            {request.friend.email}
-                          </p>
+                      );
+                    })}
+                  </>
+                )}
+
+                {/* Invitations externes */}
+                {pendingInvitations.length > 0 && (
+                  <>
+                    {pendingSent.length > 0 && (
+                      <p className="sent-section-label">
+                        Invitations par email
+                      </p>
+                    )}
+                    {pendingInvitations.map((invitation) => (
+                      <div
+                        key={invitation._id}
+                        className="request-card request-card--invitation"
+                      >
+                        <div className="request-info">
+                          <div className="avatar-placeholder avatar-placeholder--email">
+                            ✉
+                          </div>
+                          <div className="request-details">
+                            <h4>{invitation.email}</h4>
+                            <p className="request-date">
+                              Invité le{" "}
+                              {new Date(
+                                invitation.createdAt,
+                              ).toLocaleDateString("fr-FR")}
+                            </p>
+                          </div>
                         </div>
+                        <span className="invitation-badge">En attente</span>
                       </div>
-                      <div className="request-actions">
-                        <button
-                          className="btn-cancel-request"
-                          onClick={() => handleCancelRequest(request._id)}
-                        >
-                          ✕ Annuler
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
+                    ))}
+                  </>
+                )}
               </div>
             )}
           </>

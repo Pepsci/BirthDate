@@ -82,8 +82,12 @@ const AuthPage = () => {
       setSignupError("Veuillez renseigner votre date de naissance.");
       return;
     }
+
     try {
-      await apiHandler.signup(signupData);
+      await apiHandler.signup({
+        ...signupData,
+        email: signupData.email.toLowerCase(),
+      });
       setSignupSuccess(
         "Compte créé ! Vérifiez votre boîte mail avant de vous connecter. 📧",
       );

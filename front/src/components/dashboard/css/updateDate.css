@@ -1,51 +1,155 @@
-.btn-updateContainer {
+/* ================================================
+   UPDATE DATE — styles spécifiques
+   Les styles de base viennent de auth.css
+   ================================================ */
+
+/* ── HINT SOUS UN INPUT ── */
+.auth-input-hint {
+    display: block;
+    font-size: 11px;
+    color: var(--text-tertiary);
+    margin-top: 4px;
+    font-family: 'Roboto', sans-serif;
+}
+
+/* ── CHECKBOX ── */
+.auth-checkbox-field {
+    margin-bottom: 8px;
+}
+
+.auth-checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+}
+
+.auth-checkbox {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--primary);
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.auth-checkbox-text {
+    font-size: 14px;
+    color: var(--text-secondary);
+    font-family: 'Roboto', sans-serif;
+}
+
+/* ── ACTIONS PRINCIPALES ── */
+.update-actions {
     display: flex;
     flex-direction: column;
-    margin-top: 1rem;
-    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
 }
 
-.btn-update {
-    margin-top: 1rem;
-    padding: 8px;
-    box-sizing: border-box;
-    border: none;
-    border-radius: 4px;
-    background-color: var(--primary);
-    color: white;
-    font-size: 16px;
+.update-btn-secondary {
+    width: 100%;
+    padding: 11px;
+    border: 1px solid var(--border-color);
+    border-radius: 11px;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 14px;
+    font-weight: 500;
     cursor: pointer;
-    transition: all 0.3s ease;
-    width: 200px;
+    transition: border-color 0.2s, color 0.2s;
+    font-family: 'Roboto', sans-serif;
 }
 
-.btn-update:hover {
-    opacity: 0.9;
-    transform: translateY(-2px);
+.update-btn-secondary:hover {
+    border-color: var(--primary);
+    color: var(--primary);
 }
 
-.btn-updateGreen {
-    background-color: var(--success);
+.update-btn-merge {
+    width: 100%;
+    padding: 11px;
+    border: 1px solid var(--border-color);
+    border-radius: 11px;
+    background: transparent;
+    color: var(--text-tertiary);
+    font-size: 13px;
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+    font-family: 'Roboto', sans-serif;
 }
 
-.btn-updateGrey {
-    background-color: var(--gray-600);
+.update-btn-merge:hover {
+    border-color: var(--warning);
+    color: var(--warning);
 }
 
-.btn-updateRed {
-    background-color: var(--danger);
+/* ── ZONE SUPPRESSION ── */
+.update-delete-zone {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-color);
 }
 
-.formUpdate {
+.update-btn-delete-trigger {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--text-tertiary);
+    padding: 0;
+    font-family: 'Roboto', sans-serif;
+    transition: color 0.2s;
+    display: block;
+    margin: 0 auto;
+}
+
+.update-btn-delete-trigger:hover {
+    color: var(--danger);
+}
+
+.update-confirm-delete {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.update-confirm-text {
+    font-size: 13px;
     color: var(--text-secondary);
-    transition: color 0.3s ease;
+    text-align: center;
+    font-family: 'Roboto', sans-serif;
+    margin: 0;
 }
 
-.btn-updateContainer p {
-    color: var(--text-secondary);
-    transition: color 0.3s ease;
+.update-confirm-actions {
+    display: flex;
+    gap: 8px;
 }
 
-.updateLbel {
-    margin-left: 16px;
+.update-btn-danger {
+    flex: 1;
+    padding: 11px;
+    border: none;
+    border-radius: 11px;
+    background: var(--danger);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: opacity 0.2s;
+    font-family: 'Roboto', sans-serif;
+}
+
+.update-btn-danger:hover {
+    opacity: 0.88;
+}
+
+.auth-shell-update {
+    max-width: 420px;
+    width: 100%;
+    margin: 0 auto;
+}
+
+.auth-shell-update .auth-panel {
+    width: 100%;
 }

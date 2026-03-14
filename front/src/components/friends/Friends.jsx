@@ -12,14 +12,15 @@ const Friends = () => {
 
   const [pendingRequests, setPendingRequests] = useState([]);
   const [sentRequests, setSentRequests] = useState([]);
+  const [pendingInvitations, setPendingInvitations] = useState([]);
   const [friends, setFriends] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState("pending"); // "pending", "sent", "friends"
+  const [activeTab, setActiveTab] = useState("pending");
 
   useEffect(() => {
     if (!currentUser) {
-      navigate("/login");
+      navigate("/auth");
       return;
     }
     loadData();
@@ -30,19 +31,17 @@ const Friends = () => {
       setLoading(true);
       setError(null);
 
-      // Charger les demandes reçues (pending)
       const pendingResponse = await apiHandler.get(
         `/friends/requests?userId=${currentUser._id}`,
       );
       setPendingRequests(pendingResponse.data || []);
 
-      // Charger les demandes envoyées (sent)
       const sentResponse = await apiHandler.get(
         `/friends/sent?userId=${currentUser._id}`,
       );
-      setSentRequests(sentResponse.data || []);
+      setSentRequests(sentResponse.data.requests || []);
+      setPendingInvitations(sentResponse.data.invitations || []);
 
-      // Charger la liste d'amis acceptés
       const friendsResponse = await apiHandler.get(
         `/friends?userId=${currentUser._id}`,
       );
@@ -60,15 +59,9 @@ const Friends = () => {
       await apiHandler.patch(`/friends/${friendshipId}/accept`, {
         userId: currentUser._id,
       });
-
-      // Recharger les données
       await loadData();
-
-      // Optionnel : afficher un message de succès
-      alert("✅ Demande d'ami acceptée !");
     } catch (err) {
       console.error("Erreur lors de l'acceptation:", err);
-      alert("❌ Erreur lors de l'acceptation");
     }
   };
 
@@ -77,50 +70,27 @@ const Friends = () => {
       await apiHandler.patch(`/friends/${friendshipId}/reject`, {
         userId: currentUser._id,
       });
-
-      // Recharger les données
       await loadData();
-
-      alert("✅ Demande refusée");
     } catch (err) {
       console.error("Erreur lors du refus:", err);
-      alert("❌ Erreur lors du refus");
     }
   };
 
   const handleCancel = async (friendshipId) => {
-    if (!window.confirm("Voulez-vous vraiment annuler cette demande ?")) {
-      return;
-    }
-
     try {
       await apiHandler.delete(`/friends/${friendshipId}`);
-
-      // Recharger les données
       await loadData();
-
-      alert("✅ Demande annulée");
     } catch (err) {
       console.error("Erreur lors de l'annulation:", err);
-      alert("❌ Erreur lors de l'annulation");
     }
   };
 
   const handleRemoveFriend = async (friendshipId) => {
-    if (!window.confirm("Voulez-vous vraiment retirer cet ami ?")) {
-      return;
-    }
-
     try {
       await apiHandler.delete(`/friends/${friendshipId}`);
-
-      // Recharger les données
       await loadData();
-
-      alert("✅ Ami retiré");
     } catch (err) {
       console.error("Erreur lors de la suppression:", err);
-      alert("❌ Erreur lors de la suppression");
     }
   };
 
@@ -149,7 +119,7 @@ const Friends = () => {
   }
 
   const pendingCount = pendingRequests.length;
-  const sentCount = sentRequests.length;
+  const sentTotal = sentRequests.length + pendingInvitations.length;
   const friendsCount = friends.length;
 
   return (
@@ -161,7 +131,6 @@ const Friends = () => {
         </button>
       </div>
 
-      {/* Onglets de navigation */}
       <div className="friends-tabs">
         <button
           className={`tab ${activeTab === "pending" ? "active" : ""}`}
@@ -174,8 +143,8 @@ const Friends = () => {
           className={`tab ${activeTab === "sent" ? "active" : ""}`}
           onClick={() => setActiveTab("sent")}
         >
-          📤 Demandes envoyées
-          {sentCount > 0 && <span className="badge">{sentCount}</span>}
+          📤 Envoyées
+          {sentTotal > 0 && <span className="badge">{sentTotal}</span>}
         </button>
         <button
           className={`tab ${activeTab === "friends" ? "active" : ""}`}
@@ -185,7 +154,6 @@ const Friends = () => {
         </button>
       </div>
 
-      {/* Contenu des onglets */}
       <div className="friends-content">
         {activeTab === "pending" && (
           <div className="tab-content">
@@ -201,7 +169,11 @@ const Friends = () => {
         {activeTab === "sent" && (
           <div className="tab-content">
             <h2>Demandes envoyées</h2>
-            <SentRequests requests={sentRequests} onCancel={handleCancel} />
+            <SentRequests
+              requests={sentRequests}
+              invitations={pendingInvitations}
+              onCancel={handleCancel}
+            />
           </div>
         )}
 
@@ -216,7 +188,6 @@ const Friends = () => {
             ) : (
               <div className="friends-list">
                 {friends.map((friendship) => {
-                  // Déterminer qui est l'ami (celui qui n'est pas currentUser)
                   const friend =
                     friendship.user._id === currentUser._id
                       ? friendship.friend

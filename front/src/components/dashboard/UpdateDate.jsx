@@ -1,22 +1,19 @@
 import React, { useState, useEffect } from "react";
 import apiHandler from "../../api/apiHandler";
+import "../connect/authpage.css";
 import "./css/updateDate.css";
 
 const UpdateDate = ({ date, onCancel, onMerge }) => {
   const [dateToUpdate, setDateToUpdate] = useState(date);
   const [showConfirm, setShowConfirm] = useState(false);
 
-  const isFriend = !!date.linkedUser; // 👈 AJOUTÉ
+  const isFriend = !!date.linkedUser;
 
   useEffect(() => {
     apiHandler
       .get(`/date/${date._id}`)
-      .then((response) => {
-        setDateToUpdate(response.data);
-      })
-      .catch((error) => {
-        console.error(error);
-      });
+      .then((response) => setDateToUpdate(response.data))
+      .catch((error) => console.error(error));
   }, [date._id]);
 
   const handleInputChange = (e) => {
@@ -46,139 +43,145 @@ const UpdateDate = ({ date, onCancel, onMerge }) => {
     }
   };
 
-  const handleShowConfirm = () => {
-    setShowConfirm(true);
-  };
-
-  const handleCancelDelete = () => {
-    setShowConfirm(false);
-  };
-
   return (
-    <div className="form-connect formUpdate">
-      <form className="form" onSubmit={handleUpdateDate}>
-        <input
-          className="form-input"
-          type="text"
-          name="name"
-          placeholder="Enter a name"
-          value={dateToUpdate.name}
-          onChange={handleInputChange}
-        />
-        <input
-          className="form-input"
-          type="text"
-          name="surname"
-          placeholder="Enter a surname"
-          value={dateToUpdate.surname}
-          onChange={handleInputChange}
-        />
-        <input
-          className="form-input"
-          type="date"
-          name="date"
-          value={dateToUpdate.date.split("T")[0]}
-          onChange={handleInputChange}
-        />
-        {!isFriend && (
-          <div style={{ marginTop: "10px" }}>
-            <label
-              style={{
-                display: "block",
-                marginBottom: "5px",
-                fontSize: "14px",
-              }}
-            >
-              Date de fête (optionnel)
-            </label>
-            <input
-              className="form-input"
-              type="text"
-              name="nameday"
-              placeholder="MM-JJ (ex: 03-13)"
-              value={dateToUpdate.nameday || ""}
-              onChange={handleInputChange}
-              maxLength={5}
-            />
-            <small
-              style={{
-                fontSize: "12px",
-                opacity: 0.7,
-                display: "block",
-                marginTop: "5px",
-              }}
-            >
-              Format: MM-JJ (exemple: 03-13 pour le 13 mars)
-            </small>
+    <div className="auth-page">
+      <div className="auth-shell auth-shell-update">
+        <div className="auth-panel">
+          <div className="auth-panel-header">
+            <h2 className="auth-title">Modifier la date</h2>
+            <p className="auth-sub">
+              {dateToUpdate.name} {dateToUpdate.surname}
+            </p>
           </div>
-        )}
-        <label className="updateLbel">
-          Family
-          <input
-            className="form-input"
-            type="checkbox"
-            name="family"
-            checked={dateToUpdate.family}
-            onChange={handleInputChange}
-          />
-          <span>?</span>
-        </label>
 
-        <div className="btn-updateContainer">
-          <button className="btn-update btn-updateGreen" type="submit">
-            Update
-          </button>
-          <button
-            className="btn-update btn-updateGrey"
-            type="button"
-            onClick={onCancel}
-          >
-            Annuler
-          </button>
-          {/* 👇 AJOUTÉ : Bouton Fusionner pour les cartes manuelles */}
-          {!isFriend && (
-            <button
-              className="btn-update btn-updateOrange"
-              type="button"
-              onClick={() => onMerge(date)}
-              title="Fusionner avec une carte ami"
-            >
-              🔄 Fusionner avec un ami
-            </button>
-          )}
+          <form onSubmit={handleUpdateDate} className="auth-form">
+            <div className="auth-row">
+              <div className="auth-field">
+                <label className="auth-label">Prénom</label>
+                <input
+                  type="text"
+                  className="auth-input"
+                  name="name"
+                  placeholder="Prénom"
+                  value={dateToUpdate.name}
+                  onChange={handleInputChange}
+                />
+              </div>
+              <div className="auth-field">
+                <label className="auth-label">Nom</label>
+                <input
+                  type="text"
+                  className="auth-input"
+                  name="surname"
+                  placeholder="Nom"
+                  value={dateToUpdate.surname}
+                  onChange={handleInputChange}
+                />
+              </div>
+            </div>
+
+            <div className="auth-field">
+              <label className="auth-label">Date d'anniversaire</label>
+              <input
+                type="date"
+                className="auth-input auth-input--date"
+                name="date"
+                value={dateToUpdate.date.split("T")[0]}
+                onChange={handleInputChange}
+              />
+            </div>
+
+            {!isFriend && (
+              <div className="auth-field">
+                <label className="auth-label">Date de fête (optionnel)</label>
+                <input
+                  type="text"
+                  className="auth-input"
+                  name="nameday"
+                  placeholder="MM-JJ (ex: 03-13)"
+                  value={dateToUpdate.nameday || ""}
+                  onChange={handleInputChange}
+                  maxLength={5}
+                />
+                <span className="auth-input-hint">
+                  Format MM-JJ — exemple : 03-13 pour le 13 mars
+                </span>
+              </div>
+            )}
+
+            <div className="auth-field auth-checkbox-field">
+              <label className="auth-checkbox-label">
+                <input
+                  type="checkbox"
+                  name="family"
+                  checked={dateToUpdate.family}
+                  onChange={handleInputChange}
+                  className="auth-checkbox"
+                />
+                <span className="auth-checkbox-text">Famille</span>
+              </label>
+            </div>
+
+            {/* ── ACTIONS PRINCIPALES ── */}
+            <div className="update-actions">
+              <button type="submit" className="auth-btn-primary">
+                Enregistrer
+              </button>
+              <button
+                type="button"
+                className="update-btn-secondary"
+                onClick={onCancel}
+              >
+                Annuler
+              </button>
+              {!isFriend && (
+                <button
+                  type="button"
+                  className="update-btn-merge"
+                  onClick={() => onMerge(date)}
+                >
+                  Fusionner avec un ami
+                </button>
+              )}
+            </div>
+
+            {/* ── SUPPRESSION ── */}
+            <div className="update-delete-zone">
+              {!showConfirm ? (
+                <button
+                  type="button"
+                  className="update-btn-delete-trigger"
+                  onClick={() => setShowConfirm(true)}
+                >
+                  Supprimer cette date
+                </button>
+              ) : (
+                <div className="update-confirm-delete">
+                  <p className="update-confirm-text">
+                    Cette action est irréversible. Confirmer la suppression ?
+                  </p>
+                  <div className="update-confirm-actions">
+                    <button
+                      type="button"
+                      className="update-btn-danger"
+                      onClick={handleDeleteDate}
+                    >
+                      Supprimer
+                    </button>
+                    <button
+                      type="button"
+                      className="update-btn-secondary"
+                      onClick={() => setShowConfirm(false)}
+                    >
+                      Annuler
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </form>
         </div>
-
-        {showConfirm ? (
-          <div className="btn-updateContainer">
-            <p>Êtes-vous sûr de vouloir supprimer cette date ?</p>
-            <button
-              className="btn-update btn-updateRed"
-              type="button"
-              onClick={handleDeleteDate}
-            >
-              Confirm
-            </button>
-            <button
-              className="btn-update btn-updateGrey"
-              type="button"
-              onClick={handleCancelDelete}
-            >
-              Cancel
-            </button>
-          </div>
-        ) : (
-          <div className="btn-updateContainer">
-            <span>Voulez supprimer cette date ?</span>
-            <button
-              className="btn-update btn-updateRed"
-              type="button"
-              onClick={handleShowConfirm}
-            >
-              Delete
-            </button>
-          </div>
-        )}
-      </form>
+      </div>
     </div>
   );
 };

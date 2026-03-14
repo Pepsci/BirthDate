@@ -35,9 +35,9 @@ router.get("/", isAuthenticated, async (req, res) => {
 });
 
 // ========================================
-// GET - Demandes d'amitié en attente reçues
+// GET - Demandes d'amitié envoyées + invitations externes
 // ========================================
-router.get("/requests", isAuthenticated, async (req, res) => {
+router.get("/sent", isAuthenticated, async (req, res) => {
   try {
     const userId = req.payload._id;
 
@@ -45,10 +45,26 @@ router.get("/requests", isAuthenticated, async (req, res) => {
       return res.status(400).json({ message: "User ID invalide" });
     }
 
-    const requests = await Friend.getPendingRequests(userId);
-    res.status(200).json(requests);
+    // Demandes classiques vers utilisateurs inscrits
+    const sentRequests = await Friend.find({
+      user: userId,
+      status: "pending",
+    })
+      .populate("friend", "name email avatar birthDate")
+      .populate("requestedBy", "name email avatar");
+
+    // Invitations vers emails non inscrits
+    const sentInvitations = await Invitation.find({
+      invitedBy: userId,
+      status: "pending",
+    }).select("email createdAt token");
+
+    res.status(200).json({
+      requests: sentRequests,
+      invitations: sentInvitations,
+    });
   } catch (error) {
-    console.error("Erreur lors de la récupération des demandes:", error);
+    console.error("Erreur:", error);
     res.status(500).json({ message: "Erreur serveur", error: error.message });
   }
 });
