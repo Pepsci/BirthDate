@@ -1,0 +1,400 @@
+import React, { useState, useContext, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import apiHandler from "../../api/apiHandler";
+import { AuthContext } from "../../context/auth.context";
+import PasswordInput from "./PasswordInput";
+import "./authPage.css";
+
+const AuthPage = () => {
+  const [panel, setPanel] = useState("login"); // "login" | "signup" | "forgot"
+
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { storeToken, authenticateUser, isLoggedIn } = useContext(AuthContext);
+
+  const from = location.state?.from?.pathname || "/home";
+  const isFromFriends = location.state?.from?.search?.includes("tab=friends");
+
+  useEffect(() => {
+    const path = location.pathname;
+    if (path === "/signup") setPanel("signup");
+    else if (path === "/forgot-password") setPanel("forgot");
+    else setPanel("login");
+  }, [location.pathname]);
+
+  useEffect(() => {
+    authenticateUser();
+    if (isLoggedIn) navigate(from);
+  }, [isLoggedIn]);
+
+  // ─── LOGIN ───────────────────────────────────────────
+  const [loginData, setLoginData] = useState({ email: "", password: "" });
+  const [loginError, setLoginError] = useState("");
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setLoginError("");
+    try {
+      const response = await apiHandler.signin(loginData);
+      if (response?.authToken) {
+        storeToken(response.authToken);
+        authenticateUser();
+        navigate(from);
+      } else {
+        setLoginError("Réponse inattendue du serveur.");
+      }
+    } catch (err) {
+      setLoginError(
+        err.message === "Network Error"
+          ? "Email ou mot de passe incorrect."
+          : err.message || "Une erreur s'est produite.",
+      );
+    }
+  };
+
+  // ─── SIGNUP ──────────────────────────────────────────
+  const [signupData, setSignupData] = useState({
+    name: "",
+    surname: "",
+    email: "",
+    password: "",
+    birthDate: "",
+  });
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [signupError, setSignupError] = useState("");
+  const [signupSuccess, setSignupSuccess] = useState("");
+
+  const handleSignup = async (e) => {
+    e.preventDefault();
+    setSignupError("");
+    setSignupSuccess("");
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(signupData.email)) {
+      setSignupError("Veuillez fournir une adresse e-mail valide.");
+      return;
+    }
+    if (signupData.password !== confirmPassword) {
+      setSignupError("Les mots de passe ne correspondent pas.");
+      return;
+    }
+    if (!signupData.birthDate) {
+      setSignupError("Veuillez renseigner votre date de naissance.");
+      return;
+    }
+    try {
+      await apiHandler.signup(signupData);
+      setSignupSuccess(
+        "Compte créé ! Vérifiez votre boîte mail avant de vous connecter. 📧",
+      );
+      setTimeout(() => navigate("/auth"), 4000);
+    } catch (err) {
+      setSignupError(err.message || "Une erreur s'est produite.");
+    }
+  };
+
+  // ─── FORGOT PASSWORD ─────────────────────────────────
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotMsg, setForgotMsg] = useState("");
+  const [forgotError, setForgotError] = useState("");
+
+  const handleForgot = async (e) => {
+    e.preventDefault();
+    setForgotMsg("");
+    setForgotError("");
+    try {
+      await apiHandler.requestPasswordReset(forgotEmail);
+      setForgotMsg(
+        "Email de réinitialisation envoyé ! Vérifiez votre boîte mail.",
+      );
+    } catch (err) {
+      setForgotError("Une erreur s'est produite. Vérifiez l'adresse email.");
+    }
+  };
+
+  // ─── HELPERS ─────────────────────────────────────────
+  const inkPos =
+    panel === "signup" ? "33.33%" : panel === "forgot" ? "66.66%" : "0%";
+
+  return (
+    <div className="auth-page">
+      <div className="auth-shell">
+        {/* ── TABS ── */}
+        <div className="auth-tabs">
+          <button
+            className={`auth-tab ${panel === "login" ? "active" : ""}`}
+            onClick={() => setPanel("login")}
+          >
+            Connexion
+          </button>
+          <button
+            className={`auth-tab ${panel === "signup" ? "active" : ""}`}
+            onClick={() => setPanel("signup")}
+          >
+            Inscription
+          </button>
+          <button
+            className={`auth-tab ${panel === "forgot" ? "active" : ""}`}
+            onClick={() => setPanel("forgot")}
+          >
+            Mot de passe
+          </button>
+          <div
+            className="auth-ink"
+            style={{
+              transform: `translateX(${panel === "login" ? "0%" : panel === "signup" ? "100%" : "200%"})`,
+            }}
+          />
+        </div>
+
+        {/* ── PANELS TRACK ── */}
+        <div
+          className="auth-track"
+          style={{
+            transform: `translateX(${panel === "login" ? "0%" : panel === "signup" ? "-33.333%" : "-66.666%"})`,
+          }}
+        >
+          {/* ── LOGIN PANEL ── */}
+          <div className="auth-panel">
+            <div className="auth-panel-header">
+              <h2 className="auth-title">Bon retour 👋</h2>
+              <p className="auth-sub">Connectez-vous à votre compte</p>
+            </div>
+
+            {isFromFriends && (
+              <div className="auth-info-banner">
+                Connectez-vous pour voir votre demande d'ami
+              </div>
+            )}
+
+            <form onSubmit={handleLogin} className="auth-form">
+              <div className="auth-field">
+                <label className="auth-label">Email</label>
+                <input
+                  type="text"
+                  className="auth-input"
+                  placeholder="vous@exemple.com"
+                  value={loginData.email}
+                  onChange={(e) =>
+                    setLoginData({
+                      ...loginData,
+                      email: e.target.value.toLowerCase(),
+                    })
+                  }
+                />
+              </div>
+
+              <div className="auth-field">
+                <label className="auth-label">Mot de passe</label>
+                <PasswordInput
+                  className="auth-input"
+                  placeholder="••••••••"
+                  value={loginData.password}
+                  onChange={(e) =>
+                    setLoginData({ ...loginData, password: e.target.value })
+                  }
+                />
+              </div>
+
+              <button
+                type="button"
+                className="auth-forgot-link"
+                onClick={() => setPanel("forgot")}
+              >
+                Mot de passe oublié ?
+              </button>
+
+              {loginError && (
+                <p className="auth-msg auth-msg--error">{loginError}</p>
+              )}
+
+              <button type="submit" className="auth-btn-primary">
+                Se connecter
+              </button>
+            </form>
+
+            <p className="auth-switch-text">
+              Pas encore de compte ?{" "}
+              <button
+                className="auth-link-btn"
+                onClick={() => setPanel("signup")}
+              >
+                Créer un compte
+              </button>
+            </p>
+          </div>
+
+          {/* ── SIGNUP PANEL ── */}
+          <div className="auth-panel">
+            <div className="auth-panel-header">
+              <h2 className="auth-title">Créer un compte</h2>
+              <p className="auth-sub">Rejoignez BirthReminder gratuitement</p>
+            </div>
+
+            <form onSubmit={handleSignup} className="auth-form">
+              <div className="auth-row">
+                <div className="auth-field">
+                  <label className="auth-label">Prénom</label>
+                  <input
+                    type="text"
+                    className="auth-input"
+                    placeholder="Jean"
+                    value={signupData.name}
+                    onChange={(e) =>
+                      setSignupData({ ...signupData, name: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="auth-field">
+                  <label className="auth-label">Nom</label>
+                  <input
+                    type="text"
+                    className="auth-input"
+                    placeholder="Dupond"
+                    value={signupData.surname}
+                    onChange={(e) =>
+                      setSignupData({ ...signupData, surname: e.target.value })
+                    }
+                  />
+                </div>
+              </div>
+
+              <div className="auth-field">
+                <label className="auth-label">Email</label>
+                <input
+                  type="text"
+                  className="auth-input"
+                  placeholder="vous@exemple.com"
+                  value={signupData.email}
+                  onChange={(e) =>
+                    setSignupData({ ...signupData, email: e.target.value })
+                  }
+                />
+              </div>
+
+              <div className="auth-field">
+                <label className="auth-label">Date de naissance</label>
+                <input
+                  type="date"
+                  className="auth-input auth-input--date"
+                  value={signupData.birthDate}
+                  onChange={(e) =>
+                    setSignupData({ ...signupData, birthDate: e.target.value })
+                  }
+                />
+              </div>
+
+              <div className="auth-field">
+                <label className="auth-label">Mot de passe</label>
+                <PasswordInput
+                  className="auth-input"
+                  placeholder="••••••••"
+                  value={signupData.password}
+                  onChange={(e) =>
+                    setSignupData({ ...signupData, password: e.target.value })
+                  }
+                />
+              </div>
+
+              <div className="auth-field">
+                <label className="auth-label">Confirmer le mot de passe</label>
+                <PasswordInput
+                  className="auth-input"
+                  placeholder="••••••••"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                />
+              </div>
+
+              {/* Avatar chip */}
+              <div className="auth-avatar-chip">
+                <img
+                  src={`https://api.dicebear.com/8.x/bottts/svg?seed=${signupData.name || "BR"}`}
+                  alt="avatar"
+                  className="auth-avatar-img"
+                />
+                <div>
+                  <strong className="auth-avatar-name">
+                    {signupData.name
+                      ? `${signupData.name} (votre avatar)`
+                      : "Votre avatar"}
+                  </strong>
+                  <span className="auth-avatar-sub">
+                    Généré depuis votre prénom
+                  </span>
+                </div>
+              </div>
+
+              {signupError && (
+                <p className="auth-msg auth-msg--error">{signupError}</p>
+              )}
+              {signupSuccess && (
+                <p className="auth-msg auth-msg--success">{signupSuccess}</p>
+              )}
+
+              <button type="submit" className="auth-btn-primary">
+                Créer mon compte
+              </button>
+            </form>
+
+            <p className="auth-switch-text">
+              Déjà un compte ?{" "}
+              <button
+                className="auth-link-btn"
+                onClick={() => setPanel("login")}
+              >
+                Se connecter
+              </button>
+            </p>
+          </div>
+
+          {/* ── FORGOT PASSWORD PANEL ── */}
+          <div className="auth-panel">
+            <div className="auth-panel-header">
+              <h2 className="auth-title">Mot de passe oublié</h2>
+              <p className="auth-sub">
+                Entrez votre email pour recevoir un lien de réinitialisation
+              </p>
+            </div>
+
+            <form onSubmit={handleForgot} className="auth-form">
+              <div className="auth-field">
+                <label className="auth-label">Email</label>
+                <input
+                  type="email"
+                  className="auth-input"
+                  placeholder="vous@exemple.com"
+                  value={forgotEmail}
+                  onChange={(e) => setForgotEmail(e.target.value)}
+                  required
+                />
+              </div>
+
+              {forgotError && (
+                <p className="auth-msg auth-msg--error">{forgotError}</p>
+              )}
+              {forgotMsg && (
+                <p className="auth-msg auth-msg--success">{forgotMsg}</p>
+              )}
+
+              <button type="submit" className="auth-btn-primary">
+                Envoyer le lien
+              </button>
+            </form>
+
+            <p className="auth-switch-text">
+              <button
+                className="auth-link-btn"
+                onClick={() => setPanel("login")}
+              >
+                ← Retour à la connexion
+              </button>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default AuthPage;

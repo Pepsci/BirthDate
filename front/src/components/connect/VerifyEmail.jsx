@@ -23,7 +23,7 @@ function VerifyEmail() {
         await apiHandler.verifyEmail(token);
         setStatus("Adresse email vérifiée avec succès ! 🎉");
         setIsSuccess(true);
-        setTimeout(() => navigate("/login"), 3000);
+        setTimeout(() => navigate("/"), 3000);
       } catch (error) {
         console.error("Erreur lors de la vérification :", error);
         setStatus("Échec de la vérification. Le lien est peut-être expiré.");

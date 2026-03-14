@@ -58,13 +58,13 @@
 .verify-status {
     font-size: 16px;
     line-height: 1.6;
-    color: rgba(255, 255, 255, 0.95);
+    color: rgba(85, 35, 35, 0.95);
     margin: 0;
 }
 
 .verify-redirect {
     font-size: 14px;
-    color: rgba(255, 255, 255, 0.8);
+    color: rgba(107, 44, 44, 0.8);
     margin-top: 12px;
 }
 

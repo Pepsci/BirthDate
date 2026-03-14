@@ -14,7 +14,7 @@ function ResetPassword() {
     e.preventDefault();
     if (password !== confirmPassword) {
       setErrorMessage(
-        "Les mots de passe ne correspondent pas. Veuillez réessayer."
+        "Les mots de passe ne correspondent pas. Veuillez réessayer.",
       );
       return;
     }

@@ -160,7 +160,9 @@ const Signup = () => {
           <p className="error-message fontErrorMessage">{errorMessage}</p>
         )}
         {successMessage && (
-          <p className="success-message fontSuccessMessage">{successMessage}</p>
+          <p className="form-success-text fontSuccessMessage">
+            {successMessage}
+          </p>
         )}
         <Link to={"/login"}>
           <button className="btnAcount font">Déjà un compte ?</button>
