@@ -15,6 +15,8 @@ import "../UI/css/containerInfo.css";
 import "./css/profile.css";
 import "./css/profileDesktop.css";
 import "../friends/css/friend.css";
+import "../connect/authpage.css";
+import "../dashboard/css/updateDate.css";
 
 const ProfilDetails = ({
   initialSection = "personal",
@@ -92,8 +94,6 @@ const ProfilDetails = ({
         .get(`/users/${currentUser._id}`)
         .then((dbResponse) => {
           if (isMounted) {
-            console.log("📊 User data received:", dbResponse.data);
-            console.log("🎉 Nameday:", dbResponse.data.nameday);
             setUserToUpdate(dbResponse.data);
             setReceiveEmails(dbResponse.data.receiveBirthdayEmails);
             setLoadedSections((prev) => ({ ...prev, personal: true }));
@@ -220,7 +220,9 @@ const ProfilDetails = ({
       const dbResponse = await apiHandler.patch(
         `/users/${userToUpdate._id}`,
         fd,
-        { headers: { "content-type": "multipart/form-data" } },
+        {
+          headers: { "content-type": "multipart/form-data" },
+        },
       );
       storeToken(dbResponse.data.authToken);
       authenticateUser();
@@ -267,15 +269,13 @@ const ProfilDetails = ({
             <p className="profile_info_details">
               <b>Fête:</b>{" "}
               {userToUpdate.nameday ? (
-                <>
-                  {new Date(`2000-${userToUpdate.nameday}`).toLocaleDateString(
-                    "fr-FR",
-                    {
-                      day: "numeric",
-                      month: "long",
-                    },
-                  )}
-                </>
+                new Date(`2000-${userToUpdate.nameday}`).toLocaleDateString(
+                  "fr-FR",
+                  {
+                    day: "numeric",
+                    month: "long",
+                  },
+                )
               ) : (
                 <span style={{ fontStyle: "italic", opacity: 0.7 }}>
                   Non définie
@@ -323,7 +323,7 @@ const ProfilDetails = ({
 
   return (
     <div>
-      {/* ── Modals ── */}
+      {/* ── MODAL SUPPRESSION ── */}
       {showDeleteModal && (
         <div className="delete-modal-overlay" onClick={handleCancelDelete}>
           <div className="delete-modal" onClick={(e) => e.stopPropagation()}>
@@ -337,7 +337,7 @@ const ProfilDetails = ({
             </p>
             <input
               type="text"
-              className="form-input"
+              className="auth-input"
               placeholder="Tapez 'supprimer'"
               value={deleteConfirmText}
               onChange={(e) => setDeleteConfirmText(e.target.value)}
@@ -346,14 +346,14 @@ const ProfilDetails = ({
             />
             <div className="delete-modal-buttons">
               <button
-                className="btn-profil btn-profilGrey"
+                className="update-btn-secondary"
                 onClick={handleCancelDelete}
                 disabled={isDeleting}
               >
                 Annuler
               </button>
               <button
-                className="btn-profil btn-delete"
+                className="update-btn-danger"
                 onClick={handleConfirmDelete}
                 disabled={
                   deleteConfirmText.toLowerCase() !== "supprimer" || isDeleting
@@ -366,6 +366,7 @@ const ProfilDetails = ({
         </div>
       )}
 
+      {/* ── MODAL SUCCÈS SUPPRESSION ── */}
       {showSuccessMessage && (
         <div className="success-message-overlay">
           <div className="success-message">
@@ -376,6 +377,7 @@ const ProfilDetails = ({
         </div>
       )}
 
+      {/* ── MODAL ERREUR ── */}
       {showErrorMessage && (
         <div
           className="error-message-overlay"
@@ -395,161 +397,178 @@ const ProfilDetails = ({
         </div>
       )}
 
-      {/* ── Mode édition ── */}
+      {/* ── MODE ÉDITION ── */}
       {isEditing ? (
-        <div className="formEdit form-connect">
-          <div className="peel">
-            <form className="formEditProfile form" onSubmit={sendForm}>
-              <h1 className="form-title-font">Modifiez votre profil</h1>
-              <input
-                type="text"
-                className="form-input"
-                placeholder="Prénom"
-                value={userToUpdate.surname || ""}
-                onChange={(e) =>
-                  setUserToUpdate({ ...userToUpdate, surname: e.target.value })
-                }
-              />
-              <input
-                type="text"
-                className="form-input"
-                placeholder="Nom"
-                value={userToUpdate.name || ""}
-                onChange={(e) =>
-                  setUserToUpdate({ ...userToUpdate, name: e.target.value })
-                }
-              />
-              <input
-                type="date"
-                className="form-input"
-                value={
-                  userToUpdate.birthDate
-                    ? userToUpdate.birthDate.split("T")[0]
-                    : ""
-                }
-                onChange={(e) =>
-                  setUserToUpdate({
-                    ...userToUpdate,
-                    birthDate: e.target.value,
-                  })
-                }
-              />
-
-              <div style={{ marginTop: "10px" }}>
-                <label
-                  style={{
-                    display: "block",
-                    marginBottom: "5px",
-                    fontSize: "14px",
-                  }}
-                >
-                  Date de votre fête (optionnel)
-                </label>
-                <input
-                  type="text"
-                  className="form-input"
-                  placeholder="MM-JJ (ex: 03-13)"
-                  value={userToUpdate.nameday || ""}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    // Validation basique du format MM-DD
-                    if (value === "" || /^\d{0,2}-?\d{0,2}$/.test(value)) {
-                      setUserToUpdate({
-                        ...userToUpdate,
-                        nameday: value,
-                      });
-                    }
-                  }}
-                  maxLength={5}
-                />
-                <small
-                  style={{
-                    fontSize: "12px",
-                    opacity: 0.7,
-                    display: "block",
-                    marginTop: "5px",
-                  }}
-                >
-                  Format: MM-JJ (exemple: 03-13 pour le 13 mars)
-                </small>
+        <div className="auth-page">
+          <div className="auth-shell profile-edit-shell">
+            <div className="auth-panel">
+              <div className="auth-panel-header">
+                <h2 className="auth-title">Modifier votre profil</h2>
+                <p className="auth-sub">
+                  Mettez à jour vos informations personnelles
+                </p>
               </div>
 
-              <div className="profile-togglePasswordContainer">
+              <form onSubmit={sendForm} className="auth-form">
+                <div className="auth-row">
+                  <div className="auth-field">
+                    <label className="auth-label">Prénom</label>
+                    <input
+                      type="text"
+                      className="auth-input"
+                      placeholder="Prénom"
+                      value={userToUpdate.surname || ""}
+                      onChange={(e) =>
+                        setUserToUpdate({
+                          ...userToUpdate,
+                          surname: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                  <div className="auth-field">
+                    <label className="auth-label">Nom</label>
+                    <input
+                      type="text"
+                      className="auth-input"
+                      placeholder="Nom"
+                      value={userToUpdate.name || ""}
+                      onChange={(e) =>
+                        setUserToUpdate({
+                          ...userToUpdate,
+                          name: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                </div>
+
+                <div className="auth-field">
+                  <label className="auth-label">Date de naissance</label>
+                  <input
+                    type="date"
+                    className="auth-input auth-input--date"
+                    value={
+                      userToUpdate.birthDate
+                        ? userToUpdate.birthDate.split("T")[0]
+                        : ""
+                    }
+                    onChange={(e) =>
+                      setUserToUpdate({
+                        ...userToUpdate,
+                        birthDate: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+
+                <div className="auth-field">
+                  <label className="auth-label">Date de fête (optionnel)</label>
+                  <input
+                    type="text"
+                    className="auth-input"
+                    placeholder="MM-JJ (ex: 03-13)"
+                    value={userToUpdate.nameday || ""}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value === "" || /^\d{0,2}-?\d{0,2}$/.test(value)) {
+                        setUserToUpdate({ ...userToUpdate, nameday: value });
+                      }
+                    }}
+                    maxLength={5}
+                  />
+                  <span className="auth-input-hint">
+                    Format MM-JJ — exemple : 03-13 pour le 13 mars
+                  </span>
+                </div>
+
                 <button
                   type="button"
+                  className="profile-toggle-password"
                   onClick={() => setShowPasswordFields(!showPasswordFields)}
-                  className="profile-togglePassword btn-profil"
                 >
                   {showPasswordFields
                     ? "Annuler le changement de mot de passe"
                     : "Changer le mot de passe"}
                 </button>
-              </div>
-              {showPasswordFields && (
-                <>
-                  <PasswordInput
-                    type="password"
-                    placeholder="Mot de passe actuel"
-                    className="form-input"
-                    value={passwords.currentPassword}
-                    onChange={(e) =>
-                      setPasswords({
-                        ...passwords,
-                        currentPassword: e.target.value,
-                      })
-                    }
-                  />
-                  <PasswordInput
-                    type="password"
-                    placeholder="Nouveau mot de passe"
-                    className="form-input"
-                    value={passwords.newPassword}
-                    onChange={(e) =>
-                      setPasswords({
-                        ...passwords,
-                        newPassword: e.target.value,
-                      })
-                    }
-                  />
-                  <PasswordInput
-                    type="password"
-                    placeholder="Confirmez le nouveau mot de passe"
-                    className="form-input"
-                    value={passwords.confirmPassword}
-                    onChange={(e) =>
-                      setPasswords({
-                        ...passwords,
-                        confirmPassword: e.target.value,
-                      })
-                    }
-                  />
-                </>
-              )}
-              <div className="btn-profilEditContainer">
-                <button className="btn-profil btn-profilGreen" type="submit">
-                  Enregistrer
-                </button>
-                <button
-                  className="btn-profil btn-profilGrey"
-                  type="button"
-                  onClick={handleCancelEdit}
-                >
-                  Annuler
-                </button>
-                <button
-                  className="btn-profil btn-delete"
-                  type="button"
-                  onClick={handleDeleteAccount}
-                >
-                  Supprimer mon compte
-                </button>
-              </div>
-            </form>
+
+                {showPasswordFields && (
+                  <>
+                    <div className="auth-field">
+                      <label className="auth-label">Mot de passe actuel</label>
+                      <PasswordInput
+                        className="auth-input"
+                        placeholder="••••••••"
+                        value={passwords.currentPassword}
+                        onChange={(e) =>
+                          setPasswords({
+                            ...passwords,
+                            currentPassword: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="auth-field">
+                      <label className="auth-label">Nouveau mot de passe</label>
+                      <PasswordInput
+                        className="auth-input"
+                        placeholder="••••••••"
+                        value={passwords.newPassword}
+                        onChange={(e) =>
+                          setPasswords({
+                            ...passwords,
+                            newPassword: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="auth-field">
+                      <label className="auth-label">
+                        Confirmer le nouveau mot de passe
+                      </label>
+                      <PasswordInput
+                        className="auth-input"
+                        placeholder="••••••••"
+                        value={passwords.confirmPassword}
+                        onChange={(e) =>
+                          setPasswords({
+                            ...passwords,
+                            confirmPassword: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                  </>
+                )}
+
+                <div className="update-actions">
+                  <button type="submit" className="auth-btn-primary">
+                    Enregistrer
+                  </button>
+                  <button
+                    type="button"
+                    className="update-btn-secondary"
+                    onClick={handleCancelEdit}
+                  >
+                    Annuler
+                  </button>
+                </div>
+
+                <div className="update-delete-zone">
+                  <button
+                    type="button"
+                    className="update-btn-delete-trigger"
+                    onClick={handleDeleteAccount}
+                  >
+                    Supprimer mon compte
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       ) : (
         <div className="profile-wrapper">
-          {/* ── 💻 DESKTOP : bouton au-dessus du profil, hors container ── */}
           {onBack && (
             <button
               onClick={onBack}
@@ -565,7 +584,6 @@ const ProfilDetails = ({
               <div className="mobile-carousel">
                 <div className="mobile-carousel__content">
                   <div className="mobile-section">
-                    {/* Bouton retour à l'intérieur du contenu, comme profil ami */}
                     {onBack && (
                       <div className="mobile-back-btn">
                         <button onClick={onBack} className="btnBackToDateList">
@@ -573,7 +591,6 @@ const ProfilDetails = ({
                         </button>
                       </div>
                     )}
-
                     {renderSectionContent(
                       sections[currentCarouselIndex].id,
                       loadedSections[sections[currentCarouselIndex].id],
@@ -608,8 +625,6 @@ const ProfilDetails = ({
                         aria-label={section.title}
                       >
                         {section.icon}
-
-                        {/* 🔔 Badge mobile */}
                         {section.id === "friends" && friendRequestCount > 0 && (
                           <span className="notification-badge-quick">
                             {friendRequestCount}
@@ -635,8 +650,6 @@ const ProfilDetails = ({
                   >
                     <span className="sidebar-icon">{section.icon}</span>
                     <span className="sidebar-text">{section.title}</span>
-
-                    {/* 🔔 Badge notifications amis */}
                     {section.id === "friends" && friendRequestCount > 0 && (
                       <span className="sidebar-notification-badge notification-badge-profile">
                         {friendRequestCount}

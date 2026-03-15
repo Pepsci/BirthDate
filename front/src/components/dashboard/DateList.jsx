@@ -172,7 +172,9 @@ const DateList = ({
       .get("/friends")
       .then((res) => {
         console.log("=== AMIS REÇUS ===", res.data);
-        const ids = res.data.map((f) => f.friendUser._id.toString());
+        const ids = res.data
+          .filter((f) => f.friendUser && f.friendUser._id)
+          .map((f) => f.friendUser._id.toString());
         console.log("=== FRIEND IDS ===", ids);
         setFriendIds(ids);
       })

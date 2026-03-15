@@ -13,7 +13,7 @@ const {
   sendInvitationEmail,
 } = require("../services/emailTemplates/invitationEmail");
 const { generateVerificationToken } = require("../services/verififcation");
-const { createFriendDates } = require("../utils/friendDates"); // ✅ import utilitaire
+const { createFriendDates } = require("../utils/friendDates");
 
 // ========================================
 // GET - Obtenir tous les amis
@@ -35,6 +35,25 @@ router.get("/", isAuthenticated, async (req, res) => {
 });
 
 // ========================================
+// GET - Demandes d'amitié en attente reçues
+// ========================================
+router.get("/requests", isAuthenticated, async (req, res) => {
+  try {
+    const userId = req.payload._id;
+
+    if (!userId || !mongoose.isValidObjectId(userId)) {
+      return res.status(400).json({ message: "User ID invalide" });
+    }
+
+    const requests = await Friend.getPendingRequests(userId);
+    res.status(200).json(requests);
+  } catch (error) {
+    console.error("Erreur lors de la récupération des demandes:", error);
+    res.status(500).json({ message: "Erreur serveur", error: error.message });
+  }
+});
+
+// ========================================
 // GET - Demandes d'amitié envoyées + invitations externes
 // ========================================
 router.get("/sent", isAuthenticated, async (req, res) => {
@@ -45,7 +64,6 @@ router.get("/sent", isAuthenticated, async (req, res) => {
       return res.status(400).json({ message: "User ID invalide" });
     }
 
-    // Demandes classiques vers utilisateurs inscrits
     const sentRequests = await Friend.find({
       user: userId,
       status: "pending",
@@ -53,7 +71,6 @@ router.get("/sent", isAuthenticated, async (req, res) => {
       .populate("friend", "name email avatar birthDate")
       .populate("requestedBy", "name email avatar");
 
-    // Invitations vers emails non inscrits
     const sentInvitations = await Invitation.find({
       invitedBy: userId,
       status: "pending",
@@ -63,31 +80,6 @@ router.get("/sent", isAuthenticated, async (req, res) => {
       requests: sentRequests,
       invitations: sentInvitations,
     });
-  } catch (error) {
-    console.error("Erreur:", error);
-    res.status(500).json({ message: "Erreur serveur", error: error.message });
-  }
-});
-
-// ========================================
-// GET - Demandes d'amitié envoyées
-// ========================================
-router.get("/sent", isAuthenticated, async (req, res) => {
-  try {
-    const userId = req.payload._id;
-
-    if (!userId || !mongoose.isValidObjectId(userId)) {
-      return res.status(400).json({ message: "User ID invalide" });
-    }
-
-    const sentRequests = await Friend.find({
-      user: userId,
-      status: "pending",
-    })
-      .populate("friend", "name email avatar birthDate")
-      .populate("requestedBy", "name email avatar");
-
-    res.status(200).json(sentRequests);
   } catch (error) {
     console.error("Erreur:", error);
     res.status(500).json({ message: "Erreur serveur", error: error.message });
@@ -105,7 +97,6 @@ router.post("/", isAuthenticated, async (req, res, next) => {
     const targetUser = await User.findOne({ email });
 
     if (targetUser) {
-      // ✅ CAS 1 : utilisateur existant → demande d'amitié classique
       if (targetUser._id.toString() === currentUserId) {
         return res
           .status(400)
@@ -140,7 +131,6 @@ router.post("/", isAuthenticated, async (req, res, next) => {
 
       return res.status(201).json({ friendship, type: "request_sent" });
     } else {
-      // ✅ CAS 2 : email non inscrit → invitation
       const existingInvitation = await Invitation.findOne({
         email,
         invitedBy: currentUserId,
@@ -148,7 +138,6 @@ router.post("/", isAuthenticated, async (req, res, next) => {
       });
 
       if (existingInvitation) {
-        // Si le compte invité a été supprimé entre temps, on recrée
         const invitedUserExists = await User.findOne({ email });
         if (!invitedUserExists) {
           await Invitation.deleteOne({ _id: existingInvitation._id });
@@ -212,7 +201,6 @@ router.patch("/:friendshipId/accept", isAuthenticated, async (req, res) => {
     friendship.acceptedAt = Date.now();
     await friendship.save();
 
-    // ✅ Utilisation de l'utilitaire partagé
     try {
       const user1 = await User.findById(friendship.user);
       const user2 = await User.findById(friendship.friend);

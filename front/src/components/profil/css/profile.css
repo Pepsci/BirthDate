@@ -136,6 +136,50 @@
     opacity: 0.6;
 }
 
+/* ================================================
+   PROFILE EDIT — ajouts dans profile.css
+   Les styles de base viennent de auth.css et updateDate.css
+   ================================================ */
+
+/* Carte légèrement plus large que auth pour le profil */
+.profile-edit-shell {
+    max-width: 480px;
+    width: 100%;
+    margin: 0 auto;
+}
+
+/* Override panel width pour le mode single-panel */
+.profile-edit-shell .auth-panel {
+    width: 100%;
+}
+
+/* Bouton toggle mot de passe — style lien discret */
+.profile-toggle-password {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--primary);
+    padding: 0;
+    margin: 4px 0 12px;
+    font-family: 'Roboto', sans-serif;
+    transition: opacity 0.2s;
+    text-align: left;
+}
+
+.profile-toggle-password:hover {
+    opacity: 0.75;
+}
+
+/* Sur mobile, la carte prend toute la largeur */
+@media (max-width: 480px) {
+    .profile-edit-shell {
+        border-radius: 0;
+        border-left: none;
+        border-right: none;
+    }
+}
+
 
 /* ========================================
    BOUTON RETOUR — VISIBILITÉ PAR BREAKPOINT
