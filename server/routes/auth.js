@@ -3,8 +3,6 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
-const nodemailer = require("nodemailer");
-const { SESClient, SendRawEmailCommand } = require("@aws-sdk/client-ses");
 
 const userModel = require("./../models/user.model");
 const Log = require("../models/log.model");
@@ -17,36 +15,12 @@ const {
 } = require("../services/verififcation");
 const { createFriendDates } = require("../utils/friendDates");
 const { findNameDay } = require("../utils/namedayHelper");
+const {
+  sendPasswordResetEmail,
+} = require("../services/emailTemplates/passwordResetEmail");
 
 const router = express.Router();
 const saltRounds = 10;
-
-const ses = new SESClient({
-  region: process.env.AWS_REGION,
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  },
-});
-
-const transporter = nodemailer.createTransport({
-  SES: { ses, aws: { SendRawEmailCommand } },
-});
-
-async function sendEmail(email, token) {
-  try {
-    await transporter.sendMail({
-      from: "reset_password@birthreminder.com",
-      to: email,
-      subject: "Password Reset",
-      text: `Cliquez ici : ${process.env.FRONTEND_URL}/auth/reset/${token}`,
-    });
-    console.log("Email envoyé avec succès !");
-  } catch (error) {
-    console.error("Erreur lors de l'envoi de l'email :", error);
-    throw new Error("Échec de l'envoi de l'email");
-  }
-}
 
 const validatePassword = (password) => {
   return /(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,}/.test(password);
@@ -89,7 +63,6 @@ router.post("/signup", async (req, res) => {
     );
     const verificationToken = generateVerificationToken();
 
-    // 🎉 AUTO-DÉTECTION de la fête du prénom
     const nameday = findNameDay(name);
 
     const newUser = await userModel.create({
@@ -98,20 +71,18 @@ router.post("/signup", async (req, res) => {
       name,
       surname,
       birthDate: req.body.birthDate || null,
-      nameday, // 🎉 Auto-détecté (ou null si pas trouvé)
+      nameday,
       avatar: `https://api.dicebear.com/8.x/bottts/svg?seed=${surname}`,
       verificationToken,
       isVerified: false,
     });
 
-    // 📝 Log optionnel de la détection
     if (nameday) {
       console.log(`✅ Fête détectée pour ${name}: ${nameday}`);
     } else {
       console.log(`ℹ️ Aucune fête trouvée pour ${name}`);
     }
 
-    // 📊 LOG
     try {
       const ipAddress =
         req.headers["x-forwarded-for"]?.split(",")[0].trim() ||
@@ -126,7 +97,6 @@ router.post("/signup", async (req, res) => {
       console.error("❌ Erreur logging:", logError);
     }
 
-    // ✅ Traitement des invitations en attente
     try {
       const pendingInvitations = await Invitation.find({
         email: newUser.email,
@@ -144,7 +114,6 @@ router.post("/signup", async (req, res) => {
         invitation.status = "accepted";
         await invitation.save();
 
-        // ✅ Création des dates des deux côtés via l'utilitaire
         const inviter = await userModel.findById(invitation.invitedBy);
         if (inviter) {
           await createFriendDates(inviter, newUser);
@@ -222,7 +191,6 @@ router.post("/login", async (req, res) => {
         .json({ message: "Unable to authenticate the user" });
     }
 
-    // 📊 LOG
     try {
       const ipAddress =
         req.headers["x-forwarded-for"]?.split(",")[0].trim() ||
@@ -275,7 +243,7 @@ router.post("/forgot-password", async (req, res) => {
     user.resetTokenExpires = Date.now() + 3600000;
     await user.save();
 
-    await sendEmail(email, resetToken);
+    await sendPasswordResetEmail(email, resetToken);
     return res.status(200).json({ message: "Recovery email sent" });
   } catch (e) {
     console.error(e);
@@ -312,7 +280,6 @@ router.post("/reset/:token", async (req, res) => {
     user.resetTokenExpires = null;
     await user.save();
 
-    // 📊 LOG
     try {
       const ipAddress =
         req.headers["x-forwarded-for"]?.split(",")[0].trim() ||
