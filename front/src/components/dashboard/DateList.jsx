@@ -7,8 +7,8 @@ import DateFilter from "./DateFilter";
 import BirthdayCard from "./BirthdayCard";
 import ManualMergeModal from "./ManuelMergeModal";
 import Chat from "../chat/Chat";
-import ChatModal from "../chat/ChatModal"; // 👈 NOUVEAU
-import DirectChat from "../chat/DirectChat"; // 👈 NOUVEAU
+import ChatModal from "../chat/ChatModal";
+import DirectChat from "../chat/DirectChat";
 import useNotifications from "../../context/useNotifications";
 import "./css/dateList.css";
 import "./css/birthcard.css";
@@ -22,12 +22,13 @@ const DateList = ({
   onViewFriendProfile,
   onMerge,
   onResetChat,
+  initialPage = 1, // 👈 NOUVEAU
 }) => {
   const { currentUser } = useAuth();
   const [dates, setDates] = useState([]);
   const [allDates, setAllDates] = useState([]);
   const [friendIds, setFriendIds] = useState([]);
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState(initialPage); // 👈 initialisé avec initialPage
   const [isFormVisible, setIsFormVisible] = useState(false);
   const [isFilterVisible, setIsFilterVisible] = useState(false);
   const [isChatVisible, setIsChatVisible] = useState(false);
@@ -40,7 +41,6 @@ const DateList = ({
   const [showMergeModal, setShowMergeModal] = useState(false);
   const [cardToMerge, setCardToMerge] = useState(null);
 
-  // 👇 NOUVEAUX ÉTATS pour la modal chat
   const [isChatModalOpen, setIsChatModalOpen] = useState(false);
   const [selectedFriendId, setSelectedFriendId] = useState(null);
   const [selectedFriendName, setSelectedFriendName] = useState("");
@@ -113,7 +113,6 @@ const DateList = ({
     return () => window.removeEventListener("resize", handleResize);
   }, [itemsPerPage]);
 
-  // Charger le nombre de messages non lus au montage
   useEffect(() => {
     loadUnreadCount();
   }, []);
@@ -149,7 +148,6 @@ const DateList = ({
     if (newVisibility) {
       setIsFormVisible(false);
       setIsChatVisible(false);
-      // Focus sur l'input après un court délai pour que le DOM soit rendu
       setTimeout(() => {
         filterInputRef.current?.focus();
       }, 100);
@@ -171,11 +169,9 @@ const DateList = ({
     apiHandler
       .get("/friends")
       .then((res) => {
-        console.log("=== AMIS REÇUS ===", res.data);
         const ids = res.data
           .filter((f) => f.friendUser && f.friendUser._id)
           .map((f) => f.friendUser._id.toString());
-        console.log("=== FRIEND IDS ===", ids);
         setFriendIds(ids);
       })
       .catch((e) => console.error(e));
@@ -223,14 +219,17 @@ const DateList = ({
     setShowMergeModal(true);
   };
 
-  // 👇 NOUVELLE FONCTION pour ouvrir la modal chat
   const handleOpenChatModal = (friendId, friendName) => {
     setSelectedFriendId(friendId);
     setSelectedFriendName(friendName);
     setIsChatModalOpen(true);
   };
 
-  const paginate = (pageNumber) => setCurrentPage(pageNumber);
+  const paginate = (pageNumber) => {
+    setCurrentPage(pageNumber);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = dates.slice(indexOfFirstItem, indexOfLastItem);
@@ -238,7 +237,7 @@ const DateList = ({
   const [viewMode, setViewMode] = useState("card");
   const toggleViewMode = () => {
     setViewMode(viewMode === "card" ? "agenda" : "card");
-    setIsChatVisible(false); // Ferme le chat quand on change de vue
+    setIsChatVisible(false);
   };
 
   return (
@@ -296,7 +295,6 @@ const DateList = ({
         </div>
       </div>
 
-      {/* Afficher le chat si actif */}
       {isChatVisible ? (
         <div className="chat-in-datelist">
           <Chat />
@@ -313,20 +311,21 @@ const DateList = ({
             <BirthdayCard
               key={date._id}
               date={date}
-              onEdit={onEditDate}
-              onViewProfile={onViewFriendProfile}
-              onOpenChat={handleOpenChatModal} // 👈 AJOUTÉ
+              onEdit={(d) => onEditDate(d, currentPage)} // 👈 passe currentPage
+              onViewProfile={(d, section) =>
+                onViewFriendProfile(d, section, currentPage)
+              } // 👈 passe currentPage
+              onOpenChat={handleOpenChatModal}
             />
           ))}
         </div>
       )}
 
-      {/* Pagination seulement si pas de chat et mode card */}
       {!isChatVisible && viewMode === "card" && dates.length > 0 && (
         <div className="pagination">
           <button
             key="prev"
-            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+            onClick={() => paginate(Math.max(currentPage - 1, 1))}
             disabled={currentPage === 1}
           >
             Précédent
@@ -367,7 +366,6 @@ const DateList = ({
                   1
                 </button>,
               );
-
               if (startPage > 2) {
                 pages.push(
                   <span key="ellipsis-start" className="ellipsis">
@@ -398,7 +396,6 @@ const DateList = ({
                   </span>,
                 );
               }
-
               pages.push(
                 <button
                   key={`page-${totalPages}`}
@@ -417,8 +414,11 @@ const DateList = ({
           <button
             key="next"
             onClick={() =>
-              setCurrentPage((prev) =>
-                Math.min(prev + 1, Math.ceil(dates.length / itemsPerPage)),
+              paginate(
+                Math.min(
+                  currentPage + 1,
+                  Math.ceil(dates.length / itemsPerPage),
+                ),
               )
             }
             disabled={currentPage === Math.ceil(dates.length / itemsPerPage)}
@@ -428,7 +428,6 @@ const DateList = ({
         </div>
       )}
 
-      {/* Modal merge existante */}
       {showMergeModal && cardToMerge && (
         <ManualMergeModal
           sourceCard={cardToMerge}
@@ -442,7 +441,6 @@ const DateList = ({
         />
       )}
 
-      {/* 👇 NOUVELLE MODAL CHAT */}
       {selectedFriendId && (
         <ChatModal
           isOpen={isChatModalOpen}

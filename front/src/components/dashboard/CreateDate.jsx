@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import apiHandler from "../../api/apiHandler";
 import useAuth from "../../context/useAuth";
-import NamedayInput from "./NamedayInput";
+import NamedayInput from "./Namedayinput";
 import "./css/namedayInput.css";
 import "./css/createDate.css";
 import "../UI/css/modals.css";

@@ -27,6 +27,7 @@ const Home = () => {
   const [profileInitialSection, setProfileInitialSection] =
     useState("personal");
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [savedPage, setSavedPage] = useState(1); // 👈 NOUVEAU
 
   // Scroll en haut à chaque changement de vue
   useEffect(() => {
@@ -61,6 +62,7 @@ const Home = () => {
     setShowMergeModal(false);
     setCardToMerge(null);
     setProfileInitialSection("personal");
+    setSavedPage(1); // 👈 Reset page au logo
     navigate("/home");
   };
 
@@ -76,7 +78,9 @@ const Home = () => {
     setProfileInitialSection("personal");
   };
 
-  const handleEditDate = (date) => {
+  const handleEditDate = (date, currentPage) => {
+    // 👈 reçoit currentPage
+    setSavedPage(currentPage);
     setEditingDate(date);
     setShowProfile(false);
     setViewingFriendProfile(null);
@@ -87,7 +91,13 @@ const Home = () => {
     setEditingDate(null);
   };
 
-  const handleViewFriendProfile = (date, initialSection = "info") => {
+  const handleViewFriendProfile = (
+    date,
+    initialSection = "info",
+    currentPage = 1,
+  ) => {
+    // 👈 reçoit currentPage
+    setSavedPage(currentPage);
     setViewingFriendProfile({ date, initialSection });
     setShowProfile(false);
     setEditingDate(null);
@@ -162,6 +172,7 @@ const Home = () => {
               <DateList
                 onEditDate={handleEditDate}
                 onViewFriendProfile={handleViewFriendProfile}
+                initialPage={savedPage} // 👈 NOUVEAU
                 onResetChat={(fn) => {
                   resetChatRef.current = fn;
                 }}

@@ -1,11 +1,27 @@
 const webpush = require("web-push");
 const PushSubscription = require("../models/PushSubscription.model");
 
-webpush.setVapidDetails(
-  process.env.VAPID_MAILTO,
-  process.env.VAPID_PUBLIC_KEY,
-  process.env.VAPID_PRIVATE_KEY,
-);
+// 👇 Lazy init — évite le crash au require si VAPID pas encore chargé
+let vapidInitialized = false;
+
+function initVapid() {
+  if (vapidInitialized) return true;
+  if (
+    !process.env.VAPID_MAILTO ||
+    !process.env.VAPID_PUBLIC_KEY ||
+    !process.env.VAPID_PRIVATE_KEY
+  ) {
+    console.warn("⚠️ VAPID non configuré — push notifications désactivées");
+    return false;
+  }
+  webpush.setVapidDetails(
+    process.env.VAPID_MAILTO,
+    process.env.VAPID_PUBLIC_KEY,
+    process.env.VAPID_PRIVATE_KEY,
+  );
+  vapidInitialized = true;
+  return true;
+}
 
 /**
  * Envoie une push notification à un utilisateur (tous ses appareils)
@@ -14,6 +30,8 @@ webpush.setVapidDetails(
  *   type: "chat" | "birthday" | "friend" | "gift" | "default"
  */
 async function sendPushToUser(userId, payload) {
+  if (!initVapid()) return; // Skip silencieux si VAPID pas configuré
+
   const subs = await PushSubscription.find({ user: userId });
   if (!subs.length) return;
 
