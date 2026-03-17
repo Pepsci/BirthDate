@@ -1,3 +1,4 @@
+const { SESClient, SendEmailCommand } = require("@aws-sdk/client-ses");
 const {
   emailHeader,
   emailFooter,
@@ -6,6 +7,14 @@ const {
   paragraph,
   ctaButton,
 } = require("./emailHelpers");
+
+const sesClient = new SESClient({
+  region: process.env.AWS_REGION,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  },
+});
 
 function getNamedayReminderTemplate({
   name,
@@ -73,4 +82,91 @@ function getNamedayReminderTextVersion({
   return `${mainText}\n\nVoir le profil : ${namedayLink}\n\n---\nNe plus recevoir de rappels pour ${name} : ${unsubscribeSpecificLink}\nNe plus recevoir de rappels d'anniversaires : ${unsubscribeAllLink}`;
 }
 
-module.exports = { getNamedayReminderTemplate, getNamedayReminderTextVersion };
+// ========================================
+// FONCTION D'ENVOI
+// ========================================
+async function sendNamedayReminderEmail(date, daysBeforeNameday) {
+  try {
+    const owner = date.owner;
+    if (!owner || !owner.email) return;
+
+    const frontendUrl = process.env.FRONTEND_URL || "https://birthreminder.com";
+
+    const name = date.name;
+    const surname = date.surname || "";
+
+    // Formater la date de fête lisible ex: "03-19" → "19 mars"
+    const [month, day] = date.nameday.split("-");
+    const monthNames = [
+      "janvier",
+      "février",
+      "mars",
+      "avril",
+      "mai",
+      "juin",
+      "juillet",
+      "août",
+      "septembre",
+      "octobre",
+      "novembre",
+      "décembre",
+    ];
+    const formattedDate = `${parseInt(day)} ${monthNames[parseInt(month) - 1]}`;
+
+    const namedayLink = `${frontendUrl}/birthday/${date._id}`;
+    const unsubscribeAllLink = `${frontendUrl}/unsubscribe?userId=${owner._id}&type=all`;
+    const unsubscribeSpecificLink = `${frontendUrl}/unsubscribe?userId=${owner._id}&dateId=${date._id}&type=specific`;
+
+    const subject =
+      daysBeforeNameday === 0
+        ? `✨ C'est la fête de ${name} ${surname} aujourd'hui !`
+        : daysBeforeNameday === 1
+          ? `✨ Fête de ${name} ${surname} demain !`
+          : `✨ Fête de ${name} ${surname} dans ${daysBeforeNameday} jours`;
+
+    const html = getNamedayReminderTemplate({
+      name,
+      surname,
+      daysBeforeNameday,
+      namedayLink,
+      unsubscribeAllLink,
+      unsubscribeSpecificLink,
+      formattedDate,
+    });
+
+    const text = getNamedayReminderTextVersion({
+      name,
+      surname,
+      daysBeforeNameday,
+      namedayLink,
+      unsubscribeAllLink,
+      unsubscribeSpecificLink,
+      formattedDate,
+    });
+
+    const params = {
+      Source: `BirthReminder <${process.env.EMAIL_BRTHDAY}>`,
+      Destination: { ToAddresses: [owner.email] },
+      Message: {
+        Subject: { Data: subject, Charset: "UTF-8" },
+        Body: {
+          Html: { Data: html, Charset: "UTF-8" },
+          Text: { Data: text, Charset: "UTF-8" },
+        },
+      },
+    };
+
+    await sesClient.send(new SendEmailCommand(params));
+    console.log(
+      `✅ Email fête J-${daysBeforeNameday} envoyé à ${owner.email} pour ${name} ${surname}`,
+    );
+  } catch (error) {
+    console.error(`❌ Erreur envoi email fête à ${date.owner?.email}:`, error);
+  }
+}
+
+module.exports = {
+  getNamedayReminderTemplate,
+  getNamedayReminderTextVersion,
+  sendNamedayReminderEmail,
+};

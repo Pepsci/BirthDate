@@ -1,3 +1,4 @@
+const { SESClient, SendEmailCommand } = require("@aws-sdk/client-ses");
 const {
   emailHeader,
   emailFooter,
@@ -6,6 +7,14 @@ const {
   paragraph,
   ctaButton,
 } = require("./emailHelpers");
+
+const sesClient = new SESClient({
+  region: process.env.AWS_REGION,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  },
+});
 
 const getBirthdayReminderTemplate = ({
   name,
@@ -71,7 +80,77 @@ const getBirthdayReminderTextVersion = ({
   return `${message}\n\nVoir le profil : ${birthdayLink}\n\n---\nNe plus recevoir de rappels pour ${name} : ${unsubscribeSpecificLink}\nSe désabonner de tous les rappels : ${unsubscribeAllLink}`;
 };
 
+// ========================================
+// FONCTION D'ENVOI
+// ========================================
+async function sendBirthdayReminderEmail(owner, date, daysBeforeBirthday) {
+  try {
+    const frontendUrl = process.env.FRONTEND_URL || "https://birthreminder.com";
+
+    const name = date ? date.name : owner.name;
+    const surname = date ? date.surname : owner.surname || "";
+    const dateId = date ? date._id : null;
+
+    const birthdayLink = dateId
+      ? `${frontendUrl}/birthday/${dateId}`
+      : `${frontendUrl}/home`;
+
+    const unsubscribeAllLink = `${frontendUrl}/unsubscribe?userId=${owner._id}&type=all`;
+    const unsubscribeSpecificLink = dateId
+      ? `${frontendUrl}/unsubscribe?userId=${owner._id}&dateId=${dateId}&type=specific`
+      : unsubscribeAllLink;
+
+    const subject =
+      daysBeforeBirthday === 0
+        ? `🎂 C'est l'anniversaire de ${name} ${surname} aujourd'hui !`
+        : daysBeforeBirthday === 1
+          ? `🎂 Anniversaire de ${name} ${surname} demain !`
+          : `🎂 Anniversaire de ${name} ${surname} dans ${daysBeforeBirthday} jours`;
+
+    const html = getBirthdayReminderTemplate({
+      name,
+      surname,
+      daysBeforeBirthday,
+      birthdayLink,
+      unsubscribeAllLink,
+      unsubscribeSpecificLink,
+    });
+
+    const text = getBirthdayReminderTextVersion({
+      name,
+      surname,
+      daysBeforeBirthday,
+      birthdayLink,
+      unsubscribeAllLink,
+      unsubscribeSpecificLink,
+    });
+
+    const params = {
+      Source: `BirthReminder <${process.env.EMAIL_BRTHDAY}>`,
+      Destination: { ToAddresses: [owner.email] },
+      Message: {
+        Subject: { Data: subject, Charset: "UTF-8" },
+        Body: {
+          Html: { Data: html, Charset: "UTF-8" },
+          Text: { Data: text, Charset: "UTF-8" },
+        },
+      },
+    };
+
+    await sesClient.send(new SendEmailCommand(params));
+    console.log(
+      `✅ Email anniversaire J-${daysBeforeBirthday} envoyé à ${owner.email} pour ${name} ${surname}`,
+    );
+  } catch (error) {
+    console.error(
+      `❌ Erreur envoi email anniversaire à ${owner.email}:`,
+      error,
+    );
+  }
+}
+
 module.exports = {
   getBirthdayReminderTemplate,
   getBirthdayReminderTextVersion,
+  sendBirthdayReminderEmail,
 };

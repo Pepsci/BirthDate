@@ -250,6 +250,20 @@ const cronJob = cron.schedule(
 );
 
 // ========================================
+// PLANIFICATION : Test toutes les 10s
+// ========================================
+// const cronJob = cron.schedule(
+//   "*/10 * * * * *",
+//   async () => {
+//     await checkAndSendAllReminders();
+//   },
+//   {
+//     scheduled: false,
+//     timezone: "Europe/Paris",
+//   },
+// );
+
+// ========================================
 // EXPORTS
 // ========================================
 module.exports = {
