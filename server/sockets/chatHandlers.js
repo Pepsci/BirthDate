@@ -96,6 +96,13 @@ module.exports = (io) => {
           });
         }
 
+        if (content.trim().length > 2000) {
+          return socket.emit("message:error", {
+            tempId,
+            error: "Le message ne peut pas dépasser 2000 caractères",
+          });
+        }
+
         const conversation = await Conversation.findOne({
           _id: conversationId,
           participants: socket.userId,
