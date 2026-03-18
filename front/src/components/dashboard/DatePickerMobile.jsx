@@ -104,7 +104,7 @@ const WheelColumn = ({ items, selectedIndex, onChange }) => {
     velocityY.current = 0;
   };
 
-  const handleTouchMove = (e) => {
+  const handleTouchMove = useCallback((e) => {
     e.preventDefault();
     const currentY = e.touches[0].clientY;
     const now = Date.now();
@@ -117,19 +117,30 @@ const WheelColumn = ({ items, selectedIndex, onChange }) => {
 
     const delta = touchStartY.current - currentY;
     listRef.current.scrollTop = touchStartScroll.current + delta;
-  };
+  }, []);
 
   const handleTouchEnd = () => {
     rafRef.current = requestAnimationFrame(applyMomentum);
   };
 
-  const handleWheel = (e) => {
+  const handleWheel = useCallback((e) => {
     e.preventDefault();
     cancelAnimationFrame(rafRef.current);
     listRef.current.scrollTop += e.deltaY;
     clearTimeout(listRef.current._wt);
     listRef.current._wt = setTimeout(snapToNearest, 100);
-  };
+  }, [snapToNearest]);
+
+  useEffect(() => {
+    const el = listRef.current;
+    if (!el) return;
+    el.addEventListener("wheel", handleWheel, { passive: false });
+    el.addEventListener("touchmove", handleTouchMove, { passive: false });
+    return () => {
+      el.removeEventListener("wheel", handleWheel);
+      el.removeEventListener("touchmove", handleTouchMove);
+    };
+  }, [handleWheel, handleTouchMove]);
 
   return (
     <div className="dpm-wheel-wrapper">
@@ -140,9 +151,7 @@ const WheelColumn = ({ items, selectedIndex, onChange }) => {
         ref={listRef}
         className="dpm-wheel-list"
         onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
-        onWheel={handleWheel}
       >
         {Array(Math.floor(VISIBLE_ITEMS / 2))
           .fill(null)
