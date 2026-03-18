@@ -14,7 +14,6 @@ const CreateDate = ({ onDateAdded }) => {
   const [dates, setDates] = useState([]);
   const [showErrorMessage, setShowErrorMessage] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 600);
 
   const getTodayDate = () => {
     const today = new Date();
@@ -121,30 +120,11 @@ const CreateDate = ({ onDateAdded }) => {
               onChange={(e) => setDate({ ...date, surname: e.target.value })}
             />
 
-            {isMobile ? (
-              <DatePickerMobile
-                value={date.date}
-                max={`${new Date().getFullYear()}-12-31`}
-                onChange={(val) => setDate({ ...date, date: val })}
-              />
-            ) : (
-              <input
-                type="date"
-                className="filter-input"
-                value={date.date}
-                max={getTodayDate()}
-                onChange={(e) => {
-                  const selected = e.target.value;
-                  const today = getTodayDate();
-                  const year = selected?.split("-")[0];
-                  if (selected && year?.length === 4 && selected > today) {
-                    setDate({ ...date, date: today });
-                  } else {
-                    setDate({ ...date, date: selected });
-                  }
-                }}
-              />
-            )}
+            <DatePickerMobile
+              value={date.date}
+              max={`${new Date().getFullYear()}-12-31`}
+              onChange={(val) => setDate({ ...date, date: val })}
+            />
 
             <NamedayInput
               value={date.nameday}

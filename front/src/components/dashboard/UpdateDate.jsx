@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import apiHandler from "../../api/apiHandler";
+import DatePickerMobile from "./DatePickerMobile";
 import "../connect/authpage.css";
 import "./css/updateDate.css";
 
@@ -82,12 +83,11 @@ const UpdateDate = ({ date, onCancel, onMerge }) => {
 
             <div className="auth-field">
               <label className="auth-label">Date d'anniversaire</label>
-              <input
-                type="date"
-                className="auth-input auth-input--date"
-                name="date"
+              <DatePickerMobile
                 value={dateToUpdate.date.split("T")[0]}
-                onChange={handleInputChange}
+                onChange={(val) =>
+                  setDateToUpdate({ ...dateToUpdate, date: val })
+                }
               />
             </div>
 

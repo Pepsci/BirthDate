@@ -5,6 +5,7 @@ import apiHandler from "../../api/apiHandler";
 import useAuth from "../../context/useAuth";
 import PasswordInput from "../connect/PasswordInput";
 import Countdown from "../dashboard/Countdown";
+import DatePickerMobile from "../dashboard/DatePickerMobile";
 import GestionNotification from "./GestionNotifications";
 import Wishlist from "./Wishlist";
 import FriendsMobileView from "../friends/FriendsMobileView";
@@ -445,19 +446,15 @@ const ProfilDetails = ({
 
                 <div className="auth-field">
                   <label className="auth-label">Date de naissance</label>
-                  <input
-                    type="date"
-                    className="auth-input auth-input--date"
+                  <DatePickerMobile
                     value={
                       userToUpdate.birthDate
                         ? userToUpdate.birthDate.split("T")[0]
                         : ""
                     }
-                    onChange={(e) =>
-                      setUserToUpdate({
-                        ...userToUpdate,
-                        birthDate: e.target.value,
-                      })
+                    max={`${new Date().getFullYear()}-12-31`}
+                    onChange={(val) =>
+                      setUserToUpdate({ ...userToUpdate, birthDate: val })
                     }
                   />
                 </div>
