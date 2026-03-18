@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import apiHandler from "../../api/apiHandler";
 import { AuthContext } from "../../context/auth.context";
 import PasswordInput from "./PasswordInput";
+import DatePickerMobile from "../dashboard/DatePickerMobile";
 import "./authpage.css";
 
 const AuthPage = () => {
@@ -278,12 +279,11 @@ const AuthPage = () => {
 
               <div className="auth-field">
                 <label className="auth-label">Date de naissance</label>
-                <input
-                  type="date"
-                  className="auth-input auth-input--date"
+                <DatePickerMobile
                   value={signupData.birthDate}
-                  onChange={(e) =>
-                    setSignupData({ ...signupData, birthDate: e.target.value })
+                  max={`${new Date().getFullYear()}-12-31`}
+                  onChange={(val) =>
+                    setSignupData({ ...signupData, birthDate: val })
                   }
                 />
               </div>
