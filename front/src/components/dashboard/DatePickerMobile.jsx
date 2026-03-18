@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import "./css/datePickerMobile.css";
 
 const MONTHS = [
@@ -18,60 +18,117 @@ const MONTHS = [
 
 const ITEM_HEIGHT = 44;
 const VISIBLE_ITEMS = 5;
+const REPEAT = 20;
 
-const getDaysInMonth = (month, year) => {
-  return new Date(year, month, 0).getDate();
-};
+const getDaysInMonth = (month, year) => new Date(year, month, 0).getDate();
 
 const WheelColumn = ({ items, selectedIndex, onChange }) => {
   const listRef = useRef(null);
-  const isDragging = useRef(false);
-  const startY = useRef(0);
-  const startScrollTop = useRef(0);
-  const animating = useRef(false);
+  const touchStartY = useRef(0);
+  const touchStartScroll = useRef(0);
+  const velocityY = useRef(0);
+  const lastY = useRef(0);
+  const lastTime = useRef(0);
+  const rafRef = useRef(null);
+  const isSnapping = useRef(false);
+
+  const infiniteItems = [];
+  for (let r = 0; r < REPEAT; r++) {
+    items.forEach((item) => infiniteItems.push(item));
+  }
+
+  const midOffset = Math.floor(REPEAT / 2) * items.length;
+  const initialScroll = (midOffset + selectedIndex) * ITEM_HEIGHT;
 
   useEffect(() => {
-    if (listRef.current) {
-      listRef.current.scrollTop = selectedIndex * ITEM_HEIGHT;
-    }
-  }, [selectedIndex]);
-
-  const snapToNearest = () => {
     if (!listRef.current) return;
+    listRef.current.scrollTop = initialScroll;
+  }, []);
+
+  const prevItemsLength = useRef(items.length);
+  useEffect(() => {
+    if (!listRef.current) return;
+    if (prevItemsLength.current !== items.length) {
+      prevItemsLength.current = items.length;
+      const clampedIndex = Math.min(selectedIndex, items.length - 1);
+      const mid = Math.floor(REPEAT / 2) * items.length;
+      listRef.current.scrollTop = (mid + clampedIndex) * ITEM_HEIGHT;
+    }
+  }, [items.length, selectedIndex]);
+
+  const getIndexFromScroll = useCallback(
+    (scrollTop) => {
+      const raw = Math.round(scrollTop / ITEM_HEIGHT);
+      return ((raw % items.length) + items.length) % items.length;
+    },
+    [items.length],
+  );
+
+  const snapToNearest = useCallback(() => {
+    if (!listRef.current || isSnapping.current) return;
+    isSnapping.current = true;
+
     const scrollTop = listRef.current.scrollTop;
-    const index = Math.round(scrollTop / ITEM_HEIGHT);
-    const clampedIndex = Math.max(0, Math.min(items.length - 1, index));
-    listRef.current.scrollTo({
-      top: clampedIndex * ITEM_HEIGHT,
-      behavior: "smooth",
-    });
-    onChange(clampedIndex);
-  };
+    const snapped = Math.round(scrollTop / ITEM_HEIGHT) * ITEM_HEIGHT;
+
+    listRef.current.scrollTo({ top: snapped, behavior: "smooth" });
+
+    setTimeout(() => {
+      if (!listRef.current) return;
+      const index = getIndexFromScroll(listRef.current.scrollTop);
+      onChange(index);
+      isSnapping.current = false;
+    }, 200);
+  }, [items.length, getIndexFromScroll, onChange]);
+
+  const applyMomentum = useCallback(() => {
+    if (!listRef.current) return;
+    velocityY.current *= 0.92;
+
+    if (Math.abs(velocityY.current) < 0.5) {
+      snapToNearest();
+      return;
+    }
+
+    listRef.current.scrollTop += velocityY.current;
+    rafRef.current = requestAnimationFrame(applyMomentum);
+  }, [snapToNearest]);
 
   const handleTouchStart = (e) => {
-    isDragging.current = true;
-    startY.current = e.touches[0].clientY;
-    startScrollTop.current = listRef.current.scrollTop;
-    animating.current = false;
+    cancelAnimationFrame(rafRef.current);
+    isSnapping.current = false;
+    touchStartY.current = e.touches[0].clientY;
+    touchStartScroll.current = listRef.current.scrollTop;
+    lastY.current = e.touches[0].clientY;
+    lastTime.current = Date.now();
+    velocityY.current = 0;
   };
 
   const handleTouchMove = (e) => {
-    if (!isDragging.current) return;
-    const delta = startY.current - e.touches[0].clientY;
-    listRef.current.scrollTop = startScrollTop.current + delta;
+    e.preventDefault();
+    const currentY = e.touches[0].clientY;
+    const now = Date.now();
+    const dt = now - lastTime.current || 1;
+    const dy = lastY.current - currentY;
+
+    velocityY.current = (dy / dt) * 16;
+    lastY.current = currentY;
+    lastTime.current = now;
+
+    const delta = touchStartY.current - currentY;
+    listRef.current.scrollTop = touchStartScroll.current + delta;
   };
 
   const handleTouchEnd = () => {
-    isDragging.current = false;
-    snapToNearest();
+    rafRef.current = requestAnimationFrame(applyMomentum);
   };
 
-  const handleScroll = () => {
-    if (isDragging.current) return;
-    clearTimeout(listRef.current._scrollTimeout);
-    listRef.current._scrollTimeout = setTimeout(() => {
-      snapToNearest();
-    }, 80);
+  const handleWheel = (e) => {
+    e.preventDefault();
+    cancelAnimationFrame(rafRef.current);
+    listRef.current.scrollTop += e.deltaY;
+    clearTimeout(listRef.current._wt);
+    listRef.current._wt = setTimeout(snapToNearest, 100);
   };
 
   return (
@@ -85,37 +142,34 @@ const WheelColumn = ({ items, selectedIndex, onChange }) => {
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
-        onScroll={handleScroll}
+        onWheel={handleWheel}
       >
-        {/* Padding items */}
         {Array(Math.floor(VISIBLE_ITEMS / 2))
           .fill(null)
           .map((_, i) => (
             <div
-              key={`pad-top-${i}`}
+              key={`pt-${i}`}
               className="dpm-wheel-item dpm-wheel-item--pad"
             />
           ))}
-        {items.map((item, index) => (
-          <div
-            key={index}
-            className={`dpm-wheel-item ${index === selectedIndex ? "dpm-wheel-item--selected" : ""}`}
-            onClick={() => {
-              listRef.current.scrollTo({
-                top: index * ITEM_HEIGHT,
-                behavior: "smooth",
-              });
-              onChange(index);
-            }}
-          >
-            {item}
-          </div>
-        ))}
+
+        {infiniteItems.map((item, index) => {
+          const realIndex = index % items.length;
+          return (
+            <div
+              key={`${item}-${index}`}
+              className={`dpm-wheel-item ${realIndex === selectedIndex ? "dpm-wheel-item--selected" : ""}`}
+            >
+              {item}
+            </div>
+          );
+        })}
+
         {Array(Math.floor(VISIBLE_ITEMS / 2))
           .fill(null)
           .map((_, i) => (
             <div
-              key={`pad-bot-${i}`}
+              key={`pb-${i}`}
               className="dpm-wheel-item dpm-wheel-item--pad"
             />
           ))}
@@ -144,7 +198,6 @@ const DatePickerMobile = ({ value, onChange, max }) => {
   const [month, setMonth] = useState(initial.month);
   const [year, setYear] = useState(initial.year);
 
-  // Build arrays
   const years = [];
   for (let y = maxYear; y >= 1900; y--) years.push(y);
 
@@ -152,16 +205,12 @@ const DatePickerMobile = ({ value, onChange, max }) => {
   const days = Array.from({ length: daysInMonth }, (_, i) =>
     String(i + 1).padStart(2, "0"),
   );
-  const months = MONTHS.map((m, i) => ({ label: m, value: i + 1 }));
 
-  // Clamp day when month/year changes
   useEffect(() => {
     const maxDay = getDaysInMonth(month, year);
-    const clampedDay = Math.min(day, maxDay);
-    if (clampedDay !== day) setDay(clampedDay);
+    if (day > maxDay) setDay(maxDay);
   }, [month, year]);
 
-  // Emit onChange
   useEffect(() => {
     const mm = String(month).padStart(2, "0");
     const dd = String(day).padStart(2, "0");
@@ -169,8 +218,6 @@ const DatePickerMobile = ({ value, onChange, max }) => {
     if (formatted !== value) onChange(formatted);
   }, [day, month, year]);
 
-  const dayIndex = day - 1;
-  const monthIndex = month - 1;
   const yearIndex = years.indexOf(year);
 
   return (
@@ -178,12 +225,12 @@ const DatePickerMobile = ({ value, onChange, max }) => {
       <div className="dpm-wheels">
         <WheelColumn
           items={days}
-          selectedIndex={Math.max(0, dayIndex)}
+          selectedIndex={Math.max(0, day - 1)}
           onChange={(i) => setDay(i + 1)}
         />
         <WheelColumn
-          items={months.map((m) => m.label)}
-          selectedIndex={monthIndex}
+          items={MONTHS}
+          selectedIndex={month - 1}
           onChange={(i) => setMonth(i + 1)}
         />
         <WheelColumn
