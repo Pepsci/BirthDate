@@ -30,7 +30,7 @@ router.get("/", isAuthenticated, async (req, res) => {
     res.status(200).json(friends);
   } catch (error) {
     console.error("Erreur lors de la récupération des amis:", error);
-    res.status(500).json({ message: "Erreur serveur", error: error.message });
+    res.status(500).json({ message: "Erreur serveur" });
   }
 });
 
@@ -49,7 +49,7 @@ router.get("/requests", isAuthenticated, async (req, res) => {
     res.status(200).json(requests);
   } catch (error) {
     console.error("Erreur lors de la récupération des demandes:", error);
-    res.status(500).json({ message: "Erreur serveur", error: error.message });
+    res.status(500).json({ message: "Erreur serveur" });
   }
 });
 
@@ -82,7 +82,7 @@ router.get("/sent", isAuthenticated, async (req, res) => {
     });
   } catch (error) {
     console.error("Erreur:", error);
-    res.status(500).json({ message: "Erreur serveur", error: error.message });
+    res.status(500).json({ message: "Erreur serveur" });
   }
 });
 
@@ -221,7 +221,7 @@ router.patch("/:friendshipId/accept", isAuthenticated, async (req, res) => {
     });
   } catch (error) {
     console.error("Erreur lors de l'acceptation:", error);
-    res.status(500).json({ message: "Erreur serveur", error: error.message });
+    res.status(500).json({ message: "Erreur serveur" });
   }
 });
 
@@ -255,7 +255,7 @@ router.patch("/:friendshipId/reject", isAuthenticated, async (req, res) => {
     res.status(200).json({ message: "Demande d'amitié refusée", friendship });
   } catch (error) {
     console.error("Erreur lors du refus:", error);
-    res.status(500).json({ message: "Erreur serveur", error: error.message });
+    res.status(500).json({ message: "Erreur serveur" });
   }
 });
 
@@ -299,7 +299,7 @@ router.patch("/:friendshipId/link-date", isAuthenticated, async (req, res) => {
       .json({ message: "Date liée à l'ami", friendship: populatedFriendship });
   } catch (error) {
     console.error("Erreur lors de la liaison:", error);
-    res.status(500).json({ message: "Erreur serveur", error: error.message });
+    res.status(500).json({ message: "Erreur serveur" });
   }
 });
 
@@ -318,6 +318,15 @@ router.delete("/:friendshipId", isAuthenticated, async (req, res) => {
 
     if (!friendship) {
       return res.status(404).json({ message: "Amitié non trouvée" });
+    }
+
+    const userId = req.payload._id;
+    const isParticipant =
+      friendship.user.toString() === userId ||
+      friendship.friend.toString() === userId;
+
+    if (!isParticipant) {
+      return res.status(403).json({ message: "Non autorisé" });
     }
 
     try {
@@ -341,7 +350,7 @@ router.delete("/:friendshipId", isAuthenticated, async (req, res) => {
       .json({ message: "Ami et dates associées supprimés", friendship });
   } catch (error) {
     console.error("❌ Erreur lors de la suppression:", error);
-    res.status(500).json({ message: "Erreur serveur", error: error.message });
+    res.status(500).json({ message: "Erreur serveur" });
   }
 });
 

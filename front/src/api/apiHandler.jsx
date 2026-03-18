@@ -9,11 +9,8 @@ const service = axios.create({
   withCredentials: true,
 });
 
-service.interceptors.request.use((config) => {
-  const token = localStorage.getItem("authToken");
-  config.headers.Authorization = token ? `Bearer ${token}` : "";
-  return config;
-});
+// Les requêtes API utilisent le cookie httpOnly authToken (envoyé automatiquement via withCredentials)
+// Pas de lecture de localStorage
 
 function errorHandler(error) {
   if (error.response && error.response.data) {
@@ -35,11 +32,16 @@ const apiHandler = {
       .catch(errorHandler);
   },
 
-  isLoggedIn(token) {
+  isLoggedIn() {
     return service
-      .get("/auth/verify", {
-        headers: { Authorization: `Bearer ${token}` },
-      })
+      .get("/auth/verify")
+      .then((res) => res.data)
+      .catch(errorHandler);
+  },
+
+  logout() {
+    return service
+      .post("/auth/logout")
       .then((res) => res.data)
       .catch(errorHandler);
   },

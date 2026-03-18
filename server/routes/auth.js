@@ -218,8 +218,15 @@ router.post("/login", authLimiter, async (req, res) => {
     const authToken = jwt.sign(
       { _id, email: userEmail, name, surname },
       process.env.TOKEN_SECRET,
-      { algorithm: "HS256", expiresIn: "24h" },
+      { algorithm: "HS256", expiresIn: "8h" },
     );
+
+    res.cookie("authToken", authToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 8 * 60 * 60 * 1000,
+    });
 
     return res.status(200).json({ authToken });
   } catch (error) {
@@ -232,7 +239,31 @@ router.post("/login", authLimiter, async (req, res) => {
 // GET /auth/verify
 // ========================================
 router.get("/verify", isAuthenticated, (req, res) => {
-  res.status(200).json(req.payload);
+  const { _id, email, name, surname } = req.payload;
+  const authToken = jwt.sign(
+    { _id, email, name, surname },
+    process.env.TOKEN_SECRET,
+    { algorithm: "HS256", expiresIn: "8h" },
+  );
+  res.cookie("authToken", authToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    maxAge: 8 * 60 * 60 * 1000,
+  });
+  res.status(200).json({ ...req.payload, authToken });
+});
+
+// ========================================
+// POST /auth/logout
+// ========================================
+router.post("/logout", (req, res) => {
+  res.clearCookie("authToken", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+  });
+  res.status(200).json({ message: "Logged out" });
 });
 
 // ========================================
@@ -243,17 +274,15 @@ router.post("/forgot-password", authLimiter, async (req, res) => {
 
   try {
     const user = await userModel.findOne({ email });
-    if (!user) {
-      return res.status(400).json({ message: "User not found" });
+    if (user) {
+      const resetToken = crypto.randomBytes(20).toString("hex");
+      user.resetToken = resetToken;
+      user.resetTokenExpires = Date.now() + 3600000;
+      await user.save();
+      await sendPasswordResetEmail(email, resetToken);
     }
-
-    const resetToken = crypto.randomBytes(20).toString("hex");
-    user.resetToken = resetToken;
-    user.resetTokenExpires = Date.now() + 3600000;
-    await user.save();
-
-    await sendPasswordResetEmail(email, resetToken);
-    return res.status(200).json({ message: "Recovery email sent" });
+    // Toujours retourner 200 pour ne pas révéler si l'email existe
+    return res.status(200).json({ message: "Si ce compte existe, un email de récupération a été envoyé." });
   } catch (e) {
     console.error(e);
     return res.status(500).json({ message: "Internal server error" });

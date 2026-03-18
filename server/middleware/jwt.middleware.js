@@ -11,18 +11,17 @@ const isAuthenticated = expressjwt({
   getToken: getTokenFromHeaders,
 });
 
-// Function used to extracts the JWT token from the request's 'Authorization' Headers
+// Function used to extracts the JWT token from Authorization header or httpOnly cookie
 function getTokenFromHeaders(req) {
-  // Check if the token is available on the request Headers
   if (
     req.headers.authorization &&
     req.headers.authorization.split(" ")[0] === "Bearer"
   ) {
-    // Get the encoded token string and return it
-    const token = req.headers.authorization.split(" ")[1];
-    return token;
+    return req.headers.authorization.split(" ")[1];
   }
-  console.warn("⚠️ Aucun token trouvé dans les headers");
+  if (req.cookies && req.cookies.authToken) {
+    return req.cookies.authToken;
+  }
   return null;
 }
 

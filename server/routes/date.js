@@ -374,7 +374,7 @@ router.put("/:id/nameday-preferences", isAuthenticated, async (req, res) => {
     res.json(date);
   } catch (error) {
     console.error("❌ Erreur mise à jour préférences nameday:", error);
-    res.status(500).json({ message: "Erreur serveur", error: error.message });
+    res.status(500).json({ message: "Erreur serveur" });
   }
 });
 
@@ -408,7 +408,7 @@ router.put("/:id/notifications", isAuthenticated, async (req, res, next) => {
       "Erreur lors de la mise à jour des préférences de notification:",
       error,
     );
-    res.status(500).json({ message: "Erreur serveur", error: error.message });
+    res.status(500).json({ message: "Erreur serveur" });
   }
 });
 
@@ -448,7 +448,7 @@ router.put(
         "Erreur lors de la mise à jour des préférences de timing:",
         error,
       );
-      res.status(500).json({ message: "Erreur serveur", error: error.message });
+      res.status(500).json({ message: "Erreur serveur" });
     }
   },
 );

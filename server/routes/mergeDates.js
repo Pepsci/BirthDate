@@ -107,7 +107,7 @@ router.get("/detect/:userId", isAuthenticated, async (req, res) => {
     });
   } catch (error) {
     console.error("Erreur détection doublons:", error);
-    res.status(500).json({ message: "Erreur serveur", error: error.message });
+    res.status(500).json({ message: "Erreur serveur" });
   }
 });
 
@@ -218,7 +218,7 @@ router.post("/merge", isAuthenticated, async (req, res) => {
     });
   } catch (error) {
     console.error("Erreur fusion:", error);
-    res.status(500).json({ message: "Erreur serveur", error: error.message });
+    res.status(500).json({ message: "Erreur serveur" });
   }
 });
 
@@ -282,7 +282,7 @@ router.post("/merge-all/:userId", isAuthenticated, async (req, res) => {
           results.push({
             success: false,
             name: `${manualCard.name} ${manualCard.surname}`,
-            error: error.message,
+            error: "Erreur lors de la fusion",
           });
         }
       }
@@ -296,7 +296,7 @@ router.post("/merge-all/:userId", isAuthenticated, async (req, res) => {
     });
   } catch (error) {
     console.error("Erreur fusion globale:", error);
-    res.status(500).json({ message: "Erreur serveur", error: error.message });
+    res.status(500).json({ message: "Erreur serveur" });
   }
 });
 

@@ -51,7 +51,7 @@ router.get("/", isAuthenticated, async (req, res) => {
     console.error("❌ Error fetching conversations:", error);
     res
       .status(500)
-      .json({ message: "Error fetching conversations", error: error.message });
+      .json({ message: "Error fetching conversations" });
   }
 });
 
@@ -134,10 +134,12 @@ router.get("/:conversationId/messages", isAuthenticated, async (req, res) => {
       query.createdAt = { $lt: new Date(before) };
     }
 
+    const safeLimit = Math.min(Math.max(parseInt(limit) || 50, 1), 100);
+
     const messages = await Message.find(query)
       .populate("sender", "name surname email")
       .sort({ createdAt: -1 })
-      .limit(parseInt(limit));
+      .limit(safeLimit);
 
     // Inverser l'ordre pour avoir les plus anciens en premier
     messages.reverse();

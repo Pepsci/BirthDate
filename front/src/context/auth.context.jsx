@@ -9,58 +9,55 @@ function AuthProviderWrapper({ children }) {
     currentUser: null,
     isLoading: true,
     isLoggedIn: false,
+    authToken: null,
   });
 
   useEffect(() => {
     authenticateUser();
   }, []);
 
-  // ⭐ NOUVEAU - Connecter le socket automatiquement quand l'utilisateur est authentifié
+  // Connecter le socket automatiquement quand l'utilisateur est authentifié
   useEffect(() => {
-    const token = localStorage.getItem("authToken");
-
-    if (auth.isLoggedIn && token) {
-      console.log("🔌 Auto-connecting socket from AuthContext");
-      socketService.connect(token);
+    if (auth.isLoggedIn && auth.authToken) {
+      socketService.connect(auth.authToken);
     } else if (!auth.isLoggedIn) {
-      // Déconnecter le socket si l'utilisateur se déconnecte
-      console.log("🔌 Disconnecting socket (user logged out)");
       socketService.disconnect();
     }
-  }, [auth.isLoggedIn]);
+  }, [auth.isLoggedIn, auth.authToken]);
 
   const authenticateUser = () => {
-    const storedToken = localStorage.getItem("authToken");
-    if (storedToken) {
-      apiHandler
-        .isLoggedIn(storedToken)
-        .then((user) => {
-          setAuth({ currentUser: user, isLoading: false, isLoggedIn: true });
-        })
-        .catch((e) => {
-          setAuth({ currentUser: null, isLoading: false, isLoggedIn: false });
+    apiHandler
+      .isLoggedIn()
+      .then((data) => {
+        const { authToken, ...user } = data;
+        setAuth({
+          currentUser: user,
+          isLoading: false,
+          isLoggedIn: true,
+          authToken: authToken || null,
         });
-    } else {
-      setAuth({ currentUser: null, isLoading: false, isLoggedIn: false });
-    }
+      })
+      .catch(() => {
+        setAuth({ currentUser: null, isLoading: false, isLoggedIn: false, authToken: null });
+      });
   };
 
-  const removeUser = () => {
-    removeToken();
-    authenticateUser();
-  };
-
-  const removeToken = () => {
-    localStorage.removeItem("authToken");
+  // Appelé après login : stocke le token en mémoire (state React uniquement, pas localStorage)
+  const storeToken = (token) => {
+    setAuth((prev) => ({ ...prev, authToken: token }));
   };
 
   const logOut = () => {
-    removeToken();
-    authenticateUser();
+    apiHandler.logout().catch(() => {});
+    setAuth({ currentUser: null, isLoading: false, isLoggedIn: false, authToken: null });
   };
 
-  const storeToken = (token) => {
-    localStorage.setItem("authToken", token);
+  const removeUser = () => {
+    logOut();
+  };
+
+  const removeToken = () => {
+    setAuth((prev) => ({ ...prev, authToken: null }));
   };
 
   const Authvalues = {

@@ -168,7 +168,9 @@ module.exports = (io) => {
     });
 
     // L'utilisateur est en train d'écrire
-    socket.on("typing:start", ({ conversationId }) => {
+    socket.on("typing:start", async ({ conversationId }) => {
+      const conv = await Conversation.findOne({ _id: conversationId, participants: socket.userId });
+      if (!conv) return;
       socket.to(`conversation:${conversationId}`).emit("typing:start", {
         conversationId,
         userId: socket.userId,
@@ -176,7 +178,9 @@ module.exports = (io) => {
     });
 
     // L'utilisateur a arrêté d'écrire
-    socket.on("typing:stop", ({ conversationId }) => {
+    socket.on("typing:stop", async ({ conversationId }) => {
+      const conv = await Conversation.findOne({ _id: conversationId, participants: socket.userId });
+      if (!conv) return;
       socket.to(`conversation:${conversationId}`).emit("typing:stop", {
         conversationId,
         userId: socket.userId,
@@ -186,6 +190,9 @@ module.exports = (io) => {
     // Marquer les messages comme lus
     socket.on("messages:read", async ({ conversationId }) => {
       try {
+        const conv = await Conversation.findOne({ _id: conversationId, participants: socket.userId });
+        if (!conv) return;
+
         const result = await Message.updateMany(
           {
             conversation: conversationId,
