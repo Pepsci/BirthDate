@@ -569,15 +569,6 @@ const ProfilDetails = ({
         </div>
       ) : (
         <div className="profile-wrapper">
-          {onBack && (
-            <button
-              onClick={onBack}
-              className="btnBackToDateList desktop-back-btn"
-            >
-              ← Retour
-            </button>
-          )}
-
           <div className="profile">
             {/* ── 📱 CARROUSEL MOBILE ── */}
             <div className="mobile-carousel-container">
@@ -640,6 +631,15 @@ const ProfilDetails = ({
             {/* ── 💻 DESKTOP layout ── */}
             <div className="desktop-profile-container">
               <aside className="desktop-sidebar">
+                {onBack && (
+                  <button
+                    onClick={onBack}
+                    className="sidebar-btn sidebar-btn--back"
+                  >
+                    <span className="sidebar-icon">⬅️</span>
+                    <span className="sidebar-text">Retour</span>
+                  </button>
+                )}
                 {sections.map((section) => (
                   <button
                     key={section.id}

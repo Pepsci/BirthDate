@@ -82,14 +82,15 @@ const BirthdayCard = ({ date, onEdit, onViewProfile, onOpenChat }) => {
     today.getDate() === birthDate.getDate() &&
     today.getMonth() === birthDate.getMonth();
 
-  const isThisWeek = diffDays <= 7 && diffDays > 0;
+  const isTomorrow = diffDays === 1;
+  const isThisWeek = diffDays <= 7 && diffDays > 1;
   const hasGifts = date.gifts && date.gifts.length > 0;
   const isFamily = date.family === true;
 
   const cardClassName = `
     birthCard titleFont 
     ${isToday ? "today" : ""} 
-    ${isThisWeek ? "thisWeek" : ""} 
+    ${isTomorrow ? "tomorrow" : isThisWeek ? "thisWeek" : ""}
     ${hasGifts ? "has-gifts" : ""} 
     ${isFamily ? "family" : ""}
     ${isFriend ? "friend-date" : ""}
@@ -117,7 +118,7 @@ const BirthdayCard = ({ date, onEdit, onViewProfile, onOpenChat }) => {
         <span className="date">
           {parseLocalDate(date.date).toLocaleDateString("fr-FR")}
         </span>
-        {date.nameday && (
+        {(date.nameday || date.linkedUser?.nameday) && (
           <span
             className="nameday"
             style={{
@@ -127,8 +128,10 @@ const BirthdayCard = ({ date, onEdit, onViewProfile, onOpenChat }) => {
               marginTop: "4px",
             }}
           >
-            🎂 Fête:{" "}
-            {new Date(`2000-${date.nameday}`).toLocaleDateString("fr-FR", {
+            🎉 Fête:{" "}
+            {new Date(
+              `2000-${date.nameday || date.linkedUser?.nameday}`,
+            ).toLocaleDateString("fr-FR", {
               day: "numeric",
               month: "long",
             })}

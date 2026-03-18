@@ -3,17 +3,18 @@
    ======================================== */
 
 .desktop-profile-container {
-    display: none;
+  display: none;
 }
 
 @media (min-width: 768px) {
-    .desktop-profile-container {
-        display: flex;
-        gap: 2rem;
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 2rem;
-    }
+  .desktop-profile-container {
+    display: flex;
+    gap: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+    align-items: center;
+  }
 }
 
 /* ========================================
@@ -21,81 +22,96 @@
    ======================================== */
 
 .desktop-sidebar {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    min-width: 200px;
-    max-width: 200px;
-    margin-top: 100px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 200px;
+  max-width: 200px;
 }
 
 .sidebar-btn {
-    position: relative;
-    /* ✅ nécessaire pour le badge absolu */
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 16px 20px;
-    background: var(--bg-primary);
-    border: 2px solid var(--border-color);
-    border-radius: 12px;
-    color: var(--text-primary);
-    font-size: 16px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    text-align: left;
-    white-space: nowrap;
+  position: relative;
+  /* ✅ nécessaire pour le badge absolu */
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  background: var(--bg-primary);
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
+  color: var(--text-primary);
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: left;
+  white-space: nowrap;
 }
 
 .sidebar-btn:hover {
-    background: var(--bg-secondary);
-    border-color: var(--primary);
-    transform: translateX(4px);
+  background: var(--bg-secondary);
+  border-color: var(--primary);
+  transform: translateX(4px);
 }
 
 .sidebar-btn.active {
-    background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(59, 130, 246, 0.25) 100%);
-    border-color: var(--primary);
-    color: var(--primary);
-    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  background: linear-gradient(
+    135deg,
+    rgba(59, 130, 246, 0.15) 0%,
+    rgba(59, 130, 246, 0.25) 100%
+  );
+  border-color: var(--primary);
+  color: var(--primary);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
 .sidebar-icon {
-    font-size: 24px;
-    flex-shrink: 0;
+  font-size: 24px;
+  flex-shrink: 0;
 }
 
 .sidebar-text {
-    flex: 1;
+  flex: 1;
 }
 
-.desktop-sidebar  .notification-badge-profile{
-    top: -7px;
-    right: -7px;
+.desktop-sidebar .notification-badge-profile {
+  top: -7px;
+  right: -7px;
 }
+
+.sidebar-btn--back {
+  border-color: var(--border-color);
+  color: var(--text-primary);
+  padding: 16px 20px;
+}
+
+/* .sidebar-btn--back:hover {
+  border-color: var(--border-color);
+  color: var(--text-primary);
+  transform: translateX(-4px); 
+} */
 
 /* ========================================
    BADGE NOTIFICATION SUR SIDEBAR BTN
    ======================================== */
 
 .notification-badge-sidebar {
-    position: absolute;
-    top: 50%;
-    right: 12px;
-    transform: translateY(-50%);
-    background: #ef4444;
-    color: white;
-    font-size: 0.7rem;
-    font-weight: 700;
-    min-width: 18px;
-    height: 18px;
-    border-radius: 9px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0 4px;
-    pointer-events: none;
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  background: #ef4444;
+  color: white;
+  font-size: 0.7rem;
+  font-weight: 700;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  pointer-events: none;
 }
 
 /* ========================================
@@ -103,29 +119,29 @@
    ======================================== */
 
 .desktop-content {
-    flex: 1;
-    min-height: 550px;
-    max-height: 550px;
-    overflow-y: auto;
-    scrollbar-width: thin;
-    scrollbar-color: var(--primary) transparent;
+  flex: 1;
+  min-height: 550px;
+  max-height: 550px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--primary) transparent;
 }
 
 .desktop-content::-webkit-scrollbar {
-    width: 6px;
+  width: 6px;
 }
 
 .desktop-content::-webkit-scrollbar-track {
-    background: transparent;
+  background: transparent;
 }
 
 .desktop-content::-webkit-scrollbar-thumb {
-    background: var(--primary);
-    border-radius: 3px;
+  background: var(--primary);
+  border-radius: 3px;
 }
 
 .desktop-content::-webkit-scrollbar-thumb:hover {
-    background: var(--primary-light);
+  background: var(--primary-light);
 }
 
 /* ========================================
@@ -133,23 +149,23 @@
    ======================================== */
 
 @media (max-width: 767px) {
-    .desktop-profile-container {
-        display: none !important;
-    }
+  .desktop-profile-container {
+    display: none !important;
+  }
 }
 
 @media (min-width: 768px) and (max-width: 1024px) {
-    .desktop-sidebar {
-        min-width: 160px;
-        max-width: 160px;
-    }
+  .desktop-sidebar {
+    min-width: 160px;
+    max-width: 160px;
+  }
 
-    .sidebar-btn {
-        padding: 12px 16px;
-        font-size: 14px;
-    }
+  .sidebar-btn {
+    padding: 12px 16px;
+    font-size: 14px;
+  }
 
-    .sidebar-icon {
-        font-size: 20px;
-    }
+  .sidebar-icon {
+    font-size: 20px;
+  }
 }

@@ -544,11 +544,7 @@ const FriendProfile = ({ date, onCancel, initialSection = "info" }) => {
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <div className="friendProfil">
-      <div className="btnRLD">
-        <button type="button" onClick={onCancel} className="btnBack">
-          ← Retour à la liste
-        </button>
-      </div>
+      <div className="btnRLD"></div>
 
       {/* MOBILE : Carousel */}
       <div className="mobile-carousel-container">
@@ -608,6 +604,14 @@ const FriendProfile = ({ date, onCancel, initialSection = "info" }) => {
       {/* DESKTOP : Sidebar + Content */}
       <div className="desktop-profile-container">
         <div className="desktop-sidebar">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="sidebar-btn sidebar-btn--back"
+          >
+            <span className="sidebar-icon">⬅️</span>
+            <span className="sidebar-text">Retour</span>
+          </button>
           {menuSections.map((section) => (
             <button
               key={section.id}

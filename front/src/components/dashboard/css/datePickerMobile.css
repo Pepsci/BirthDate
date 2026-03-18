@@ -1,0 +1,129 @@
+/* ========================================
+   DatePickerMobile - Rouleaux style iOS
+======================================== */
+
+.dpm-container {
+  width: 100%;
+  border-radius: 16px;
+  overflow: hidden;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+}
+
+/* ── Rouleaux ── */
+.dpm-wheels {
+  display: flex;
+  align-items: stretch;
+  height: 220px; /* 5 items × 44px */
+  position: relative;
+}
+
+/* ── Colonne de roue ── */
+.dpm-wheel-wrapper {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  border-right: 1px solid var(--border-color);
+}
+
+.dpm-wheel-wrapper:last-child {
+  border-right: none;
+}
+
+/* ── Liste scrollable ── */
+.dpm-wheel-list {
+  height: 100%;
+  overflow-y: scroll;
+  scroll-snap-type: y mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.dpm-wheel-list::-webkit-scrollbar {
+  display: none;
+}
+
+/* ── Items ── */
+.dpm-wheel-item {
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  scroll-snap-align: start;
+  cursor: pointer;
+  transition: color 0.15s ease;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.dpm-wheel-item--pad {
+  pointer-events: none;
+  visibility: hidden;
+}
+
+.dpm-wheel-item--selected {
+  color: var(--text-primary);
+  font-weight: 700;
+  font-size: 17px;
+}
+
+/* ── Sélecteur central (ligne de sélection) ── */
+.dpm-wheel-selector {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 44px;
+  transform: translateY(-50%);
+  background: rgba(59, 130, 246, 0.08);
+  border-top: 1.5px solid var(--primary);
+  border-bottom: 1.5px solid var(--primary);
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* ── Dégradés haut/bas (effet de fondu) ── */
+.dpm-wheel-overlay {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 88px; /* 2 items */
+  pointer-events: none;
+  z-index: 3;
+}
+
+.dpm-wheel-overlay--top {
+  top: 0;
+  background: linear-gradient(
+    to bottom,
+    var(--bg-secondary) 0%,
+    transparent 100%
+  );
+}
+
+.dpm-wheel-overlay--bottom {
+  bottom: 0;
+  background: linear-gradient(to top, var(--bg-secondary) 0%, transparent 100%);
+}
+
+/* ── Labels colonnes ── */
+.dpm-labels {
+  display: flex;
+  padding: 6px 0 2px;
+  border-top: 1px solid var(--border-color);
+}
+
+.dpm-label {
+  flex: 1;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--text-secondary);
+  opacity: 0.6;
+}

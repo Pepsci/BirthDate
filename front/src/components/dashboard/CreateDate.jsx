@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import apiHandler from "../../api/apiHandler";
 import useAuth from "../../context/useAuth";
 import NamedayInput from "./NamedayInput";
+import DatePickerMobile from "./DatePickerMobile";
 import "./css/namedayInput.css";
 import "./css/createDate.css";
 import "../UI/css/modals.css";
@@ -13,6 +14,7 @@ const CreateDate = ({ onDateAdded }) => {
   const [dates, setDates] = useState([]);
   const [showErrorMessage, setShowErrorMessage] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 600);
 
   const getTodayDate = () => {
     const today = new Date();
@@ -37,6 +39,12 @@ const CreateDate = ({ onDateAdded }) => {
       }));
     }
   }, [currentUser]);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 600);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const handleClick = async (e) => {
     e.preventDefault();
@@ -113,12 +121,30 @@ const CreateDate = ({ onDateAdded }) => {
               onChange={(e) => setDate({ ...date, surname: e.target.value })}
             />
 
-            <input
-              type="date"
-              className="filter-input"
-              value={date.date}
-              onChange={(e) => setDate({ ...date, date: e.target.value })}
-            />
+            {isMobile ? (
+              <DatePickerMobile
+                value={date.date}
+                max={`${new Date().getFullYear()}-12-31`}
+                onChange={(val) => setDate({ ...date, date: val })}
+              />
+            ) : (
+              <input
+                type="date"
+                className="filter-input"
+                value={date.date}
+                max={getTodayDate()}
+                onChange={(e) => {
+                  const selected = e.target.value;
+                  const today = getTodayDate();
+                  const year = selected?.split("-")[0];
+                  if (selected && year?.length === 4 && selected > today) {
+                    setDate({ ...date, date: today });
+                  } else {
+                    setDate({ ...date, date: selected });
+                  }
+                }}
+              />
+            )}
 
             <NamedayInput
               value={date.nameday}

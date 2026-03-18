@@ -18,7 +18,7 @@ router.get("/", isAuthenticated, async (req, res, next) => {
     const dateList = await dateModel
       .find({ owner: userId })
       .populate("owner")
-      .populate("linkedUser", "name surname email avatar birthDate");
+      .populate("linkedUser", "name surname email avatar birthDate nameday");
 
     // Récupérer toutes les conversations de l'utilisateur
     const conversations = await Conversation.find({

@@ -37,8 +37,11 @@
   overflow: hidden;
   position: relative;
   box-shadow: var(--card-shadow);
-  transition: transform 0.3s ease, box-shadow 0.3s ease,
-    background-color 0.3s ease, border-color 0.3s ease;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease,
+    background-color 0.3s ease,
+    border-color 0.3s ease;
   animation: fadeIn 0.5s ease backwards;
   display: flex;
   flex-direction: column;
@@ -48,23 +51,23 @@
 }
 
 /* Animation avec délai différent */
-.birthCard:nth-child(5n+1) {
+.birthCard:nth-child(5n + 1) {
   animation-delay: 0.1s;
 }
 
-.birthCard:nth-child(5n+2) {
+.birthCard:nth-child(5n + 2) {
   animation-delay: 0.2s;
 }
 
-.birthCard:nth-child(5n+3) {
+.birthCard:nth-child(5n + 3) {
   animation-delay: 0.3s;
 }
 
-.birthCard:nth-child(5n+4) {
+.birthCard:nth-child(5n + 4) {
   animation-delay: 0.4s;
 }
 
-.birthCard:nth-child(5n+5) {
+.birthCard:nth-child(5n + 5) {
   animation-delay: 0.5s;
 }
 
@@ -73,19 +76,16 @@
   box-shadow: var(--card-shadow-hover);
 }
 
-
 .nameday {
-    
-    display: "block";
-      font-size: "0.85em";
-      opacity: 0.8;
-      margin-top: "4px";
-  }
-
+  display: "block";
+  font-size: "0.85em";
+  opacity: 0.8;
+  margin-top: "4px";
+}
 
 /* Bande colorée en haut de chaque carte */
 .birthCard::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
@@ -94,19 +94,19 @@
   background: var(--gray-400);
 }
 
-.birthCard:nth-child(4n+1)::before {
+.birthCard:nth-child(4n + 1)::before {
   background: var(--gray-400);
 }
 
-.birthCard:nth-child(4n+2)::before {
+.birthCard:nth-child(4n + 2)::before {
   background: var(--gray-500);
 }
 
-.birthCard:nth-child(4n+3)::before {
+.birthCard:nth-child(4n + 3)::before {
   background: var(--gray-600);
 }
 
-.birthCard:nth-child(4n+4)::before {
+.birthCard:nth-child(4n + 4)::before {
   background: var(--primary);
 }
 
@@ -169,7 +169,9 @@
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  transition: background-color 0.3s ease, border-color 0.3s ease;
+  transition:
+    background-color 0.3s ease,
+    border-color 0.3s ease;
 }
 
 .daysUntilBirthday {
@@ -248,11 +250,28 @@
 }
 
 .birthCard.thisWeek::after {
-  content: "Cette semaine";
+  content: "Bientôt ! 🎂";
   position: absolute;
   top: 22px;
   right: -47px;
   background-color: var(--gray-500);
+  color: white;
+  padding: 0.25rem 1.5rem;
+  font-size: 0.75rem;
+  font-weight: bold;
+  transform: rotate(45deg);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  z-index: 1;
+  width: 110px;
+  text-align: center;
+}
+
+.birthCard.tomorrow::after {
+  content: "Demain ! 🎂";
+  position: absolute;
+  top: 22px;
+  right: -47px;
+  background-color: var(--primary);
   color: white;
   padding: 0.25rem 1.5rem;
   font-size: 0.75rem;
@@ -300,7 +319,6 @@
     grid-template-columns: repeat(2, 1fr);
   }
 }
-
 
 @media (max-width: 600px) {
   .birthDeck {
@@ -397,6 +415,14 @@
 
   .birthCard.today::after,
   .birthCard.thisWeek::after {
+    font-size: 0.65rem;
+    top: 19px;
+    right: -40px;
+    padding: 0.2rem 1rem;
+    width: 100px;
+  }
+
+  .birthCard.tomorrow::after {
     font-size: 0.65rem;
     top: 19px;
     right: -40px;
