@@ -66,7 +66,7 @@ router.get("/", async (req, res) => {
     );
 
     const emailFilter = {
-      email: { $regex: new RegExp("^" + email + "$", "i") },
+      email: email.toLowerCase().trim(),
     };
 
     // ── 1. Demandes d'ami ──────────────────────────────────────────────────────

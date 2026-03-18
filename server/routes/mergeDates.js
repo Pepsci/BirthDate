@@ -4,13 +4,14 @@ const router = express.Router();
 const DateModel = require("../models/date.model");
 const WishlistModel = require("../models/wishlist.model");
 const mongoose = require("mongoose");
+const { isAuthenticated } = require("../middleware/jwt.middleware");
 
 // ========================================
 // GET - Détecter les doublons potentiels pour un utilisateur
 // ========================================
-router.get("/detect/:userId", async (req, res) => {
+router.get("/detect/:userId", isAuthenticated, async (req, res) => {
   try {
-    const { userId } = req.params;
+    const userId = req.payload._id;
 
     if (!mongoose.isValidObjectId(userId)) {
       return res.status(400).json({ message: "User ID invalide" });
@@ -113,9 +114,10 @@ router.get("/detect/:userId", async (req, res) => {
 // ========================================
 // POST - Fusionner une carte manuelle vers une carte ami
 // ========================================
-router.post("/merge", async (req, res) => {
+router.post("/merge", isAuthenticated, async (req, res) => {
   try {
-    const { friendCardId, manualCardId, userId } = req.body;
+    const { friendCardId, manualCardId } = req.body;
+    const userId = req.payload._id;
 
     if (
       !mongoose.isValidObjectId(friendCardId) ||
@@ -223,9 +225,9 @@ router.post("/merge", async (req, res) => {
 // ========================================
 // POST - Fusionner TOUTES les cartes détectées pour un utilisateur
 // ========================================
-router.post("/merge-all/:userId", async (req, res) => {
+router.post("/merge-all/:userId", isAuthenticated, async (req, res) => {
   try {
-    const { userId } = req.params;
+    const userId = req.payload._id;
 
     if (!mongoose.isValidObjectId(userId)) {
       return res.status(400).json({ message: "User ID invalide" });

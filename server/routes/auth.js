@@ -3,6 +3,7 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
+const rateLimit = require("express-rate-limit");
 
 const userModel = require("./../models/user.model");
 const Log = require("../models/log.model");
@@ -21,6 +22,14 @@ const {
 
 const router = express.Router();
 const saltRounds = 10;
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: "Trop de tentatives, réessayez dans 15 minutes." },
+});
 
 const validatePassword = (password) => {
   return /(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,}/.test(password);
@@ -141,7 +150,7 @@ router.post("/signup", async (req, res) => {
 // ========================================
 // POST /auth/login
 // ========================================
-router.post("/login", async (req, res) => {
+router.post("/login", authLimiter, async (req, res) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
@@ -229,7 +238,7 @@ router.get("/verify", isAuthenticated, (req, res) => {
 // ========================================
 // POST /auth/forgot-password
 // ========================================
-router.post("/forgot-password", async (req, res) => {
+router.post("/forgot-password", authLimiter, async (req, res) => {
   const { email } = req.body;
 
   try {

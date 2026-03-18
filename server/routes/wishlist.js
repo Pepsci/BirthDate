@@ -6,9 +6,10 @@ const UserModel = require("../models/user.model");
 const mongoose = require("mongoose");
 const cheerio = require("cheerio");
 const axios = require("axios");
+const { isAuthenticated } = require("../middleware/jwt.middleware");
 
 // POST /api/wishlist/fetch-url - Récupérer les infos d'un produit depuis une URL
-router.post("/fetch-url", async (req, res) => {
+router.post("/fetch-url", isAuthenticated, async (req, res) => {
   try {
     const { url } = req.body;
 
@@ -131,18 +132,14 @@ router.post("/fetch-url", async (req, res) => {
   }
 });
 
-// POST /api/wishlist/:id/reserve - Réserver un item
-router.post("/:id/reserve", async (req, res) => {
+// POST /api/wishlist/:id/reserve - Réserver un item (tout utilisateur authentifié)
+router.post("/:id/reserve", isAuthenticated, async (req, res) => {
   try {
     if (!mongoose.isValidObjectId(req.params.id)) {
       return res.status(400).json({ message: "Invalid Item ID" });
     }
 
-    const { userId } = req.body;
-
-    if (!userId) {
-      return res.status(400).json({ message: "userId requis" });
-    }
+    const reservingUserId = req.payload._id;
 
     const item = await WishlistModel.findById(req.params.id);
 
@@ -154,7 +151,7 @@ router.post("/:id/reserve", async (req, res) => {
       return res.status(400).json({ message: "Cet item est déjà réservé" });
     }
 
-    item.reservedBy = userId;
+    item.reservedBy = reservingUserId;
     item.reservedAt = new Date();
     await item.save();
 
@@ -170,13 +167,11 @@ router.post("/:id/reserve", async (req, res) => {
 });
 
 // POST /api/wishlist/:id/unreserve - Annuler la réservation
-router.post("/:id/unreserve", async (req, res) => {
+router.post("/:id/unreserve", isAuthenticated, async (req, res) => {
   try {
     if (!mongoose.isValidObjectId(req.params.id)) {
       return res.status(400).json({ message: "Invalid Item ID" });
     }
-
-    const { userId } = req.body;
 
     const item = await WishlistModel.findById(req.params.id);
 
@@ -185,7 +180,7 @@ router.post("/:id/unreserve", async (req, res) => {
     }
 
     // Seul celui qui a réservé peut annuler
-    if (item.reservedBy?.toString() !== userId) {
+    if (item.reservedBy?.toString() !== req.payload._id) {
       return res
         .status(403)
         .json({ message: "Vous n'avez pas réservé cet item" });
@@ -207,13 +202,9 @@ router.post("/:id/unreserve", async (req, res) => {
 });
 
 // GET /api/wishlist - Obtenir MA wishlist complète
-router.get("/", async (req, res, next) => {
+router.get("/", isAuthenticated, async (req, res, next) => {
   try {
-    const userId = req.query.userId;
-
-    if (!userId) {
-      return res.status(400).json({ message: "userId requis" });
-    }
+    const userId = req.payload._id;
 
     const items = await WishlistModel.find({ userId }).sort({
       isPurchased: 1,
@@ -232,7 +223,7 @@ router.get("/", async (req, res, next) => {
 });
 
 // GET /api/wishlist/user/:userId - Voir la wishlist d'un ami
-router.get("/user/:userId", async (req, res, next) => {
+router.get("/user/:userId", isAuthenticated, async (req, res, next) => {
   try {
     const { userId } = req.params;
 
@@ -266,13 +257,13 @@ router.get("/user/:userId", async (req, res, next) => {
 });
 
 // POST /api/wishlist - Créer un nouvel item
-router.post("/", async (req, res, next) => {
+router.post("/", isAuthenticated, async (req, res, next) => {
   try {
-    const { userId, title, description, price, url, image, isShared } =
-      req.body;
+    const { title, description, price, url, image, isShared } = req.body;
+    const userId = req.payload._id;
 
-    if (!userId || !title) {
-      return res.status(400).json({ message: "userId et title requis" });
+    if (!title) {
+      return res.status(400).json({ message: "title requis" });
     }
 
     const item = await WishlistModel.create({
@@ -296,7 +287,7 @@ router.post("/", async (req, res, next) => {
 });
 
 // GET /api/wishlist/:id - Obtenir un item spécifique
-router.get("/:id", async (req, res, next) => {
+router.get("/:id", isAuthenticated, async (req, res, next) => {
   try {
     if (!mongoose.isValidObjectId(req.params.id)) {
       return res.status(400).json({ message: "Invalid Item ID" });
@@ -318,8 +309,8 @@ router.get("/:id", async (req, res, next) => {
   }
 });
 
-// PATCH /api/wishlist/:id - Modifier un item
-router.patch("/:id", async (req, res, next) => {
+// PATCH /api/wishlist/:id - Modifier un item (propriétaire uniquement)
+router.patch("/:id", isAuthenticated, async (req, res, next) => {
   try {
     if (!mongoose.isValidObjectId(req.params.id)) {
       return res.status(400).json({ message: "Invalid Item ID" });
@@ -327,14 +318,14 @@ router.patch("/:id", async (req, res, next) => {
 
     const { title, description, price, url, image, isShared } = req.body;
 
-    const updatedItem = await WishlistModel.findByIdAndUpdate(
-      req.params.id,
+    const updatedItem = await WishlistModel.findOneAndUpdate(
+      { _id: req.params.id, userId: req.payload._id },
       { title, description, price, url, image, isShared },
       { new: true },
     );
 
     if (!updatedItem) {
-      return res.status(404).json({ message: "Item non trouvé" });
+      return res.status(404).json({ message: "Item non trouvé ou non autorisé" });
     }
 
     res.status(200).json({
@@ -350,16 +341,17 @@ router.patch("/:id", async (req, res, next) => {
 // ========================================
 // Marque l'item comme acheté ET l'ajoute dans les gifts de la date
 // ========================================
-router.post("/:id/gift-offered", async (req, res) => {
+router.post("/:id/gift-offered", isAuthenticated, async (req, res) => {
   try {
     if (!mongoose.isValidObjectId(req.params.id)) {
       return res.status(400).json({ message: "Invalid Item ID" });
     }
 
-    const { userId, dateId, occasion, year } = req.body;
+    const { dateId, occasion, year } = req.body;
+    const userId = req.payload._id;
 
-    if (!userId || !dateId) {
-      return res.status(400).json({ message: "userId et dateId requis" });
+    if (!dateId) {
+      return res.status(400).json({ message: "dateId requis" });
     }
 
     if (!mongoose.isValidObjectId(dateId)) {
@@ -426,17 +418,20 @@ router.post("/:id/gift-offered", async (req, res) => {
   }
 });
 
-// DELETE /api/wishlist/:id - Supprimer un item
-router.delete("/:id", async (req, res, next) => {
+// DELETE /api/wishlist/:id - Supprimer un item (propriétaire uniquement)
+router.delete("/:id", isAuthenticated, async (req, res, next) => {
   try {
     if (!mongoose.isValidObjectId(req.params.id)) {
       return res.status(400).json({ message: "Invalid Item ID" });
     }
 
-    const deletedItem = await WishlistModel.findByIdAndDelete(req.params.id);
+    const deletedItem = await WishlistModel.findOneAndDelete({
+      _id: req.params.id,
+      userId: req.payload._id,
+    });
 
     if (!deletedItem) {
-      return res.status(404).json({ message: "Item non trouvé" });
+      return res.status(404).json({ message: "Item non trouvé ou non autorisé" });
     }
 
     res.status(200).json({
@@ -449,17 +444,20 @@ router.delete("/:id", async (req, res, next) => {
   }
 });
 
-// POST /api/wishlist/:id/toggle-sharing - Basculer le partage
-router.post("/:id/toggle-sharing", async (req, res, next) => {
+// POST /api/wishlist/:id/toggle-sharing - Basculer le partage (propriétaire uniquement)
+router.post("/:id/toggle-sharing", isAuthenticated, async (req, res, next) => {
   try {
     if (!mongoose.isValidObjectId(req.params.id)) {
       return res.status(400).json({ message: "Invalid Item ID" });
     }
 
-    const item = await WishlistModel.findById(req.params.id);
+    const item = await WishlistModel.findOne({
+      _id: req.params.id,
+      userId: req.payload._id,
+    });
 
     if (!item) {
-      return res.status(404).json({ message: "Item non trouvé" });
+      return res.status(404).json({ message: "Item non trouvé ou non autorisé" });
     }
 
     item.isShared = !item.isShared;
@@ -478,18 +476,14 @@ router.post("/:id/toggle-sharing", async (req, res, next) => {
   }
 });
 
-// POST /api/wishlist/:id/purchase - Marquer comme acheté
-router.post("/:id/purchase", async (req, res, next) => {
+// POST /api/wishlist/:id/purchase - Marquer comme acheté (tout utilisateur authentifié)
+router.post("/:id/purchase", isAuthenticated, async (req, res, next) => {
   try {
     if (!mongoose.isValidObjectId(req.params.id)) {
       return res.status(400).json({ message: "Invalid Item ID" });
     }
 
-    const { userId } = req.body;
-
-    if (!userId) {
-      return res.status(400).json({ message: "userId requis" });
-    }
+    const userId = req.payload._id;
 
     const item = await WishlistModel.findById(req.params.id);
 
@@ -517,8 +511,8 @@ router.post("/:id/purchase", async (req, res, next) => {
   }
 });
 
-// POST /api/wishlist/:id/unpurchase - Démarquer comme acheté
-router.post("/:id/unpurchase", async (req, res, next) => {
+// POST /api/wishlist/:id/unpurchase - Démarquer comme acheté (acheteur uniquement)
+router.post("/:id/unpurchase", isAuthenticated, async (req, res, next) => {
   try {
     if (!mongoose.isValidObjectId(req.params.id)) {
       return res.status(400).json({ message: "Invalid Item ID" });
@@ -528,6 +522,10 @@ router.post("/:id/unpurchase", async (req, res, next) => {
 
     if (!item) {
       return res.status(404).json({ message: "Item non trouvé" });
+    }
+
+    if (item.purchasedBy?.toString() !== req.payload._id) {
+      return res.status(403).json({ message: "Non autorisé" });
     }
 
     item.isPurchased = false;

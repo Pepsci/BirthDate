@@ -6,6 +6,7 @@ const path = require("path");
 const cookieParser = require("cookie-parser");
 const logger = require("morgan");
 const cors = require("cors");
+const helmet = require("helmet");
 
 const dateStatsRouter = require("./routes/date.stats");
 const authRouter = require("./routes/auth");
@@ -30,6 +31,8 @@ const {
 } = require("./jobs/chatNotificationCron");
 
 const app = express();
+
+app.use(helmet());
 
 const allowedOrigins = [
   "http://localhost:5173",
@@ -83,26 +86,6 @@ chatCronDaily.start();
 chatCronTwiceDaily.start();
 chatCronWeekly.start();
 
-app.get("/api/push/test-chat", async (req, res) => {
-  const { sendPushToUser } = require("./services/pushService");
-  const User = require("./models/user.model");
-
-  const user = await User.findOne({ email: "jossfilippi@gmail.com" });
-  console.log("pushEnabled:", user.pushEnabled);
-
-  const PushSubscription = require("./models/PushSubscription.model");
-  const subs = await PushSubscription.find({ user: user._id });
-  console.log("subscriptions:", subs.length);
-
-  await sendPushToUser(user._id, {
-    title: "💬 Test push",
-    body: "Test direct !",
-    url: "/home",
-    tag: "test",
-  });
-
-  res.json({ pushEnabled: user.pushEnabled, subs: subs.length });
-});
 
 console.log("🤖 Cron jobs activés :");
 console.log("   ✅ Purge comptes supprimés (tous les jours à 3h)");

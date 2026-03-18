@@ -17,7 +17,7 @@ router.get("/", isAuthenticated, async (req, res, next) => {
 
     const dateList = await dateModel
       .find({ owner: userId })
-      .populate("owner")
+      .populate("owner", "-password -resetToken -verificationToken")
       .populate("linkedUser", "name surname email avatar birthDate nameday");
 
     // Récupérer toutes les conversations de l'utilisateur
@@ -100,7 +100,7 @@ router.get("/:id", isAuthenticated, async (req, res, next) => {
         _id: req.params.id,
         owner: req.payload._id,
       })
-      .populate("owner")
+      .populate("owner", "-password -resetToken -verificationToken")
       .populate("linkedUser", "name surname email avatar birthDate");
 
     if (!date) {
@@ -333,7 +333,7 @@ router.delete("/:id", isAuthenticated, async (req, res, next) => {
 // PUT /date/:id/nameday-preferences
 // Mettre à jour les préférences de notification pour les FÊTES
 // ========================================
-router.put("/:id/nameday-preferences", async (req, res) => {
+router.put("/:id/nameday-preferences", isAuthenticated, async (req, res) => {
   try {
     const { id } = req.params;
     const { timings, notifyOnNameday } = req.body;
@@ -351,8 +351,8 @@ router.put("/:id/nameday-preferences", async (req, res) => {
     }
 
     // Mise à jour
-    const date = await Date.findByIdAndUpdate(
-      id,
+    const date = await dateModel.findOneAndUpdate(
+      { _id: id, owner: req.payload._id },
       {
         $set: {
           "namedayPreferences.timings": timings,
@@ -360,7 +360,7 @@ router.put("/:id/nameday-preferences", async (req, res) => {
         },
       },
       { new: true, runValidators: true },
-    ).populate("owner linkedUser");
+    ).populate("owner", "-password -resetToken -verificationToken").populate("linkedUser");
 
     if (!date) {
       return res.status(404).json({ message: "Date non trouvée" });

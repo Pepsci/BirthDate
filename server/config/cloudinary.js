@@ -10,9 +10,23 @@ cloudinary.config({
 
 const storage = new CloudinaryStorage({
   cloudinary,
-  folder: "discord-clone",
+  params: {
+    folder: "birthreminder",
+    allowed_formats: ["jpg", "jpeg", "png", "webp", "gif"],
+  },
 });
 
-const fileUploader = multer({ storage });
+const ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+
+const fileUploader = multer({
+  storage,
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
+      return cb(new Error("Type de fichier non autorisé. Formats acceptés : JPG, PNG, WEBP, GIF."), false);
+    }
+    cb(null, true);
+  },
+});
 
 module.exports = fileUploader;
