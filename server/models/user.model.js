@@ -12,7 +12,7 @@ const userSchema = new Schema({
   },
   birthDate: Date,
   nameday: {
-    type: String, // Format "MM-DD"
+    type: String,
     required: false,
     validate: {
       validator: function (v) {
@@ -27,13 +27,19 @@ const userSchema = new Schema({
   verificationToken: String,
   isVerified: { type: Boolean, default: false },
   lastVerificationEmailSent: Date,
+
+  // ── Emails anniversaires ───────────────────────────────────────────────────
   receiveBirthdayEmails: { type: Boolean, default: true },
   receiveFriendRequestEmails: { type: Boolean, default: true },
   receiveOwnBirthdayEmail: { type: Boolean, default: true },
+
+  // ── Récap mensuel (NOUVEAU) ────────────────────────────────────────────────
+  monthlyRecap: { type: Boolean, default: false },
+
+  // ── Compte ────────────────────────────────────────────────────────────────
   deletedAt: Date,
 
   // ── Onboarding ─────────────────────────────────────────────────────────────
-  /** true une fois que l'utilisateur a vu ou passé le guide d'onboarding */
   onboardingDone: { type: Boolean, default: false },
 
   // ── Notifications emails chat ──────────────────────────────────────────────

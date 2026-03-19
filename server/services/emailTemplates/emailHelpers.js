@@ -237,6 +237,142 @@ function warning(html) {
   `;
 }
 
+/**
+ * Ligne d'avatar avec initiales colorées, nom cliquable et badge J-X
+ * Utilisé dans le récap mensuel
+ * @param {string} name
+ * @param {string} surname
+ * @param {string} dateLabel  - ex: "Samedi 6 avril · dans 3 jours"
+ * @param {string} badgeText  - ex: "J-3" | "Aujourd'hui" | "Passé"
+ * @param {boolean} urgent    - true = badge violet, false = badge gris
+ * @param {string} profileUrl - URL de destination du lien nom
+ */
+function avatarBlock(name, surname, dateLabel, badgeText, urgent, profileUrl) {
+  const colors = [
+    { bg: "#CECBF6", text: "#3C3489" }, // purple
+    { bg: "#9FE1CB", text: "#085041" }, // teal
+    { bg: "#F5C4B3", text: "#712B13" }, // coral
+    { bg: "#B5D4F4", text: "#0C447C" }, // blue
+    { bg: "#C0DD97", text: "#27500A" }, // green
+    { bg: "#FAC775", text: "#633806" }, // amber
+    { bg: "#F4C0D1", text: "#72243E" }, // pink
+  ];
+  // Couleur persistante basée sur la première lettre du prénom
+  const idx = (name.charCodeAt(0) || 0) % colors.length;
+  const color = colors[idx];
+  const initials = `${name[0] || ""}${surname[0] || ""}`.toUpperCase();
+
+  const badgeBg = urgent ? "#EEEDFE" : "rgba(255,255,255,0.15)";
+  const badgeColor = urgent ? "#534AB7" : "rgba(255,255,255,0.7)";
+
+  return `
+                <tr>
+                  <td style="padding:0 32px;">
+                    <table width="100%" cellpadding="0" cellspacing="0"
+                      style="border-bottom:1px solid rgba(255,255,255,0.1);">
+                      <tr>
+                        <!-- Avatar initiales -->
+                        <td width="44" valign="middle" style="padding:12px 0;">
+                          <div style="
+                            width:40px;height:40px;
+                            border-radius:50%;
+                            background-color:${color.bg};
+                            text-align:center;
+                            line-height:40px;
+                            font-size:13px;
+                            font-weight:700;
+                            color:${color.text};
+                            font-family:'Roboto',Arial,sans-serif;
+                          ">${initials}</div>
+                        </td>
+                        <!-- Nom + date -->
+                        <td valign="middle" style="padding:12px 0 12px 12px;">
+                          <a href="${profileUrl}" style="
+                            font-size:14px;font-weight:700;
+                            color:#ffffff;text-decoration:none;
+                            display:block;margin-bottom:2px;
+                          ">${name} ${surname}</a>
+                          <span style="font-size:12px;color:rgba(255,255,255,0.55);">
+                            ${dateLabel}
+                          </span>
+                        </td>
+                        <!-- Badge J-X -->
+                        <td width="52" align="right" valign="middle" style="padding:12px 0;">
+                          <span style="
+                            display:inline-block;
+                            background:${badgeBg};
+                            color:${badgeColor};
+                            font-size:11px;font-weight:700;
+                            padding:3px 8px;
+                            border-radius:20px;
+                            white-space:nowrap;
+                          ">${badgeText}</span>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+  `;
+}
+
+/**
+ * Titre de section en majuscules (ex: "CETTE SEMAINE")
+ * Utilisé dans le récap mensuel
+ */
+function sectionLabel(text) {
+  return `
+                <tr>
+                  <td style="padding:20px 32px 8px;">
+                    <p style="
+                      margin:0;
+                      font-size:11px;font-weight:700;
+                      letter-spacing:0.08em;
+                      text-transform:uppercase;
+                      color:rgba(255,255,255,0.4);
+                    ">${text}</p>
+                  </td>
+                </tr>
+  `;
+}
+
+/**
+ * Ligne de métriques (3 chiffres côte à côte)
+ * Utilisé dans le récap mensuel
+ * @param {Array<{value: number|string, label: string}>} metrics
+ */
+function metricRow(metrics) {
+  const cells = metrics
+    .map(
+      ({ value, label }) => `
+        <td align="center" style="padding:16px 8px;">
+          <p style="margin:0;font-size:26px;font-weight:700;color:#ffffff;">
+            ${value}
+          </p>
+          <p style="margin:4px 0 0;font-size:11px;color:rgba(255,255,255,0.55);">
+            ${label}
+          </p>
+        </td>
+      `,
+    )
+    .join(
+      `<td width="1" style="background:rgba(255,255,255,0.1);padding:0;"></td>`,
+    );
+
+  return `
+                <tr>
+                  <td style="padding:0 32px 8px;">
+                    <table width="100%" cellpadding="0" cellspacing="0" style="
+                      background:rgba(255,255,255,0.08);
+                      border-radius:12px;
+                      overflow:hidden;
+                    ">
+                      <tr>${cells}</tr>
+                    </table>
+                  </td>
+                </tr>
+  `;
+}
+
 module.exports = {
   emailHeader,
   emailFooter,
@@ -248,4 +384,7 @@ module.exports = {
   note,
   linkFallback,
   warning,
+  avatarBlock,
+  sectionLabel,
+  metricRow,
 };

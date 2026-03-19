@@ -92,7 +92,7 @@ async function sendBirthdayReminderEmail(owner, date, daysBeforeBirthday) {
     const dateId = date ? date._id : null;
 
     const birthdayLink = dateId
-      ? `${frontendUrl}/birthday/${dateId}`
+      ? `${frontendUrl}/home?tab=date&dateId=${dateId}`
       : `${frontendUrl}/home`;
 
     const unsubscribeAllLink = `${frontendUrl}/unsubscribe?userId=${owner._id}&type=all`;

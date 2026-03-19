@@ -113,7 +113,7 @@ async function sendNamedayReminderEmail(date, daysBeforeNameday) {
     ];
     const formattedDate = `${parseInt(day)} ${monthNames[parseInt(month) - 1]}`;
 
-    const namedayLink = `${frontendUrl}/birthday/${date._id}`;
+    const namedayLink = `${frontendUrl}/home?tab=date&dateId=${date._id}`;
     const unsubscribeAllLink = `${frontendUrl}/unsubscribe?userId=${owner._id}&type=all`;
     const unsubscribeSpecificLink = `${frontendUrl}/unsubscribe?userId=${owner._id}&dateId=${date._id}&type=specific`;
 

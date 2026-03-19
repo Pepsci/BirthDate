@@ -26,6 +26,7 @@ function formatUser(user) {
     receiveBirthdayEmails: user.receiveBirthdayEmails,
     receiveFriendRequestEmails: user.receiveFriendRequestEmails,
     receiveOwnBirthdayEmail: user.receiveOwnBirthdayEmail,
+    monthlyRecap: user.monthlyRecap,
     // Emails chat
     receiveChatEmails: user.receiveChatEmails,
     chatEmailFrequency: user.chatEmailFrequency,

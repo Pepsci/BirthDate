@@ -8,6 +8,9 @@ const {
 const {
   sendNamedayReminderEmail,
 } = require("../services/emailTemplates/namedayReminder");
+const {
+  sendMonthlyRecapEmail,
+} = require("../services/emailTemplates/monthlyRecapEmail"); // NOUVEAU
 
 // ========================================
 // HELPER: Vérifier si un anniversaire est dans X jours
@@ -32,9 +35,7 @@ function isBirthdayInXDays(birthDate, daysFromNow) {
 // HELPER: Vérifier si une fête (nameday) est dans X jours
 // ========================================
 function isNamedayInXDays(nameday, daysFromNow) {
-  if (!nameday || !nameday.match(/^\d{2}-\d{2}$/)) {
-    return false;
-  }
+  if (!nameday || !nameday.match(/^\d{2}-\d{2}$/)) return false;
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -124,9 +125,7 @@ async function checkAndSendCardBirthdayReminders() {
     console.log("🎂 [CRON] Vérification des rappels d'anniversaires cartes...");
 
     const dates = await dateModel
-      .find({
-        receiveNotifications: { $ne: false },
-      })
+      .find({ receiveNotifications: { $ne: false } })
       .populate("owner linkedUser");
 
     for (const date of dates) {
@@ -138,19 +137,14 @@ async function checkAndSendCardBirthdayReminders() {
       };
 
       const { timings = [1], notifyOnBirthday = true } = prefs;
-
       const owner = date.owner;
 
-      // ── Push : vérifier les préférences une seule fois par owner ──
       const pushOk =
         owner.pushEnabled === true && owner.pushEvents?.birthdays !== false;
-
       const pushTimings = owner.pushBirthdayTimings || [1, 0];
 
-      // Jour de l'anniversaire
       if (notifyOnBirthday && isBirthdayInXDays(date.date, 0)) {
         await sendBirthdayReminderEmail(owner, date, 0);
-
         if (pushOk && pushTimings.includes(0)) {
           await sendPushToUser(owner._id, buildBirthdayPushPayload(date, 0));
           console.log(
@@ -159,11 +153,9 @@ async function checkAndSendCardBirthdayReminders() {
         }
       }
 
-      // Rappels à l'avance
       for (const days of timings) {
         if (isBirthdayInXDays(date.date, days)) {
           await sendBirthdayReminderEmail(owner, date, days);
-
           if (pushOk && pushTimings.includes(days)) {
             await sendPushToUser(
               owner._id,
@@ -205,13 +197,11 @@ async function checkAndSendNamedayReminders() {
 
       const { timings = [1], notifyOnNameday = true } = prefs;
 
-      // Jour de la fête
       if (notifyOnNameday && isNamedayInXDays(date.nameday, 0)) {
         console.log(`🎉 Fête de ${date.name} aujourd'hui !`);
         await sendNamedayReminderEmail(date, 0);
       }
 
-      // Rappels à l'avance
       for (const days of timings) {
         if (isNamedayInXDays(date.nameday, days)) {
           console.log(`📅 Rappel fête de ${date.name} dans ${days} jour(s)`);
@@ -225,7 +215,35 @@ async function checkAndSendNamedayReminders() {
 }
 
 // ========================================
-// FONCTION PRINCIPALE
+// RÉCAP MENSUEL (NOUVEAU)
+// ========================================
+async function checkAndSendMonthlyRecap() {
+  try {
+    console.log("📅 [CRON] Envoi des récaps mensuels...");
+
+    const users = await User.find({
+      monthlyRecap: true,
+      receiveBirthdayEmails: { $ne: false },
+      deletedAt: { $exists: false },
+    });
+
+    for (const user of users) {
+      const dates = await dateModel
+        .find({ owner: user._id })
+        .populate("linkedUser", "name surname");
+      await sendMonthlyRecapEmail(user, dates);
+    }
+
+    console.log(
+      `✅ [CRON] Récaps mensuels envoyés à ${users.length} utilisateur(s)`,
+    );
+  } catch (error) {
+    console.error("❌ Erreur récaps mensuels:", error);
+  }
+}
+
+// ========================================
+// FONCTION PRINCIPALE (rappels quotidiens)
 // ========================================
 async function checkAndSendAllReminders() {
   console.log("\n📧 [CRON] Démarrage de la vérification des rappels...");
@@ -243,10 +261,18 @@ const cronJob = cron.schedule(
   async () => {
     await checkAndSendAllReminders();
   },
-  {
-    scheduled: false,
-    timezone: "Europe/Paris",
+  { scheduled: false, timezone: "Europe/Paris" },
+);
+
+// ========================================
+// PLANIFICATION : Récap mensuel — 1er du mois à 8h (NOUVEAU)
+// ========================================
+const monthlyRecapJob = cron.schedule(
+  "0 8 1 * *",
+  async () => {
+    await checkAndSendMonthlyRecap();
   },
+  { scheduled: false, timezone: "Europe/Paris" },
 );
 
 // ========================================
@@ -254,13 +280,8 @@ const cronJob = cron.schedule(
 // ========================================
 // const cronJob = cron.schedule(
 //   "*/10 * * * * *",
-//   async () => {
-//     await checkAndSendAllReminders();
-//   },
-//   {
-//     scheduled: false,
-//     timezone: "Europe/Paris",
-//   },
+//   async () => { await checkAndSendAllReminders(); },
+//   { scheduled: false, timezone: "Europe/Paris" }
 // );
 
 // ========================================
@@ -269,9 +290,10 @@ const cronJob = cron.schedule(
 module.exports = {
   start: () => {
     cronJob.start();
-    console.log(
-      "✅ Emails anniversaires & fêtes planifiés (tous les jours à minuit)",
-    );
+    monthlyRecapJob.start();
+    console.log("✅ Rappels quotidiens planifiés (minuit)");
+    console.log("✅ Récap mensuel planifié (1er du mois à 8h)");
   },
   checkAndSendAllReminders,
+  checkAndSendMonthlyRecap,
 };
