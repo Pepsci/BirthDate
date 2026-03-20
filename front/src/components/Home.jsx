@@ -2,6 +2,7 @@ import React, { useContext, useState, useEffect, useRef } from "react";
 import useNotifications from "../context/useNotifications";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/auth.context";
+import apiHandler from "../api/apiHandler";
 import DateList from "./dashboard/DateList";
 import ProfilDetails from "./profil/Profile";
 import UpdateDate from "./dashboard/UpdateDate";
@@ -27,9 +28,9 @@ const Home = () => {
   const [profileInitialSection, setProfileInitialSection] =
     useState("personal");
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [savedPage, setSavedPage] = useState(1); // 👈 NOUVEAU
+  const [savedPage, setSavedPage] = useState(1);
+  const [agendaParams, setAgendaParams] = useState(null);
 
-  // Scroll en haut à chaque changement de vue
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [showProfile, editingDate, viewingFriendProfile, showMergeModal]);
@@ -47,12 +48,51 @@ const Home = () => {
   }, [isLoggedIn, currentUser]);
 
   useEffect(() => {
+    if (!isLoggedIn || !currentUser) return;
+
     const tab = searchParams.get("tab");
-    if (tab === "friends" && isLoggedIn) {
+    const dateId = searchParams.get("dateId");
+    const month = searchParams.get("month");
+    const year = searchParams.get("year");
+
+    if (!tab) return;
+
+    console.log("🔗 Deep link:", { tab, dateId, month, year });
+
+    if (tab === "friends") {
       setShowProfile(true);
       setProfileInitialSection("friends");
+      navigate("/home", { replace: true });
+    } else if (tab === "profile") {
+      setShowProfile(true);
+      setProfileInitialSection("personal");
+      navigate("/home", { replace: true });
+    } else if (tab === "agenda") {
+      const monthNum =
+        month !== null ? parseInt(month) - 1 : new Date().getMonth();
+      const yearNum = year !== null ? parseInt(year) : new Date().getFullYear();
+      console.log("🗓️ Agenda params calculés:", { monthNum, yearNum });
+      setAgendaParams({ month: monthNum, year: yearNum });
+      setShowProfile(false);
+      setEditingDate(null);
+      setViewingFriendProfile(null);
+      navigate("/home", { replace: true });
+    } else if (tab === "date" && dateId) {
+      apiHandler
+        .get(`/date/${dateId}`)
+        .then((res) => {
+          setViewingFriendProfile({ date: res.data, initialSection: "info" });
+          setShowProfile(false);
+          setEditingDate(null);
+          setAgendaParams(null);
+          navigate("/home", { replace: true });
+        })
+        .catch((e) => {
+          console.error("Deep link date introuvable:", e);
+          navigate("/home", { replace: true });
+        });
     }
-  }, [searchParams, isLoggedIn]);
+  }, [searchParams, isLoggedIn, currentUser]);
 
   const handleLogoClick = () => {
     if (resetChatRef.current) resetChatRef.current();
@@ -62,7 +102,8 @@ const Home = () => {
     setShowMergeModal(false);
     setCardToMerge(null);
     setProfileInitialSection("personal");
-    setSavedPage(1); // 👈 Reset page au logo
+    setAgendaParams(null);
+    setSavedPage(1);
     navigate("/home");
   };
 
@@ -79,7 +120,6 @@ const Home = () => {
   };
 
   const handleEditDate = (date, currentPage) => {
-    // 👈 reçoit currentPage
     setSavedPage(currentPage);
     setEditingDate(date);
     setShowProfile(false);
@@ -96,7 +136,6 @@ const Home = () => {
     initialSection = "info",
     currentPage = 1,
   ) => {
-    // 👈 reçoit currentPage
     setSavedPage(currentPage);
     setViewingFriendProfile({ date, initialSection });
     setShowProfile(false);
@@ -172,7 +211,8 @@ const Home = () => {
               <DateList
                 onEditDate={handleEditDate}
                 onViewFriendProfile={handleViewFriendProfile}
-                initialPage={savedPage} // 👈 NOUVEAU
+                initialPage={savedPage}
+                agendaParams={agendaParams}
                 onResetChat={(fn) => {
                   resetChatRef.current = fn;
                 }}
