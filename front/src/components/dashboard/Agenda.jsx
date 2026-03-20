@@ -1,18 +1,27 @@
 import React, { useState } from "react";
 import "./css/agenda.css";
 
-const Agenda = ({ dates }) => {
-  const [currentMonth, setCurrentMonth] = useState(new Date());
+const Agenda = ({ dates, initialMonth, initialYear }) => {
+  const today = new Date();
+
+  // MODIFIÉ : init depuis les props deep link si présentes
+  const [currentMonth, setCurrentMonth] = useState(
+    new Date(
+      initialYear !== undefined ? initialYear : today.getFullYear(),
+      initialMonth !== undefined ? initialMonth : today.getMonth(),
+      1,
+    ),
+  );
 
   const handleNextMonth = () => {
     setCurrentMonth(
-      new Date(currentMonth.setMonth(currentMonth.getMonth() + 1))
+      new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1),
     );
   };
 
   const handlePreviousMonth = () => {
     setCurrentMonth(
-      new Date(currentMonth.setMonth(currentMonth.getMonth() - 1))
+      new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1),
     );
   };
 
@@ -21,24 +30,21 @@ const Agenda = ({ dates }) => {
     return dateObject.getMonth() === currentMonth.getMonth();
   });
 
-  // Créer un tableau pour les jours du mois
   const daysInMonth = new Array(
     new Date(
       currentMonth.getFullYear(),
       currentMonth.getMonth() + 1,
-      0
-    ).getDate()
+      0,
+    ).getDate(),
   )
     .fill(null)
     .map(() => []);
 
-  // Remplir le tableau avec les dates d'anniversaire
   datesInCurrentMonth.forEach((date) => {
     const dateObject = new Date(date.date);
     daysInMonth[dateObject.getDate() - 1].push(date);
   });
 
-  // Créer un tableau pour les semaines du mois
   const weeksInMonth = [];
   for (let i = 0; i < daysInMonth.length; i += 7) {
     weeksInMonth.push(daysInMonth.slice(i, i + 7));
@@ -69,7 +75,7 @@ const Agenda = ({ dates }) => {
                 const dateObject = new Date(
                   currentMonth.getFullYear(),
                   currentMonth.getMonth(),
-                  dayOfMonth
+                  dayOfMonth,
                 );
                 const dayOfWeek = dateObject.toLocaleDateString("fr-FR", {
                   weekday: window.innerWidth <= 600 ? "narrow" : "long",

@@ -14,10 +14,13 @@ const EmailTab = ({ dates, loading }) => {
   const [receiveOwnBirthdayEmail, setReceiveOwnBirthdayEmail] = useState(true);
   const [loadingOwnBirthdayPref, setLoadingOwnBirthdayPref] = useState(false);
 
+  // NOUVEAU
+  const [monthlyRecap, setMonthlyRecap] = useState(false);
+  const [loadingMonthlyRecap, setLoadingMonthlyRecap] = useState(false);
+
   const [filterPrenom, setFilterPrenom] = useState("");
   const [filterNom, setFilterNom] = useState("");
   const [filterFamille, setFilterFamille] = useState(false);
-
   const [localDates, setLocalDates] = useState(dates);
 
   useEffect(() => {
@@ -37,6 +40,7 @@ const EmailTab = ({ dates, loading }) => {
       setReceiveOwnBirthdayEmail(
         response.data.receiveOwnBirthdayEmail !== false,
       );
+      setMonthlyRecap(response.data.monthlyRecap === true); // NOUVEAU
     } catch (err) {
       console.error("Erreur chargement préférences:", err);
     }
@@ -167,6 +171,26 @@ const EmailTab = ({ dates, loading }) => {
           warning={
             !receiveOwnBirthdayEmail
               ? "⚠️ Vous ne recevrez pas d'email le jour de votre anniversaire."
+              : null
+          }
+        />
+
+        {/* NOUVEAU : Récap mensuel */}
+        <PrefToggle
+          label="📅 Recevoir un récap des anniversaires du mois"
+          checked={monthlyRecap}
+          loading={loadingMonthlyRecap}
+          onChange={(v) =>
+            patchUser(
+              "monthlyRecap",
+              v,
+              setLoadingMonthlyRecap,
+              setMonthlyRecap,
+            )
+          }
+          warning={
+            monthlyRecap && !userEmailPreference
+              ? "⚠️ Les emails globaux sont désactivés — le récap mensuel ne sera pas envoyé."
               : null
           }
         />

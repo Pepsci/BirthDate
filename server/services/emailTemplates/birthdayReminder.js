@@ -80,9 +80,6 @@ const getBirthdayReminderTextVersion = ({
   return `${message}\n\nVoir le profil : ${birthdayLink}\n\n---\nNe plus recevoir de rappels pour ${name} : ${unsubscribeSpecificLink}\nSe désabonner de tous les rappels : ${unsubscribeAllLink}`;
 };
 
-// ========================================
-// FONCTION D'ENVOI
-// ========================================
 async function sendBirthdayReminderEmail(owner, date, daysBeforeBirthday) {
   try {
     const frontendUrl = process.env.FRONTEND_URL || "https://birthreminder.com";
@@ -91,6 +88,7 @@ async function sendBirthdayReminderEmail(owner, date, daysBeforeBirthday) {
     const surname = date ? date.surname : owner.surname || "";
     const dateId = date ? date._id : null;
 
+    // CORRIGÉ : deep link vers /home?tab=date&dateId= au lieu de /birthday/:id
     const birthdayLink = dateId
       ? `${frontendUrl}/home?tab=date&dateId=${dateId}`
       : `${frontendUrl}/home`;

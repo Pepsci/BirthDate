@@ -82,20 +82,15 @@ function getNamedayReminderTextVersion({
   return `${mainText}\n\nVoir le profil : ${namedayLink}\n\n---\nNe plus recevoir de rappels pour ${name} : ${unsubscribeSpecificLink}\nNe plus recevoir de rappels d'anniversaires : ${unsubscribeAllLink}`;
 }
 
-// ========================================
-// FONCTION D'ENVOI
-// ========================================
 async function sendNamedayReminderEmail(date, daysBeforeNameday) {
   try {
     const owner = date.owner;
     if (!owner || !owner.email) return;
 
     const frontendUrl = process.env.FRONTEND_URL || "https://birthreminder.com";
-
     const name = date.name;
     const surname = date.surname || "";
 
-    // Formater la date de fête lisible ex: "03-19" → "19 mars"
     const [month, day] = date.nameday.split("-");
     const monthNames = [
       "janvier",
@@ -113,6 +108,7 @@ async function sendNamedayReminderEmail(date, daysBeforeNameday) {
     ];
     const formattedDate = `${parseInt(day)} ${monthNames[parseInt(month) - 1]}`;
 
+    // CORRIGÉ : deep link vers /home?tab=date&dateId= au lieu de /birthday/:id
     const namedayLink = `${frontendUrl}/home?tab=date&dateId=${date._id}`;
     const unsubscribeAllLink = `${frontendUrl}/unsubscribe?userId=${owner._id}&type=all`;
     const unsubscribeSpecificLink = `${frontendUrl}/unsubscribe?userId=${owner._id}&dateId=${date._id}&type=specific`;

@@ -30,6 +30,10 @@ function AuthProviderWrapper({ children }) {
       .isLoggedIn()
       .then((data) => {
         const { authToken, ...user } = data;
+        // CORRIGÉ : sync localStorage avec le token reçu du serveur
+        if (authToken) {
+          localStorage.setItem("authToken", authToken);
+        }
         setAuth({
           currentUser: user,
           isLoading: false,
@@ -38,16 +42,20 @@ function AuthProviderWrapper({ children }) {
         });
       })
       .catch(() => {
+        localStorage.removeItem("authToken");
         setAuth({ currentUser: null, isLoading: false, isLoggedIn: false, authToken: null });
       });
   };
 
-  // Appelé après login : stocke le token en mémoire (state React uniquement, pas localStorage)
+  // CORRIGÉ : stocke le token en mémoire ET dans localStorage
   const storeToken = (token) => {
+    localStorage.setItem("authToken", token);
     setAuth((prev) => ({ ...prev, authToken: token }));
   };
 
+  // CORRIGÉ : nettoie localStorage à la déconnexion
   const logOut = () => {
+    localStorage.removeItem("authToken");
     apiHandler.logout().catch(() => {});
     setAuth({ currentUser: null, isLoading: false, isLoggedIn: false, authToken: null });
   };
@@ -57,6 +65,7 @@ function AuthProviderWrapper({ children }) {
   };
 
   const removeToken = () => {
+    localStorage.removeItem("authToken");
     setAuth((prev) => ({ ...prev, authToken: null }));
   };
 
