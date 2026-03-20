@@ -2,11 +2,17 @@ const jwt = require("jsonwebtoken");
 
 module.exports = (socket, next) => {
   try {
-    // Le token peut être envoyé soit dans auth.token soit dans handshake.headers
-    const token =
+    // Le token peut être envoyé soit dans auth.token, handshake.headers.authorization, ou dans les cookies
+    let token =
       socket.handshake.auth.token ||
       (socket.handshake.headers.authorization &&
         socket.handshake.headers.authorization.split(" ")[1]);
+
+    if (!token && socket.handshake.headers.cookie) {
+      const cookie = require("cookie");
+      const cookies = cookie.parse(socket.handshake.headers.cookie);
+      token = cookies.authToken;
+    }
 
     if (!token) {
       console.warn("⚠️ Socket.io: Aucun token fourni");

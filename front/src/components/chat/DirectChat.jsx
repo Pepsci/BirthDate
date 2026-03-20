@@ -54,6 +54,10 @@ function DirectChat({ friendId }) {
         friendId,
       );
 
+      // Ajoute temporairement dans loadConversation avant le post
+console.log("friendId envoyé:", friendId);
+console.log("token:", localStorage.getItem("authToken"));
+
       const response = await apiHandler.post("/conversations/start", {
         friendId,
       });

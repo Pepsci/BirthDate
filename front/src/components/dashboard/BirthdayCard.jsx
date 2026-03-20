@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from "react";
 import useNotifications from "../../context/useNotifications";
+import apiHandler from "../../api/apiHandler";
+import { useNavigate } from "react-router-dom";
 import Countdown from "./Countdown";
 import "./css/birthcard.css";
 
 const BirthdayCard = ({ date, onEdit, onViewProfile, onOpenChat }) => {
+  const navigate = useNavigate();
   const { conversationUnreads } = useNotifications();
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [existingEventId, setExistingEventId] = useState(null);
 
   const isFriend = !!date.linkedUser;
 
@@ -21,6 +25,18 @@ const BirthdayCard = ({ date, onEdit, onViewProfile, onOpenChat }) => {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  useEffect(() => {
+    // Vérifier si un événement existe déjà pour cette personne (User ou Date manuelle)
+    const personId = date.linkedUser?._id || date.linkedUser || date._id;
+    if (personId) {
+      apiHandler.get(`/events/check/${personId}`)
+        .then(res => {
+          if (res.data.exists) setExistingEventId(res.data.shortId);
+        })
+        .catch(err => console.error("Error checking event", err));
+    }
+  }, [date]);
 
   // ✅ Parse la date sans conversion timezone
   const parseLocalDate = (dateStr) => {
@@ -146,13 +162,32 @@ const BirthdayCard = ({ date, onEdit, onViewProfile, onOpenChat }) => {
 
         <div className="button-group">
           {!isFriend && (
-            <button onClick={() => onEdit(date)} className="btn-edit">
-              Modifier
+            <button 
+              onClick={() => {
+                if (existingEventId) navigate(`/event/${existingEventId}`);
+                else navigate(`/events/new?forDate=${date._id}&name=${date.name}&date=${date.date}`);
+              }} 
+              className="btn-event"
+              style={{ background: "var(--primary)", color: "#fff", border: "none" }}
+            >
+              {existingEventId ? "🎉 Voir l'Évènement" : "🎉 Événement"}
             </button>
           )}
           <button onClick={() => onViewProfile(date)} className="btn-view">
             Voir Profil
           </button>
+          {isFriend && (
+            <button 
+              onClick={() => {
+                if (existingEventId) navigate(`/event/${existingEventId}`);
+                else navigate(`/events/new?forPerson=${date.linkedUser?._id || date.linkedUser}&name=${date.name}&date=${date.date}`);
+              }} 
+              className="btn-event-friend"
+              style={{ background: "var(--primary)", color: "#fff", border: "none", padding: "5px 10px", borderRadius: "5px", fontSize: "0.85rem", cursor: "pointer" }}
+            >
+              {existingEventId ? "🎉 Voir l'Évènement" : "🎉 Événement"}
+            </button>
+          )}
           {isFriend && (
             <button onClick={handleMessageClick} className="btn-message">
               💬 Chat
@@ -164,6 +199,16 @@ const BirthdayCard = ({ date, onEdit, onViewProfile, onOpenChat }) => {
             </button>
           )}
         </div>
+        {!isFriend && (
+          <button 
+            onClick={() => onEdit(date)} 
+            className="btn-edit-tiny"
+            style={{ position: "absolute", top: "10px", right: "10px", background: "transparent", border: "none", color: "var(--text-tertiary)", cursor: "pointer", fontSize: "0.8rem" }}
+            title="Modifier la date"
+          >
+            <i className="fa-solid fa-pen"></i>
+          </button>
+        )}
       </div>
     </div>
   );

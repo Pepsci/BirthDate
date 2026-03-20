@@ -1,0 +1,122 @@
+/* eventPage.css */
+
+.event-page {
+  width: 100%;
+  animation: fadeIn 0.4s ease;
+  background: var(--bg-primary);
+  border-radius: 16px;
+  box-shadow: var(--card-shadow);
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+}
+
+.event-page-header {
+  padding: 2rem 2rem 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+  background: linear-gradient(to right, var(--bg-secondary), var(--bg-primary));
+}
+
+.event-page-header h1 {
+  font-size: 2rem;
+  color: var(--text-primary);
+  margin: 0 0 0.5rem 0;
+}
+
+.event-page-header .organizer-info {
+  color: var(--text-secondary);
+  margin: 0;
+  font-size: 1rem;
+}
+
+.event-page-content {
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.event-detail-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.event-detail-section h3 {
+  color: var(--primary);
+  margin: 0 0 0.5rem 0;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0.5rem;
+}
+
+.event-detail-section p {
+  color: var(--text-primary);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.event-share-box {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-top: 1rem;
+}
+
+.event-share-input-group {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.event-share-input-group input {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: monospace;
+}
+
+.event-share-input-group button {
+  background: var(--primary);
+  color: white;
+  border: none;
+  padding: 0 1.5rem;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.event-share-input-group button:hover {
+  background: var(--primary-light);
+}
+
+.event-success-banner {
+  background: var(--success);
+  color: white;
+  padding: 1rem;
+  text-align: center;
+  font-weight: 500;
+  animation: fadeIn 0.3s ease;
+}
+
+@media (max-width: 600px) {
+  .event-page-header {
+    padding: 1.5rem;
+  }
+  .event-page-content {
+    padding: 1.5rem;
+  }
+  .event-share-input-group {
+    flex-direction: column;
+  }
+  .event-share-input-group button {
+    padding: 0.75rem;
+  }
+}

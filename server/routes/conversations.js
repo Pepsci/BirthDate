@@ -66,12 +66,14 @@ router.post("/start", isAuthenticated, async (req, res) => {
     }
 
     // Vérifier que les deux utilisateurs sont amis
+    console.log("userId:", userId, "friendId:", friendId);
     const friendship = await Friend.findOne({
       $or: [
         { user: userId, friend: friendId, status: "accepted" },
         { user: friendId, friend: userId, status: "accepted" },
       ],
     });
+    console.log("friendship trouvée:", friendship);
 
     if (!friendship) {
       return res

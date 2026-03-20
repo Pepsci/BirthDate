@@ -19,10 +19,12 @@ const friendRouter = require("./routes/friends");
 const conversationsRouter = require("./routes/conversations");
 const mergeDatesRouter = require("./routes/mergeDates");
 const pushRoutes = require("./routes/push");
+const eventsRouter = require("./routes/events");
 
 // Charger les cron jobs
 const purgeDeletedAccounts = require("./jobs/purgeDeletedAccounts");
 const sendReminders = require("./jobs/sendReminders");
+const eventReminders = require("./jobs/eventReminders");
 const {
   chatCronInstant,
   chatCronTwiceDaily,
@@ -77,10 +79,12 @@ app.use("/api/friends", friendRouter);
 app.use("/api/conversations", conversationsRouter);
 app.use("/api/merge-dates", mergeDatesRouter);
 app.use("/api/push", pushRoutes);
+app.use("/api/events", eventsRouter);
 
 // Démarrer les cron jobs
 purgeDeletedAccounts.start();
 sendReminders.start();
+eventReminders.start();
 chatCronInstant.start();
 chatCronDaily.start();
 chatCronTwiceDaily.start();
@@ -90,6 +94,7 @@ chatCronWeekly.start();
 console.log("🤖 Cron jobs activés :");
 console.log("   ✅ Purge comptes supprimés (tous les jours à 3h)");
 console.log("   ✅ Emails anniversaires & fêtes (tous les jours à minuit)");
+console.log("   ✅ Emails rappels événements (tous les jours à 6h)");
 console.log("   ✅ Emails chat instantané (toutes les 5 minutes)");
 console.log("   ✅ Emails chat quotidien (tous les jours à 9h)");
 console.log("   ✅ Emails chat hebdomadaire (chaque lundi à 9h)");

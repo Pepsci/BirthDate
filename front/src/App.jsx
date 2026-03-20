@@ -22,6 +22,9 @@ import CGU from "./components/pages/CGU";
 import Footer from "./components/layout/Footer";
 import GuidePage from "./components/pages/GuidePage";
 import ScrollToTop from "./components/layout/ScrollToTop";
+import EventsPanel from "./components/events/EventsPanel";
+import EventPage from "./components/events/EventPage";
+import EventForm from "./components/events/EventForm";
 
 function App() {
   return (
@@ -56,12 +59,17 @@ function App() {
           <Route path="/auth/reset/:token" element={<ResetPassword />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
 
+          {/* Route publique — accessible sans compte (lecture seule pour non-invités) */}
+          <Route path="/event/:shortId" element={<EventPage />} />
+
           <Route element={<PrivateRoute />}>
             <Route path="/home" element={<Home />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/birthday/:id" element={<BirthdayView />} />
             <Route path="/update-date/:id" element={<UpdateDate />} />
             <Route path="/merge-duplicates" element={<MergeDuplicates />} />
+            <Route path="/events/mine" element={<EventsPanel />} />
+            <Route path="/events/new" element={<EventForm onClose={(id) => id ? (window.location.href = `/event/${id}?created=true`) : (window.location.href = "/home")} />} />
           </Route>
         </Routes>
         <CookieBanner />

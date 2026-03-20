@@ -1,17 +1,14 @@
-// backend/server.js (nouveau fichier)
 require("dotenv").config();
 require("./config/mongoDb");
 
 const http = require("http");
 const { Server } = require("socket.io");
-const app = require("./app"); // On importe l'app Express
+const app = require("./app");
 
 const PORT = process.env.PORT || 3000;
 
-// Créer le serveur HTTP
 const server = http.createServer(app);
 
-// Configuration Socket.io
 const io = new Server(server, {
   cors: {
     origin: [
@@ -24,15 +21,21 @@ const io = new Server(server, {
   },
 });
 
-// Middleware d'authentification Socket.io
 const socketAuthMiddleware = require("./middleware/socketAuth");
 io.use(socketAuthMiddleware);
 
-// Gestion des événements Socket.io
-const setupSocketHandlers = require("./sockets/chatHandlers");
-setupSocketHandlers(io);
+const setupChatHandlers = require("./sockets/chatHandlers");
+const setupEventHandlers = require("./sockets/eventHandlers");
 
-// Démarrer le serveur
+// Map partagée entre les deux handlers
+const connectedUsers = new Map();
+
+// Un seul io.on("connection") — évite les doublons de listeners
+io.on("connection", (socket) => {
+  setupChatHandlers(io, socket, connectedUsers);
+  setupEventHandlers(io, socket);
+});
+
 server.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📡 Socket.io ready`);

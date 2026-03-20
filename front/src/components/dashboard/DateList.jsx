@@ -9,6 +9,7 @@ import ManualMergeModal from "./ManuelMergeModal";
 import Chat from "../chat/Chat";
 import ChatModal from "../chat/ChatModal";
 import DirectChat from "../chat/DirectChat";
+import EventsPanel from "../events/EventsPanel";
 import useNotifications from "../../context/useNotifications";
 import "./css/dateList.css";
 import "./css/birthcard.css";
@@ -34,6 +35,7 @@ const DateList = ({
   const [isFormVisible, setIsFormVisible] = useState(false);
   const [isFilterVisible, setIsFilterVisible] = useState(false);
   const [isChatVisible, setIsChatVisible] = useState(false);
+  const [isEventsVisible, setIsEventsVisible] = useState(false);
   const [itemsPerPage, setItemsPerPage] = useState(
     window.innerWidth <= 600 ? ITEMS_PER_PAGE_MOBILE : ITEMS_PER_PAGE,
   );
@@ -162,6 +164,7 @@ const DateList = ({
     if (!isFormVisible) {
       setIsFilterVisible(false);
       setIsChatVisible(false);
+      setIsEventsVisible(false);
     }
   };
 
@@ -175,6 +178,7 @@ const DateList = ({
     if (newVisibility) {
       setIsFormVisible(false);
       setIsChatVisible(false);
+      setIsEventsVisible(false);
       setTimeout(() => filterInputRef.current?.focus(), 100);
     }
   };
@@ -185,7 +189,19 @@ const DateList = ({
     if (newVisibility) {
       setIsFormVisible(false);
       setIsFilterVisible(false);
+      setIsEventsVisible(false);
       resetUnreadCount();
+    }
+  };
+
+  const toggleEventsVisibility = () => {
+    const newVisibility = !isEventsVisible;
+    setIsEventsVisible(newVisibility);
+    if (newVisibility) {
+      setIsFormVisible(false);
+      setIsFilterVisible(false);
+      setIsChatVisible(false);
+      setIsFilterVisible(false);
     }
   };
 
@@ -243,6 +259,7 @@ const DateList = ({
   const toggleViewMode = () => {
     setViewMode(viewMode === "card" ? "agenda" : "card");
     setIsChatVisible(false);
+    setIsEventsVisible(false);
   };
 
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -278,6 +295,13 @@ const DateList = ({
           </button>
 
           <button
+            className={`btnSwitch ${isEventsVisible ? "active" : ""}`}
+            onClick={toggleEventsVisibility}
+          >
+            {isEventsVisible ? "Cacher Événements" : "🎉 Événements"}
+          </button>
+
+          <button
             className={`btnSwitch ${isFormVisible ? "active" : ""}`}
             onClick={toggleFormVisibility}
           >
@@ -307,6 +331,8 @@ const DateList = ({
         <div className="chat-in-datelist">
           <Chat />
         </div>
+      ) : isEventsVisible ? (
+        <EventsPanel allDates={allDates} />
       ) : dates.length === 0 ? (
         <div className="no-results">
           Aucun résultat trouvé pour cette recherche
