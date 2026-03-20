@@ -7,7 +7,6 @@ import MessageInput from "./MessageInput";
 import "./css/chatWindow.css";
 
 function ChatWindow({ conversation, onBack, onRead }) {
-  // ← onRead ajouté
   const { isUserOnline } = useOnlineStatus();
 
   const [messages, setMessages] = useState([]);
@@ -29,9 +28,11 @@ function ChatWindow({ conversation, onBack, onRead }) {
   const longPressTimer = useRef(null);
   const conversationIdRef = useRef(conversation._id);
 
-  const currentUserId = JSON.parse(
-    atob(localStorage.getItem("authToken").split(".")[1]),
-  )._id;
+  // CORRIGÉ : safe si authToken est null (Firefox/Opera)
+  const authToken = localStorage.getItem("authToken");
+  const currentUserId = authToken
+    ? JSON.parse(atob(authToken.split(".")[1]))._id
+    : null;
 
   useEffect(() => {
     conversationIdRef.current = conversation._id;
@@ -99,6 +100,9 @@ function ChatWindow({ conversation, onBack, onRead }) {
   }, [conversation, showUnreadSeparator]);
 
   const loadMessages = async () => {
+    // Guard : si pas d'userId on ne peut pas charger
+    if (!currentUserId) return;
+
     setLoading(true);
     try {
       const response = await apiHandler.get(
@@ -146,18 +150,13 @@ function ChatWindow({ conversation, onBack, onRead }) {
     }
   };
 
-  // ─── Marquer comme lu ────────────────────────────────────────────────────────
   const markAsRead = async () => {
     try {
       await apiHandler.put(`/conversations/${conversation._id}/read`);
-
       socketService.emit("messages:read", {
         conversationId: conversation._id,
       });
-
-      // ← Notifier le parent pour réinitialiser le badge immédiatement
       if (onRead) onRead();
-
       setHideSeparator(true);
       setTimeout(() => {
         setShowUnreadSeparator(false);
@@ -284,7 +283,6 @@ function ChatWindow({ conversation, onBack, onRead }) {
     }
   };
 
-  // ← Sans condition : markAsRead à chaque focus input
   const handleInputFocus = () => {
     markAsRead();
   };
@@ -384,6 +382,15 @@ function ChatWindow({ conversation, onBack, onRead }) {
 
   const otherUser = getOtherParticipant();
   const isOnline = otherUser ? isUserOnline(otherUser._id) : false;
+
+  // Guard : authToken manquant
+  if (!currentUserId) {
+    return (
+      <div className="chat-window">
+        <div className="loading">Session expirée, veuillez vous reconnecter.</div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
