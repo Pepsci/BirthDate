@@ -22,13 +22,15 @@ const DateList = ({
   onViewFriendProfile,
   onMerge,
   onResetChat,
-  initialPage = 1, // 👈 NOUVEAU
+  initialPage = 1,
+  agendaParams = null,
+  initialFilter = null, // NOUVEAU : "Gaspard Lefebvre" depuis deep link email
 }) => {
   const { currentUser } = useAuth();
   const [dates, setDates] = useState([]);
   const [allDates, setAllDates] = useState([]);
   const [friendIds, setFriendIds] = useState([]);
-  const [currentPage, setCurrentPage] = useState(initialPage); // 👈 initialisé avec initialPage
+  const [currentPage, setCurrentPage] = useState(initialPage);
   const [isFormVisible, setIsFormVisible] = useState(false);
   const [isFilterVisible, setIsFilterVisible] = useState(false);
   const [isChatVisible, setIsChatVisible] = useState(false);
@@ -45,6 +47,8 @@ const DateList = ({
   const [selectedFriendId, setSelectedFriendId] = useState(null);
   const [selectedFriendName, setSelectedFriendName] = useState("");
 
+  const [viewMode, setViewMode] = useState(agendaParams ? "agenda" : "card");
+
   const sortDates = (datesArray) => {
     const today = new Date();
     const todayDay = today.getDate();
@@ -57,7 +61,6 @@ const DateList = ({
 
       const dayA = dateA.getDate();
       const monthA = dateA.getMonth();
-
       const dayB = dateB.getDate();
       const monthB = dateB.getMonth();
 
@@ -66,21 +69,13 @@ const DateList = ({
 
       if (isTodayA && !isTodayB) return -1;
       if (!isTodayA && isTodayB) return 1;
-
-      if (isTodayA && isTodayB) {
-        return a.name.localeCompare(b.name);
-      }
+      if (isTodayA && isTodayB) return a.name.localeCompare(b.name);
 
       const nextBirthdayA = new Date(todayYear, monthA, dayA);
       const nextBirthdayB = new Date(todayYear, monthB, dayB);
 
-      if (nextBirthdayA < today) {
-        nextBirthdayA.setFullYear(todayYear + 1);
-      }
-
-      if (nextBirthdayB < today) {
-        nextBirthdayB.setFullYear(todayYear + 1);
-      }
+      if (nextBirthdayA < today) nextBirthdayA.setFullYear(todayYear + 1);
+      if (nextBirthdayB < today) nextBirthdayB.setFullYear(todayYear + 1);
 
       return nextBirthdayA - nextBirthdayB;
     });
@@ -105,9 +100,7 @@ const DateList = ({
     const handleResize = () => {
       const newItemsPerPage =
         window.innerWidth <= 600 ? ITEMS_PER_PAGE_MOBILE : ITEMS_PER_PAGE;
-      if (itemsPerPage !== newItemsPerPage) {
-        setItemsPerPage(newItemsPerPage);
-      }
+      if (itemsPerPage !== newItemsPerPage) setItemsPerPage(newItemsPerPage);
     };
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
@@ -128,43 +121,6 @@ const DateList = ({
     }
   }, []);
 
-  const toggleFormVisibility = () => {
-    setIsFormVisible(!isFormVisible);
-    if (!isFormVisible) {
-      setIsFilterVisible(false);
-      setIsChatVisible(false);
-    }
-  };
-
-  const toggleFilterVisibility = () => {
-    const newVisibility = !isFilterVisible;
-    setIsFilterVisible(newVisibility);
-
-    if (!newVisibility) {
-      setDates(allDates);
-      setCurrentPage(1);
-    }
-
-    if (newVisibility) {
-      setIsFormVisible(false);
-      setIsChatVisible(false);
-      setTimeout(() => {
-        filterInputRef.current?.focus();
-      }, 100);
-    }
-  };
-
-  const toggleChatVisibility = () => {
-    const newVisibility = !isChatVisible;
-    setIsChatVisible(newVisibility);
-
-    if (newVisibility) {
-      setIsFormVisible(false);
-      setIsFilterVisible(false);
-      resetUnreadCount();
-    }
-  };
-
   useEffect(() => {
     apiHandler
       .get("/friends")
@@ -176,6 +132,62 @@ const DateList = ({
       })
       .catch((e) => console.error(e));
   }, [currentUser]);
+
+  // NOUVEAU : appliquer le filtre deep link quand les dates sont chargées
+  useEffect(() => {
+    if (!initialFilter || allDates.length === 0) return;
+
+    const parts = initialFilter.trim().split(" ");
+    const firstName = parts[0] || "";
+    const lastName = parts.slice(1).join(" ") || "";
+
+    // Filtrer les dates
+    const filtered = allDates.filter((d) => {
+      const matchFirst = firstName
+        ? d.name?.toLowerCase().includes(firstName.toLowerCase())
+        : true;
+      const matchLast = lastName
+        ? d.surname?.toLowerCase().includes(lastName.toLowerCase())
+        : true;
+      return matchFirst && matchLast;
+    });
+
+    setDates(filtered);
+    setCurrentPage(1);
+    setIsFilterVisible(true); // Ouvrir le panneau filtre pour que l'user voit ce qui est appliqué
+  }, [initialFilter, allDates]);
+
+  const toggleFormVisibility = () => {
+    setIsFormVisible(!isFormVisible);
+    if (!isFormVisible) {
+      setIsFilterVisible(false);
+      setIsChatVisible(false);
+    }
+  };
+
+  const toggleFilterVisibility = () => {
+    const newVisibility = !isFilterVisible;
+    setIsFilterVisible(newVisibility);
+    if (!newVisibility) {
+      setDates(allDates);
+      setCurrentPage(1);
+    }
+    if (newVisibility) {
+      setIsFormVisible(false);
+      setIsChatVisible(false);
+      setTimeout(() => filterInputRef.current?.focus(), 100);
+    }
+  };
+
+  const toggleChatVisibility = () => {
+    const newVisibility = !isChatVisible;
+    setIsChatVisible(newVisibility);
+    if (newVisibility) {
+      setIsFormVisible(false);
+      setIsFilterVisible(false);
+      resetUnreadCount();
+    }
+  };
 
   const handleDateAdded = (newDate) => {
     const updatedDates = sortDates([...allDates, newDate]);
@@ -191,23 +203,21 @@ const DateList = ({
     friendFilter,
   ) => {
     let filteredDates = [...allDates];
-    if (familyFilter) {
-      filteredDates = filteredDates.filter((date) => date.family === true);
-    }
+    if (familyFilter)
+      filteredDates = filteredDates.filter((d) => d.family === true);
     if (friendFilter) {
       filteredDates = filteredDates.filter(
-        (date) =>
-          date.linkedUser && friendIds.includes(date.linkedUser._id.toString()),
+        (d) => d.linkedUser && friendIds.includes(d.linkedUser._id.toString()),
       );
     }
     if (newName) {
-      filteredDates = filteredDates.filter((date) =>
-        date.name.toLowerCase().startsWith(newName.toLowerCase()),
+      filteredDates = filteredDates.filter((d) =>
+        d.name.toLowerCase().startsWith(newName.toLowerCase()),
       );
     }
     if (newSurname) {
-      filteredDates = filteredDates.filter((date) =>
-        date.surname.toLowerCase().startsWith(newSurname.toLowerCase()),
+      filteredDates = filteredDates.filter((d) =>
+        d.surname.toLowerCase().startsWith(newSurname.toLowerCase()),
       );
     }
     setDates(filteredDates);
@@ -230,15 +240,14 @@ const DateList = ({
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = dates.slice(indexOfFirstItem, indexOfLastItem);
-
-  const [viewMode, setViewMode] = useState("card");
   const toggleViewMode = () => {
     setViewMode(viewMode === "card" ? "agenda" : "card");
     setIsChatVisible(false);
   };
+
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = dates.slice(indexOfFirstItem, indexOfLastItem);
 
   return (
     <div className="dateList">
@@ -286,7 +295,6 @@ const DateList = ({
               />
             </div>
           )}
-
           {isFormVisible && (
             <div className="filter-section">
               <CreateDate onDateAdded={handleDateAdded} />
@@ -304,17 +312,21 @@ const DateList = ({
           Aucun résultat trouvé pour cette recherche
         </div>
       ) : viewMode === "agenda" ? (
-        <Agenda dates={dates} />
+        <Agenda
+          dates={dates}
+          initialMonth={agendaParams?.month}
+          initialYear={agendaParams?.year}
+        />
       ) : (
         <div className="birthDeck">
           {currentItems.map((date) => (
             <BirthdayCard
               key={date._id}
               date={date}
-              onEdit={(d) => onEditDate(d, currentPage)} // 👈 passe currentPage
+              onEdit={(d) => onEditDate(d, currentPage)}
               onViewProfile={(d, section) =>
                 onViewFriendProfile(d, section, currentPage)
-              } // 👈 passe currentPage
+              }
               onOpenChat={handleOpenChatModal}
             />
           ))}
@@ -335,7 +347,6 @@ const DateList = ({
             const totalPages = Math.ceil(dates.length / itemsPerPage);
             const maxPagesToShow = window.innerWidth <= 600 ? 3 : 5;
             const pages = [];
-
             let startPage, endPage;
 
             if (totalPages <= maxPagesToShow) {
@@ -361,18 +372,16 @@ const DateList = ({
                   key="page-1"
                   onClick={() => paginate(1)}
                   className={currentPage === 1 ? "active" : ""}
-                  data-page="1"
                 >
                   1
                 </button>,
               );
-              if (startPage > 2) {
+              if (startPage > 2)
                 pages.push(
                   <span key="ellipsis-start" className="ellipsis">
                     ...
                   </span>,
                 );
-              }
             }
 
             for (let i = startPage; i <= endPage; i++) {
@@ -381,7 +390,6 @@ const DateList = ({
                   key={`page-${i}`}
                   onClick={() => paginate(i)}
                   className={currentPage === i ? "active" : ""}
-                  data-page={i}
                 >
                   {i}
                 </button>,
@@ -389,19 +397,17 @@ const DateList = ({
             }
 
             if (endPage < totalPages) {
-              if (endPage < totalPages - 1) {
+              if (endPage < totalPages - 1)
                 pages.push(
                   <span key="ellipsis-end" className="ellipsis">
                     ...
                   </span>,
                 );
-              }
               pages.push(
                 <button
                   key={`page-${totalPages}`}
                   onClick={() => paginate(totalPages)}
                   className={currentPage === totalPages ? "active" : ""}
-                  data-page={totalPages}
                 >
                   {totalPages}
                 </button>,
