@@ -1,36 +1,35 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "motion/react";
 import apiHandler from "../../api/apiHandler";
 import useAuth from "../../context/useAuth";
 import EventCard from "./EventCard";
 import EventForm from "./EventForm";
 import "./css/eventsPanel.css";
 
-const DESKTOP_PER_PAGE = 10; // 2 lignes × 5 colonnes
+const DESKTOP_PER_PAGE = 10;
 const MOBILE_PER_PAGE = 8;
-const PAGINATION_THRESHOLD = 6; // pagination apparaît au-delà
+const PAGINATION_THRESHOLD = 6;
 
 const isMobile = () => window.innerWidth <= 600;
 
-// ─── Composant pagination réutilisable ──────────────────
+// ─── Pagination ──────────────────────────────────────────
 const SectionPagination = ({ currentPage, totalPages, onPageChange }) => {
   if (totalPages <= 1) return null;
 
-  const pages = [];
   const maxVisible = isMobile() ? 3 : 5;
   let start = Math.max(1, currentPage - Math.floor(maxVisible / 2));
   let end = Math.min(totalPages, start + maxVisible - 1);
   if (end - start + 1 < maxVisible) start = Math.max(1, end - maxVisible + 1);
 
   return (
-    <div className="events-pagination">
-      <button
-        className="events-pagination-btn"
-        onClick={() => onPageChange(currentPage - 1)}
-        disabled={currentPage === 1}
-      >
-        Précédent
-      </button>
+    <motion.div
+      className="events-pagination"
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25 }}
+    >
+      <button className="events-pagination-btn" onClick={() => onPageChange(currentPage - 1)} disabled={currentPage === 1}>Précédent</button>
 
       {start > 1 && (
         <>
@@ -40,13 +39,15 @@ const SectionPagination = ({ currentPage, totalPages, onPageChange }) => {
       )}
 
       {Array.from({ length: end - start + 1 }, (_, i) => start + i).map(p => (
-        <button
+        <motion.button
           key={p}
           className={`events-pagination-btn ${currentPage === p ? "active" : ""}`}
           onClick={() => onPageChange(p)}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.92 }}
         >
           {p}
-        </button>
+        </motion.button>
       ))}
 
       {end < totalPages && (
@@ -56,18 +57,12 @@ const SectionPagination = ({ currentPage, totalPages, onPageChange }) => {
         </>
       )}
 
-      <button
-        className="events-pagination-btn"
-        onClick={() => onPageChange(currentPage + 1)}
-        disabled={currentPage === totalPages}
-      >
-        Suivant
-      </button>
-    </div>
+      <button className="events-pagination-btn" onClick={() => onPageChange(currentPage + 1)} disabled={currentPage === totalPages}>Suivant</button>
+    </motion.div>
   );
 };
 
-// ─── Composant section paginée ───────────────────────────
+// ─── Section paginée animée ──────────────────────────────
 const PaginatedSection = ({ title, events, navigate, onEdit, onDelete }) => {
   const [page, setPage] = useState(1);
   const perPage = isMobile() ? MOBILE_PER_PAGE : DESKTOP_PER_PAGE;
@@ -78,19 +73,31 @@ const PaginatedSection = ({ title, events, navigate, onEdit, onDelete }) => {
   if (events.length === 0) return null;
 
   return (
-    <div className="events-section">
+    <motion.div
+      className="events-section"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+    >
       <h3>{title}</h3>
-      <div className="events-grid">
-        {visible.map(evt => (
+      <motion.div
+        className="events-grid"
+        key={page} // re-anime à chaque changement de page
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.2 }}
+      >
+        {visible.map((evt, i) => (
           <EventCard
             key={evt._id}
             event={evt}
             navigate={navigate}
             onEdit={onEdit}
             onDelete={onDelete}
+            index={i}
           />
         ))}
-      </div>
+      </motion.div>
       {showPagination && (
         <SectionPagination
           currentPage={page}
@@ -98,7 +105,7 @@ const PaginatedSection = ({ title, events, navigate, onEdit, onDelete }) => {
           onPageChange={(p) => { setPage(p); window.scrollTo({ top: 0, behavior: "smooth" }); }}
         />
       )}
-    </div>
+    </motion.div>
   );
 };
 
@@ -162,88 +169,135 @@ const EventsPanel = ({ allDates }) => {
   const filteredEvents = getFilteredEvents();
   const organized = filteredEvents.filter(e => e.isOrganizer);
   const invited = filteredEvents.filter(e => !e.isOrganizer);
-
-  // En mode filtre "mine" ou "invited", on affiche tout à plat sans section
   const flatMode = filter === "mine" || filter === "invited";
 
+  const filters = [
+    { key: "all", label: "Tous" },
+    { key: "mine", label: "Mes événements" },
+    { key: "invited", label: "Invitations" },
+    { key: "upcoming", label: "À venir" },
+    { key: "pending", label: "En attente", className: "pending" },
+    { key: "past", label: "Passés" },
+  ];
+
   return (
-    <div className="events-panel">
+    <motion.div
+      className="events-panel"
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, ease: "easeOut" }}
+    >
       {/* Header */}
       <div className="events-header">
         <h2 className="titleFont">Mes Événements</h2>
-        <button className="btn-create-event" onClick={() => setShowEventForm(true)}>
+        <motion.button
+          className="btn-create-event"
+          onClick={() => setShowEventForm(true)}
+          whileHover={{ scale: 1.04, y: -1 }}
+          whileTap={{ scale: 0.97 }}
+        >
           + Créer un événement
-        </button>
+        </motion.button>
       </div>
 
       {/* Filtres */}
       <div className="events-filters">
-        <button className={filter === "all" ? "active" : ""} onClick={() => setFilter("all")}>Tous</button>
-        <button className={filter === "mine" ? "active" : ""} onClick={() => setFilter("mine")}>Mes événements</button>
-        <button className={filter === "invited" ? "active" : ""} onClick={() => setFilter("invited")}>Invitations</button>
-        <button className={filter === "upcoming" ? "active" : ""} onClick={() => setFilter("upcoming")}>À venir</button>
-        <button className={`${filter === "pending" ? "active pending" : ""}`} onClick={() => setFilter("pending")}>En attente</button>
-        <button className={filter === "past" ? "active" : ""} onClick={() => setFilter("past")}>Passés</button>
+        {filters.map(f => (
+          <motion.button
+            key={f.key}
+            className={`${filter === f.key ? `active ${f.className || ""}` : ""}`}
+            onClick={() => setFilter(f.key)}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            {f.label}
+          </motion.button>
+        ))}
       </div>
 
       {/* Contenu */}
-      {loading ? (
-        <p className="events-loading">Chargement des événements…</p>
-      ) : filteredEvents.length === 0 ? (
-        <div className="no-events">
-          <p>Aucun événement trouvé.</p>
-          <button className="btn-create-event btn-create-event--ghost" onClick={() => setShowEventForm(true)}>
-            J'organise mon premier événement
-          </button>
-        </div>
-      ) : flatMode ? (
-        <div className="events-lists">
-          <PaginatedSection
-            title={filter === "mine" ? "Mes événements organisés" : "Invitations reçues"}
-            events={filteredEvents}
-            navigate={navigate}
-            onEdit={filter === "mine" ? setEditingEvent : undefined}
-            onDelete={filter === "mine" ? handleDeleteEvent : undefined}
-          />
-        </div>
-      ) : (
-        <div className="events-lists">
-          <PaginatedSection
-            title="Mes événements organisés"
-            events={organized}
-            navigate={navigate}
-            onEdit={setEditingEvent}
-            onDelete={handleDeleteEvent}
-          />
-          <PaginatedSection
-            title="Invitations reçues"
-            events={invited}
-            navigate={navigate}
-          />
-        </div>
-      )}
+      <AnimatePresence mode="wait">
+        {loading ? (
+          <motion.p
+            key="loading"
+            className="events-loading"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            Chargement des événements…
+          </motion.p>
+        ) : filteredEvents.length === 0 ? (
+          <motion.div
+            key="empty"
+            className="no-events"
+            initial={{ opacity: 0, scale: 0.97 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.97 }}
+            transition={{ duration: 0.25 }}
+          >
+            <p>Aucun événement trouvé.</p>
+            <motion.button
+              className="btn-create-event btn-create-event--ghost"
+              onClick={() => setShowEventForm(true)}
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.97 }}
+            >
+              J'organise mon premier événement
+            </motion.button>
+          </motion.div>
+        ) : (
+          <motion.div
+            key={filter}
+            className="events-lists"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.25 }}
+          >
+            {flatMode ? (
+              <PaginatedSection
+                title={filter === "mine" ? "Mes événements organisés" : "Invitations reçues"}
+                events={filteredEvents}
+                navigate={navigate}
+                onEdit={filter === "mine" ? setEditingEvent : undefined}
+                onDelete={filter === "mine" ? handleDeleteEvent : undefined}
+              />
+            ) : (
+              <>
+                <PaginatedSection title="Mes événements organisés" events={organized} navigate={navigate} onEdit={setEditingEvent} onDelete={handleDeleteEvent} />
+                <PaginatedSection title="Invitations reçues" events={invited} navigate={navigate} />
+              </>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Modals */}
-      {showEventForm && (
-        <EventForm
-          onClose={(shortId) => {
-            setShowEventForm(false);
-            if (shortId) navigate(`/event/${shortId}?created=true`);
-          }}
-        />
-      )}
+      <AnimatePresence>
+        {showEventForm && (
+          <EventForm
+            onClose={(shortId) => {
+              setShowEventForm(false);
+              if (shortId) navigate(`/event/${shortId}?created=true`);
+            }}
+          />
+        )}
+      </AnimatePresence>
 
-      {editingEvent && (
-        <EventForm
-          editMode={true}
-          existingEvent={editingEvent}
-          onClose={(result) => {
-            setEditingEvent(null);
-            if (result) loadEvents();
-          }}
-        />
-      )}
-    </div>
+      <AnimatePresence>
+        {editingEvent && (
+          <EventForm
+            editMode={true}
+            existingEvent={editingEvent}
+            onClose={(result) => {
+              setEditingEvent(null);
+              if (result) loadEvents();
+            }}
+          />
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 };
 

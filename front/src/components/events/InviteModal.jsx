@@ -1,5 +1,18 @@
 import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "motion/react";
 import apiHandler from "../../api/apiHandler";
+
+const overlayVariants = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { duration: 0.25 } },
+  exit: { opacity: 0, transition: { duration: 0.2 } },
+};
+
+const modalVariants = {
+  hidden: { opacity: 0, y: 40, scale: 0.96 },
+  visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.3, ease: [0.22, 1, 0.36, 1] } },
+  exit: { opacity: 0, y: 20, scale: 0.96, transition: { duration: 0.2, ease: "easeIn" } },
+};
 
 const InviteModal = ({ shortId, onClose }) => {
   const [friends, setFriends] = useState([]);
@@ -17,9 +30,9 @@ const InviteModal = ({ shortId, onClose }) => {
     setLoading(true);
     try {
       const emails = externalEmails.split(",").map(e => e.trim()).filter(e => e !== "");
-      await apiHandler.post(`/events/${shortId}/invite`, { 
+      await apiHandler.post(`/events/${shortId}/invite`, {
         userIds: selectedFriends,
-        externalEmails: emails
+        externalEmails: emails,
       });
       onClose(true);
     } catch (err) {
@@ -29,49 +42,91 @@ const InviteModal = ({ shortId, onClose }) => {
   };
 
   return (
-    <div className="event-modal-overlay" style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
-      <div className="event-modal" style={{ background: "var(--bg-primary)", padding: "30px", borderRadius: "15px", width: "90%", maxWidth: "500px", boxShadow: "var(--shadow-lg)" }}>
+    <motion.div
+      className="event-modal-overlay"
+      style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}
+      variants={overlayVariants}
+      initial="hidden"
+      animate="visible"
+      exit="exit"
+      onClick={() => onClose(false)}
+    >
+      <motion.div
+        className="event-modal"
+        style={{ background: "var(--bg-primary)", padding: "30px", borderRadius: "15px", width: "90%", maxWidth: "500px", boxShadow: "var(--shadow-lg)" }}
+        variants={modalVariants}
+        initial="hidden"
+        animate="visible"
+        exit="exit"
+        onClick={e => e.stopPropagation()}
+      >
         <h2 className="titleFont" style={{ margin: "0 0 20px 0" }}>Inviter des proches</h2>
-        
-        <div className="modal-body" style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+
+        <motion.div
+          className="modal-body"
+          style={{ display: "flex", flexDirection: "column", gap: "20px" }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.1, duration: 0.25 }}
+        >
           <div>
             <label style={{ fontWeight: "bold", display: "block", marginBottom: "10px" }}>Vos amis BirthReminder</label>
             <div style={{ maxHeight: "200px", overflowY: "auto", border: "1px solid var(--border-color)", borderRadius: "10px", padding: "10px", background: "var(--bg-secondary)" }}>
-              {friends.filter(f => f.friendUser).map(f => (
-                <label key={f.friendUser._id} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px", cursor: "pointer" }}>
-                  <input 
-                    type="checkbox" 
-                    checked={selectedFriends.includes(f.friendUser._id)} 
+              {friends.filter(f => f.friendUser).map((f, i) => (
+                <motion.label
+                  key={f.friendUser._id}
+                  style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px", cursor: "pointer" }}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.05, duration: 0.2 }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedFriends.includes(f.friendUser._id)}
                     onChange={(e) => {
                       if (e.target.checked) setSelectedFriends([...selectedFriends, f.friendUser._id]);
                       else setSelectedFriends(selectedFriends.filter(id => id !== f.friendUser._id));
-                    }} 
+                    }}
                   />
                   <span>{f.friendUser.name} {f.friendUser.surname}</span>
-                </label>
+                </motion.label>
               ))}
             </div>
           </div>
 
           <div>
             <label style={{ fontWeight: "bold", display: "block", marginBottom: "10px" }}>Email d'invités externes (séparés par une virgule)</label>
-            <textarea 
-              placeholder="exemple@email.com, ami@email.com" 
-              value={externalEmails} 
+            <textarea
+              placeholder="exemple@email.com, ami@email.com"
+              value={externalEmails}
               onChange={(e) => setExternalEmails(e.target.value)}
               style={{ width: "100%", padding: "10px", borderRadius: "10px", border: "1px solid var(--border-color)", background: "var(--bg-secondary)", color: "var(--text-primary)", minHeight: "80px" }}
             />
           </div>
-        </div>
+        </motion.div>
 
         <div className="modal-footer" style={{ display: "flex", gap: "10px", marginTop: "30px", justifyContent: "flex-end" }}>
-          <button onClick={() => onClose(false)} className="btn-cancel" style={{ padding: "10px 20px", borderRadius: "10px", border: "none", cursor: "pointer", background: "var(--bg-tertiary)" }}>Annuler</button>
-          <button onClick={handleInvite} disabled={loading || (selectedFriends.length === 0 && !externalEmails.trim())} className="btn-submit" style={{ padding: "10px 20px", borderRadius: "10px", border: "none", cursor: "pointer", background: "var(--primary)", color: "#fff", fontWeight: "bold" }}>
-            {loading ? "Envoi..." : "Envoyer les invitations 📨"}
-          </button>
+          <motion.button
+            onClick={() => onClose(false)}
+            style={{ padding: "10px 20px", borderRadius: "10px", border: "none", cursor: "pointer", background: "var(--bg-tertiary)" }}
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
+          >
+            Annuler
+          </motion.button>
+          <motion.button
+            onClick={handleInvite}
+            disabled={loading || (selectedFriends.length === 0 && !externalEmails.trim())}
+            style={{ padding: "10px 20px", borderRadius: "10px", border: "none", cursor: "pointer", background: "var(--primary)", color: "#fff", fontWeight: "bold" }}
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
+            animate={loading ? { opacity: 0.7 } : { opacity: 1 }}
+          >
+            {loading ? "Envoi…" : "Envoyer les invitations 📨"}
+          </motion.button>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 };
 

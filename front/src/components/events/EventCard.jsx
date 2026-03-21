@@ -1,7 +1,8 @@
 import React, { useState } from "react";
+import { motion, AnimatePresence } from "motion/react";
 import "./css/eventCard.css";
 
-const EventCard = ({ event, navigate, onEdit, onDelete }) => {
+const EventCard = ({ event, navigate, onEdit, onDelete, index = 0 }) => {
   const [deleteConfirm, setDeleteConfirm] = useState(false);
 
   const isPast = new Date(event.fixedDate || event.selectedDate || event.createdAt) < new Date();
@@ -44,7 +45,17 @@ const EventCard = ({ event, navigate, onEdit, onDelete }) => {
   };
 
   return (
-    <div className="event-card" onClick={() => navigate(url)}>
+    <motion.div
+      className="event-card"
+      onClick={() => navigate(url)}
+      /* ── Entrée en cascade ── */
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, delay: index * 0.06, ease: "easeOut" }}
+      /* ── Hover ── */
+      whileHover={{ y: -5, boxShadow: "var(--card-shadow-hover, 0 10px 28px rgba(0,0,0,0.28))" }}
+      whileTap={{ scale: 0.98 }}
+    >
       <span className={`event-card-badge ${getBadgeClass()}`}>
         {getBadgeLabel()}
       </span>
@@ -81,34 +92,58 @@ const EventCard = ({ event, navigate, onEdit, onDelete }) => {
 
         <div className="event-card-actions" onClick={e => e.stopPropagation()}>
           {event.isOrganizer && onEdit && (
-            <button
+            <motion.button
               className="event-card-action"
               onClick={e => { e.stopPropagation(); onEdit(event); }}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
             >
               ✏️ Modifier
-            </button>
+            </motion.button>
           )}
 
           {event.isOrganizer && onDelete && (
             <>
-              <button
+              <motion.button
                 className={`event-card-action ${deleteConfirm ? "danger-confirm" : "danger"}`}
                 onClick={handleDelete}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                animate={deleteConfirm ? { scale: [1, 1.05, 1] } : {}}
+                transition={{ duration: 0.2 }}
               >
                 {deleteConfirm ? "⚠️ Confirmer" : "🗑️"}
-              </button>
-              {deleteConfirm && (
-                <button className="event-card-action" onClick={handleCancelDelete}>✕</button>
-              )}
+              </motion.button>
+              <AnimatePresence>
+                {deleteConfirm && (
+                  <motion.button
+                    className="event-card-action"
+                    onClick={handleCancelDelete}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    transition={{ duration: 0.15 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    ✕
+                  </motion.button>
+                )}
+              </AnimatePresence>
             </>
           )}
 
           {!event.isOrganizer && (
-            <button className="event-card-action">Voir</button>
+            <motion.button
+              className="event-card-action"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              Voir
+            </motion.button>
           )}
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 
