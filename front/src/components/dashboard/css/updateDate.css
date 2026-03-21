@@ -12,6 +12,10 @@
     font-family: 'Roboto', sans-serif;
 }
 
+.auth-panel{
+    width: 100%;
+}
+
 /* ── CHECKBOX ── */
 .auth-checkbox-field {
     margin-bottom: 8px;
@@ -144,6 +148,7 @@
     opacity: 0.88;
 }
 
+/* ── STANDALONE (non compact) ── */
 .auth-shell-update {
     max-width: 420px;
     width: 100%;
@@ -152,4 +157,69 @@
 
 .auth-shell-update .auth-panel {
     width: 100%;
+}
+
+/* ── COMPACT MODE (dans FriendProfile) ── */
+/* Le panel doit remplir la zone centrale sans déborder */
+.update-compact-wrapper {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+}
+
+.update-compact-wrapper .auth-panel {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    padding: 20px 24px 16px;
+    overflow: hidden;
+}
+
+.update-compact-wrapper .auth-panel-header {
+    flex-shrink: 0;
+    margin-bottom: 16px;
+}
+
+.update-compact-wrapper .auth-title {
+    font-size: 17px;
+}
+
+.update-compact-wrapper .auth-form {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding-right: 4px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-color) transparent;
+}
+
+.update-compact-wrapper .auth-form::-webkit-scrollbar {
+    width: 4px;
+}
+
+.update-compact-wrapper .auth-form::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.update-compact-wrapper .auth-form::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 4px;
+}
+
+/* DatePicker plus compact en mode inline */
+.update-compact-wrapper .date-picker-mobile {
+    max-height: 160px;
+}
+
+/* Réduire le gap entre les champs en compact */
+.update-compact-wrapper .auth-field {
+    margin-bottom: 10px;
+}
+
+.update-compact-wrapper .update-delete-zone {
+    margin-top: 12px;
+    padding-top: 12px;
 }

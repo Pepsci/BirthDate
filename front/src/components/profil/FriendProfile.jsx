@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import Countdown from "../dashboard/Countdown";
+import UpdateDate from "../dashboard/UpdateDate";
 import FriendGiftList from "./FriendGiftList";
 import DirectChat from "../chat/DirectChat";
 import ChatModal from "../chat/ChatModal";
 import GiftOfferedModal from "../friends/GiftOfferedModal";
 import apiHandler from "../../api/apiHandler";
 import useAuth from "../../context/useAuth";
+import useNotifications from "../../context/useNotifications";
 import "../UI/css/gifts-common.css";
 import "../UI/css/carousel-common.css";
 import "./css/friendNotifications.css";
@@ -33,6 +35,7 @@ const MENU_SECTIONS_DEFAULT = [
   { id: "info", title: "Infos", icon: "👤" },
   { id: "notifications", title: "Notifications", icon: "🔔" },
   { id: "gifts", title: "Cadeaux", icon: "🎁" },
+  { id: "edit", title: "Modifier", icon: "✏️" },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -40,10 +43,13 @@ const MENU_SECTIONS_DEFAULT = [
 const FriendProfile = ({ date, onCancel, initialSection = "info" }) => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
+  const { conversationUnreads } = useNotifications();
 
   // ── State ──────────────────────────────────────────────────────────────────
   const [currentDate, setCurrentDate] = useState(date);
   const [isLoading, setIsLoading] = useState(false);
+  const [existingEventId, setExistingEventId] = useState(null);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
   // Notifications
   const [receiveNotifications, setReceiveNotifications] = useState(true);
@@ -72,8 +78,27 @@ const FriendProfile = ({ date, onCancel, initialSection = "info" }) => {
     ? MENU_SECTIONS_FRIEND
     : MENU_SECTIONS_DEFAULT;
   const friendId = date.linkedUser?._id || date.linkedUser;
+  const isFriend = !!date.linkedUser;
+  const unreadForFriend = isFriend && date.conversationId
+    ? conversationUnreads[date.conversationId] || 0
+    : 0;
 
   // ── Effects ────────────────────────────────────────────────────────────────
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  useEffect(() => {
+    const personId = friendId || date._id;
+    if (personId) {
+      apiHandler.get(`/events/check/${personId}`)
+        .then(res => { if (res.data.exists) setExistingEventId(res.data.shortId); })
+        .catch(() => {});
+    }
+  }, [date._id, friendId]);
+
   useEffect(() => {
     if (date.linkedUser) loadFriendWishlist();
   }, [date.linkedUser]);
@@ -270,6 +295,17 @@ const FriendProfile = ({ date, onCancel, initialSection = "info" }) => {
       );
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // ── Event handler ──────────────────────────────────────────────────────────
+  const handleEventClick = () => {
+    if (existingEventId) {
+      navigate(`/event/${existingEventId}`);
+    } else if (isFriend) {
+      navigate(`/events/new?forPerson=${friendId}&name=${encodeURIComponent(date.name)}&date=${date.date}`);
+    } else {
+      navigate(`/events/new?forDate=${date._id}&name=${encodeURIComponent(date.name)}&date=${date.date}`);
     }
   };
 
@@ -510,6 +546,19 @@ const FriendProfile = ({ date, onCancel, initialSection = "info" }) => {
     <FriendGiftList currentDate={currentDate} onUpdate={setCurrentDate} />
   );
 
+  const renderEditSection = () => (
+    <UpdateDate
+      compact
+      date={currentDate}
+      onCancel={() => setActiveSection("info")}
+      onSaved={(updated) => {
+        setCurrentDate(updated);
+        setActiveSection("info");
+      }}
+      onDeleted={onCancel}
+    />
+  );
+
   const renderChatSection = () => {
     if (!friendId)
       return (
@@ -536,6 +585,8 @@ const FriendProfile = ({ date, onCancel, initialSection = "info" }) => {
         return renderGiftsSection();
       case "chat":
         return renderChatSection();
+      case "edit":
+        return renderEditSection();
       default:
         return renderInfoSection();
     }
@@ -593,9 +644,21 @@ const FriendProfile = ({ date, onCancel, initialSection = "info" }) => {
                   }`}
                   aria-label={section.title}
                 >
-                  {section.icon}
+                  <span style={{ position: "relative", display: "inline-flex" }}>
+                    {section.icon}
+                    {section.id === "chat" && unreadForFriend > 0 && (
+                      <span className="sidebar-unread-badge">{unreadForFriend}</span>
+                    )}
+                  </span>
                 </button>
               ))}
+              <button
+                onClick={handleEventClick}
+                className="mobile-carousel__quick-btn"
+                aria-label="Événement"
+              >
+                🎉
+              </button>
             </div>
           </div>
         </div>
@@ -618,10 +681,22 @@ const FriendProfile = ({ date, onCancel, initialSection = "info" }) => {
               onClick={() => setActiveSection(section.id)}
               className={`sidebar-btn ${activeSection === section.id ? "active" : ""}`}
             >
-              <span className="sidebar-icon">{section.icon}</span>
+              <span className="sidebar-icon">
+                {section.icon}
+                {section.id === "chat" && unreadForFriend > 0 && (
+                  <span className="sidebar-unread-badge">{unreadForFriend}</span>
+                )}
+              </span>
               <span className="sidebar-text">{section.title}</span>
             </button>
           ))}
+          <button
+            onClick={handleEventClick}
+            className="sidebar-btn"
+          >
+            <span className="sidebar-icon">🎉</span>
+            <span className="sidebar-text">Événement</span>
+          </button>
         </div>
         <div className="desktop-content containerInfo">
           {renderSection(activeSection)}

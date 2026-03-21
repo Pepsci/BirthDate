@@ -237,7 +237,7 @@
   position: absolute;
   top: 22px;
   right: -47px;
-  background-color: var(--gray-600);
+  background-color: var(--success);
   color: white;
   padding: 0.25rem 1.5rem;
   font-size: 0.75rem;
