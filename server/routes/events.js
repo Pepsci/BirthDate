@@ -34,10 +34,11 @@ router.post("/", isAuthenticated, async (req, res) => {
       fixedLocation,
       locationOptions,
       giftMode,
-      imposedGift,
+      imposedGifts,
       giftPoolEnabled,
       maxGuests,
       allowExternalGuests,
+      allowGuestInvites,
       reminders,
       status,
     } = req.body;
@@ -61,10 +62,11 @@ router.post("/", isAuthenticated, async (req, res) => {
       fixedLocation: locationMode === "fixed" ? fixedLocation : undefined,
       locationOptions: locationMode === "vote" ? locationOptions : undefined,
       giftMode,
-      imposedGift: giftMode === "imposed" ? imposedGift : undefined,
+      imposedGifts: giftMode === "imposed" ? (imposedGifts || []) : [],
       giftPoolEnabled: giftPoolEnabled || false,
       maxGuests: maxGuests || null,
       allowExternalGuests: allowExternalGuests !== false,
+      allowGuestInvites: allowGuestInvites === true,
       accessCode,
       reminders: reminders || [],
       status: "published", // Publié par défaut à la création
@@ -233,8 +235,8 @@ router.put("/:shortId", isAuthenticated, async (req, res) => {
       title, description, type,
       dateMode, fixedDate, dateOptions, selectedDate,
       locationMode, fixedLocation, locationOptions, selectedLocation,
-      giftMode, imposedGift,
-      maxGuests, allowExternalGuests, reminders, status
+      giftMode, imposedGifts,
+      maxGuests, allowExternalGuests, allowGuestInvites, reminders, status
     } = req.body;
 
     if (title) event.title = title;
@@ -252,16 +254,17 @@ router.put("/:shortId", isAuthenticated, async (req, res) => {
     if (selectedLocation !== undefined) event.selectedLocation = selectedLocation;
 
     if (giftMode) event.giftMode = giftMode;
-    if (imposedGift !== undefined) {
-      event.imposedGift = {
-        name: imposedGift.name || "",
-        url: imposedGift.url || "",
-        price: imposedGift.price ? Number(imposedGift.price) : undefined,
-      };
+    if (imposedGifts !== undefined) {
+      event.imposedGifts = (imposedGifts || []).map(g => ({
+        name: g.name || "",
+        url: g.url || "",
+        price: g.price ? Number(g.price) : undefined,
+      }));
     }
 
     if (maxGuests !== undefined) event.maxGuests = maxGuests || null;
     if (allowExternalGuests !== undefined) event.allowExternalGuests = allowExternalGuests;
+    if (allowGuestInvites !== undefined) event.allowGuestInvites = allowGuestInvites;
     if (reminders && Array.isArray(reminders)) {
       event.reminders = reminders.map(r => ({
         type: r.type,
@@ -536,7 +539,29 @@ router.post("/:shortId/gifts/:giftId/vote", isAuthenticated, checkEventAccess, a
 });
 
 /*
- * 14. GET /api/events/:shortId/messages -> chat (fallback HTTP)
+ * 14. PUT /api/events/:shortId/gifts/:giftId -> modifier une proposition de cadeau (proposeur only)
+ */
+router.put("/:shortId/gifts/:giftId", isAuthenticated, checkEventAccess, async (req, res) => {
+  try {
+    const proposal = await EventGiftProposal.findById(req.params.giftId);
+    if (!proposal) return res.status(404).json({ message: "Proposition introuvable" });
+    if (proposal.proposedBy.toString() !== req.payload._id) {
+      return res.status(403).json({ message: "Non autorisé" });
+    }
+    const { name, url, price } = req.body;
+    if (name) proposal.name = name;
+    if (url !== undefined) proposal.url = url;
+    if (price !== undefined) proposal.price = price ? Number(price) : undefined;
+    await proposal.save();
+    res.status(200).json(proposal);
+  } catch (error) {
+    console.error("❌ Error updating gift proposal:", error);
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+});
+
+/*
+ * 15. GET /api/events/:shortId/messages -> chat (fallback HTTP)
  */
 router.get("/:shortId/messages", isAuthenticated, checkEventAccess, async (req, res) => {
   try {

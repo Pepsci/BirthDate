@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import apiHandler from "../../api/apiHandler";
 import { useLocation } from "react-router-dom";
@@ -22,12 +22,91 @@ const stepVariants = {
   exit: (dir) => ({ opacity: 0, x: dir > 0 ? -40 : 40, transition: { duration: 0.2 } }),
 };
 
+// ─── Hook Google Places Autocomplete ────────────────────
+const usePlacesAutocomplete = (inputRef, onPlaceSelected) => {
+  const autocompleteRef = useRef(null);
+
+  useEffect(() => {
+    if (!inputRef.current || !window.google?.maps?.places) return;
+
+    autocompleteRef.current = new window.google.maps.places.Autocomplete(inputRef.current, {
+      types: ["establishment", "geocode"],
+      fields: ["name", "formatted_address", "geometry"],
+    });
+
+    const listener = autocompleteRef.current.addListener("place_changed", () => {
+      const place = autocompleteRef.current.getPlace();
+      if (!place.geometry) return;
+
+      onPlaceSelected({
+        name: place.name || "",
+        address: place.formatted_address || "",
+        lat: place.geometry.location.lat(),
+        lng: place.geometry.location.lng(),
+      });
+    });
+
+    return () => {
+      window.google.maps.event.removeListener(listener);
+    };
+  }, [inputRef.current, window.google?.maps?.places]);
+};
+
+// ─── Loader script Google Maps ───────────────────────────
+const loadGoogleMapsScript = () => {
+  return new Promise((resolve) => {
+    if (window.google?.maps?.places) { resolve(); return; }
+    if (document.getElementById("google-maps-script")) {
+      // Script déjà en cours de chargement, attendre
+      const interval = setInterval(() => {
+        if (window.google?.maps?.places) { clearInterval(interval); resolve(); }
+      }, 100);
+      return;
+    }
+    const script = document.createElement("script");
+    script.id = "google-maps-script";
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${import.meta.env.VITE_GOOGLE_MAPS_KEY}&libraries=places`;
+    script.async = true;
+    script.defer = true;
+    script.onload = resolve;
+    document.head.appendChild(script);
+  });
+};
+
+// ─── Composant champ lieu avec autocomplete ──────────────
+const LocationAutocomplete = ({ value, onChange, onPlaceSelected }) => {
+  const inputRef = useRef(null);
+  const [googleReady, setGoogleReady] = useState(false);
+
+  useEffect(() => {
+    loadGoogleMapsScript().then(() => setGoogleReady(true));
+  }, []);
+
+  usePlacesAutocomplete(
+    googleReady ? inputRef : { current: null },
+    onPlaceSelected
+  );
+
+  return (
+    <input
+      ref={inputRef}
+      type="text"
+      placeholder="Rechercher un lieu, une adresse..."
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      autoComplete="off"
+      style={{ width: "100%" }}
+    />
+  );
+};
+
+// ─── Composant principal ─────────────────────────────────
 const EventForm = ({ onClose, defaultValues = {}, editMode = false, existingEvent = null }) => {
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
 
   const [step, setStep] = useState(1);
-  const [direction, setDirection] = useState(1); // 1 = forward, -1 = backward
+  const [direction, setDirection] = useState(1);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState(() => {
     if (editMode && existingEvent) {
@@ -42,13 +121,14 @@ const EventForm = ({ onClose, defaultValues = {}, editMode = false, existingEven
         fixedDate: existingEvent.fixedDate ? new Date(existingEvent.fixedDate).toISOString().slice(0, 16) : "",
         dateOptions: existingEvent.dateOptions || [],
         locationMode: existingEvent.locationMode || "fixed",
-        fixedLocation: existingEvent.fixedLocation || { name: "", address: "" },
+        fixedLocation: existingEvent.fixedLocation || { name: "", address: "", coordinates: { lat: null, lng: null } },
         locationOptions: existingEvent.locationOptions || [],
         giftMode: existingEvent.giftMode || "proposals",
-        imposedGift: existingEvent.imposedGift || { name: "", url: "", price: "" },
+        imposedGifts: existingEvent.imposedGifts || [],
         giftPoolEnabled: existingEvent.giftPoolEnabled || false,
         maxGuests: existingEvent.maxGuests || "",
         allowExternalGuests: existingEvent.allowExternalGuests !== false,
+        allowGuestInvites: existingEvent.allowGuestInvites || false,
         reminders: existingEvent.reminders || [],
       };
     }
@@ -66,13 +146,14 @@ const EventForm = ({ onClose, defaultValues = {}, editMode = false, existingEven
       fixedDate: "",
       dateOptions: [],
       locationMode: "fixed",
-      fixedLocation: { name: "", address: "" },
+      fixedLocation: { name: "", address: "", coordinates: { lat: null, lng: null } },
       locationOptions: [],
       giftMode: "proposals",
-      imposedGift: { name: "", url: "", price: "" },
+      imposedGifts: [],
       giftPoolEnabled: false,
       maxGuests: "",
       allowExternalGuests: true,
+      allowGuestInvites: false,
       reminders: [
         { type: "event_date", daysBeforeEvent: 7, sent: false },
         { type: "event_date", daysBeforeEvent: 1, sent: false },
@@ -82,6 +163,7 @@ const EventForm = ({ onClose, defaultValues = {}, editMode = false, existingEven
 
   const [friends, setFriends] = useState([]);
   const [selectedFriends, setSelectedFriends] = useState([]);
+  const [newImposedGift, setNewImposedGift] = useState({ name: "", url: "", price: "" });
 
   useEffect(() => {
     apiHandler.get("/friends")
@@ -96,6 +178,21 @@ const EventForm = ({ onClose, defaultValues = {}, editMode = false, existingEven
 
   const handleNext = () => { setDirection(1); setStep(s => s + 1); };
   const handlePrev = () => { setDirection(-1); setStep(s => s - 1); };
+
+  // Callback quand Google Places retourne un lieu
+  const handlePlaceSelected = (place) => {
+    setFormData(prev => ({
+      ...prev,
+      fixedLocation: {
+        name: place.name,
+        address: place.address,
+        coordinates: {
+          lat: place.lat,
+          lng: place.lng,
+        },
+      },
+    }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -154,19 +251,23 @@ const EventForm = ({ onClose, defaultValues = {}, editMode = false, existingEven
         <div className="event-modal-body">
           {/* Stepper */}
           <div className="event-stepper">
-            {[1, 2, 3, 4, 5, 6].map((s) => (
-              <motion.div
-                key={s}
-                className={`event-step-circle ${step >= s ? "active" : ""}`}
-                animate={{ scale: step === s ? 1.15 : 1 }}
-                transition={{ type: "spring", stiffness: 400, damping: 20 }}
-              >
-                {s}
-              </motion.div>
-            ))}
+            {[1, 2, 3, 4, 5, 6].map((s) => {
+              const clickable = editMode || s <= step;
+              return (
+                <motion.div
+                  key={s}
+                  className={`event-step-circle ${step >= s ? "active" : ""}`}
+                  animate={{ scale: step === s ? 1.15 : 1 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 20 }}
+                  onClick={() => { if (clickable) { setDirection(s > step ? 1 : -1); setStep(s); } }}
+                  style={{ cursor: clickable ? "pointer" : "default" }}
+                >
+                  {s}
+                </motion.div>
+              );
+            })}
           </div>
 
-          {/* Steps animés */}
           <div style={{ overflow: "hidden", position: "relative" }}>
             <AnimatePresence mode="wait" custom={direction}>
               <motion.div
@@ -178,6 +279,7 @@ const EventForm = ({ onClose, defaultValues = {}, editMode = false, existingEven
                 animate="center"
                 exit="exit"
               >
+                {/* ── Step 1 : Infos générales ── */}
                 {step === 1 && (
                   <>
                     <h3>Étape 1 : Informations générales</h3>
@@ -201,6 +303,7 @@ const EventForm = ({ onClose, defaultValues = {}, editMode = false, existingEven
                   </>
                 )}
 
+                {/* ── Step 2 : Date ── */}
                 {step === 2 && (
                   <>
                     <h3>Étape 2 : Date</h3>
@@ -228,35 +331,112 @@ const EventForm = ({ onClose, defaultValues = {}, editMode = false, existingEven
                   </>
                 )}
 
+                {/* ── Step 3 : Lieu avec Google Places ── */}
                 {step === 3 && (
                   <>
                     <h3>Étape 3 : Lieu</h3>
                     <div className="event-form-group">
-                      <label>Lieu *</label>
+                      <label>Mode</label>
                       <select name="locationMode" value={formData.locationMode} onChange={handleChange}>
                         <option value="fixed">Lieu exact</option>
                         <option value="vote">Je propose plusieurs lieux (Vote)</option>
                       </select>
                     </div>
+
                     {formData.locationMode === "fixed" && (
                       <div className="event-form-group">
-                        <input type="text" placeholder="Nom du lieu (ex: Chez moi)" value={formData.fixedLocation.name} onChange={(e) => setFormData({ ...formData, fixedLocation: { ...formData.fixedLocation, name: e.target.value } })} required />
-                        <input type="text" placeholder="Adresse" value={formData.fixedLocation.address} onChange={(e) => setFormData({ ...formData, fixedLocation: { ...formData.fixedLocation, address: e.target.value } })} style={{ marginTop: "10px" }} />
+                        <label>Rechercher un lieu</label>
+                        <LocationAutocomplete
+                          value={formData.fixedLocation.name}
+                          onChange={(val) => setFormData(prev => ({
+                            ...prev,
+                            fixedLocation: { ...prev.fixedLocation, name: val, lat: null, lng: null },
+                          }))}
+                          onPlaceSelected={handlePlaceSelected}
+                        />
+
+                        {/* Adresse complète affichée après sélection */}
+                        {formData.fixedLocation.address && (
+                          <motion.div
+                            initial={{ opacity: 0, y: -6 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.2 }}
+                            style={{
+                              marginTop: "10px",
+                              padding: "10px 14px",
+                              background: "var(--bg-secondary)",
+                              borderRadius: "8px",
+                              border: "1px solid var(--border-color)",
+                              fontSize: "0.88rem",
+                              color: "var(--text-secondary)",
+                              display: "flex",
+                              alignItems: "flex-start",
+                              gap: "8px",
+                            }}
+                          >
+                            <i className="fa-solid fa-location-dot" style={{ color: "var(--primary)", marginTop: "2px", flexShrink: 0 }}></i>
+                            <span>{formData.fixedLocation.address}</span>
+                          </motion.div>
+                        )}
+
+                        {/* Champ adresse manuel si pas de sélection Google */}
+                        {!formData.fixedLocation.coordinates?.lat && (
+                          <input
+                            type="text"
+                            placeholder="Ou saisissez l'adresse manuellement"
+                            value={formData.fixedLocation.address}
+                            onChange={(e) => setFormData(prev => ({
+                              ...prev,
+                              fixedLocation: { ...prev.fixedLocation, address: e.target.value },
+                            }))}
+                            style={{ marginTop: "10px", width: "100%" }}
+                          />
+                        )}
                       </div>
                     )}
                   </>
                 )}
 
+                {/* ── Step 4 : Cadeaux ── */}
                 {step === 4 && (
                   <>
                     <h3>Étape 4 : Cadeaux</h3>
                     <div className="event-form-group">
                       <label>Mode cadeaux</label>
                       <select name="giftMode" value={formData.giftMode} onChange={handleChange}>
-                        <option value="proposals">Liste d'idées participative</option>
-                        <option value="imposed">Cadeau précis imposé / Cagnotte unique</option>
+                        <option value="proposals">Liste d'idées participative (tout le monde propose/vote)</option>
+                        <option value="imposed">Cadeau(x) imposé(s) par l'organisateur</option>
                       </select>
                     </div>
+
+                    {formData.giftMode === "imposed" && (
+                      <div className="event-form-group">
+                        <label>Cadeaux imposés</label>
+                        {formData.imposedGifts.length > 0 && (
+                          <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "12px" }}>
+                            {formData.imposedGifts.map((g, i) => (
+                              <div key={i} style={{ display: "flex", alignItems: "center", gap: "10px", padding: "10px 12px", background: "var(--bg-secondary)", borderRadius: "8px", border: "1px solid var(--border-color)" }}>
+                                <div style={{ flex: 1 }}>
+                                  <span style={{ fontWeight: "bold" }}>{g.name}</span>
+                                  {g.price && <span style={{ color: "var(--text-tertiary)", fontSize: "0.85rem", marginLeft: "8px" }}>{g.price}€</span>}
+                                  {g.url && <a href={g.url} target="_blank" rel="noopener noreferrer" style={{ marginLeft: "8px", color: "var(--primary)", fontSize: "0.8rem" }}><i className="fa-solid fa-link"></i></a>}
+                                </div>
+                                <button type="button" onClick={() => setFormData(prev => ({ ...prev, imposedGifts: prev.imposedGifts.filter((_, idx) => idx !== i) }))} style={{ background: "transparent", border: "none", color: "var(--danger, #e74c3c)", cursor: "pointer", fontSize: "1rem" }}>✕</button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        <div style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "12px", background: "var(--bg-secondary)", borderRadius: "8px", border: "1px dashed var(--border-color)" }}>
+                          <input type="text" placeholder="Nom du cadeau *" value={newImposedGift.name} onChange={(e) => setNewImposedGift(prev => ({ ...prev, name: e.target.value }))} />
+                          <input type="text" placeholder="Lien (URL)" value={newImposedGift.url} onChange={(e) => setNewImposedGift(prev => ({ ...prev, url: e.target.value }))} />
+                          <input type="number" placeholder="Prix approx. (€)" value={newImposedGift.price} onChange={(e) => setNewImposedGift(prev => ({ ...prev, price: e.target.value }))} />
+                          <button type="button" disabled={!newImposedGift.name.trim()} onClick={() => { if (!newImposedGift.name.trim()) return; setFormData(prev => ({ ...prev, imposedGifts: [...prev.imposedGifts, { ...newImposedGift }] })); setNewImposedGift({ name: "", url: "", price: "" }); }} style={{ padding: "8px", background: "var(--primary)", color: "#fff", border: "none", borderRadius: "6px", cursor: "pointer", fontWeight: "bold", opacity: newImposedGift.name.trim() ? 1 : 0.5 }}>
+                            + Ajouter ce cadeau
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
                     <div className="cagnotte-placeholder">
                       <div className="badge">Bientôt disponible</div>
                       <h4 style={{ margin: "0 0 10px 0", color: "var(--text-primary)" }}>💳 Cagnotte partagée</h4>
@@ -265,6 +445,7 @@ const EventForm = ({ onClose, defaultValues = {}, editMode = false, existingEven
                   </>
                 )}
 
+                {/* ── Step 5 : Invitations ── */}
                 {step === 5 && (
                   <>
                     <h3>Étape 5 : Invitations & Confidentialité</h3>
@@ -277,17 +458,8 @@ const EventForm = ({ onClose, defaultValues = {}, editMode = false, existingEven
                         ) : (
                           friends.filter(f => f.friendUser).map(f => (
                             <label key={f.friendUser._id} style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px", cursor: "pointer" }}>
-                              <input
-                                type="checkbox"
-                                checked={selectedFriends.includes(f.friendUser._id)}
-                                onChange={(e) => {
-                                  if (e.target.checked) setSelectedFriends([...selectedFriends, f.friendUser._id]);
-                                  else setSelectedFriends(selectedFriends.filter(id => id !== f.friendUser._id));
-                                }}
-                              />
-                              <div style={{ width: "30px", height: "30px", borderRadius: "50%", background: "var(--primary)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.8rem", fontWeight: "bold" }}>
-                                {f.friendUser.name[0]}
-                              </div>
+                              <input type="checkbox" checked={selectedFriends.includes(f.friendUser._id)} onChange={(e) => { if (e.target.checked) setSelectedFriends([...selectedFriends, f.friendUser._id]); else setSelectedFriends(selectedFriends.filter(id => id !== f.friendUser._id)); }} />
+                              <div style={{ width: "30px", height: "30px", borderRadius: "50%", background: "var(--primary)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.8rem", fontWeight: "bold" }}>{f.friendUser.name[0]}</div>
                               <span>{f.friendUser.name} {f.friendUser.surname}</span>
                             </label>
                           ))
@@ -302,29 +474,24 @@ const EventForm = ({ onClose, defaultValues = {}, editMode = false, existingEven
                       <input type="checkbox" id="allowExternals" name="allowExternalGuests" checked={formData.allowExternalGuests} onChange={handleChange} />
                       <label htmlFor="allowExternals">Autoriser les invités externes (via lien public avec code)</label>
                     </div>
+                    <div className="event-checkbox-group">
+                      <input type="checkbox" id="allowGuestInvites" name="allowGuestInvites" checked={formData.allowGuestInvites} onChange={handleChange} />
+                      <label htmlFor="allowGuestInvites">Autoriser les invités à inviter d'autres personnes</label>
+                    </div>
                   </>
                 )}
 
+                {/* ── Step 6 : Rappels ── */}
                 {step === 6 && (
                   <>
                     <h3>Étape 6 : Rappels</h3>
                     <p style={{ marginBottom: "1.5rem", color: "var(--text-secondary)", fontSize: "0.95rem" }}>Configurez les rappels automatiques envoyés aux invités confirmés.</p>
                     <div className="event-checkbox-group">
-                      <input type="checkbox" id="rem7" checked={formData.reminders.some(r => r.daysBeforeEvent === 7)} onChange={(e) => {
-                        const current = [...formData.reminders];
-                        if (e.target.checked) current.push({ type: "event_date", daysBeforeEvent: 7, sent: false });
-                        else { const idx = current.findIndex(r => r.daysBeforeEvent === 7); if (idx !== -1) current.splice(idx, 1); }
-                        setFormData({ ...formData, reminders: current });
-                      }} />
+                      <input type="checkbox" id="rem7" checked={formData.reminders.some(r => r.daysBeforeEvent === 7)} onChange={(e) => { const current = [...formData.reminders]; if (e.target.checked) current.push({ type: "event_date", daysBeforeEvent: 7, sent: false }); else { const idx = current.findIndex(r => r.daysBeforeEvent === 7); if (idx !== -1) current.splice(idx, 1); } setFormData({ ...formData, reminders: current }); }} />
                       <label htmlFor="rem7">Rappel à J-7</label>
                     </div>
                     <div className="event-checkbox-group">
-                      <input type="checkbox" id="rem1" checked={formData.reminders.some(r => r.daysBeforeEvent === 1)} onChange={(e) => {
-                        const current = [...formData.reminders];
-                        if (e.target.checked) current.push({ type: "event_date", daysBeforeEvent: 1, sent: false });
-                        else { const idx = current.findIndex(r => r.daysBeforeEvent === 1); if (idx !== -1) current.splice(idx, 1); }
-                        setFormData({ ...formData, reminders: current });
-                      }} />
+                      <input type="checkbox" id="rem1" checked={formData.reminders.some(r => r.daysBeforeEvent === 1)} onChange={(e) => { const current = [...formData.reminders]; if (e.target.checked) current.push({ type: "event_date", daysBeforeEvent: 1, sent: false }); else { const idx = current.findIndex(r => r.daysBeforeEvent === 1); if (idx !== -1) current.splice(idx, 1); } setFormData({ ...formData, reminders: current }); }} />
                       <label htmlFor="rem1">Rappel la veille (J-1)</label>
                     </div>
                   </>
@@ -336,23 +503,12 @@ const EventForm = ({ onClose, defaultValues = {}, editMode = false, existingEven
 
         <div className="event-modal-footer">
           {step > 1 && (
-            <motion.button type="button" onClick={handlePrev} className="event-btn-cancel" whileHover={{ x: -2 }} whileTap={{ scale: 0.97 }}>
-              Précédent
-            </motion.button>
+            <motion.button type="button" onClick={handlePrev} className="event-btn-cancel" whileHover={{ x: -2 }} whileTap={{ scale: 0.97 }}>Précédent</motion.button>
           )}
           {step === 1 && (
-            <motion.button type="button" onClick={() => onClose()} className="event-btn-cancel" whileTap={{ scale: 0.97 }}>
-              Annuler
-            </motion.button>
+            <motion.button type="button" onClick={() => onClose()} className="event-btn-cancel" whileTap={{ scale: 0.97 }}>Annuler</motion.button>
           )}
-          <motion.button
-            type="button"
-            onClick={step === 6 ? handleSubmit : handleNext}
-            disabled={loading}
-            className="event-btn-submit"
-            whileHover={{ scale: 1.03, x: step < 6 ? 2 : 0 }}
-            whileTap={{ scale: 0.97 }}
-          >
+          <motion.button type="button" onClick={step === 6 ? handleSubmit : handleNext} disabled={loading} className="event-btn-submit" whileHover={{ scale: 1.03, x: step < 6 ? 2 : 0 }} whileTap={{ scale: 0.97 }}>
             {loading ? "Chargement..." : step === 6 ? (editMode ? "Enregistrer les modifications ✓" : "Créer l'événement 🎉") : "Suivant →"}
           </motion.button>
         </div>

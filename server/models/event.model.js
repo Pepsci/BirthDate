@@ -83,11 +83,13 @@ const eventSchema = new Schema(
       enum: ["imposed", "proposals"],
       required: true,
     },
-    imposedGift: {
-      name: String,
-      url: String,
-      price: Number,
-    },
+    imposedGifts: [
+      {
+        name: String,
+        url: String,
+        price: Number,
+      },
+    ],
     // [CAGNOTTE — placeholder, à intégrer ultérieurement]
     giftPoolEnabled: {
       type: Boolean,
@@ -108,6 +110,10 @@ const eventSchema = new Schema(
     allowExternalGuests: {
       type: Boolean,
       default: true,
+    },
+    allowGuestInvites: {
+      type: Boolean,
+      default: false,
     },
 
     // Rappels

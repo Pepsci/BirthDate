@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "motion/react";
 import apiHandler from "../../api/apiHandler";
 import useAuth from "../../context/useAuth";
 import socketService from "../services/socket.service";
@@ -10,7 +11,91 @@ import DateVotePanel from "./DateVotePanel";
 import LocationVotePanel from "./LocationVotePanel";
 import GiftProposalPanel from "./GiftProposalPanel";
 import InviteModal from "./InviteModal";
+import "./css/eventPage.css";
 
+// ─── Maps helpers ────────────────────────────────────────
+const getMapsUrl = (location) => {
+  const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  const coords = location?.coordinates;
+  const hasCoords = coords?.lat && coords?.lng;
+  if (hasCoords) {
+    const coordStr = `${coords.lat},${coords.lng}`;
+    const label = encodeURIComponent(location.name || location.address || "");
+    return isIos
+      ? `maps://maps.apple.com/?ll=${coordStr}&q=${label}`
+      : `https://maps.google.com/?q=${coordStr}`;
+  }
+  const query = encodeURIComponent([location?.name, location?.address].filter(Boolean).join(", "));
+  return isIos ? `maps://maps.apple.com/?q=${query}` : `https://maps.google.com/?q=${query}`;
+};
+
+const getStaticMapUrl = (location) => {
+  const key = import.meta.env.VITE_GOOGLE_MAPS_KEY;
+  if (!key) return null;
+  const coords = location?.coordinates;
+  const center = coords?.lat && coords?.lng
+    ? `${coords.lat},${coords.lng}`
+    : encodeURIComponent([location?.name, location?.address].filter(Boolean).join(", "));
+  const marker = coords?.lat && coords?.lng ? `color:0x6C63FF|${coords.lat},${coords.lng}` : `color:0x6C63FF|${encodeURIComponent(location?.address || "")}`;
+  return `https://maps.googleapis.com/maps/api/staticmap?center=${center}&zoom=16&size=640x220&scale=2&style=feature:all|element:geometry|color:0x1a1a2e&style=feature:all|element:labels.text.fill|color:0xffffff&style=feature:road|element:geometry|color:0x2d2d4e&style=feature:water|element:geometry|color:0x0f0f23&markers=size:mid|color:0x6C63FF|${marker}&key=${key}`;
+};
+
+// ─── Animations ──────────────────────────────────────────
+const fadeUp = (delay = 0) => ({
+  initial: { opacity: 0, y: 24 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.4, delay, ease: [0.22, 1, 0.36, 1] },
+});
+
+const getEventEmoji = (type) => {
+  const map = { birthday: "🎂", party: "🎊", dinner: "🍽️", other: "📅" };
+  return map[type] || "📅";
+};
+
+const getStatusColor = (status, isPast) => {
+  if (status === "cancelled") return "#e74c3c";
+  if (isPast || status === "done") return "#636e72";
+  if (status === "published") return "#27ae60";
+  return "#f39c12";
+};
+
+const getStatusLabel = (status, isPast) => {
+  if (status === "cancelled") return "Annulé";
+  if (isPast || status === "done") return "Terminé";
+  if (status === "published") return "Confirmé";
+  return "Brouillon";
+};
+
+// ─── Composant card glassmorphism ────────────────────────
+const GlassCard = ({ children, className = "", style = {}, ...props }) => (
+  <motion.div className={`ep-glass-card ${className}`} style={style} {...props}>
+    {children}
+  </motion.div>
+);
+
+// ─── Composant participant ───────────────────────────────
+const ParticipantRow = ({ inv }) => {
+  const name = inv.user
+    ? `${inv.user.name} ${inv.user.surname || ""}`.trim()
+    : inv.guestName || inv.externalEmail || "Invité externe";
+  const initials = name.split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase();
+  const statusConfig = {
+    accepted: { label: "Confirmé", color: "#27ae60" },
+    declined: { label: "Décliné", color: "#e74c3c" },
+    maybe: { label: "Peut-être", color: "#f39c12" },
+    pending: { label: "En attente", color: "#95a5a6" },
+  };
+  const s = statusConfig[inv.status] || statusConfig.pending;
+  return (
+    <div className="ep-participant-row">
+      <div className="ep-participant-avatar">{initials || "?"}</div>
+      <span className="ep-participant-name">{name}</span>
+      <span className="ep-participant-badge" style={{ background: s.color }}>{s.label}</span>
+    </div>
+  );
+};
+
+// ─── Page principale ─────────────────────────────────────
 const EventPage = () => {
   const { shortId } = useParams();
   const location = useLocation();
@@ -20,7 +105,6 @@ const EventPage = () => {
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
   const [accessCodeInput, setAccessCodeInput] = useState("");
   const [guestNameInput, setGuestNameInput] = useState("");
   const [joinError, setJoinError] = useState("");
@@ -29,6 +113,9 @@ const EventPage = () => {
   const [showEditForm, setShowEditForm] = useState(false);
   const [invitations, setInvitations] = useState([]);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [activeTab, setActiveTab] = useState("info");
+  const [mapError, setMapError] = useState(false);
+  const [showMap, setShowMap] = useState(false);
 
   useEffect(() => {
     const fetchEvent = async () => {
@@ -38,7 +125,6 @@ const EventPage = () => {
         const res = await apiHandler.get(`/events/${shortId}`, config);
         setEvent(res.data);
       } catch (err) {
-        console.error("Error fetching event", err);
         setError("Événement introuvable ou vous n'avez pas accès.");
       } finally {
         setLoading(false);
@@ -51,7 +137,7 @@ const EventPage = () => {
     if (!event?.hasFullAccess) return;
     apiHandler.get(`/events/${shortId}/invitations`)
       .then(res => setInvitations(res.data))
-      .catch(err => console.error("Error fetching invitations", err));
+      .catch(console.error);
   }, [shortId, event?.hasFullAccess, refreshKey]);
 
   useEffect(() => {
@@ -60,24 +146,18 @@ const EventPage = () => {
     if (!socket) return;
     const handleRsvpUpdate = ({ shortId: sId }) => {
       if (sId !== shortId) return;
-      apiHandler.get(`/events/${shortId}/invitations`)
-        .then(res => setInvitations(res.data))
-        .catch(console.error);
+      apiHandler.get(`/events/${shortId}/invitations`).then(res => setInvitations(res.data)).catch(console.error);
     };
     socket.on("event:rsvp_update", handleRsvpUpdate);
     return () => socket.off("event:rsvp_update", handleRsvpUpdate);
   }, [shortId, event?.hasFullAccess]);
 
   const handleDeleteEvent = async () => {
-    if (!deleteConfirm) {
-      setDeleteConfirm(true);
-      return;
-    }
+    if (!deleteConfirm) { setDeleteConfirm(true); return; }
     try {
       await apiHandler.delete(`/events/${shortId}`);
-      navigate("/home?tab=events"); // ← modifié
+      navigate("/home?tab=events");
     } catch (err) {
-      console.error("Error deleting event", err);
       setDeleteConfirm(false);
     }
   };
@@ -88,266 +168,424 @@ const EventPage = () => {
     try {
       if (currentUser) {
         await apiHandler.post(`/events/${shortId}/join`, { code: accessCodeInput });
-        setLoading(true);
-        setRefreshKey(k => k + 1);
+        setLoading(true); setRefreshKey(k => k + 1);
       } else {
-        if (!guestNameInput.trim()) {
-          setJoinError("Veuillez indiquer votre nom pour rejoindre l'événement.");
-          return;
-        }
+        if (!guestNameInput.trim()) { setJoinError("Veuillez indiquer votre nom."); return; }
         const res = await apiHandler.post(`/events/${shortId}/join`, { code: accessCodeInput, guestName: guestNameInput });
         if (res.data && (res.data.unlockSession || res.data.invitation)) {
           sessionStorage.setItem(`event_code_${shortId}`, accessCodeInput);
-          setLoading(true);
-          setRefreshKey(k => k + 1);
+          setLoading(true); setRefreshKey(k => k + 1);
         }
       }
     } catch (err) {
-      const msg = err?.response?.data?.message || err?.message || "Code invalide";
-      setJoinError(msg);
+      setJoinError(err?.response?.data?.message || err?.message || "Code invalide");
     }
   };
 
-  if (loading) return <div className="contentCenter"><p>Chargement de l'événement...</p></div>;
-  if (error || !event) return <div className="contentCenter"><p>{error}</p></div>;
+  if (loading) return (
+    <div className="ep-loading">
+      <motion.div className="ep-loading-spinner" animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: "linear" }} />
+      <p>Chargement…</p>
+    </div>
+  );
+
+  if (error || !event) return (
+    <div className="ep-error">
+      <p>{error || "Événement introuvable"}</p>
+      <button onClick={() => navigate("/home?tab=events")}>← Retour</button>
+    </div>
+  );
+
+  const isPast = event.fixedDate && new Date(event.fixedDate) < new Date();
+  const statusColor = getStatusColor(event.status, isPast);
+  const statusLabel = getStatusLabel(event.status, isPast);
+  const isOrganizer = event.organizer._id === currentUser?._id;
+  const hasLocation = event.locationMode === "fixed" && event.fixedLocation?.name;
+  const staticMapUrl = hasLocation && event.hasFullAccess ? getStaticMapUrl(event.fixedLocation) : null;
+
+  // Tabs disponibles
+  const tabs = [
+    { id: "info", label: "Infos", icon: "fa-circle-info" },
+    ...(event.hasFullAccess ? [
+      { id: "participants", label: `Invités${invitations.length ? ` (${invitations.length})` : ""}`, icon: "fa-users" },
+      { id: "chat", label: "Discussion", icon: "fa-comments" },
+      ...(event.dateMode === "vote" || event.locationMode === "vote" || event.giftMode === "proposals"
+        ? [{ id: "vote", label: "Votes", icon: "fa-check-to-slot" }]
+        : []),
+    ] : []),
+  ];
 
   return (
-    <div className="event-page" style={{ maxWidth: "800px", margin: "40px auto", padding: "20px", background: "var(--bg-primary)", borderRadius: "10px", boxShadow: "var(--shadow-md)" }}>
-      {location.search.includes("created=true") && (
-        <div style={{ padding: "15px", background: "var(--success)", color: "#fff", borderRadius: "5px", marginBottom: "20px", textAlign: "center" }}>
-          ✅ Événement créé avec succès ! Partagez le code ou le lien ci-dessous.
-        </div>
-      )}
+    <div className="ep-root">
+      {/* ── Hero ── */}
+    <div className="ep-hero" style={{ "--status-color": statusColor }}>
+        {/* Bouton retour */}
+        <motion.button
+          className="ep-back-btn"
+          onClick={() => navigate("/home?tab=events")}
+          whileHover={{ x: -3 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          <i className="fa-solid fa-arrow-left"></i> Retour
+        </motion.button>
 
-      <button
-        onClick={() => navigate("/home?tab=events")} // ← modifié
-        style={{ marginBottom: "20px", display: "flex", alignItems: "center", gap: "8px", background: "transparent", border: "none", color: "var(--text-secondary)", cursor: "pointer", fontSize: "0.9rem" }}
-      >
-        <i className="fa-solid fa-arrow-left"></i> Retour aux événements
-      </button>
+        {/* Contenu hero */}
+        <div className="ep-hero-content">
+          <motion.div className="ep-hero-emoji" {...fadeUp(0.05)}>
+            {getEventEmoji(event.type)}
+          </motion.div>
 
-      <header style={{ borderBottom: "1px solid var(--border-color)", paddingBottom: "20px", marginBottom: "20px" }}>
-        <h1 className="titleFont" style={{ margin: "0 0 10px 0" }}>
-          {event.title}
-        </h1>
-        <p style={{ color: "var(--text-secondary)", margin: 0 }}>
-          Organisé par <strong>{event.organizer.name} {event.organizer.surname}</strong>
-        </p>
-        {event.organizer._id === currentUser?._id && (
-          <div style={{ display: "flex", gap: "10px", marginTop: "15px", flexWrap: "wrap" }}>
-            <button
-              onClick={() => setShowInviteModal(true)}
-              style={{ padding: "8px 15px", background: "var(--primary)", color: "#fff", border: "none", borderRadius: "15px", cursor: "pointer", fontWeight: "bold", fontSize: "0.9rem" }}
-            >
-              + Inviter des amis
-            </button>
-            <button
-              onClick={() => setShowEditForm(true)}
-              style={{ padding: "8px 15px", background: "transparent", color: "var(--primary)", border: "2px solid var(--primary)", borderRadius: "15px", cursor: "pointer", fontWeight: "bold", fontSize: "0.9rem" }}
-            >
-              ✏️ Modifier l'événement
-            </button>
-            <button
-              onClick={handleDeleteEvent}
-              style={{ padding: "8px 15px", background: deleteConfirm ? "var(--danger, #e74c3c)" : "transparent", color: deleteConfirm ? "#fff" : "var(--danger, #e74c3c)", border: "2px solid var(--danger, #e74c3c)", borderRadius: "15px", cursor: "pointer", fontWeight: "bold", fontSize: "0.9rem", transition: "all 0.2s" }}
-            >
-              {deleteConfirm ? "⚠️ Confirmer la suppression" : "🗑️ Supprimer"}
-            </button>
-            {deleteConfirm && (
-              <button
-                onClick={() => setDeleteConfirm(false)}
-                style={{ padding: "8px 12px", background: "transparent", border: "1px solid var(--border-color)", borderRadius: "15px", cursor: "pointer", color: "var(--text-secondary)", fontSize: "0.85rem" }}
-              >
-                Annuler
-              </button>
-            )}
-          </div>
-        )}
-      </header>
+          <motion.div className="ep-status-badge" style={{ background: statusColor }} {...fadeUp(0.1)}>
+            {statusLabel}
+          </motion.div>
 
-      <div className="event-details" style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-        <div className="detail-section">
-          <h3><i className="fa-regular fa-calendar"></i> Date</h3>
-          {event.dateMode === "fixed" && event.fixedDate ? (
-            <p>{new Date(event.fixedDate).toLocaleString("fr-FR", { weekday: "long", year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" })}</p>
-          ) : (
-            <p><em>En cours de décision (Vote)</em></p>
+          <motion.h1 className="ep-hero-title titleFont" {...fadeUp(0.15)}>
+            {event.title}
+          </motion.h1>
+
+          <motion.p className="ep-hero-organizer" {...fadeUp(0.2)}>
+            par <strong>{event.organizer.name} {event.organizer.surname}</strong>
+          </motion.p>
+
+          {/* Date + Lieu en pills */}
+          <motion.div className="ep-hero-meta" {...fadeUp(0.25)}>
+            <div className="ep-hero-pill">
+              <i className="fa-regular fa-calendar"></i>
+              <span>
+                {event.dateMode === "fixed" && event.fixedDate
+                  ? new Date(event.fixedDate).toLocaleString("fr-FR", { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" })
+                  : "Date en cours de décision"}
+              </span>
+            </div>
+            <div className="ep-hero-pill">
+              <i className="fa-solid fa-location-dot"></i>
+              <span>
+                {!event.hasFullAccess
+                  ? "Lieu masqué"
+                  : hasLocation ? event.fixedLocation.name : "Lieu en cours de décision"}
+              </span>
+            </div>
+          </motion.div>
+
+          {/* Succès création */}
+          {location.search.includes("created=true") && (
+            <motion.div className="ep-success-banner" {...fadeUp(0.3)}>
+              ✅ Événement créé ! Partagez le lien ci-dessous.
+            </motion.div>
           )}
         </div>
 
-        <div className="detail-section">
-          <h3><i className="fa-solid fa-location-dot"></i> Lieu</h3>
-          {!event.hasFullAccess ? (
-            <p style={{ color: "var(--text-tertiary)", fontStyle: "italic" }}>📍 Masqué tant que vous n'avez pas rejoint l'événement</p>
-          ) : event.locationMode === "fixed" && event.fixedLocation?.name ? (
-            <p><strong>{event.fixedLocation.name}</strong><br />{event.fixedLocation.address}</p>
-          ) : (
-            <p><em>En cours de décision (Vote)</em></p>
-          )}
-        </div>
-
-        {event.description && (
-          <div className="detail-section">
-            <h3><i className="fa-solid fa-circle-info"></i> Informations</h3>
-            <p style={{ whiteSpace: "pre-wrap" }}>{event.description}</p>
-          </div>
-        )}
-
-        {event.hasFullAccess && event.organizer._id !== currentUser?._id && (
-          <RSVPButton
-            shortId={shortId}
-            currentStatus={event.myRsvpStatus}
-            onStatusChange={(status) => setEvent({ ...event, myRsvpStatus: status })}
-          />
-        )}
-
-        {event.hasFullAccess ? (
-          <>
-            <div className="detail-section" style={{ background: "var(--bg-secondary)", padding: "20px", borderRadius: "10px" }}>
-              <h3><i className="fa-solid fa-share-nodes"></i> Partager l'événement</h3>
-              <p>Envoyez ce lien à vos invités :</p>
-              <div style={{ display: "flex", gap: "10px", alignItems: "center", marginTop: "10px" }}>
-                <input type="text" readOnly value={`${window.location.origin}/event/${event.shortId}`} style={{ flex: 1, padding: "10px", borderRadius: "5px", border: "1px solid var(--border-color)", background: "var(--bg-tertiary)", color: "var(--text-primary)" }} />
-                <button style={{ padding: "10px 20px", background: "var(--primary)", color: "#fff", border: "none", borderRadius: "5px", cursor: "pointer", fontWeight: "bold" }} onClick={() => navigator.clipboard.writeText(`${window.location.origin}/event/${event.shortId}`)}>
-                  Copier
-                </button>
-              </div>
-              <p style={{ marginTop: "10px", fontSize: "0.9rem" }}>Ou utilisez le code d'accès : <strong>{event.accessCode}</strong></p>
-            </div>
-
-            {invitations.length > 0 && (
-              <div className="detail-section" style={{ background: "var(--bg-secondary)", padding: "20px", borderRadius: "10px" }}>
-                <h3 style={{ marginTop: 0 }}><i className="fa-solid fa-users"></i> Participants</h3>
-                <p style={{ color: "var(--text-secondary)", fontSize: "0.9rem", margin: "0 0 15px 0" }}>
-                  <strong style={{ color: "var(--success, #27ae60)" }}>{invitations.filter(i => i.status === "accepted").length} confirmés</strong>
-                  {" · "}
-                  <strong style={{ color: "var(--warning, #f39c12)" }}>{invitations.filter(i => i.status === "maybe").length} peut-être</strong>
-                  {" · "}
-                  <strong style={{ color: "var(--text-tertiary)" }}>{invitations.filter(i => i.status === "pending").length} en attente</strong>
-                </p>
-                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                  {invitations.map(inv => {
-                    const name = inv.user
-                      ? `${inv.user.name} ${inv.user.surname || ""}`.trim()
-                      : inv.guestName || inv.externalEmail || "Invité externe";
-                    const initials = name.split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase();
-                    const statusConfig = {
-                      accepted: { label: "✓ Confirmé", bg: "var(--success, #27ae60)" },
-                      declined: { label: "✗ Décliné", bg: "var(--danger, #e74c3c)" },
-                      maybe: { label: "~ Peut-être", bg: "var(--warning, #f39c12)" },
-                      pending: { label: "⏳ En attente", bg: "var(--text-tertiary, #95a5a6)" },
-                    };
-                    const s = statusConfig[inv.status] || statusConfig.pending;
-                    return (
-                      <div key={inv._id} style={{ display: "flex", alignItems: "center", gap: "12px", padding: "10px 14px", background: "var(--bg-primary)", borderRadius: "8px", border: "1px solid var(--border-color)" }}>
-                        <div style={{ width: "36px", height: "36px", borderRadius: "50%", background: "var(--primary)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: "bold", fontSize: "0.85rem", flexShrink: 0 }}>
-                          {initials || "?"}
-                        </div>
-                        <span style={{ flex: 1, fontSize: "0.95rem" }}>{name}</span>
-                        <span style={{ padding: "3px 10px", borderRadius: "12px", fontSize: "0.78rem", fontWeight: "bold", background: s.bg, color: "#fff" }}>
-                          {s.label}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
+        {/* Actions organisateur dans le hero */}
+        {(isOrganizer || (event.hasFullAccess && event.allowGuestInvites)) && (
+          <motion.div className="ep-hero-actions" {...fadeUp(0.3)}>
+            <motion.button className="ep-btn ep-btn-primary" onClick={() => setShowInviteModal(true)} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+              <i className="fa-solid fa-user-plus"></i> Inviter
+            </motion.button>
+            {isOrganizer && (
+              <>
+                <motion.button className="ep-btn ep-btn-outline" onClick={() => setShowEditForm(true)} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+                  <i className="fa-solid fa-pen"></i> Modifier
+                </motion.button>
+                <motion.button
+                  className={`ep-btn ${deleteConfirm ? "ep-btn-danger-active" : "ep-btn-danger"}`}
+                  onClick={handleDeleteEvent}
+                  whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                >
+                  <i className="fa-solid fa-trash"></i>
+                  {deleteConfirm ? "Confirmer ?" : ""}
+                </motion.button>
+                {deleteConfirm && (
+                  <motion.button className="ep-btn ep-btn-ghost" onClick={() => setDeleteConfirm(false)} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
+                    Annuler
+                  </motion.button>
+                )}
+              </>
             )}
+          </motion.div>
+        )}
 
-            <div className="chat-section" style={{ marginTop: "20px" }}>
-              <h3><i className="fa-regular fa-comments"></i> Discussion de l'événement</h3>
-              <EventChat shortId={event.shortId} />
-            </div>
-
-            <div className="interactive-sections" style={{ marginTop: "40px", display: "flex", flexDirection: "column", gap: "30px" }}>
-              {event.dateMode === "vote" && (
-                <DateVotePanel
-                  shortId={shortId}
-                  options={event.dateOptions}
-                  myVotes={event.myRsvpStatus === "pending" ? [] : (event.dateVote || [])}
-                  isOrganizer={event.organizer._id === currentUser?._id}
-                  invitations={event.invitations || []}
-                  onVoteChange={() => setRefreshKey(k => k + 1)}
-                />
-              )}
-
-              {event.locationMode === "vote" && (
-                <LocationVotePanel
-                  shortId={shortId}
-                  options={event.locationOptions}
-                  myVote={event.locationVote}
-                  isOrganizer={event.organizer._id === currentUser?._id}
-                  invitations={event.invitations || []}
-                  onVoteChange={() => setRefreshKey(k => k + 1)}
-                />
-              )}
-
-              {event.giftMode === "proposals" && (
-                <GiftProposalPanel
-                  shortId={shortId}
-                  isOrganizer={event.organizer._id === currentUser?._id}
-                />
-              )}
-            </div>
-          </>
-        ) : (
-          <div className="restricted-access-banner" style={{ background: "var(--primary)", color: "#fff", padding: "20px", borderRadius: "10px", textAlign: "center", marginTop: "20px" }}>
-            <i className="fa-solid fa-lock" style={{ fontSize: "2rem", marginBottom: "10px" }}></i>
-            <h3 style={{ margin: "0 0 10px 0" }}>Événement Privé</h3>
-            <p style={{ margin: "0 0 20px 0" }}>Connectez-vous ou rejoignez l'événement avec le code d'accès pour participer au chat, voter et proposer des cadeaux !</p>
-
-            <form onSubmit={handleJoinCode} style={{ display: "flex", flexDirection: "column", gap: "10px", maxWidth: "300px", margin: "0 auto" }}>
-              {!currentUser && event.allowExternalGuests && (
-                <input
-                  type="text"
-                  placeholder="Votre Nom"
-                  value={guestNameInput}
-                  onChange={(e) => setGuestNameInput(e.target.value)}
-                  style={{ padding: "10px", borderRadius: "5px", border: "1px solid var(--border-color)", background: "var(--bg-primary)", color: "var(--text-primary)" }}
-                  required={!currentUser}
-                />
-              )}
-              {!currentUser && !event.allowExternalGuests && (
-                <p style={{ fontSize: "0.8rem", margin: 0, color: "rgba(255,255,255,0.8)" }}>Connectez-vous pour rejoindre. Les invités externes ne sont pas autorisés.</p>
-              )}
-              {currentUser || event.allowExternalGuests ? (
-                <>
-                  <input
-                    type="text"
-                    placeholder="Code d'accès"
-                    value={accessCodeInput}
-                    onChange={(e) => setAccessCodeInput(e.target.value.toUpperCase())}
-                    style={{ padding: "10px", borderRadius: "5px", border: "1px solid var(--border-color)", background: "var(--bg-primary)", color: "var(--text-primary)", textTransform: "uppercase" }}
-                    required
-                  />
-                  {joinError && <p style={{ color: "#ffb3b3", fontSize: "0.9rem", margin: 0 }}>{joinError}</p>}
-                  <button type="submit" style={{ padding: "10px", background: "var(--bg-primary)", color: "var(--primary)", border: "none", borderRadius: "5px", cursor: "pointer", fontWeight: "bold" }}>
-                    Rejoindre l'événement
-                  </button>
-                </>
-              ) : null}
-            </form>
-          </div>
+        {/* RSVP pour les invités */}
+        {event.hasFullAccess && !isOrganizer && (
+          <motion.div className="ep-hero-rsvp" {...fadeUp(0.35)}>
+            <RSVPButton
+              shortId={shortId}
+              currentStatus={event.myRsvpStatus}
+              onStatusChange={(status) => {
+                setEvent({ ...event, myRsvpStatus: status });
+                // Rafraîchit la liste des participants immédiatement
+                apiHandler.get(`/events/${shortId}/invitations`)
+                  .then(res => setInvitations(res.data))
+                  .catch(console.error);
+              }}
+            />
+          </motion.div>
         )}
       </div>
 
-      {showInviteModal && (
-        <InviteModal shortId={shortId} onClose={(refresh) => {
-          setShowInviteModal(false);
-          if (refresh) setRefreshKey(k => k + 1);
-        }} />
-      )}
+      {/* ── Body ── */}
+      <div className="ep-body">
+        {event.hasFullAccess ? (
+          <>
+            {/* Tabs */}
+            <motion.div className="ep-tabs" {...fadeUp(0.35)}>
+              {tabs.map(tab => (
+                <motion.button
+                  key={tab.id}
+                  className={`ep-tab ${activeTab === tab.id ? "active" : ""}`}
+                  onClick={() => setActiveTab(tab.id)}
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                >
+                  <i className={`fa-solid ${tab.icon}`}></i>
+                  <span>{tab.label}</span>
+                </motion.button>
+              ))}
+            </motion.div>
 
-      {showEditForm && (
-        <EventForm
-          editMode={true}
-          existingEvent={event}
-          onClose={(result) => {
-            setShowEditForm(false);
-            if (result) setRefreshKey(k => k + 1);
-          }}
-        />
-      )}
+            {/* Contenu tabs */}
+            <AnimatePresence mode="wait">
+              {/* ── Tab Infos ── */}
+              {activeTab === "info" && (
+                <motion.div
+                  key="info"
+                  className="ep-tab-content"
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -12 }}
+                  transition={{ duration: 0.25 }}
+                >
+                  <div className="ep-grid">
+                    {/* Card lieu + map */}
+                    {hasLocation && (
+                      <GlassCard className="ep-card ep-card-location" {...fadeUp(0.1)}>
+                        <div className="ep-card-header">
+                          <i className="fa-solid fa-location-dot ep-card-icon"></i>
+                          <h3>Lieu</h3>
+                        </div>
+                        <p className="ep-location-name">{event.fixedLocation.name}</p>
+                        {event.fixedLocation.address && (
+                          <p className="ep-location-address">{event.fixedLocation.address}</p>
+                        )}
+                        {/* Map sur demande */}
+                        {staticMapUrl && !mapError && !showMap && (
+                          <motion.button
+                            className="ep-map-reveal-btn"
+                            onClick={() => setShowMap(true)}
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                          >
+                            <i className="fa-solid fa-map"></i> Voir la carte
+                          </motion.button>
+                        )}
+
+                        <AnimatePresence>
+                          {staticMapUrl && !mapError && showMap && (
+                            <motion.div
+                              className="ep-map-container"
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: "auto" }}
+                              exit={{ opacity: 0, height: 0 }}
+                              transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                            >
+                              <img
+                                src={staticMapUrl}
+                                alt="Carte du lieu"
+                                className="ep-map-img"
+                                onError={() => setMapError(true)}
+                              />
+                              <a
+                                href={getMapsUrl(event.fixedLocation)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="ep-map-overlay-btn"
+                              >
+                                <i className="fa-solid fa-diamond-turn-right"></i>
+                                {/iPad|iPhone|iPod/.test(navigator.userAgent) ? "Ouvrir dans Plans" : "Ouvrir dans Google Maps"}
+                              </a>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                        {/* Fallback sans map */}
+                        {(!staticMapUrl || mapError) && (
+                          <a href={getMapsUrl(event.fixedLocation)} target="_blank" rel="noopener noreferrer" className="ep-maps-link">
+                            <i className="fa-solid fa-diamond-turn-right"></i>
+                            {/iPad|iPhone|iPod/.test(navigator.userAgent) ? "Ouvrir dans Plans" : "Ouvrir dans Google Maps"}
+                          </a>
+                        )}
+                      </GlassCard>
+                    )}
+
+                    {/* Card description */}
+                    {event.description && (
+                      <GlassCard className="ep-card" {...fadeUp(0.15)}>
+                        <div className="ep-card-header">
+                          <i className="fa-solid fa-circle-info ep-card-icon"></i>
+                          <h3>Informations</h3>
+                        </div>
+                        <p className="ep-description">{event.description}</p>
+                      </GlassCard>
+                    )}
+
+                    {/* Card partage */}
+                    {(isOrganizer || event.allowGuestInvites) && (
+                      <GlassCard className="ep-card" {...fadeUp(0.2)}>
+                        <div className="ep-card-header">
+                          <i className="fa-solid fa-share-nodes ep-card-icon"></i>
+                          <h3>Partager</h3>
+                        </div>
+                        <div className="ep-share-row">
+                          <input type="text" readOnly value={`${window.location.origin}/event/${event.shortId}`} className="ep-share-input" />
+                          <motion.button
+                            className="ep-btn ep-btn-primary ep-btn-sm"
+                            onClick={() => navigator.clipboard.writeText(`${window.location.origin}/event/${event.shortId}`)}
+                            whileTap={{ scale: 0.95 }}
+                          >
+                            <i className="fa-solid fa-copy"></i>
+                          </motion.button>
+                        </div>
+                        <p className="ep-access-code">
+                          Code d'accès : <strong>{event.accessCode}</strong>
+                        </p>
+                      </GlassCard>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+
+              {/* ── Tab Participants ── */}
+              {activeTab === "participants" && (
+                <motion.div
+                  key="participants"
+                  className="ep-tab-content"
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -12 }}
+                  transition={{ duration: 0.25 }}
+                >
+                  <GlassCard className="ep-card">
+                    {/* Stats */}
+                    <div className="ep-stats-row">
+                      <div className="ep-stat" style={{ "--stat-color": "#27ae60" }}>
+                        <span className="ep-stat-num">{invitations.filter(i => i.status === "accepted").length}</span>
+                        <span className="ep-stat-label">Confirmés</span>
+                      </div>
+                      <div className="ep-stat" style={{ "--stat-color": "#f39c12" }}>
+                        <span className="ep-stat-num">{invitations.filter(i => i.status === "maybe").length}</span>
+                        <span className="ep-stat-label">Peut-être</span>
+                      </div>
+                      <div className="ep-stat" style={{ "--stat-color": "#95a5a6" }}>
+                        <span className="ep-stat-num">{invitations.filter(i => i.status === "pending").length}</span>
+                        <span className="ep-stat-label">En attente</span>
+                      </div>
+                      <div className="ep-stat" style={{ "--stat-color": "#e74c3c" }}>
+                        <span className="ep-stat-num">{invitations.filter(i => i.status === "declined").length}</span>
+                        <span className="ep-stat-label">Déclinés</span>
+                      </div>
+                    </div>
+
+                    {/* Liste */}
+                    <div className="ep-participants-list">
+                      {invitations.length === 0
+                        ? <p className="ep-empty">Aucun invité pour l'instant.</p>
+                        : invitations.map((inv, i) => (
+                          <motion.div key={inv._id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.04 }}>
+                            <ParticipantRow inv={inv} />
+                          </motion.div>
+                        ))
+                      }
+                    </div>
+                  </GlassCard>
+                </motion.div>
+              )}
+
+              {/* ── Tab Chat ── */}
+              {activeTab === "chat" && (
+                <motion.div
+                  key="chat"
+                  className="ep-tab-content"
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -12 }}
+                  transition={{ duration: 0.25 }}
+                >
+                  <GlassCard className="ep-card ep-card-chat">
+                    <EventChat shortId={event.shortId} />
+                  </GlassCard>
+                </motion.div>
+              )}
+
+              {/* ── Tab Votes ── */}
+              {activeTab === "vote" && (
+                <motion.div
+                  key="vote"
+                  className="ep-tab-content"
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -12 }}
+                  transition={{ duration: 0.25 }}
+                >
+                  <div className="ep-grid">
+                    {event.dateMode === "vote" && (
+                      <GlassCard className="ep-card">
+                        <DateVotePanel shortId={shortId} options={event.dateOptions} myVotes={event.myRsvpStatus === "pending" ? [] : (event.dateVote || [])} isOrganizer={isOrganizer} invitations={event.invitations || []} onVoteChange={() => setRefreshKey(k => k + 1)} />
+                      </GlassCard>
+                    )}
+                    {event.locationMode === "vote" && (
+                      <GlassCard className="ep-card">
+                        <LocationVotePanel shortId={shortId} options={event.locationOptions} myVote={event.locationVote} isOrganizer={isOrganizer} invitations={event.invitations || []} onVoteChange={() => setRefreshKey(k => k + 1)} />
+                      </GlassCard>
+                    )}
+                    {event.giftMode === "proposals" && (
+                      <GlassCard className="ep-card">
+                        <GiftProposalPanel shortId={shortId} isOrganizer={isOrganizer} />
+                      </GlassCard>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </>
+        ) : (
+          /* ── Accès restreint ── */
+          <motion.div className="ep-restricted" {...fadeUp(0.3)}>
+            <GlassCard className="ep-card ep-card-restricted">
+              <div className="ep-lock-icon">🔒</div>
+              <h3>Événement privé</h3>
+              <p>Rejoignez l'événement avec le code d'accès pour participer.</p>
+
+              <form onSubmit={handleJoinCode} className="ep-join-form">
+                {!currentUser && event.allowExternalGuests && (
+                  <input type="text" placeholder="Votre prénom" value={guestNameInput} onChange={e => setGuestNameInput(e.target.value)} className="ep-input" required />
+                )}
+                {!currentUser && !event.allowExternalGuests && (
+                  <p className="ep-join-info">Connectez-vous pour rejoindre cet événement.</p>
+                )}
+                {(currentUser || event.allowExternalGuests) && (
+                  <>
+                    <input type="text" placeholder="Code d'accès" value={accessCodeInput} onChange={e => setAccessCodeInput(e.target.value.toUpperCase())} className="ep-input ep-input-code" required />
+                    {joinError && <p className="ep-join-error">{joinError}</p>}
+                    <motion.button type="submit" className="ep-btn ep-btn-primary ep-btn-full" whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                      Rejoindre l'événement
+                    </motion.button>
+                  </>
+                )}
+              </form>
+            </GlassCard>
+          </motion.div>
+        )}
+      </div>
+
+      {/* ── Modals ── */}
+      <AnimatePresence>
+        {showInviteModal && (
+          <InviteModal shortId={shortId} onClose={(refresh) => { setShowInviteModal(false); if (refresh) setRefreshKey(k => k + 1); }} />
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {showEditForm && (
+          <EventForm editMode={true} existingEvent={event} onClose={(result) => { setShowEditForm(false); if (result) setRefreshKey(k => k + 1); }} />
+        )}
+      </AnimatePresence>
     </div>
   );
 };
