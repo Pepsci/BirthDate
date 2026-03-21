@@ -3,24 +3,48 @@ import apiHandler from "../../api/apiHandler";
 import { useLocation } from "react-router-dom";
 import "./css/eventForm.css";
 
-const EventForm = ({ onClose, defaultValues = {} }) => {
+const EventForm = ({ onClose, defaultValues = {}, editMode = false, existingEvent = null }) => {
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
-  
+
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState(() => {
+    if (editMode && existingEvent) {
+      return {
+        title: existingEvent.title || "",
+        type: existingEvent.type || "party",
+        description: existingEvent.description || "",
+        forPerson: existingEvent.forPerson?._id || existingEvent.forPerson || "",
+        forDate: "",
+        recurrence: "once",
+        dateMode: existingEvent.dateMode || "fixed",
+        fixedDate: existingEvent.fixedDate
+          ? new Date(existingEvent.fixedDate).toISOString().slice(0, 16)
+          : "",
+        dateOptions: existingEvent.dateOptions || [],
+        locationMode: existingEvent.locationMode || "fixed",
+        fixedLocation: existingEvent.fixedLocation || { name: "", address: "" },
+        locationOptions: existingEvent.locationOptions || [],
+        giftMode: existingEvent.giftMode || "proposals",
+        imposedGift: existingEvent.imposedGift || { name: "", url: "", price: "" },
+        giftPoolEnabled: existingEvent.giftPoolEnabled || false,
+        maxGuests: existingEvent.maxGuests || "",
+        allowExternalGuests: existingEvent.allowExternalGuests !== false,
+        reminders: existingEvent.reminders || [],
+      };
+    }
     const initialName = searchParams.get("name") || defaultValues.name;
     const initialPersonId = searchParams.get("forPerson") || defaultValues.forPerson || "";
     const initialDateId = searchParams.get("forDate") || defaultValues.forDate || "";
     return {
       title: initialName ? `Anniversaire de ${initialName}` : "",
-      type: initialName ? "birthday" : "party", 
+      type: initialName ? "birthday" : "party",
       description: "",
       forPerson: initialPersonId,
       forDate: initialDateId,
       recurrence: "once",
-      
+
       dateMode: "fixed",
       fixedDate: "",
       dateOptions: [],
@@ -73,19 +97,24 @@ const EventForm = ({ onClose, defaultValues = {} }) => {
       if (payload.dateMode === "fixed" && formData.fixedDate) {
         payload.fixedDate = new Date(formData.fixedDate);
       }
-      
-      const res = await apiHandler.post("/events", payload);
-      const shortId = res.data.shortId;
 
-      if (selectedFriends.length > 0) {
-        await apiHandler.post(`/events/${shortId}/invite`, { userIds: selectedFriends });
+      if (editMode && existingEvent) {
+        await apiHandler.put(`/events/${existingEvent.shortId}`, payload);
+        if (selectedFriends.length > 0) {
+          await apiHandler.post(`/events/${existingEvent.shortId}/invite`, { userIds: selectedFriends });
+        }
+        onClose(true); // true = refresh needed
+      } else {
+        const res = await apiHandler.post("/events", payload);
+        const shortId = res.data.shortId;
+        if (selectedFriends.length > 0) {
+          await apiHandler.post(`/events/${shortId}/invite`, { userIds: selectedFriends });
+        }
+        onClose(shortId);
       }
-
-      onClose(shortId); // Renvoie l'ID généré pour rediriger
     } catch (err) {
-      console.error("Error creating event", err);
+      console.error("Error submitting event", err);
       setLoading(false);
-      // Gérer l'erreur
     }
   };
 
@@ -93,7 +122,7 @@ const EventForm = ({ onClose, defaultValues = {} }) => {
     <div className="event-modal-overlay">
       <div className="event-modal">
         <div className="event-modal-header">
-          <h2>Créer un événement</h2>
+          <h2>{editMode ? "Modifier l'événement" : "Créer un événement"}</h2>
           <button className="event-close-btn" onClick={() => onClose()}>✕</button>
         </div>
         
@@ -279,7 +308,7 @@ const EventForm = ({ onClose, defaultValues = {} }) => {
           )}
           
           <button type="button" onClick={step === 6 ? handleSubmit : handleNext} disabled={loading} className="event-btn-submit">
-            {loading ? "Chargement..." : step === 6 ? "Créer l'événement 🎉" : "Suivant"}
+            {loading ? "Chargement..." : step === 6 ? (editMode ? "Enregistrer les modifications ✓" : "Créer l'événement 🎉") : "Suivant"}
           </button>
         </div>
 

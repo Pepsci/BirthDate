@@ -230,21 +230,19 @@ router.put("/:shortId", isAuthenticated, async (req, res) => {
     }
 
     const {
-      title, description, type, recurrence, 
+      title, description, type,
       dateMode, fixedDate, dateOptions, selectedDate,
       locationMode, fixedLocation, locationOptions, selectedLocation,
       giftMode, imposedGift,
       maxGuests, allowExternalGuests, reminders, status
     } = req.body;
 
-    // Update fields
     if (title) event.title = title;
     if (description !== undefined) event.description = description;
     if (type) event.type = type;
-    if (recurrence) event.recurrence = recurrence;
-    
+
     if (dateMode) event.dateMode = dateMode;
-    if (fixedDate !== undefined) event.fixedDate = fixedDate;
+    if (fixedDate !== undefined) event.fixedDate = fixedDate || null;
     if (dateOptions) event.dateOptions = dateOptions;
     if (selectedDate !== undefined) event.selectedDate = selectedDate;
 
@@ -254,11 +252,23 @@ router.put("/:shortId", isAuthenticated, async (req, res) => {
     if (selectedLocation !== undefined) event.selectedLocation = selectedLocation;
 
     if (giftMode) event.giftMode = giftMode;
-    if (imposedGift !== undefined) event.imposedGift = imposedGift;
+    if (imposedGift !== undefined) {
+      event.imposedGift = {
+        name: imposedGift.name || "",
+        url: imposedGift.url || "",
+        price: imposedGift.price ? Number(imposedGift.price) : undefined,
+      };
+    }
 
-    if (maxGuests !== undefined) event.maxGuests = maxGuests;
+    if (maxGuests !== undefined) event.maxGuests = maxGuests || null;
     if (allowExternalGuests !== undefined) event.allowExternalGuests = allowExternalGuests;
-    if (reminders) event.reminders = reminders;
+    if (reminders && Array.isArray(reminders)) {
+      event.reminders = reminders.map(r => ({
+        type: r.type,
+        daysBeforeEvent: r.daysBeforeEvent,
+        sent: r.sent || false,
+      }));
+    }
     if (status) event.status = status;
 
     await event.save();
@@ -559,6 +569,20 @@ router.get("/:shortId/share", async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Error getting share link:", error);
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+});
+
+/* 16. GET /api/events/:shortId/invitations -> liste des invitations peuplées */
+router.get("/:shortId/invitations", isAuthenticated, checkEventAccess, async (req, res) => {
+  try {
+    const invitations = await EventInvitation.find({ event: req.event._id })
+      .populate("user", "name surname avatar")
+      .sort({ createdAt: 1 });
+
+    res.status(200).json(invitations);
+  } catch (error) {
+    console.error("❌ Error fetching invitations:", error);
     res.status(500).json({ message: "Erreur serveur" });
   }
 });

@@ -1,10 +1,20 @@
 /* eventsPanel.css */
 
-.events-panel {
-  width: 100%;
-  animation: fadeIn 0.5s ease forwards;
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
+/* ─── Conteneur principal ──────────────────────────────── */
+.events-panel {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 1.5rem 2rem 3rem;
+  animation: fadeInUp 0.35s ease forwards;
+}
+
+/* ─── Header ───────────────────────────────────────────── */
 .events-header {
   display: flex;
   justify-content: space-between;
@@ -16,28 +26,50 @@
 
 .events-header h2 {
   color: var(--text-primary);
+  font-size: 1.6rem;
   margin: 0;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
+/* ─── Bouton créer ─────────────────────────────────────── */
 .btn-create-event {
   background: var(--primary);
-  color: white;
-  padding: 0.75rem 1.5rem;
+  color: #fff;
+  padding: 0.6rem 1.25rem;
   border: none;
-  border-radius: 8px;
+  border-radius: 20px;
   cursor: pointer;
-  font-weight: bold;
-  font-size: 1rem;
-  transition: all 0.2s ease;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: background 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  white-space: nowrap;
 }
 
 .btn-create-event:hover {
-  background: var(--primary-light);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+  background: var(--primary-light, var(--primary));
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
 }
 
+.btn-create-event:active {
+  transform: translateY(0);
+}
+
+.btn-create-event--ghost {
+  background: transparent;
+  color: var(--primary);
+  border: 1px solid var(--primary);
+  box-shadow: none;
+}
+
+.btn-create-event--ghost:hover {
+  background: var(--primary);
+  color: #fff;
+}
+
+/* ─── Filtres ──────────────────────────────────────────── */
 .events-filters {
   display: flex;
   gap: 0.5rem;
@@ -46,57 +78,206 @@
 }
 
 .events-filters button {
-  padding: 0.5rem 1rem;
+  padding: 0.45rem 1rem;
   border-radius: 20px;
   border: 1px solid var(--border-color);
   background: var(--bg-secondary);
-  color: var(--text-primary);
+  color: var(--text-secondary);
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 500;
-  transition: all 0.2s ease;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
 
 .events-filters button:hover {
   background: var(--bg-tertiary);
-  border-color: var(--border-color-hover);
+  color: var(--text-primary);
+  border-color: var(--primary);
 }
 
 .events-filters button.active {
   background: var(--primary);
-  color: white;
+  color: #fff;
   border-color: var(--primary);
 }
 
 .events-filters button.active.pending {
-  background: var(--danger);
-  border-color: var(--danger);
+  background: var(--danger, #e74c3c);
+  border-color: var(--danger, #e74c3c);
+  color: #fff;
 }
 
+/* ─── Chargement ───────────────────────────────────────── */
+.events-loading {
+  color: var(--text-secondary);
+  text-align: center;
+  padding: 2rem;
+}
+
+/* ─── État vide ────────────────────────────────────────── */
 .no-events {
   text-align: center;
   padding: 3rem 2rem;
   background: var(--bg-secondary);
   border: 1px dashed var(--border-color);
-  border-radius: 12px;
+  border-radius: 16px;
   color: var(--text-secondary);
-  margin-top: 2rem;
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
 }
 
 .no-events p {
-  font-size: 1.1rem;
+  font-size: 1rem;
+  margin: 0;
+  color: var(--text-tertiary);
+}
+
+/* ─── Section (organisés / invitations) ────────────────── */
+.events-section {
+  margin-bottom: 3rem;
+}
+
+.events-section h3 {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0.6rem;
+  margin: 0 0 1.25rem 0;
+}
+
+/* ─── Grille : max 5 colonnes ──────────────────────────── */
+.events-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 1.25rem;
   margin-bottom: 1rem;
 }
 
-.events-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 2rem;
+/* ─── Pagination par section ───────────────────────────── */
+.events-pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 1.5rem;
+  flex-wrap: wrap;
 }
 
-@media (max-width: 600px) {
+.events-pagination-btn {
+  padding: 0.4rem 0.85rem;
+  border-radius: 20px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  min-width: 36px;
+  text-align: center;
+}
+
+.events-pagination-btn:hover:not(:disabled) {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border-color: var(--primary);
+}
+
+.events-pagination-btn.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+.events-pagination-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.events-pagination-ellipsis {
+  color: var(--text-tertiary);
+  padding: 0 0.2rem;
+  font-size: 0.85rem;
+}
+
+/* ─── Responsive large (≤ 1300px) → 4 colonnes ─────────── */
+@media (max-width: 1300px) {
   .events-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* ─── Responsive tablette (≤ 900px) → 3 colonnes ───────── */
+@media (max-width: 900px) {
+  .events-panel {
+    padding: 1.25rem 1.5rem 2.5rem;
+  }
+
+  .events-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+  }
+}
+
+/* ─── Responsive tablette small (≤ 700px) → 2 colonnes ─── */
+@media (max-width: 700px) {
+  .events-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.85rem;
+  }
+}
+
+/* ─── Responsive mobile (≤ 600px) ─────────────────────── */
+@media (max-width: 600px) {
+  .events-panel {
+    padding: 1rem 1rem 2rem;
+  }
+
+  .events-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .events-header h2 {
+    font-size: 1.3rem;
+  }
+
+  .btn-create-event {
+    width: 100%;
+    text-align: center;
+  }
+
+  .events-filters {
+    gap: 0.4rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .events-filters button {
+    font-size: 0.78rem;
+    padding: 0.35rem 0.75rem;
+  }
+
+  /* Grille 2 colonnes comme les birthday cards */
+  .events-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+  }
+
+  .no-events {
+    padding: 2rem 1.25rem;
+    border-radius: 12px;
+  }
+
+  .events-pagination-btn {
+    font-size: 0.78rem;
+    padding: 0.35rem 0.7rem;
+    min-width: 30px;
   }
 }

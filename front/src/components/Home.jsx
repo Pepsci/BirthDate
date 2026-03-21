@@ -25,11 +25,11 @@ const Home = () => {
   const [viewingFriendProfile, setViewingFriendProfile] = useState(null);
   const [showMergeModal, setShowMergeModal] = useState(false);
   const [cardToMerge, setCardToMerge] = useState(null);
-  const [profileInitialSection, setProfileInitialSection] =
-    useState("personal");
+  const [profileInitialSection, setProfileInitialSection] = useState("personal");
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [savedPage, setSavedPage] = useState(1);
   const [agendaParams, setAgendaParams] = useState(null);
+  const [initialEventsOpen, setInitialEventsOpen] = useState(false); // ← nouveau
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -68,14 +68,20 @@ const Home = () => {
       setProfileInitialSection("personal");
       navigate("/home", { replace: true });
     } else if (tab === "agenda") {
-      const monthNum =
-        month !== null ? parseInt(month) - 1 : new Date().getMonth();
+      const monthNum = month !== null ? parseInt(month) - 1 : new Date().getMonth();
       const yearNum = year !== null ? parseInt(year) : new Date().getFullYear();
       console.log("🗓️ Agenda params calculés:", { monthNum, yearNum });
       setAgendaParams({ month: monthNum, year: yearNum });
       setShowProfile(false);
       setEditingDate(null);
       setViewingFriendProfile(null);
+      navigate("/home", { replace: true });
+    } else if (tab === "events") { // ← nouveau
+      setShowProfile(false);
+      setEditingDate(null);
+      setViewingFriendProfile(null);
+      setAgendaParams(null);
+      setInitialEventsOpen(true);
       navigate("/home", { replace: true });
     } else if (tab === "date" && dateId) {
       apiHandler
@@ -103,6 +109,7 @@ const Home = () => {
     setCardToMerge(null);
     setProfileInitialSection("personal");
     setAgendaParams(null);
+    setInitialEventsOpen(false);
     setSavedPage(1);
     navigate("/home");
   };
@@ -131,11 +138,7 @@ const Home = () => {
     setEditingDate(null);
   };
 
-  const handleViewFriendProfile = (
-    date,
-    initialSection = "info",
-    currentPage = 1,
-  ) => {
+  const handleViewFriendProfile = (date, initialSection = "info", currentPage = 1) => {
     setSavedPage(currentPage);
     setViewingFriendProfile({ date, initialSection });
     setShowProfile(false);
@@ -213,6 +216,8 @@ const Home = () => {
                 onViewFriendProfile={handleViewFriendProfile}
                 initialPage={savedPage}
                 agendaParams={agendaParams}
+                initialEventsOpen={initialEventsOpen}              // ← nouveau
+                onEventsOpened={() => setInitialEventsOpen(false)} // ← nouveau
                 onResetChat={(fn) => {
                   resetChatRef.current = fn;
                 }}

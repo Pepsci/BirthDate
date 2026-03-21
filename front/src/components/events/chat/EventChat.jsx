@@ -247,18 +247,36 @@ const handleInputChange = (e) => {
             0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
             30% { transform: translateY(-5px); opacity: 1; }
           }
+          @media (max-width: 600px) {
+            .event-send-btn {
+              min-width: 44px !important;
+              width: 44px !important;
+              height: 44px !important;
+              padding: 0 !important;
+              background: var(--primary) !important;
+              color: #fff !important;
+              border-radius: 50% !important;
+              display: flex !important;
+              align-items: center !important;
+              justify-content: center !important;
+              opacity: 1 !important;
+            }
+            .event-send-btn:disabled {
+              opacity: 0.4 !important;
+            }
+          }
         `}</style>
       </div>
 
-      <form onSubmit={handleSendMessage} style={{ display: "flex", borderTop: "1px solid var(--border-color)", padding: "10px", background: "var(--bg-secondary)", flexShrink: 0 }}>
+      <form onSubmit={handleSendMessage} style={{ display: "flex", borderTop: "1px solid var(--border-color)", padding: "10px", background: "var(--bg-secondary)", flexShrink: 0, gap: "8px", alignItems: "center" }}>
         <input
           type="text"
           value={newMessage}
-          onChange={handleInputChange} // MODIFIÉ : handleInputChange au lieu de setNewMessage
+          onChange={handleInputChange}
           placeholder="Écrivez un message..."
-          style={{ flex: 1, padding: "10px", borderRadius: "20px", border: "1px solid var(--border-color)", background: "var(--bg-primary)", color: "var(--text-primary)", outline: "none" }}
+          style={{ flex: 1, padding: "10px", borderRadius: "20px", border: "1px solid var(--border-color)", background: "var(--bg-primary)", color: "var(--text-primary)", outline: "none", minWidth: 0 }}
         />
-        <button type="submit" disabled={!newMessage.trim()} style={{ background: "transparent", border: "none", color: "var(--primary)", fontSize: "1.2rem", padding: "0 15px", cursor: newMessage.trim() ? "pointer" : "not-allowed", opacity: newMessage.trim() ? 1 : 0.5 }}>
+        <button type="submit" className="event-send-btn" disabled={!newMessage.trim()} style={{ background: "transparent", border: "none", color: "var(--primary)", fontSize: "1.2rem", padding: "0 12px", cursor: newMessage.trim() ? "pointer" : "not-allowed", opacity: newMessage.trim() ? 1 : 0.5, flexShrink: 0 }}>
           <i className="fa-solid fa-paper-plane"></i>
         </button>
       </form>

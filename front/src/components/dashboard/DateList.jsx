@@ -25,7 +25,9 @@ const DateList = ({
   onResetChat,
   initialPage = 1,
   agendaParams = null,
-  initialFilter = null, // NOUVEAU : "Gaspard Lefebvre" depuis deep link email
+  initialFilter = null,
+  initialEventsOpen = false, // ← nouveau
+  onEventsOpened = null,     // ← nouveau
 }) => {
   const { currentUser } = useAuth();
   const [dates, setDates] = useState([]);
@@ -50,6 +52,16 @@ const DateList = ({
   const [selectedFriendName, setSelectedFriendName] = useState("");
 
   const [viewMode, setViewMode] = useState(agendaParams ? "agenda" : "card");
+
+  // ← nouveau : ouvre l'EventsPanel si demandé depuis EventPage
+  useEffect(() => {
+    if (!initialEventsOpen) return;
+    setIsEventsVisible(true);
+    setIsFormVisible(false);
+    setIsFilterVisible(false);
+    setIsChatVisible(false);
+    if (onEventsOpened) onEventsOpened();
+  }, [initialEventsOpen]);
 
   const sortDates = (datesArray) => {
     const today = new Date();
@@ -135,7 +147,6 @@ const DateList = ({
       .catch((e) => console.error(e));
   }, [currentUser]);
 
-  // NOUVEAU : appliquer le filtre deep link quand les dates sont chargées
   useEffect(() => {
     if (!initialFilter || allDates.length === 0) return;
 
@@ -143,7 +154,6 @@ const DateList = ({
     const firstName = parts[0] || "";
     const lastName = parts.slice(1).join(" ") || "";
 
-    // Filtrer les dates
     const filtered = allDates.filter((d) => {
       const matchFirst = firstName
         ? d.name?.toLowerCase().includes(firstName.toLowerCase())
@@ -156,7 +166,7 @@ const DateList = ({
 
     setDates(filtered);
     setCurrentPage(1);
-    setIsFilterVisible(true); // Ouvrir le panneau filtre pour que l'user voit ce qui est appliqué
+    setIsFilterVisible(true);
   }, [initialFilter, allDates]);
 
   const toggleFormVisibility = () => {
@@ -201,7 +211,6 @@ const DateList = ({
       setIsFormVisible(false);
       setIsFilterVisible(false);
       setIsChatVisible(false);
-      setIsFilterVisible(false);
     }
   };
 
@@ -212,12 +221,7 @@ const DateList = ({
     setIsFormVisible(true);
   };
 
-  const handleFilterChange = (
-    newName,
-    newSurname,
-    familyFilter,
-    friendFilter,
-  ) => {
+  const handleFilterChange = (newName, newSurname, familyFilter, friendFilter) => {
     let filteredDates = [...allDates];
     if (familyFilter)
       filteredDates = filteredDates.filter((d) => d.family === true);
@@ -381,10 +385,7 @@ const DateList = ({
             } else if (currentPage <= Math.ceil(maxPagesToShow / 2)) {
               startPage = 1;
               endPage = maxPagesToShow;
-            } else if (
-              currentPage + Math.floor(maxPagesToShow / 2) >=
-              totalPages
-            ) {
+            } else if (currentPage + Math.floor(maxPagesToShow / 2) >= totalPages) {
               startPage = totalPages - maxPagesToShow + 1;
               endPage = totalPages;
             } else {
@@ -394,29 +395,17 @@ const DateList = ({
 
             if (startPage > 1) {
               pages.push(
-                <button
-                  key="page-1"
-                  onClick={() => paginate(1)}
-                  className={currentPage === 1 ? "active" : ""}
-                >
+                <button key="page-1" onClick={() => paginate(1)} className={currentPage === 1 ? "active" : ""}>
                   1
                 </button>,
               );
               if (startPage > 2)
-                pages.push(
-                  <span key="ellipsis-start" className="ellipsis">
-                    ...
-                  </span>,
-                );
+                pages.push(<span key="ellipsis-start" className="ellipsis">...</span>);
             }
 
             for (let i = startPage; i <= endPage; i++) {
               pages.push(
-                <button
-                  key={`page-${i}`}
-                  onClick={() => paginate(i)}
-                  className={currentPage === i ? "active" : ""}
-                >
+                <button key={`page-${i}`} onClick={() => paginate(i)} className={currentPage === i ? "active" : ""}>
                   {i}
                 </button>,
               );
@@ -424,17 +413,9 @@ const DateList = ({
 
             if (endPage < totalPages) {
               if (endPage < totalPages - 1)
-                pages.push(
-                  <span key="ellipsis-end" className="ellipsis">
-                    ...
-                  </span>,
-                );
+                pages.push(<span key="ellipsis-end" className="ellipsis">...</span>);
               pages.push(
-                <button
-                  key={`page-${totalPages}`}
-                  onClick={() => paginate(totalPages)}
-                  className={currentPage === totalPages ? "active" : ""}
-                >
+                <button key={`page-${totalPages}`} onClick={() => paginate(totalPages)} className={currentPage === totalPages ? "active" : ""}>
                   {totalPages}
                 </button>,
               );
@@ -445,14 +426,7 @@ const DateList = ({
 
           <button
             key="next"
-            onClick={() =>
-              paginate(
-                Math.min(
-                  currentPage + 1,
-                  Math.ceil(dates.length / itemsPerPage),
-                ),
-              )
-            }
+            onClick={() => paginate(Math.min(currentPage + 1, Math.ceil(dates.length / itemsPerPage)))}
             disabled={currentPage === Math.ceil(dates.length / itemsPerPage)}
           >
             Suivant
