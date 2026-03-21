@@ -48,9 +48,9 @@ const BirthdayCard = ({ date, onViewProfile }) => {
     >
       <div className="birthCardName">
         <span className="birthCard-name">
-          <b>{date.name}</b>
-          {isFriend && <span className="friend-badge">👥 AMI</span>}
-          {isFamily && !isFriend && <span className="family-badge">👨‍👩‍👧 FAMILLE</span>}
+          <b>{date.name} </b>
+          {isFriend && <span className="friend-badge"> 👥</span>}
+          {isFamily && !isFriend && <span className="family-badge"> 👨‍👩‍👧 </span>}
         </span>
         <span><b>{date.surname}</b></span>
       </div>
