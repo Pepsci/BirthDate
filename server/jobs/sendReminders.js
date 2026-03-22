@@ -10,13 +10,13 @@ const {
 } = require("../services/emailTemplates/namedayReminder");
 const {
   sendMonthlyRecapEmail,
-} = require("../services/emailTemplates/monthlyRecapEmail"); // NOUVEAU
+} = require("../services/emailTemplates/monthlyRecapEmail");
 
 // ========================================
 // HELPER: Vérifier si un anniversaire est dans X jours
 // ========================================
 function isBirthdayInXDays(birthDate, daysFromNow) {
-  const today = new Date();
+  const today = new Date(new Date().toLocaleString("en-US", { timeZone: "Europe/Paris" }));
   today.setHours(0, 0, 0, 0);
 
   const targetDate = new Date(today);
@@ -37,7 +37,7 @@ function isBirthdayInXDays(birthDate, daysFromNow) {
 function isNamedayInXDays(nameday, daysFromNow) {
   if (!nameday || !nameday.match(/^\d{2}-\d{2}$/)) return false;
 
-  const today = new Date();
+    const today = new Date(new Date().toLocaleString("en-US", { timeZone: "Europe/Paris" }));
   today.setHours(0, 0, 0, 0);
 
   const targetDate = new Date(today);
