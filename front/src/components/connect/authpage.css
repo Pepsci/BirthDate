@@ -347,8 +347,7 @@
 
     .auth-panel {
         padding: 24px 20px 20px;
-        width: 100%;
-
+        width: 33.333%;
     }
 
     .auth-row {
