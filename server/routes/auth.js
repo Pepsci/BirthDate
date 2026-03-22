@@ -238,20 +238,37 @@ router.post("/login", authLimiter, async (req, res) => {
 // ========================================
 // GET /auth/verify
 // ========================================
-router.get("/verify", isAuthenticated, (req, res) => {
-  const { _id, email, name, surname } = req.payload;
-  const authToken = jwt.sign(
-    { _id, email, name, surname },
-    process.env.TOKEN_SECRET,
-    { algorithm: "HS256", expiresIn: "8h" },
-  );
-  res.cookie("authToken", authToken, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
-    maxAge: 8 * 60 * 60 * 1000,
-  });
-  res.status(200).json({ ...req.payload, authToken });
+router.get("/verify", isAuthenticated, async (req, res) => {
+  try {
+    const user = await userModel.findById(req.payload._id).select("-password -resetToken -verificationToken");
+    
+    if (!user || user.deletedAt) {
+      return res.status(401).json({ message: "User not found" });
+    }
+
+    const authToken = jwt.sign(
+      { 
+        _id: user._id, 
+        email: user.email, 
+        name: user.name, 
+        surname: user.surname 
+      },
+      process.env.TOKEN_SECRET,
+      { algorithm: "HS256", expiresIn: "8h" },
+    );
+
+    res.cookie("authToken", authToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 8 * 60 * 60 * 1000,
+    });
+
+    res.status(200).json({ ...user.toObject(), authToken });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal server error" });
+  }
 });
 
 // ========================================
