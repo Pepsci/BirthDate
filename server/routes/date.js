@@ -1,9 +1,10 @@
 const express = require("express");
 const router = express.Router();
 const dateModel = require("./../models/date.model");
-const Conversation = require("./../models/conversation.model"); // Ajoute ce require
+const Conversation = require("./../models/conversation.model");
 const mongoose = require("mongoose");
 const userModel = require("../models/user.model");
+const { findNameDay } = require("../utils/namedayHelper");
 
 const { isAuthenticated } = require("../middleware/jwt.middleware");
 
@@ -68,6 +69,9 @@ router.post("/", isAuthenticated, async (req, res, next) => {
   const { date, name, surname, family, linkedUser, nameday } = req.body;
 
   try {
+    // Auto-détection de la fête si non fournie manuellement
+    const resolvedNameday = nameday || (name ? findNameDay(name) : null);
+
     const newDate = await dateModel.create({
       date,
       owner: req.payload._id,
@@ -75,7 +79,7 @@ router.post("/", isAuthenticated, async (req, res, next) => {
       surname,
       family,
       linkedUser,
-      nameday: nameday || null,
+      nameday: resolvedNameday,
     });
 
     res.status(201).json(newDate);
@@ -150,7 +154,15 @@ router.patch("/:id", isAuthenticated, async (req, res, next) => {
       });
     }
 
-    const updateFields = { date, name, surname, family, nameday };
+    // Si le nom change et pas de nameday explicite, recalculer
+    const resolvedNameday =
+      nameday !== undefined
+        ? nameday || null
+        : name && name !== existingDate.name
+          ? findNameDay(name)
+          : existingDate.nameday;
+
+    const updateFields = { date, name, surname, family, nameday: resolvedNameday };
 
     if (giftName && purchased !== undefined) {
       updateFields.$push = { gifts: { giftName, purchased } };
@@ -327,8 +339,6 @@ router.delete("/:id", isAuthenticated, async (req, res, next) => {
   }
 });
 
-// À ajouter dans server/routes/date.js
-
 // ========================================
 // PUT /date/:id/nameday-preferences
 // Mettre à jour les préférences de notification pour les FÊTES
@@ -338,7 +348,6 @@ router.put("/:id/nameday-preferences", isAuthenticated, async (req, res) => {
     const { id } = req.params;
     const { timings, notifyOnNameday } = req.body;
 
-    // Validation des timings (seulement 1 et 7 autorisés pour les fêtes)
     if (timings && !Array.isArray(timings)) {
       return res.status(400).json({ message: "Timings doit être un tableau" });
     }
@@ -350,17 +359,19 @@ router.put("/:id/nameday-preferences", isAuthenticated, async (req, res) => {
       });
     }
 
-    // Mise à jour
-    const date = await dateModel.findOneAndUpdate(
-      { _id: id, owner: req.payload._id },
-      {
-        $set: {
-          "namedayPreferences.timings": timings,
-          "namedayPreferences.notifyOnNameday": notifyOnNameday,
+    const date = await dateModel
+      .findOneAndUpdate(
+        { _id: id, owner: req.payload._id },
+        {
+          $set: {
+            "namedayPreferences.timings": timings,
+            "namedayPreferences.notifyOnNameday": notifyOnNameday,
+          },
         },
-      },
-      { new: true, runValidators: true },
-    ).populate("owner", "-password -resetToken -verificationToken").populate("linkedUser");
+        { new: true, runValidators: true },
+      )
+      .populate("owner", "-password -resetToken -verificationToken")
+      .populate("linkedUser");
 
     if (!date) {
       return res.status(404).json({ message: "Date non trouvée" });

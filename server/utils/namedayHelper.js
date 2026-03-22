@@ -1,73 +1,100 @@
-const namedays = require("../data/namedays-fr.json");
+/**
+ * namedayHelper.js
+ *
+ * Lookup des fêtes par prénom, multi-langue.
+ * Priorité : FR → US (fallback) → null
+ *
+ * Format des fichiers : { "julie": "04-08", "sophie": "05-25", ... }
+ */
+
+const path = require('path');
+const fs   = require('fs');
+
+// Cache en mémoire : on charge chaque langue une seule fois
+const cache = {};
+
+function getIndex(lang) {
+  if (!cache[lang]) {
+    const filePath = path.join(__dirname, `../data/namedays-${lang}-by-name.json`);
+    if (!fs.existsSync(filePath)) {
+      console.warn(`⚠️  Fichier namedays manquant pour la langue : ${lang}`);
+      cache[lang] = {};
+    } else {
+      cache[lang] = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    }
+  }
+  return cache[lang];
+}
+
+function getDateIndex(lang) {
+  const key = `date_${lang}`;
+  if (!cache[key]) {
+    const filePath = path.join(__dirname, `../data/namedays-${lang}-by-date.json`);
+    if (!fs.existsSync(filePath)) {
+      cache[key] = {};
+    } else {
+      cache[key] = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    }
+  }
+  return cache[key];
+}
 
 /**
- * Extrait tous les prénoms possibles d'un nom de saint
- * "St-Aloysius de Gonzague (ou Louis)" → ["aloysius", "louis"]
+ * Normalise un prénom pour la recherche
+ * "Jean-Marie" → ["jean-marie", "jean"]
+ * "José" → ["jose", "josé"]
  */
-function extractAllNames(saintName) {
-  const names = [];
-  const cleaned = saintName
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
+function normalizeFirstName(firstName) {
+  if (!firstName) return [];
 
-  // Prénom principal (enlever St/Ste et les suffixes)
-  const mainName = cleaned
-    .replace(/^(st-|ste-|saint-|sainte-)/i, "")
-    .replace(/\s+(le|la|de|du|des|d'|l')\s+.*/i, "")
-    .trim();
+  const lower = firstName.toLowerCase().trim();
 
-  if (mainName) names.push(mainName);
+  // Version sans accents
+  const norm = lower
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z-]/g, '');
 
-  // Variantes entre parenthèses : "(ou Louis)" → "louis"
-  const variantMatch = cleaned.match(/\(ou\s+([^)]+)\)/i);
-  if (variantMatch) {
-    names.push(variantMatch[1].trim());
+  const candidates = new Set([lower, norm]);
+
+  // Si prénom composé (Jean-Marie), ajouter le premier prénom seul
+  if (lower.includes('-')) {
+    const first = lower.split('-')[0];
+    const firstNorm = norm.split('-')[0];
+    candidates.add(first);
+    candidates.add(firstNorm);
   }
 
-  return names;
+  return [...candidates].filter(Boolean);
 }
 
 /**
  * Trouve la date de fête d'un prénom
+ * Priorité : lang (fr par défaut) → us (fallback) → null
+ *
+ * @param {string} firstName - Le prénom à chercher
+ * @param {string} lang      - Code langue (défaut: 'fr')
+ * @returns {string|null}    - Date au format "MM-DD" ou null
  */
-function findNameDay(firstName) {
+function findNameDay(firstName, lang = 'fr') {
   if (!firstName) return null;
 
-  let cleanedFirstName = firstName
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .trim();
+  const candidates = normalizeFirstName(firstName);
 
-  // Si prénom composé (Jean-Marc), prendre le premier
-  if (cleanedFirstName.includes("-")) {
-    cleanedFirstName = cleanedFirstName.split("-")[0];
+  // 1. Cherche dans la langue demandée (fr par défaut)
+  const primaryIndex = getIndex(lang);
+  for (const candidate of candidates) {
+    if (primaryIndex[candidate]) {
+      return primaryIndex[candidate];
+    }
   }
 
-  // Si espace détecté, essayer les deux ordres
-  let possibleNames = [cleanedFirstName];
-  if (cleanedFirstName.includes(" ")) {
-    const parts = cleanedFirstName.split(" ");
-    possibleNames = [parts[0], parts[parts.length - 1]];
-  }
-
-  // Parcourir tous les mois
-  for (const month in namedays) {
-    for (const day in namedays[month]) {
-      const saints = namedays[month][day];
-
-      for (const saint of saints) {
-        const saintNames = extractAllNames(saint);
-
-        // Vérifier si un des prénoms recherchés match un des noms du saint
-        for (const searchName of possibleNames) {
-          if (saintNames.includes(searchName)) {
-            const formattedMonth = month.padStart(2, "0");
-            const formattedDay = day.padStart(2, "0");
-            return `${formattedMonth}-${formattedDay}`;
-          }
-        }
+  // 2. Fallback sur US si lang !== 'us' et rien trouvé
+  if (lang !== 'us') {
+    const usIndex = getIndex('us');
+    for (const candidate of candidates) {
+      if (usIndex[candidate]) {
+        return usIndex[candidate];
       }
     }
   }
@@ -76,20 +103,34 @@ function findNameDay(firstName) {
 }
 
 /**
- * Récupère tous les prénoms qui fêtent leur fête aujourd'hui
+ * Récupère tous les prénoms fêtés à une date donnée
+ * @param {string} date - Format "MM-DD"
+ * @param {string} lang - Code langue (défaut: 'fr')
+ * @returns {string[]}  - Liste des prénoms
  */
-function getNameDaysForDate(date) {
-  const [month, day] = date.split("-").map((d) => parseInt(d, 10).toString());
+function getNamesForDate(date, lang = 'fr') {
+  const index = getDateIndex(lang);
+  return index[date] || [];
+}
 
-  if (!namedays[month] || !namedays[month][day]) {
-    return [];
-  }
+/**
+ * Vérifie si aujourd'hui est la fête d'un prénom
+ * @param {string} firstName
+ * @param {string} lang
+ * @returns {boolean}
+ */
+function isNameDayToday(firstName, lang = 'fr') {
+  const today = new Date();
+  const mm = String(today.getMonth() + 1).padStart(2, '0');
+  const dd = String(today.getDate()).padStart(2, '0');
+  const todayKey = `${mm}-${dd}`;
 
-  return namedays[month][day].flatMap((saint) => extractAllNames(saint));
+  const nameday = findNameDay(firstName, lang);
+  return nameday === todayKey;
 }
 
 module.exports = {
   findNameDay,
-  getNameDaysForDate,
-  extractAllNames,
+  getNamesForDate,
+  isNameDayToday,
 };
