@@ -30,7 +30,6 @@ function AuthProviderWrapper({ children }) {
       .isLoggedIn()
       .then((data) => {
         const { authToken, ...user } = data;
-        // CORRIGÉ : sync localStorage avec le token reçu du serveur
         if (authToken) {
           localStorage.setItem("authToken", authToken);
         }
@@ -47,13 +46,16 @@ function AuthProviderWrapper({ children }) {
       });
   };
 
-  // CORRIGÉ : stocke le token en mémoire ET dans localStorage
   const storeToken = (token) => {
     localStorage.setItem("authToken", token);
     setAuth((prev) => ({ ...prev, authToken: token }));
   };
 
-  // CORRIGÉ : nettoie localStorage à la déconnexion
+  // ── Mise à jour immédiate de currentUser sans appel API ──────────────────
+  const updateUser = (userData) => {
+    setAuth((prev) => ({ ...prev, currentUser: userData }));
+  };
+
   const logOut = () => {
     localStorage.removeItem("authToken");
     apiHandler.logout().catch(() => {});
@@ -75,6 +77,7 @@ function AuthProviderWrapper({ children }) {
     isLoggedIn: auth.isLoggedIn,
     storeToken,
     authenticateUser,
+    updateUser,
     removeUser,
     removeToken,
     logOut,

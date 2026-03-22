@@ -26,7 +26,7 @@ const ProfilDetails = ({
 }) => {
   const { logOut } = useContext(AuthContext);
   const { friendRequestCount, clearFriendRequestCount } = useNotifications();
-  const { currentUser, isLoggedin, removeUser, storeToken, authenticateUser } =
+  const { currentUser, isLoggedin, removeUser, storeToken, authenticateUser, updateUser } =
     useAuth();
 
   const [userToUpdate, setUserToUpdate] = useState({
@@ -107,7 +107,7 @@ const ProfilDetails = ({
     return () => {
       isMounted = false;
     };
-  }, [isLoggedin, currentUser]);
+  }, [isLoggedin, currentUser?._id]);
 
   useEffect(() => {
     const currentSection = sections[currentCarouselIndex];
@@ -193,6 +193,7 @@ const ProfilDetails = ({
     const fd = new FormData();
     fd.append("username", userToUpdate.username || "");
     fd.append("name", userToUpdate.name || "");
+    fd.append("surname", userToUpdate.surname || "");
     fd.append("email", userToUpdate.email || "");
     if (userToUpdate.birthDate) {
       fd.append("birthDate", new Date(userToUpdate.birthDate).toISOString());
@@ -217,23 +218,27 @@ const ProfilDetails = ({
       fd.append("newPassword", passwords.newPassword);
     }
     fd.append("receiveBirthdayEmails", receiveEmails);
+
     try {
       const dbResponse = await apiHandler.patch(
         `/users/${userToUpdate._id}`,
         fd,
-        {
-          headers: { "content-type": "multipart/form-data" },
-        },
+        { headers: { "content-type": "multipart/form-data" } },
       );
+
+      const updatedPayload = dbResponse.data.payload;
+
+      // ── Stocker le nouveau token ──
       storeToken(dbResponse.data.authToken);
-      authenticateUser();
-      setUserToUpdate(dbResponse.data.payload);
+
+      // ── Mettre à jour currentUser immédiatement dans le contexte ──
+      updateUser(updatedPayload);
+
+      // ── Mettre à jour le state local ──
+      setUserToUpdate(updatedPayload);
+
       setIsEditing(false);
-      setPasswords({
-        currentPassword: "",
-        newPassword: "",
-        confirmPassword: "",
-      });
+      setPasswords({ currentPassword: "", newPassword: "", confirmPassword: "" });
       setShowPasswordFields(false);
     } catch (error) {
       console.error(error);
@@ -272,10 +277,7 @@ const ProfilDetails = ({
               {userToUpdate.nameday ? (
                 new Date(`2000-${userToUpdate.nameday}`).toLocaleDateString(
                   "fr-FR",
-                  {
-                    day: "numeric",
-                    month: "long",
-                  },
+                  { day: "numeric", month: "long" },
                 )
               ) : (
                 <span style={{ fontStyle: "italic", opacity: 0.7 }}>
@@ -412,33 +414,29 @@ const ProfilDetails = ({
 
               <form onSubmit={sendForm} className="auth-form">
                 <div className="auth-row">
+                  {/* ── PRÉNOM = name ── */}
                   <div className="auth-field">
                     <label className="auth-label">Prénom</label>
                     <input
                       type="text"
                       className="auth-input"
                       placeholder="Prénom"
-                      value={userToUpdate.surname || ""}
+                      value={userToUpdate.name || ""}
                       onChange={(e) =>
-                        setUserToUpdate({
-                          ...userToUpdate,
-                          surname: e.target.value,
-                        })
+                        setUserToUpdate({ ...userToUpdate, name: e.target.value })
                       }
                     />
                   </div>
+                  {/* ── NOM = surname ── */}
                   <div className="auth-field">
                     <label className="auth-label">Nom</label>
                     <input
                       type="text"
                       className="auth-input"
                       placeholder="Nom"
-                      value={userToUpdate.name || ""}
+                      value={userToUpdate.surname || ""}
                       onChange={(e) =>
-                        setUserToUpdate({
-                          ...userToUpdate,
-                          name: e.target.value,
-                        })
+                        setUserToUpdate({ ...userToUpdate, surname: e.target.value })
                       }
                     />
                   </div>
@@ -498,10 +496,7 @@ const ProfilDetails = ({
                         placeholder="••••••••"
                         value={passwords.currentPassword}
                         onChange={(e) =>
-                          setPasswords({
-                            ...passwords,
-                            currentPassword: e.target.value,
-                          })
+                          setPasswords({ ...passwords, currentPassword: e.target.value })
                         }
                       />
                     </div>
@@ -512,10 +507,7 @@ const ProfilDetails = ({
                         placeholder="••••••••"
                         value={passwords.newPassword}
                         onChange={(e) =>
-                          setPasswords({
-                            ...passwords,
-                            newPassword: e.target.value,
-                          })
+                          setPasswords({ ...passwords, newPassword: e.target.value })
                         }
                       />
                     </div>
@@ -528,10 +520,7 @@ const ProfilDetails = ({
                         placeholder="••••••••"
                         value={passwords.confirmPassword}
                         onChange={(e) =>
-                          setPasswords({
-                            ...passwords,
-                            confirmPassword: e.target.value,
-                          })
+                          setPasswords({ ...passwords, confirmPassword: e.target.value })
                         }
                       />
                     </div>
