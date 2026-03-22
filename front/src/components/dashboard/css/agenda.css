@@ -1,124 +1,456 @@
-/* Variables de couleurs */
-:root {
-    /* Palette de gris */
-    --gray-50: #f9fafb;
-    --gray-100: #f3f4f6;
-    --gray-200: #e5e7eb;
-    --gray-300: #d1d5db;
-    --gray-400: #9ca3af;
-    --gray-500: #6b7280;
-    --gray-600: #4b5563;
-    --gray-700: #374151;
-    --gray-800: #1f2937;
-    --gray-900: #111827;
+/* ============================================
+   AGENDA — Mois & Semaine
+   ============================================ */
 
-table {
+.agenda-container {
+  width: 95%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem 1.5rem;
+  box-sizing: border-box;
+}
+
+/* ── Toggle Mois / Semaine ───────────────────────── */
+.agenda-view-toggle {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  overflow: hidden;
+  width: fit-content;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.agenda-toggle-btn {
+  background: var(--bg-primary);
+  border: none;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: 0.5rem 1.5rem;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.agenda-toggle-btn + .agenda-toggle-btn {
+  border-left: 1px solid var(--border-color);
+}
+
+.agenda-toggle-btn--active {
+  background: var(--primary);
+  color: #fff;
+}
+
+/* ── Navigation ──────────────────────────────────── */
+.agenda-navigation {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.agenda-nav-btn {
+  background: var(--bg-primary);
+  border: 2px solid var(--border-color);
+  border-radius: 50%;
+  color: var(--text-primary);
+  width: 40px;
+  height: 40px;
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.agenda-nav-btn:hover {
+  border-color: var(--primary);
+  background: var(--bg-secondary);
+}
+
+.agenda-month-title {
+  color: var(--text-primary);
+  font-size: 1.15rem;
+  font-weight: 600;
+  text-transform: capitalize;
+  margin: 0;
+  min-width: 230px;
+  text-align: center;
+}
+
+/* ============================================
+   VUE MOIS — grille CSS 7 colonnes
+   ============================================ */
+
+.agenda-month-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+/* En-têtes jours */
+.agenda-day-header {
+  text-align: center;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  padding: 0.6rem 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Cellules */
+.agenda-cell {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  min-height: 110px;
+  padding: 6px 8px 8px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+  box-sizing: border-box;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.agenda-cell:hover {
+  border-color: var(--primary);
+  background: var(--bg-secondary);
+}
+
+.agenda-cell--empty {
+  background: var(--bg-tertiary);
+  opacity: 0.35;
+  border-color: transparent;
+  cursor: default;
+  pointer-events: none;
+}
+
+.agenda-cell--today {
+  border-color: var(--primary);
+  background: rgba(59, 130, 246, 0.08);
+}
+
+/* Numéro du jour — top right */
+.agenda-cell__top {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.agenda-cell__number {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  min-width: 24px;
+  min-height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.agenda-cell--today .agenda-cell__number {
+  background: var(--primary);
+  color: #fff;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  font-size: 0.8rem;
+}
+
+/* Pastilles — bottom center */
+.agenda-cell__bottom {
+  display: flex;
+  justify-content: center;
+}
+
+.agenda-cell__dots {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  justify-content: center;
+  padding-bottom: 2px;
+}
+
+/* Pastilles (shared) */
+.agenda-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.agenda-dot--birthday {
+  background: var(--primary);
+}
+
+.agenda-dot--nameday {
+  background: var(--warning);
+}
+
+.agenda-dot--event {
+  background: var(--success);
+}
+
+/* ============================================
+   VUE SEMAINE — layout vertical 7 lignes
+   ============================================ */
+
+.agenda-week-grid {
+  display: flex;
+  flex-direction: column;
+  /* Remplit la hauteur restante de la page sous les boutons/toggle/nav */
+  /* Ajuster la valeur si le header ou les boutons ont une hauteur différente */
+  height: calc(100vh - 320px);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.agenda-week-row {
+  flex: 1;
+  display: flex;
+  align-items: stretch;
+  border-bottom: 1px solid var(--border-color);
+  min-height: 0; /* allow flex children to shrink below content size */
+  background: var(--bg-secondary);
+  transition: background 0.15s;
+}
+
+.agenda-week-row:last-child {
+  border-bottom: none;
+}
+
+.agenda-week-row--today {
+  border-left: 3px solid var(--primary);
+  background: rgba(59, 130, 246, 0.05);
+}
+
+.agenda-week-row--has-items {
+  background: var(--bg-primary);
+}
+
+.agenda-week-row--today.agenda-week-row--has-items {
+  background: rgba(59, 130, 246, 0.06);
+}
+
+/* Colonne gauche : étiquette du jour */
+.agenda-week-row__left {
+  width: 80px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 4px;
+  border-right: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  gap: 4px;
+}
+
+.agenda-week-row__dayname {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+}
+
+.agenda-week-row__daynum {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.agenda-week-row__daynum--today {
+  background: var(--primary);
+  color: #fff;
+  border-radius: 50%;
+}
+
+/* Colonne droite : items */
+.agenda-week-row__right {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  padding: 8px 12px;
+  gap: 4px;
+  overflow-y: auto;
+}
+
+/* Boutons items */
+.agenda-week-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: none;
+  border: none;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  cursor: pointer;
+  padding: 3px 8px;
+  border-radius: 6px;
+  text-align: left;
+  transition: background 0.15s;
+  font-family: inherit;
+  width: 100%;
+}
+
+.agenda-week-item--birthday:hover {
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.agenda-week-item--nameday:hover {
+  background: rgba(245, 158, 11, 0.1);
+}
+
+.agenda-week-item--event:hover {
+  background: rgba(16, 185, 129, 0.1);
+}
+
+/* Bouton "+ X autres" */
+.agenda-week-overflow {
+  font-size: 0.78rem;
+  color: var(--primary);
+  font-weight: 600;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 8px;
+  text-align: left;
+  border-radius: 4px;
+  transition: background 0.15s;
+  font-family: inherit;
+}
+
+.agenda-week-overflow:hover {
+  background: rgba(59, 130, 246, 0.08);
+}
+
+/* ── Légende ─────────────────────────────────────── */
+.agenda-legend {
+  display: flex;
+  gap: 1.25rem;
+  justify-content: center;
+  margin-top: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.agenda-legend__item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+/* ============================================
+   RESPONSIVE
+   ============================================ */
+
+@media (max-width: 768px) {
+  .agenda-container {
     width: 100%;
-    border-collapse: collapse;
-    table-layout: fixed;
-}
+    padding: 0.75rem;
+  }
 
-td {
-    border: 1px solid #ddd;
-    padding: 8px;
-    vertical-align: top;
-    width: 14.28%;
-    color: #8dbfce;
-    overflow: auto;
-    scrollbar-width: none;
-}
+  .agenda-cell {
+    min-height: 80px;
+  }
 
-tr:nth-child(even) {
-    background-color: var(--gray-600);
-}
+  /* Vue semaine : hauteur auto sur tablette/mobile */
+  .agenda-week-grid {
+    height: auto;
+    border-radius: 8px;
+  }
 
-td:hover {
-    background-color: #ddd;
-    color:var(--gray-600);
-}
+  .agenda-week-row {
+    min-height: 48px;
+  }
 
-h2 {
-    text-align: center;
-    color: #333;
-}
-
-.btnAgenda {
-    background-color: #1b1b71;
-    color: white;
-    padding: 10px 24px;
-    margin: 10px;
-    border: none;
-    border-radius: 50px;
-    cursor: pointer;
-}
-
-.btnAgenda:hover {
-    background-color: #008cba;
-}
-
-/* p {
-    margin: 0;
-    color: #666;
-} */
-
-.square {
-    width: 80%;
-    /* Ajustez cette valeur selon vos besoins */
-    height: 0;
-    padding-bottom: 45%;
-    /* La hauteur est définie par le padding pour créer un carré */
-    position: relative;
-}
-
-.square-content {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-}
-
-.nameAgenda{
-    text-align: end;
-}
-
-.month-navigation {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.currentMonth{
-    color: var(--gray-300);
-}
-
-.agenda-names{
-    width: 225px;
-    margin: 0.3rem;
-    font-size: smaller;
+  .agenda-week-row--has-items {
+    min-height: 60px;
+  }
 }
 
 @media (max-width: 600px) {
-    .day-number {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-    }
+  .agenda-container {
+    padding: 0.5rem 0.25rem;
+  }
 
-    .day-number strong {
-        margin-right: 4px;
-    }
+  .agenda-month-grid {
+    gap: 2px;
+  }
 
-    .names {
-        font-size: smaller;
-        text-align: center;
-    }
+  .agenda-cell {
+    min-height: 60px;
+    padding: 4px;
+    border-radius: 6px;
+  }
 
-    td{
-        height: 80px;
-    }
+  .agenda-cell__number {
+    font-size: 0.7rem;
+    min-width: 18px;
+    min-height: 18px;
+  }
 
-    table{
-        margin-top: 1rem;
-    }
+  .agenda-cell--today .agenda-cell__number {
+    width: 20px;
+    height: 20px;
+    font-size: 0.68rem;
+  }
 
-}
+  .agenda-dot {
+    width: 6px;
+    height: 6px;
+  }
+
+  .agenda-month-title {
+    font-size: 0.9rem;
+    min-width: 140px;
+  }
+
+  .agenda-nav-btn {
+    width: 34px;
+    height: 34px;
+    font-size: 1.1rem;
+  }
+
+  .agenda-toggle-btn {
+    padding: 0.4rem 1rem;
+    font-size: 0.8rem;
+  }
+
+  .agenda-week-row__left {
+    width: 60px;
+  }
+
+  .agenda-week-row__dayname {
+    font-size: 0.6rem;
+  }
+
+  .agenda-week-row__daynum {
+    font-size: 0.9rem;
+    width: 26px;
+    height: 26px;
+  }
+
+  .agenda-week-item {
+    font-size: 0.78rem;
+  }
 }

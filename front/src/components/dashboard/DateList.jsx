@@ -62,6 +62,7 @@ const DateList = ({
   const filterInputRef = useRef(null);
   const { unreadCount, loadUnreadCount, resetUnreadCount } = useNotifications();
 
+  const [events, setEvents] = useState([]);
   const [showMergeModal, setShowMergeModal] = useState(false);
   const [cardToMerge, setCardToMerge] = useState(null);
   const [isChatModalOpen, setIsChatModalOpen] = useState(false);
@@ -108,6 +109,18 @@ const DateList = ({
   };
 
   useEffect(() => { loadDates(); }, [currentUser]);
+
+  useEffect(() => {
+    apiHandler.get("/events/mine")
+      .then(res => {
+        const all = [
+          ...(res.data.organized || []),
+          ...(res.data.invited || []),
+        ];
+        setEvents(all);
+      })
+      .catch(err => console.error(err));
+  }, []);
 
   useEffect(() => {
     const handleResize = () => {
@@ -300,7 +313,7 @@ const DateList = ({
             exit={{ opacity: 0, y: -12 }}
             transition={{ duration: 0.25 }}
           >
-            <Agenda dates={dates} initialMonth={agendaParams?.month} initialYear={agendaParams?.year} />
+            <Agenda dates={dates} events={events} initialMonth={agendaParams?.month} initialYear={agendaParams?.year} />
           </motion.div>
         )}
 
