@@ -45,7 +45,7 @@ const UpdateDate = ({ date, onCancel, onSaved, onDeleted, onMerge, compact = fal
   };
 
   const panel = (
-    <div className="auth-panel">
+    <div className="auth-panel auth-panel-update">
       <div className="auth-panel-header">
         <h2 className="auth-title">Modifier la date</h2>
         <p className="auth-sub">
