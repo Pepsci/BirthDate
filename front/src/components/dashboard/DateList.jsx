@@ -32,7 +32,6 @@ const CollapsiblePanel = ({ isVisible, onClose, closeLabel = "Fermer", children 
         transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
         style={{ overflow: "hidden" }}
       >
-        {/* Bouton × en haut à droite du panel — mobile seulement (via CSS) */}
         <button
           className="panel-close-btn"
           onClick={onClose}
@@ -54,6 +53,7 @@ const DateList = ({
   onViewFriendProfile,
   onMerge,
   onResetChat,
+  onResetDateList, // ← nouveau
   initialPage = 1,
   agendaParams = null,
   initialFilter = null,
@@ -82,6 +82,23 @@ const DateList = ({
   const [selectedFriendId, setSelectedFriendId] = useState(null);
   const [selectedFriendName, setSelectedFriendName] = useState("");
   const [viewMode, setViewMode] = useState(agendaParams ? "agenda" : "card");
+
+  // ─── Expose le reset complet à Home via ref ──────────────
+  useEffect(() => {
+    if (!onResetDateList) return;
+    onResetDateList(() => {
+      setViewMode("card");
+      setIsFilterVisible(false);
+      setIsFormVisible(false);
+      setIsChatVisible(false);
+      setIsEventsVisible(false);
+      setCurrentPage(1);
+      setDates((prev) => prev); // garde les données, juste remet la vue
+    });
+  }, []);
+
+  // Remet les dates filtrées à leur état initial quand on reset
+  // (géré via allDates dans closeFilter, pas besoin d'autre chose)
 
   useEffect(() => {
     if (!initialEventsOpen) return;
@@ -197,7 +214,6 @@ const DateList = ({
     if (n) { setIsFormVisible(false); setIsFilterVisible(false); setIsChatVisible(false); }
   };
 
-  // Fermetures directes (pour le bouton × dans le panel)
   const closeFilter = () => { setIsFilterVisible(false); setDates(allDates); setCurrentPage(1); };
   const closeForm   = () => setIsFormVisible(false);
 
@@ -238,8 +254,6 @@ const DateList = ({
 
         <div className="dateList-tiltle">
           <h1 className="titleFont">Vos BirthDates</h1>
-
-          {/* FAB mobile uniquement */}
           <div className="fab-mobile-only">
             <FabMenu
               onFilter={toggleFilterVisibility}
@@ -310,7 +324,6 @@ const DateList = ({
         </div>
       </div>
 
-      {/* ─── Contenu principal ───────────────────────────── */}
       <AnimatePresence mode="wait">
         {activePanel === "chat" && (
           <motion.div

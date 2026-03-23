@@ -18,6 +18,7 @@ const Home = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const resetChatRef = useRef(null);
+  const resetDateListRef = useRef(null); // ← nouveau : reset complet de DateList
 
   const [date] = useState([]);
   const [showProfile, setShowProfile] = useState(false);
@@ -29,7 +30,7 @@ const Home = () => {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [savedPage, setSavedPage] = useState(1);
   const [agendaParams, setAgendaParams] = useState(null);
-  const [initialEventsOpen, setInitialEventsOpen] = useState(false); // ← nouveau
+  const [initialEventsOpen, setInitialEventsOpen] = useState(false);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -70,13 +71,12 @@ const Home = () => {
     } else if (tab === "agenda") {
       const monthNum = month !== null ? parseInt(month) - 1 : new Date().getMonth();
       const yearNum = year !== null ? parseInt(year) : new Date().getFullYear();
-      console.log("🗓️ Agenda params calculés:", { monthNum, yearNum });
       setAgendaParams({ month: monthNum, year: yearNum });
       setShowProfile(false);
       setEditingDate(null);
       setViewingFriendProfile(null);
       navigate("/home", { replace: true });
-    } else if (tab === "events") { // ← nouveau
+    } else if (tab === "events") {
       setShowProfile(false);
       setEditingDate(null);
       setViewingFriendProfile(null);
@@ -101,7 +101,13 @@ const Home = () => {
   }, [searchParams, isLoggedIn, currentUser]);
 
   const handleLogoClick = () => {
+    // 1. Reset du chat
     if (resetChatRef.current) resetChatRef.current();
+
+    // 2. Reset complet de DateList (viewMode → card, ferme tous les panels)
+    if (resetDateListRef.current) resetDateListRef.current();
+
+    // 3. Reset des states de Home
     setShowProfile(false);
     setEditingDate(null);
     setViewingFriendProfile(null);
@@ -111,6 +117,7 @@ const Home = () => {
     setAgendaParams(null);
     setInitialEventsOpen(false);
     setSavedPage(1);
+
     navigate("/home");
   };
 
@@ -216,11 +223,10 @@ const Home = () => {
                 onViewFriendProfile={handleViewFriendProfile}
                 initialPage={savedPage}
                 agendaParams={agendaParams}
-                initialEventsOpen={initialEventsOpen}              // ← nouveau
-                onEventsOpened={() => setInitialEventsOpen(false)} // ← nouveau
-                onResetChat={(fn) => {
-                  resetChatRef.current = fn;
-                }}
+                initialEventsOpen={initialEventsOpen}
+                onEventsOpened={() => setInitialEventsOpen(false)}
+                onResetChat={(fn) => { resetChatRef.current = fn; }}
+                onResetDateList={(fn) => { resetDateListRef.current = fn; }} // ← nouveau
               />
             )}
 
