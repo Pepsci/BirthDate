@@ -29,27 +29,46 @@ module.exports = (io, socket) => {
   });
 
   socket.on("event:message_send", async (data) => {
-    const { shortId, content, tempId } = data;
+    const { shortId, content, isEncrypted, encryptedFor: encryptedForMap, tempId } = data;
     try {
       if (!content || content.trim().length === 0) {
         return socket.emit("event:message_error", { tempId, error: "Le message ne peut pas être vide" });
+      }
+      const maxLength = isEncrypted ? 50000 : 2000;
+      if (content.trim().length > maxLength) {
+        return socket.emit("event:message_error", { tempId, error: "Le message est trop long" });
       }
       const event = await Event.findOne({ shortId });
       if (!event) return socket.emit("event:message_error", { tempId, error: "Événement introuvable" });
       if (!socket.userId) return socket.emit("event:message_error", { tempId, error: "Non autorisé" });
 
-      const message = new EventMessage({
+      const messageData = {
         event: event._id,
         sender: socket.userId,
         content: content.trim(),
         readBy: [{ user: socket.userId, readAt: new Date() }],
-      });
+        isEncrypted: !!isEncrypted,
+      };
+
+      // encryptedForMap est un objet plain { userId: ciphertext, ... } pré-calculé côté client
+      if (isEncrypted && encryptedForMap && typeof encryptedForMap === "object") {
+        messageData.encryptedFor = encryptedForMap;
+      }
+
+      const message = new EventMessage(messageData);
       await message.save();
-      await message.populate("sender", "name surname email avatar");
+      await message.populate("sender", "name surname email avatar publicKey");
       console.log(`💬 Event message saved for event ${shortId}`);
 
-      socket.emit("event:message_new", { shortId, message: { ...message.toObject(), tempId } });
-      socket.to(`event:${shortId}`).emit("event:message_new", { shortId, message: message.toObject() });
+      // toObject() peut retourner un Map Mongoose — Socket.io ne le sérialise pas correctement
+      const toSerializable = (msgObj) => {
+        if (msgObj.encryptedFor instanceof Map) {
+          msgObj.encryptedFor = Object.fromEntries(msgObj.encryptedFor);
+        }
+        return msgObj;
+      };
+      socket.emit("event:message_new", { shortId, message: toSerializable({ ...message.toObject(), tempId }) });
+      socket.to(`event:${shortId}`).emit("event:message_new", { shortId, message: toSerializable(message.toObject()) });
     } catch (error) {
       console.error("❌ Error sending event message:", error);
       socket.emit("event:message_error", { tempId, error: "Impossible d'envoyer le message" });

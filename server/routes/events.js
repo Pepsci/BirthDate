@@ -141,10 +141,10 @@ router.get("/check/:id", isAuthenticated, async (req, res) => {
 router.get("/:shortId", async (req, res) => {
   try {
     const event = await Event.findOne({ shortId: req.params.shortId })
-      .populate("organizer", "name surname email avatar")
+      .populate("organizer", "name surname email avatar publicKey")
       .populate({
         path: "invitations",
-        populate: { path: "user", select: "name surname avatar" }
+        populate: { path: "user", select: "name surname avatar publicKey" }
       })
       .populate("forPerson", "name surname avatar")
       .populate("forDate", "name date");
@@ -568,7 +568,7 @@ router.get("/:shortId/messages", isAuthenticated, checkEventAccess, async (req, 
     const event = req.event;
 
     const messages = await EventMessage.find({ event: event._id })
-      .populate("sender", "name surname avatar")
+      .populate("sender", "name surname avatar publicKey")
       .sort({ createdAt: 1 });
 
     res.status(200).json(messages);
@@ -602,7 +602,7 @@ router.get("/:shortId/share", async (req, res) => {
 router.get("/:shortId/invitations", isAuthenticated, checkEventAccess, async (req, res) => {
   try {
     const invitations = await EventInvitation.find({ event: req.event._id })
-      .populate("user", "name surname avatar")
+      .populate("user", "name surname avatar publicKey")
       .sort({ createdAt: 1 });
 
     res.status(200).json(invitations);

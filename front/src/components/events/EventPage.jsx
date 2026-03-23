@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import apiHandler from "../../api/apiHandler";
@@ -116,6 +116,21 @@ const EventPage = () => {
   const [activeTab, setActiveTab] = useState("info");
   const [mapError, setMapError] = useState(false);
   const [showMap, setShowMap] = useState(false);
+
+  // Map { userId → publicKey } de tous les participants connus — passé à EventChat
+  // pour chiffrer les messages sortants à destination de chacun d'eux.
+  const participants = useMemo(() => {
+    const map = {};
+    if (event?.organizer?._id && event?.organizer?.publicKey) {
+      map[event.organizer._id.toString()] = event.organizer.publicKey;
+    }
+    invitations.forEach((inv) => {
+      if (inv.user?._id && inv.user?.publicKey) {
+        map[inv.user._id.toString()] = inv.user.publicKey;
+      }
+    });
+    return map;
+  }, [event?.organizer, invitations]);
 
   useEffect(() => {
     const fetchEvent = async () => {
@@ -509,7 +524,7 @@ const EventPage = () => {
                   transition={{ duration: 0.25 }}
                 >
                   <GlassCard className="ep-card ep-card-chat">
-                    <EventChat shortId={event.shortId} />
+                    <EventChat shortId={event.shortId} participants={participants} />
                   </GlassCard>
                 </motion.div>
               )}

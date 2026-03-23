@@ -17,7 +17,16 @@ const eventMessageSchema = new Schema(
       type: String,
       required: true,
       trim: true,
-      maxlength: 2000,
+      maxlength: 50000,
+    },
+    isEncrypted: {
+      type: Boolean,
+      default: false,
+    },
+    encryptedFor: {
+      type: Map,
+      of: String,
+      default: null,
     },
     readBy: [
       {
