@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import "./css/FabMenu.css";
+import "./css/fabMenu.css";
 
 const ALL_FAB_ITEMS = [
   {
