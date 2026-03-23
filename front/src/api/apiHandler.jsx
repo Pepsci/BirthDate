@@ -90,12 +90,30 @@ const apiHandler = {
       .catch(errorHandler);
   },
 
-  resetPassword(token, password) {
-    console.log("api token", token);
-    console.log("api password", password);
-
+  resetPassword(token, password, publicKey = null, encryptedPrivateKey = null) {
+    const body = { password };
+    if (publicKey) body.publicKey = publicKey;
+    if (encryptedPrivateKey) body.encryptedPrivateKey = encryptedPrivateKey;
     return service
-      .post(`/auth/reset/${token}`, { password })
+      .post(`/auth/reset/${token}`, body)
+      .then((res) => res.data)
+      .catch(errorHandler);
+  },
+
+  // ── E2E Encryption ──────────────────────────────────────────────────────────
+
+  // Stocker/mettre à jour la paire de clés E2E de l'utilisateur connecté
+  storeE2EKeys({ publicKey, encryptedPrivateKey }) {
+    return service
+      .put("/users/keys", { publicKey, encryptedPrivateKey })
+      .then((res) => res.data)
+      .catch(errorHandler);
+  },
+
+  // Récupérer la clé publique d'un utilisateur (pour chiffrer un message à son intention)
+  getUserPublicKey(userId) {
+    return service
+      .get(`/users/${userId}/publicKey`)
       .then((res) => res.data)
       .catch(errorHandler);
   },

@@ -61,13 +61,15 @@ module.exports = (io, socket, connectedUsers) => {
   });
 
   socket.on("message:send", async (data) => {
-    const { conversationId, content, tempId } = data;
+    const { conversationId, content, isEncrypted, encryptedForRecipient, encryptedForSender, tempId } = data;
     try {
       if (!content || content.trim().length === 0) {
         return socket.emit("message:error", { tempId, error: "Le message ne peut pas être vide" });
       }
-      if (content.trim().length > 2000) {
-        return socket.emit("message:error", { tempId, error: "Le message ne peut pas dépasser 2000 caractères" });
+      // Pour les messages chiffrés (base64), la limite est portée à 50 000 chars
+      const maxLength = isEncrypted ? 50000 : 2000;
+      if (content.trim().length > maxLength) {
+        return socket.emit("message:error", { tempId, error: "Le message est trop long" });
       }
       const conversation = await Conversation.findOne({
         _id: conversationId,
@@ -76,26 +78,42 @@ module.exports = (io, socket, connectedUsers) => {
       if (!conversation) {
         return socket.emit("message:error", { tempId, error: "Conversation introuvable" });
       }
-      const message = new Message({
+
+      // Calculé tôt pour pouvoir indexer encryptedFor par recipientId
+      const recipientId = conversation.participants.find(
+        (p) => p.toString() !== socket.userId,
+      );
+
+      const messageData = {
         conversation: conversationId,
         sender: socket.userId,
         content: content.trim(),
         readBy: [{ user: socket.userId }],
-      });
+        isEncrypted: !!isEncrypted,
+      };
+      // Stocker une copie chiffrée indexée par userId pour chaque participant.
+      // encryptedFor[recipientId] = chiffré pour le destinataire
+      // encryptedFor[senderId]    = chiffré pour l'expéditeur (lui permet de relire son historique)
+      if (isEncrypted) {
+        const encFor = {};
+        if (encryptedForRecipient && recipientId) encFor[recipientId.toString()] = encryptedForRecipient;
+        if (encryptedForSender) encFor[socket.userId] = encryptedForSender;
+        if (Object.keys(encFor).length > 0) messageData.encryptedFor = encFor;
+      }
+
+      const message = new Message(messageData);
       await message.save();
       conversation.lastMessage = message._id;
       conversation.lastMessageAt = message.createdAt;
       await conversation.save();
-
-      const recipientId = conversation.participants.find(
-        (p) => p.toString() !== socket.userId,
-      );
       if (recipientId && !connectedUsers.has(recipientId.toString())) {
         const sender = await User.findById(socket.userId, "name surname");
         const senderName = sender ? `${sender.name} ${sender.surname || ""}`.trim() : "Quelqu'un";
+        // Ne jamais envoyer le contenu chiffré dans la notification push
+        const pushBody = isEncrypted ? "🔒 Nouveau message chiffré" : content.trim().slice(0, 100);
         sendPushToUser(recipientId, {
           title: `💬 ${senderName}`,
-          body: content.trim().slice(0, 100),
+          body: pushBody,
           url: "/home",
           tag: `chat-${conversationId}`,
           type: "chat",
@@ -103,9 +121,17 @@ module.exports = (io, socket, connectedUsers) => {
         }).catch((err) => console.error("❌ Push chat error:", err));
       }
 
-      await message.populate("sender", "name surname email");
-      socket.emit("message:new", { conversationId, message: { ...message.toObject(), tempId } });
-      socket.to(`conversation:${conversationId}`).emit("message:new", { conversationId, message: message.toObject() });
+      await message.populate("sender", "name surname email publicKey");
+      // toObject() peut retourner un Map Mongoose pour encryptedFor — Socket.io
+      // ne sérialise pas les Map correctement (émet {}). Conversion explicite.
+      const toSerializable = (msgObj) => {
+        if (msgObj.encryptedFor instanceof Map) {
+          msgObj.encryptedFor = Object.fromEntries(msgObj.encryptedFor);
+        }
+        return msgObj;
+      };
+      socket.emit("message:new", { conversationId, message: toSerializable({ ...message.toObject(), tempId }) });
+      socket.to(`conversation:${conversationId}`).emit("message:new", { conversationId, message: toSerializable(message.toObject()) });
       console.log(`💬 Message sent in conversation ${conversationId}`);
     } catch (error) {
       console.error("❌ Error sending message:", error);
@@ -173,6 +199,10 @@ module.exports = (io, socket, connectedUsers) => {
       if (message.sender.toString() !== socket.userId) {
         return socket.emit("error", { message: "You can only edit your own messages" });
       }
+      // Les messages chiffrés ne peuvent pas être modifiés (intégrité E2E)
+      if (message.isEncrypted) {
+        return socket.emit("error", { message: "Les messages chiffrés ne peuvent pas être modifiés" });
+      }
       const EDIT_TIME_LIMIT = 5 * 60 * 1000;
       if (Date.now() - new Date(message.createdAt).getTime() > EDIT_TIME_LIMIT) {
         return socket.emit("error", { message: "Cannot edit messages older than 5 minutes" });
@@ -184,7 +214,7 @@ module.exports = (io, socket, connectedUsers) => {
       message.edited = true;
       message.editedAt = new Date();
       await message.save();
-      await message.populate("sender", "name surname email");
+      await message.populate("sender", "name surname email publicKey");
       io.to(`conversation:${conversationId}`).emit("message:edited", {
         messageId,
         conversationId,

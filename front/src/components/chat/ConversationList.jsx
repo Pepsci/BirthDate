@@ -1,8 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import socketService from "../services/socket.service";
 import { useOnlineStatus } from "../../context/OnlineStatusContext";
+import { AuthContext } from "../../context/auth.context";
 import apiHandler from "../../api/apiHandler";
+import { getPrivateKey, decryptMessage } from "../../utils/encryption";
 import "./css/ConversationList.css";
 
 function ConversationList({
@@ -11,6 +13,7 @@ function ConversationList({
   onSelectConversation,
 }) {
   const { isUserOnline } = useOnlineStatus(); // ⭐ NOUVEAU
+  const { currentUser } = useContext(AuthContext);
   const [friends, setFriends] = useState([]);
   const [showNewChat, setShowNewChat] = useState(false);
   const [localConversations, setLocalConversations] = useState(conversations);
@@ -20,6 +23,30 @@ function ConversationList({
   const currentUserId = JSON.parse(
     atob(localStorage.getItem("authToken").split(".")[1]),
   )._id;
+
+  const getMessagePreview = (message) => {
+    if (!message) return "";
+    if (!message.isEncrypted) return message.content;
+
+    const myCopy = message.encryptedFor?.[currentUserId];
+    if (!myCopy) return "🔒 Message chiffré";
+
+    const myPrivateKey = getPrivateKey();
+    if (!myPrivateKey) return "🔒 Message chiffré";
+
+    // La clé publique de l'expéditeur : la mienne si j'ai envoyé, sinon celle du sender
+    const senderId =
+      typeof message.sender === "object" ? message.sender?._id : message.sender;
+    const senderPublicKey =
+      senderId === currentUserId
+        ? currentUser?.publicKey
+        : message.sender?.publicKey;
+
+    if (!senderPublicKey) return "🔒 Message chiffré";
+
+    const decrypted = decryptMessage(myCopy, senderPublicKey, myPrivateKey);
+    return decrypted ?? "🔒 Message chiffré";
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -291,7 +318,7 @@ function ConversationList({
 
                     <div className="conversation-preview">
                       <span className="last-message">
-                        {conversation.lastMessage?.content ||
+                        {getMessagePreview(conversation.lastMessage) ||
                           "Nouvelle conversation"}
                       </span>
                       {conversation.unreadCount > 0 && (

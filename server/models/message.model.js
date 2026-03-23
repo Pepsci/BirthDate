@@ -16,7 +16,16 @@ const messageSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
-      maxlength: 2000,
+      maxlength: 50000, // Augmenté pour le contenu chiffré en base64
+    },
+    isEncrypted: {
+      type: Boolean,
+      default: false,
+    },
+    encryptedFor: {
+      type: Map,
+      of: String,
+      default: null,
     },
     readBy: [
       {

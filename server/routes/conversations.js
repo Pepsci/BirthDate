@@ -17,12 +17,12 @@ router.get("/", isAuthenticated, async (req, res) => {
     const conversations = await Conversation.find({
       participants: userId,
     })
-      .populate("participants", "name surname email")
+      .populate("participants", "name surname email publicKey")
       .populate({
         path: "lastMessage",
         populate: {
           path: "sender",
-          select: "name surname email",
+          select: "name surname email publicKey",
         },
       })
       .sort({ lastMessageAt: -1 });

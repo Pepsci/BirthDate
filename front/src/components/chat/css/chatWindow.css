@@ -753,6 +753,69 @@
 }
 
 /* ================================
+   E2E ENCRYPTION UI
+================================ */
+
+.e2e-badge {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--success);
+    background: color-mix(in srgb, var(--success) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--success) 30%, transparent);
+    border-radius: 12px;
+    padding: 3px 8px;
+    margin-left: auto;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.e2e-separator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 12px 16px;
+    color: var(--text-tertiary);
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.e2e-separator::before,
+.e2e-separator::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--border-color);
+}
+
+.e2e-separator span {
+    white-space: nowrap;
+}
+
+.msg-locked {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-style: italic;
+    opacity: 0.6;
+    padding: 4px 0;
+}
+
+.msg-unreadable {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-style: italic;
+    color: var(--danger);
+    opacity: 0.7;
+    padding: 4px 0;
+}
+
+/* ================================
    DESKTOP ONLY
 ================================ */
 

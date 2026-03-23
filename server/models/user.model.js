@@ -67,6 +67,12 @@ const userSchema = new Schema({
     type: [Number],
     default: [1, 0],
   },
+
+  // ── Chiffrement E2E ────────────────────────────────────────────────────────
+  publicKey: { type: String, default: null },
+  encryptedPrivateKey: { type: String, default: null },
+  e2eMode: { type: String, enum: ["standard", "full"], default: "standard" },
+  e2eActivatedAt: { type: Date, default: null },
 });
 
 const UserModel = model("User", userSchema);

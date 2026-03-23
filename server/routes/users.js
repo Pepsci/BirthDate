@@ -35,6 +35,10 @@ function formatUser(user) {
     pushEnabled: user.pushEnabled,
     pushEvents: user.pushEvents,
     pushBirthdayTimings: user.pushBirthdayTimings,
+    // E2E
+    publicKey: user.publicKey,
+    encryptedPrivateKey: user.encryptedPrivateKey,
+    e2eMode: user.e2eMode,
   };
 }
 
@@ -101,6 +105,11 @@ router.patch(
         }
         const salt = bcrypt.genSaltSync(10);
         user.password = bcrypt.hashSync(newPassword, salt);
+
+        // ── Re-chiffrement E2E : le front renvoie encryptedPrivateKey re-chiffrée
+        if (req.body.encryptedPrivateKey) {
+          user.encryptedPrivateKey = req.body.encryptedPrivateKey;
+        }
       }
 
       user.username = req.body.username || user.username;
@@ -292,6 +301,44 @@ router.patch("/me/chat-email-prefs", isAuthenticated, async (req, res) => {
   }
 });
 
+// ─── E2E Encryption ──────────────────────────────────────────────────────────
+
+/* PUT /users/keys — Stocker/mettre à jour publicKey + encryptedPrivateKey */
+router.put("/keys", isAuthenticated, async (req, res) => {
+  const { publicKey, encryptedPrivateKey } = req.body;
+
+  if (!publicKey || !encryptedPrivateKey) {
+    return res
+      .status(400)
+      .json({ message: "publicKey et encryptedPrivateKey sont requis." });
+  }
+
+  try {
+    await userModel.findByIdAndUpdate(req.payload._id, {
+      publicKey,
+      encryptedPrivateKey,
+    });
+    return res.status(200).json({ message: "Clés E2E enregistrées." });
+  } catch (err) {
+    console.error("Erreur PUT /users/keys:", err);
+    return res.status(500).json({ message: "Erreur serveur." });
+  }
+});
+
+/* GET /users/:id/publicKey — Récupérer la clé publique d'un utilisateur */
+router.get("/:id/publicKey", isAuthenticated, async (req, res) => {
+  try {
+    const user = await userModel.findById(req.params.id).select("publicKey");
+    if (!user) {
+      return res.status(404).json({ message: "Utilisateur non trouvé." });
+    }
+    return res.status(200).json({ publicKey: user.publicKey });
+  } catch (err) {
+    console.error("Erreur GET /users/:id/publicKey:", err);
+    return res.status(500).json({ message: "Erreur serveur." });
+  }
+});
+
 /* GET user by ID */
 router.get("/:id", isAuthenticated, async (req, res, next) => {
   try {
@@ -344,6 +391,11 @@ router.patch(
         }
         const salt = bcrypt.genSaltSync(10);
         user.password = bcrypt.hashSync(newPassword, salt);
+
+        // ── Re-chiffrement E2E : le front renvoie encryptedPrivateKey re-chiffrée
+        if (req.body.encryptedPrivateKey) {
+          user.encryptedPrivateKey = req.body.encryptedPrivateKey;
+        }
       }
 
       user.username = req.body.username || user.username;

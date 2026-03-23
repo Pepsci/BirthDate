@@ -311,7 +311,7 @@ router.post("/forgot-password", authLimiter, async (req, res) => {
 // ========================================
 router.post("/reset/:token", async (req, res) => {
   const { token } = req.params;
-  const { password: newPassword } = req.body;
+  const { password: newPassword, publicKey, encryptedPrivateKey } = req.body;
 
   if (!validatePassword(newPassword)) {
     return res.status(400).json({
@@ -333,6 +333,20 @@ router.post("/reset/:token", async (req, res) => {
     );
     user.resetToken = null;
     user.resetTokenExpires = null;
+
+    // ── Gestion des clés E2E après reset ─────────────────────────────────────
+    if (publicKey && encryptedPrivateKey) {
+      // Le front a fourni une nouvelle paire (cas où le userId était disponible)
+      user.publicKey = publicKey;
+      user.encryptedPrivateKey = encryptedPrivateKey;
+    } else {
+      // Mode standard : l'ancienne clé privée chiffrée n'est plus déchiffrable.
+      // On la vide : au prochain login, le front détectera encryptedPrivateKey=null
+      // et générera automatiquement une nouvelle paire de clés.
+      user.encryptedPrivateKey = null;
+      // publicKey conservée telle quelle (sera écrasée lors de la régénération)
+    }
+
     await user.save();
 
     try {
@@ -349,7 +363,10 @@ router.post("/reset/:token", async (req, res) => {
       console.error("❌ Erreur logging:", logError);
     }
 
-    return res.status(200).json({ message: "Password has been reset" });
+    return res.status(200).json({
+      message: "Password has been reset",
+      newKeysGenerated: !!(publicKey && encryptedPrivateKey),
+    });
   } catch (e) {
     console.error(e);
     return res.status(500).json({ message: "Internal server error" });

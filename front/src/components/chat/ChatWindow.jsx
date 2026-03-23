@@ -1,13 +1,20 @@
 // src/components/Chat/ChatWindow.jsx
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useContext } from "react";
 import socketService from "../services/socket.service";
 import apiHandler from "../../api/apiHandler";
 import { useOnlineStatus } from "../../context/OnlineStatusContext";
+import { AuthContext } from "../../context/auth.context";
+import {
+  getPrivateKey,
+  encryptMessage,
+  decryptMessage,
+} from "../../utils/encryption";
 import MessageInput from "./MessageInput";
 import "./css/chatWindow.css";
 
 function ChatWindow({ conversation, onBack, onRead }) {
   const { isUserOnline } = useOnlineStatus();
+  const { currentUser } = useContext(AuthContext);
 
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -21,12 +28,20 @@ function ChatWindow({ conversation, onBack, onRead }) {
 
   const [editingMessage, setEditingMessage] = useState(null);
 
+  // ── E2E ────────────────────────────────────────────────────────────────────
+  // Clé publique de l'autre participant, chargée à l'ouverture de la conversation
+  const [otherUserPublicKey, setOtherUserPublicKey] = useState(null);
+
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
   const typingTimeoutRef = useRef(null);
   const hasJoinedRef = useRef(false);
   const longPressTimer = useRef(null);
   const conversationIdRef = useRef(conversation._id);
+  // Cache plaintext des messages envoyés, keyed par tempId.
+  // Permet d'afficher le texte clair immédiatement après confirmation serveur
+  // sans attendre le déchiffrement (qui peut échouer si encryptedFor est absent).
+  const plaintextCacheRef = useRef({});
 
   // CORRIGÉ : safe si authToken est null (Firefox/Opera)
   const authToken = localStorage.getItem("authToken");
@@ -36,6 +51,17 @@ function ChatWindow({ conversation, onBack, onRead }) {
 
   useEffect(() => {
     conversationIdRef.current = conversation._id;
+  }, [conversation._id]);
+
+  // ── Fetch la publicKey du destinataire au changement de conversation ──────
+  useEffect(() => {
+    setOtherUserPublicKey(null);
+    const other = conversation.participants?.find((p) => p._id !== currentUserId);
+    if (!other?._id) return;
+    apiHandler
+      .getUserPublicKey(other._id)
+      .then(({ publicKey }) => setOtherUserPublicKey(publicKey || null))
+      .catch(() => setOtherUserPublicKey(null));
   }, [conversation._id]);
 
   useEffect(() => {
@@ -100,7 +126,6 @@ function ChatWindow({ conversation, onBack, onRead }) {
   }, [conversation, showUnreadSeparator]);
 
   const loadMessages = async () => {
-    // Guard : si pas d'userId on ne peut pas charger
     if (!currentUserId) return;
 
     setLoading(true);
@@ -168,11 +193,51 @@ function ChatWindow({ conversation, onBack, onRead }) {
     }
   };
 
+  // ── Résolution du contenu à afficher (plaintext ou déchiffré) ─────────────
+  // Appelé dans le rendu — le déchiffrement NaCl est synchrone et rapide.
+  const resolveDisplayContent = (msg) => {
+    // Message non chiffré (historique avant E2E ou temp message en cours d'envoi)
+    if (!msg.isEncrypted) return { text: msg.content, encrypted: false };
+
+    // Plaintext mis en cache à la confirmation serveur (keyed par _id réel).
+    // Survit aux re-renders et aux setMessages ultérieurs du parent.
+    const cached = plaintextCacheRef.current[msg._id];
+    if (cached) return { text: cached, encrypted: true };
+
+    const myPrivateKey = getPrivateKey();
+    if (!myPrivateKey) {
+      // Clé privée absente de sessionStorage (nouvelle onglet ou déconnexion)
+      return { text: null, encrypted: true, locked: true };
+    }
+
+    const myPublicKey = currentUser?.publicKey;
+
+    // Chaque participant lit sa propre copie : encryptedFor[monUserId]
+    // expéditeur → copie chiffrée avec sa propre publicKey (self-box)
+    // destinataire → copie chiffrée avec sa publicKey par l'expéditeur
+    const myCopy = msg.encryptedFor?.[currentUserId];
+    if (!myCopy) return { text: null, encrypted: true, error: true };
+
+    // Clé publique de l'expéditeur utilisée lors du chiffrement DH
+    const senderPubKey = msg.sender._id === currentUserId ? myPublicKey : otherUserPublicKey;
+    if (!senderPubKey) return { text: null, encrypted: true, error: true };
+
+    const decrypted = decryptMessage(myCopy, senderPubKey, myPrivateKey);
+    return decrypted
+      ? { text: decrypted, encrypted: true }
+      : { text: null, encrypted: true, error: true };
+  };
+
+  // ── Envoi de message avec chiffrement conditionnel ─────────────────────────
   const handleSendMessage = (content) => {
     const tempId = `temp-${Date.now()}`;
+
+    // Le message temporaire stocke toujours le texte en clair
+    // resolveDisplayContent retourne { encrypted: false } pour les temp messages
     const tempMessage = {
       _id: tempId,
       content,
+      isEncrypted: false, // Affiché en clair tant que le serveur n'a pas confirmé
       sender: { _id: currentUserId },
       createdAt: new Date().toISOString(),
       status: "sending",
@@ -190,13 +255,40 @@ function ChatWindow({ conversation, onBack, onRead }) {
       );
       return;
     }
-    socketService.emit("message:send", {
-      conversationId: conversation._id,
-      content,
-      tempId,
-    });
+
+    // Chiffre si les deux parties ont des clés E2E et que la clé privée est en session
+    const myPrivateKey = getPrivateKey();
+    const myPublicKey = currentUser?.publicKey;
+    const shouldEncrypt = !!otherUserPublicKey && !!myPublicKey && !!myPrivateKey;
+
+    // Cache le plaintext pour l'affichage immédiat après confirmation serveur
+    if (shouldEncrypt) plaintextCacheRef.current[tempId] = content;
+
+    if (shouldEncrypt) {
+      // Chiffre pour le destinataire (stocké dans `content`)
+      const encryptedContent = encryptMessage(content, otherUserPublicKey, myPrivateKey);
+      // Chiffre pour soi-même (permet de relire ses messages depuis l'historique)
+      const selfEncrypted = encryptMessage(content, myPublicKey, myPrivateKey);
+
+      socketService.emit("message:send", {
+        conversationId: conversation._id,
+        content: encryptedContent,
+        isEncrypted: true,
+        encryptedForRecipient: encryptedContent,
+        encryptedForSender: selfEncrypted,
+        tempId,
+      });
+    } else {
+      socketService.emit("message:send", {
+        conversationId: conversation._id,
+        content,
+        tempId,
+      });
+    }
   };
 
+  // ── Retry avec re-chiffrement ──────────────────────────────────────────────
+  // Les temp messages échoués ont toujours le texte en clair dans `content`
   const handleRetry = (message) => {
     setMessages((prev) =>
       prev.map((msg) =>
@@ -212,15 +304,41 @@ function ChatWindow({ conversation, onBack, onRead }) {
       );
       return;
     }
-    socketService.emit("message:send", {
-      conversationId: conversation._id,
-      content: message.content,
-      tempId: message._id,
-    });
+
+    const myPrivateKey = getPrivateKey();
+    const myPublicKey = currentUser?.publicKey;
+    const shouldEncrypt = !!otherUserPublicKey && !!myPublicKey && !!myPrivateKey;
+
+    if (shouldEncrypt) {
+      const encryptedContent = encryptMessage(message.content, otherUserPublicKey, myPrivateKey);
+      const selfEncrypted = encryptMessage(message.content, myPublicKey, myPrivateKey);
+      socketService.emit("message:send", {
+        conversationId: conversation._id,
+        content: encryptedContent,
+        isEncrypted: true,
+        encryptedForRecipient: encryptedContent,
+        encryptedForSender: selfEncrypted,
+        tempId: message._id,
+      });
+    } else {
+      socketService.emit("message:send", {
+        conversationId: conversation._id,
+        content: message.content,
+        tempId: message._id,
+      });
+    }
   };
 
   const handleNewMessage = ({ conversationId, message }) => {
     if (conversationId !== conversationIdRef.current) return;
+    // Normalisation — le serveur expose sender: { _id } (objet imbriqué), pas senderId
+    if (message.tempId) {
+      // Remappe le plaintext du cache : tempId → _id réel.
+      // La ref survit à tous les setMessages ultérieurs (contrairement à une prop sur l'objet).
+      const localPlaintext = plaintextCacheRef.current[message.tempId];
+      delete plaintextCacheRef.current[message.tempId];
+      if (localPlaintext) plaintextCacheRef.current[message._id] = localPlaintext;
+    }
     setMessages((prev) => {
       if (message.tempId) {
         return prev.map((msg) =>
@@ -319,7 +437,9 @@ function ChatWindow({ conversation, onBack, onRead }) {
     handleDeleteClick(contextMenu.message._id);
   };
 
+  // Les messages chiffrés ne peuvent pas être édités (intégrité E2E)
   const canEditMessage = (message) => {
+    if (message.isEncrypted) return false;
     const EDIT_TIME_LIMIT = 5 * 60 * 1000;
     const messageAge = Date.now() - new Date(message.createdAt).getTime();
     return (
@@ -383,7 +503,12 @@ function ChatWindow({ conversation, onBack, onRead }) {
   const otherUser = getOtherParticipant();
   const isOnline = otherUser ? isUserOnline(otherUser._id) : false;
 
-  // Guard : authToken manquant
+  // Badge E2E visible si le destinataire a une clé publique (conversation chiffrable)
+  const isE2EConversation = !!otherUserPublicKey;
+
+  // Index du premier message chiffré pour le séparateur visuel
+  const firstEncryptedIndex = messages.findIndex((m) => m.isEncrypted);
+
   if (!currentUserId) {
     return (
       <div className="chat-window">
@@ -423,12 +548,24 @@ function ChatWindow({ conversation, onBack, onRead }) {
             )}
           </div>
         </div>
+
+        {/* Badge chiffrement E2E */}
+        {isE2EConversation && (
+          <div className="e2e-badge" title="Cette conversation est chiffrée de bout en bout">
+            🔒 Chiffrement E2E
+          </div>
+        )}
       </div>
 
       <div className="messages-container" ref={messagesContainerRef}>
-        {messages.map((message) => {
+        {messages.map((message, index) => {
           const isOwn = message.sender._id === currentUserId;
           const isFirstUnread = message._id === firstUnreadId;
+          const isFirstEncrypted = index === firstEncryptedIndex;
+
+          // Résolution du contenu à afficher
+          const { text: displayText, locked, error } = resolveDisplayContent(message);
+
           return (
             <div key={message._id} id={`msg-${message._id}`}>
               {showUnreadSeparator && isFirstUnread && (
@@ -438,6 +575,14 @@ function ChatWindow({ conversation, onBack, onRead }) {
                   Messages non lus
                 </div>
               )}
+
+              {/* Séparateur avant le premier message chiffré */}
+              {isFirstEncrypted && (
+                <div className="e2e-separator">
+                  <span>🔒 Messages chiffrés ci-dessous</span>
+                </div>
+              )}
+
               <div
                 className={`message ${isOwn ? "own" : "other"} ${
                   longPressMessageId === message._id ? "show-delete" : ""
@@ -456,8 +601,16 @@ function ChatWindow({ conversation, onBack, onRead }) {
                   <div
                     className={`message-bubble ${message.status === "sending" ? "sending" : ""} ${message.status === "failed" ? "failed" : ""}`}
                   >
-                    {message.content}
-                    {message.edited && (
+                    {locked ? (
+                      <span className="msg-locked">
+                        🔒 Reconnectez-vous pour lire ce message
+                      </span>
+                    ) : error ? (
+                      <span className="msg-unreadable">Message non lisible</span>
+                    ) : (
+                      displayText
+                    )}
+                    {message.edited && !locked && !error && (
                       <span
                         className="edited-indicator"
                         title={`Modifié le ${new Date(message.editedAt).toLocaleString("fr-FR")}`}

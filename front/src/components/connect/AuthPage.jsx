@@ -4,14 +4,60 @@ import apiHandler from "../../api/apiHandler";
 import { AuthContext } from "../../context/auth.context";
 import PasswordInput from "./PasswordInput";
 import DatePickerMobile from "../dashboard/DatePickerMobile";
+import {
+  generateKeyPair,
+  encryptPrivateKey,
+  decryptPrivateKey,
+  storePrivateKey,
+} from "../../utils/encryption";
 import "./authpage.css";
+
+// ── Initialisation des clés E2E après login ───────────────────────────────────
+// Appelé à chaque login avec le mot de passe en clair et les données utilisateur.
+// Cas couverts :
+//   1. Première connexion / après reset mdp → génère + uploade une nouvelle paire
+//   2. Connexion normale                    → déchiffre la clé privée existante
+//   3. Déchiffrement échoue (corrompu)      → régénère (fallback silencieux)
+async function setupE2EKeys(password, userData) {
+  const { _id, publicKey, encryptedPrivateKey } = userData;
+  const userId = _id.toString();
+
+  if (!publicKey || !encryptedPrivateKey) {
+    // Première connexion ou après un reset de mot de passe
+    const { publicKey: newPubKey, secretKey } = generateKeyPair();
+    const encKey = encryptPrivateKey(secretKey, password, userId);
+    await apiHandler.storeE2EKeys({
+      publicKey: newPubKey,
+      encryptedPrivateKey: encKey,
+    });
+    storePrivateKey(secretKey);
+    return;
+  }
+
+  // Connexion normale : déchiffre la clé privée stockée en DB
+  const privateKey = decryptPrivateKey(encryptedPrivateKey, password, userId);
+  if (privateKey) {
+    storePrivateKey(privateKey);
+    return;
+  }
+
+  // Fallback : déchiffrement échoué → régénère une nouvelle paire
+  // (ne devrait pas arriver en flux normal, mais garantit la robustesse)
+  const { publicKey: newPubKey, secretKey } = generateKeyPair();
+  const encKey = encryptPrivateKey(secretKey, password, userId);
+  await apiHandler.storeE2EKeys({
+    publicKey: newPubKey,
+    encryptedPrivateKey: encKey,
+  });
+  storePrivateKey(secretKey);
+}
 
 const AuthPage = () => {
   const [panel, setPanel] = useState("login"); // "login" | "signup" | "forgot"
 
   const navigate = useNavigate();
   const location = useLocation();
-  const { storeToken, authenticateUser, isLoggedIn } = useContext(AuthContext);
+  const { storeToken, authenticateUser, setUserSession, isLoggedIn } = useContext(AuthContext);
 
   const from = location.state?.from?.pathname || "/home";
   const isFromFriends = location.state?.from?.search?.includes("tab=friends");
@@ -36,14 +82,26 @@ const AuthPage = () => {
     e.preventDefault();
     setLoginError("");
     try {
+      // Étape 1 : authentification classique → cookie httpOnly posé par le serveur
       const response = await apiHandler.signin(loginData);
-      if (response?.authToken) {
-        storeToken(response.authToken);
-        authenticateUser();
-        navigate(from);
-      } else {
+      if (!response?.authToken) {
         setLoginError("Réponse inattendue du serveur.");
+        return;
       }
+      storeToken(response.authToken);
+
+      // Étape 2 : récupère les données complètes de l'utilisateur (incluant les champs E2E)
+      const fullUserData = await apiHandler.isLoggedIn();
+      const { authToken: newToken, ...user } = fullUserData;
+      if (newToken) storeToken(newToken);
+
+      // Étape 3 : initialise les clés E2E (génère ou déchiffre la clé privée)
+      // Le mot de passe en clair n'est disponible qu'ici — il ne quitte pas le client
+      await setupE2EKeys(loginData.password, user);
+
+      // Étape 4 : met à jour le contexte auth sans second appel API
+      setUserSession(user);
+      navigate(from);
     } catch (err) {
       setLoginError(
         err.message === "Network Error"

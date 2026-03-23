@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import apiHandler from "../api/apiHandler";
 import socketService from "../components/services/socket.service";
+import { clearPrivateKey } from "../utils/encryption";
 
 const AuthContext = React.createContext();
 
@@ -58,8 +59,20 @@ function AuthProviderWrapper({ children }) {
 
   const logOut = () => {
     localStorage.removeItem("authToken");
+    clearPrivateKey(); // Supprime la clé privée E2E de sessionStorage
     apiHandler.logout().catch(() => {});
     setAuth({ currentUser: null, isLoading: false, isLoggedIn: false, authToken: null });
+  };
+
+  // ── Mise à jour de la session auth depuis des données déjà fetchées ────────
+  // Évite un double appel API après login (les données viennent de isLoggedIn())
+  const setUserSession = (user) => {
+    setAuth((prev) => ({
+      ...prev,
+      currentUser: user,
+      isLoading: false,
+      isLoggedIn: true,
+    }));
   };
 
   const removeUser = () => {
@@ -78,6 +91,7 @@ function AuthProviderWrapper({ children }) {
     storeToken,
     authenticateUser,
     updateUser,
+    setUserSession,
     removeUser,
     removeToken,
     logOut,
