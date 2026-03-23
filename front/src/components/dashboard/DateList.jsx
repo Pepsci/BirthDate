@@ -11,6 +11,7 @@ import Chat from "../chat/Chat";
 import ChatModal from "../chat/ChatModal";
 import DirectChat from "../chat/DirectChat";
 import EventsPanel from "../events/EventsPanel";
+import FabMenu from "./FabMenu";
 import useNotifications from "../../context/useNotifications";
 import "./css/dateList.css";
 import "./css/birthcard.css";
@@ -19,17 +20,29 @@ import "../UI/css/badge-notification.css";
 const ITEMS_PER_PAGE = 10;
 const ITEMS_PER_PAGE_MOBILE = 6;
 
-// ─── Panel animé (filtre, formulaire) ───────────────────
-const CollapsiblePanel = ({ isVisible, children }) => (
+// ─── Panel animé avec bouton fermer intégré ──────────────
+const CollapsiblePanel = ({ isVisible, onClose, closeLabel = "Fermer", children }) => (
   <AnimatePresence>
     {isVisible && (
       <motion.div
+        className="collapsible-panel"
         initial={{ opacity: 0, height: 0 }}
         animate={{ opacity: 1, height: "auto" }}
         exit={{ opacity: 0, height: 0 }}
         transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
         style={{ overflow: "hidden" }}
       >
+        {/* Bouton × en haut à droite du panel — mobile seulement (via CSS) */}
+        <button
+          className="panel-close-btn"
+          onClick={onClose}
+          aria-label={closeLabel}
+        >
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <line x1="1" y1="1" x2="11" y2="11" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            <line x1="11" y1="1" x2="1" y2="11" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+          </svg>
+        </button>
         {children}
       </motion.div>
     )}
@@ -184,6 +197,10 @@ const DateList = ({
     if (n) { setIsFormVisible(false); setIsFilterVisible(false); setIsChatVisible(false); }
   };
 
+  // Fermetures directes (pour le bouton × dans le panel)
+  const closeFilter = () => { setIsFilterVisible(false); setDates(allDates); setCurrentPage(1); };
+  const closeForm   = () => setIsFormVisible(false);
+
   const handleDateAdded = (newDate) => {
     const u = sortDates([...allDates, newDate]);
     setAllDates(u); setDates(u); setIsFormVisible(true);
@@ -213,16 +230,35 @@ const DateList = ({
   const currentItems = dates.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(dates.length / itemsPerPage);
 
-  // ─── Détermine le panel actif ────────────────────────────
   const activePanel = isChatVisible ? "chat" : isEventsVisible ? "events" : "dates";
 
   return (
     <div className="dateList">
       <div className="dateListHeader">
+
         <div className="dateList-tiltle">
           <h1 className="titleFont">Vos BirthDates</h1>
+
+          {/* FAB mobile uniquement */}
+          <div className="fab-mobile-only">
+            <FabMenu
+              onFilter={toggleFilterVisibility}
+              onAgenda={toggleViewMode}
+              onChat={toggleChatVisibility}
+              onEvents={toggleEventsVisibility}
+              onForm={toggleFormVisibility}
+              isFilterVisible={isFilterVisible}
+              viewMode={viewMode}
+              isChatVisible={isChatVisible}
+              isEventsVisible={isEventsVisible}
+              isFormVisible={isFormVisible}
+              unreadCount={unreadCount}
+            />
+          </div>
         </div>
-        <div className="dateListHeader-btn">
+
+        {/* Boutons desktop */}
+        <div className="dateListHeader-btn desktop-only">
           {["filter", "agenda", "chat", "events", "form"].map((btn) => {
             const isActive = btn === "filter" ? isFilterVisible : btn === "chat" ? isChatVisible : btn === "events" ? isEventsVisible : btn === "form" ? isFormVisible : false;
             const label = {
@@ -250,14 +286,23 @@ const DateList = ({
           })}
         </div>
 
-        {/* Panels filtre / formulaire avec animation collapse */}
+        {/* Panels avec bouton × intégré */}
         <div className="forms-container">
-          <CollapsiblePanel isVisible={isFilterVisible}>
+          <CollapsiblePanel
+            isVisible={isFilterVisible}
+            onClose={closeFilter}
+            closeLabel="Fermer le filtre"
+          >
             <div className="form-section filter-section">
               <DateFilter onFilterChange={handleFilterChange} inputRef={filterInputRef} friendIds={friendIds} />
             </div>
           </CollapsiblePanel>
-          <CollapsiblePanel isVisible={isFormVisible}>
+
+          <CollapsiblePanel
+            isVisible={isFormVisible}
+            onClose={closeForm}
+            closeLabel="Fermer le formulaire"
+          >
             <div className="filter-section">
               <CreateDate onDateAdded={handleDateAdded} />
             </div>
@@ -265,7 +310,7 @@ const DateList = ({
         </div>
       </div>
 
-      {/* ─── Contenu principal avec transitions ─────────────── */}
+      {/* ─── Contenu principal ───────────────────────────── */}
       <AnimatePresence mode="wait">
         {activePanel === "chat" && (
           <motion.div
@@ -343,7 +388,6 @@ const DateList = ({
               ))}
             </motion.div>
 
-            {/* ─── Pagination animée ─────────────────────── */}
             {totalPages > 1 && (
               <motion.div
                 className="pagination"

@@ -12,18 +12,10 @@
 
 .dateList-tiltle {
     display: flex;
-    justify-content: center;
-}
-
-.dateListHeader-btn {
-    display: flex;
-    justify-content: center;
+    justify-content: space-between;
     align-items: center;
-    margin: 1rem;
-}
-
-.dateListHeader-btn .btnSwitch {
-    width: 200px;
+    padding: 0 1rem;
+    margin-bottom: 1.5rem;
 }
 
 .dateListheaderConter {
@@ -35,8 +27,79 @@
 .titleFont {
     font-size: 1.75rem;
     color: var(--text-primary);
-    margin-bottom: 1.5rem;
     transition: color 0.3s ease;
+}
+
+/* ─── Visibilité desktop / mobile ─────────────────────── */
+.fab-mobile-only {
+    display: none;
+}
+
+.desktop-only {
+    display: flex;
+}
+
+@media (max-width: 768px) {
+    .fab-mobile-only {
+        display: flex;
+    }
+    .desktop-only {
+        display: none !important;
+    }
+}
+
+/* ================================
+   Panel avec bouton fermer
+================================ */
+
+/* Wrapper relatif pour positionner le × */
+.collapsible-panel {
+    position: relative;
+}
+
+/* Bouton × dans le coin haut-droit du panel */
+.panel-close-btn {
+    display: none; /* caché sur desktop */
+    position: absolute;
+    top: 18px;
+    right: 18px;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 1px solid var(--border-color);
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.panel-close-btn:hover {
+    background: var(--danger, #ef4444);
+    color: white;
+    border-color: transparent;
+}
+
+/* Affiché uniquement sur mobile */
+@media (max-width: 768px) {
+    .panel-close-btn {
+        display: flex;
+    }
+}
+
+/* ================================
+   Boutons desktop
+================================ */
+.dateListHeader-btn {
+    justify-content: center;
+    align-items: center;
+    margin: 1rem;
+}
+
+.dateListHeader-btn .btnSwitch {
+    width: 200px;
 }
 
 .btnSwitch {
@@ -87,17 +150,9 @@
     transition: all 0.3s ease;
 }
 
-/* Animation d'apparition */
 @keyframes slideDown {
-    from {
-        opacity: 0;
-        transform: translateY(-20px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(-20px); }
+    to   { opacity: 1; transform: translateY(0); }
 }
 
 /* ================================
@@ -162,19 +217,9 @@
 }
 
 /* ================================
-   Media Queries - Responsive
+   Media Queries
 ================================ */
 @media (max-width: 768px) {
-    .dateListHeader-btn {
-        gap: 0.75rem;
-        margin: 1rem 0.5rem;
-    }
-
-    .dateListHeader-btn .btnSwitch {
-        width: 180px;
-        height: 48px;
-    }
-
     .pagination {
         gap: 0.25rem;
         padding: 0 1rem;
@@ -204,20 +249,8 @@
 }
 
 @media (max-width: 600px) {
-    .dateListHeader-btn {
-        margin: 1rem;
-        gap: 0.2rem;
-    }
-
-    .dateListHeader-btn .btnSwitch {
-        width: 130px;
-        height: 60px;
-    }
-
-    .btnSwitch {
-        margin: 0.2rem;
-        padding: 0.4rem 0.1rem;
-        width: 143px;
+    .dateList-tiltle {
+        padding: 0 0.75rem;
     }
 
     .pagination {

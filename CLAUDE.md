@@ -1,337 +1,413 @@
 # BirthReminder — CLAUDE.md
-## Feature : Système d'Événements
+*Mis à jour : mars 2026*
 
 ---
 
 ## 🧠 Contexte du projet
 
-BirthReminder est une application web full-stack de gestion d'anniversaires et d'événements entre amis.
+BirthReminder est une application web full-stack de gestion d'anniversaires, de fêtes et d'événements entre amis.
 
 **Stack technique :**
-- **Frontend** : React (SPA)
-- **Backend** : Node.js + Express
-- **Base de données** : MongoDB (Mongoose)
-- **Temps réel** : Socket.io (chat entre amis déjà opérationnel)
-- **Emails** : AWS SES (rappels, notifications déjà en place)
-- **Déploiement** : AWS EC2 (prod sur birthreminder.com + dev sur localhost)
-- **Auth** : Sessions existantes (utilisateurs connectés)
-
-**Avant de commencer :**
-1. Scanne l'intégralité du codebase existant
-2. Identifie les schémas Mongoose existants (User, Friend, Birthday, Chat, Message, NamedayPreferences, etc.)
-3. Identifie les routes Express existantes et leur structure
-4. Identifie les composants React existants, notamment les cartes de contacts/anniversaires
-5. Identifie la configuration Socket.io existante (éviter les stale closures — voir pattern déjà utilisé)
-6. Respecte les conventions de nommage, structure de fichiers et patterns déjà en place
-7. Respecte le système de dark/light mode existant (CSS variables déjà configurées sur 28+ fichiers)
+| Couche | Tech |
+|--------|------|
+| Frontend | React 18 + Vite, React Router 6, motion/react (Framer Motion) |
+| Backend | Node.js + Express 4.19 |
+| Base de données | MongoDB + Mongoose 6.2 |
+| Temps réel | Socket.io 4.8 (chat amis + chat événements) |
+| Emails | AWS SES via @aws-sdk/client-ses + Nodemailer |
+| Upload images | Cloudinary (multer-storage-cloudinary) |
+| Auth | JWT stockés en cookie httpOnly |
+| Cron jobs | node-cron (4 jobs actifs) |
+| Déploiement | AWS EC2 — prod : `birthreminder.com` / dev : `localhost` |
 
 ---
 
-## 🎯 Objectif
+## 📁 Structure du projet
 
-Implémenter un système d'événements complet intégré à l'existant, accessible depuis les cartes de contacts et via des pages dédiées avec URL courte.
+```
+BirthDate/
+├── server/
+│   ├── app.js                  # Express app, CORS, montage des routes, init crons
+│   ├── server.js               # HTTP server + Socket.io setup
+│   ├── models/                 # Schémas Mongoose
+│   ├── routes/                 # Routes Express (/api/*)
+│   ├── middleware/             # JWT, logger, checkEventAccess
+│   ├── sockets/                # Handlers Socket.io (chat + events)
+│   ├── services/emailTemplates/ # Templates AWS SES
+│   ├── jobs/                   # Cron jobs
+│   ├── config/                 # MongoDB, Cloudinary
+│   └── utils/                  # Helpers (nameday, friendDates)
+└── front/
+    └── src/
+        ├── App.jsx             # Router principal
+        ├── main.jsx            # Bootstrap + Context providers
+        ├── api/apiHandler.jsx  # Instance Axios centralisée
+        ├── context/            # Auth, Theme, Notifications, OnlineStatus
+        ├── protectedRoutes/    # PrivateRoute wrapper
+        ├── styles/variables.css # CSS variables globales dark/light
+        └── components/
+            ├── Accueil/        # LandingPage
+            ├── connect/        # AuthPage, VerifyEmail, ResetPassword
+            ├── dashboard/      # Home, DateList, BirthdayCard, Agenda...
+            ├── chat/           # Chat, DirectChat, ChatModal, ChatWindow...
+            ├── events/         # EventPage, EventForm, EventsPanel, EventCard...
+            ├── friends/        # Friends, AddFriendModal, MergeDuplicates...
+            ├── layout/         # Footer, CookieBanner, ScrollToTop
+            ├── pages/          # CGU, Privacy, Cookies, Guide
+            ├── profil/         # Profile, FriendProfile, Wishlist...
+            ├── services/       # socket.service.js
+            └── UI/             # Logo, CSS partagé
+```
 
 ---
 
-## 📁 Architecture cible
+## 🗄️ Modèles Mongoose
 
-### Nouveaux schémas Mongoose à créer
+### Modèles existants (ne pas modifier les schémas sauf ajout de ref)
 
-#### `Event`
+| Modèle | Fichier | Description |
+|--------|---------|-------------|
+| `User` | `user.model.js` | Profil, auth, préférences notifications |
+| `Date` | `date.model.js` | Entrée anniversaire/fête, liée optionnellement à un User (`linkedUser`) |
+| `Friend` | `friend.model.js` | Relation d'amitié avec statut |
+| `Conversation` | `conversation.model.js` | Conversation DM entre deux users |
+| `Message` | `message.model.js` | Message dans une Conversation |
+| `Wishlist` | `wishlist.model.js` | Liste de cadeaux par user |
+| `Invitation` | `invitation.model.js` | Demande d'amitié |
+| `PushSubscription` | `PushSubscription.model.js` | Subscriptions push notifications |
+| `Log` | `log.model.js` | Journalisation activités |
+
+### Modèles Events (nouveaux — implémentés)
+
+| Modèle | Fichier | Champs clés |
+|--------|---------|-------------|
+| `Event` | `event.model.js` | `shortId` (5 chars, nanoid), `title`, `type` (birthday/party/dinner/other), `organizer` (ref User), `forPerson` (ref User), `forDate` (ref Date), `dateMode` (fixed/vote), `fixedDate`, `dateOptions[]`, `selectedDate`, `locationMode` (fixed/vote), `fixedLocation`, `locationOptions[]`, `giftMode` (imposed/proposals), `imposedGifts[]` (array), `giftPoolEnabled` (false par défaut), `maxGuests`, `accessCode` (6 chars), `allowExternalGuests`, `allowGuestInvites`, `reminders[]`, `status` (draft/published/cancelled/done). Virtual `invitations` populé depuis EventInvitation. |
+| `EventInvitation` | `eventInvitation.model.js` | `event`, `user` (null si externe), `externalEmail`, `guestName`, `status` (pending/accepted/declined/maybe), `dateVote[]`, `locationVote`, `joinedViaCode` |
+| `EventGiftProposal` | `eventGiftProposal.model.js` | `event`, `proposedBy`, `name`, `url`, `price`, `votes[]` |
+| `EventMessage` | `eventMessage.model.js` | `event`, `sender`, `content`, `readBy[]` |
+
+> **Champ `imposedGifts`** : c'est un **array** (pas un objet unique). Toujours traiter comme `imposedGifts: []`.
+
+---
+
+## 🛣️ Routes Express
+
+**Préfixe global : `/api`**
+
+### Routes implémentées — Events (`/api/events`)
+
+```
+POST   /                          Créer un événement (auth)
+GET    /mine                      Mes événements organisés + invités (auth) → { organized[], invited[] }
+GET    /check/:id                 Vérifier si un event existe — `:id` peut être un `userId` (forPerson) ou un `dateId` (forDate). Retourne `{ eventShortId }` si trouvé, sinon `null`. (auth)
+GET    /:shortId                  Récupérer un event (public, accès partiel si non-invité)
+PUT    /:shortId                  Modifier un event (organizer only)
+DELETE /:shortId                  Supprimer + cascade (organizer only)
+POST   /:shortId/invite           Inviter users inscrits + envoi email
+POST   /:shortId/join             Rejoindre via accessCode (public ou connecté). Body : `{ accessCode, guestName? }`. Vérifie que `accessCode` correspond au champ `event.accessCode` (comparaison case-insensitive). Si connecté → crée/met à jour une `EventInvitation` avec `joinedViaCode: true`. Si non connecté → crée une invitation avec `user: null` et `externalEmail/guestName` si fournis.
+PUT    /:shortId/rsvp             Répondre invitation (auth + checkEventAccess)
+POST   /:shortId/vote/date        Voter pour une date (auth + checkEventAccess)
+POST   /:shortId/vote/location    Voter pour un lieu (auth + checkEventAccess)
+POST   /:shortId/gifts            Proposer un cadeau (auth + checkEventAccess)
+GET    /:shortId/gifts            Lister les propositions (auth + checkEventAccess)
+POST   /:shortId/gifts/:giftId/vote  Voter pour un cadeau (toggle)
+PUT    /:shortId/gifts/:giftId    Modifier sa propre proposition (proposer only)
+GET    /:shortId/messages         Messages du chat event (auth + checkEventAccess)
+GET    /:shortId/share            { url, code } pour partage
+GET    /:shortId/invitations      Liste invitations peuplées (auth + checkEventAccess)
+```
+
+### ⚠️ Ordre critique des routes
+`/mine` et `/check/:id` doivent être **déclarés avant** `/:shortId` dans `events.js` pour éviter que "mine" et "check" soient interprétés comme des shortIds.
+
+### Middleware `checkEventAccess`
+Injecte `req.event`, `req.userRole` ("organizer" | "guest"), `req.invitation` sur les routes protégées événement.
+
+---
+
+## 🌐 Routes Frontend (App.jsx)
+
+| Route | Composant | Accès |
+|-------|-----------|-------|
+| `/` | LandingPage | Public |
+| `/auth`, `/login`, `/signup`, `/forgot-password` | AuthPage | Public |
+| `/verify-email` | VerifyEmail | Public |
+| `/auth/reset/:token` | ResetPassword | Public |
+| `/event/:shortId` | **EventPage** | Public (lecture seule sans compte) |
+| `/unsubscribe` | Unsubscribe | Public |
+| `/home` | Home | Privé |
+| `/profile` | Profile | Privé |
+| `/birthday/:id` | BirthdayView | Privé |
+| `/update-date/:id` | UpdateDate | Privé |
+| `/merge-duplicates` | MergeDuplicates | Privé |
+| `/events/mine` | EventsPanel | Privé |
+| `/events/new` | EventForm | Privé |
+
+### Deep links depuis `/home`
+Le composant `Home` gère les deep links via query params :
+```
+/home?tab=date&dateId=xxx    → ouvre FriendProfile pour ce dateId
+/home?tab=agenda             → affiche la vue agenda
+/home?tab=events             → ouvre EventsPanel
+/home?tab=friends            → ouvre le profil utilisateur section amis
+```
+
+---
+
+## ⚛️ Composants React — État actuel
+
+### BirthdayCard (`dashboard/BirthdayCard.jsx`)
+- **Carte simplifiée** : toute la carte est cliquable → `onViewProfile(date, "info")`
+- Aucun bouton visible, curseur pointer sur la carte entière
+- Affiche : nom, prénom, badge AMI / FAMILLE, âge, date, fête (nameday), countdown
+- Props : `{ date, onViewProfile }`
+
+### FriendProfile (`profil/FriendProfile.jsx`)
+- Vue profil complète avec sidebar desktop + carousel mobile
+- Sections : Infos, Notifications, Sa Wishlist (amis), Mes Cadeaux, Messages (amis), Modifier (dates manuelles)
+- **Bouton ✏️ Modifier** : uniquement si `!date.linkedUser` → charge `<UpdateDate compact>` en inline
+- **Bouton 💬 Chat** : uniquement si `date.linkedUser` — badge d'unreads depuis `conversationUnreads`
+- **Bouton 🎉 Événement** : pour toutes les dates — navigue vers `/event/:shortId` ou `/events/new?forPerson=...` / `?forDate=...`
+- `isMobile` détecté via resize listener (`<= 768px`)
+- `existingEventId` fetchée via `GET /events/check/:personId`
+
+### UpdateDate (`dashboard/UpdateDate.jsx`)
+- Props : `{ date, onCancel, onSaved?, onDeleted?, onMerge?, compact? }`
+- `compact=true` : rend uniquement `.auth-panel` sans wrapper page complet
+- `onSaved(updatedDate)` appelé après PATCH réussi
+- `onDeleted()` appelé après DELETE réussi
+
+### Agenda (`dashboard/Agenda.jsx`)
+- **Vue Mois** : grille CSS 7 colonnes, offset lundi corrigé `(firstDay + 6) % 7`, cellules cliquables → AgendaDayModal
+- **Vue Semaine** : layout vertical 7 lignes, colonne gauche (nom jour + numéro), colonne droite (items cliquables directs)
+- `WEEK_VIEW_MAX_ITEMS = 3` : au-delà → bouton "+ X autres" → AgendaDayModal
+- Pastilles : bleu (anniversaire), orange (fête/nameday), vert (événement)
+- **Namedays** : parsés depuis `date.nameday || date.linkedUser?.nameday` (format `MM-DD`)
+- Toggle Mois/Semaine, mobile par défaut en semaine (`<= 768px`)
+- `switchToWeek` → semaine en cours (`getMonday(today)`)
+- Reçoit `events` depuis `DateList` (fetchés via `GET /events/mine`)
+
+### AgendaDayModal (`dashboard/AgendaDayModal.jsx`)
+- Props : `{ day, month, year, dates, namedays?, events, onClose }`
+- Sections : 🎂 Anniversaires, 🎉 Fêtes, 🎉 Événements
+- Navigation : anniversaires/fêtes → `/home?tab=date&dateId=...`, événements → `/event/:shortId`
+- Fermeture : bouton ✕ + clic overlay + touche Escape
+- Bottom sheet sur mobile (`align-items: flex-end`)
+
+### EventsPanel (`events/EventsPanel.jsx`)
+- Affiché à la place des cartes quand l'onglet Événements est actif dans DateList
+- Filtres : Tous / Mes events / Invités / À venir / En attente / Passés
+- Edit/Delete événements (organizer only) avec modal EventForm intégré
+- Pagination
+
+### EventPage (`events/EventPage.jsx`)
+- Page publique `/event/:shortId`
+- Tabs : **Info** / **Participants** / **Cadeaux** / **Chat** / **Votes**
+- Hero section avec date + lieu en pills
+- RSVP inline (Accepter / Peut-être / Décliner) — appelle `PUT /:shortId/rsvp`
+- Votes date/lieu : affichés seulement si `dateMode === 'vote'` / `locationMode === 'vote'` et `selectedDate` non encore fixée
+- Propositions cadeaux : liste + formulaire ajout (connecté uniquement), votes toggle
+- Chat Socket.io : joint la room `event:join` au montage, quitte à l'unmount
+- `allowGuestInvites` : contrôle si les invités voient le bouton "Inviter" + section partage (lien + code)
+- **Accès non-connecté** : lecture seule — pas de RSVP, pas de chat, pas de vote. Bouton "Rejoindre avec un code" → modal `JoinEventModal`
+- **`JoinEventModal`** : saisie `accessCode` (6 chars) + `guestName` optionnel → `POST /:shortId/join`
+- Retour → `/home?tab=events` (si connecté) ou `/` (si non connecté)
+
+### Guests externes — Flow complet
+1. L'organisateur partage `birthreminder.com/event/:shortId` + `accessCode`
+2. Le guest ouvre l'URL → `EventPage` en mode lecture seule
+3. Clic "Rejoindre" → `JoinEventModal` → `POST /:shortId/join` avec `{ accessCode, guestName }`
+4. Backend crée une `EventInvitation` avec `user: null`, `guestName`, `joinedViaCode: true`, `status: 'pending'`
+5. Le guest est redirigé vers la même page, maintenant avec accès complet (RSVP, vote, chat)
+6. Son identité est mémorisée via un cookie de session ou `localStorage` côté front (`guestToken`)
+
+> ⚠️ Les guests externes ne voient pas le chat si `allowExternalGuests` est `false` sur l'event.
+
+### EventCard (`events/EventCard.jsx`)
+- Carte résumé affichée dans `EventsPanel` et potentiellement dans `Agenda`
+- Affiche : titre, type (badge coloré), date/lieu si fixés, nombre de participants, statut (draft/published/etc.)
+- Actions (organizer only) : ✏️ Modifier → ouvre `EventForm` en mode edit, 🗑️ Supprimer → modal confirmation
+- Clic sur la carte → navigue vers `/event/:shortId`
+
+### EventForm (`events/EventForm.jsx`)
+- Stepper 6 étapes avec animations motion/react
+- Google Places Autocomplete pour le lieu (step 3)
+- Étapes cliquables directement : toujours en edit mode, uniquement ≤ step actuel en create mode
+- `imposedGifts` : array avec UI add/remove (pas un objet unique)
+- `allowGuestInvites` : checkbox en étape 5
+
+### DateList (`dashboard/DateList.jsx`)
+- Fetche `GET /events/mine` pour passer `events` à `<Agenda>`
+- Gère les états : isFilterVisible, isChatVisible, isEventsVisible, viewMode (card/agenda)
+- Buttons navbar : Filtre | Carte/Agenda | Chat | 🎉 Événements | Ajouter une date
+
+---
+
+## 🔌 Socket.io
+
+### Pattern anti-stale-closure (IMPORTANT)
+Voir `server/sockets/chatHandlers.js` pour le pattern utilisé. Les handlers doivent être re-enregistrés à chaque reconnexion et les callbacks doivent accéder aux variables via closure ou ref, pas via state direct.
+
+### Rooms et events — Chat amis (existant)
+- Room : `conversation:${conversationId}`
+- Events : `message:send`, `message:new`, `typing:start`, `typing:stop`, `messages:read`
+
+### Rooms et events — Événements (implémentés)
 ```js
-{
-  _id: ObjectId,
-  shortId: String, // ex: "xK9mZ" — généré avec nanoid (5 chars)
-  title: String,
-  description: String,
-  type: String, // 'birthday', 'party', 'dinner', 'other'
-  organizer: { type: ObjectId, ref: 'User' },
-  forPerson: { type: ObjectId, ref: 'User', default: null }, // personne concernée (pré-rempli depuis carte)
-  recurrence: {
-    enabled: Boolean,
-    frequency: String, // 'yearly', 'custom'
-    nextOccurrence: Date
-  },
+// Rejoindre la room
+socket.emit('event:join', { shortId })
+socket.emit('event:leave', { shortId })
 
-  // Dates
-  dateMode: String, // 'fixed' | 'vote'
-  fixedDate: Date,
-  dateOptions: [Date], // si dateMode === 'vote'
-  selectedDate: Date, // date retenue après vote
+// Chat
+socket.emit('event:message_send', { shortId, content })
+socket.on('event:message_new', callback)
+socket.emit('event:typing_start', { shortId })
+socket.on('event:typing_stop', callback)
 
-  // Lieux
-  locationMode: String, // 'fixed' | 'vote'
-  fixedLocation: {
-    name: String,
-    address: String,
-    coordinates: { lat: Number, lng: Number }
-  },
-  locationOptions: [{ name: String, address: String, coordinates: { lat: Number, lng: Number } }],
-  selectedLocation: Object,
-
-  // Cadeaux
-  giftMode: String, // 'imposed' | 'proposals'
-  imposedGift: { name: String, url: String, price: Number },
-  // [CAGNOTTE — placeholder, à intégrer ultérieurement]
-  // giftPoolEnabled: Boolean,
-  // giftPool: { type: ObjectId, ref: 'GiftPool' }
-
-  // Invitations
-  maxGuests: Number, // null = illimité
-  accessCode: String, // code 6 chars pour rejoindre sans compte
-  allowExternalGuests: Boolean,
-
-  // Rappels
-  reminders: [{
-    type: String, // 'event_date', 'pool_deadline'
-    daysBeforeEvent: Number,
-    sent: Boolean
-  }],
-
-  status: String, // 'draft' | 'published' | 'cancelled' | 'done'
-  createdAt: Date,
-  updatedAt: Date
-}
+// Mises à jour temps réel
+socket.on('event:rsvp_updated', callback)
+socket.on('event:vote_updated', callback)
+socket.on('event:gift_proposed', callback)
+socket.on('event:guest_joined', callback)
 ```
 
-#### `EventInvitation`
-```js
-{
-  _id: ObjectId,
-  event: { type: ObjectId, ref: 'Event' },
-  user: { type: ObjectId, ref: 'User', default: null }, // null si invité externe
-  externalEmail: String, // si non inscrit
-  guestName: String, // si non inscrit
-  status: String, // 'pending' | 'accepted' | 'declined' | 'maybe'
-  dateVote: [Date], // votes sur les dates proposées
-  locationVote: ObjectId, // vote sur le lieu
-  joinedViaCode: Boolean,
-  createdAt: Date
-}
-```
-
-#### `EventGiftProposal`
-```js
-{
-  _id: ObjectId,
-  event: { type: ObjectId, ref: 'Event' },
-  proposedBy: { type: ObjectId, ref: 'User' },
-  name: String,
-  url: String,
-  price: Number,
-  votes: [{ type: ObjectId, ref: 'User' }],
-  createdAt: Date
-}
-```
-
-#### `EventMessage` (chat dédié événement)
-```js
-{
-  _id: ObjectId,
-  event: { type: ObjectId, ref: 'Event' },
-  sender: { type: ObjectId, ref: 'User' },
-  content: String,
-  readBy: [{ type: ObjectId, ref: 'User' }],
-  createdAt: Date
-}
-```
+### Client Socket.io
+Service singleton : `front/src/components/services/socket.service.js`
+- `socketService.connect(userId)` — connexion avec auth
+- `socketService.emit(event, data)` — émettre
+- `socketService.on(event, cb)` / `socketService.off(event, cb)` — écouter / se désabonner
 
 ---
 
-### Nouvelles routes Express à créer
+## 📧 AWS SES — Templates email
 
-**Préfixe : `/api/events`**
+**Helpers partagés** : `server/services/emailTemplates/emailHelpers.js`
+→ fonctions `header()`, `footer()`, `badge()`, `ctaButton()` pour un style cohérent.
 
-```
-POST   /api/events                          → créer un événement
-GET    /api/events/:shortId                 → récupérer un événement (public)
-PUT    /api/events/:shortId                 → modifier un événement (organizer only)
-DELETE /api/events/:shortId                 → annuler un événement (organizer only)
+**Templates existants :**
+- `birthdayReminder.js` — rappel anniversaire
+- `namedayReminder.js` — rappel fête
+- `invitationEmail.js` — invitation ami
+- `friendRequestEmailService.js` — demande d'ami
+- `passwordResetEmail.js` — réinitialisation mot de passe
+- `monthlyRecapEmail.js` — récap mensuel
+- `eventEmails.js` — **invitation event, rappel J-7/J-1, vote requis, date confirmée**
 
-GET    /api/events/mine                     → mes événements (organisateur ou invité)
-
-POST   /api/events/:shortId/invite          → inviter des utilisateurs inscrits
-POST   /api/events/:shortId/join            → rejoindre via code (invité externe ou inscrit)
-PUT    /api/events/:shortId/rsvp            → répondre à l'invitation (présent/absent/maybe)
-
-POST   /api/events/:shortId/vote/date       → voter pour une date
-POST   /api/events/:shortId/vote/location   → voter pour un lieu
-
-POST   /api/events/:shortId/gifts           → proposer un cadeau
-POST   /api/events/:shortId/gifts/:giftId/vote → voter pour un cadeau proposé
-
-GET    /api/events/:shortId/messages        → récupérer messages du chat événement
-POST   /api/events/:shortId/messages        → envoyer un message (via HTTP fallback)
-
-GET    /api/events/:shortId/share           → générer/retourner le lien de partage + code
-```
+> ⚠️ Ne jamais modifier les templates existants. Ajouter uniquement.
 
 ---
 
-### Nouvelles pages React à créer
+## ⏰ Cron Jobs
 
-#### `/event/:shortId` — Page publique de l'événement
-- Accessible sans compte (lecture seule pour non-invités)
-- Affiche : titre, date, lieu, organisateur, description
-- Bouton "Rejoindre avec un code" pour les externes
-- Si invité connecté : affiche RSVP, vote dates/lieux, proposals cadeaux, chat
-- Responsive : Map sur desktop, vue liste sur mobile
-
-#### `/events/new` — Création d'événement
-- Formulaire multi-étapes (stepper)
-- Étape 1 : Infos générales (titre, type, description, récurrence)
-- Étape 2 : Date (mode fixe ou vote avec plusieurs options)
-- Étape 3 : Lieu (mode fixe avec Maps ou vote avec plusieurs options)
-- Étape 4 : Cadeaux (imposé ou propositions libres)
-- Étape 5 : Invitations (amis BirthReminder + options externes)
-- Étape 6 : Rappels et options avancées
-- Placeholder visuel pour la cagnotte (section grisée "Bientôt disponible")
-
-#### `/events/mine` — Mes événements
-- Liste des événements organisés + auxquels je suis invité
-- Filtres : à venir / passés / en attente de réponse
+| Fichier | Schedule | Rôle |
+|---------|----------|------|
+| `jobs/sendReminders.js` | Minuit quotidien | Rappels anniversaires et fêtes |
+| `jobs/eventReminders.js` | 6h quotidien | Rappels événements (J-7, J-1, configurable) |
+| `jobs/chatNotificationCron.js` | 5min / 9h / Lun 9h | Notifications chat groupées |
+| `jobs/purgeDeletedAccounts.js` | 3h quotidien | Suppression comptes inactifs |
 
 ---
 
-### Composants React à créer/modifier
+## 🎨 CSS & Design System
 
-#### Modifier (existants)
+### Variables CSS globales (`front/src/styles/variables.css`)
+```css
+/* Couleurs */
+--primary: #3b82f6;       --primary-light: #60a5fa;   --primary-dark: #2563eb;
+--success: #10b981;       --danger: #ef4444;           --warning: #f59e0b;
 
-**1. Barre de navigation principale (page Home "Vos BirthDates")**
+/* Backgrounds */
+--bg-primary: #ffffff;    --bg-secondary: #f9fafb;     --bg-tertiary: #f3f4f6;
 
-La barre contient actuellement 4 boutons dans cet ordre :
-```
-[ Filtre ] [ Agenda ] [ Chat ] [ Ajouter une date ]
-```
-Insérer le bouton Événements **entre Chat et Ajouter une date** :
-```
-[ Filtre ] [ Agenda ] [ Chat ] [ 🎉 Événements ] [ Ajouter une date ]
-```
-- Le bouton "🎉 Événements" remplace l'affichage des cartes BirthDates par le panel EventsPanel
-- Même style visuel que les boutons existants (respecter classes CSS / variables dark/light mode)
-- Comportement : toggle — cliquer à nouveau sur "Événements" revient aux cartes
+/* Texte */
+--text-primary: #111827;  --text-secondary: #6b7280;   --text-tertiary: #9ca3af;
 
-**2. Cartes BirthDates (composant carte individuelle)**
+/* Borders */
+--border-color: #e5e7eb;  --border-color-hover: #d1d5db;
 
-Chaque carte affiche actuellement deux boutons en bas :
+/* Shadows */
+--card-shadow: ...;       --card-shadow-hover: ...;
 ```
-[ Modifier ]  [ Voir Profil ]
-```
-**Remplacer le bouton "Modifier" par "🎉 Événement"** :
-```
-[ 🎉 Événement ]  [ Voir Profil ]
-```
-- ⚠️ Ne pas supprimer la logique de modification — la déplacer directement dans la carte (inline edit ou via un autre pattern existant dans le codebase)
-- Le bouton "🎉 Événement" redirige vers `/events/new?forPerson=userId` avec pré-remplissage du nom et de la date d'anniversaire de la personne concernée
-- Même style que le bouton "Modifier" actuel
 
-**3. EventsPanel — nouveau composant (remplace les cartes quand actif)**
+Dark mode : classe `.dark` sur le body redéfinit toutes ces variables.
 
-Affiché à la place de la liste de cartes BirthDates quand l'onglet "Événements" est actif. Contient :
-- **En-tête** avec titre "Mes Événements" + bouton "**+ Créer un événement**" (ouvre `/events/new` sans pré-remplissage)
-- **Calendrier/timeline** affichant toutes les dates BirthReminder de l'utilisateur en contexte (anniversaires existants + événements créés) — vue agréable pour choisir une date lors de la création
-- **Liste des événements** : organisés par l'utilisateur + auxquels il est invité
-- Filtres rapides : "À venir" / "En attente de réponse" / "Passés"
-- Chaque événement listé avec `EventCard` (titre, date, nb participants, statut RSVP)
+### Règles CSS à respecter
+- **Pas d'inline styles** — tout dans des fichiers `.css` dédiés
+- Toujours utiliser les variables CSS (`var(--primary)`, `var(--bg-primary)`, etc.)
+- Chaque composant a son fichier CSS dans son dossier (`css/nomComposant.css`)
+- Le dark/light mode est géré automatiquement via `ThemeContext` + classe `.dark` sur body
 
-#### Créer (nouveaux)
-- `EventCard` — carte résumé d'un événement (pour listes)
-- `EventPage` — page complète de l'événement
-- `EventForm` — formulaire multi-étapes de création
-- `EventChat` — chat Socket.io dédié à l'événement (réutiliser pattern existant, attention aux stale closures)
-- `RSVPButton` — bouton présent/absent/maybe avec dropdown
-- `DateVotePanel` — affichage et vote sur les dates proposées
-- `LocationVotePanel` — affichage et vote sur les lieux (Maps desktop / liste mobile)
-- `GiftProposalPanel` — propositions + votes cadeaux
-- `InviteModal` — inviter des amis + générer lien/code
-- `JoinEventModal` — rejoindre via code (pour invités externes)
-- `EventReminderSettings` — configuration des rappels
+### Fichiers CSS partagés (`components/UI/css/`)
+- `carousel-common.css` — styles carousel mobile (FriendProfile)
+- `gifts-common.css` — styles cartes cadeaux
+- `badge-notification.css` — badges de notification
+- `modals.css` — styles modals génériques
+- `containerInfo.css` — conteneurs info
 
 ---
 
-## 🔌 Socket.io — Intégration événements
+## 🔗 URLs & Partage événements
 
-Ajouter les rooms et events suivants au serveur Socket.io existant :
-
-```js
-// Rejoindre la room d'un événement
-socket.join(`event:${shortId}`)
-
-// Nouveaux événements Socket.io
-'event:message'        → nouveau message dans le chat événement
-'event:rsvp_update'    → quelqu'un a répondu à l'invitation
-'event:vote_update'    → un vote date/lieu a été mis à jour
-'event:gift_proposal'  → nouvelle proposition de cadeau
-'event:guest_joined'   → un invité a rejoint l'événement
-```
-
-⚠️ **Important** : respecter le pattern de gestion des callbacks Socket.io déjà en place dans le codebase pour éviter les stale closures (scanner le chat existant avant d'implémenter).
-
----
-
-## 📧 AWS SES — Rappels événements
-
-Ajouter les templates d'emails suivants (respecter le style des emails existants) :
-
-- **Invitation reçue** : "Tu es invité(e) à [titre événement]"
-- **Rappel J-7** : "L'événement [titre] approche !"
-- **Rappel J-1** : "C'est demain : [titre événement]"
-- **Vote date/lieu** : "L'organisateur a besoin de ton vote"
-- **Date retenue** : "La date de [titre] est confirmée : [date]"
-
-Ajouter un job cron (ou utiliser le système existant) pour envoyer les rappels automatiques.
-
----
-
-## 🗺️ Maps & Localisation
-
-- **Desktop** : Google Maps embed ou Leaflet.js (vérifier ce qui est déjà installé)
-- **Mobile** : vue liste avec adresse + lien "Ouvrir dans Maps"
-- Détection device : utiliser `window.innerWidth` ou media query existante
-
----
-
-## 💳 Cagnotte — PLACEHOLDER UNIQUEMENT
-
-> ⚠️ Ne pas implémenter la cagnotte maintenant. Prévoir uniquement :
-> - Un champ `giftPoolEnabled: false` dans le schéma Event (par défaut désactivé)
-> - Une section visuellement présente dans l'EventPage et l'EventForm, grisée, avec le texte "Cagnotte — Bientôt disponible"
-> - La structure de données est commentée dans le schéma pour intégration future (Stripe / Wero / IBAN)
-
----
-
-## 🔗 URLs & Partage
-
-- Chaque événement a un `shortId` de 5 caractères généré avec **nanoid**
+- `shortId` : 5 caractères, généré avec `nanoid(5)`
+- `accessCode` : 6 caractères alphanumériques (`Math.random().toString(36).substring(2,8).toUpperCase()`)
 - URL publique : `birthreminder.com/event/:shortId`
-- Code d'accès : 6 caractères alphanumériques pour rejoindre sans lien direct
-- L'API `/api/events/:shortId/share` retourne : `{ url, code }`
+- API share : `GET /api/events/:shortId/share` → `{ url, code }`
 
 ---
 
-## ✅ Checklist d'implémentation suggérée
+## 💳 Cagnotte — PLACEHOLDER
 
-1. [ ] Schémas Mongoose (Event, EventInvitation, EventGiftProposal, EventMessage)
-2. [ ] Routes Express CRUD événements
-3. [ ] Routes invitations + RSVP
-4. [ ] Routes votes (dates, lieux, cadeaux)
-5. [ ] Routes chat événement (HTTP + Socket.io)
-6. [ ] Routes partage (lien + code)
-7. [ ] Cron AWS SES rappels
-8. [ ] Composant EventForm (multi-étapes)
-9. [ ] Page /event/:shortId
-10. [ ] Page /events/mine
-11. [ ] Bouton sur ContactCard existante
-12. [ ] EventChat (Socket.io)
-13. [ ] Maps intégration (desktop/mobile)
-14. [ ] Tests end-to-end sur les flows principaux
+> Ne pas implémenter. Champ `giftPoolEnabled: false` déjà présent dans le schéma Event.
+> Prévoir visuellement une section grisée "Cagnotte — Bientôt disponible" dans EventPage/EventForm.
 
 ---
 
 ## 🚫 Ne pas toucher
 
-- Le système de chat entre amis existant (ne pas modifier, seulement s'en inspirer)
-- Les schémas User, Friend, Birthday existants (seulement ajouter des refs si nécessaire)
+- Le système de chat entre amis existant (s'en inspirer, ne pas modifier)
+- Les schémas `User`, `Friend`, `Date` existants (seulement ajouter des refs si nécessaire)
 - La configuration Nginx / PM2 / CORS existante
-- Les fichiers CSS dark/light mode (utiliser les variables CSS existantes)
-- AWS SES configuration existante (ajouter des templates, ne pas modifier l'existant)
+- La configuration AWS SES existante (ajouter des templates, ne pas modifier l'existant)
+- Les fichiers CSS du dark/light mode — utiliser uniquement les variables CSS
+
+---
+
+## ⚠️ Points de vigilance
+
+### Dates
+- Les anniversaires (`date.date`) sont comparés **mois + jour uniquement** (récurrence annuelle)
+- Les namedays (`date.nameday || date.linkedUser?.nameday`) sont au format `"MM-DD"` (ex: `"03-13"`)
+- Les dates d'événements comparent **année + mois + jour** (pas récurrentes)
+- Toujours parser les dates avec `new Date(year, month, day)` pour éviter les problèmes de timezone
+
+### Événements
+- `imposedGifts` est un **array**, jamais un objet unique
+- `allowGuestInvites` contrôle la visibilité du bouton "Inviter" et du lien de partage pour les invités
+- `forDate` vs `forPerson` : `forDate` référence un objet `Date` (anniversaire manuel), `forPerson` référence un `User` (ami inscrit)
+
+### Navigation profil
+- Les profils n'ont PAS de route dédiée `/dates/:id` — tout passe par `/home?tab=date&dateId=...`
+- Le retour depuis EventPage va vers `/home?tab=events`
+
+### Socket.io stale closures
+- Toujours utiliser le pattern de `chatHandlers.js` (re-enregistrement des handlers)
+- Ne pas capturer du state React dans les callbacks Socket sans les exposer via ref
+
+---
+
+## 📦 Dépendances clés
+
+### Backend (`server/package.json`)
+```
+express 4.19          mongoose 6.2          socket.io 4.8
+bcryptjs 2.4          jsonwebtoken 9.0      express-jwt 7.7
+@aws-sdk/client-ses   nodemailer 6.10       node-cron 4.2
+nanoid 3.3            multer + cloudinary   helmet 8.0
+```
+
+### Frontend (`front/package.json`)
+```
+react 18.3            react-router-dom 6.2  axios 1.7
+socket.io-client 4.8  motion 12.38          lucide-react 0.539
+vite 5.4
+```
