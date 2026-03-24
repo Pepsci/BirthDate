@@ -189,3 +189,260 @@
     font-size: 20px;
   }
 }
+
+/* ========================================
+   E2E SETTINGS — section Confidentialité
+   ======================================== */
+
+.e2e-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.e2e-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.e2e-desc {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.e2e-meta {
+  font-size: 0.82rem;
+  color: var(--text-tertiary);
+  margin: -8px 0 0;
+}
+
+/* Badge "Chiffrement Maximum actif" */
+.e2e-active-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, rgba(59,130,246,0.15), rgba(59,130,246,0.25));
+  border: 1.5px solid var(--primary);
+  color: var(--primary);
+  font-weight: 700;
+  font-size: 0.95rem;
+  border-radius: 10px;
+  padding: 8px 14px;
+  width: fit-content;
+}
+
+/* Boîte info bleue */
+.e2e-info-box {
+  background: rgba(59, 130, 246, 0.08);
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  border-radius: 10px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.e2e-info-box p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+/* Boîte avertissement orange */
+.e2e-warning-box {
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-radius: 10px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.e2e-warning-box p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+/* Stepper */
+.e2e-stepper {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.e2e-step {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid var(--border-color);
+  background: var(--bg-secondary);
+  color: var(--text-tertiary);
+  font-size: 0.8rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.e2e-step--active {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: #fff;
+}
+
+.e2e-step--done {
+  border-color: var(--success);
+  background: var(--success);
+  color: #fff;
+}
+
+/* Grille seed phrase 4 colonnes */
+.e2e-seed-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.e2e-seed-word {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 7px 10px;
+  font-size: 0.82rem;
+}
+
+.e2e-seed-number {
+  color: var(--text-tertiary);
+  font-size: 0.72rem;
+  font-weight: 700;
+  min-width: 14px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.e2e-seed-text {
+  color: var(--text-primary);
+  font-weight: 600;
+  font-family: monospace;
+  letter-spacing: 0.02em;
+}
+
+/* Textarea vérification seed */
+.e2e-textarea {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  resize: vertical;
+  font-family: monospace;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+
+.e2e-textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+/* Champ mot de passe avec bouton toggle */
+.e2e-password-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.e2e-password-field .auth-input {
+  flex: 1;
+  padding-right: 44px;
+}
+
+.e2e-toggle-pw {
+  position: absolute;
+  right: 10px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 4px;
+  line-height: 1;
+  color: var(--text-tertiary);
+  transition: color 0.2s;
+}
+
+.e2e-toggle-pw:hover {
+  color: var(--text-primary);
+}
+
+/* Navigation (boutons bas de page) */
+.e2e-nav {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.e2e-nav .update-btn-secondary {
+  flex: 1;
+  min-width: 100px;
+}
+
+.e2e-nav .btn-profil {
+  flex: 2;
+  min-width: 140px;
+  margin: 0;
+}
+
+/* Boutons d'action (vue "déjà actif") */
+.e2e-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.e2e-actions .btn-profil {
+  margin: 0;
+}
+
+/* Variante bouton — couleur primaire explicite */
+.e2e-btn-primary {
+  background: var(--primary) !important;
+}
+
+/* Variante bouton — rouge danger */
+.e2e-btn-danger {
+  background: var(--danger) !important;
+}
+
+.e2e-btn-danger:hover {
+  opacity: 0.88;
+}
+
+/* Message d'erreur */
+.e2e-error {
+  color: var(--danger);
+  font-size: 0.85rem;
+  margin: -4px 0 0;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+/* Responsive mobile — grille 3 colonnes sur petit écran */
+@media (max-width: 480px) {
+  .e2e-seed-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}

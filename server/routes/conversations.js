@@ -17,12 +17,12 @@ router.get("/", isAuthenticated, async (req, res) => {
     const conversations = await Conversation.find({
       participants: userId,
     })
-      .populate("participants", "name surname email publicKey")
+      .populate("participants", "name surname email publicKey oldPublicKey")
       .populate({
         path: "lastMessage",
         populate: {
           path: "sender",
-          select: "name surname email publicKey",
+          select: "name surname email publicKey oldPublicKey",
         },
       })
       .sort({ lastMessageAt: -1 });
@@ -139,7 +139,7 @@ router.get("/:conversationId/messages", isAuthenticated, async (req, res) => {
     const safeLimit = Math.min(Math.max(parseInt(limit) || 50, 1), 100);
 
     const messages = await Message.find(query)
-      .populate("sender", "name surname email")
+      .populate("sender", "name surname email publicKey oldPublicKey")
       .sort({ createdAt: -1 })
       .limit(safeLimit);
 

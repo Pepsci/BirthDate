@@ -16,6 +16,7 @@
 import nacl from "tweetnacl";
 import { encodeBase64 } from "tweetnacl-util";
 import * as bip39 from "bip39";
+import french from "bip39/src/wordlists/french.json";
 import { scrypt } from "@noble/hashes/scrypt.js";
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -53,6 +54,7 @@ function bytesToUtf8(bytes) {
 // ────────────────────────────────────────────────────────────────────────────
 
 const SESSION_KEY = "e2e_private_key";
+const SESSION_OLD_KEY = "e2e_old_private_key";
 
 /**
  * Stocke la clé privée brute (Uint8Array) en sessionStorage sous forme base64.
@@ -79,6 +81,25 @@ export function clearPrivateKey() {
 /** Indique si une clé privée est disponible dans la session courante. */
 export function hasPrivateKey() {
   return !!sessionStorage.getItem(SESSION_KEY);
+}
+
+// ── Ancienne clé privée (période de transition au changement de mode E2E) ──
+
+/** Stocke l'ancienne clé privée en sessionStorage (base64). */
+export function storeOldPrivateKey(privateKeyBytes) {
+  if (!privateKeyBytes) return;
+  sessionStorage.setItem(SESSION_OLD_KEY, encodeBase64(privateKeyBytes));
+}
+
+/** Récupère l'ancienne clé privée depuis sessionStorage. */
+export function getOldPrivateKey() {
+  const b64 = sessionStorage.getItem(SESSION_OLD_KEY);
+  return b64 ? toUint8Array(b64) : null;
+}
+
+/** Vide l'ancienne clé privée de sessionStorage. */
+export function clearOldPrivateKey() {
+  sessionStorage.removeItem(SESSION_OLD_KEY);
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -199,29 +220,31 @@ export function encryptMessage(message, recipientPublicKeyB64, myPrivateKey) {
 /**
  * Déchiffre un message reçu.
  *
- * @param {string}     encryptedB64        — contenu chiffré en base64
- * @param {string}     senderPublicKeyB64  — publicKey de l'expéditeur (base64)
- * @param {Uint8Array} myPrivateKey        — ma clé privée (via getPrivateKey())
- * @returns {string|null} texte déchiffré, ou null si déchiffrement impossible
- *   (clé absente, message corrompu, expéditeur non E2E, etc.)
+ * Accepte une clé privée unique OU un tableau de clés (ex : clé active + ancienne clé).
+ * Essaie chaque clé dans l'ordre et retourne le plaintext dès le premier succès.
+ *
+ * @param {string}                encryptedB64        — contenu chiffré en base64
+ * @param {string}                senderPublicKeyB64  — publicKey de l'expéditeur (base64)
+ * @param {Uint8Array|Uint8Array[]} privateKeyOrKeys  — clé(s) privée(s)
+ * @returns {string|null} texte déchiffré, ou null si toutes les clés échouent
  */
-export function decryptMessage(encryptedB64, senderPublicKeyB64, myPrivateKey) {
-  try {
-    const senderPublicKey = toUint8Array(senderPublicKeyB64);
-    const privateKey = toUint8Array(myPrivateKey);
-    const combined = toUint8Array(encryptedB64);
-    const nonce = combined.slice(0, nacl.box.nonceLength);
-    const ciphertext = combined.slice(nacl.box.nonceLength);
-    const decrypted = nacl.box.open(
-      ciphertext,
-      nonce,
-      senderPublicKey,
-      privateKey,
-    );
-    return decrypted ? bytesToUtf8(decrypted) : null;
-  } catch {
-    return null;
+export function decryptMessage(encryptedB64, senderPublicKeyB64, privateKeyOrKeys) {
+  const keys = Array.isArray(privateKeyOrKeys) ? privateKeyOrKeys : [privateKeyOrKeys];
+  const senderPublicKey = toUint8Array(senderPublicKeyB64);
+  const combined = toUint8Array(encryptedB64);
+  const nonce = combined.slice(0, nacl.box.nonceLength);
+  const ciphertext = combined.slice(nacl.box.nonceLength);
+
+  for (const key of keys) {
+    if (!key) continue;
+    try {
+      const decrypted = nacl.box.open(ciphertext, nonce, senderPublicKey, toUint8Array(key));
+      if (decrypted) return bytesToUtf8(decrypted);
+    } catch {
+      // essayer la clé suivante
+    }
   }
+  return null;
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -233,7 +256,7 @@ export function decryptMessage(encryptedB64, senderPublicKeyB64, myPrivateKey) {
  * @returns {string} phrase BIP39 (mots séparés par des espaces)
  */
 export function generateSeedPhrase() {
-  return bip39.generateMnemonic(); // 128 bits → 12 mots
+  return bip39.generateMnemonic(128, null, french); // 128 bits → 12 mots français
 }
 
 /**
@@ -242,7 +265,7 @@ export function generateSeedPhrase() {
  * @returns {boolean}
  */
 export function validateSeedPhrase(seedPhrase) {
-  return bip39.validateMnemonic(seedPhrase.trim().toLowerCase());
+  return bip39.validateMnemonic(seedPhrase.trim().toLowerCase(), french);
 }
 
 /**
@@ -278,4 +301,35 @@ export function keyPairFromSeed(seedPhrase) {
     publicKey: encodeBase64(keyPair.publicKey),
     secretKey: keyPair.secretKey,
   };
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Chiffrement de la seed phrase (Full E2E — pour affichage ultérieur)
+// ────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Chiffre la seed phrase BIP39 avec le mot de passe de l'utilisateur.
+ * Réutilise encryptPrivateKey (nacl.secretbox + scrypt) — la seed est traitée
+ * comme un payload binaire quelconque.
+ *
+ * @param {string} seedPhrase — phrase de 12 mots
+ * @param {string} password
+ * @param {string} userId
+ * @returns {string} base64 (nonce ‖ ciphertext)
+ */
+export function encryptSeedPhrase(seedPhrase, password, userId) {
+  return encryptPrivateKey(utf8ToBytes(seedPhrase), password, userId);
+}
+
+/**
+ * Déchiffre la seed phrase BIP39.
+ *
+ * @param {string} encryptedB64 — valeur stockée en DB
+ * @param {string} password
+ * @param {string} userId
+ * @returns {string|null} seed phrase en clair, ou null si mot de passe incorrect
+ */
+export function decryptSeedPhrase(encryptedB64, password, userId) {
+  const bytes = decryptPrivateKey(encryptedB64, password, userId);
+  return bytes ? bytesToUtf8(bytes) : null;
 }

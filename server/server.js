@@ -27,8 +27,10 @@ io.use(socketAuthMiddleware);
 const setupChatHandlers = require("./sockets/chatHandlers");
 const setupEventHandlers = require("./sockets/eventHandlers");
 
-// Map partagée entre les deux handlers
+// Map partagée entre les deux handlers et les routes HTTP
 const connectedUsers = new Map();
+app.set("io", io);
+app.set("connectedUsers", connectedUsers);
 
 // Un seul io.on("connection") — évite les doublons de listeners
 io.on("connection", (socket) => {

@@ -71,6 +71,12 @@ const userSchema = new Schema({
   // ── Chiffrement E2E ────────────────────────────────────────────────────────
   publicKey: { type: String, default: null },
   encryptedPrivateKey: { type: String, default: null },
+  // Ancienne paire de clés — conservée lors d'un changement de mode E2E
+  // pour permettre de déchiffrer les messages émis avant le changement
+  oldPublicKey: { type: String, default: null },
+  oldEncryptedPrivateKey: { type: String, default: null },
+  // Seed phrase BIP39 chiffrée (uniquement en mode Full E2E)
+  encryptedSeedPhrase: { type: String, default: null },
   e2eMode: { type: String, enum: ["standard", "full"], default: "standard" },
   e2eActivatedAt: { type: Date, default: null },
 });

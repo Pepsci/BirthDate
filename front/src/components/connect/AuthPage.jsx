@@ -9,6 +9,8 @@ import {
   encryptPrivateKey,
   decryptPrivateKey,
   storePrivateKey,
+  storeOldPrivateKey,
+  getOldPrivateKey,
 } from "../../utils/encryption";
 import "./authpage.css";
 
@@ -19,7 +21,7 @@ import "./authpage.css";
 //   2. Connexion normale                    → déchiffre la clé privée existante
 //   3. Déchiffrement échoue (corrompu)      → régénère (fallback silencieux)
 async function setupE2EKeys(password, userData) {
-  const { _id, publicKey, encryptedPrivateKey } = userData;
+  const { _id, publicKey, encryptedPrivateKey, oldEncryptedPrivateKey } = userData;
   const userId = _id.toString();
 
   if (!publicKey || !encryptedPrivateKey) {
@@ -38,6 +40,16 @@ async function setupE2EKeys(password, userData) {
   const privateKey = decryptPrivateKey(encryptedPrivateKey, password, userId);
   if (privateKey) {
     storePrivateKey(privateKey);
+    // Si une ancienne clé existe en DB (après changement de mode E2E),
+    // la déchiffrer et la stocker pour accéder aux anciens messages
+    const oldPrivateKey = oldEncryptedPrivateKey
+      ? decryptPrivateKey(oldEncryptedPrivateKey, password, userId)
+      : null;
+    // Guard : ne pas écraser une oldPrivateKey déjà en session
+    // (protège contre un deuxième appel sans oldEncryptedPrivateKey)
+    if (oldPrivateKey && !getOldPrivateKey()) {
+      storeOldPrivateKey(oldPrivateKey);
+    }
     return;
   }
 

@@ -4,6 +4,7 @@ import socketService from "../../services/socket.service";
 import { AuthContext } from "../../../context/auth.context";
 import {
   getPrivateKey,
+  getOldPrivateKey,
   encryptMessage,
   decryptMessage,
 } from "../../../utils/encryption";
@@ -137,8 +138,9 @@ const EventChat = ({ shortId, participants = {} }) => {
     const cached = plaintextCacheRef.current[msg._id];
     if (cached) return { text: cached };
 
-    const myPrivateKey = getPrivateKey();
-    if (!myPrivateKey) return { text: null, locked: true };
+    // Tableau de clés : active d'abord, ancienne en fallback
+    const privateKeys = [getPrivateKey(), getOldPrivateKey()].filter(Boolean);
+    if (privateKeys.length === 0) return { text: null, locked: true };
 
     const myCopy = msg.encryptedFor?.[currentUserId];
     // Absent = participant arrivé après la rédaction du message
@@ -153,7 +155,7 @@ const EventChat = ({ shortId, participants = {} }) => {
 
     if (!senderPublicKey) return { text: null, locked: true };
 
-    const decrypted = decryptMessage(myCopy, senderPublicKey, myPrivateKey);
+    const decrypted = decryptMessage(myCopy, senderPublicKey, privateKeys);
     return decrypted ? { text: decrypted } : { text: null, error: true };
   };
 

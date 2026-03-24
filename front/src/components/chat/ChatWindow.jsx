@@ -6,6 +6,7 @@ import { useOnlineStatus } from "../../context/OnlineStatusContext";
 import { AuthContext } from "../../context/auth.context";
 import {
   getPrivateKey,
+  getOldPrivateKey,
   encryptMessage,
   decryptMessage,
 } from "../../utils/encryption";
@@ -31,6 +32,8 @@ function ChatWindow({ conversation, onBack, onRead }) {
   // ── E2E ────────────────────────────────────────────────────────────────────
   // Clé publique de l'autre participant, chargée à l'ouverture de la conversation
   const [otherUserPublicKey, setOtherUserPublicKey] = useState(null);
+  // Ref miroir pour accès synchrone dans les handlers socket (évite stale closure)
+  const otherUserPublicKeyRef = useRef(null);
 
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
@@ -56,13 +59,36 @@ function ChatWindow({ conversation, onBack, onRead }) {
   // ── Fetch la publicKey du destinataire au changement de conversation ──────
   useEffect(() => {
     setOtherUserPublicKey(null);
+    otherUserPublicKeyRef.current = null;
     const other = conversation.participants?.find((p) => p._id !== currentUserId);
     if (!other?._id) return;
     apiHandler
       .getUserPublicKey(other._id)
-      .then(({ publicKey }) => setOtherUserPublicKey(publicKey || null))
-      .catch(() => setOtherUserPublicKey(null));
+      .then(({ publicKey }) => {
+        setOtherUserPublicKey(publicKey || null);
+        otherUserPublicKeyRef.current = publicKey || null;
+      })
+      .catch(() => {
+        setOtherUserPublicKey(null);
+        otherUserPublicKeyRef.current = null;
+      });
   }, [conversation._id]);
+
+  // ── Helper : récupère la publicKey fraîche du destinataire ────────────────
+  const fetchRecipientPublicKey = async () => {
+    const other = conversation.participants?.find((p) => p._id !== currentUserId);
+    if (!other?._id) return otherUserPublicKeyRef.current;
+    try {
+      const { publicKey } = await apiHandler.getUserPublicKey(other._id);
+      if (publicKey && publicKey !== otherUserPublicKeyRef.current) {
+        setOtherUserPublicKey(publicKey);
+        otherUserPublicKeyRef.current = publicKey;
+      }
+      return publicKey || null;
+    } catch {
+      return otherUserPublicKeyRef.current;
+    }
+  };
 
   useEffect(() => {
     const handleClickOutside = () => {
@@ -91,6 +117,7 @@ function ChatWindow({ conversation, onBack, onRead }) {
     socket.on("typing:start", handleTypingStart);
     socket.on("typing:stop", handleTypingStop);
     socket.on("messages:read", handleMessagesRead);
+    socket.on("contact:keyUpdated", handleContactKeyUpdated);
     return () => {
       socket.off("message:new", handleNewMessage);
       socket.off("message:deleted", handleMessageDeleted);
@@ -98,6 +125,7 @@ function ChatWindow({ conversation, onBack, onRead }) {
       socket.off("typing:start", handleTypingStart);
       socket.off("typing:stop", handleTypingStop);
       socket.off("messages:read", handleMessagesRead);
+      socket.off("contact:keyUpdated", handleContactKeyUpdated);
     };
   }, [conversation]);
 
@@ -204,32 +232,57 @@ function ChatWindow({ conversation, onBack, onRead }) {
     const cached = plaintextCacheRef.current[msg._id];
     if (cached) return { text: cached, encrypted: true };
 
-    const myPrivateKey = getPrivateKey();
-    if (!myPrivateKey) {
-      // Clé privée absente de sessionStorage (nouvelle onglet ou déconnexion)
+    // Tableau de clés : active d'abord, ancienne en fallback
+    // (permet de lire les messages chiffrés avant un changement de mode E2E)
+    const privateKeys = [getPrivateKey(), getOldPrivateKey()].filter(Boolean);
+    if (privateKeys.length === 0) {
       return { text: null, encrypted: true, locked: true };
     }
 
-    const myPublicKey = currentUser?.publicKey;
+    // Clés publiques de l'expéditeur à essayer dans l'ordre :
+    //   - message de moi : ma clé actuelle + ma vieille clé (self-copy)
+    //   - message de l'autre : sa clé actuelle (dans le message) + son ancienne clé
+    // oldPublicKey est populé par le backend depuis user.model.js
+    const isOwnMessage = msg.sender._id === currentUserId;
+    const senderPubKeys = isOwnMessage
+      ? [currentUser?.publicKey, currentUser?.oldPublicKey].filter(Boolean)
+      : [msg.sender?.publicKey, msg.sender?.oldPublicKey].filter(Boolean);
 
-    // Chaque participant lit sa propre copie : encryptedFor[monUserId]
-    // expéditeur → copie chiffrée avec sa propre publicKey (self-box)
-    // destinataire → copie chiffrée avec sa publicKey par l'expéditeur
+    if (senderPubKeys.length === 0) return { text: null, encrypted: true, error: true };
+
+    // Nouveau format : chaque participant a sa propre copie dans encryptedFor
     const myCopy = msg.encryptedFor?.[currentUserId];
-    if (!myCopy) return { text: null, encrypted: true, error: true };
+    if (myCopy) {
+      for (const senderPubKey of senderPubKeys) {
+        const decrypted = decryptMessage(myCopy, senderPubKey, privateKeys);
+        if (decrypted) return { text: decrypted, encrypted: true };
+      }
+      return { text: null, encrypted: true, error: true };
+    }
 
-    // Clé publique de l'expéditeur utilisée lors du chiffrement DH
-    const senderPubKey = msg.sender._id === currentUserId ? myPublicKey : otherUserPublicKey;
-    if (!senderPubKey) return { text: null, encrypted: true, error: true };
+    // Format legacy : content contient le ciphertext directement
+    // (messages envoyés avant la migration vers encryptedFor)
+    if (msg.content && msg.content.length > 50) {
+      for (const senderPubKey of senderPubKeys) {
+        const decrypted = decryptMessage(msg.content, senderPubKey, privateKeys);
+        if (decrypted) return { text: decrypted, encrypted: true };
+      }
+      return { text: null, encrypted: true, error: true };
+    }
 
-    const decrypted = decryptMessage(myCopy, senderPubKey, myPrivateKey);
-    return decrypted
-      ? { text: decrypted, encrypted: true }
-      : { text: null, encrypted: true, error: true };
+    return { text: null, encrypted: true, error: true };
+  };
+
+  // ── Mise à jour de la clé publique d'un contact (activation Full E2E) ──────
+  const handleContactKeyUpdated = ({ userId, newPublicKey }) => {
+    const other = conversation.participants?.find((p) => p._id !== currentUserId);
+    if (other?._id !== userId) return; // concerne un autre contact, ignorer
+    setOtherUserPublicKey(newPublicKey || null);
+    otherUserPublicKeyRef.current = newPublicKey || null;
   };
 
   // ── Envoi de message avec chiffrement conditionnel ─────────────────────────
-  const handleSendMessage = (content) => {
+  const handleSendMessage = async (content) => {
     const tempId = `temp-${Date.now()}`;
 
     // Le message temporaire stocke toujours le texte en clair
@@ -256,18 +309,22 @@ function ChatWindow({ conversation, onBack, onRead }) {
       return;
     }
 
-    // Chiffre si les deux parties ont des clés E2E et que la clé privée est en session
     const myPrivateKey = getPrivateKey();
     const myPublicKey = currentUser?.publicKey;
-    const shouldEncrypt = !!otherUserPublicKey && !!myPublicKey && !!myPrivateKey;
+
+    // Toujours récupérer la clé fraîche avant de chiffrer —
+    // évite d'utiliser une clé périmée si le contact a changé de paire (Full E2E)
+    const recipientPublicKey = (myPrivateKey && myPublicKey)
+      ? await fetchRecipientPublicKey()
+      : null;
+
+    const shouldEncrypt = !!recipientPublicKey && !!myPublicKey && !!myPrivateKey;
 
     // Cache le plaintext pour l'affichage immédiat après confirmation serveur
     if (shouldEncrypt) plaintextCacheRef.current[tempId] = content;
 
     if (shouldEncrypt) {
-      // Chiffre pour le destinataire (stocké dans `content`)
-      const encryptedContent = encryptMessage(content, otherUserPublicKey, myPrivateKey);
-      // Chiffre pour soi-même (permet de relire ses messages depuis l'historique)
+      const encryptedContent = encryptMessage(content, recipientPublicKey, myPrivateKey);
       const selfEncrypted = encryptMessage(content, myPublicKey, myPrivateKey);
 
       socketService.emit("message:send", {
@@ -289,7 +346,7 @@ function ChatWindow({ conversation, onBack, onRead }) {
 
   // ── Retry avec re-chiffrement ──────────────────────────────────────────────
   // Les temp messages échoués ont toujours le texte en clair dans `content`
-  const handleRetry = (message) => {
+  const handleRetry = async (message) => {
     setMessages((prev) =>
       prev.map((msg) =>
         msg._id === message._id ? { ...msg, status: "sending" } : msg,
@@ -307,10 +364,13 @@ function ChatWindow({ conversation, onBack, onRead }) {
 
     const myPrivateKey = getPrivateKey();
     const myPublicKey = currentUser?.publicKey;
-    const shouldEncrypt = !!otherUserPublicKey && !!myPublicKey && !!myPrivateKey;
+    const recipientPublicKey = (myPrivateKey && myPublicKey)
+      ? await fetchRecipientPublicKey()
+      : null;
+    const shouldEncrypt = !!recipientPublicKey && !!myPublicKey && !!myPrivateKey;
 
     if (shouldEncrypt) {
-      const encryptedContent = encryptMessage(message.content, otherUserPublicKey, myPrivateKey);
+      const encryptedContent = encryptMessage(message.content, recipientPublicKey, myPrivateKey);
       const selfEncrypted = encryptMessage(message.content, myPublicKey, myPrivateKey);
       socketService.emit("message:send", {
         conversationId: conversation._id,
@@ -339,6 +399,15 @@ function ChatWindow({ conversation, onBack, onRead }) {
       delete plaintextCacheRef.current[message.tempId];
       if (localPlaintext) plaintextCacheRef.current[message._id] = localPlaintext;
     }
+
+    // Si l'autre utilisateur a changé de clés (ex: activation Full E2E),
+    // mettre à jour le cache local pour que les prochains envois utilisent sa nouvelle clé.
+    const senderId = message.sender?._id;
+    if (senderId !== currentUserId && message.sender?.publicKey && message.sender.publicKey !== otherUserPublicKeyRef.current) {
+      setOtherUserPublicKey(message.sender.publicKey);
+      otherUserPublicKeyRef.current = message.sender.publicKey;
+    }
+
     setMessages((prev) => {
       if (message.tempId) {
         return prev.map((msg) =>

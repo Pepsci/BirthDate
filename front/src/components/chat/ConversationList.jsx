@@ -4,7 +4,7 @@ import socketService from "../services/socket.service";
 import { useOnlineStatus } from "../../context/OnlineStatusContext";
 import { AuthContext } from "../../context/auth.context";
 import apiHandler from "../../api/apiHandler";
-import { getPrivateKey, decryptMessage } from "../../utils/encryption";
+import { getPrivateKey, getOldPrivateKey, decryptMessage } from "../../utils/encryption";
 import "./css/ConversationList.css";
 
 function ConversationList({
@@ -31,8 +31,8 @@ function ConversationList({
     const myCopy = message.encryptedFor?.[currentUserId];
     if (!myCopy) return "🔒 Message chiffré";
 
-    const myPrivateKey = getPrivateKey();
-    if (!myPrivateKey) return "🔒 Message chiffré";
+    const privateKeys = [getPrivateKey(), getOldPrivateKey()].filter(Boolean);
+    if (privateKeys.length === 0) return "🔒 Message chiffré";
 
     // La clé publique de l'expéditeur : la mienne si j'ai envoyé, sinon celle du sender
     const senderId =
@@ -44,7 +44,7 @@ function ConversationList({
 
     if (!senderPublicKey) return "🔒 Message chiffré";
 
-    const decrypted = decryptMessage(myCopy, senderPublicKey, myPrivateKey);
+    const decrypted = decryptMessage(myCopy, senderPublicKey, privateKeys);
     return decrypted ?? "🔒 Message chiffré";
   };
 

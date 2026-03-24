@@ -8,6 +8,7 @@ import Countdown from "../dashboard/Countdown";
 import DatePickerMobile from "../dashboard/DatePickerMobile";
 import GestionNotification from "./GestionNotifications";
 import Wishlist from "./Wishlist";
+import E2ESettings from "./E2ESettings";
 import FriendsMobileView from "../friends/FriendsMobileView";
 import MergeDuplicatesSection from "../friends/MergeDuplicatesSection";
 import ThemeToggle from "./ThemeToggle";
@@ -62,6 +63,11 @@ const ProfilDetails = ({
     { id: "friends", title: "Amis", icon: "👥" },
     { id: "merge", title: "Doublons", icon: "🔄" },
     { id: "wishlist", title: "Ma wishlist", icon: "🎁" },
+    {
+      id: "e2e",
+      title: currentUser?.e2eMode === "full" ? "Chiffrement Maximum actif" : "Confidentialité",
+      icon: "🔐",
+    },
   ];
 
   const getInitialIndex = () => {
@@ -81,6 +87,7 @@ const ProfilDetails = ({
       friends: false,
       merge: false,
       wishlist: false,
+      e2e: false,
     };
     initial[initialSection] = true;
     return initial;
@@ -317,6 +324,8 @@ const ProfilDetails = ({
         return <MergeDuplicatesSection />;
       case "wishlist":
         return <Wishlist />;
+      case "e2e":
+        return <E2ESettings />;
       default:
         return null;
     }

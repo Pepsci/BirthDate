@@ -38,7 +38,11 @@ function formatUser(user) {
     // E2E
     publicKey: user.publicKey,
     encryptedPrivateKey: user.encryptedPrivateKey,
+    oldPublicKey: user.oldPublicKey,
+    oldEncryptedPrivateKey: user.oldEncryptedPrivateKey,
+    encryptedSeedPhrase: user.encryptedSeedPhrase,
     e2eMode: user.e2eMode,
+    e2eActivatedAt: user.e2eActivatedAt,
   };
 }
 
@@ -303,9 +307,10 @@ router.patch("/me/chat-email-prefs", isAuthenticated, async (req, res) => {
 
 // ─── E2E Encryption ──────────────────────────────────────────────────────────
 
-/* PUT /users/keys — Stocker/mettre à jour publicKey + encryptedPrivateKey */
+/* PUT /users/keys — Stocker/mettre à jour la paire de clés E2E.
+ * Accepte aussi e2eMode, encryptedSeedPhrase (Full E2E) et e2eActivatedAt. */
 router.put("/keys", isAuthenticated, async (req, res) => {
-  const { publicKey, encryptedPrivateKey } = req.body;
+  const { publicKey, encryptedPrivateKey, e2eMode, encryptedSeedPhrase } = req.body;
 
   if (!publicKey || !encryptedPrivateKey) {
     return res
@@ -314,13 +319,83 @@ router.put("/keys", isAuthenticated, async (req, res) => {
   }
 
   try {
-    await userModel.findByIdAndUpdate(req.payload._id, {
-      publicKey,
-      encryptedPrivateKey,
-    });
+    const user = await userModel.findById(req.payload._id);
+    if (!user) {
+      return res.status(404).json({ message: "Utilisateur non trouvé." });
+    }
+
+    // Archiver l'ancienne paire avant remplacement (permet de déchiffrer
+    // les messages échangés avant le changement de mode E2E)
+    if (user.publicKey) {
+      user.oldPublicKey = user.publicKey;
+      user.oldEncryptedPrivateKey = user.encryptedPrivateKey ?? null;
+    }
+
+    user.publicKey = publicKey;
+    user.encryptedPrivateKey = encryptedPrivateKey;
+
+    if (e2eMode === "full") {
+      user.e2eMode = "full";
+      user.e2eActivatedAt = new Date();
+      if (encryptedSeedPhrase) user.encryptedSeedPhrase = encryptedSeedPhrase;
+    } else if (e2eMode === "standard") {
+      user.e2eMode = "standard";
+      user.e2eActivatedAt = null;
+      user.encryptedSeedPhrase = null;
+    }
+
+    await user.save();
+
+    // Notifier les amis connectés que la clé publique a changé
+    try {
+      const io = req.app.get("io");
+      const connectedUsers = req.app.get("connectedUsers");
+      if (io && connectedUsers) {
+        const friendships = await Friend.find({
+          $or: [
+            { user: req.payload._id, status: "accepted" },
+            { friend: req.payload._id, status: "accepted" },
+          ],
+        });
+        const userId = req.payload._id.toString();
+        friendships.forEach(({ user: fUser, friend }) => {
+          const friendId = fUser.toString() === userId ? friend.toString() : fUser.toString();
+          const socketId = connectedUsers.get(friendId);
+          if (socketId) {
+            io.to(socketId).emit("contact:keyUpdated", {
+              userId,
+              newPublicKey: publicKey,
+            });
+          }
+        });
+      }
+    } catch (notifyErr) {
+      console.error("Erreur notification contact:keyUpdated:", notifyErr);
+      // Non bloquant — la réponse HTTP est déjà envoyée si on arrive ici
+    }
+
     return res.status(200).json({ message: "Clés E2E enregistrées." });
   } catch (err) {
     console.error("Erreur PUT /users/keys:", err);
+    return res.status(500).json({ message: "Erreur serveur." });
+  }
+});
+
+/* DELETE /users/reset-e2e-keys — Remet toutes les clés E2E à null (tests uniquement) */
+router.delete("/reset-e2e-keys", isAuthenticated, async (req, res) => {
+  try {
+    await userModel.findByIdAndUpdate(req.payload._id, {
+      publicKey: null,
+      encryptedPrivateKey: null,
+      oldPublicKey: null,
+      oldEncryptedPrivateKey: null,
+      encryptedSeedPhrase: null,
+      e2eMode: "standard",
+      e2eActivatedAt: null,
+    });
+    return res.status(200).json({ message: "Clés E2E réinitialisées." });
+  } catch (err) {
+    console.error("Erreur DELETE /users/reset-e2e-keys:", err);
     return res.status(500).json({ message: "Erreur serveur." });
   }
 });

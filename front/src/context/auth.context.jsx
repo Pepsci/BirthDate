@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import apiHandler from "../api/apiHandler";
 import socketService from "../components/services/socket.service";
-import { clearPrivateKey } from "../utils/encryption";
+import { clearPrivateKey, clearOldPrivateKey } from "../utils/encryption";
 
 const AuthContext = React.createContext();
 
@@ -59,7 +59,8 @@ function AuthProviderWrapper({ children }) {
 
   const logOut = () => {
     localStorage.removeItem("authToken");
-    clearPrivateKey(); // Supprime la clé privée E2E de sessionStorage
+    clearPrivateKey();
+    clearOldPrivateKey(); // Supprime les clés E2E de sessionStorage
     apiHandler.logout().catch(() => {});
     setAuth({ currentUser: null, isLoading: false, isLoggedIn: false, authToken: null });
   };

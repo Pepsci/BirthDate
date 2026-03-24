@@ -103,9 +103,9 @@ const apiHandler = {
   // ── E2E Encryption ──────────────────────────────────────────────────────────
 
   // Stocker/mettre à jour la paire de clés E2E de l'utilisateur connecté
-  storeE2EKeys({ publicKey, encryptedPrivateKey }) {
+  storeE2EKeys({ publicKey, encryptedPrivateKey, e2eMode, encryptedSeedPhrase }) {
     return service
-      .put("/users/keys", { publicKey, encryptedPrivateKey })
+      .put("/users/keys", { publicKey, encryptedPrivateKey, e2eMode, encryptedSeedPhrase })
       .then((res) => res.data)
       .catch(errorHandler);
   },
