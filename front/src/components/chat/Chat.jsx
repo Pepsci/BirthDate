@@ -177,7 +177,7 @@ function Chat() {
     const currentUserId = JSON.parse(
       atob(localStorage.getItem("authToken").split(".")[1]),
     )._id;
-    return conversation.participants.find((p) => p._id !== currentUserId);
+    return conversation.participants?.find((p) => p?._id && p._id !== currentUserId);
   };
 
   const otherUser = selectedConversation

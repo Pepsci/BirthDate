@@ -60,7 +60,7 @@ function ChatWindow({ conversation, onBack, onRead }) {
   useEffect(() => {
     setOtherUserPublicKey(null);
     otherUserPublicKeyRef.current = null;
-    const other = conversation.participants?.find((p) => p._id !== currentUserId);
+    const other = conversation.participants?.find((p) => p?._id && p._id !== currentUserId);
     if (!other?._id) return;
     apiHandler
       .getUserPublicKey(other._id)
@@ -76,7 +76,7 @@ function ChatWindow({ conversation, onBack, onRead }) {
 
   // ── Helper : récupère la publicKey fraîche du destinataire ────────────────
   const fetchRecipientPublicKey = async () => {
-    const other = conversation.participants?.find((p) => p._id !== currentUserId);
+    const other = conversation.participants?.find((p) => p?._id && p._id !== currentUserId);
     if (!other?._id) return otherUserPublicKeyRef.current;
     try {
       const { publicKey } = await apiHandler.getUserPublicKey(other._id);
@@ -275,7 +275,7 @@ function ChatWindow({ conversation, onBack, onRead }) {
 
   // ── Mise à jour de la clé publique d'un contact (activation Full E2E) ──────
   const handleContactKeyUpdated = ({ userId, newPublicKey }) => {
-    const other = conversation.participants?.find((p) => p._id !== currentUserId);
+    const other = conversation.participants?.find((p) => p?._id && p._id !== currentUserId);
     if (other?._id !== userId) return; // concerne un autre contact, ignorer
     setOtherUserPublicKey(newPublicKey || null);
     otherUserPublicKeyRef.current = newPublicKey || null;
@@ -542,7 +542,7 @@ function ChatWindow({ conversation, onBack, onRead }) {
   };
 
   const getOtherParticipant = () =>
-    conversation.participants.find((p) => p._id !== currentUserId);
+    conversation.participants?.find((p) => p?._id && p._id !== currentUserId);
 
   const formatMessageTime = (date) =>
     new Date(date).toLocaleTimeString("fr-FR", {

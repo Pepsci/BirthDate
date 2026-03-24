@@ -192,7 +192,7 @@ function ConversationList({
   };
 
   const getOtherParticipant = (conversation) => {
-    return conversation.participants.find((p) => p._id !== currentUserId);
+    return conversation.participants?.find((p) => p?._id && p._id !== currentUserId);
   };
 
   const formatLastMessageTime = (date) => {
