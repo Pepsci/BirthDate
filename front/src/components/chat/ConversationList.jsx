@@ -236,9 +236,11 @@ function ConversationList({
             {friends.length === 0 ? (
               <p className="no-friends">Aucun ami disponible</p>
             ) : (
-              friends.map((friend) => {
+              friends
+                .filter((friend) => friend.friendUser?._id)
+                .map((friend) => {
                 const friendUser = friend.friendUser;
-                const friendIsOnline = isUserOnline(friendUser._id); // ⭐ NOUVEAU
+                const friendIsOnline = isUserOnline(friendUser._id);
 
                 return (
                   <div
