@@ -381,24 +381,6 @@ router.put("/keys", isAuthenticated, async (req, res) => {
   }
 });
 
-/* DELETE /users/reset-e2e-keys — Remet toutes les clés E2E à null (tests uniquement) */
-router.delete("/reset-e2e-keys", isAuthenticated, async (req, res) => {
-  try {
-    await userModel.findByIdAndUpdate(req.payload._id, {
-      publicKey: null,
-      encryptedPrivateKey: null,
-      oldPublicKey: null,
-      oldEncryptedPrivateKey: null,
-      encryptedSeedPhrase: null,
-      e2eMode: "standard",
-      e2eActivatedAt: null,
-    });
-    return res.status(200).json({ message: "Clés E2E réinitialisées." });
-  } catch (err) {
-    console.error("Erreur DELETE /users/reset-e2e-keys:", err);
-    return res.status(500).json({ message: "Erreur serveur." });
-  }
-});
 
 /* GET /users/:id/publicKey — Récupérer la clé publique d'un utilisateur */
 router.get("/:id/publicKey", isAuthenticated, async (req, res) => {

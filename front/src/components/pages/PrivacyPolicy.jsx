@@ -283,7 +283,37 @@ export default function PrivacyPolicy() {
         </section>
 
         <section>
-          <h2>8. Mineurs</h2>
+          <h2>8. Chiffrement des messages</h2>
+          <p>
+            Vos messages sont chiffrés de bout en bout (E2E).{" "}
+            <strong>
+              BirthReminder ne peut pas lire le contenu de vos conversations —
+              ni maintenant, ni jamais.
+            </strong>
+          </p>
+
+          <h3>Mode Standard (par défaut)</h3>
+          <p>
+            Vos messages sont chiffrés avec une clé dérivée de votre mot de
+            passe. Ils restent accessibles sur tous vos appareils après
+            connexion.
+          </p>
+
+          <h3>Mode Chiffrement Maximum (optionnel)</h3>
+          <p>
+            Vos messages sont protégés par une phrase de récupération de 12
+            mots que vous seul possédez. En cas de perte simultanée de cette
+            phrase et de votre mot de passe, vos messages sont définitivement
+            inaccessibles.{" "}
+            <strong>
+              BirthReminder ne dispose d'aucun moyen de récupération dans ce
+              cas.
+            </strong>
+          </p>
+        </section>
+
+        <section>
+          <h2>9. Mineurs</h2>
           <p>
             BirthReminder est destiné aux personnes majeures (18 ans et plus).
             Si vous avez moins de 18 ans, vous devez obtenir l'autorisation de
@@ -297,7 +327,7 @@ export default function PrivacyPolicy() {
         </section>
 
         <section>
-          <h2>9. Modifications de cette politique</h2>
+          <h2>10. Modifications de cette politique</h2>
           <p>
             Nous pouvons modifier cette politique de confidentialité pour
             refléter les changements dans nos pratiques ou pour des raisons
@@ -311,7 +341,7 @@ export default function PrivacyPolicy() {
         </section>
 
         <section>
-          <h2>10. Contact</h2>
+          <h2>11. Contact</h2>
           <p>
             Pour toute question concernant cette politique de confidentialité ou
             vos données personnelles, contactez-nous :
@@ -330,7 +360,7 @@ export default function PrivacyPolicy() {
         </section>
 
         <p className="last-update">
-          <strong>Dernière mise à jour :</strong> 10 février 2026
+          <strong>Dernière mise à jour :</strong> 24 mars 2026
         </p>
       </div>
     </div>
