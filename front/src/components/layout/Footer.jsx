@@ -1,9 +1,11 @@
 import { Link } from "react-router-dom";
 import "./css/footer.css";
 
-export default function Footer() {
+export default function Footer({ isMobileFooterRoute, isDesktopNoFooterRoute }) {
   return (
-    <footer className="site-footer">
+    <footer
+      className={`site-footer ${!isMobileFooterRoute ? "footer-hidden-mobile" : ""} ${isDesktopNoFooterRoute ? "footer-hidden-desktop" : ""}`}
+    >
       <div className="footer-container">
         {/* Colonne 1 - Produit */}
         <div className="footer-column">

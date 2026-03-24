@@ -1,4 +1,4 @@
-import { Route, Routes } from "react-router-dom";
+import { Route, Routes, useLocation } from "react-router-dom";
 import "./App.css";
 import AuthPage from "./components/connect/AuthPage";
 import Home from "./components/Home";
@@ -27,6 +27,16 @@ import EventPage from "./components/events/EventPage";
 import EventForm from "./components/events/EventForm";
 
 function App() {
+  const location = useLocation();
+
+  // Sur mobile, le footer n'est affiché que sur la landing et /home (cartes + agenda)
+  // Sur desktop, il est affiché partout sauf les routes app privées
+  const mobileFooterRoutes = ["/", "/home"];
+  const desktopNoFooterRoutes = ["/profile", "/birthday", "/update-date", "/merge-duplicates", "/events"];
+
+  const isMobileFooterRoute = mobileFooterRoutes.includes(location.pathname);
+  const isDesktopNoFooterRoute = desktopNoFooterRoutes.some(path => location.pathname.startsWith(path));
+
   return (
     <div className="App">
       <div className="routeContent">
@@ -73,7 +83,10 @@ function App() {
           </Route>
         </Routes>
         <CookieBanner />
-        <Footer />
+        <Footer
+          isMobileFooterRoute={isMobileFooterRoute}
+          isDesktopNoFooterRoute={isDesktopNoFooterRoute}
+        />
       </div>
     </div>
   );
