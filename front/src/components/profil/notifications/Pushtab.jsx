@@ -173,20 +173,48 @@ const PushTab = () => {
     );
   };
 
-  if (permState === "unsupported") {
+if (permState === "unsupported") {
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  const isStandalone = window.navigator.standalone === true;
+
+  if (isIOS && !isStandalone) {
     return (
       <div className="tab-content-inner">
         <div className="push-unsupported">
-          <span className="push-icon">🔔</span>
-          <h3>Notifications push non supportées</h3>
+          <span className="push-icon">📱</span>
+          <h3>Installez BirthReminder pour recevoir des notifications</h3>
           <p>
-            Votre navigateur ne supporte pas les notifications push. Essayez
-            Chrome, Firefox ou Edge.
+            Sur iPhone et iPad, les notifications push nécessitent que
+            l'application soit installée sur votre écran d'accueil.
+          </p>
+          <ol className="push-instructions">
+            <li>Ouvrez <strong>birthreminder.com</strong> dans <strong>Safari</strong></li>
+            <li>Appuyez sur l'icône <strong>Partager</strong> <span className="share-icon">⎋</span></li>
+            <li>Sélectionnez <strong>"Sur l'écran d'accueil"</strong></li>
+            <li>Ouvrez l'app depuis votre écran d'accueil</li>
+            <li>Revenez ici pour activer les notifications 🔔</li>
+          </ol>
+          <p className="push-reload-hint">
+            ⚠️ Fonctionne sur iOS 16.4 et versions ultérieures.
           </p>
         </div>
       </div>
     );
   }
+
+  return (
+    <div className="tab-content-inner">
+      <div className="push-unsupported">
+        <span className="push-icon">🔔</span>
+        <h3>Notifications push non supportées</h3>
+        <p>
+          Votre navigateur ne supporte pas les notifications push. Essayez
+          Chrome, Firefox ou Edge.
+        </p>
+      </div>
+    </div>
+  );
+}
 
   if (permState === "denied") {
     return (

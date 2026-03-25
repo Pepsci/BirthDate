@@ -1,4 +1,4 @@
-/* front/src/components/layout/Footer.css */
+/* front/src/components/layout/footer.css */
 
 .site-footer {
     background: var(--bg-primary);
@@ -90,19 +90,8 @@
     transition: color 0.3s ease;
 }
 
-/* Desktop : caché sur les routes app privées */
-@media (min-width: 769px) {
-    .footer-hidden-desktop {
-        display: none;
-    }
-}
-
-/* Mobile : caché partout sauf landing et /home */
+/* Mobile responsive */
 @media (max-width: 768px) {
-    .footer-hidden-mobile {
-        display: none;
-    }
-
     .site-footer {
         padding: 32px 16px 16px;
     }
