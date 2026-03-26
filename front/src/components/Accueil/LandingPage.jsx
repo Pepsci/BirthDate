@@ -2,6 +2,7 @@
   import { useNavigate } from "react-router-dom";
   import "./LandingPage.css";
   import Logo from "./Logo+nom-couleur.png";
+  import SEO from "../SEO";
 
   // ─── Hook stats : public si non connecté, perso si connecté ──────────────
   const useBirthdayStats = () => {
