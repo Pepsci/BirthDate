@@ -24,6 +24,25 @@ const SEO = ({
     <meta name="twitter:image" content={image} />
 
     <link rel="canonical" href={url} />
+    
+      {/* Schema.org JSON-LD */}
+    <script type="application/ld+json">
+      {JSON.stringify({
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "BirthReminder",
+        "url": "https://birthreminder.com",
+        "description": "BirthReminder t'envoie des rappels d'anniversaire au bon moment. Ajoute tes proches, gère tes listes de cadeaux et discute en direct avec tes amis.",
+        "applicationCategory": "LifestyleApplication",
+        "operatingSystem": "Web",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "EUR"
+        },
+        "inLanguage": "fr"
+      })}
+    </script>
   </Helmet>
 )
 
