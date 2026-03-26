@@ -7,6 +7,7 @@ import { AuthProviderWrapper } from "./context/auth.context";
 import { NotificationProvider } from "./context/notification.context";
 import { OnlineStatusProvider } from "./context/OnlineStatusContext";
 import { ThemeProvider } from "./context/theme.context";
+import { HelmetProvider } from 'react-helmet-async'
 
 const root = ReactDOM.createRoot(document.getElementById("root"));
 
@@ -17,7 +18,9 @@ root.render(
         <AuthProviderWrapper>
           <NotificationProvider>
             <OnlineStatusProvider>
+              <HelmetProvider>
               <App />
+              </HelmetProvider>
             </OnlineStatusProvider>
           </NotificationProvider>
         </AuthProviderWrapper>
