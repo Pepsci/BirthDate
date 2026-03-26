@@ -1,7 +1,9 @@
 import { Link } from "react-router-dom";
 import Logo from "../UI/Logo";
 import "./css/guidePage.css";
+import { Helmet } from 'react-helmet-async'
 
+  
 const SECTIONS = [
   {
     id: "dates",
@@ -111,6 +113,11 @@ const SECTIONS = [
 export default function GuidePage() {
   return (
     <div className="guide-page">
+      <Helmet>
+          <title>Guide d'utilisation – BirthReminder</title>
+          <meta name="description" content="Apprenez à utiliser BirthReminder : ajouter des anniversaires, gérer vos amis, configurer vos rappels email et push, créer votre wishlist." />
+          <link rel="canonical" href="https://birthreminder.com/guide" />
+      </Helmet>
       {/* Header */}
       <div className="guide-header">
         <Link to="/home" className="guide-back">
