@@ -1,4 +1,9 @@
 /* front/src/components/layout/footer.css */
+/* Caché par défaut */
+.footer-mobile-wrapper {
+    display: none;
+}
+
 @media (min-width: 769px) {
     .footer-mobile-wrapper {
         display: none !important;

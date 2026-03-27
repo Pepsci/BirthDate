@@ -1,4 +1,5 @@
 import { Route, Routes } from "react-router-dom";
+import React, { useState, useEffect, useRef } from "react";
 import "./App.css";
 import AuthPage from "./components/connect/AuthPage";
 import Home from "./components/Home";
@@ -26,7 +27,17 @@ import EventsPanel from "./components/events/EventsPanel";
 import EventPage from "./components/events/EventPage";
 import EventForm from "./components/events/EventForm";
 
+
 function App() {
+
+const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+useEffect(() => {
+  const handler = () => setIsMobile(window.innerWidth <= 768);
+  window.addEventListener("resize", handler);
+  return () => window.removeEventListener("resize", handler);
+}, []);
+
   return (
     <div className="App">
       <div className="routeContent">
@@ -73,7 +84,7 @@ function App() {
           </Route>
         </Routes>
         <CookieBanner />
-        <Footer />
+        {!isMobile && <Footer />}
       </div>
     </div>
   );

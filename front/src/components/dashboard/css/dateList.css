@@ -217,9 +217,10 @@
 }
 
 /* ================================
-   Media Queries
+Media Queries
 ================================ */
 @media (max-width: 768px) {
+    
     .pagination {
         gap: 0.25rem;
         padding: 0 1rem;
