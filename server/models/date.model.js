@@ -1,12 +1,11 @@
 const { Schema, model } = require("mongoose");
 
-// Dans models/date.model.js
 const dateSchema = Schema({
   date: { type: Date, required: true },
   name: String,
   surname: String,
   nameday: {
-    type: String, // Format "MM-DD"
+    type: String,
     required: false,
     validate: {
       validator: function (v) {
@@ -24,23 +23,15 @@ const dateSchema = Schema({
     default: true,
   },
 
-  // 🎂 PRÉFÉRENCES ANNIVERSAIRES (existantes)
   notificationPreferences: {
-    timings: {
-      type: [Number],
-      default: [1],
-    },
-    notifyOnBirthday: {
-      type: Boolean,
-      default: true,
-    },
+    timings: { type: [Number], default: [1] },
+    notifyOnBirthday: { type: Boolean, default: true },
   },
 
-  // 🎉 PRÉFÉRENCES FÊTES (NOUVELLES - ajoutées)
   namedayPreferences: {
     timings: {
       type: [Number],
-      default: [1], // 1 jour avant par défaut
+      default: [1],
       validate: {
         validator: function (arr) {
           return arr.every((n) => [1, 7].includes(n));
@@ -49,26 +40,22 @@ const dateSchema = Schema({
           "Les timings de fête doivent être 1 (veille) ou 7 (semaine avant)",
       },
     },
-    notifyOnNameday: {
-      type: Boolean,
-      default: true, // Notifier le jour de la fête par défaut
-    },
+    notifyOnNameday: { type: Boolean, default: true },
   },
 
-  comment: {
-    type: Array,
-    default: [],
-  },
+  comment: { type: Array, default: [] },
 
   gifts: [
     {
       giftName: { type: String, required: true },
       purchased: { type: Boolean, default: false },
 
+      // String libre — plus d'enum restrictif
+      // Valeurs courantes : "Anniversaire", "Noël", "Saint-Valentin", etc.
+      // Anciennes valeurs en base ("birthday", "christmas", "other") restent valides
       occasion: {
         type: String,
-        enum: ["birthday", "christmas", "other"],
-        default: "birthday",
+        default: "Anniversaire",
       },
       year: {
         type: Number,
@@ -78,10 +65,14 @@ const dateSchema = Schema({
         type: Date,
         default: null,
       },
+
+      // Nouveaux champs — infos produit
+      url: { type: String, default: null },
+      price: { type: Number, default: null },
+      image: { type: String, default: null },
     },
   ],
 
-  // Pour lier à un utilisateur inscrit (plus tard)
   linkedUser: {
     type: Schema.Types.ObjectId,
     ref: "User",

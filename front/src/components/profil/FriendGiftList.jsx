@@ -16,10 +16,20 @@ const OCCASIONS = [
   { value: "Crémaillère", emoji: "🏠", label: "Crémaillère" },
   { value: "Autre", emoji: "✨", label: "Autre" },
 ];
+
+const BLOCKED_DOMAINS = [
+  { domain: "amazon", name: "Amazon" },
+  { domain: "fnac", name: "Fnac" },
+  { domain: "micromania", name: "Micromania" },
+];
+
 const DEFAULT_FORM = {
   giftName: "",
   occasion: "Anniversaire",
   year: new Date().getFullYear(),
+  url: "",
+  price: "",
+  image: "",
 };
 
 const FriendGiftList = ({
@@ -33,13 +43,81 @@ const FriendGiftList = ({
   const [deletingGiftId, setDeletingGiftId] = useState(null);
   const [formData, setFormData] = useState(DEFAULT_FORM);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [isFetchingUrl, setIsFetchingUrl] = useState(false);
+  const [fetchMessage, setFetchMessage] = useState(null);
+
   const [showFilters, setShowFilters] = useState(false);
   const [filterOccasion, setFilterOccasion] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((p) => ({ ...p, [name]: value }));
+    setFormData((prev) => {
+      const updated = { ...prev, [name]: value };
+      // Détection sites bloqués à la saisie URL
+      if (name === "url") {
+        const matched = BLOCKED_DOMAINS.find((s) =>
+          value.toLowerCase().includes(s.domain),
+        );
+        if (matched) {
+          setFetchMessage({
+            type: "warning",
+            text: `⚠️ ${matched.name} ne supporte pas le remplissage automatique — remplis les champs manuellement`,
+          });
+        } else if (!value) {
+          setFetchMessage(null);
+        } else {
+          setFetchMessage((prev) =>
+            prev?.text?.includes("ne supporte pas") ? null : prev,
+          );
+        }
+      }
+      return updated;
+    });
+  };
+
+  const handleFetchUrl = async () => {
+    if (!formData.url.trim()) return;
+    setIsFetchingUrl(true);
+    setFetchMessage(null);
+    try {
+      const response = await apiHandler.post("/wishlist/fetch-url", {
+        url: formData.url,
+      });
+      if (!response.data.success) {
+        setFetchMessage({
+          type: "warning",
+          text: `⚠️ ${response.data.message || "Ce site ne permet pas la récupération automatique"}`,
+        });
+        return;
+      }
+      const { title, description, image, price } = response.data.data;
+      setFormData((prev) => ({
+        ...prev,
+        giftName: title || prev.giftName,
+        image: image || prev.image,
+        price: price || prev.price,
+      }));
+      const missing = [];
+      if (!title) missing.push("titre");
+      if (!price) missing.push("prix");
+      if (!image) missing.push("image");
+      setFetchMessage(
+        missing.length === 0
+          ? { type: "success", text: "✓ Infos récupérées !" }
+          : {
+              type: "warning",
+              text: `⚠️ Remplissage partiel — ${missing.join(", ")} non trouvé${missing.length > 1 ? "s" : ""}`,
+            },
+      );
+    } catch {
+      setFetchMessage({
+        type: "warning",
+        text: "⚠️ Erreur lors de la récupération",
+      });
+    } finally {
+      setIsFetchingUrl(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -54,15 +132,19 @@ const FriendGiftList = ({
         occasion: formData.occasion,
         year: parseInt(formData.year),
         purchased: editingGift ? editingGift.purchased : false,
+        url: formData.url || null,
+        price: formData.price ? Number(formData.price) : null,
+        image: formData.image || null,
       };
       const url = editingGift
         ? `/date/${currentDate._id}/gifts/${editingGift._id}`
         : `/date/${currentDate._id}/gifts`;
-      const r = await apiHandler.patch(url, payload);
-      onUpdate(r.data);
+      const response = await apiHandler.patch(url, payload);
+      onUpdate(response.data);
       setFormData(DEFAULT_FORM);
       setShowForm(false);
       setEditingGift(null);
+      setFetchMessage(null);
     } catch {
       alert("Erreur lors de la sauvegarde");
     }
@@ -74,7 +156,11 @@ const FriendGiftList = ({
       giftName: gift.giftName,
       occasion: gift.occasion || "Anniversaire",
       year: gift.year || new Date().getFullYear(),
+      url: gift.url || "",
+      price: gift.price || "",
+      image: gift.image || "",
     });
+    setFetchMessage(null);
     setShowForm(true);
     setDeletingGiftId(null);
     setTimeout(() => {
@@ -90,7 +176,9 @@ const FriendGiftList = ({
     setShowForm(false);
     setEditingGift(null);
     setFormData(DEFAULT_FORM);
+    setFetchMessage(null);
   };
+
   const handleDelete = (id) => {
     setDeletingGiftId(id);
     setShowForm(false);
@@ -99,25 +187,31 @@ const FriendGiftList = ({
   const handleDeleteCancel = () => setDeletingGiftId(null);
   const handleDeleteConfirm = async (id) => {
     try {
-      const r = await apiHandler.delete(`/date/${currentDate._id}/gifts/${id}`);
-      onUpdate(r.data);
+      const response = await apiHandler.delete(
+        `/date/${currentDate._id}/gifts/${id}`,
+      );
+      onUpdate(response.data);
       setDeletingGiftId(null);
     } catch {
       alert("Erreur lors de la suppression");
     }
   };
+
   const handleTogglePurchased = async (gift) => {
     try {
-      const r = await apiHandler.patch(
+      const response = await apiHandler.patch(
         `/date/${currentDate._id}/gifts/${gift._id}`,
         {
           giftName: gift.giftName,
           occasion: gift.occasion,
           year: gift.year,
           purchased: !gift.purchased,
+          url: gift.url,
+          price: gift.price,
+          image: gift.image,
         },
       );
-      onUpdate(r.data);
+      onUpdate(response.data);
     } catch {
       console.error("Erreur toggle");
     }
@@ -155,6 +249,48 @@ const FriendGiftList = ({
           <h3>{editingGift ? "Modifier l'idée" : "Nouvelle idée"}</h3>
           <form onSubmit={handleSubmit}>
             <div className="gift-form-input">
+              {/* URL + fetch auto */}
+              <div className="gift-url-row">
+                <input
+                  type="url"
+                  name="url"
+                  className="form-input"
+                  placeholder="Lien du produit (URL)"
+                  value={formData.url}
+                  onChange={handleInputChange}
+                />
+                <button
+                  type="button"
+                  className="btn-profil btn-fetch-url"
+                  onClick={handleFetchUrl}
+                  disabled={!formData.url.trim() || isFetchingUrl}
+                >
+                  {isFetchingUrl ? "⏳" : "🔍 Récupérer les infos avec le lien"}
+                </button>
+              </div>
+
+              {fetchMessage && (
+                <p
+                  className={`fetch-message fetch-message--${fetchMessage.type}`}
+                >
+                  {fetchMessage.text}
+                </p>
+              )}
+
+              {/* Preview image */}
+              {formData.image && (
+                <div className="gift-image-preview">
+                  <img
+                    src={formData.image}
+                    alt="Preview"
+                    onError={(e) => {
+                      e.target.style.display = "none";
+                    }}
+                  />
+                </div>
+              )}
+
+              {/* Nom */}
               <input
                 type="text"
                 name="giftName"
@@ -164,6 +300,8 @@ const FriendGiftList = ({
                 onChange={handleInputChange}
                 required
               />
+
+              {/* Occasion */}
               <select
                 name="occasion"
                 className="form-input"
@@ -176,18 +314,45 @@ const FriendGiftList = ({
                   </option>
                 ))}
               </select>
+
+              {/* Année + Prix sur la même ligne */}
+              <div style={{ display: "flex", gap: "8px", width: "100%" }}>
+                <input
+                  type="number"
+                  name="year"
+                  className="form-input"
+                  placeholder="Année"
+                  value={formData.year}
+                  onChange={handleInputChange}
+                  min="2000"
+                  max="2100"
+                  required
+                  style={{ flex: 1 }}
+                />
+                <input
+                  type="number"
+                  name="price"
+                  className="form-input"
+                  placeholder="Prix (€)"
+                  value={formData.price}
+                  onChange={handleInputChange}
+                  step="0.01"
+                  min="0"
+                  style={{ flex: 1 }}
+                />
+              </div>
+
+              {/* URL image manuelle */}
               <input
-                type="number"
-                name="year"
+                type="url"
+                name="image"
                 className="form-input"
-                placeholder="Année"
-                value={formData.year}
+                placeholder="URL de l'image (optionnel)"
+                value={formData.image}
                 onChange={handleInputChange}
-                min="2000"
-                max="2100"
-                required
               />
             </div>
+
             <div className="gift-form-buttons">
               <button type="submit" className="btn-profil btn-profilGreen">
                 {editingGift ? "Enregistrer" : "Ajouter"}
@@ -204,6 +369,7 @@ const FriendGiftList = ({
         </div>
       )}
 
+      {/* Filtres */}
       <button
         className="btn-toggle-filters"
         onClick={() => setShowFilters(!showFilters)}

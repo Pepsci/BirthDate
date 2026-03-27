@@ -162,7 +162,13 @@ router.patch("/:id", isAuthenticated, async (req, res, next) => {
           ? findNameDay(name)
           : existingDate.nameday;
 
-    const updateFields = { date, name, surname, family, nameday: resolvedNameday };
+    const updateFields = {
+      date,
+      name,
+      surname,
+      family,
+      nameday: resolvedNameday,
+    };
 
     if (giftName && purchased !== undefined) {
       updateFields.$push = { gifts: { giftName, purchased } };
@@ -237,7 +243,7 @@ router.patch("/:id/gifts/:giftId", isAuthenticated, async (req, res, next) => {
       return res.status(400).json({ message: "Invalid Date ID or Gift ID" });
     }
 
-    const { giftName, occasion, year, purchased } = req.body;
+    const { giftName, occasion, year, purchased, url, price, image } = req.body;
 
     const updatedDate = await dateModel.findOneAndUpdate(
       {
@@ -251,6 +257,9 @@ router.patch("/:id/gifts/:giftId", isAuthenticated, async (req, res, next) => {
           "gifts.$.occasion": occasion,
           "gifts.$.year": year,
           "gifts.$.purchased": purchased,
+          "gifts.$.url": url || null,
+          "gifts.$.price": price ? Number(price) : null,
+          "gifts.$.image": image || null,
         },
       },
       { new: true },

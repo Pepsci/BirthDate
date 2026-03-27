@@ -4,13 +4,23 @@ import socketService from "../services/socket.service";
 import GiftCardGrid from "../UI/GiftCardGrid";
 import ImportGiftModal from "./ImportGiftModal";
 
+const BLOCKED_DOMAINS = [
+  { domain: "amazon", name: "Amazon" },
+  { domain: "fnac", name: "Fnac" },
+  { domain: "micromania", name: "Micromania" },
+];
+
+const DEFAULT_FORM = { name: "", url: "", price: "", image: "" };
+
 const GiftProposalPanel = ({ shortId, isOrganizer }) => {
   const [proposals, setProposals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [editingGift, setEditingGift] = useState(null);
-  const [newGift, setNewGift] = useState({ name: "", url: "", price: "" });
+  const [newGift, setNewGift] = useState(DEFAULT_FORM);
+  const [isFetchingUrl, setIsFetchingUrl] = useState(false);
+  const [fetchMessage, setFetchMessage] = useState(null);
 
   const authToken = localStorage.getItem("authToken");
   const currentUserId = authToken
@@ -38,11 +48,80 @@ const GiftProposalPanel = ({ shortId, isOrganizer }) => {
     };
   }, [shortId]);
 
+  const handleUrlChange = (e) => {
+    const value = e.target.value;
+    setNewGift((prev) => ({ ...prev, url: value }));
+    const matched = BLOCKED_DOMAINS.find((s) =>
+      value.toLowerCase().includes(s.domain),
+    );
+    if (matched) {
+      setFetchMessage({
+        type: "warning",
+        text: `⚠️ ${matched.name} ne supporte pas le remplissage automatique`,
+      });
+    } else if (!value) {
+      setFetchMessage(null);
+    } else {
+      setFetchMessage((prev) =>
+        prev?.text?.includes("ne supporte pas") ? null : prev,
+      );
+    }
+  };
+
+  const handleFetchUrl = async () => {
+    if (!newGift.url.trim()) return;
+    setIsFetchingUrl(true);
+    setFetchMessage(null);
+    try {
+      const response = await apiHandler.post("/wishlist/fetch-url", {
+        url: newGift.url,
+      });
+      if (!response.data.success) {
+        setFetchMessage({
+          type: "warning",
+          text: `⚠️ ${response.data.message || "Ce site ne permet pas la récupération automatique"}`,
+        });
+        return;
+      }
+      const { title, image, price } = response.data.data;
+      setNewGift((prev) => ({
+        ...prev,
+        name: title || prev.name,
+        image: image || prev.image,
+        price: price || prev.price,
+      }));
+      const missing = [];
+      if (!title) missing.push("titre");
+      if (!price) missing.push("prix");
+      if (!image) missing.push("image");
+      setFetchMessage(
+        missing.length === 0
+          ? { type: "success", text: "✓ Infos récupérées !" }
+          : {
+              type: "warning",
+              text: `⚠️ Remplissage partiel — ${missing.join(", ")} non trouvé${missing.length > 1 ? "s" : ""}`,
+            },
+      );
+    } catch {
+      setFetchMessage({
+        type: "warning",
+        text: "⚠️ Erreur lors de la récupération",
+      });
+    } finally {
+      setIsFetchingUrl(false);
+    }
+  };
+
   const handleAddGift = async (e) => {
     e.preventDefault();
     try {
-      await apiHandler.post(`/events/${shortId}/gifts`, newGift);
-      setNewGift({ name: "", url: "", price: "" });
+      await apiHandler.post(`/events/${shortId}/gifts`, {
+        name: newGift.name,
+        url: newGift.url,
+        price: newGift.price,
+      });
+      setNewGift(DEFAULT_FORM);
+      setFetchMessage(null);
       setShowAddForm(false);
       fetchProposals();
       socketService.emit("event:gift_proposed", { shortId });
@@ -77,6 +156,15 @@ const GiftProposalPanel = ({ shortId, isOrganizer }) => {
     }
   };
 
+  const inputStyle = {
+    padding: "8px",
+    borderRadius: "5px",
+    border: "1px solid var(--border-color)",
+    background: "var(--bg-secondary)",
+    color: "var(--text-primary)",
+    width: "100%",
+  };
+
   if (loading)
     return (
       <div
@@ -98,6 +186,7 @@ const GiftProposalPanel = ({ shortId, isOrganizer }) => {
         borderRadius: "15px",
       }}
     >
+      {/* Header */}
       <div
         style={{
           display: "flex",
@@ -132,6 +221,7 @@ const GiftProposalPanel = ({ shortId, isOrganizer }) => {
             onClick={() => {
               setShowAddForm(!showAddForm);
               setShowImportModal(false);
+              setFetchMessage(null);
             }}
             style={{
               background: "var(--primary)",
@@ -148,6 +238,7 @@ const GiftProposalPanel = ({ shortId, isOrganizer }) => {
         </div>
       </div>
 
+      {/* Formulaire édition */}
       {editingGift && (
         <form
           onSubmit={handleEditGift}
@@ -164,33 +255,22 @@ const GiftProposalPanel = ({ shortId, isOrganizer }) => {
         >
           <input
             type="text"
+            placeholder="Nom du cadeau *"
             value={editingGift.name}
             onChange={(e) =>
               setEditingGift((p) => ({ ...p, name: e.target.value }))
             }
             required
-            style={{
-              padding: "8px",
-              borderRadius: "5px",
-              border: "1px solid var(--border-color)",
-              background: "var(--bg-secondary)",
-              color: "var(--text-primary)",
-            }}
+            style={inputStyle}
           />
           <input
-            type="text"
+            type="url"
             placeholder="Lien (URL)"
             value={editingGift.url}
             onChange={(e) =>
               setEditingGift((p) => ({ ...p, url: e.target.value }))
             }
-            style={{
-              padding: "8px",
-              borderRadius: "5px",
-              border: "1px solid var(--border-color)",
-              background: "var(--bg-secondary)",
-              color: "var(--text-primary)",
-            }}
+            style={inputStyle}
           />
           <input
             type="number"
@@ -199,13 +279,7 @@ const GiftProposalPanel = ({ shortId, isOrganizer }) => {
             onChange={(e) =>
               setEditingGift((p) => ({ ...p, price: e.target.value }))
             }
-            style={{
-              padding: "8px",
-              borderRadius: "5px",
-              border: "1px solid var(--border-color)",
-              background: "var(--bg-secondary)",
-              color: "var(--text-primary)",
-            }}
+            style={inputStyle}
           />
           <div style={{ display: "flex", gap: "8px" }}>
             <button
@@ -241,77 +315,104 @@ const GiftProposalPanel = ({ shortId, isOrganizer }) => {
         </form>
       )}
 
+      {/* Formulaire ajout avec fetch auto */}
       {showAddForm && (
-        <form
-          onSubmit={handleAddGift}
-          style={{
-            marginBottom: "20px",
-            padding: "15px",
-            background: "var(--bg-primary)",
-            borderRadius: "10px",
-            border: "1px solid var(--border-color)",
-            display: "flex",
-            flexDirection: "column",
-            gap: "10px",
-          }}
-        >
-          <input
-            type="text"
-            placeholder="Nom du cadeau *"
-            value={newGift.name}
-            onChange={(e) => setNewGift({ ...newGift, name: e.target.value })}
-            required
+        <div className="gift-form-card" style={{ marginBottom: "20px" }}>
+          <h3
             style={{
-              padding: "8px",
-              borderRadius: "5px",
-              border: "1px solid var(--border-color)",
-              background: "var(--bg-secondary)",
+              textAlign: "center",
+              marginBottom: "16px",
+              fontSize: "16px",
               color: "var(--text-primary)",
-            }}
-          />
-          <input
-            type="text"
-            placeholder="Lien (URL)"
-            value={newGift.url}
-            onChange={(e) => setNewGift({ ...newGift, url: e.target.value })}
-            style={{
-              padding: "8px",
-              borderRadius: "5px",
-              border: "1px solid var(--border-color)",
-              background: "var(--bg-secondary)",
-              color: "var(--text-primary)",
-            }}
-          />
-          <input
-            type="number"
-            placeholder="Prix approx. (€)"
-            value={newGift.price}
-            onChange={(e) => setNewGift({ ...newGift, price: e.target.value })}
-            style={{
-              padding: "8px",
-              borderRadius: "5px",
-              border: "1px solid var(--border-color)",
-              background: "var(--bg-secondary)",
-              color: "var(--text-primary)",
-            }}
-          />
-          <button
-            type="submit"
-            style={{
-              padding: "10px",
-              background: "var(--primary)",
-              color: "#fff",
-              border: "none",
-              borderRadius: "5px",
-              cursor: "pointer",
-              fontWeight: "bold",
             }}
           >
-            Ajouter l'idée
-          </button>
-        </form>
+            Nouvelle idée
+          </h3>
+          <form onSubmit={handleAddGift}>
+            <div className="gift-form-input">
+              {/* URL + fetch */}
+              <div className="gift-url-row">
+                <input
+                  type="url"
+                  className="form-input"
+                  placeholder="Lien du produit (URL)"
+                  value={newGift.url}
+                  onChange={handleUrlChange}
+                />
+                <button
+                  type="button"
+                  className="btn-profil btn-fetch-url"
+                  onClick={handleFetchUrl}
+                  disabled={!newGift.url.trim() || isFetchingUrl}
+                >
+                  {isFetchingUrl ? "⏳" : "🔍 Récupérer les infos avec le lien"}
+                </button>
+              </div>
+
+              {fetchMessage && (
+                <p
+                  className={`fetch-message fetch-message--${fetchMessage.type}`}
+                >
+                  {fetchMessage.text}
+                </p>
+              )}
+
+              {newGift.image && (
+                <div className="gift-image-preview">
+                  <img
+                    src={newGift.image}
+                    alt="Preview"
+                    onError={(e) => {
+                      e.target.style.display = "none";
+                    }}
+                  />
+                </div>
+              )}
+
+              <input
+                type="text"
+                className="form-input"
+                placeholder="Nom du cadeau *"
+                value={newGift.name}
+                onChange={(e) =>
+                  setNewGift((p) => ({ ...p, name: e.target.value }))
+                }
+                required
+              />
+              <input
+                type="number"
+                className="form-input"
+                placeholder="Prix approx. (€)"
+                value={newGift.price}
+                onChange={(e) =>
+                  setNewGift((p) => ({ ...p, price: e.target.value }))
+                }
+                step="0.01"
+                min="0"
+              />
+            </div>
+
+            <div className="gift-form-buttons">
+              <button type="submit" className="btn-profil btn-profilGreen">
+                Ajouter l'idée
+              </button>
+              <button
+                type="button"
+                className="btn-profil btn-profilGrey"
+                onClick={() => {
+                  setShowAddForm(false);
+                  setNewGift(DEFAULT_FORM);
+                  setFetchMessage(null);
+                }}
+              >
+                Annuler
+              </button>
+            </div>
+          </form>
+        </div>
       )}
 
+      {/* Grille */}
       {proposals.length === 0 ? (
         <p
           style={{
