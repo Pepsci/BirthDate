@@ -13,12 +13,13 @@ import DirectChat from "../chat/DirectChat";
 import EventsPanel from "../events/EventsPanel";
 import FabMenu from "./FabMenu";
 import useNotifications from "../../context/useNotifications";
+import Footer from "../layout/Footer";
 import "./css/dateList.css";
 import "./css/birthcard.css";
 import "../UI/css/badge-notification.css";
 
 const ITEMS_PER_PAGE = 10;
-const ITEMS_PER_PAGE_MOBILE = 6;
+const ITEMS_PER_PAGE_MOBILE = 8;
 
 // ─── Panel animé avec bouton fermer intégré ──────────────
 const CollapsiblePanel = ({ isVisible, onClose, closeLabel = "Fermer", children }) => (
@@ -53,7 +54,7 @@ const DateList = ({
   onViewFriendProfile,
   onMerge,
   onResetChat,
-  onResetDateList, // ← nouveau
+  onResetDateList,
   initialPage = 1,
   agendaParams = null,
   initialFilter = null,
@@ -93,12 +94,9 @@ const DateList = ({
       setIsChatVisible(false);
       setIsEventsVisible(false);
       setCurrentPage(1);
-      setDates((prev) => prev); // garde les données, juste remet la vue
+      setDates((prev) => prev);
     });
   }, []);
-
-  // Remet les dates filtrées à leur état initial quand on reset
-  // (géré via allDates dans closeFilter, pas besoin d'autre chose)
 
   useEffect(() => {
     if (!initialEventsOpen) return;
@@ -247,6 +245,9 @@ const DateList = ({
   const totalPages = Math.ceil(dates.length / itemsPerPage);
 
   const activePanel = isChatVisible ? "chat" : isEventsVisible ? "events" : "dates";
+
+  // Footer visible uniquement sur mobile, uniquement en vue cartes
+  const showMobileFooter = activePanel === "dates" && viewMode === "card";
 
   return (
     <div className="dateList">
@@ -473,6 +474,11 @@ const DateList = ({
           <DirectChat friendId={selectedFriendId} />
         </ChatModal>
       )}
+
+      {/* Footer mobile uniquement, visible uniquement en vue cartes */}
+      <div className={`footer-mobile-wrapper ${showMobileFooter ? "footer-mobile-visible" : ""}`}>
+        <Footer />
+      </div>
     </div>
   );
 };

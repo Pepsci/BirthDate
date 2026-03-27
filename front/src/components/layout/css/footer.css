@@ -1,4 +1,10 @@
 /* front/src/components/layout/footer.css */
+@media (min-width: 769px) {
+    .footer-mobile-wrapper {
+        display: none !important;
+    }
+}
+
 
 .site-footer {
     background: var(--bg-primary);
@@ -92,8 +98,13 @@
 
 /* Mobile responsive */
 @media (max-width: 768px) {
-    .site-footer {
-        padding: 32px 16px 16px;
+    .footer-mobile-wrapper.footer-mobile-visible {
+        display: block;
+    }
+ 
+    /* Cache le footer global rendu dans App.jsx */
+    .App > .routeContent > footer.site-footer {
+        display: none;
     }
 
     .footer-container {
