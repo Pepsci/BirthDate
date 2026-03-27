@@ -9,6 +9,7 @@ import GiftOfferedModal from "../friends/GiftOfferedModal";
 import apiHandler from "../../api/apiHandler";
 import useAuth from "../../context/useAuth";
 import useNotifications from "../../context/useNotifications";
+import GiftCardGrid from "../UI/GiftCardGrid";
 import "../UI/css/gifts-common.css";
 import "../UI/css/carousel-common.css";
 import "./css/friendNotifications.css";
@@ -79,10 +80,16 @@ const FriendProfile = ({ date, onCancel, initialSection = "info" }) => {
     : MENU_SECTIONS_DEFAULT;
   const friendId = date.linkedUser?._id || date.linkedUser;
   const isFriend = !!date.linkedUser;
-  console.log("date.conversationId:", date.conversationId, "| isFriend:", isFriend);
-  const unreadForFriend = isFriend && date.conversationId
-    ? conversationUnreads[date.conversationId] || 0
-    : 0;
+  console.log(
+    "date.conversationId:",
+    date.conversationId,
+    "| isFriend:",
+    isFriend,
+  );
+  const unreadForFriend =
+    isFriend && date.conversationId
+      ? conversationUnreads[date.conversationId] || 0
+      : 0;
 
   // ── Effects ────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -94,8 +101,11 @@ const FriendProfile = ({ date, onCancel, initialSection = "info" }) => {
   useEffect(() => {
     const personId = friendId || date._id;
     if (personId) {
-      apiHandler.get(`/events/check/${personId}`)
-        .then(res => { if (res.data.exists) setExistingEventId(res.data.shortId); })
+      apiHandler
+        .get(`/events/check/${personId}`)
+        .then((res) => {
+          if (res.data.exists) setExistingEventId(res.data.shortId);
+        })
         .catch(() => {});
     }
   }, [date._id, friendId]);
@@ -304,9 +314,13 @@ const FriendProfile = ({ date, onCancel, initialSection = "info" }) => {
     if (existingEventId) {
       navigate(`/event/${existingEventId}`);
     } else if (isFriend) {
-      navigate(`/events/new?forPerson=${friendId}&name=${encodeURIComponent(date.name)}&date=${date.date}`);
+      navigate(
+        `/events/new?forPerson=${friendId}&name=${encodeURIComponent(date.name)}&date=${date.date}`,
+      );
     } else {
-      navigate(`/events/new?forDate=${date._id}&name=${encodeURIComponent(date.name)}&date=${date.date}`);
+      navigate(
+        `/events/new?forDate=${date._id}&name=${encodeURIComponent(date.name)}&date=${date.date}`,
+      );
     }
   };
 
@@ -412,6 +426,10 @@ const FriendProfile = ({ date, onCancel, initialSection = "info" }) => {
         </div>
       );
 
+    // Filtrer les items visibles pour les amis :
+    // - items non réservés → visibles
+    // - items réservés par moi → visibles
+    // - items réservés par quelqu'un d'autre → cachés
     const visibleItems = wishlist.filter((item) => {
       if (!item.reservedBy) return true;
       const reservedById =
@@ -422,123 +440,15 @@ const FriendProfile = ({ date, onCancel, initialSection = "info" }) => {
     return (
       <div className="wishlist-section">
         <h2>🎁 Sa Wishlist</h2>
-        <div className="gift-items">
-          {visibleItems.map((item) => {
-            const isReservedByMe =
-              item.reservedBy?._id?.toString() ===
-                currentUser._id?.toString() ||
-              item.reservedBy?.toString() === currentUser._id?.toString();
-            const isOfferedByMe = giftOfferedSuccess === item._id;
-
-            return (
-              <div
-                key={item._id}
-                className={`gift-item-card ${isReservedByMe ? "gift-item-card--reserved-by-me" : ""} ${item.isPurchased ? "gift-item-card--purchased" : ""}`}
-              >
-                <div className="gift-item-horizontal">
-                  {item.image && (
-                    <div className="gift-item-img-wrapper">
-                      <img
-                        src={item.image}
-                        alt={item.title}
-                        onError={(e) => {
-                          e.target.parentElement.style.display = "none";
-                        }}
-                      />
-                    </div>
-                  )}
-
-                  <div className="gift-item-content">
-                    <div className="gift-item-header">
-                      <h4 className="gift-item-title">{item.title}</h4>
-                      {item.isPurchased && (
-                        <span className="gift-item-badge purchased">
-                          ✅ Offert
-                        </span>
-                      )}
-                      {!item.isPurchased && isReservedByMe && (
-                        <span className="gift-item-badge reserved">
-                          🎁 Réservé par moi
-                        </span>
-                      )}
-                    </div>
-
-                    {item.description && (
-                      <p className="gift-item-description">
-                        {item.description}
-                      </p>
-                    )}
-
-                    <div className="gift-item-footer">
-                      {item.price && (
-                        <span className="gift-item-price">{item.price} €</span>
-                      )}
-                      {item.url && (
-                        <a
-                          href={item.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="gift-item-link"
-                        >
-                          🔗 Voir le produit
-                        </a>
-                      )}
-                    </div>
-
-                    {isOfferedByMe && (
-                      <p className="gift-item-success">
-                        ✅ Cadeau ajouté à ta liste !
-                      </p>
-                    )}
-
-                    {!item.isPurchased && (
-                      <div className="gift-item-actions">
-                        {!item.reservedBy ? (
-                          <div className="gift-item-actions-row">
-                            <button
-                              className="btn-gift btn-reserve"
-                              onClick={() => handleReserve(item._id)}
-                            >
-                              🎁 Je le réserve
-                            </button>
-                            <button
-                              className="btn-gift btn-offered"
-                              onClick={() => setGiftOfferedModal(item)}
-                            >
-                              ✅ Je l'ai offert
-                            </button>
-                          </div>
-                        ) : isReservedByMe ? (
-                          <div className="gift-item-actions-row">
-                            <button
-                              className="btn-gift btn-unreserve"
-                              onClick={() => handleUnreserve(item._id)}
-                            >
-                              ↩️ Annuler ma réservation
-                            </button>
-                            <button
-                              className="btn-gift btn-offered"
-                              onClick={() => setGiftOfferedModal(item)}
-                            >
-                              ✅ Je l'ai offert
-                            </button>
-                          </div>
-                        ) : (
-                          <p className="gift-item-reserved-by">
-                            🧑 Réservé par{" "}
-                            {item.reservedBy?.name
-                              ? `${item.reservedBy.name}${item.reservedBy.surname ? " " + item.reservedBy.surname : ""}`
-                              : "Un ami"}
-                          </p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        <GiftCardGrid
+          items={visibleItems}
+          type="wishlist"
+          currentUserId={currentUser._id}
+          readOnly
+          onReserve={handleReserve}
+          onUnreserve={handleUnreserve}
+          onOffered={(item) => setGiftOfferedModal(item)}
+        />
       </div>
     );
   };
@@ -645,10 +555,14 @@ const FriendProfile = ({ date, onCancel, initialSection = "info" }) => {
                   }`}
                   aria-label={section.title}
                 >
-                  <span style={{ position: "relative", display: "inline-flex" }}>
+                  <span
+                    style={{ position: "relative", display: "inline-flex" }}
+                  >
                     {section.icon}
                     {section.id === "chat" && unreadForFriend > 0 && (
-                      <span className="sidebar-unread-badge">{unreadForFriend}</span>
+                      <span className="sidebar-unread-badge">
+                        {unreadForFriend}
+                      </span>
                     )}
                   </span>
                 </button>
@@ -685,16 +599,15 @@ const FriendProfile = ({ date, onCancel, initialSection = "info" }) => {
               <span className="sidebar-icon">
                 {section.icon}
                 {section.id === "chat" && unreadForFriend > 0 && (
-                  <span className="sidebar-unread-badge">{unreadForFriend}</span>
+                  <span className="sidebar-unread-badge">
+                    {unreadForFriend}
+                  </span>
                 )}
               </span>
               <span className="sidebar-text">{section.title}</span>
             </button>
           ))}
-          <button
-            onClick={handleEventClick}
-            className="sidebar-btn"
-          >
+          <button onClick={handleEventClick} className="sidebar-btn">
             <span className="sidebar-icon">🎉</span>
             <span className="sidebar-text">Événement</span>
           </button>

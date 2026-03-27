@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import apiHandler from "../../api/apiHandler";
+import GiftCardGrid from "../UI/GiftCardGrid";
 import GiftShareModal from "../chat/GiftShareModal";
 import "../UI/css/gifts-common.css";
 
@@ -15,35 +16,30 @@ const OCCASIONS = [
   { value: "Crémaillère", emoji: "🏠", label: "Crémaillère" },
   { value: "Autre", emoji: "✨", label: "Autre" },
 ];
-
-const getOccasionDisplay = (value) =>
-  OCCASIONS.find((o) => o.value === value) || {
-    emoji: "🎁",
-    label: value || "Anniversaire",
-  };
-
 const DEFAULT_FORM = {
   giftName: "",
   occasion: "Anniversaire",
   year: new Date().getFullYear(),
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-
-const FriendGiftList = ({ currentDate, onUpdate, conversationId, recipientName }) => {
+const FriendGiftList = ({
+  currentDate,
+  onUpdate,
+  conversationId,
+  recipientName,
+}) => {
   const [showForm, setShowForm] = useState(false);
   const [editingGift, setEditingGift] = useState(null);
   const [deletingGiftId, setDeletingGiftId] = useState(null);
   const [formData, setFormData] = useState(DEFAULT_FORM);
   const [showShareModal, setShowShareModal] = useState(false);
-
   const [showFilters, setShowFilters] = useState(false);
   const [filterOccasion, setFilterOccasion] = useState("all");
   const [filterStatus, setFilterStatus] = useState("all");
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((p) => ({ ...p, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
@@ -52,7 +48,6 @@ const FriendGiftList = ({ currentDate, onUpdate, conversationId, recipientName }
       alert("Le nom du cadeau est requis");
       return;
     }
-
     try {
       const payload = {
         giftName: formData.giftName,
@@ -60,21 +55,15 @@ const FriendGiftList = ({ currentDate, onUpdate, conversationId, recipientName }
         year: parseInt(formData.year),
         purchased: editingGift ? editingGift.purchased : false,
       };
-
       const url = editingGift
         ? `/date/${currentDate._id}/gifts/${editingGift._id}`
         : `/date/${currentDate._id}/gifts`;
-
-      const response = editingGift
-        ? await apiHandler.patch(url, payload)
-        : await apiHandler.patch(url, payload);
-
-      onUpdate(response.data);
+      const r = await apiHandler.patch(url, payload);
+      onUpdate(r.data);
       setFormData(DEFAULT_FORM);
       setShowForm(false);
       setEditingGift(null);
-    } catch (error) {
-      console.error("Erreur lors de la sauvegarde:", error);
+    } catch {
       alert("Erreur lors de la sauvegarde");
     }
   };
@@ -88,7 +77,6 @@ const FriendGiftList = ({ currentDate, onUpdate, conversationId, recipientName }
     });
     setShowForm(true);
     setDeletingGiftId(null);
-
     setTimeout(() => {
       [
         document.querySelector(".gift-container"),
@@ -103,30 +91,24 @@ const FriendGiftList = ({ currentDate, onUpdate, conversationId, recipientName }
     setEditingGift(null);
     setFormData(DEFAULT_FORM);
   };
-
-  const handleDeleteClick = (giftId) => {
-    setDeletingGiftId(giftId);
+  const handleDelete = (id) => {
+    setDeletingGiftId(id);
     setShowForm(false);
     setEditingGift(null);
   };
-
-  const handleConfirmDelete = async () => {
-    if (!deletingGiftId) return;
+  const handleDeleteCancel = () => setDeletingGiftId(null);
+  const handleDeleteConfirm = async (id) => {
     try {
-      const response = await apiHandler.delete(
-        `/date/${currentDate._id}/gifts/${deletingGiftId}`,
-      );
-      onUpdate(response.data);
+      const r = await apiHandler.delete(`/date/${currentDate._id}/gifts/${id}`);
+      onUpdate(r.data);
       setDeletingGiftId(null);
-    } catch (error) {
-      console.error("Erreur lors de la suppression:", error);
+    } catch {
       alert("Erreur lors de la suppression");
     }
   };
-
   const handleTogglePurchased = async (gift) => {
     try {
-      const response = await apiHandler.patch(
+      const r = await apiHandler.patch(
         `/date/${currentDate._id}/gifts/${gift._id}`,
         {
           giftName: gift.giftName,
@@ -135,24 +117,22 @@ const FriendGiftList = ({ currentDate, onUpdate, conversationId, recipientName }
           purchased: !gift.purchased,
         },
       );
-      onUpdate(response.data);
-    } catch (error) {
-      console.error("Erreur lors du changement de statut:", error);
+      onUpdate(r.data);
+    } catch {
+      console.error("Erreur toggle");
     }
   };
 
   const gifts = currentDate.gifts || [];
   const validGifts = gifts.filter((g) => g && g.giftName && g._id);
   const filteredGifts = validGifts.filter((gift) => {
-    const matchesOccasion =
-      filterOccasion === "all" || gift.occasion === filterOccasion;
-    const matchesStatus =
+    const mo = filterOccasion === "all" || gift.occasion === filterOccasion;
+    const ms =
       filterStatus === "all" ||
       (filterStatus === "purchased" && gift.purchased) ||
       (filterStatus === "pending" && !gift.purchased);
-    return matchesOccasion && matchesStatus;
+    return mo && ms;
   });
-
   const activeFiltersCount =
     (filterOccasion !== "all" ? 1 : 0) + (filterStatus !== "all" ? 1 : 0);
 
@@ -160,26 +140,15 @@ const FriendGiftList = ({ currentDate, onUpdate, conversationId, recipientName }
     <div className="gift-container">
       <div className="gift-header">
         <h2>🎁 Vos idées de cadeaux</h2>
-        {/* Bouton partager — visible uniquement si une conversation est disponible */}
         {validGifts.length > 0 && (
           <button
-            className="btn-profil btn-add-item"
+            className="btn-gift-share"
             onClick={() => setShowShareModal(true)}
-            title="Partager des idées dans le chat"
           >
             📤 Partager
           </button>
         )}
       </div>
-
-      {!showForm && (
-        <button
-          className="btn-profil btn-add-item"
-          onClick={() => setShowForm(true)}
-        >
-          + Ajouter une idée
-        </button>
-      )}
 
       {showForm && (
         <div className="gift-form-card">
@@ -195,7 +164,6 @@ const FriendGiftList = ({ currentDate, onUpdate, conversationId, recipientName }
                 onChange={handleInputChange}
                 required
               />
-
               <select
                 name="occasion"
                 className="form-input"
@@ -208,7 +176,6 @@ const FriendGiftList = ({ currentDate, onUpdate, conversationId, recipientName }
                   </option>
                 ))}
               </select>
-
               <input
                 type="number"
                 name="year"
@@ -237,7 +204,6 @@ const FriendGiftList = ({ currentDate, onUpdate, conversationId, recipientName }
         </div>
       )}
 
-      {/* Filtres */}
       <button
         className="btn-toggle-filters"
         onClick={() => setShowFilters(!showFilters)}
@@ -272,7 +238,6 @@ const FriendGiftList = ({ currentDate, onUpdate, conversationId, recipientName }
               ))}
             </div>
           </div>
-
           <div className="filter-group">
             <h4 className="filter-title">Statut</h4>
             <div className="filter-buttons">
@@ -299,105 +264,33 @@ const FriendGiftList = ({ currentDate, onUpdate, conversationId, recipientName }
         </div>
       )}
 
-      {/* Liste */}
-      <div className="gift-items">
-        {filteredGifts.length === 0 ? (
-          <p className="gift-empty">
-            {activeFiltersCount > 0
-              ? "Aucun cadeau ne correspond aux filtres sélectionnés"
-              : "Aucune idée de cadeau pour le moment 💡"}
-          </p>
-        ) : (
-          filteredGifts.map((gift) => {
-            const occasionDisplay = getOccasionDisplay(gift.occasion);
-            return (
-              <div key={gift._id} className="gift-item-card">
-                {deletingGiftId !== gift._id ? (
-                  <>
-                    <div className="gift-item-header">
-                      <h4 className="gift-item-title">{gift.giftName}</h4>
-                      <span
-                        className={`gift-item-badge ${gift.purchased ? "purchased" : "pending"}`}
-                      >
-                        {gift.purchased ? "✅ Acheté" : "⭕ À acheter"}
-                      </span>
-                    </div>
+      {filteredGifts.length === 0 ? (
+        <GiftCardGrid
+          items={[]}
+          type="gifts"
+          showAddCard={!showForm}
+          onAdd={() => setShowForm(true)}
+        />
+      ) : (
+        <GiftCardGrid
+          items={filteredGifts}
+          type="gifts"
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          onToggle={handleTogglePurchased}
+          deletingId={deletingGiftId}
+          onDeleteConfirm={handleDeleteConfirm}
+          onDeleteCancel={handleDeleteCancel}
+          showAddCard={!showForm}
+          onAdd={() => setShowForm(true)}
+        />
+      )}
 
-                    <div className="gift-item-meta">
-                      <span className="gift-occasion">
-                        {occasionDisplay.emoji} {occasionDisplay.label}
-                      </span>
-                      <span className="gift-year">
-                        {gift.year || new Date().getFullYear()}
-                      </span>
-                    </div>
-
-                    <div className="gift-item-actions">
-                      <button
-                        className="btn-gift btn-toggle"
-                        onClick={() => handleTogglePurchased(gift)}
-                        title={
-                          gift.purchased
-                            ? "Marquer comme non acheté"
-                            : "Marquer comme acheté"
-                        }
-                      >
-                        {gift.purchased ? "✅" : "⭕"}
-                      </button>
-                      <button
-                        className="btn-gift btn-edit"
-                        onClick={() => handleEdit(gift)}
-                      >
-                        ✏️
-                      </button>
-                      <button
-                        className="btn-gift btn-delete"
-                        onClick={() => handleDeleteClick(gift._id)}
-                      >
-                        🗑️
-                      </button>
-                    </div>
-                  </>
-                ) : (
-                  <div className="gift-delete-confirm">
-                    <div className="delete-confirm-icon">⚠️</div>
-                    <h4 className="delete-confirm-title">
-                      Supprimer cette idée ?
-                    </h4>
-                    <p className="delete-confirm-text">
-                      <strong>{gift.giftName}</strong>
-                    </p>
-                    <p className="delete-confirm-warning">
-                      Cette action est irréversible
-                    </p>
-                    <div className="delete-confirm-buttons">
-                      <button
-                        className="btn-profil btn-profilGrey"
-                        onClick={() => setDeletingGiftId(null)}
-                      >
-                        Annuler
-                      </button>
-                      <button
-                        className="btn-profil btn-delete"
-                        onClick={handleConfirmDelete}
-                      >
-                        Supprimer
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })
-        )}
-      </div>
-
-      {/* Modal de partage */}
       {showShareModal && (
-      <GiftShareModal
-   currentDate={currentDate}
-       onClose={() => setShowShareModal(false)}
-/>
+        <GiftShareModal
+          currentDate={currentDate}
+          onClose={() => setShowShareModal(false)}
+        />
       )}
     </div>
   );

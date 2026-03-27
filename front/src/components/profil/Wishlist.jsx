@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import apiHandler from "../../api/apiHandler";
 import useAuth from "../../context/useAuth";
+import GiftCardGrid from "../UI/GiftCardGrid";
 import "../UI/css/gifts-common.css";
 
 const Wishlist = () => {
@@ -12,7 +13,6 @@ const Wishlist = () => {
   const [deletingItemId, setDeletingItemId] = useState(null);
   const [isFetchingUrl, setIsFetchingUrl] = useState(false);
   const [fetchMessage, setFetchMessage] = useState(null);
-
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -32,36 +32,32 @@ const Wishlist = () => {
     if (currentUser) fetchWishlist();
   }, [currentUser]);
 
-  // Détection automatique sites bloqués dès la saisie URL
   useEffect(() => {
     if (!formData.url) {
       setFetchMessage(null);
       return;
     }
-    const matched = blockedDomains.find((site) =>
-      formData.url.toLowerCase().includes(site.domain),
+    const matched = blockedDomains.find((s) =>
+      formData.url.toLowerCase().includes(s.domain),
     );
-    if (matched) {
+    if (matched)
       setFetchMessage({
         type: "warning",
         text: `⚠️ ${matched.name} ne supporte pas le remplissage automatique — remplis les champs manuellement`,
       });
-    } else {
+    else
       setFetchMessage((prev) =>
         prev?.text?.includes("ne supporte pas") ? null : prev,
       );
-    }
   }, [formData.url]);
 
   const fetchWishlist = async () => {
     try {
       setIsLoading(true);
-      const response = await apiHandler.get(
-        `/wishlist?userId=${currentUser._id}`,
-      );
-      setWishlistItems(response.data.data || []);
-    } catch (error) {
-      console.error("Erreur lors du chargement de la wishlist:", error);
+      const r = await apiHandler.get(`/wishlist?userId=${currentUser._id}`);
+      setWishlistItems(r.data.data || []);
+    } catch (e) {
+      console.error(e);
     } finally {
       setIsLoading(false);
     }
@@ -77,17 +73,17 @@ const Wishlist = () => {
     setIsFetchingUrl(true);
     setFetchMessage(null);
     try {
-      const response = await apiHandler.post("/wishlist/fetch-url", {
+      const r = await apiHandler.post("/wishlist/fetch-url", {
         url: formData.url,
       });
-      if (!response.data.success) {
+      if (!r.data.success) {
         setFetchMessage({
           type: "warning",
-          text: `⚠️ ${response.data.message || "Ce site ne permet pas la récupération automatique"}`,
+          text: `⚠️ ${r.data.message || "Ce site ne permet pas la récupération automatique"}`,
         });
         return;
       }
-      const { title, description, image, price } = response.data.data;
+      const { title, description, image, price } = r.data.data;
       setFormData((prev) => ({
         ...prev,
         title: title || prev.title,
@@ -107,7 +103,7 @@ const Wishlist = () => {
               text: `⚠️ Remplissage partiel — ${missing.join(", ")} non trouvé${missing.length > 1 ? "s" : ""}`,
             },
       );
-    } catch (error) {
+    } catch {
       setFetchMessage({
         type: "warning",
         text: "⚠️ Erreur lors de la récupération",
@@ -124,18 +120,16 @@ const Wishlist = () => {
       return;
     }
     try {
-      if (editingItem) {
+      if (editingItem)
         await apiHandler.patch(`/wishlist/${editingItem._id}`, formData);
-      } else {
+      else
         await apiHandler.post("/wishlist", {
           ...formData,
           userId: currentUser._id,
         });
-      }
       handleCancel();
       fetchWishlist();
-    } catch (error) {
-      console.error("Erreur lors de la sauvegarde:", error);
+    } catch {
       alert("Erreur lors de la sauvegarde");
     }
   };
@@ -162,32 +156,6 @@ const Wishlist = () => {
     }, 100);
   };
 
-  const handleDeleteClick = (itemId) => {
-    setDeletingItemId(itemId);
-    setShowForm(false);
-    setEditingItem(null);
-  };
-
-  const handleConfirmDelete = async (itemId) => {
-    try {
-      await apiHandler.delete(`/wishlist/${itemId}`);
-      setDeletingItemId(null);
-      fetchWishlist();
-    } catch (error) {
-      console.error("Erreur lors de la suppression:", error);
-      alert("Erreur lors de la suppression");
-    }
-  };
-
-  const handleToggleSharing = async (item) => {
-    try {
-      await apiHandler.post(`/wishlist/${item._id}/toggle-sharing`);
-      fetchWishlist();
-    } catch (error) {
-      console.error("Erreur lors du changement de partage:", error);
-    }
-  };
-
   const handleCancel = () => {
     setShowForm(false);
     setEditingItem(null);
@@ -201,10 +169,25 @@ const Wishlist = () => {
       isShared: true,
     });
   };
-
-  // Séparer items disponibles et réservés
-  const availableItems = wishlistItems.filter((item) => !item.reservedBy);
-  const reservedItems = wishlistItems.filter((item) => item.reservedBy);
+  const handleDelete = (id) => setDeletingItemId(id);
+  const handleDeleteCancel = () => setDeletingItemId(null);
+  const handleDeleteConfirm = async (id) => {
+    try {
+      await apiHandler.delete(`/wishlist/${id}`);
+      setDeletingItemId(null);
+      fetchWishlist();
+    } catch {
+      alert("Erreur lors de la suppression");
+    }
+  };
+  const handleToggleSharing = async (item) => {
+    try {
+      await apiHandler.post(`/wishlist/${item._id}/toggle-sharing`);
+      fetchWishlist();
+    } catch {
+      console.error("Erreur toggle sharing");
+    }
+  };
 
   if (isLoading) return <p className="loading">Chargement...</p>;
 
@@ -213,15 +196,6 @@ const Wishlist = () => {
       <div className="gift-header">
         <h2>🎁 Ma Wishlist</h2>
       </div>
-
-      {!showForm && (
-        <button
-          className="btn-profil btn-add-item"
-          onClick={() => setShowForm(true)}
-        >
-          + Ajouter une idée
-        </button>
-      )}
 
       {showForm && (
         <div className="gift-form-card">
@@ -246,7 +220,6 @@ const Wishlist = () => {
                   {isFetchingUrl ? "⏳" : "🔍 Récupérer les infos avec le lien"}
                 </button>
               </div>
-
               {fetchMessage && (
                 <p
                   className={`fetch-message fetch-message--${fetchMessage.type}`}
@@ -254,7 +227,6 @@ const Wishlist = () => {
                   {fetchMessage.text}
                 </p>
               )}
-
               {formData.image && (
                 <div className="gift-image-preview">
                   <img
@@ -266,7 +238,6 @@ const Wishlist = () => {
                   />
                 </div>
               )}
-
               <input
                 type="text"
                 name="title"
@@ -303,7 +274,6 @@ const Wishlist = () => {
                 onChange={handleInputChange}
               />
             </div>
-
             <div className="gift-share-toggle">
               <label className="toggle-label">
                 <input
@@ -319,7 +289,6 @@ const Wishlist = () => {
                 </span>
               </label>
             </div>
-
             <div className="gift-form-buttons">
               <button type="submit" className="btn-profil btn-profilGreen">
                 {editingItem ? "Enregistrer" : "Ajouter"}
@@ -336,174 +305,25 @@ const Wishlist = () => {
         </div>
       )}
 
-      <div className="gift-items">
-        {wishlistItems.length === 0 ? (
-          <p className="gift-empty">
-            Votre wishlist est vide. Ajoutez vos envies ! 🎁
-          </p>
-        ) : (
-          <>
-            {/* Items disponibles */}
-            {availableItems.map((item) => (
-              <div key={item._id} className="gift-item-card">
-                {deletingItemId !== item._id ? (
-                  <div className="gift-item-horizontal">
-                    {item.image && (
-                      <div className="gift-item-img-wrapper">
-                        <img
-                          src={item.image}
-                          alt={item.title}
-                          onError={(e) => {
-                            e.target.parentElement.style.display = "none";
-                          }}
-                        />
-                      </div>
-                    )}
-                    <div className="gift-item-content">
-                      <div className="gift-item-header">
-                        <h4 className="gift-item-title">{item.title}</h4>
-                        <span
-                          className={`gift-item-badge ${item.isShared ? "shared" : "private"}`}
-                        >
-                          {item.isShared ? "🔓" : "🔒"}
-                        </span>
-                      </div>
-                      {item.description && (
-                        <p className="gift-item-description">
-                          {item.description}
-                        </p>
-                      )}
-                      <div className="gift-item-footer">
-                        {item.price && (
-                          <span className="gift-item-price">
-                            {item.price} €
-                          </span>
-                        )}
-                        {item.url && (
-                          <a
-                            href={item.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="gift-item-link"
-                          >
-                            🔗 Voir le produit
-                          </a>
-                        )}
-                      </div>
-                      {item.isPurchased && (
-                        <p className="gift-item-purchased">✅ Acheté</p>
-                      )}
-                      <div className="gift-item-actions">
-                        <button
-                          className="btn-gift btn-toggle"
-                          onClick={() => handleToggleSharing(item)}
-                          title={item.isShared ? "Rendre privé" : "Partager"}
-                        >
-                          {item.isShared ? "🔒" : "🔓"}
-                        </button>
-                        <button
-                          className="btn-gift btn-edit"
-                          onClick={() => handleEdit(item)}
-                        >
-                          ✏️
-                        </button>
-                        <button
-                          className="btn-gift btn-delete"
-                          onClick={() => handleDeleteClick(item._id)}
-                        >
-                          🗑️
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="gift-delete-confirm">
-                    <div className="delete-confirm-icon">⚠️</div>
-                    <h4 className="delete-confirm-title">
-                      Supprimer cette idée ?
-                    </h4>
-                    <p className="delete-confirm-text">
-                      <strong>{item.title}</strong>
-                    </p>
-                    <p className="delete-confirm-warning">
-                      Cette action est irréversible
-                    </p>
-                    <div className="delete-confirm-buttons">
-                      <button
-                        className="btn-profil btn-profilGrey"
-                        onClick={() => setDeletingItemId(null)}
-                      >
-                        Annuler
-                      </button>
-                      <button
-                        className="btn-profil btn-delete"
-                        onClick={() => handleConfirmDelete(item._id)}
-                      >
-                        Supprimer
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))}
-
-            {/* Section items réservés — visibles uniquement par le propriétaire */}
-            {reservedItems.length > 0 && (
-              <>
-                <p className="wishlist-reserved-title">
-                  🎁 Déjà réservés par un ami
-                </p>
-                {reservedItems.map((item) => (
-                  <div
-                    key={item._id}
-                    className="gift-item-card gift-item-card--reserved"
-                  >
-                    <div className="gift-item-horizontal">
-                      {item.image && (
-                        <div className="gift-item-img-wrapper">
-                          <img
-                            src={item.image}
-                            alt={item.title}
-                            onError={(e) => {
-                              e.target.parentElement.style.display = "none";
-                            }}
-                          />
-                        </div>
-                      )}
-                      <div className="gift-item-content">
-                        <div className="gift-item-header">
-                          <h4 className="gift-item-title">{item.title}</h4>
-                          <span className="gift-item-badge reserved">
-                            🎁 Réservé
-                          </span>
-                        </div>
-                        <p className="gift-item-reserved-by">
-                          🎁 Quelqu'un a réservé ce cadeau pour toi
-                        </p>
-                        {item.price && (
-                          <span className="gift-item-price">
-                            {item.price} €
-                          </span>
-                        )}
-                        {item.url && (
-                          <a
-                            href={item.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="gift-item-link"
-                          >
-                            🔗 Voir le produit
-                          </a>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </>
-            )}
-          </>
-        )}
-      </div>
+      {wishlistItems.length === 0 && !showForm ? (
+        <p className="gift-empty">
+          Votre wishlist est vide. Ajoutez vos envies ! 🎁
+        </p>
+      ) : (
+        <GiftCardGrid
+          items={wishlistItems}
+          type="wishlist"
+          currentUserId={currentUser._id}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          onToggle={handleToggleSharing}
+          deletingId={deletingItemId}
+          onDeleteConfirm={handleDeleteConfirm}
+          onDeleteCancel={handleDeleteCancel}
+          showAddCard={!showForm}
+          onAdd={() => setShowForm(true)}
+        />
+      )}
     </div>
   );
 };
