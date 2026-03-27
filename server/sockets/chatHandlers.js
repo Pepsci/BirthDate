@@ -3,7 +3,6 @@ const Message = require("../models/message.model");
 const User = require("../models/user.model");
 const { sendPushToUser } = require("../services/pushService");
 
-// MODIFIÉ : reçoit (io, socket, connectedUsers) au lieu de faire io.on("connection")
 module.exports = (io, socket, connectedUsers) => {
   console.log(`📱 User connected: ${socket.userId}`);
 
@@ -61,16 +60,28 @@ module.exports = (io, socket, connectedUsers) => {
   });
 
   socket.on("message:send", async (data) => {
-    const { conversationId, content, isEncrypted, encryptedForRecipient, encryptedForSender, tempId } = data;
+    const {
+      conversationId,
+      content,
+      type,
+      metadata,
+      isEncrypted,
+      encryptedForRecipient,
+      encryptedForSender,
+      tempId,
+    } = data;
+
     try {
       if (!content || content.trim().length === 0) {
         return socket.emit("message:error", { tempId, error: "Le message ne peut pas être vide" });
       }
-      // Pour les messages chiffrés (base64), la limite est portée à 50 000 chars
+
+      // Les gift_share ont un contenu fallback court, les messages chiffrés peuvent être longs
       const maxLength = isEncrypted ? 50000 : 2000;
       if (content.trim().length > maxLength) {
         return socket.emit("message:error", { tempId, error: "Le message est trop long" });
       }
+
       const conversation = await Conversation.findOne({
         _id: conversationId,
         participants: socket.userId,
@@ -79,38 +90,58 @@ module.exports = (io, socket, connectedUsers) => {
         return socket.emit("message:error", { tempId, error: "Conversation introuvable" });
       }
 
-      // Calculé tôt pour pouvoir indexer encryptedFor par recipientId
       const recipientId = conversation.participants.find(
         (p) => p.toString() !== socket.userId,
       );
+
+      const messageType = type === "gift_share" ? "gift_share" : "text";
 
       const messageData = {
         conversation: conversationId,
         sender: socket.userId,
         content: content.trim(),
+        type: messageType,
         readBy: [{ user: socket.userId }],
-        isEncrypted: !!isEncrypted,
+        isEncrypted: messageType === "gift_share" ? false : !!isEncrypted,
       };
-      // Stocker une copie chiffrée indexée par userId pour chaque participant.
-      // encryptedFor[recipientId] = chiffré pour le destinataire
-      // encryptedFor[senderId]    = chiffré pour l'expéditeur (lui permet de relire son historique)
-      if (isEncrypted) {
+
+      // Métadonnées structurées pour les cartes cadeaux — jamais chiffrées
+      if (messageType === "gift_share" && metadata) {
+        messageData.metadata = metadata;
+      }
+
+      // Chiffrement E2E — uniquement pour les messages texte
+      if (messageType === "text" && isEncrypted && encryptedForRecipient && encryptedForSender) {
         const encFor = {};
-        if (encryptedForRecipient && recipientId) encFor[recipientId.toString()] = encryptedForRecipient;
-        if (encryptedForSender) encFor[socket.userId] = encryptedForSender;
+        if (recipientId) encFor[recipientId.toString()] = encryptedForRecipient;
+        encFor[socket.userId] = encryptedForSender;
         if (Object.keys(encFor).length > 0) messageData.encryptedFor = encFor;
       }
 
       const message = new Message(messageData);
       await message.save();
+
       conversation.lastMessage = message._id;
       conversation.lastMessageAt = message.createdAt;
       await conversation.save();
+
+      // ── Push notification pour le destinataire hors ligne ──────────────────
       if (recipientId && !connectedUsers.has(recipientId.toString())) {
         const sender = await User.findById(socket.userId, "name surname");
-        const senderName = sender ? `${sender.name} ${sender.surname || ""}`.trim() : "Quelqu'un";
-        // Ne jamais envoyer le contenu chiffré dans la notification push
-        const pushBody = isEncrypted ? "🔒 Nouveau message chiffré" : content.trim().slice(0, 100);
+        const senderName = sender
+          ? `${sender.name} ${sender.surname || ""}`.trim()
+          : "Quelqu'un";
+
+        let pushBody;
+        if (messageType === "gift_share") {
+          const personName = metadata?.personName || "quelqu'un";
+          pushBody = `🎁 Idées cadeaux pour ${personName}`;
+        } else if (isEncrypted) {
+          pushBody = "🔒 Nouveau message chiffré";
+        } else {
+          pushBody = content.trim().slice(0, 100);
+        }
+
         sendPushToUser(recipientId, {
           title: `💬 ${senderName}`,
           body: pushBody,
@@ -122,17 +153,28 @@ module.exports = (io, socket, connectedUsers) => {
       }
 
       await message.populate("sender", "name surname email publicKey");
-      // toObject() peut retourner un Map Mongoose pour encryptedFor — Socket.io
-      // ne sérialise pas les Map correctement (émet {}). Conversion explicite.
+
+      // Conversion Map → objet plain pour la sérialisation Socket.io
       const toSerializable = (msgObj) => {
         if (msgObj.encryptedFor instanceof Map) {
           msgObj.encryptedFor = Object.fromEntries(msgObj.encryptedFor);
         }
         return msgObj;
       };
-      socket.emit("message:new", { conversationId, message: toSerializable({ ...message.toObject(), tempId }) });
-      socket.to(`conversation:${conversationId}`).emit("message:new", { conversationId, message: toSerializable(message.toObject()) });
-      console.log(`💬 Message sent in conversation ${conversationId}`);
+
+      // L'expéditeur reçoit le message avec le tempId pour remplacer l'optimiste
+      socket.emit("message:new", {
+        conversationId,
+        message: toSerializable({ ...message.toObject(), tempId }),
+      });
+
+      // Les autres participants reçoivent le message sans tempId
+      socket.to(`conversation:${conversationId}`).emit("message:new", {
+        conversationId,
+        message: toSerializable(message.toObject()),
+      });
+
+      console.log(`💬 Message [${messageType}] sent in conversation ${conversationId}`);
     } catch (error) {
       console.error("❌ Error sending message:", error);
       socket.emit("message:error", { tempId, error: "Impossible d'envoyer le message" });
@@ -199,9 +241,12 @@ module.exports = (io, socket, connectedUsers) => {
       if (message.sender.toString() !== socket.userId) {
         return socket.emit("error", { message: "You can only edit your own messages" });
       }
-      // Les messages chiffrés ne peuvent pas être modifiés (intégrité E2E)
+      // Les messages chiffrés et les cartes cadeaux ne peuvent pas être modifiés
       if (message.isEncrypted) {
         return socket.emit("error", { message: "Les messages chiffrés ne peuvent pas être modifiés" });
+      }
+      if (message.type === "gift_share") {
+        return socket.emit("error", { message: "Les cartes cadeaux ne peuvent pas être modifiées" });
       }
       const EDIT_TIME_LIMIT = 5 * 60 * 1000;
       if (Date.now() - new Date(message.createdAt).getTime() > EDIT_TIME_LIMIT) {

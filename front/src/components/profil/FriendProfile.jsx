@@ -79,6 +79,7 @@ const FriendProfile = ({ date, onCancel, initialSection = "info" }) => {
     : MENU_SECTIONS_DEFAULT;
   const friendId = date.linkedUser?._id || date.linkedUser;
   const isFriend = !!date.linkedUser;
+  console.log("date.conversationId:", date.conversationId, "| isFriend:", isFriend);
   const unreadForFriend = isFriend && date.conversationId
     ? conversationUnreads[date.conversationId] || 0
     : 0;

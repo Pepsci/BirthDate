@@ -1,0 +1,204 @@
+/* ── GiftShareCard ──────────────────────────────────────────────────────── */
+
+.gsc-card {
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+  min-width: 220px;
+  max-width: 300px;
+  /* S'adapte à la couleur de la bulle selon isOwn */
+}
+
+.gsc-card--own {
+  background: rgba(124, 111, 255, 0.14);
+  border-color: rgba(124, 111, 255, 0.3);
+}
+
+.gsc-card--other {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* ── Header (cliquable) ── */
+.gsc-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: background 0.15s;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  gap: 8px;
+}
+
+.gsc-header:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.gsc-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.gsc-header-icon {
+  font-size: 1.3rem;
+  flex-shrink: 0;
+}
+
+.gsc-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-primary, #f1eff8);
+  margin: 0;
+  line-height: 1.3;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.7;
+}
+
+.gsc-person {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary, #f1eff8);
+  margin: 1px 0 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gsc-header-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.gsc-count {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--primary, #7c6fff);
+  background: rgba(124, 111, 255, 0.15);
+  border-radius: 100px;
+  padding: 2px 8px;
+}
+
+.gsc-chevron {
+  font-size: 0.8rem;
+  color: var(--text-secondary, rgba(241, 239, 248, 0.5));
+  transition: transform 0.2s;
+  display: inline-block;
+}
+
+.gsc-chevron--open {
+  transform: rotate(180deg);
+}
+
+/* ── Body ── */
+.gsc-body {
+  padding: 10px 14px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  animation: gscExpand 0.2s ease;
+}
+
+@keyframes gscExpand {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.gsc-empty {
+  font-size: 0.8rem;
+  color: var(--text-secondary, rgba(241, 239, 248, 0.5));
+  margin: 0;
+  text-align: center;
+  padding: 8px 0;
+}
+
+.gsc-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.gsc-section--purchased {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.gsc-section-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-secondary, rgba(241, 239, 248, 0.45));
+  margin: 0 0 4px;
+}
+
+.gsc-gift-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 5px 6px;
+  border-radius: 8px;
+  transition: background 0.12s;
+}
+
+.gsc-gift-row:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.gsc-gift-row--purchased {
+  opacity: 0.55;
+}
+
+.gsc-gift-emoji {
+  font-size: 1rem;
+  flex-shrink: 0;
+  line-height: 1.4;
+}
+
+.gsc-gift-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.gsc-gift-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary, #f1eff8);
+  line-height: 1.35;
+}
+
+.gsc-gift-meta {
+  font-size: 0.72rem;
+  color: var(--text-secondary, rgba(241, 239, 248, 0.5));
+  line-height: 1.3;
+}
+
+/* ── Bouton sauvegarder sur une fiche ── */
+.gsc-save-btn {
+  width: 100%;
+  margin-top: 10px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(124, 111, 255, 0.35);
+  background: rgba(124, 111, 255, 0.1);
+  color: var(--primary, #7c6fff);
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+}
+
+.gsc-save-btn:hover {
+  background: rgba(124, 111, 255, 0.2);
+  border-color: rgba(124, 111, 255, 0.55);
+  transform: translateY(-1px);
+}

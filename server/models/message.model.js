@@ -12,11 +12,23 @@ const messageSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    // "text" (défaut) | "gift_share"
+    type: {
+      type: String,
+      enum: ["text", "gift_share"],
+      default: "text",
+    },
     content: {
       type: String,
       required: true,
       trim: true,
-      maxlength: 50000, // Augmenté pour le contenu chiffré en base64
+      maxlength: 50000,
+    },
+    // Payload structuré pour les messages non-texte (gift_share, etc.)
+    // Pas chiffré intentionnellement — ce sont des métadonnées de coordination
+    metadata: {
+      type: mongoose.Schema.Types.Mixed,
+      default: null,
     },
     isEncrypted: {
       type: Boolean,
@@ -51,6 +63,7 @@ const messageSchema = new mongoose.Schema(
     timestamps: true,
   },
 );
+
 messageSchema.index({ conversation: 1, createdAt: -1 });
 
 module.exports = mongoose.model("Message", messageSchema);

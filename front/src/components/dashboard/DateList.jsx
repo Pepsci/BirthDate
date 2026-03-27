@@ -22,7 +22,12 @@ const ITEMS_PER_PAGE = 10;
 const ITEMS_PER_PAGE_MOBILE = 8;
 
 // ─── Panel animé avec bouton fermer intégré ──────────────
-const CollapsiblePanel = ({ isVisible, onClose, closeLabel = "Fermer", children }) => (
+const CollapsiblePanel = ({
+  isVisible,
+  onClose,
+  closeLabel = "Fermer",
+  children,
+}) => (
   <AnimatePresence>
     {isVisible && (
       <motion.div
@@ -39,8 +44,24 @@ const CollapsiblePanel = ({ isVisible, onClose, closeLabel = "Fermer", children 
           aria-label={closeLabel}
         >
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-            <line x1="1" y1="1" x2="11" y2="11" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-            <line x1="11" y1="1" x2="1" y2="11" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            <line
+              x1="1"
+              y1="1"
+              x2="11"
+              y2="11"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+            />
+            <line
+              x1="11"
+              y1="1"
+              x2="1"
+              y2="11"
+              stroke="currentColor"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+            />
           </svg>
         </button>
         {children}
@@ -115,8 +136,10 @@ const DateList = ({
     return datesArray.sort((a, b) => {
       const dateA = new Date(a.date);
       const dateB = new Date(b.date);
-      const dayA = dateA.getDate(); const monthA = dateA.getMonth();
-      const dayB = dateB.getDate(); const monthB = dateB.getMonth();
+      const dayA = dateA.getDate();
+      const monthA = dateA.getMonth();
+      const dayB = dateB.getDate();
+      const monthB = dateB.getMonth();
       const isTodayA = dayA === todayDay && monthA === todayMonth;
       const isTodayB = dayB === todayDay && monthB === todayMonth;
       if (isTodayA && !isTodayB) return -1;
@@ -131,102 +154,172 @@ const DateList = ({
   };
 
   const loadDates = () => {
-    apiHandler.get(`/date?owner=${currentUser._id}`)
-      .then(res => { const s = sortDates(res.data); setAllDates(s); setDates(s); })
-      .catch(e => console.error(e));
+    apiHandler
+      .get(`/date?owner=${currentUser._id}`)
+      .then((res) => {
+        const s = sortDates(res.data);
+        setAllDates(s);
+        setDates(s);
+      })
+      .catch((e) => console.error(e));
   };
 
-  useEffect(() => { loadDates(); }, [currentUser]);
+  useEffect(() => {
+    loadDates();
+  }, [currentUser]);
 
   useEffect(() => {
-    apiHandler.get("/events/mine")
-      .then(res => {
+    apiHandler
+      .get("/events/mine")
+      .then((res) => {
         const all = [
           ...(res.data.organized || []),
           ...(res.data.invited || []),
         ];
         setEvents(all);
       })
-      .catch(err => console.error(err));
+      .catch((err) => console.error(err));
   }, []);
 
   useEffect(() => {
     const handleResize = () => {
-      const n = window.innerWidth <= 600 ? ITEMS_PER_PAGE_MOBILE : ITEMS_PER_PAGE;
+      const n =
+        window.innerWidth <= 600 ? ITEMS_PER_PAGE_MOBILE : ITEMS_PER_PAGE;
       if (itemsPerPage !== n) setItemsPerPage(n);
     };
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, [itemsPerPage]);
 
-  useEffect(() => { loadUnreadCount(); }, []);
+  useEffect(() => {
+    loadUnreadCount();
+  }, []);
 
   useEffect(() => {
     if (onResetChat) {
       onResetChat(() => {
-        setIsChatVisible(false); setIsChatModalOpen(false);
-        setSelectedFriendId(null); setSelectedFriendName("");
+        setIsChatVisible(false);
+        setIsChatModalOpen(false);
+        setSelectedFriendId(null);
+        setSelectedFriendName("");
       });
     }
   }, []);
 
   useEffect(() => {
-    apiHandler.get("/friends")
-      .then(res => setFriendIds(res.data.filter(f => f.friendUser?._id).map(f => f.friendUser._id.toString())))
-      .catch(e => console.error(e));
+    apiHandler
+      .get("/friends")
+      .then((res) =>
+        setFriendIds(
+          res.data
+            .filter((f) => f.friendUser?._id)
+            .map((f) => f.friendUser._id.toString()),
+        ),
+      )
+      .catch((e) => console.error(e));
   }, [currentUser]);
 
   useEffect(() => {
     if (!initialFilter || allDates.length === 0) return;
     const parts = initialFilter.trim().split(" ");
-    const firstName = parts[0] || ""; const lastName = parts.slice(1).join(" ") || "";
-    setDates(allDates.filter(d => {
-      const mFirst = firstName ? d.name?.toLowerCase().includes(firstName.toLowerCase()) : true;
-      const mLast = lastName ? d.surname?.toLowerCase().includes(lastName.toLowerCase()) : true;
-      return mFirst && mLast;
-    }));
-    setCurrentPage(1); setIsFilterVisible(true);
+    const firstName = parts[0] || "";
+    const lastName = parts.slice(1).join(" ") || "";
+    setDates(
+      allDates.filter((d) => {
+        const mFirst = firstName
+          ? d.name?.toLowerCase().includes(firstName.toLowerCase())
+          : true;
+        const mLast = lastName
+          ? d.surname?.toLowerCase().includes(lastName.toLowerCase())
+          : true;
+        return mFirst && mLast;
+      }),
+    );
+    setCurrentPage(1);
+    setIsFilterVisible(true);
   }, [initialFilter, allDates]);
 
   const toggleFormVisibility = () => {
-    setIsFormVisible(v => !v);
-    if (!isFormVisible) { setIsFilterVisible(false); setIsChatVisible(false); setIsEventsVisible(false); }
+    setIsFormVisible((v) => !v);
+    if (!isFormVisible) {
+      setIsFilterVisible(false);
+      setIsChatVisible(false);
+      setIsEventsVisible(false);
+    }
   };
 
   const toggleFilterVisibility = () => {
     const n = !isFilterVisible;
     setIsFilterVisible(n);
-    if (!n) { setDates(allDates); setCurrentPage(1); }
-    if (n) { setIsFormVisible(false); setIsChatVisible(false); setIsEventsVisible(false); setTimeout(() => filterInputRef.current?.focus(), 100); }
+    if (!n) {
+      setDates(allDates);
+      setCurrentPage(1);
+    }
+    if (n) {
+      setIsFormVisible(false);
+      setIsChatVisible(false);
+      setIsEventsVisible(false);
+      setTimeout(() => filterInputRef.current?.focus(), 100);
+    }
   };
 
   const toggleChatVisibility = () => {
     const n = !isChatVisible;
     setIsChatVisible(n);
-    if (n) { setIsFormVisible(false); setIsFilterVisible(false); setIsEventsVisible(false); resetUnreadCount(); }
+    if (n) {
+      setIsFormVisible(false);
+      setIsFilterVisible(false);
+      setIsEventsVisible(false);
+      resetUnreadCount();
+    }
   };
 
   const toggleEventsVisibility = () => {
     const n = !isEventsVisible;
     setIsEventsVisible(n);
-    if (n) { setIsFormVisible(false); setIsFilterVisible(false); setIsChatVisible(false); }
+    if (n) {
+      setIsFormVisible(false);
+      setIsFilterVisible(false);
+      setIsChatVisible(false);
+    }
   };
 
-  const closeFilter = () => { setIsFilterVisible(false); setDates(allDates); setCurrentPage(1); };
-  const closeForm   = () => setIsFormVisible(false);
+  const closeFilter = () => {
+    setIsFilterVisible(false);
+    setDates(allDates);
+    setCurrentPage(1);
+  };
+  const closeForm = () => setIsFormVisible(false);
 
   const handleDateAdded = (newDate) => {
     const u = sortDates([...allDates, newDate]);
-    setAllDates(u); setDates(u); setIsFormVisible(true);
+    setAllDates(u);
+    setDates(u);
+    setIsFormVisible(true);
   };
 
-  const handleFilterChange = (newName, newSurname, familyFilter, friendFilter) => {
+  const handleFilterChange = (
+    newName,
+    newSurname,
+    familyFilter,
+    friendFilter,
+  ) => {
     let f = [...allDates];
-    if (familyFilter) f = f.filter(d => d.family === true);
-    if (friendFilter) f = f.filter(d => d.linkedUser && friendIds.includes(d.linkedUser._id.toString()));
-    if (newName) f = f.filter(d => d.name.toLowerCase().startsWith(newName.toLowerCase()));
-    if (newSurname) f = f.filter(d => d.surname.toLowerCase().startsWith(newSurname.toLowerCase()));
-    setDates(f); setCurrentPage(1);
+    if (familyFilter) f = f.filter((d) => d.family === true);
+    if (friendFilter)
+      f = f.filter(
+        (d) => d.linkedUser && friendIds.includes(d.linkedUser._id.toString()),
+      );
+    if (newName)
+      f = f.filter((d) =>
+        d.name.toLowerCase().startsWith(newName.toLowerCase()),
+      );
+    if (newSurname)
+      f = f.filter((d) =>
+        d.surname.toLowerCase().startsWith(newSurname.toLowerCase()),
+      );
+    setDates(f);
+    setCurrentPage(1);
   };
 
   const paginate = (pageNumber) => {
@@ -235,16 +328,27 @@ const DateList = ({
   };
 
   const toggleViewMode = () => {
-    setViewMode(v => v === "card" ? "agenda" : "card");
-    setIsChatVisible(false); setIsEventsVisible(false);
+    setViewMode((v) => (v === "card" ? "agenda" : "card"));
+    setIsChatVisible(false);
+    setIsEventsVisible(false);
   };
+
+  useEffect(() => {
+    const handler = () => loadDates();
+    window.addEventListener("dates:refresh", handler);
+    return () => window.removeEventListener("dates:refresh", handler);
+  }, []);
 
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = dates.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(dates.length / itemsPerPage);
 
-  const activePanel = isChatVisible ? "chat" : isEventsVisible ? "events" : "dates";
+  const activePanel = isChatVisible
+    ? "chat"
+    : isEventsVisible
+      ? "events"
+      : "dates";
 
   // Footer visible uniquement sur mobile, uniquement en vue cartes
   const showMobileFooter = activePanel === "dates" && viewMode === "card";
@@ -252,7 +356,6 @@ const DateList = ({
   return (
     <div className="dateList">
       <div className="dateListHeader">
-
         <div className="dateList-tiltle">
           <h1 className="titleFont">Vos BirthDates</h1>
           <div className="fab-mobile-only">
@@ -275,7 +378,16 @@ const DateList = ({
         {/* Boutons desktop */}
         <div className="dateListHeader-btn desktop-only">
           {["filter", "agenda", "chat", "events", "form"].map((btn) => {
-            const isActive = btn === "filter" ? isFilterVisible : btn === "chat" ? isChatVisible : btn === "events" ? isEventsVisible : btn === "form" ? isFormVisible : false;
+            const isActive =
+              btn === "filter"
+                ? isFilterVisible
+                : btn === "chat"
+                  ? isChatVisible
+                  : btn === "events"
+                    ? isEventsVisible
+                    : btn === "form"
+                      ? isFormVisible
+                      : false;
             const label = {
               filter: isFilterVisible ? "Cacher le filtre" : "Filtre",
               agenda: viewMode === "card" ? "Agenda" : "Carte",
@@ -283,7 +395,13 @@ const DateList = ({
               events: isEventsVisible ? "Cacher Événements" : "🎉 Événements",
               form: isFormVisible ? "Cacher le formulaire" : "Ajouter une date",
             }[btn];
-            const onClick = { filter: toggleFilterVisibility, agenda: toggleViewMode, chat: toggleChatVisibility, events: toggleEventsVisibility, form: toggleFormVisibility }[btn];
+            const onClick = {
+              filter: toggleFilterVisibility,
+              agenda: toggleViewMode,
+              chat: toggleChatVisibility,
+              events: toggleEventsVisibility,
+              form: toggleFormVisibility,
+            }[btn];
             return (
               <motion.button
                 key={btn}
@@ -309,7 +427,11 @@ const DateList = ({
             closeLabel="Fermer le filtre"
           >
             <div className="form-section filter-section">
-              <DateFilter onFilterChange={handleFilterChange} inputRef={filterInputRef} friendIds={friendIds} />
+              <DateFilter
+                onFilterChange={handleFilterChange}
+                inputRef={filterInputRef}
+                friendIds={friendIds}
+              />
             </div>
           </CollapsiblePanel>
 
@@ -364,17 +486,24 @@ const DateList = ({
           </motion.div>
         )}
 
-        {activePanel === "dates" && dates.length > 0 && viewMode === "agenda" && (
-          <motion.div
-            key="agenda"
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -12 }}
-            transition={{ duration: 0.25 }}
-          >
-            <Agenda dates={dates} events={events} initialMonth={agendaParams?.month} initialYear={agendaParams?.year} />
-          </motion.div>
-        )}
+        {activePanel === "dates" &&
+          dates.length > 0 &&
+          viewMode === "agenda" && (
+            <motion.div
+              key="agenda"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.25 }}
+            >
+              <Agenda
+                dates={dates}
+                events={events}
+                initialMonth={agendaParams?.month}
+                initialYear={agendaParams?.year}
+              />
+            </motion.div>
+          )}
 
         {activePanel === "dates" && dates.length > 0 && viewMode === "card" && (
           <motion.div key={`cards-p${currentPage}`}>
@@ -390,13 +519,23 @@ const DateList = ({
                   key={date._id}
                   initial={{ opacity: 0, y: 16 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, delay: i * 0.05, ease: "easeOut" }}
+                  transition={{
+                    duration: 0.3,
+                    delay: i * 0.05,
+                    ease: "easeOut",
+                  }}
                 >
                   <BirthdayCard
                     date={date}
                     onEdit={(d) => onEditDate(d, currentPage)}
-                    onViewProfile={(d, section) => onViewFriendProfile(d, section, currentPage)}
-                    onOpenChat={(friendId, friendName) => { setSelectedFriendId(friendId); setSelectedFriendName(friendName); setIsChatModalOpen(true); }}
+                    onViewProfile={(d, section) =>
+                      onViewFriendProfile(d, section, currentPage)
+                    }
+                    onOpenChat={(friendId, friendName) => {
+                      setSelectedFriendId(friendId);
+                      setSelectedFriendName(friendName);
+                      setIsChatModalOpen(true);
+                    }}
                   />
                 </motion.div>
               ))}
@@ -421,30 +560,72 @@ const DateList = ({
                 {(() => {
                   const maxShow = window.innerWidth <= 600 ? 3 : 5;
                   const pages = [];
-                  let start = Math.max(1, currentPage - Math.floor(maxShow / 2));
+                  let start = Math.max(
+                    1,
+                    currentPage - Math.floor(maxShow / 2),
+                  );
                   let end = Math.min(totalPages, start + maxShow - 1);
-                  if (end - start + 1 < maxShow) start = Math.max(1, end - maxShow + 1);
+                  if (end - start + 1 < maxShow)
+                    start = Math.max(1, end - maxShow + 1);
 
                   if (start > 1) {
-                    pages.push(<motion.button key="p1" onClick={() => paginate(1)} className={currentPage === 1 ? "active" : ""} whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>1</motion.button>);
-                    if (start > 2) pages.push(<span key="e1" className="ellipsis">...</span>);
+                    pages.push(
+                      <motion.button
+                        key="p1"
+                        onClick={() => paginate(1)}
+                        className={currentPage === 1 ? "active" : ""}
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                      >
+                        1
+                      </motion.button>,
+                    );
+                    if (start > 2)
+                      pages.push(
+                        <span key="e1" className="ellipsis">
+                          ...
+                        </span>,
+                      );
                   }
                   for (let i = start; i <= end; i++) {
                     pages.push(
-                      <motion.button key={`p${i}`} onClick={() => paginate(i)} className={currentPage === i ? "active" : ""} whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+                      <motion.button
+                        key={`p${i}`}
+                        onClick={() => paginate(i)}
+                        className={currentPage === i ? "active" : ""}
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                      >
                         {i}
-                      </motion.button>
+                      </motion.button>,
                     );
                   }
                   if (end < totalPages) {
-                    if (end < totalPages - 1) pages.push(<span key="e2" className="ellipsis">...</span>);
-                    pages.push(<motion.button key={`p${totalPages}`} onClick={() => paginate(totalPages)} className={currentPage === totalPages ? "active" : ""} whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>{totalPages}</motion.button>);
+                    if (end < totalPages - 1)
+                      pages.push(
+                        <span key="e2" className="ellipsis">
+                          ...
+                        </span>,
+                      );
+                    pages.push(
+                      <motion.button
+                        key={`p${totalPages}`}
+                        onClick={() => paginate(totalPages)}
+                        className={currentPage === totalPages ? "active" : ""}
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                      >
+                        {totalPages}
+                      </motion.button>,
+                    );
                   }
                   return pages;
                 })()}
 
                 <motion.button
-                  onClick={() => paginate(Math.min(currentPage + 1, totalPages))}
+                  onClick={() =>
+                    paginate(Math.min(currentPage + 1, totalPages))
+                  }
                   disabled={currentPage === totalPages}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
@@ -460,7 +641,10 @@ const DateList = ({
       {showMergeModal && cardToMerge && (
         <ManualMergeModal
           sourceCard={cardToMerge}
-          onClose={() => { setShowMergeModal(false); setCardToMerge(null); }}
+          onClose={() => {
+            setShowMergeModal(false);
+            setCardToMerge(null);
+          }}
           onMergeSuccess={loadDates}
         />
       )}
@@ -468,7 +652,11 @@ const DateList = ({
       {selectedFriendId && (
         <ChatModal
           isOpen={isChatModalOpen}
-          onClose={() => { setIsChatModalOpen(false); setSelectedFriendId(null); setSelectedFriendName(""); }}
+          onClose={() => {
+            setIsChatModalOpen(false);
+            setSelectedFriendId(null);
+            setSelectedFriendName("");
+          }}
           title={selectedFriendName}
         >
           <DirectChat friendId={selectedFriendId} />
@@ -476,7 +664,9 @@ const DateList = ({
       )}
 
       {/* Footer mobile uniquement, visible uniquement en vue cartes */}
-      <div className={`footer-mobile-wrapper ${showMobileFooter ? "footer-mobile-visible" : ""}`}>
+      <div
+        className={`footer-mobile-wrapper ${showMobileFooter ? "footer-mobile-visible" : ""}`}
+      >
         <Footer />
       </div>
     </div>

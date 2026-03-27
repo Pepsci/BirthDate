@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import apiHandler from "../../api/apiHandler";
+import GiftShareModal from "../chat/GiftShareModal";
 import "../UI/css/gifts-common.css";
 
 const OCCASIONS = [
@@ -29,11 +30,12 @@ const DEFAULT_FORM = {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-const FriendGiftList = ({ currentDate, onUpdate }) => {
+const FriendGiftList = ({ currentDate, onUpdate, conversationId, recipientName }) => {
   const [showForm, setShowForm] = useState(false);
   const [editingGift, setEditingGift] = useState(null);
   const [deletingGiftId, setDeletingGiftId] = useState(null);
   const [formData, setFormData] = useState(DEFAULT_FORM);
+  const [showShareModal, setShowShareModal] = useState(false);
 
   const [showFilters, setShowFilters] = useState(false);
   const [filterOccasion, setFilterOccasion] = useState("all");
@@ -158,6 +160,16 @@ const FriendGiftList = ({ currentDate, onUpdate }) => {
     <div className="gift-container">
       <div className="gift-header">
         <h2>🎁 Vos idées de cadeaux</h2>
+        {/* Bouton partager — visible uniquement si une conversation est disponible */}
+        {validGifts.length > 0 && (
+          <button
+            className="btn-profil btn-add-item"
+            onClick={() => setShowShareModal(true)}
+            title="Partager des idées dans le chat"
+          >
+            📤 Partager
+          </button>
+        )}
       </div>
 
       {!showForm && (
@@ -379,6 +391,14 @@ const FriendGiftList = ({ currentDate, onUpdate }) => {
           })
         )}
       </div>
+
+      {/* Modal de partage */}
+      {showShareModal && (
+      <GiftShareModal
+   currentDate={currentDate}
+       onClose={() => setShowShareModal(false)}
+/>
+      )}
     </div>
   );
 };
