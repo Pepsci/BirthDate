@@ -1,32 +1,7 @@
 import React, { useState } from "react";
 import "./css/giftCardGrid.css";
+import GiftDetailModal from "./GiftDetailModal";
 
-/**
- * GiftCardGrid — grille 2 colonnes style "boutique"
- *
- * Normalise 3 formats de données :
- *   type="wishlist"  → item: { title, description, price, url, image, isShared, reservedBy, isPurchased }
- *   type="gifts"     → item: { giftName, occasion, year, purchased }
- *   type="event"     → item: { name, price, url, votes, proposedBy }
- *
- * Props :
- *   items        : array
- *   type         : "wishlist" | "gifts" | "event"
- *   onEdit       : (item) => void
- *   onDelete     : (itemId) => void
- *   onToggle     : (item) => void          — wishlist: toggle sharing / gifts: toggle purchased
- *   onReserve    : (itemId) => void        — wishlist ami
- *   onUnreserve  : (itemId) => void        — wishlist ami
- *   onVote       : (itemId) => void        — event
- *   onOffered    : (item) => void          — wishlist ami
- *   currentUserId: string
- *   deletingId   : string | null           — ID en cours de confirmation suppression
- *   onDeleteConfirm : (itemId) => void
- *   onDeleteCancel  : () => void
- *   readOnly     : bool                    — vue ami (pas d'edit/delete)
- *   showAddCard  : bool                    — affiche la carte "+ Ajouter"
- *   onAdd        : () => void
- */
 const GiftCardGrid = ({
   items = [],
   type = "wishlist",
@@ -45,7 +20,8 @@ const GiftCardGrid = ({
   showAddCard = false,
   onAdd,
 }) => {
-  // ── Normalise un item selon son type ───────────────────────────────────
+  const [selectedItem, setSelectedItem] = useState(null);
+
   const normalize = (item) => {
     if (type === "wishlist") {
       return {
@@ -73,9 +49,9 @@ const GiftCardGrid = ({
         id: item._id,
         title: item.giftName,
         description: null,
-        price: null,
-        url: null,
-        image: null,
+        price: item.price ? `${item.price} €` : null,
+        url: item.url || null,
+        image: item.image || null,
         badge: item.purchased ? "purchased" : "pending",
         badgeLabel: item.purchased ? "✅ Acheté" : "⭕ À acheter",
         occasion: item.occasion,
@@ -123,15 +99,25 @@ const GiftCardGrid = ({
     Crémaillère: "🏠",
     Autre: "✨",
   };
-
   const getOccasionEmoji = (occasion) => OCCASION_EMOJI[occasion] || "🎁";
 
   return (
     <div className="gcg-grid">
+      {/* Carte "+ Ajouter" — toujours en premier */}
+      {showAddCard && (
+        <div className="gcg-card gcg-card--add" onClick={onAdd}>
+          <div className="gcg-add-inner">
+            <span className="gcg-add-icon">+</span>
+            <span className="gcg-add-label">Ajouter</span>
+          </div>
+        </div>
+      )}
+
       {items.map((rawItem) => {
         const item = normalize(rawItem);
         const isDeleting = deletingId === item.id;
 
+        // ── Carte en mode suppression ──────────────────────────────────────
         if (isDeleting) {
           return (
             <div key={item.id} className="gcg-card gcg-card--deleting">
@@ -163,10 +149,13 @@ const GiftCardGrid = ({
           );
         }
 
+        // ── Carte normale — clic ouvre le modal ───────────────────────────
         return (
           <div
             key={item.id}
             className={`gcg-card ${item.isPurchased && !readOnly ? "gcg-card--purchased" : ""} ${item.isReserved && readOnly && !item.isReservedByMe ? "gcg-card--reserved" : ""}`}
+            onClick={() => setSelectedItem(item)}
+            style={{ cursor: "pointer" }}
           >
             {/* ── Image / Placeholder ── */}
             <div className="gcg-img-wrapper">
@@ -186,28 +175,26 @@ const GiftCardGrid = ({
                 style={{ display: item.image ? "none" : "flex" }}
               >
                 <span className="gcg-img-emoji">
-                  {type === "gifts"
-                    ? getOccasionEmoji(item.occasion)
-                    : type === "event"
-                      ? "🎁"
-                      : "🎁"}
+                  {type === "gifts" ? getOccasionEmoji(item.occasion) : "🎁"}
                 </span>
               </div>
 
-              {/* Badge statut — coin haut droit */}
               {item.badge && (
                 <span className={`gcg-badge gcg-badge--${item.badge}`}>
                   {item.badgeLabel}
                 </span>
               )}
 
-              {/* Overlay actions au hover (desktop) — edit/delete */}
+              {/* Overlay hover desktop — stopPropagation pour ne pas ouvrir le modal */}
               {!readOnly && (
                 <div className="gcg-hover-actions">
                   {onEdit && (
                     <button
                       className="gcg-action-btn gcg-action-btn--edit"
-                      onClick={() => onEdit(rawItem)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEdit(rawItem);
+                      }}
                     >
                       ✏️
                     </button>
@@ -215,7 +202,10 @@ const GiftCardGrid = ({
                   {onDelete && (
                     <button
                       className="gcg-action-btn gcg-action-btn--delete"
-                      onClick={() => onDelete(item.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDelete(item.id);
+                      }}
                     >
                       🗑️
                     </button>
@@ -228,12 +218,10 @@ const GiftCardGrid = ({
             <div className="gcg-body">
               <h4 className="gcg-title">{item.title}</h4>
 
-              {/* Description (wishlist) */}
               {item.description && (
                 <p className="gcg-desc">{item.description}</p>
               )}
 
-              {/* Occasion + année (gifts) */}
               {type === "gifts" && item.occasion && (
                 <p className="gcg-meta">
                   {getOccasionEmoji(item.occasion)} {item.occasion}
@@ -241,7 +229,6 @@ const GiftCardGrid = ({
                 </p>
               )}
 
-              {/* Prix + lien */}
               <div className="gcg-footer">
                 {item.price && (
                   <span className="gcg-price">
@@ -255,100 +242,126 @@ const GiftCardGrid = ({
                     target="_blank"
                     rel="noopener noreferrer"
                     className="gcg-link"
+                    onClick={(e) => e.stopPropagation()}
                   >
                     🔗 Voir
                   </a>
                 )}
               </div>
 
-              {/* Proposé par (event) */}
               {type === "event" && item.proposedBy && (
                 <p className="gcg-meta">Proposé par {item.proposedBy}</p>
               )}
 
-              {/* Réservé par un ami (vue propriétaire wishlist) */}
               {type === "wishlist" && !readOnly && item.isReserved && (
                 <p className="gcg-reserved-owner">
                   🎁 Quelqu'un a réservé ce cadeau pour toi
                 </p>
               )}
 
-              {/* ── Actions mobile (toujours visibles) + actions contextuelles ── */}
+              {/* ── Actions — stopPropagation sur tous les boutons ── */}
               <div className="gcg-actions">
-                {/* Wishlist — vue propriétaire */}
                 {type === "wishlist" && !readOnly && !item.isReserved && (
                   <>
                     <button
                       className="gcg-btn gcg-btn--secondary gcg-mobile-only"
-                      onClick={() => onToggle?.(rawItem)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onToggle?.(rawItem);
+                      }}
                     >
                       {rawItem.isShared ? "🔒" : "🔓"}
                     </button>
                     <button
                       className="gcg-btn gcg-btn--secondary gcg-mobile-only"
-                      onClick={() => onEdit?.(rawItem)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEdit?.(rawItem);
+                      }}
                     >
                       ✏️
                     </button>
                     <button
                       className="gcg-btn gcg-btn--danger gcg-mobile-only"
-                      onClick={() => onDelete?.(item.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDelete?.(item.id);
+                      }}
                     >
                       🗑️
                     </button>
                     <button
                       className="gcg-btn gcg-btn--ghost gcg-desktop-only"
-                      onClick={() => onToggle?.(rawItem)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onToggle?.(rawItem);
+                      }}
                     >
                       {rawItem.isShared ? "🔒 Rendre privé" : "🔓 Partager"}
                     </button>
                   </>
                 )}
 
-                {/* Gifts — vue propriétaire */}
                 {type === "gifts" && !readOnly && (
                   <>
                     <button
                       className="gcg-btn gcg-btn--secondary gcg-mobile-only"
-                      onClick={() => onToggle?.(rawItem)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onToggle?.(rawItem);
+                      }}
                     >
                       {rawItem.purchased ? "✅" : "⭕"}
                     </button>
                     <button
                       className="gcg-btn gcg-btn--secondary gcg-mobile-only"
-                      onClick={() => onEdit?.(rawItem)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onEdit?.(rawItem);
+                      }}
                     >
                       ✏️
                     </button>
                     <button
                       className="gcg-btn gcg-btn--danger gcg-mobile-only"
-                      onClick={() => onDelete?.(item.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDelete?.(item.id);
+                      }}
                     >
                       🗑️
                     </button>
                     <button
                       className="gcg-btn gcg-btn--ghost gcg-desktop-only"
-                      onClick={() => onToggle?.(rawItem)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onToggle?.(rawItem);
+                      }}
                     >
                       {rawItem.purchased ? "⭕ Non acheté" : "✅ Acheté"}
                     </button>
                   </>
                 )}
 
-                {/* Wishlist — vue ami */}
                 {type === "wishlist" && readOnly && !item.isPurchased && (
                   <>
                     {!item.isReserved ? (
                       <>
                         <button
                           className="gcg-btn gcg-btn--primary"
-                          onClick={() => onReserve?.(item.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onReserve?.(item.id);
+                          }}
                         >
                           🎁 Je réserve
                         </button>
                         <button
                           className="gcg-btn gcg-btn--ghost"
-                          onClick={() => onOffered?.(rawItem)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onOffered?.(rawItem);
+                          }}
                         >
                           ✅ Je l'ai offert
                         </button>
@@ -357,13 +370,19 @@ const GiftCardGrid = ({
                       <>
                         <button
                           className="gcg-btn gcg-btn--ghost"
-                          onClick={() => onUnreserve?.(item.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onUnreserve?.(item.id);
+                          }}
                         >
                           ↩️ Annuler
                         </button>
                         <button
                           className="gcg-btn gcg-btn--ghost"
-                          onClick={() => onOffered?.(rawItem)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onOffered?.(rawItem);
+                          }}
                         >
                           ✅ Offert
                         </button>
@@ -376,20 +395,25 @@ const GiftCardGrid = ({
                   </>
                 )}
 
-                {/* Event — vote */}
                 {type === "event" && (
                   <div className="gcg-vote-row">
                     {item.isOwner && onEdit && (
                       <button
                         className="gcg-btn gcg-btn--ghost gcg-btn--sm"
-                        onClick={() => onEdit?.(rawItem)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onEdit?.(rawItem);
+                        }}
                       >
                         ✏️
                       </button>
                     )}
                     <button
                       className={`gcg-btn gcg-btn--vote ${item.hasVoted ? "gcg-btn--voted" : ""}`}
-                      onClick={() => onVote?.(item.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onVote?.(item.id);
+                      }}
                     >
                       ♥ {item.voteCount}
                     </button>
@@ -401,14 +425,41 @@ const GiftCardGrid = ({
         );
       })}
 
-      {/* Carte "+ Ajouter" */}
-      {showAddCard && (
-        <div className="gcg-card gcg-card--add" onClick={onAdd}>
-          <div className="gcg-add-inner">
-            <span className="gcg-add-icon">+</span>
-            <span className="gcg-add-label">Ajouter</span>
-          </div>
-        </div>
+      {/* Modal détail — s'ouvre au clic sur une carte */}
+      {selectedItem && (
+        <GiftDetailModal
+          item={selectedItem}
+          type={type}
+          readOnly={readOnly}
+          onClose={() => setSelectedItem(null)}
+          onEdit={(raw) => {
+            setSelectedItem(null);
+            onEdit?.(raw);
+          }}
+          onDelete={(id) => {
+            setSelectedItem(null);
+            onDelete?.(id);
+          }}
+          onToggle={(raw) => {
+            onToggle?.(raw);
+            setSelectedItem(null);
+          }}
+          onReserve={(id) => {
+            onReserve?.(id);
+            setSelectedItem(null);
+          }}
+          onUnreserve={(id) => {
+            onUnreserve?.(id);
+            setSelectedItem(null);
+          }}
+          onOffered={(raw) => {
+            onOffered?.(raw);
+            setSelectedItem(null);
+          }}
+          onVote={(id) => {
+            onVote?.(id);
+          }}
+        />
       )}
     </div>
   );
