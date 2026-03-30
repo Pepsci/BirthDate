@@ -1,0 +1,68 @@
+.notif-page {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 24px 16px 80px;
+}
+
+.notif-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.notif-page-title {
+  font-size: 20px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.notif-page-markall {
+  font-size: 13px;
+  color: var(--primary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 0;
+}
+
+.notif-page-markall:hover {
+  text-decoration: underline;
+}
+
+.notif-page-list {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.notif-page-empty,
+.notif-page-loading {
+  padding: 40px;
+  text-align: center;
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.notif-page-loadmore {
+  display: block;
+  width: 100%;
+  padding: 14px;
+  text-align: center;
+  font-size: 13px;
+  color: var(--primary);
+  background: none;
+  border: none;
+  border-top: 1px solid var(--border-color);
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.12s;
+}
+
+.notif-page-loadmore:hover {
+  background: var(--bg-secondary);
+}

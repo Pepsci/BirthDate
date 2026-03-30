@@ -9,6 +9,7 @@ import UpdateDate from "./dashboard/UpdateDate";
 import FriendProfile from "./profil/FriendProfile";
 import ManualMergeModal from "./dashboard/ManuelMergeModal";
 import OnboardingModal from "./profil/notifications/OnboardingModal";
+import NotificationBell from "./notifications/NotificationBell";
 import "./dashboard/css/homePage.css";
 import Logo from "./UI/Logo";
 
@@ -18,7 +19,8 @@ const Home = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const resetChatRef = useRef(null);
-  const resetDateListRef = useRef(null); // ← nouveau : reset complet de DateList
+  const resetDateListRef = useRef(null);
+  const openChatRef = useRef(null); // ← nouveau : ouvrir le chat depuis l'extérieur
 
   const [date] = useState([]);
   const [showProfile, setShowProfile] = useState(false);
@@ -26,11 +28,14 @@ const Home = () => {
   const [viewingFriendProfile, setViewingFriendProfile] = useState(null);
   const [showMergeModal, setShowMergeModal] = useState(false);
   const [cardToMerge, setCardToMerge] = useState(null);
-  const [profileInitialSection, setProfileInitialSection] = useState("personal");
+  const [profileInitialSection, setProfileInitialSection] =
+    useState("personal");
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [savedPage, setSavedPage] = useState(1);
   const [agendaParams, setAgendaParams] = useState(null);
   const [initialEventsOpen, setInitialEventsOpen] = useState(false);
+  const [initialChatConversationId, setInitialChatConversationId] =
+    useState(null);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -55,10 +60,9 @@ const Home = () => {
     const dateId = searchParams.get("dateId");
     const month = searchParams.get("month");
     const year = searchParams.get("year");
+    const conversationId = searchParams.get("conversationId");
 
     if (!tab) return;
-
-    console.log("🔗 Deep link:", { tab, dateId, month, year });
 
     if (tab === "friends") {
       setShowProfile(true);
@@ -69,7 +73,8 @@ const Home = () => {
       setProfileInitialSection("personal");
       navigate("/home", { replace: true });
     } else if (tab === "agenda") {
-      const monthNum = month !== null ? parseInt(month) - 1 : new Date().getMonth();
+      const monthNum =
+        month !== null ? parseInt(month) - 1 : new Date().getMonth();
       const yearNum = year !== null ? parseInt(year) : new Date().getFullYear();
       setAgendaParams({ month: monthNum, year: yearNum });
       setShowProfile(false);
@@ -82,6 +87,14 @@ const Home = () => {
       setViewingFriendProfile(null);
       setAgendaParams(null);
       setInitialEventsOpen(true);
+      navigate("/home", { replace: true });
+    } else if (tab === "chat") {
+      // ── Deep link chat depuis une notif ──
+      setShowProfile(false);
+      setEditingDate(null);
+      setViewingFriendProfile(null);
+      setAgendaParams(null);
+      setInitialChatConversationId(conversationId || null);
       navigate("/home", { replace: true });
     } else if (tab === "date" && dateId) {
       apiHandler
@@ -100,14 +113,18 @@ const Home = () => {
     }
   }, [searchParams, isLoggedIn, currentUser]);
 
+  // Quand initialChatConversationId est défini, on ouvre le chat via le ref
+  useEffect(() => {
+    if (!initialChatConversationId) return;
+    if (openChatRef.current) {
+      openChatRef.current(initialChatConversationId);
+      setInitialChatConversationId(null);
+    }
+  }, [initialChatConversationId, openChatRef.current]);
+
   const handleLogoClick = () => {
-    // 1. Reset du chat
     if (resetChatRef.current) resetChatRef.current();
-
-    // 2. Reset complet de DateList (viewMode → card, ferme tous les panels)
     if (resetDateListRef.current) resetDateListRef.current();
-
-    // 3. Reset des states de Home
     setShowProfile(false);
     setEditingDate(null);
     setViewingFriendProfile(null);
@@ -116,8 +133,8 @@ const Home = () => {
     setProfileInitialSection("personal");
     setAgendaParams(null);
     setInitialEventsOpen(false);
+    setInitialChatConversationId(null);
     setSavedPage(1);
-
     navigate("/home");
   };
 
@@ -141,11 +158,13 @@ const Home = () => {
     setShowMergeModal(false);
   };
 
-  const handleCancelEdit = () => {
-    setEditingDate(null);
-  };
+  const handleCancelEdit = () => setEditingDate(null);
 
-  const handleViewFriendProfile = (date, initialSection = "info", currentPage = 1) => {
+  const handleViewFriendProfile = (
+    date,
+    initialSection = "info",
+    currentPage = 1,
+  ) => {
     setSavedPage(currentPage);
     setViewingFriendProfile({ date, initialSection });
     setShowProfile(false);
@@ -153,9 +172,7 @@ const Home = () => {
     setShowMergeModal(false);
   };
 
-  const handleCancelViewProfile = () => {
-    setViewingFriendProfile(null);
-  };
+  const handleCancelViewProfile = () => setViewingFriendProfile(null);
 
   const handleOpenMergeModal = (date) => {
     setCardToMerge(date);
@@ -177,6 +194,7 @@ const Home = () => {
         {isLoggedIn && (
           <div className="homePageUser">
             <div className="homePageCurrentUser">
+              <NotificationBell />
               <button onClick={handleShowProfile} className="btnProfile">
                 <div className="btn-currentName">
                   {currentUser && currentUser.name}
@@ -225,8 +243,15 @@ const Home = () => {
                 agendaParams={agendaParams}
                 initialEventsOpen={initialEventsOpen}
                 onEventsOpened={() => setInitialEventsOpen(false)}
-                onResetChat={(fn) => { resetChatRef.current = fn; }}
-                onResetDateList={(fn) => { resetDateListRef.current = fn; }} // ← nouveau
+                onResetChat={(fn) => {
+                  resetChatRef.current = fn;
+                }}
+                onResetDateList={(fn) => {
+                  resetDateListRef.current = fn;
+                }}
+                onOpenChat={(fn) => {
+                  openChatRef.current = fn;
+                }}
               />
             )}
 

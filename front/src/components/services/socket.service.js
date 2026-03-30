@@ -6,7 +6,7 @@ class SocketService {
   }
 
   connect(token) {
-    if (this.socket?.connected) {
+    if (this.socket) {
       console.log("✅ Socket already connected");
       return this.socket;
     }

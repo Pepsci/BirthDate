@@ -20,6 +20,7 @@ const conversationsRouter = require("./routes/conversations");
 const mergeDatesRouter = require("./routes/mergeDates");
 const pushRoutes = require("./routes/push");
 const eventsRouter = require("./routes/events");
+const notificationsRouter = require("./routes/notifications");
 
 // Charger les cron jobs
 const purgeDeletedAccounts = require("./jobs/purgeDeletedAccounts");
@@ -33,6 +34,9 @@ const {
 } = require("./jobs/chatNotificationCron");
 
 const app = express();
+
+sendReminders.initApp(app);
+eventReminders.initApp(app);
 
 app.use(helmet());
 
@@ -80,6 +84,7 @@ app.use("/api/conversations", conversationsRouter);
 app.use("/api/merge-dates", mergeDatesRouter);
 app.use("/api/push", pushRoutes);
 app.use("/api/events", eventsRouter);
+app.use("/api/notifications", notificationsRouter);
 
 // Démarrer les cron jobs
 purgeDeletedAccounts.start();
@@ -89,7 +94,6 @@ chatCronInstant.start();
 chatCronDaily.start();
 chatCronTwiceDaily.start();
 chatCronWeekly.start();
-
 
 console.log("🤖 Cron jobs activés :");
 console.log("   ✅ Purge comptes supprimés (tous les jours à 3h)");

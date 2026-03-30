@@ -31,10 +31,12 @@ const setupEventHandlers = require("./sockets/eventHandlers");
 const connectedUsers = new Map();
 app.set("io", io);
 app.set("connectedUsers", connectedUsers);
+io.app = app;
 
 // Un seul io.on("connection") — évite les doublons de listeners
 io.on("connection", (socket) => {
-  setupChatHandlers(io, socket, connectedUsers);
+  socket.join(`user:${socket.userId}`);
+  setupChatHandlers(io, socket, connectedUsers, app);
   setupEventHandlers(io, socket);
 });
 

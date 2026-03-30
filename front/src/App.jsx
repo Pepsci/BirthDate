@@ -1,5 +1,5 @@
 import { Route, Routes } from "react-router-dom";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import "./App.css";
 import AuthPage from "./components/connect/AuthPage";
 import Home from "./components/Home";
@@ -26,22 +26,23 @@ import ScrollToTop from "./components/layout/ScrollToTop";
 import EventsPanel from "./components/events/EventsPanel";
 import EventPage from "./components/events/EventPage";
 import EventForm from "./components/events/EventForm";
-
+import NotificationToast from "./components/notifications/NotificationToast";
 
 function App() {
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
-const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
-
-useEffect(() => {
-  const handler = () => setIsMobile(window.innerWidth <= 768);
-  window.addEventListener("resize", handler);
-  return () => window.removeEventListener("resize", handler);
-}, []);
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener("resize", handler);
+    return () => window.removeEventListener("resize", handler);
+  }, []);
 
   return (
     <div className="App">
       <div className="routeContent">
         <ScrollToTop />
+        {/* Toast en dehors des Routes — toujours monté */}
+        <NotificationToast />
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/cookies" element={<CookiesPolicy />} />
@@ -50,10 +51,8 @@ useEffect(() => {
           <Route path="/cgu" element={<CGU />} />
           <Route path="/guide" element={<GuidePage />} />
 
-          {/* ── AUTH (login + signup + forgot-password fusionnés) ── */}
+          {/* ── AUTH ── */}
           <Route path="/auth" element={<AuthPage />} />
-
-          {/* Redirections pour les anciens liens (emails, bookmarks) */}
           <Route path="/login" element={<AuthPage />} />
           <Route path="/signup" element={<AuthPage />} />
           <Route path="/forgot-password" element={<AuthPage />} />
@@ -70,7 +69,7 @@ useEffect(() => {
           <Route path="/auth/reset/:token" element={<ResetPassword />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
 
-          {/* Route publique — accessible sans compte (lecture seule pour non-invités) */}
+          {/* Route publique */}
           <Route path="/event/:shortId" element={<EventPage />} />
 
           <Route element={<PrivateRoute />}>
@@ -80,7 +79,18 @@ useEffect(() => {
             <Route path="/update-date/:id" element={<UpdateDate />} />
             <Route path="/merge-duplicates" element={<MergeDuplicates />} />
             <Route path="/events/mine" element={<EventsPanel />} />
-            <Route path="/events/new" element={<EventForm onClose={(id) => id ? (window.location.href = `/event/${id}?created=true`) : (window.location.href = "/home")} />} />
+            <Route
+              path="/events/new"
+              element={
+                <EventForm
+                  onClose={(id) =>
+                    id
+                      ? (window.location.href = `/event/${id}?created=true`)
+                      : (window.location.href = "/home")
+                  }
+                />
+              }
+            />
           </Route>
         </Routes>
         <CookieBanner />

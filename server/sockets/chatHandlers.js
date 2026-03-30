@@ -2,8 +2,9 @@ const Conversation = require("../models/conversation.model");
 const Message = require("../models/message.model");
 const User = require("../models/user.model");
 const { sendPushToUser } = require("../services/pushService");
+const { notify } = require("../utils/notify");
 
-module.exports = (io, socket, connectedUsers) => {
+module.exports = (io, socket, connectedUsers, app) => {
   console.log(`📱 User connected: ${socket.userId}`);
 
   connectedUsers.set(socket.userId, socket.id);
@@ -12,16 +13,23 @@ module.exports = (io, socket, connectedUsers) => {
   socket.on("users:getOnline", () => {
     const onlineUserIds = Array.from(connectedUsers.keys());
     socket.emit("users:online", { userIds: onlineUserIds });
-    console.log(`📋 Sent online users list to ${socket.userId}:`, onlineUserIds);
+    console.log(
+      `📋 Sent online users list to ${socket.userId}:`,
+      onlineUserIds,
+    );
   });
 
   socket.on("conversations:join", async () => {
     try {
-      const conversations = await Conversation.find({ participants: socket.userId });
+      const conversations = await Conversation.find({
+        participants: socket.userId,
+      });
       conversations.forEach((conv) => {
         socket.join(`conversation:${conv._id}`);
       });
-      console.log(`✅ User ${socket.userId} joined ${conversations.length} conversations`);
+      console.log(
+        `✅ User ${socket.userId} joined ${conversations.length} conversations`,
+      );
     } catch (error) {
       console.error("❌ Error joining conversations:", error);
     }
@@ -35,7 +43,9 @@ module.exports = (io, socket, connectedUsers) => {
       });
       if (conversation) {
         socket.join(`conversation:${conversationId}`);
-        console.log(`✅ User ${socket.userId} joined conversation ${conversationId}`);
+        console.log(
+          `✅ User ${socket.userId} joined conversation ${conversationId}`,
+        );
         await Message.updateMany(
           {
             conversation: conversationId,
@@ -73,13 +83,18 @@ module.exports = (io, socket, connectedUsers) => {
 
     try {
       if (!content || content.trim().length === 0) {
-        return socket.emit("message:error", { tempId, error: "Le message ne peut pas être vide" });
+        return socket.emit("message:error", {
+          tempId,
+          error: "Le message ne peut pas être vide",
+        });
       }
 
-      // Les gift_share ont un contenu fallback court, les messages chiffrés peuvent être longs
       const maxLength = isEncrypted ? 50000 : 2000;
       if (content.trim().length > maxLength) {
-        return socket.emit("message:error", { tempId, error: "Le message est trop long" });
+        return socket.emit("message:error", {
+          tempId,
+          error: "Le message est trop long",
+        });
       }
 
       const conversation = await Conversation.findOne({
@@ -87,7 +102,10 @@ module.exports = (io, socket, connectedUsers) => {
         participants: socket.userId,
       });
       if (!conversation) {
-        return socket.emit("message:error", { tempId, error: "Conversation introuvable" });
+        return socket.emit("message:error", {
+          tempId,
+          error: "Conversation introuvable",
+        });
       }
 
       const recipientId = conversation.participants.find(
@@ -105,13 +123,16 @@ module.exports = (io, socket, connectedUsers) => {
         isEncrypted: messageType === "gift_share" ? false : !!isEncrypted,
       };
 
-      // Métadonnées structurées pour les cartes cadeaux — jamais chiffrées
       if (messageType === "gift_share" && metadata) {
         messageData.metadata = metadata;
       }
 
-      // Chiffrement E2E — uniquement pour les messages texte
-      if (messageType === "text" && isEncrypted && encryptedForRecipient && encryptedForSender) {
+      if (
+        messageType === "text" &&
+        isEncrypted &&
+        encryptedForRecipient &&
+        encryptedForSender
+      ) {
         const encFor = {};
         if (recipientId) encFor[recipientId.toString()] = encryptedForRecipient;
         encFor[socket.userId] = encryptedForSender;
@@ -152,9 +173,51 @@ module.exports = (io, socket, connectedUsers) => {
         }).catch((err) => console.error("❌ Push chat error:", err));
       }
 
+      // ── Notif applicative si le destinataire n'a pas la conversation ouverte ──
+      if (recipientId) {
+        const conversationRoom = io.sockets.adapter.rooms.get(
+          `conversation:${conversationId}`,
+        );
+        const recipientSocketId = connectedUsers.get(recipientId.toString());
+
+        // Le destinataire n'est pas dans la room de la conversation = messages non lus
+        const recipientInConversation =
+          recipientSocketId &&
+          conversationRoom &&
+          conversationRoom.has(recipientSocketId);
+
+        if (!recipientInConversation) {
+          const sender = await User.findById(socket.userId, "name surname");
+          const senderName = sender
+            ? `${sender.name} ${sender.surname || ""}`.trim()
+            : "Quelqu'un";
+
+          let preview;
+          if (messageType === "gift_share") {
+            preview = `🎁 Idées cadeaux pour ${metadata?.personName || "quelqu'un"}`;
+          } else if (isEncrypted) {
+            preview = "🔒 Message chiffré";
+          } else {
+            preview = content.trim().slice(0, 60);
+          }
+
+          console.log("🔔 app défini ?", !!app, "type:", typeof app);
+
+          notify(app, {
+            userId: recipientId,
+            type: "new_message",
+            data: {
+              senderName,
+              preview,
+              conversationId,
+            },
+            link: `/home?tab=chat&conversationId=${conversationId}`,
+          }).catch((err) => console.error("❌ Notify chat error:", err));
+        }
+      }
+
       await message.populate("sender", "name surname email publicKey");
 
-      // Conversion Map → objet plain pour la sérialisation Socket.io
       const toSerializable = (msgObj) => {
         if (msgObj.encryptedFor instanceof Map) {
           msgObj.encryptedFor = Object.fromEntries(msgObj.encryptedFor);
@@ -162,40 +225,56 @@ module.exports = (io, socket, connectedUsers) => {
         return msgObj;
       };
 
-      // L'expéditeur reçoit le message avec le tempId pour remplacer l'optimiste
       socket.emit("message:new", {
         conversationId,
         message: toSerializable({ ...message.toObject(), tempId }),
       });
 
-      // Les autres participants reçoivent le message sans tempId
       socket.to(`conversation:${conversationId}`).emit("message:new", {
         conversationId,
         message: toSerializable(message.toObject()),
       });
 
-      console.log(`💬 Message [${messageType}] sent in conversation ${conversationId}`);
+      console.log(
+        `💬 Message [${messageType}] sent in conversation ${conversationId}`,
+      );
     } catch (error) {
       console.error("❌ Error sending message:", error);
-      socket.emit("message:error", { tempId, error: "Impossible d'envoyer le message" });
+      socket.emit("message:error", {
+        tempId,
+        error: "Impossible d'envoyer le message",
+      });
     }
   });
 
   socket.on("typing:start", async ({ conversationId }) => {
-    const conv = await Conversation.findOne({ _id: conversationId, participants: socket.userId });
+    const conv = await Conversation.findOne({
+      _id: conversationId,
+      participants: socket.userId,
+    });
     if (!conv) return;
-    socket.to(`conversation:${conversationId}`).emit("typing:start", { conversationId, userId: socket.userId });
+    socket
+      .to(`conversation:${conversationId}`)
+      .emit("typing:start", { conversationId, userId: socket.userId });
   });
 
   socket.on("typing:stop", async ({ conversationId }) => {
-    const conv = await Conversation.findOne({ _id: conversationId, participants: socket.userId });
+    const conv = await Conversation.findOne({
+      _id: conversationId,
+      participants: socket.userId,
+    });
     if (!conv) return;
-    socket.to(`conversation:${conversationId}`).emit("typing:stop", { conversationId, userId: socket.userId });
+    socket
+      .to(`conversation:${conversationId}`)
+      .emit("typing:stop", { conversationId, userId: socket.userId });
   });
 
   socket.on("messages:read", async ({ conversationId }) => {
     try {
-      const conv = await Conversation.findOne({ _id: conversationId, participants: socket.userId });
+      const conv = await Conversation.findOne({
+        _id: conversationId,
+        participants: socket.userId,
+      });
       if (!conv) return;
       const result = await Message.updateMany(
         {
@@ -211,7 +290,9 @@ module.exports = (io, socket, connectedUsers) => {
           userId: socket.userId,
           count: result.modifiedCount,
         });
-        console.log(`✅ ${result.modifiedCount} messages marked as read in conversation ${conversationId}`);
+        console.log(
+          `✅ ${result.modifiedCount} messages marked as read in conversation ${conversationId}`,
+        );
       }
     } catch (error) {
       console.error("❌ Error marking messages as read:", error);
@@ -221,12 +302,18 @@ module.exports = (io, socket, connectedUsers) => {
   socket.on("message:delete", async ({ messageId, conversationId }) => {
     try {
       const message = await Message.findById(messageId);
-      if (!message) return socket.emit("error", { message: "Message not found" });
+      if (!message)
+        return socket.emit("error", { message: "Message not found" });
       if (message.sender.toString() !== socket.userId) {
-        return socket.emit("error", { message: "You can only delete your own messages" });
+        return socket.emit("error", {
+          message: "You can only delete your own messages",
+        });
       }
       await Message.findByIdAndDelete(messageId);
-      io.to(`conversation:${conversationId}`).emit("message:deleted", { messageId, conversationId });
+      io.to(`conversation:${conversationId}`).emit("message:deleted", {
+        messageId,
+        conversationId,
+      });
       console.log(`🗑️ Message ${messageId} deleted by ${socket.userId}`);
     } catch (error) {
       console.error("❌ Error deleting message:", error);
@@ -237,20 +324,31 @@ module.exports = (io, socket, connectedUsers) => {
   socket.on("message:edit", async ({ messageId, content, conversationId }) => {
     try {
       const message = await Message.findById(messageId);
-      if (!message) return socket.emit("error", { message: "Message not found" });
+      if (!message)
+        return socket.emit("error", { message: "Message not found" });
       if (message.sender.toString() !== socket.userId) {
-        return socket.emit("error", { message: "You can only edit your own messages" });
+        return socket.emit("error", {
+          message: "You can only edit your own messages",
+        });
       }
-      // Les messages chiffrés et les cartes cadeaux ne peuvent pas être modifiés
       if (message.isEncrypted) {
-        return socket.emit("error", { message: "Les messages chiffrés ne peuvent pas être modifiés" });
+        return socket.emit("error", {
+          message: "Les messages chiffrés ne peuvent pas être modifiés",
+        });
       }
       if (message.type === "gift_share") {
-        return socket.emit("error", { message: "Les cartes cadeaux ne peuvent pas être modifiées" });
+        return socket.emit("error", {
+          message: "Les cartes cadeaux ne peuvent pas être modifiées",
+        });
       }
       const EDIT_TIME_LIMIT = 5 * 60 * 1000;
-      if (Date.now() - new Date(message.createdAt).getTime() > EDIT_TIME_LIMIT) {
-        return socket.emit("error", { message: "Cannot edit messages older than 5 minutes" });
+      if (
+        Date.now() - new Date(message.createdAt).getTime() >
+        EDIT_TIME_LIMIT
+      ) {
+        return socket.emit("error", {
+          message: "Cannot edit messages older than 5 minutes",
+        });
       }
       if (!content || content.trim().length === 0) {
         return socket.emit("error", { message: "Content cannot be empty" });
@@ -276,12 +374,20 @@ module.exports = (io, socket, connectedUsers) => {
 
   socket.on("conversation:delete", async ({ conversationId }) => {
     try {
-      const conversation = await Conversation.findOne({ _id: conversationId, participants: socket.userId });
-      if (!conversation) return socket.emit("error", { message: "Conversation not found" });
+      const conversation = await Conversation.findOne({
+        _id: conversationId,
+        participants: socket.userId,
+      });
+      if (!conversation)
+        return socket.emit("error", { message: "Conversation not found" });
       await Message.deleteMany({ conversation: conversationId });
       await Conversation.findByIdAndDelete(conversationId);
-      io.to(`conversation:${conversationId}`).emit("conversation:deleted", { conversationId });
-      console.log(`🗑️ Conversation ${conversationId} deleted by ${socket.userId}`);
+      io.to(`conversation:${conversationId}`).emit("conversation:deleted", {
+        conversationId,
+      });
+      console.log(
+        `🗑️ Conversation ${conversationId} deleted by ${socket.userId}`,
+      );
     } catch (error) {
       console.error("❌ Error deleting conversation:", error);
       socket.emit("error", { message: "Failed to delete conversation" });

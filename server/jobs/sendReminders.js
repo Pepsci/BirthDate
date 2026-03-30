@@ -12,11 +12,19 @@ const {
   sendMonthlyRecapEmail,
 } = require("../services/emailTemplates/monthlyRecapEmail");
 
+// notify nécessite l'instance app — on la reçoit via init()
+let _app = null;
+const initApp = (app) => {
+  _app = app;
+};
+
 // ========================================
 // HELPER: Vérifier si un anniversaire est dans X jours
 // ========================================
 function isBirthdayInXDays(birthDate, daysFromNow) {
-  const today = new Date(new Date().toLocaleString("en-US", { timeZone: "Europe/Paris" }));
+  const today = new Date(
+    new Date().toLocaleString("en-US", { timeZone: "Europe/Paris" }),
+  );
   today.setHours(0, 0, 0, 0);
 
   const targetDate = new Date(today);
@@ -37,7 +45,9 @@ function isBirthdayInXDays(birthDate, daysFromNow) {
 function isNamedayInXDays(nameday, daysFromNow) {
   if (!nameday || !nameday.match(/^\d{2}-\d{2}$/)) return false;
 
-    const today = new Date(new Date().toLocaleString("en-US", { timeZone: "Europe/Paris" }));
+  const today = new Date(
+    new Date().toLocaleString("en-US", { timeZone: "Europe/Paris" }),
+  );
   today.setHours(0, 0, 0, 0);
 
   const targetDate = new Date(today);
@@ -124,6 +134,8 @@ async function checkAndSendCardBirthdayReminders() {
   try {
     console.log("🎂 [CRON] Vérification des rappels d'anniversaires cartes...");
 
+    const { notify } = require("../utils/notify");
+
     const dates = await dateModel
       .find({ receiveNotifications: { $ne: false } })
       .populate("owner linkedUser");
@@ -145,24 +157,40 @@ async function checkAndSendCardBirthdayReminders() {
 
       if (notifyOnBirthday && isBirthdayInXDays(date.date, 0)) {
         await sendBirthdayReminderEmail(owner, date, 0);
+
+        // ── Notif applicative J ──
+        if (_app) {
+          await notify(_app, {
+            userId: owner._id,
+            type: "birthday_soon",
+            data: { name: date.name, daysLeft: 0 },
+            link: `/?tab=date&dateId=${date._id}`,
+          });
+        }
+
         if (pushOk && pushTimings.includes(0)) {
           await sendPushToUser(owner._id, buildBirthdayPushPayload(date, 0));
-          console.log(
-            `🔔 [PUSH] Anniversaire J de ${date.name} → ${owner.email}`,
-          );
         }
       }
 
       for (const days of timings) {
         if (isBirthdayInXDays(date.date, days)) {
           await sendBirthdayReminderEmail(owner, date, days);
+
+          // ── Notif applicative J-X ──
+          if (_app) {
+            await notify(_app, {
+              userId: owner._id,
+              type: "birthday_soon",
+              data: { name: date.name, daysLeft: days },
+              link: `/?tab=date&dateId=${date._id}`,
+            });
+          }
+
           if (pushOk && pushTimings.includes(days)) {
             await sendPushToUser(
               owner._id,
               buildBirthdayPushPayload(date, days),
-            );
-            console.log(
-              `🔔 [PUSH] Anniversaire J-${days} de ${date.name} → ${owner.email}`,
             );
           }
         }
@@ -215,7 +243,7 @@ async function checkAndSendNamedayReminders() {
 }
 
 // ========================================
-// RÉCAP MENSUEL (NOUVEAU)
+// RÉCAP MENSUEL
 // ========================================
 async function checkAndSendMonthlyRecap() {
   try {
@@ -243,7 +271,7 @@ async function checkAndSendMonthlyRecap() {
 }
 
 // ========================================
-// FONCTION PRINCIPALE (rappels quotidiens)
+// FONCTION PRINCIPALE
 // ========================================
 async function checkAndSendAllReminders() {
   console.log("\n📧 [CRON] Démarrage de la vérification des rappels...");
@@ -265,7 +293,7 @@ const cronJob = cron.schedule(
 );
 
 // ========================================
-// PLANIFICATION : Récap mensuel — 1er du mois à 8h (NOUVEAU)
+// PLANIFICATION : Récap mensuel — 1er du mois à 8h
 // ========================================
 const monthlyRecapJob = cron.schedule(
   "0 8 1 * *",
@@ -276,18 +304,10 @@ const monthlyRecapJob = cron.schedule(
 );
 
 // ========================================
-// PLANIFICATION : Test toutes les 10s
-// ========================================
-// const cronJob = cron.schedule(
-//   "*/10 * * * * *",
-//   async () => { await checkAndSendAllReminders(); },
-//   { scheduled: false, timezone: "Europe/Paris" }
-// );
-
-// ========================================
 // EXPORTS
 // ========================================
 module.exports = {
+  initApp,
   start: () => {
     cronJob.start();
     monthlyRecapJob.start();

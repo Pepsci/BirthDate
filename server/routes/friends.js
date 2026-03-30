@@ -6,6 +6,7 @@ const DateModel = require("../models/date.model");
 const Invitation = require("../models/invitation.model");
 const mongoose = require("mongoose");
 const { isAuthenticated } = require("../middleware/jwt.middleware");
+const { notify } = require("../utils/notify");
 const {
   sendFriendRequestNotification,
 } = require("../services/emailTemplates/friendRequestEmailService");
@@ -129,6 +130,17 @@ router.post("/", isAuthenticated, async (req, res, next) => {
         targetUser._id,
       );
 
+      // ── Notif applicative → destinataire de la demande ──
+      await notify(req.app, {
+        userId: targetUser._id,
+        type: "friend_request",
+        data: {
+          name: `${currentUser.name} ${currentUser.surname || ""}`.trim(),
+          avatar: currentUser.avatar,
+        },
+        link: "/home?tab=friends",
+      });
+
       return res.status(201).json({ friendship, type: "request_sent" });
     } else {
       const existingInvitation = await Invitation.findOne({
@@ -207,8 +219,19 @@ router.patch("/:friendshipId/accept", isAuthenticated, async (req, res) => {
       if (user1 && user2) {
         await createFriendDates(user1, user2);
       }
+
+      // ── Notif applicative → celui qui avait envoyé la demande ──
+      await notify(req.app, {
+        userId: friendship.user,
+        type: "friend_accepted",
+        data: {
+          name: `${user2.name} ${user2.surname || ""}`.trim(),
+          avatar: user2.avatar,
+        },
+        link: "/home?tab=friends",
+      });
     } catch (error) {
-      console.error("Erreur création dates automatiques:", error);
+      console.error("Erreur création dates / notif:", error);
     }
 
     const populatedFriendship = await Friend.findById(friendship._id)

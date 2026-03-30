@@ -76,6 +76,7 @@ const DateList = ({
   onMerge,
   onResetChat,
   onResetDateList,
+  onOpenChat,
   initialPage = 1,
   agendaParams = null,
   initialFilter = null,
@@ -104,6 +105,7 @@ const DateList = ({
   const [selectedFriendId, setSelectedFriendId] = useState(null);
   const [selectedFriendName, setSelectedFriendName] = useState("");
   const [viewMode, setViewMode] = useState(agendaParams ? "agenda" : "card");
+  const [initialConversationId, setInitialConversationId] = useState(null);
 
   // ─── Expose le reset complet à Home via ref ──────────────
   useEffect(() => {
@@ -152,6 +154,20 @@ const DateList = ({
       return nextA - nextB;
     });
   };
+
+  useEffect(() => {
+    if (!onOpenChat) return;
+    onOpenChat((conversationId) => {
+      // Ouvre le panel chat
+      setIsChatVisible(true);
+      setIsFormVisible(false);
+      setIsFilterVisible(false);
+      setIsEventsVisible(false);
+      resetUnreadCount();
+      // Passe la conversationId au composant Chat
+      if (conversationId) setInitialConversationId(conversationId);
+    });
+  }, []);
 
   const loadDates = () => {
     apiHandler
@@ -457,7 +473,7 @@ const DateList = ({
             exit={{ opacity: 0, y: -12 }}
             transition={{ duration: 0.25 }}
           >
-            <Chat />
+            <Chat initialConversationId={initialConversationId} />
           </motion.div>
         )}
 

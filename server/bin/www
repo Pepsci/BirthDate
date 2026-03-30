@@ -19,8 +19,12 @@ let server;
 if (isProduction) {
   try {
     const options = {
-      key: fs.readFileSync("/etc/letsencrypt/live/birthreminder.com/privkey.pem"),
-      cert: fs.readFileSync("/etc/letsencrypt/live/birthreminder.com/fullchain.pem"),
+      key: fs.readFileSync(
+        "/etc/letsencrypt/live/birthreminder.com/privkey.pem",
+      ),
+      cert: fs.readFileSync(
+        "/etc/letsencrypt/live/birthreminder.com/fullchain.pem",
+      ),
     };
     server = https.createServer(options, app);
     console.log("✅ Serveur HTTPS en production");
@@ -59,12 +63,13 @@ io.use(socketAuthMiddleware);
 const setupChatHandlers = require("../sockets/chatHandlers");
 const setupEventHandlers = require("../sockets/eventHandlers");
 
-// Map partagée entre les deux handlers
 const connectedUsers = new Map();
+app.set("io", io);
+app.set("connectedUsers", connectedUsers);
 
-// CORRIGÉ : un seul io.on("connection") qui appelle les deux handlers
 io.on("connection", (socket) => {
-  setupChatHandlers(io, socket, connectedUsers);
+  socket.join(`user:${socket.userId}`);
+  setupChatHandlers(io, socket, connectedUsers, app); // ← app passé ici
   setupEventHandlers(io, socket);
 });
 

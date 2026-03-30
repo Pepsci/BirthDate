@@ -7,8 +7,9 @@ const mongoose = require("mongoose");
 const cheerio = require("cheerio");
 const axios = require("axios");
 const { isAuthenticated } = require("../middleware/jwt.middleware");
+const { notify } = require("../utils/notify");
 
-// POST /api/wishlist/fetch-url - Récupérer les infos d'un produit depuis une URL
+// POST /api/wishlist/fetch-url
 router.post("/fetch-url", isAuthenticated, async (req, res) => {
   try {
     const { url } = req.body;
@@ -17,7 +18,6 @@ router.post("/fetch-url", isAuthenticated, async (req, res) => {
       return res.status(400).json({ message: "URL requise" });
     }
 
-    // ✅ Détection sites bloqués — VERSION BACKEND
     const blockedDomains = [
       { domain: "amazon", name: "Amazon" },
       { domain: "fnac", name: "Fnac" },
@@ -44,7 +44,6 @@ router.post("/fetch-url", isAuthenticated, async (req, res) => {
       accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
     };
 
-    // Tentative 1 : Open Graph
     try {
       const { result, error } = await ogs({ url, timeout: 5000, headers });
 
@@ -69,11 +68,9 @@ router.post("/fetch-url", isAuthenticated, async (req, res) => {
       console.log("OGS échoué, tentative cheerio...");
     }
 
-    // Tentative 2 : Cheerio (Fnac, Amazon, etc.)
     const response = await axios.get(url, { headers, timeout: 8000 });
     const $ = cheerio.load(response.data);
 
-    // Sélecteurs pour les grands sites
     const title =
       $('meta[property="og:title"]').attr("content") ||
       $('meta[name="twitter:title"]').attr("content") ||
@@ -91,12 +88,11 @@ router.post("/fetch-url", isAuthenticated, async (req, res) => {
       $('meta[name="twitter:image"]').attr("content") ||
       null;
 
-    // Prix : sélecteurs spécifiques Fnac / Amazon
     const rawPrice =
       $('meta[property="product:price:amount"]').attr("content") ||
       $('meta[property="og:price:amount"]').attr("content") ||
-      $(".f-priceBox-price").first().text().trim() || // Fnac
-      $(".a-price-whole").first().text().trim() || // Amazon
+      $(".f-priceBox-price").first().text().trim() ||
+      $(".a-price-whole").first().text().trim() ||
       $('[data-testid="price"]').first().text().trim() ||
       null;
 
@@ -132,7 +128,7 @@ router.post("/fetch-url", isAuthenticated, async (req, res) => {
   }
 });
 
-// POST /api/wishlist/:id/reserve - Réserver un item (tout utilisateur authentifié)
+// POST /api/wishlist/:id/reserve
 router.post("/:id/reserve", isAuthenticated, async (req, res) => {
   try {
     if (!mongoose.isValidObjectId(req.params.id)) {
@@ -140,7 +136,6 @@ router.post("/:id/reserve", isAuthenticated, async (req, res) => {
     }
 
     const reservingUserId = req.payload._id;
-
     const item = await WishlistModel.findById(req.params.id);
 
     if (!item) {
@@ -155,18 +150,27 @@ router.post("/:id/reserve", isAuthenticated, async (req, res) => {
     item.reservedAt = new Date();
     await item.save();
 
-    res.status(200).json({
-      success: true,
-      message: "Item réservé",
-      data: item,
-    });
+    // ── Notif applicative → propriétaire de la wishlist ──
+    // On ne notifie pas si c'est le propriétaire lui-même qui réserve
+    if (item.userId.toString() !== reservingUserId.toString()) {
+      await notify(req.app, {
+        userId: item.userId,
+        type: "gift_reserved",
+        data: { giftName: item.title },
+        link: "/home",
+      });
+    }
+
+    res
+      .status(200)
+      .json({ success: true, message: "Item réservé", data: item });
   } catch (error) {
     console.error("Erreur réservation:", error);
     res.status(500).json({ message: "Internal Server Error" });
   }
 });
 
-// POST /api/wishlist/:id/unreserve - Annuler la réservation
+// POST /api/wishlist/:id/unreserve
 router.post("/:id/unreserve", isAuthenticated, async (req, res) => {
   try {
     if (!mongoose.isValidObjectId(req.params.id)) {
@@ -179,7 +183,6 @@ router.post("/:id/unreserve", isAuthenticated, async (req, res) => {
       return res.status(404).json({ message: "Item non trouvé" });
     }
 
-    // Seul celui qui a réservé peut annuler
     if (item.reservedBy?.toString() !== req.payload._id) {
       return res
         .status(403)
@@ -190,39 +193,31 @@ router.post("/:id/unreserve", isAuthenticated, async (req, res) => {
     item.reservedAt = null;
     await item.save();
 
-    res.status(200).json({
-      success: true,
-      message: "Réservation annulée",
-      data: item,
-    });
+    res
+      .status(200)
+      .json({ success: true, message: "Réservation annulée", data: item });
   } catch (error) {
     console.error("Erreur annulation réservation:", error);
     res.status(500).json({ message: "Internal Server Error" });
   }
 });
 
-// GET /api/wishlist - Obtenir MA wishlist complète
+// GET /api/wishlist
 router.get("/", isAuthenticated, async (req, res, next) => {
   try {
     const userId = req.payload._id;
-
     const items = await WishlistModel.find({ userId }).sort({
       isPurchased: 1,
       createdAt: -1,
     });
-
-    res.status(200).json({
-      success: true,
-      count: items.length,
-      data: items,
-    });
+    res.status(200).json({ success: true, count: items.length, data: items });
   } catch (error) {
     console.error("Erreur lors de la récupération de la wishlist:", error);
     res.status(500).json({ message: "Internal Server Error" });
   }
 });
 
-// GET /api/wishlist/user/:userId - Voir la wishlist d'un ami
+// GET /api/wishlist/user/:userId
 router.get("/user/:userId", isAuthenticated, async (req, res, next) => {
   try {
     const { userId } = req.params;
@@ -256,7 +251,7 @@ router.get("/user/:userId", isAuthenticated, async (req, res, next) => {
   }
 });
 
-// POST /api/wishlist - Créer un nouvel item
+// POST /api/wishlist
 router.post("/", isAuthenticated, async (req, res, next) => {
   try {
     const { title, description, price, url, image, isShared } = req.body;
@@ -276,17 +271,14 @@ router.post("/", isAuthenticated, async (req, res, next) => {
       isShared: isShared || false,
     });
 
-    res.status(201).json({
-      success: true,
-      data: item,
-    });
+    res.status(201).json({ success: true, data: item });
   } catch (error) {
     console.error("Erreur lors de la création de l'item:", error);
     res.status(500).json({ message: "Internal Server Error" });
   }
 });
 
-// GET /api/wishlist/:id - Obtenir un item spécifique
+// GET /api/wishlist/:id
 router.get("/:id", isAuthenticated, async (req, res, next) => {
   try {
     if (!mongoose.isValidObjectId(req.params.id)) {
@@ -299,17 +291,14 @@ router.get("/:id", isAuthenticated, async (req, res, next) => {
       return res.status(404).json({ message: "Item non trouvé" });
     }
 
-    res.status(200).json({
-      success: true,
-      data: item,
-    });
+    res.status(200).json({ success: true, data: item });
   } catch (error) {
     console.error("Erreur lors de la récupération de l'item:", error);
     res.status(500).json({ message: "Internal Server Error" });
   }
 });
 
-// PATCH /api/wishlist/:id - Modifier un item (propriétaire uniquement)
+// PATCH /api/wishlist/:id
 router.patch("/:id", isAuthenticated, async (req, res, next) => {
   try {
     if (!mongoose.isValidObjectId(req.params.id)) {
@@ -325,22 +314,19 @@ router.patch("/:id", isAuthenticated, async (req, res, next) => {
     );
 
     if (!updatedItem) {
-      return res.status(404).json({ message: "Item non trouvé ou non autorisé" });
+      return res
+        .status(404)
+        .json({ message: "Item non trouvé ou non autorisé" });
     }
 
-    res.status(200).json({
-      success: true,
-      data: updatedItem,
-    });
+    res.status(200).json({ success: true, data: updatedItem });
   } catch (error) {
     console.error("Erreur lors de la mise à jour de l'item:", error);
     res.status(500).json({ message: "Internal Server Error" });
   }
 });
 
-// ========================================
-// Marque l'item comme acheté ET l'ajoute dans les gifts de la date
-// ========================================
+// POST /api/wishlist/:id/gift-offered
 router.post("/:id/gift-offered", isAuthenticated, async (req, res) => {
   try {
     if (!mongoose.isValidObjectId(req.params.id)) {
@@ -358,7 +344,6 @@ router.post("/:id/gift-offered", isAuthenticated, async (req, res) => {
       return res.status(400).json({ message: "Invalid Date ID" });
     }
 
-    // 1. Récupérer l'item wishlist
     const item = await WishlistModel.findById(req.params.id);
     if (!item) {
       return res.status(404).json({ message: "Item non trouvé" });
@@ -368,18 +353,15 @@ router.post("/:id/gift-offered", isAuthenticated, async (req, res) => {
       return res.status(400).json({ message: "Cet item a déjà été acheté" });
     }
 
-    // 2. Marquer l'item comme acheté
     item.isPurchased = true;
     item.purchasedBy = userId;
     item.purchasedAt = new Date();
-    // Si l'item était réservé par cet utilisateur, on garde la réservation
     if (!item.reservedBy) {
       item.reservedBy = userId;
       item.reservedAt = new Date();
     }
     await item.save();
 
-    // 3. Ajouter le cadeau dans les gifts de la date
     const dateModel = require("../models/date.model");
     const updatedDate = await dateModel.findOneAndUpdate(
       { _id: dateId, owner: userId },
@@ -397,7 +379,6 @@ router.post("/:id/gift-offered", isAuthenticated, async (req, res) => {
     );
 
     if (!updatedDate) {
-      // L'item wishlist a quand même été marqué, on retourne un warning
       return res.status(200).json({
         success: true,
         warning:
@@ -418,7 +399,7 @@ router.post("/:id/gift-offered", isAuthenticated, async (req, res) => {
   }
 });
 
-// DELETE /api/wishlist/:id - Supprimer un item (propriétaire uniquement)
+// DELETE /api/wishlist/:id
 router.delete("/:id", isAuthenticated, async (req, res, next) => {
   try {
     if (!mongoose.isValidObjectId(req.params.id)) {
@@ -431,20 +412,21 @@ router.delete("/:id", isAuthenticated, async (req, res, next) => {
     });
 
     if (!deletedItem) {
-      return res.status(404).json({ message: "Item non trouvé ou non autorisé" });
+      return res
+        .status(404)
+        .json({ message: "Item non trouvé ou non autorisé" });
     }
 
-    res.status(200).json({
-      success: true,
-      message: "Item supprimé avec succès",
-    });
+    res
+      .status(200)
+      .json({ success: true, message: "Item supprimé avec succès" });
   } catch (error) {
     console.error("Erreur lors de la suppression de l'item:", error);
     res.status(500).json({ message: "Internal Server Error" });
   }
 });
 
-// POST /api/wishlist/:id/toggle-sharing - Basculer le partage (propriétaire uniquement)
+// POST /api/wishlist/:id/toggle-sharing
 router.post("/:id/toggle-sharing", isAuthenticated, async (req, res, next) => {
   try {
     if (!mongoose.isValidObjectId(req.params.id)) {
@@ -457,7 +439,9 @@ router.post("/:id/toggle-sharing", isAuthenticated, async (req, res, next) => {
     });
 
     if (!item) {
-      return res.status(404).json({ message: "Item non trouvé ou non autorisé" });
+      return res
+        .status(404)
+        .json({ message: "Item non trouvé ou non autorisé" });
     }
 
     item.isShared = !item.isShared;
@@ -476,7 +460,7 @@ router.post("/:id/toggle-sharing", isAuthenticated, async (req, res, next) => {
   }
 });
 
-// POST /api/wishlist/:id/purchase - Marquer comme acheté (tout utilisateur authentifié)
+// POST /api/wishlist/:id/purchase
 router.post("/:id/purchase", isAuthenticated, async (req, res, next) => {
   try {
     if (!mongoose.isValidObjectId(req.params.id)) {
@@ -484,7 +468,6 @@ router.post("/:id/purchase", isAuthenticated, async (req, res, next) => {
     }
 
     const userId = req.payload._id;
-
     const item = await WishlistModel.findById(req.params.id);
 
     if (!item) {
@@ -500,18 +483,16 @@ router.post("/:id/purchase", isAuthenticated, async (req, res, next) => {
     item.purchasedAt = new Date();
     await item.save();
 
-    res.status(200).json({
-      success: true,
-      message: "Item marqué comme acheté",
-      data: item,
-    });
+    res
+      .status(200)
+      .json({ success: true, message: "Item marqué comme acheté", data: item });
   } catch (error) {
     console.error("Erreur lors du marquage de l'item:", error);
     res.status(500).json({ message: "Internal Server Error" });
   }
 });
 
-// POST /api/wishlist/:id/unpurchase - Démarquer comme acheté (acheteur uniquement)
+// POST /api/wishlist/:id/unpurchase
 router.post("/:id/unpurchase", isAuthenticated, async (req, res, next) => {
   try {
     if (!mongoose.isValidObjectId(req.params.id)) {
@@ -533,11 +514,9 @@ router.post("/:id/unpurchase", isAuthenticated, async (req, res, next) => {
     item.purchasedAt = null;
     await item.save();
 
-    res.status(200).json({
-      success: true,
-      message: "Item démarqué",
-      data: item,
-    });
+    res
+      .status(200)
+      .json({ success: true, message: "Item démarqué", data: item });
   } catch (error) {
     console.error("Erreur lors du démarquage de l'item:", error);
     res.status(500).json({ message: "Internal Server Error" });
