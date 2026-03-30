@@ -2,7 +2,6 @@
    GiftCardGrid — grille 2 colonnes style boutique
    ═══════════════════════════════════════════════ */
 
-/* ── Grille ─────────────────────────────────────── */
 .gcg-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -10,7 +9,7 @@
   width: 100%;
 }
 
-/* ── Card ────────────────────────────────────────── */
+/* ── Card ── */
 .gcg-card {
   background: var(--bg-primary);
   border: 1px solid var(--border-color);
@@ -86,7 +85,7 @@
   color: var(--text-secondary);
 }
 
-/* ── Image / Placeholder ─────────────────────────── */
+/* ── Image / Placeholder ── */
 .gcg-img-wrapper {
   position: relative;
   width: 100%;
@@ -117,7 +116,7 @@
   opacity: 0.5;
 }
 
-/* ── Badge statut ─────────────────────────────────── */
+/* ── Badge statut ── */
 .gcg-badge {
   position: absolute;
   top: 8px;
@@ -135,32 +134,28 @@
   color: #059669;
   border: 1px solid rgba(16, 185, 129, 0.35);
 }
-
 .gcg-badge--private {
   background: var(--bg-tertiary);
   color: var(--text-secondary);
   border: 1px solid var(--border-color);
 }
-
 .gcg-badge--purchased {
   background: rgba(16, 185, 129, 0.18);
   color: #059669;
   border: 1px solid rgba(16, 185, 129, 0.3);
 }
-
 .gcg-badge--pending {
   background: rgba(251, 191, 36, 0.15);
   color: #d97706;
   border: 1px solid rgba(251, 191, 36, 0.3);
 }
-
 .gcg-badge--reserved {
   background: rgba(102, 126, 234, 0.18);
   color: #667eea;
   border: 1px solid rgba(102, 126, 234, 0.3);
 }
 
-/* ── Overlay actions hover (desktop) ─────────────── */
+/* ── Overlay actions hover (desktop) ── */
 .gcg-hover-actions {
   position: absolute;
   top: 8px;
@@ -194,24 +189,38 @@
 .gcg-action-btn:hover {
   transform: scale(1.1);
 }
-
 .gcg-action-btn--edit {
   background: rgba(59, 130, 246, 0.85);
   color: #fff;
 }
-
 .gcg-action-btn--delete {
   background: rgba(239, 68, 68, 0.85);
   color: #fff;
 }
 
-/* ── Corps ───────────────────────────────────────── */
+/* ── Corps ── */
 .gcg-body {
   padding: 10px 12px 12px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
   flex: 1;
+  gap: 0;
+}
+
+/* Haut — titre, description, meta — pousse le bas vers le bas */
+.gcg-body-top {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+/* Bas — prix, lien, actions — toujours collé en bas */
+.gcg-body-bottom {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .gcg-title {
@@ -221,7 +230,7 @@
   line-height: 1.35;
   margin: 0;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -244,11 +253,11 @@
   line-height: 1.4;
 }
 
+/* ── Bas de carte : prix + lien ── */
 .gcg-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-top: 4px;
   gap: 6px;
 }
 
@@ -258,35 +267,41 @@
   color: var(--primary);
 }
 
+/* Lien "Voir" — style bouton */
 .gcg-link {
   font-size: 11px;
-  color: var(--text-secondary);
+  font-weight: 600;
+  color: var(--primary);
   text-decoration: none;
-  transition: color 0.15s;
+  border: 1px solid rgba(99, 102, 241, 0.35);
+  background: rgba(99, 102, 241, 0.08);
+  padding: 4px 10px;
+  border-radius: 8px;
+  transition: all 0.15s;
+  white-space: nowrap;
 }
 
 .gcg-link:hover {
-  color: var(--primary);
+  background: rgba(99, 102, 241, 0.18);
+  border-color: var(--primary);
 }
 
-/* ── Messages ────────────────────────────────────── */
+/* ── Messages ── */
 .gcg-reserved-owner {
   font-size: 11px;
   color: #667eea;
-  margin: 2px 0 0;
+  margin: 0;
 }
-
 .gcg-reserved-friend {
   font-size: 11px;
   color: var(--text-secondary);
   margin: 4px 0 0;
 }
 
-/* ── Boutons actions ─────────────────────────────── */
+/* ── Boutons actions ── */
 .gcg-actions {
   display: flex;
   gap: 6px;
-  margin-top: 8px;
   flex-wrap: wrap;
 }
 
@@ -311,7 +326,6 @@
   color: var(--primary);
   border: 1px solid rgba(99, 102, 241, 0.3);
 }
-
 .gcg-btn--primary:hover {
   background: rgba(99, 102, 241, 0.25);
 }
@@ -321,7 +335,6 @@
   color: var(--text-secondary);
   border: 1px solid var(--border-color);
 }
-
 .gcg-btn--ghost:hover {
   background: var(--bg-tertiary);
   color: var(--text-primary);
@@ -332,7 +345,6 @@
   color: var(--text-primary);
   border: 1px solid var(--border-color);
 }
-
 .gcg-btn--secondary:hover {
   background: var(--bg-tertiary);
 }
@@ -342,7 +354,6 @@
   color: var(--danger);
   border: 1px solid rgba(239, 68, 68, 0.25);
 }
-
 .gcg-btn--danger:hover {
   background: rgba(239, 68, 68, 0.22);
 }
@@ -377,14 +388,13 @@
   border-color: #e05c87;
   color: #e05c87;
 }
-
 .gcg-btn--voted {
   background: rgba(224, 92, 135, 0.15);
   border-color: #e05c87;
   color: #e05c87;
 }
 
-/* ── Visibilité mobile/desktop ───────────────────── */
+/* ── Visibilité mobile/desktop ── */
 .gcg-mobile-only {
   display: none;
 }
@@ -392,7 +402,7 @@
   display: flex;
 }
 
-/* ── Responsive ──────────────────────────────────── */
+/* ── Responsive ── */
 @media (max-width: 600px) {
   .gcg-grid {
     gap: 10px;
@@ -401,7 +411,6 @@
   .gcg-img-wrapper {
     height: 100px;
   }
-
   .gcg-img-emoji {
     font-size: 28px;
   }
@@ -409,20 +418,17 @@
   .gcg-body {
     padding: 8px 10px 10px;
   }
-
   .gcg-title {
     font-size: 12px;
   }
-
   .gcg-price {
     font-size: 13px;
   }
 
-  /* Mobile : hover impossible → actions toujours visibles */
+  /* Mobile : hover impossible → overlay caché, boutons toujours visibles */
   .gcg-hover-actions {
     display: none;
   }
-
   .gcg-mobile-only {
     display: flex;
   }

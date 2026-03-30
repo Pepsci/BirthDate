@@ -117,7 +117,6 @@ const GiftCardGrid = ({
         const item = normalize(rawItem);
         const isDeleting = deletingId === item.id;
 
-        // ── Carte en mode suppression ──────────────────────────────────────
         if (isDeleting) {
           return (
             <div key={item.id} className="gcg-card gcg-card--deleting">
@@ -149,7 +148,6 @@ const GiftCardGrid = ({
           );
         }
 
-        // ── Carte normale — clic ouvre le modal ───────────────────────────
         return (
           <div
             key={item.id}
@@ -185,7 +183,7 @@ const GiftCardGrid = ({
                 </span>
               )}
 
-              {/* Overlay hover desktop — stopPropagation pour ne pas ouvrir le modal */}
+              {/* Overlay hover desktop */}
               {!readOnly && (
                 <div className="gcg-hover-actions">
                   {onEdit && (
@@ -216,190 +214,70 @@ const GiftCardGrid = ({
 
             {/* ── Corps ── */}
             <div className="gcg-body">
-              <h4 className="gcg-title">{item.title}</h4>
+              {/* Haut — titre, description, meta */}
+              <div className="gcg-body-top">
+                <h4 className="gcg-title">{item.title}</h4>
 
-              {item.description && (
-                <p className="gcg-desc">{item.description}</p>
-              )}
-
-              {type === "gifts" && item.occasion && (
-                <p className="gcg-meta">
-                  {getOccasionEmoji(item.occasion)} {item.occasion}
-                  {item.year ? ` · ${item.year}` : ""}
-                </p>
-              )}
-
-              <div className="gcg-footer">
-                {item.price && (
-                  <span className="gcg-price">
-                    {item.price}
-                    {type === "wishlist" ? " €" : ""}
-                  </span>
+                {item.description && (
+                  <p className="gcg-desc">{item.description}</p>
                 )}
-                {item.url && (
-                  <a
-                    href={item.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="gcg-link"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    🔗 Voir
-                  </a>
+
+                {type === "gifts" && item.occasion && (
+                  <p className="gcg-meta">
+                    {getOccasionEmoji(item.occasion)} {item.occasion}
+                    {item.year ? ` · ${item.year}` : ""}
+                  </p>
+                )}
+
+                {type === "event" && item.proposedBy && (
+                  <p className="gcg-meta">Proposé par {item.proposedBy}</p>
+                )}
+
+                {type === "wishlist" && !readOnly && item.isReserved && (
+                  <p className="gcg-reserved-owner">
+                    🎁 Quelqu'un a réservé ce cadeau pour toi
+                  </p>
                 )}
               </div>
 
-              {type === "event" && item.proposedBy && (
-                <p className="gcg-meta">Proposé par {item.proposedBy}</p>
-              )}
+              {/* Bas — prix + lien + actions — toujours collé en bas */}
+              <div className="gcg-body-bottom">
+                {/* Prix + lien */}
+                <div className="gcg-footer">
+                  {item.price && (
+                    <span className="gcg-price">
+                      {item.price}
+                      {type === "wishlist" ? " €" : ""}
+                    </span>
+                  )}
+                  {item.url && (
+                    <a
+                      href={item.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="gcg-link"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      🔗 Voir
+                    </a>
+                  )}
+                </div>
 
-              {type === "wishlist" && !readOnly && item.isReserved && (
-                <p className="gcg-reserved-owner">
-                  🎁 Quelqu'un a réservé ce cadeau pour toi
-                </p>
-              )}
-
-              {/* ── Actions — stopPropagation sur tous les boutons ── */}
-              <div className="gcg-actions">
-                {type === "wishlist" && !readOnly && !item.isReserved && (
-                  <>
-                    <button
-                      className="gcg-btn gcg-btn--secondary gcg-mobile-only"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onToggle?.(rawItem);
-                      }}
-                    >
-                      {rawItem.isShared ? "🔒" : "🔓"}
-                    </button>
-                    <button
-                      className="gcg-btn gcg-btn--secondary gcg-mobile-only"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onEdit?.(rawItem);
-                      }}
-                    >
-                      ✏️
-                    </button>
-                    <button
-                      className="gcg-btn gcg-btn--danger gcg-mobile-only"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDelete?.(item.id);
-                      }}
-                    >
-                      🗑️
-                    </button>
-                    <button
-                      className="gcg-btn gcg-btn--ghost gcg-desktop-only"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onToggle?.(rawItem);
-                      }}
-                    >
-                      {rawItem.isShared ? "🔒 Rendre privé" : "🔓 Partager"}
-                    </button>
-                  </>
-                )}
-
-                {type === "gifts" && !readOnly && (
-                  <>
-                    <button
-                      className="gcg-btn gcg-btn--secondary gcg-mobile-only"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onToggle?.(rawItem);
-                      }}
-                    >
-                      {rawItem.purchased ? "✅" : "⭕"}
-                    </button>
-                    <button
-                      className="gcg-btn gcg-btn--secondary gcg-mobile-only"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onEdit?.(rawItem);
-                      }}
-                    >
-                      ✏️
-                    </button>
-                    <button
-                      className="gcg-btn gcg-btn--danger gcg-mobile-only"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDelete?.(item.id);
-                      }}
-                    >
-                      🗑️
-                    </button>
-                    <button
-                      className="gcg-btn gcg-btn--ghost gcg-desktop-only"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onToggle?.(rawItem);
-                      }}
-                    >
-                      {rawItem.purchased ? "⭕ Non acheté" : "✅ Acheté"}
-                    </button>
-                  </>
-                )}
-
-                {type === "wishlist" && readOnly && !item.isPurchased && (
-                  <>
-                    {!item.isReserved ? (
-                      <>
-                        <button
-                          className="gcg-btn gcg-btn--primary"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onReserve?.(item.id);
-                          }}
-                        >
-                          🎁 Je réserve
-                        </button>
-                        <button
-                          className="gcg-btn gcg-btn--ghost"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onOffered?.(rawItem);
-                          }}
-                        >
-                          ✅ Je l'ai offert
-                        </button>
-                      </>
-                    ) : item.isReservedByMe ? (
-                      <>
-                        <button
-                          className="gcg-btn gcg-btn--ghost"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onUnreserve?.(item.id);
-                          }}
-                        >
-                          ↩️ Annuler
-                        </button>
-                        <button
-                          className="gcg-btn gcg-btn--ghost"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onOffered?.(rawItem);
-                          }}
-                        >
-                          ✅ Offert
-                        </button>
-                      </>
-                    ) : (
-                      <p className="gcg-reserved-friend">
-                        🧑 Réservé par {item.reservedByName || "un ami"}
-                      </p>
-                    )}
-                  </>
-                )}
-
-                {type === "event" && (
-                  <div className="gcg-vote-row">
-                    {item.isOwner && onEdit && (
+                {/* Actions */}
+                <div className="gcg-actions">
+                  {type === "wishlist" && !readOnly && !item.isReserved && (
+                    <>
                       <button
-                        className="gcg-btn gcg-btn--ghost gcg-btn--sm"
+                        className="gcg-btn gcg-btn--secondary gcg-mobile-only"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onToggle?.(rawItem);
+                        }}
+                      >
+                        {rawItem.isShared ? "🔒" : "🔓"}
+                      </button>
+                      <button
+                        className="gcg-btn gcg-btn--secondary gcg-mobile-only"
                         onClick={(e) => {
                           e.stopPropagation();
                           onEdit?.(rawItem);
@@ -407,25 +285,151 @@ const GiftCardGrid = ({
                       >
                         ✏️
                       </button>
-                    )}
-                    <button
-                      className={`gcg-btn gcg-btn--vote ${item.hasVoted ? "gcg-btn--voted" : ""}`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onVote?.(item.id);
-                      }}
-                    >
-                      ♥ {item.voteCount}
-                    </button>
-                  </div>
-                )}
+                      <button
+                        className="gcg-btn gcg-btn--danger gcg-mobile-only"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDelete?.(item.id);
+                        }}
+                      >
+                        🗑️
+                      </button>
+                      <button
+                        className="gcg-btn gcg-btn--ghost gcg-desktop-only"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onToggle?.(rawItem);
+                        }}
+                      >
+                        {rawItem.isShared ? "🔒 Rendre privé" : "🔓 Partager"}
+                      </button>
+                    </>
+                  )}
+
+                  {type === "gifts" && !readOnly && (
+                    <>
+                      <button
+                        className="gcg-btn gcg-btn--secondary gcg-mobile-only"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onToggle?.(rawItem);
+                        }}
+                      >
+                        {rawItem.purchased ? "✅" : "⭕"}
+                      </button>
+                      <button
+                        className="gcg-btn gcg-btn--secondary gcg-mobile-only"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onEdit?.(rawItem);
+                        }}
+                      >
+                        ✏️
+                      </button>
+                      <button
+                        className="gcg-btn gcg-btn--danger gcg-mobile-only"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDelete?.(item.id);
+                        }}
+                      >
+                        🗑️
+                      </button>
+                      <button
+                        className="gcg-btn gcg-btn--ghost gcg-desktop-only"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onToggle?.(rawItem);
+                        }}
+                      >
+                        {rawItem.purchased ? "⭕ Non acheté" : "✅ Acheté"}
+                      </button>
+                    </>
+                  )}
+
+                  {type === "wishlist" && readOnly && !item.isPurchased && (
+                    <>
+                      {!item.isReserved ? (
+                        <>
+                          <button
+                            className="gcg-btn gcg-btn--primary"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onReserve?.(item.id);
+                            }}
+                          >
+                            🎁 Je réserve
+                          </button>
+                          <button
+                            className="gcg-btn gcg-btn--ghost"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onOffered?.(rawItem);
+                            }}
+                          >
+                            ✅ Je l'ai offert
+                          </button>
+                        </>
+                      ) : item.isReservedByMe ? (
+                        <>
+                          <button
+                            className="gcg-btn gcg-btn--ghost"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onUnreserve?.(item.id);
+                            }}
+                          >
+                            ↩️ Annuler
+                          </button>
+                          <button
+                            className="gcg-btn gcg-btn--ghost"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onOffered?.(rawItem);
+                            }}
+                          >
+                            ✅ Offert
+                          </button>
+                        </>
+                      ) : (
+                        <p className="gcg-reserved-friend">
+                          🧑 Réservé par {item.reservedByName || "un ami"}
+                        </p>
+                      )}
+                    </>
+                  )}
+
+                  {type === "event" && (
+                    <div className="gcg-vote-row">
+                      {item.isOwner && onEdit && (
+                        <button
+                          className="gcg-btn gcg-btn--ghost gcg-btn--sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onEdit?.(rawItem);
+                          }}
+                        >
+                          ✏️
+                        </button>
+                      )}
+                      <button
+                        className={`gcg-btn gcg-btn--vote ${item.hasVoted ? "gcg-btn--voted" : ""}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onVote?.(item.id);
+                        }}
+                      >
+                        ♥ {item.voteCount}
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
         );
       })}
 
-      {/* Modal détail — s'ouvre au clic sur une carte */}
       {selectedItem && (
         <GiftDetailModal
           item={selectedItem}
