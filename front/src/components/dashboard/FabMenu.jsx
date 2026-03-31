@@ -9,7 +9,12 @@ const ALL_FAB_ITEMS = [
     color: "#6366f1",
     icon: (
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-        <path d="M2 4h12M4 8h8M6 12h4" stroke="white" strokeWidth="1.6" strokeLinecap="round" />
+        <path
+          d="M2 4h12M4 8h8M6 12h4"
+          stroke="white"
+          strokeWidth="1.6"
+          strokeLinecap="round"
+        />
       </svg>
     ),
   },
@@ -19,10 +24,41 @@ const ALL_FAB_ITEMS = [
     color: "#0ea5e9",
     icon: (
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-        <rect x="1.5" y="2.5" width="13" height="11" rx="1.5" stroke="white" strokeWidth="1.4" />
-        <line x1="1.5" y1="6.5" x2="14.5" y2="6.5" stroke="white" strokeWidth="1.4" />
-        <line x1="5" y1="1" x2="5" y2="4" stroke="white" strokeWidth="1.4" strokeLinecap="round" />
-        <line x1="11" y1="1" x2="11" y2="4" stroke="white" strokeWidth="1.4" strokeLinecap="round" />
+        <rect
+          x="1.5"
+          y="2.5"
+          width="13"
+          height="11"
+          rx="1.5"
+          stroke="white"
+          strokeWidth="1.4"
+        />
+        <line
+          x1="1.5"
+          y1="6.5"
+          x2="14.5"
+          y2="6.5"
+          stroke="white"
+          strokeWidth="1.4"
+        />
+        <line
+          x1="5"
+          y1="1"
+          x2="5"
+          y2="4"
+          stroke="white"
+          strokeWidth="1.4"
+          strokeLinecap="round"
+        />
+        <line
+          x1="11"
+          y1="1"
+          x2="11"
+          y2="4"
+          stroke="white"
+          strokeWidth="1.4"
+          strokeLinecap="round"
+        />
       </svg>
     ),
   },
@@ -47,8 +83,17 @@ const ALL_FAB_ITEMS = [
     color: "#f59e0b",
     icon: (
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-        <path d="M8 1.5a6.5 6.5 0 1 1 0 13 6.5 6.5 0 0 1 0-13z" stroke="white" strokeWidth="1.4" />
-        <path d="M8 5v3.5l2.5 1.5" stroke="white" strokeWidth="1.4" strokeLinecap="round" />
+        <path
+          d="M8 1.5a6.5 6.5 0 1 1 0 13 6.5 6.5 0 0 1 0-13z"
+          stroke="white"
+          strokeWidth="1.4"
+        />
+        <path
+          d="M8 5v3.5l2.5 1.5"
+          stroke="white"
+          strokeWidth="1.4"
+          strokeLinecap="round"
+        />
       </svg>
     ),
   },
@@ -58,19 +103,37 @@ const ALL_FAB_ITEMS = [
     color: "#ec4899",
     icon: (
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-        <line x1="8" y1="2" x2="8" y2="14" stroke="white" strokeWidth="2.2" strokeLinecap="round" />
-        <line x1="2" y1="8" x2="14" y2="8" stroke="white" strokeWidth="2.2" strokeLinecap="round" />
+        <line
+          x1="8"
+          y1="2"
+          x2="8"
+          y2="14"
+          stroke="white"
+          strokeWidth="2.2"
+          strokeLinecap="round"
+        />
+        <line
+          x1="2"
+          y1="8"
+          x2="14"
+          y2="8"
+          stroke="white"
+          strokeWidth="2.2"
+          strokeLinecap="round"
+        />
       </svg>
     ),
   },
 ];
 
+const OFFSET_X = -120;
+
 const POSITIONS = [
-  { x: -14, y:  56 },
-  { x: -30, y: 112 },
-  { x: -44, y: 168 },
-  { x: -30, y: 224 },
-  { x: -14, y: 280 },
+  { x: -14 + OFFSET_X, y: 70 },
+  { x: -30 + OFFSET_X, y: 140 },
+  { x: -44 + OFFSET_X, y: 210 },
+  { x: -30 + OFFSET_X, y: 280 },
+  { x: -14 + OFFSET_X, y: 350 },
 ];
 
 export default function FabMenu({
@@ -96,7 +159,13 @@ export default function FabMenu({
     return true;
   });
 
-  const handlers = { filter: onFilter, agenda: onAgenda, chat: onChat, events: onEvents, form: onForm };
+  const handlers = {
+    filter: onFilter,
+    agenda: onAgenda,
+    chat: onChat,
+    events: onEvents,
+    form: onForm,
+  };
 
   useEffect(() => {
     if (!isOpen) return;
@@ -123,11 +192,14 @@ export default function FabMenu({
   };
 
   const hasActive =
-    isFilterVisible || isChatVisible || isEventsVisible || isFormVisible || viewMode === "agenda";
+    isFilterVisible ||
+    isChatVisible ||
+    isEventsVisible ||
+    isFormVisible ||
+    viewMode === "agenda";
 
   return (
     <div className="fab-menu" ref={containerRef}>
-
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -147,7 +219,9 @@ export default function FabMenu({
             const pos = POSITIONS[i] ?? { x: 0, y: (i + 1) * 56 };
             const label =
               item.id === "agenda"
-                ? viewMode === "card" ? "Agenda" : "Carte"
+                ? viewMode === "card"
+                  ? "Agenda"
+                  : "Carte"
                 : item.label;
 
             return (
@@ -192,12 +266,27 @@ export default function FabMenu({
         aria-label={isOpen ? "Fermer le menu" : "Ouvrir le menu"}
       >
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <line x1="8" y1="2" x2="8" y2="14" stroke="white" strokeWidth="2.2" strokeLinecap="round" />
-          <line x1="2" y1="8" x2="14" y2="8" stroke="white" strokeWidth="2.2" strokeLinecap="round" />
+          <line
+            x1="8"
+            y1="2"
+            x2="8"
+            y2="14"
+            stroke="white"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+          />
+          <line
+            x1="2"
+            y1="8"
+            x2="14"
+            y2="8"
+            stroke="white"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+          />
         </svg>
         {hasActive && !isOpen && <span className="fab-active-dot" />}
       </motion.button>
-
     </div>
   );
 }
