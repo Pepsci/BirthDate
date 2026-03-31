@@ -29,16 +29,27 @@ const SectionPagination = ({ currentPage, totalPages, onPageChange }) => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
     >
-      <button className="events-pagination-btn" onClick={() => onPageChange(currentPage - 1)} disabled={currentPage === 1}>Précédent</button>
+      <button
+        className="events-pagination-btn"
+        onClick={() => onPageChange(currentPage - 1)}
+        disabled={currentPage === 1}
+      >
+        Précédent
+      </button>
 
       {start > 1 && (
         <>
-          <button className={`events-pagination-btn ${currentPage === 1 ? "active" : ""}`} onClick={() => onPageChange(1)}>1</button>
+          <button
+            className={`events-pagination-btn ${currentPage === 1 ? "active" : ""}`}
+            onClick={() => onPageChange(1)}
+          >
+            1
+          </button>
           {start > 2 && <span className="events-pagination-ellipsis">…</span>}
         </>
       )}
 
-      {Array.from({ length: end - start + 1 }, (_, i) => start + i).map(p => (
+      {Array.from({ length: end - start + 1 }, (_, i) => start + i).map((p) => (
         <motion.button
           key={p}
           className={`events-pagination-btn ${currentPage === p ? "active" : ""}`}
@@ -52,23 +63,45 @@ const SectionPagination = ({ currentPage, totalPages, onPageChange }) => {
 
       {end < totalPages && (
         <>
-          {end < totalPages - 1 && <span className="events-pagination-ellipsis">…</span>}
-          <button className={`events-pagination-btn ${currentPage === totalPages ? "active" : ""}`} onClick={() => onPageChange(totalPages)}>{totalPages}</button>
+          {end < totalPages - 1 && (
+            <span className="events-pagination-ellipsis">…</span>
+          )}
+          <button
+            className={`events-pagination-btn ${currentPage === totalPages ? "active" : ""}`}
+            onClick={() => onPageChange(totalPages)}
+          >
+            {totalPages}
+          </button>
         </>
       )}
 
-      <button className="events-pagination-btn" onClick={() => onPageChange(currentPage + 1)} disabled={currentPage === totalPages}>Suivant</button>
+      <button
+        className="events-pagination-btn"
+        onClick={() => onPageChange(currentPage + 1)}
+        disabled={currentPage === totalPages}
+      >
+        Suivant
+      </button>
     </motion.div>
   );
 };
 
 // ─── Section paginée animée ──────────────────────────────
-const PaginatedSection = ({ title, events, navigate, onEdit, onDelete }) => {
+const PaginatedSection = ({
+  title,
+  events,
+  navigate,
+  onEdit,
+  onDelete,
+  onLeave,
+}) => {
   const [page, setPage] = useState(1);
   const perPage = isMobile() ? MOBILE_PER_PAGE : DESKTOP_PER_PAGE;
   const totalPages = Math.ceil(events.length / perPage);
   const showPagination = events.length > PAGINATION_THRESHOLD;
-  const visible = showPagination ? events.slice((page - 1) * perPage, page * perPage) : events;
+  const visible = showPagination
+    ? events.slice((page - 1) * perPage, page * perPage)
+    : events;
 
   if (events.length === 0) return null;
 
@@ -82,7 +115,7 @@ const PaginatedSection = ({ title, events, navigate, onEdit, onDelete }) => {
       <h3>{title}</h3>
       <motion.div
         className="events-grid"
-        key={page} // re-anime à chaque changement de page
+        key={page}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.2 }}
@@ -94,6 +127,7 @@ const PaginatedSection = ({ title, events, navigate, onEdit, onDelete }) => {
             navigate={navigate}
             onEdit={onEdit}
             onDelete={onDelete}
+            onLeave={onLeave}
             index={i}
           />
         ))}
@@ -102,7 +136,10 @@ const PaginatedSection = ({ title, events, navigate, onEdit, onDelete }) => {
         <SectionPagination
           currentPage={page}
           totalPages={totalPages}
-          onPageChange={(p) => { setPage(p); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+          onPageChange={(p) => {
+            setPage(p);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
         />
       )}
     </motion.div>
@@ -125,8 +162,13 @@ const EventsPanel = ({ allDates }) => {
       const organized = response.data.organized || [];
       const invited = response.data.invited || [];
       const allEvtsMap = new Map();
-      organized.forEach(e => allEvtsMap.set(e._id, { ...e, isOrganizer: true }));
-      invited.forEach(e => { if (!allEvtsMap.has(e._id)) allEvtsMap.set(e._id, { ...e, isOrganizer: false }); });
+      organized.forEach((e) =>
+        allEvtsMap.set(e._id, { ...e, isOrganizer: true }),
+      );
+      invited.forEach((e) => {
+        if (!allEvtsMap.has(e._id))
+          allEvtsMap.set(e._id, { ...e, isOrganizer: false });
+      });
       const sorted = Array.from(allEvtsMap.values()).sort((a, b) => {
         const dateA = a.fixedDate || a.selectedDate || a.createdAt;
         const dateB = b.fixedDate || b.selectedDate || b.createdAt;
@@ -140,35 +182,47 @@ const EventsPanel = ({ allDates }) => {
     }
   };
 
-  useEffect(() => { loadEvents(); }, []);
+  useEffect(() => {
+    loadEvents();
+  }, []);
 
   const handleDeleteEvent = async (shortId) => {
     try {
       await apiHandler.delete(`/events/${shortId}`);
-      setEvents(prev => prev.filter(e => e.shortId !== shortId));
+      setEvents((prev) => prev.filter((e) => e.shortId !== shortId));
     } catch (err) {
       console.error("Error deleting event", err);
+    }
+  };
+
+  const handleLeaveEvent = async (shortId) => {
+    try {
+      await apiHandler.delete(`/events/${shortId}/leave`);
+      setEvents((prev) => prev.filter((e) => e.shortId !== shortId));
+    } catch (err) {
+      console.error("Error leaving event", err);
     }
   };
 
   const getFilteredEvents = () => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    return events.filter(e => {
+    return events.filter((e) => {
       const eDate = e.dateMode === "fixed" ? e.fixedDate : e.selectedDate;
       const isPast = eDate && new Date(eDate) < today;
       if (filter === "mine") return e.isOrganizer;
       if (filter === "invited") return !e.isOrganizer;
       if (filter === "upcoming") return !isPast;
       if (filter === "past") return isPast;
-      if (filter === "pending") return !e.isOrganizer && e.myRsvpStatus === "pending";
+      if (filter === "pending")
+        return !e.isOrganizer && e.myRsvpStatus === "pending";
       return true;
     });
   };
 
   const filteredEvents = getFilteredEvents();
-  const organized = filteredEvents.filter(e => e.isOrganizer);
-  const invited = filteredEvents.filter(e => !e.isOrganizer);
+  const organized = filteredEvents.filter((e) => e.isOrganizer);
+  const invited = filteredEvents.filter((e) => !e.isOrganizer);
   const flatMode = filter === "mine" || filter === "invited";
 
   const filters = [
@@ -202,7 +256,7 @@ const EventsPanel = ({ allDates }) => {
 
       {/* Filtres */}
       <div className="events-filters">
-        {filters.map(f => (
+        {filters.map((f) => (
           <motion.button
             key={f.key}
             className={`${filter === f.key ? `active ${f.className || ""}` : ""}`}
@@ -257,16 +311,32 @@ const EventsPanel = ({ allDates }) => {
           >
             {flatMode ? (
               <PaginatedSection
-                title={filter === "mine" ? "Mes événements organisés" : "Invitations reçues"}
+                title={
+                  filter === "mine"
+                    ? "Mes événements organisés"
+                    : "Invitations reçues"
+                }
                 events={filteredEvents}
                 navigate={navigate}
                 onEdit={filter === "mine" ? setEditingEvent : undefined}
                 onDelete={filter === "mine" ? handleDeleteEvent : undefined}
+                onLeave={filter === "invited" ? handleLeaveEvent : undefined}
               />
             ) : (
               <>
-                <PaginatedSection title="Mes événements organisés" events={organized} navigate={navigate} onEdit={setEditingEvent} onDelete={handleDeleteEvent} />
-                <PaginatedSection title="Invitations reçues" events={invited} navigate={navigate} />
+                <PaginatedSection
+                  title="Mes événements organisés"
+                  events={organized}
+                  navigate={navigate}
+                  onEdit={setEditingEvent}
+                  onDelete={handleDeleteEvent}
+                />
+                <PaginatedSection
+                  title="Invitations reçues"
+                  events={invited}
+                  navigate={navigate}
+                  onLeave={handleLeaveEvent}
+                />
               </>
             )}
           </motion.div>

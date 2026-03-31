@@ -3,8 +3,16 @@ import { motion, AnimatePresence } from "motion/react";
 import EventCountdown from "./EventCountdown";
 import "./css/eventCard.css";
 
-const EventCard = ({ event, navigate, onEdit, onDelete, index = 0 }) => {
+const EventCard = ({
+  event,
+  navigate,
+  onEdit,
+  onDelete,
+  onLeave,
+  index = 0,
+}) => {
   const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [leaveConfirm, setLeaveConfirm] = useState(false);
 
   const eventDate = event.fixedDate || event.selectedDate || null;
   const isPast = eventDate
@@ -57,6 +65,20 @@ const EventCard = ({ event, navigate, onEdit, onDelete, index = 0 }) => {
     setDeleteConfirm(false);
   };
 
+  const handleLeave = (e) => {
+    e.stopPropagation();
+    if (!leaveConfirm) {
+      setLeaveConfirm(true);
+      return;
+    }
+    onLeave(event.shortId);
+  };
+
+  const handleCancelLeave = (e) => {
+    e.stopPropagation();
+    setLeaveConfirm(false);
+  };
+
   return (
     <motion.div
       className="event-card"
@@ -105,7 +127,7 @@ const EventCard = ({ event, navigate, onEdit, onDelete, index = 0 }) => {
         )}
       </div>
 
-      {/* ── Countdown : toujours affiché, 0 si date passée ou non définie ── */}
+      {/* ── Countdown ── */}
       <EventCountdown targetDate={eventDate} />
 
       <div className="event-card-footer">
@@ -117,7 +139,8 @@ const EventCard = ({ event, navigate, onEdit, onDelete, index = 0 }) => {
           className="event-card-actions"
           onClick={(e) => e.stopPropagation()}
         >
-          {event.isOrganizer && onEdit && (
+          {/* ── Organisateur ── */}
+          {event.isOrganizer && onEdit && !deleteConfirm && (
             <motion.button
               className="event-card-action"
               onClick={(e) => {
@@ -161,14 +184,53 @@ const EventCard = ({ event, navigate, onEdit, onDelete, index = 0 }) => {
             </>
           )}
 
+          {/* ── Invité ── */}
           {!event.isOrganizer && (
-            <motion.button
-              className="event-card-action"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              Voir
-            </motion.button>
+            <>
+              {!leaveConfirm && (
+                <motion.button
+                  className="event-card-action"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(url);
+                  }}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  Voir
+                </motion.button>
+              )}
+
+              {onLeave && (
+                <>
+                  <motion.button
+                    className={`event-card-action ${leaveConfirm ? "danger-confirm" : "danger"}`}
+                    onClick={handleLeave}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    animate={leaveConfirm ? { scale: [1, 1.05, 1] } : {}}
+                    transition={{ duration: 0.2 }}
+                  >
+                    {leaveConfirm ? "⚠️ Confirmer" : "🚪"}
+                  </motion.button>
+                  <AnimatePresence>
+                    {leaveConfirm && (
+                      <motion.button
+                        className="event-card-action"
+                        onClick={handleCancelLeave}
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.8 }}
+                        transition={{ duration: 0.15 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        ✕
+                      </motion.button>
+                    )}
+                  </AnimatePresence>
+                </>
+              )}
+            </>
           )}
         </div>
       </div>
