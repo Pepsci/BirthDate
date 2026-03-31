@@ -15,9 +15,10 @@ img {
   transition: background-color 0.3s ease;
 }
 
-.homePageCurrentuser {
+.homePageCurrentUser {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .homePageCurrentUser {

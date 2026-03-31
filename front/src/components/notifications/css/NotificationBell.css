@@ -14,7 +14,9 @@
   color: var(--text-secondary);
   cursor: pointer;
   border-radius: 50%;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 
 .notif-bell-btn:hover {

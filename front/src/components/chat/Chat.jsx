@@ -1,4 +1,3 @@
-// src/components/Chat/Chat.jsx
 import { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import apiHandler from "../../api/apiHandler";
@@ -9,7 +8,7 @@ import ChatWindow from "./ChatWindow";
 import ChatModal from "./ChatModal";
 import "./css/chat.css";
 
-function Chat() {
+function Chat({ initialConversationId = null }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { markAsRead, setActiveConversation } = useNotifications();
@@ -64,7 +63,16 @@ function Chat() {
   const loadConversations = async () => {
     try {
       const response = await apiHandler.get("/conversations");
-      setConversations(response.data);
+      const convs = response.data;
+      setConversations(convs);
+
+      // ── Auto-sélection depuis deep link notif ──
+      if (initialConversationId) {
+        const target = convs.find((c) => c._id === initialConversationId);
+        if (target) {
+          handleSelectConversation(target);
+        }
+      }
     } catch (error) {
       console.error("❌ Error loading conversations:", error);
       setConversations([]);
@@ -77,7 +85,6 @@ function Chat() {
     setConversations((prev) =>
       prev.map((conv) => {
         if (conv._id !== conversationId) return conv;
-
         const senderId =
           typeof message.sender === "object"
             ? message.sender._id
@@ -87,7 +94,6 @@ function Chat() {
         )._id;
         const isOwnMessage = senderId === currentUserId;
         const isSelected = activeConversationRef.current === conversationId;
-
         return {
           ...conv,
           lastMessage: message,
@@ -127,7 +133,6 @@ function Chat() {
   const handleUserOffline = ({ userId }) =>
     console.log("User offline:", userId);
 
-  // ← Callback passée à ChatWindow pour réinitialiser le badge localement
   const handleConversationRead = (conversationId) => {
     setConversations((prev) =>
       prev.map((conv) =>
@@ -138,11 +143,8 @@ function Chat() {
 
   const handleSelectConversation = async (conversation) => {
     setSelectedConversation(conversation);
-
     if (isMobile) setIsChatWindowOpen(true);
-
     markAsRead(conversation._id);
-
     if (conversation.unreadCount > 0) {
       try {
         await apiHandler.put(`/conversations/${conversation._id}/read`);
@@ -177,7 +179,9 @@ function Chat() {
     const currentUserId = JSON.parse(
       atob(localStorage.getItem("authToken").split(".")[1]),
     )._id;
-    return conversation.participants?.find((p) => p?._id && p._id !== currentUserId);
+    return conversation.participants?.find(
+      (p) => p?._id && p._id !== currentUserId,
+    );
   };
 
   const otherUser = selectedConversation
@@ -205,7 +209,7 @@ function Chat() {
               <ChatWindow
                 conversation={selectedConversation}
                 onBack={handleBackToList}
-                onRead={() => handleConversationRead(selectedConversation._id)} // ← ajouté
+                onRead={() => handleConversationRead(selectedConversation._id)}
               />
             </ChatModal>
           )}
@@ -220,7 +224,7 @@ function Chat() {
           {selectedConversation ? (
             <ChatWindow
               conversation={selectedConversation}
-              onRead={() => handleConversationRead(selectedConversation._id)} // ← ajouté
+              onRead={() => handleConversationRead(selectedConversation._id)}
             />
           ) : (
             <div className="no-conversation-selected">

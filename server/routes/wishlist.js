@@ -149,6 +149,7 @@ router.post("/:id/reserve", isAuthenticated, async (req, res) => {
     item.reservedBy = reservingUserId;
     item.reservedAt = new Date();
     await item.save();
+    console.log("🔔 io dans wishlist:", !!req.app.get("io"));
 
     // ── Notif applicative → propriétaire de la wishlist ──
     // On ne notifie pas si c'est le propriétaire lui-même qui réserve
