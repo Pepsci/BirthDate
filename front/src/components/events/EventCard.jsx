@@ -1,18 +1,23 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import EventCountdown from "./EventCountdown";
 import "./css/eventCard.css";
 
 const EventCard = ({ event, navigate, onEdit, onDelete, index = 0 }) => {
   const [deleteConfirm, setDeleteConfirm] = useState(false);
 
-  const isPast = new Date(event.fixedDate || event.selectedDate || event.createdAt) < new Date();
+  const eventDate = event.fixedDate || event.selectedDate || null;
+  const isPast = eventDate
+    ? new Date(eventDate) < new Date()
+    : new Date(event.createdAt) < new Date();
   const url = `/event/${event.shortId}`;
 
   const getBadgeClass = () => {
     if (event.status === "draft") return "draft";
     if (event.status === "cancelled") return "cancelled";
     if (isPast) return "past";
-    if (!event.isOrganizer && event.myRsvpStatus === "pending") return "pending";
+    if (!event.isOrganizer && event.myRsvpStatus === "pending")
+      return "pending";
     return "confirmed";
   };
 
@@ -20,22 +25,30 @@ const EventCard = ({ event, navigate, onEdit, onDelete, index = 0 }) => {
     if (event.status === "draft") return "Brouillon";
     if (event.status === "cancelled") return "Annulé";
     if (isPast) return "Terminé";
-    if (!event.isOrganizer && event.myRsvpStatus === "pending") return "Action requise";
+    if (!event.isOrganizer && event.myRsvpStatus === "pending")
+      return "Action requise";
     return "Confirmé";
   };
 
   const getEventTypeIcon = () => {
     switch (event.type) {
-      case "birthday": return "🎂";
-      case "party": return "🎊";
-      case "dinner": return "🍽️";
-      default: return "📅";
+      case "birthday":
+        return "🎂";
+      case "party":
+        return "🎊";
+      case "dinner":
+        return "🍽️";
+      default:
+        return "📅";
     }
   };
 
   const handleDelete = (e) => {
     e.stopPropagation();
-    if (!deleteConfirm) { setDeleteConfirm(true); return; }
+    if (!deleteConfirm) {
+      setDeleteConfirm(true);
+      return;
+    }
     onDelete(event.shortId);
   };
 
@@ -48,12 +61,13 @@ const EventCard = ({ event, navigate, onEdit, onDelete, index = 0 }) => {
     <motion.div
       className="event-card"
       onClick={() => navigate(url)}
-      /* ── Entrée en cascade ── */
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: index * 0.06, ease: "easeOut" }}
-      /* ── Hover ── */
-      whileHover={{ y: -5, boxShadow: "var(--card-shadow-hover, 0 10px 28px rgba(0,0,0,0.28))" }}
+      whileHover={{
+        y: -5,
+        boxShadow: "var(--card-shadow-hover, 0 10px 28px rgba(0,0,0,0.28))",
+      }}
       whileTap={{ scale: 0.98 }}
     >
       <span className={`event-card-badge ${getBadgeClass()}`}>
@@ -68,14 +82,20 @@ const EventCard = ({ event, navigate, onEdit, onDelete, index = 0 }) => {
         <span>
           <i className="fa-regular fa-calendar"></i>
           {event.dateMode === "fixed" && event.fixedDate
-            ? new Date(event.fixedDate).toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })
-            : (event.selectedDate ? new Date(event.selectedDate).toLocaleDateString("fr-FR") : "Date à définir")}
+            ? new Date(event.fixedDate).toLocaleDateString("fr-FR", {
+                weekday: "long",
+                day: "numeric",
+                month: "long",
+              })
+            : event.selectedDate
+              ? new Date(event.selectedDate).toLocaleDateString("fr-FR")
+              : "Date à définir"}
         </span>
         <span>
           <i className="fa-solid fa-location-dot"></i>
           {event.locationMode === "fixed" && event.fixedLocation?.name
             ? event.fixedLocation.name
-            : (event.selectedLocation?.name || "Lieu à définir")}
+            : event.selectedLocation?.name || "Lieu à définir"}
         </span>
         {!event.isOrganizer && event.organizer && (
           <span>
@@ -85,16 +105,25 @@ const EventCard = ({ event, navigate, onEdit, onDelete, index = 0 }) => {
         )}
       </div>
 
+      {/* ── Countdown : toujours affiché, 0 si date passée ou non définie ── */}
+      <EventCountdown targetDate={eventDate} />
+
       <div className="event-card-footer">
         <span className="event-card-role">
           {event.isOrganizer ? "Vous êtes l'organisateur" : "Vous êtes invité"}
         </span>
 
-        <div className="event-card-actions" onClick={e => e.stopPropagation()}>
+        <div
+          className="event-card-actions"
+          onClick={(e) => e.stopPropagation()}
+        >
           {event.isOrganizer && onEdit && (
             <motion.button
               className="event-card-action"
-              onClick={e => { e.stopPropagation(); onEdit(event); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit(event);
+              }}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >

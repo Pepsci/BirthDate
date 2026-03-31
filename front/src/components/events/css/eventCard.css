@@ -1,8 +1,22 @@
 /* eventCard.css */
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(6px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.event-card-no-date {
+  font-size: 0.8rem;
+  color: var(--text-tertiary);
+  font-style: italic;
+  margin: 0.5rem 0 0.75rem 0;
+  text-align: center;
 }
 
 .event-card {
@@ -12,7 +26,10 @@
   padding: 1.25rem 1.5rem;
   cursor: pointer;
   position: relative;
-  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease,
+    border-color 0.25s ease;
   display: flex;
   flex-direction: column;
   min-height: 190px;
@@ -42,10 +59,22 @@
   color: var(--text-secondary);
   border: 1px solid var(--border-color);
 }
-.event-card-badge.cancelled { background: var(--danger, #e74c3c); color: #fff; }
-.event-card-badge.past      { background: var(--text-tertiary, #636e72); color: #fff; }
-.event-card-badge.pending   { background: var(--warning, #f39c12); color: #fff; }
-.event-card-badge.confirmed { background: var(--success, #27ae60); color: #fff; }
+.event-card-badge.cancelled {
+  background: var(--danger, #e74c3c);
+  color: #fff;
+}
+.event-card-badge.past {
+  background: var(--text-tertiary, #636e72);
+  color: #fff;
+}
+.event-card-badge.pending {
+  background: var(--warning, #f39c12);
+  color: #fff;
+}
+.event-card-badge.confirmed {
+  background: var(--success, #27ae60);
+  color: #fff;
+}
 
 .event-card-icon {
   font-size: 2rem;
@@ -60,6 +89,8 @@
   font-weight: 700;
   line-height: 1.3;
   padding-right: 70px;
+  word-break: break-word;
+  overflow-wrap: break-word;
 }
 
 .event-card-details {
@@ -92,7 +123,7 @@
   padding-top: 0.85rem;
   border-top: 1px solid var(--border-color);
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
   align-items: center;
   gap: 0.5rem;
 }
@@ -101,12 +132,15 @@
   font-size: 0.8rem;
   color: var(--text-tertiary);
   font-style: italic;
+  min-width: 0;
 }
 
 .event-card-actions {
   display: flex;
   gap: 0.4rem;
   align-items: center;
+  align-self: flex-end;
+  flex-shrink: 0;
 }
 
 .event-card-action {
@@ -118,17 +152,25 @@
   font-size: 0.78rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s ease, color 0.2s ease;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
   white-space: nowrap;
 }
 
-.event-card-action:hover { background: var(--primary); color: #fff; }
+.event-card-action:hover {
+  background: var(--primary);
+  color: #fff;
+}
 
 .event-card-action.danger {
   color: var(--danger, #e74c3c);
   border-color: var(--danger, #e74c3c);
 }
-.event-card-action.danger:hover { background: var(--danger, #e74c3c); color: #fff; }
+.event-card-action.danger:hover {
+  background: var(--danger, #e74c3c);
+  color: #fff;
+}
 
 .event-card-action.danger-confirm {
   background: var(--danger, #e74c3c);
@@ -142,14 +184,18 @@
     min-height: 160px;
   }
 
-  .event-card-icon { font-size: 1.6rem; }
-
-  .event-card-title {
-    font-size: 0.9rem;
-    padding-right: 60px;
+  .event-card-icon {
+    font-size: 1.6rem;
   }
 
-  .event-card-details { font-size: 0.78rem; }
+  .event-card-title {
+    font-size: 0.72rem;
+    padding-right: 30px;
+  }
+
+  .event-card-details {
+    font-size: 0.78rem;
+  }
 
   .event-card-badge {
     font-size: 0.65rem;
