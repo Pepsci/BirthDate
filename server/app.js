@@ -21,6 +21,7 @@ const mergeDatesRouter = require("./routes/mergeDates");
 const pushRoutes = require("./routes/push");
 const eventsRouter = require("./routes/events");
 const notificationsRouter = require("./routes/notifications");
+const statsRouter = require("./routes/stats");
 
 // Charger les cron jobs
 const purgeDeletedAccounts = require("./jobs/purgeDeletedAccounts");
@@ -85,6 +86,7 @@ app.use("/api/merge-dates", mergeDatesRouter);
 app.use("/api/push", pushRoutes);
 app.use("/api/events", eventsRouter);
 app.use("/api/notifications", notificationsRouter);
+app.use("/api/stats", statsRouter);
 
 // Démarrer les cron jobs
 purgeDeletedAccounts.start();
