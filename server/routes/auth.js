@@ -151,7 +151,7 @@ router.post("/signup", async (req, res) => {
 // POST /auth/login
 // ========================================
 router.post("/login", authLimiter, async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, rememberMe } = req.body;
 
   if (!email || !password) {
     return res.status(400).json({ message: "Provide email and password." });
@@ -215,17 +215,22 @@ router.post("/login", authLimiter, async (req, res) => {
     }
 
     const { _id, email: userEmail, name, surname } = foundUser;
+    const tokenDuration = rememberMe ? "30d" : "8h";
+    const cookieMaxAge = rememberMe
+      ? 30 * 24 * 60 * 60 * 1000
+      : 8 * 60 * 60 * 1000;
+
     const authToken = jwt.sign(
       { _id, email: userEmail, name, surname },
       process.env.TOKEN_SECRET,
-      { algorithm: "HS256", expiresIn: "8h" },
+      { algorithm: "HS256", expiresIn: tokenDuration },
     );
 
     res.cookie("authToken", authToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
-      maxAge: 8 * 60 * 60 * 1000,
+      maxAge: cookieMaxAge,
     });
 
     return res.status(200).json({ authToken });
@@ -240,28 +245,44 @@ router.post("/login", authLimiter, async (req, res) => {
 // ========================================
 router.get("/verify", isAuthenticated, async (req, res) => {
   try {
-    const user = await userModel.findById(req.payload._id).select("-password -resetToken -verificationToken");
-    
+    const user = await userModel
+      .findById(req.payload._id)
+      .select("-password -resetToken -verificationToken");
+
     if (!user || user.deletedAt) {
       return res.status(401).json({ message: "User not found" });
     }
 
+    // Conserver la durée du token original
+    const originalExp = req.payload.exp;
+    const now = Math.floor(Date.now() / 1000);
+    const remainingSeconds = originalExp - now;
+
+    // Si moins d'1h restante, on prolonge selon la durée originale
+    const originalDuration = originalExp - req.payload.iat;
+    const isLongToken = originalDuration > 8 * 3600; // > 8h = rememberMe
+
+    const tokenDuration = isLongToken ? "30d" : "8h";
+    const cookieMaxAge = isLongToken
+      ? 30 * 24 * 60 * 60 * 1000
+      : 8 * 60 * 60 * 1000;
+
     const authToken = jwt.sign(
-      { 
-        _id: user._id, 
-        email: user.email, 
-        name: user.name, 
-        surname: user.surname 
+      {
+        _id: user._id,
+        email: user.email,
+        name: user.name,
+        surname: user.surname,
       },
       process.env.TOKEN_SECRET,
-      { algorithm: "HS256", expiresIn: "8h" },
+      { algorithm: "HS256", expiresIn: tokenDuration },
     );
 
     res.cookie("authToken", authToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
-      maxAge: 8 * 60 * 60 * 1000,
+      maxAge: cookieMaxAge,
     });
 
     res.status(200).json({ ...user.toObject(), authToken });
@@ -299,7 +320,9 @@ router.post("/forgot-password", authLimiter, async (req, res) => {
       await sendPasswordResetEmail(email, resetToken);
     }
     // Toujours retourner 200 pour ne pas révéler si l'email existe
-    return res.status(200).json({ message: "Si ce compte existe, un email de récupération a été envoyé." });
+    return res.status(200).json({
+      message: "Si ce compte existe, un email de récupération a été envoyé.",
+    });
   } catch (e) {
     console.error(e);
     return res.status(500).json({ message: "Internal server error" });

@@ -21,7 +21,8 @@ import "./authpage.css";
 //   2. Connexion normale                    → déchiffre la clé privée existante
 //   3. Déchiffrement échoue (corrompu)      → régénère (fallback silencieux)
 async function setupE2EKeys(password, userData) {
-  const { _id, publicKey, encryptedPrivateKey, oldEncryptedPrivateKey } = userData;
+  const { _id, publicKey, encryptedPrivateKey, oldEncryptedPrivateKey } =
+    userData;
   const userId = _id.toString();
 
   if (!publicKey || !encryptedPrivateKey) {
@@ -69,7 +70,8 @@ const AuthPage = () => {
 
   const navigate = useNavigate();
   const location = useLocation();
-  const { storeToken, authenticateUser, setUserSession, isLoggedIn } = useContext(AuthContext);
+  const { storeToken, authenticateUser, setUserSession, isLoggedIn } =
+    useContext(AuthContext);
 
   const from = location.state?.from?.pathname || "/home";
   const isFromFriends = location.state?.from?.search?.includes("tab=friends");
@@ -81,13 +83,17 @@ const AuthPage = () => {
     else setPanel("login");
   }, [location.pathname]);
 
+  navigate;
   useEffect(() => {
-    authenticateUser();
     if (isLoggedIn) navigate(from);
   }, [isLoggedIn]);
 
   // ─── LOGIN ───────────────────────────────────────────
-  const [loginData, setLoginData] = useState({ email: "", password: "" });
+  const [loginData, setLoginData] = useState({
+    email: "",
+    password: "",
+    rememberMe: false,
+  });
   const [loginError, setLoginError] = useState("");
 
   const handleLogin = async (e) => {
@@ -95,11 +101,11 @@ const AuthPage = () => {
     setLoginError("");
     try {
       // Étape 1 : authentification classique → cookie httpOnly posé par le serveur
-      const response = await apiHandler.signin(loginData);
-      if (!response?.authToken) {
-        setLoginError("Réponse inattendue du serveur.");
-        return;
-      }
+      const response = await apiHandler.signin({
+        email: loginData.email,
+        password: loginData.password,
+        rememberMe: loginData.rememberMe,
+      });
       storeToken(response.authToken);
 
       // Étape 2 : récupère les données complètes de l'utilisateur (incluant les champs E2E)
@@ -278,6 +284,21 @@ const AuthPage = () => {
               >
                 Mot de passe oublié ?
               </button>
+              <div className="auth-remember">
+                <label className="auth-remember-label">
+                  <input
+                    type="checkbox"
+                    checked={loginData.rememberMe}
+                    onChange={(e) =>
+                      setLoginData({
+                        ...loginData,
+                        rememberMe: e.target.checked,
+                      })
+                    }
+                  />
+                  <span>Rester connecté</span>
+                </label>
+              </div>
 
               {loginError && (
                 <p className="auth-msg auth-msg--error">{loginError}</p>
