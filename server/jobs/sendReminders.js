@@ -79,6 +79,7 @@ function buildBirthdayPushPayload(date, daysFromNow) {
       body: `Pensez à lui souhaiter un joyeux anniversaire 🎉`,
       url: "/home",
       tag: `birthday-${date._id}-today`,
+      type: "birthday",
     };
   }
 
@@ -98,6 +99,39 @@ function buildBirthdayPushPayload(date, daysFromNow) {
     body: `N'oubliez pas de préparer quelque chose !`,
     url: "/home",
     tag: `birthday-${date._id}-${daysFromNow}`,
+    type: "birthday",
+  };
+}
+
+// ========================================
+// HELPER: Construire le message push fête
+// ========================================
+function buildNamedayPushPayload(date, daysFromNow) {
+  const firstName = date.name || "Quelqu'un";
+
+  if (daysFromNow === 0) {
+    return {
+      title: `🌸 C'est la fête de ${firstName} !`,
+      body: `Pensez à lui souhaiter une bonne fête 🎉`,
+      url: "/home",
+      tag: `nameday-${date._id}-today`,
+      type: "nameday",
+    };
+  }
+
+  const dayLabel =
+    daysFromNow === 1
+      ? "demain"
+      : daysFromNow === 7
+        ? "dans 1 semaine"
+        : `dans ${daysFromNow} jours`;
+
+  return {
+    title: `🌸 Fête de ${firstName} ${dayLabel}`,
+    body: `N'oubliez pas de lui souhaiter !`,
+    url: "/home",
+    tag: `nameday-${date._id}-${daysFromNow}`,
+    type: "nameday",
   };
 }
 
@@ -224,16 +258,33 @@ async function checkAndSendNamedayReminders() {
       };
 
       const { timings = [1], notifyOnNameday = true } = prefs;
+      const owner = date.owner;
+
+      // Push activé ? On réutilise pushEnabled (même logique que birthday)
+      const pushOk =
+        owner.pushEnabled === true && owner.pushEvents?.birthdays !== false;
+      const pushTimings = owner.pushBirthdayTimings || [1, 0];
 
       if (notifyOnNameday && isNamedayInXDays(date.nameday, 0)) {
         console.log(`🎉 Fête de ${date.name} aujourd'hui !`);
         await sendNamedayReminderEmail(date, 0);
+
+        if (pushOk && pushTimings.includes(0)) {
+          await sendPushToUser(owner._id, buildNamedayPushPayload(date, 0));
+        }
       }
 
       for (const days of timings) {
         if (isNamedayInXDays(date.nameday, days)) {
           console.log(`📅 Rappel fête de ${date.name} dans ${days} jour(s)`);
           await sendNamedayReminderEmail(date, days);
+
+          if (pushOk && pushTimings.includes(days)) {
+            await sendPushToUser(
+              owner._id,
+              buildNamedayPushPayload(date, days),
+            );
+          }
         }
       }
     }

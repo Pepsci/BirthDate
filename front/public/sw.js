@@ -4,7 +4,7 @@ self.addEventListener("push", (event) => {
   if (!event.data) return;
 
   const data = event.data.json();
-  const type = data.type || "default"; // "chat" | "birthday" | "friend" | "gift"
+  const type = data.type || "default"; // "chat" | "birthday" | "nameday" | "friend" | "gift"
 
   // ── Options selon le type de notification ──────────────────────────────────
   let icon = "/icon-192x192.png";
@@ -19,6 +19,9 @@ self.addEventListener("push", (event) => {
   } else if (type === "birthday") {
     icon = "/icon-birthday-96x96.png";
     actions = [{ action: "open_birthday", title: "🎂 Voir l'anniversaire" }];
+  } else if (type === "nameday") {
+    icon = "/icon-192x192.png";
+    actions = [{ action: "open_nameday", title: "🌸 Voir la fête" }];
   } else if (type === "friend") {
     icon = "/icon-192x192.png";
     actions = [{ action: "open_friends", title: "👥 Voir les demandes" }];
@@ -33,7 +36,7 @@ self.addEventListener("push", (event) => {
     badge: "/badge-72x72.png",
     tag: data.tag || "birthreminder",
     vibrate: [100, 50, 100],
-    requireInteraction: type === "birthday", // anniversaires restent affichés jusqu'au clic
+    requireInteraction: type === "birthday" || type === "nameday", // restent affichés jusqu'au clic
     silent: false,
     actions,
     data: {
@@ -58,6 +61,7 @@ self.addEventListener("notificationclick", (event) => {
 
   if (action === "open_chat" || type === "chat") targetUrl = "/home";
   if (action === "open_birthday" || type === "birthday") targetUrl = "/home";
+  if (action === "open_nameday" || type === "nameday") targetUrl = "/home";
   if (action === "open_friends" || type === "friend")
     targetUrl = "/home?tab=friends";
   if (action === "open_wishlist" || type === "gift")
