@@ -54,7 +54,9 @@ function ChatWindow({ conversation, onBack, onRead }) {
   useEffect(() => {
     setOtherUserPublicKey(null);
     otherUserPublicKeyRef.current = null;
-    const other = conversation.participants?.find((p) => p?._id && p._id !== currentUserId);
+    const other = conversation.participants?.find(
+      (p) => p?._id && p._id !== currentUserId,
+    );
     if (!other?._id) return;
     apiHandler
       .getUserPublicKey(other._id)
@@ -69,7 +71,9 @@ function ChatWindow({ conversation, onBack, onRead }) {
   }, [conversation._id]);
 
   const fetchRecipientPublicKey = async () => {
-    const other = conversation.participants?.find((p) => p?._id && p._id !== currentUserId);
+    const other = conversation.participants?.find(
+      (p) => p?._id && p._id !== currentUserId,
+    );
     if (!other?._id) return otherUserPublicKeyRef.current;
     try {
       const { publicKey } = await apiHandler.getUserPublicKey(other._id);
@@ -92,8 +96,28 @@ function ChatWindow({ conversation, onBack, onRead }) {
     return () => document.removeEventListener("click", handleClickOutside);
   }, []);
 
+  // ⭐ NOUVEAU - Restaure automatiquement les clés E2E depuis localStorage backup
+  const ensureE2EKeysAvailable = () => {
+    // Tenter de charger la clé active (getPrivateKey fait le fallback localStorage automatiquement)
+    const activeKey = getPrivateKey();
+
+    // Tenter de charger l'ancienne clé (si transition de mode E2E)
+    const oldKey = getOldPrivateKey();
+
+    if (activeKey) {
+      console.log("🔑 E2E keys available and restored");
+    } else {
+      console.warn("⚠️ No E2E keys found - encrypted messages won't decrypt");
+    }
+
+    return { activeKey, oldKey };
+  };
+
   useEffect(() => {
     if (conversation) {
+      // ⭐ NOUVEAU - Restaurer les clés E2E AVANT de charger les messages
+      ensureE2EKeysAvailable();
+
       hasJoinedRef.current = false;
       loadMessages();
     }
@@ -215,7 +239,8 @@ function ChatWindow({ conversation, onBack, onRead }) {
 
   const resolveDisplayContent = (msg) => {
     // Les messages gift_share n'ont pas de contenu à déchiffrer
-    if (msg.type === "gift_share") return { text: msg.content, encrypted: false };
+    if (msg.type === "gift_share")
+      return { text: msg.content, encrypted: false };
     if (!msg.isEncrypted) return { text: msg.content, encrypted: false };
 
     const cached = plaintextCacheRef.current[msg._id];
@@ -231,7 +256,8 @@ function ChatWindow({ conversation, onBack, onRead }) {
       ? [currentUser?.publicKey, currentUser?.oldPublicKey].filter(Boolean)
       : [msg.sender?.publicKey, msg.sender?.oldPublicKey].filter(Boolean);
 
-    if (senderPubKeys.length === 0) return { text: null, encrypted: true, error: true };
+    if (senderPubKeys.length === 0)
+      return { text: null, encrypted: true, error: true };
 
     const myCopy = msg.encryptedFor?.[currentUserId];
     if (myCopy) {
@@ -244,7 +270,11 @@ function ChatWindow({ conversation, onBack, onRead }) {
 
     if (msg.content && msg.content.length > 50) {
       for (const senderPubKey of senderPubKeys) {
-        const decrypted = decryptMessage(msg.content, senderPubKey, privateKeys);
+        const decrypted = decryptMessage(
+          msg.content,
+          senderPubKey,
+          privateKeys,
+        );
         if (decrypted) return { text: decrypted, encrypted: true };
       }
       return { text: null, encrypted: true, error: true };
@@ -254,7 +284,9 @@ function ChatWindow({ conversation, onBack, onRead }) {
   };
 
   const handleContactKeyUpdated = ({ userId, newPublicKey }) => {
-    const other = conversation.participants?.find((p) => p?._id && p._id !== currentUserId);
+    const other = conversation.participants?.find(
+      (p) => p?._id && p._id !== currentUserId,
+    );
     if (other?._id !== userId) return;
     setOtherUserPublicKey(newPublicKey || null);
     otherUserPublicKeyRef.current = newPublicKey || null;
@@ -287,15 +319,19 @@ function ChatWindow({ conversation, onBack, onRead }) {
 
     const myPrivateKey = getPrivateKey();
     const myPublicKey = currentUser?.publicKey;
-    const recipientPublicKey = (myPrivateKey && myPublicKey)
-      ? await fetchRecipientPublicKey()
-      : null;
-    const shouldEncrypt = !!recipientPublicKey && !!myPublicKey && !!myPrivateKey;
+    const recipientPublicKey =
+      myPrivateKey && myPublicKey ? await fetchRecipientPublicKey() : null;
+    const shouldEncrypt =
+      !!recipientPublicKey && !!myPublicKey && !!myPrivateKey;
 
     if (shouldEncrypt) plaintextCacheRef.current[tempId] = content;
 
     if (shouldEncrypt) {
-      const encryptedContent = encryptMessage(content, recipientPublicKey, myPrivateKey);
+      const encryptedContent = encryptMessage(
+        content,
+        recipientPublicKey,
+        myPrivateKey,
+      );
       const selfEncrypted = encryptMessage(content, myPublicKey, myPrivateKey);
       socketService.emit("message:send", {
         conversationId: conversation._id,
@@ -334,14 +370,22 @@ function ChatWindow({ conversation, onBack, onRead }) {
 
     const myPrivateKey = getPrivateKey();
     const myPublicKey = currentUser?.publicKey;
-    const recipientPublicKey = (myPrivateKey && myPublicKey)
-      ? await fetchRecipientPublicKey()
-      : null;
-    const shouldEncrypt = !!recipientPublicKey && !!myPublicKey && !!myPrivateKey;
+    const recipientPublicKey =
+      myPrivateKey && myPublicKey ? await fetchRecipientPublicKey() : null;
+    const shouldEncrypt =
+      !!recipientPublicKey && !!myPublicKey && !!myPrivateKey;
 
     if (shouldEncrypt) {
-      const encryptedContent = encryptMessage(message.content, recipientPublicKey, myPrivateKey);
-      const selfEncrypted = encryptMessage(message.content, myPublicKey, myPrivateKey);
+      const encryptedContent = encryptMessage(
+        message.content,
+        recipientPublicKey,
+        myPrivateKey,
+      );
+      const selfEncrypted = encryptMessage(
+        message.content,
+        myPublicKey,
+        myPrivateKey,
+      );
       socketService.emit("message:send", {
         conversationId: conversation._id,
         content: encryptedContent,
@@ -366,11 +410,16 @@ function ChatWindow({ conversation, onBack, onRead }) {
     if (message.tempId) {
       const localPlaintext = plaintextCacheRef.current[message.tempId];
       delete plaintextCacheRef.current[message.tempId];
-      if (localPlaintext) plaintextCacheRef.current[message._id] = localPlaintext;
+      if (localPlaintext)
+        plaintextCacheRef.current[message._id] = localPlaintext;
     }
 
     const senderId = message.sender?._id;
-    if (senderId !== currentUserId && message.sender?.publicKey && message.sender.publicKey !== otherUserPublicKeyRef.current) {
+    if (
+      senderId !== currentUserId &&
+      message.sender?.publicKey &&
+      message.sender.publicKey !== otherUserPublicKeyRef.current
+    ) {
       setOtherUserPublicKey(message.sender.publicKey);
       otherUserPublicKeyRef.current = message.sender.publicKey;
     }
@@ -437,7 +486,9 @@ function ChatWindow({ conversation, onBack, onRead }) {
     }
   };
 
-  const handleInputFocus = () => { markAsRead(); };
+  const handleInputFocus = () => {
+    markAsRead();
+  };
 
   const handleContextMenu = (e, message) => {
     e.preventDefault();
@@ -479,7 +530,9 @@ function ChatWindow({ conversation, onBack, onRead }) {
     if (message.isEncrypted) return false;
     const EDIT_TIME_LIMIT = 5 * 60 * 1000;
     const messageAge = Date.now() - new Date(message.createdAt).getTime();
-    return messageAge <= EDIT_TIME_LIMIT && message.sender._id === currentUserId;
+    return (
+      messageAge <= EDIT_TIME_LIMIT && message.sender._id === currentUserId
+    );
   };
 
   const handleStartEdit = (message) => {
@@ -519,7 +572,8 @@ function ChatWindow({ conversation, onBack, onRead }) {
   const renderMessageStatus = (message) => {
     if (message.sender._id !== currentUserId) return null;
     const status = message.status;
-    if (status === "sending") return <span className="msg-status sending">⏳</span>;
+    if (status === "sending")
+      return <span className="msg-status sending">⏳</span>;
     if (status === "failed")
       return (
         <span
@@ -542,7 +596,9 @@ function ChatWindow({ conversation, onBack, onRead }) {
   if (!currentUserId) {
     return (
       <div className="chat-window">
-        <div className="loading">Session expirée, veuillez vous reconnecter.</div>
+        <div className="loading">
+          Session expirée, veuillez vous reconnecter.
+        </div>
       </div>
     );
   }
@@ -559,7 +615,9 @@ function ChatWindow({ conversation, onBack, onRead }) {
     <div className="chat-window">
       <div className="chat-header">
         {onBack && (
-          <button className="back-button" onClick={onBack}>←</button>
+          <button className="back-button" onClick={onBack}>
+            ←
+          </button>
         )}
         <div className="chat-header-user">
           <div className="chat-avatar">
@@ -577,7 +635,10 @@ function ChatWindow({ conversation, onBack, onRead }) {
           </div>
         </div>
         {isE2EConversation && (
-          <div className="e2e-badge" title="Cette conversation est chiffrée de bout en bout">
+          <div
+            className="e2e-badge"
+            title="Cette conversation est chiffrée de bout en bout"
+          >
             🔒 Chiffrement E2E
           </div>
         )}
@@ -591,14 +652,20 @@ function ChatWindow({ conversation, onBack, onRead }) {
           const isGiftShare = message.type === "gift_share" && message.metadata;
 
           // Pas de résolution de contenu nécessaire pour gift_share
-          const { text: displayText, locked, error } = isGiftShare
+          const {
+            text: displayText,
+            locked,
+            error,
+          } = isGiftShare
             ? { text: null, locked: false, error: false }
             : resolveDisplayContent(message);
 
           return (
             <div key={message._id} id={`msg-${message._id}`}>
               {showUnreadSeparator && isFirstUnread && (
-                <div className={`unread-separator ${hideSeparator ? "fade-out" : ""}`}>
+                <div
+                  className={`unread-separator ${hideSeparator ? "fade-out" : ""}`}
+                >
                   Messages non lus
                 </div>
               )}
@@ -636,7 +703,9 @@ function ChatWindow({ conversation, onBack, onRead }) {
                           🔒 Reconnectez-vous pour lire ce message
                         </span>
                       ) : error ? (
-                        <span className="msg-unreadable">Message non lisible</span>
+                        <span className="msg-unreadable">
+                          Message non lisible
+                        </span>
                       ) : (
                         displayText
                       )}
@@ -645,7 +714,8 @@ function ChatWindow({ conversation, onBack, onRead }) {
                           className="edited-indicator"
                           title={`Modifié le ${new Date(message.editedAt).toLocaleString("fr-FR")}`}
                         >
-                          {" "}(modifié)
+                          {" "}
+                          (modifié)
                         </span>
                       )}
                     </div>

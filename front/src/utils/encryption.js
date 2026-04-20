@@ -9,7 +9,7 @@
  *
  * Règles absolues :
  *   - La clé privée NE QUITTE JAMAIS le client (jamais envoyée en HTTP)
- *   - sessionStorage uniquement pour la clé en mémoire (jamais localStorage)
+ *   - sessionStorage pour la session en cours + localStorage pour backup
  *   - Un nonce aléatoire unique est généré pour chaque message chiffré
  */
 
@@ -50,56 +50,90 @@ function bytesToUtf8(bytes) {
 }
 
 // ────────────────────────────────────────────────────────────────────────────
-// SessionStorage — clé privée déchiffrée en mémoire
+// SessionStorage + LocalStorage backup — clé privée déchiffrée en mémoire
 // ────────────────────────────────────────────────────────────────────────────
 
 const SESSION_KEY = "e2e_private_key";
 const SESSION_OLD_KEY = "e2e_old_private_key";
+const BACKUP_KEY = "e2e_private_key_backup"; // ⭐ NOUVEAU - Backup localStorage
+const BACKUP_OLD_KEY = "e2e_old_private_key_backup"; // ⭐ NOUVEAU
 
 /**
  * Stocke la clé privée brute (Uint8Array) en sessionStorage sous forme base64.
- * Vidé automatiquement à la fermeture de l'onglet.
+ * ⭐ NOUVEAU : Crée aussi un backup dans localStorage pour restauration.
+ * Vidé automatiquement à la fermeture de l'onglet (sessionStorage).
  */
 export function storePrivateKey(privateKeyBytes) {
-  sessionStorage.setItem(SESSION_KEY, encodeBase64(privateKeyBytes));
+  const b64 = encodeBase64(privateKeyBytes);
+  sessionStorage.setItem(SESSION_KEY, b64);
+  // ⭐ NOUVEAU - Backup dans localStorage
+  localStorage.setItem(BACKUP_KEY, b64);
 }
 
 /**
  * Récupère la clé privée depuis sessionStorage.
+ * ⭐ NOUVEAU : Si absente, tente de restaurer depuis localStorage backup.
  * @returns {Uint8Array|null} clé privée de 32 bytes, ou null si absente
  */
 export function getPrivateKey() {
-  const b64 = sessionStorage.getItem(SESSION_KEY);
+  let b64 = sessionStorage.getItem(SESSION_KEY);
+
+  // ⭐ NOUVEAU - Si pas en session, restaurer depuis localStorage
+  if (!b64) {
+    b64 = localStorage.getItem(BACKUP_KEY);
+    if (b64) {
+      console.log("🔑 Restoring E2E private key from localStorage backup");
+      sessionStorage.setItem(SESSION_KEY, b64);
+    }
+  }
+
   return b64 ? toUint8Array(b64) : null;
 }
 
-/** Vide la clé privée de sessionStorage (appelé à la déconnexion). */
+/** Vide la clé privée de sessionStorage ET localStorage (appelé à la déconnexion). */
 export function clearPrivateKey() {
   sessionStorage.removeItem(SESSION_KEY);
+  localStorage.removeItem(BACKUP_KEY); // ⭐ NOUVEAU
 }
 
-/** Indique si une clé privée est disponible dans la session courante. */
+/** Indique si une clé privée est disponible dans la session courante ou en backup. */
 export function hasPrivateKey() {
-  return !!sessionStorage.getItem(SESSION_KEY);
+  return !!(
+    sessionStorage.getItem(SESSION_KEY) || localStorage.getItem(BACKUP_KEY)
+  );
 }
 
 // ── Ancienne clé privée (période de transition au changement de mode E2E) ──
 
-/** Stocke l'ancienne clé privée en sessionStorage (base64). */
+/** Stocke l'ancienne clé privée en sessionStorage + localStorage backup (base64). */
 export function storeOldPrivateKey(privateKeyBytes) {
   if (!privateKeyBytes) return;
-  sessionStorage.setItem(SESSION_OLD_KEY, encodeBase64(privateKeyBytes));
+  const b64 = encodeBase64(privateKeyBytes);
+  sessionStorage.setItem(SESSION_OLD_KEY, b64);
+  // ⭐ NOUVEAU - Backup dans localStorage
+  localStorage.setItem(BACKUP_OLD_KEY, b64);
 }
 
-/** Récupère l'ancienne clé privée depuis sessionStorage. */
+/** Récupère l'ancienne clé privée depuis sessionStorage (avec fallback localStorage). */
 export function getOldPrivateKey() {
-  const b64 = sessionStorage.getItem(SESSION_OLD_KEY);
+  let b64 = sessionStorage.getItem(SESSION_OLD_KEY);
+
+  // ⭐ NOUVEAU - Fallback localStorage
+  if (!b64) {
+    b64 = localStorage.getItem(BACKUP_OLD_KEY);
+    if (b64) {
+      console.log("🔑 Restoring old E2E private key from localStorage backup");
+      sessionStorage.setItem(SESSION_OLD_KEY, b64);
+    }
+  }
+
   return b64 ? toUint8Array(b64) : null;
 }
 
-/** Vide l'ancienne clé privée de sessionStorage. */
+/** Vide l'ancienne clé privée de sessionStorage ET localStorage. */
 export function clearOldPrivateKey() {
   sessionStorage.removeItem(SESSION_OLD_KEY);
+  localStorage.removeItem(BACKUP_OLD_KEY); // ⭐ NOUVEAU
 }
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -228,8 +262,14 @@ export function encryptMessage(message, recipientPublicKeyB64, myPrivateKey) {
  * @param {Uint8Array|Uint8Array[]} privateKeyOrKeys  — clé(s) privée(s)
  * @returns {string|null} texte déchiffré, ou null si toutes les clés échouent
  */
-export function decryptMessage(encryptedB64, senderPublicKeyB64, privateKeyOrKeys) {
-  const keys = Array.isArray(privateKeyOrKeys) ? privateKeyOrKeys : [privateKeyOrKeys];
+export function decryptMessage(
+  encryptedB64,
+  senderPublicKeyB64,
+  privateKeyOrKeys,
+) {
+  const keys = Array.isArray(privateKeyOrKeys)
+    ? privateKeyOrKeys
+    : [privateKeyOrKeys];
   const senderPublicKey = toUint8Array(senderPublicKeyB64);
   const combined = toUint8Array(encryptedB64);
   const nonce = combined.slice(0, nacl.box.nonceLength);
@@ -238,7 +278,12 @@ export function decryptMessage(encryptedB64, senderPublicKeyB64, privateKeyOrKey
   for (const key of keys) {
     if (!key) continue;
     try {
-      const decrypted = nacl.box.open(ciphertext, nonce, senderPublicKey, toUint8Array(key));
+      const decrypted = nacl.box.open(
+        ciphertext,
+        nonce,
+        senderPublicKey,
+        toUint8Array(key),
+      );
       if (decrypted) return bytesToUtf8(decrypted);
     } catch {
       // essayer la clé suivante
