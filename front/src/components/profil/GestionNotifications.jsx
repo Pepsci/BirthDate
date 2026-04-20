@@ -4,6 +4,7 @@ import EmailTab from "./notifications/EmailTab";
 import FetesTab from "./notifications/FetesTab";
 import ChatTab from "./notifications/ChatTab";
 import PushTab from "./notifications/Pushtab";
+import EventsTab from "./notifications/EventsTab";
 import "./css/notificationtabs.css";
 
 const GestionNotification = () => {
@@ -65,25 +66,36 @@ const GestionNotification = () => {
           className={`notif-tab ${activeTab === "emails" ? "active" : ""}`}
           onClick={() => setActiveTab("emails")}
         >
-          📧 Anniversaires
+          <span className="tab-icon">📧</span>
+          <span className="tab-label">Anniv.</span>
         </button>
         <button
           className={`notif-tab ${activeTab === "fetes" ? "active" : ""}`}
           onClick={() => setActiveTab("fetes")}
         >
-          🎉 Fêtes
+          <span className="tab-icon">🎉</span>
+          <span className="tab-label">Fêtes</span>
+        </button>
+        <button
+          className={`notif-tab ${activeTab === "events" ? "active" : ""}`}
+          onClick={() => setActiveTab("events")}
+        >
+          <span className="tab-icon">📅</span>
+          <span className="tab-label">Events</span>
         </button>
         <button
           className={`notif-tab ${activeTab === "chat" ? "active" : ""}`}
           onClick={() => setActiveTab("chat")}
         >
-          💬 Messages
+          <span className="tab-icon">💬</span>
+          <span className="tab-label">Chat</span>
         </button>
         <button
           className={`notif-tab ${activeTab === "push" ? "active" : ""}`}
           onClick={() => setActiveTab("push")}
         >
-          🔔 Push
+          <span className="tab-icon">🔔</span>
+          <span className="tab-label">Push</span>
         </button>
       </div>
 
@@ -92,6 +104,8 @@ const GestionNotification = () => {
           <EmailTab dates={dates} loading={loading} />
         ) : activeTab === "fetes" ? (
           <FetesTab dates={dates} loading={loading} />
+        ) : activeTab === "events" ? (
+          <EventsTab />
         ) : activeTab === "chat" ? (
           <ChatTab />
         ) : (

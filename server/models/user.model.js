@@ -62,11 +62,19 @@ const userSchema = new Schema({
     chat: { type: Boolean, default: true },
     friends: { type: Boolean, default: true },
     gifts: { type: Boolean, default: true },
+    events: { type: Boolean, default: true },
   },
   pushBirthdayTimings: {
     type: [Number],
     default: [1, 0],
   },
+  pushEventTimings: {
+    type: [Number],
+    default: [1],
+  },
+
+  // ── Emails événements ──────────────────────────────────────────────────────
+  receiveEventEmails: { type: Boolean, default: true },
 
   // ── Chiffrement E2E ────────────────────────────────────────────────────────
   publicKey: { type: String, default: null },

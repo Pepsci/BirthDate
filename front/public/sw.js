@@ -28,6 +28,9 @@ self.addEventListener("push", (event) => {
   } else if (type === "gift") {
     icon = "/icon-192x192.png";
     actions = [{ action: "open_wishlist", title: "🎁 Voir la liste" }];
+  } else if (type === "event") {
+    icon = "/icon-192x192.png";
+    actions = [{ action: "open_event", title: "🎉 Voir l'événement" }];
   }
 
   const options = {
@@ -36,7 +39,8 @@ self.addEventListener("push", (event) => {
     badge: "/badge-72x72.png",
     tag: data.tag || "birthreminder",
     vibrate: [100, 50, 100],
-    requireInteraction: type === "birthday" || type === "nameday", // restent affichés jusqu'au clic
+    requireInteraction:
+      type === "birthday" || type === "nameday" || type === "event",
     silent: false,
     actions,
     data: {
@@ -66,6 +70,8 @@ self.addEventListener("notificationclick", (event) => {
     targetUrl = "/home?tab=friends";
   if (action === "open_wishlist" || type === "gift")
     targetUrl = "/home?tab=profile&section=wishlist";
+  if (action === "open_event" || type === "event")
+    targetUrl = "/home?tab=events";
 
   // Action "Couper les notifs chat" → appel API en arrière-plan
   if (action === "mute_chat" && friendId) {

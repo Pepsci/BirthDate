@@ -49,6 +49,22 @@ const TIMING_OPTIONS = [
   },
 ];
 
+const EVENT_TIMING_OPTIONS = [
+  { value: 0, icon: "🎉", label: "Le jour même", desc: "Rappel le jour J" },
+  {
+    value: 1,
+    icon: "🔔",
+    label: "1 jour avant",
+    desc: "La veille de l'événement",
+  },
+  {
+    value: 7,
+    icon: "🗓️",
+    label: "1 semaine avant",
+    desc: "7 jours avant l'événement",
+  },
+];
+
 const PushTab = () => {
   const [permState, setPermState] = useState(getPermissionState());
   const [loading, setLoading] = useState(false);
@@ -62,8 +78,10 @@ const PushTab = () => {
     chat: true,
     friends: true,
     gifts: true,
+    events: true,
   });
   const [pushTimings, setPushTimings] = useState([1, 0]);
+  const [pushEventTimings, setPushEventTimings] = useState([1]);
 
   useEffect(() => {
     loadPrefs();
@@ -73,8 +91,13 @@ const PushTab = () => {
     try {
       const res = await apiHandler.get("/users/me");
       const u = res.data;
-      if (u.pushEvents) setPushEvents(u.pushEvents);
+      if (u.pushEvents)
+        setPushEvents({
+          ...u.pushEvents,
+          events: u.pushEvents.events ?? true,
+        });
       if (u.pushBirthdayTimings) setPushTimings(u.pushBirthdayTimings);
+      if (u.pushEventTimings) setPushEventTimings(u.pushEventTimings);
 
       let isActuallySubscribed = false;
       if (
@@ -156,6 +179,7 @@ const PushTab = () => {
       await apiHandler.patch("/users/me", {
         pushEvents,
         pushBirthdayTimings: pushTimings,
+        pushEventTimings,
       });
       setSaveStatus("saved");
       setTimeout(() => setSaveStatus(null), 3000);
@@ -173,48 +197,62 @@ const PushTab = () => {
     );
   };
 
-if (permState === "unsupported") {
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-  const isStandalone = window.navigator.standalone === true;
+  const toggleEventTiming = (value) => {
+    setPushEventTimings((prev) =>
+      prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value],
+    );
+  };
 
-  if (isIOS && !isStandalone) {
+  if (permState === "unsupported") {
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isStandalone = window.navigator.standalone === true;
+
+    if (isIOS && !isStandalone) {
+      return (
+        <div className="tab-content-inner">
+          <div className="push-unsupported">
+            <span className="push-icon">📱</span>
+            <h3>Installez BirthReminder pour recevoir des notifications</h3>
+            <p>
+              Sur iPhone et iPad, les notifications push nécessitent que
+              l'application soit installée sur votre écran d'accueil.
+            </p>
+            <ol className="push-instructions">
+              <li>
+                Ouvrez <strong>birthreminder.com</strong> dans{" "}
+                <strong>Safari</strong>
+              </li>
+              <li>
+                Appuyez sur l'icône <strong>Partager</strong>{" "}
+                <span className="share-icon">⎋</span>
+              </li>
+              <li>
+                Sélectionnez <strong>"Sur l'écran d'accueil"</strong>
+              </li>
+              <li>Ouvrez l'app depuis votre écran d'accueil</li>
+              <li>Revenez ici pour activer les notifications 🔔</li>
+            </ol>
+            <p className="push-reload-hint">
+              ⚠️ Fonctionne sur iOS 16.4 et versions ultérieures.
+            </p>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="tab-content-inner">
         <div className="push-unsupported">
-          <span className="push-icon">📱</span>
-          <h3>Installez BirthReminder pour recevoir des notifications</h3>
+          <span className="push-icon">🔔</span>
+          <h3>Notifications push non supportées</h3>
           <p>
-            Sur iPhone et iPad, les notifications push nécessitent que
-            l'application soit installée sur votre écran d'accueil.
-          </p>
-          <ol className="push-instructions">
-            <li>Ouvrez <strong>birthreminder.com</strong> dans <strong>Safari</strong></li>
-            <li>Appuyez sur l'icône <strong>Partager</strong> <span className="share-icon">⎋</span></li>
-            <li>Sélectionnez <strong>"Sur l'écran d'accueil"</strong></li>
-            <li>Ouvrez l'app depuis votre écran d'accueil</li>
-            <li>Revenez ici pour activer les notifications 🔔</li>
-          </ol>
-          <p className="push-reload-hint">
-            ⚠️ Fonctionne sur iOS 16.4 et versions ultérieures.
+            Votre navigateur ne supporte pas les notifications push. Essayez
+            Chrome, Firefox ou Edge.
           </p>
         </div>
       </div>
     );
   }
-
-  return (
-    <div className="tab-content-inner">
-      <div className="push-unsupported">
-        <span className="push-icon">🔔</span>
-        <h3>Notifications push non supportées</h3>
-        <p>
-          Votre navigateur ne supporte pas les notifications push. Essayez
-          Chrome, Firefox ou Edge.
-        </p>
-      </div>
-    </div>
-  );
-}
 
   if (permState === "denied") {
     return (
@@ -288,6 +326,7 @@ if (permState === "unsupported") {
 
       {pushEnabled && permState === "granted" && (
         <>
+          {/* ── Toggles types de notifications ── */}
           <div className="push-section">
             <h3 className="push-section-title">
               Recevoir des notifications pour
@@ -321,9 +360,17 @@ if (permState === "unsupported") {
                   setPushEvents((prev) => ({ ...prev, gifts: v }))
                 }
               />
+              <PrefToggle
+                label="🎉 Rappels d'événements"
+                checked={pushEvents.events ?? true}
+                onChange={(v) =>
+                  setPushEvents((prev) => ({ ...prev, events: v }))
+                }
+              />
             </div>
           </div>
 
+          {/* ── Timings anniversaires ── */}
           {pushEvents.birthdays && (
             <div className="push-section">
               <h3 className="push-section-title">
@@ -363,6 +410,47 @@ if (permState === "unsupported") {
             </div>
           )}
 
+          {/* ── Timings événements ── */}
+          {pushEvents.events && (
+            <div className="push-section">
+              <h3 className="push-section-title">
+                Quand être notifié pour les événements ?
+              </h3>
+              <div
+                className="timing-options-grid"
+                style={{ gridTemplateColumns: "1fr" }}
+              >
+                {EVENT_TIMING_OPTIONS.map(({ value, icon, label, desc }) => (
+                  <label
+                    key={value}
+                    className="timing-checkbox"
+                    onClick={() => toggleEventTiming(value)}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={pushEventTimings.includes(value)}
+                      onChange={() => toggleEventTiming(value)}
+                      style={{
+                        position: "absolute",
+                        opacity: 0,
+                        width: 0,
+                        height: 0,
+                      }}
+                    />
+                    <span className="timing-label">
+                      <span className="timing-icon">{icon}</span>
+                      <div className="timing-text">
+                        <span className="timing-title">{label}</span>
+                        <span className="timing-subtitle">{desc}</span>
+                      </div>
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ── Sauvegarde ── */}
           <div className="push-save-row">
             <button
               className="push-btn push-btn--save"

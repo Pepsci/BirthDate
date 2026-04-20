@@ -5,6 +5,7 @@ const User = require("../models/user.model");
 const {
   sendEventReminderEmail,
 } = require("../services/emailTemplates/eventEmails");
+const { sendPushToUser } = require("../services/pushService");
 
 // notify nécessite l'instance app — on la reçoit via initApp()
 let _app = null;
@@ -14,6 +15,9 @@ const initApp = (app) => {
 
 const frontendUrl = process.env.FRONTEND_URL || "https://birthreminder.com";
 
+// ========================================
+// HELPER: Vérifier si un événement est dans X jours
+// ========================================
 const isEventInXDays = (eventDate, daysFromNow) => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -31,6 +35,41 @@ const isEventInXDays = (eventDate, daysFromNow) => {
   );
 };
 
+// ========================================
+// HELPER: Construire le message push événement
+// ========================================
+function buildEventPushPayload(event, daysFromNow) {
+  const title = event.title || "Un événement";
+
+  if (daysFromNow === 0) {
+    return {
+      title: `🎉 C'est aujourd'hui — ${title} !`,
+      body: `L'événement a lieu aujourd'hui, bonne fête !`,
+      url: `/event/${event.shortId}`,
+      tag: `event-${event._id}-today`,
+      type: "event",
+    };
+  }
+
+  const dayLabel =
+    daysFromNow === 1
+      ? "demain"
+      : daysFromNow === 7
+        ? "dans 1 semaine"
+        : `dans ${daysFromNow} jours`;
+
+  return {
+    title: `🎉 ${title} ${dayLabel}`,
+    body: `N'oubliez pas, l'événement approche !`,
+    url: `/event/${event.shortId}`,
+    tag: `event-${event._id}-${daysFromNow}`,
+    type: "event",
+  };
+}
+
+// ========================================
+// RAPPELS ÉVÉNEMENTS
+// ========================================
 async function checkAndSendEventReminders() {
   try {
     console.log("📅 [CRON] Vérification des rappels d'événements...");
@@ -61,17 +100,37 @@ async function checkAndSendEventReminders() {
               `⏳ Rappel J-${reminder.daysBeforeEvent} pour "${event.title}"`,
             );
 
+            // Populate étendu pour avoir les prefs email et push des participants
             const invitations = await EventInvitation.find({
               event: event._id,
               status: { $in: ["accepted", "maybe"] },
-            }).populate("user", "email _id");
+            }).populate(
+              "user",
+              "email _id receiveEventEmails pushEnabled pushEvents pushEventTimings",
+            );
 
-            const recipients = [];
             const organizer = await User.findById(event.organizer);
-            if (organizer && organizer.email) recipients.push(organizer.email);
+
+            // ── Emails ──
+            const recipients = [];
+
+            if (
+              organizer &&
+              organizer.email &&
+              organizer.receiveEventEmails !== false
+            ) {
+              recipients.push(organizer.email);
+            }
 
             for (const inv of invitations) {
-              if (inv.user && inv.user.email) recipients.push(inv.user.email);
+              if (
+                inv.user &&
+                inv.user.email &&
+                inv.user.receiveEventEmails !== false
+              ) {
+                recipients.push(inv.user.email);
+              }
+              // Invités externes : pas de préférence possible, on envoie toujours
               if (inv.externalEmail) recipients.push(inv.externalEmail);
             }
 
@@ -99,11 +158,10 @@ async function checkAndSendEventReminders() {
               });
             }
 
-            // ── Notif applicative → participants connectés (compte BirthReminder) ──
+            // ── Notif applicative → participants connectés ──
             if (_app) {
               for (const inv of invitations) {
                 if (inv.user && inv.user._id) {
-                  // Ne pas doubler la notif de l'organisateur
                   if (inv.user._id.toString() === event.organizer?.toString())
                     continue;
 
@@ -117,6 +175,43 @@ async function checkAndSendEventReminders() {
                     link: `/event/${event.shortId}`,
                   });
                 }
+              }
+            }
+
+            // ── Push → organisateur ──
+            if (
+              organizer &&
+              organizer.pushEnabled === true &&
+              organizer.pushEvents?.events !== false
+            ) {
+              const pushTimings = organizer.pushEventTimings || [1];
+              if (pushTimings.includes(reminder.daysBeforeEvent)) {
+                await sendPushToUser(
+                  organizer._id,
+                  buildEventPushPayload(event, reminder.daysBeforeEvent),
+                );
+              }
+            }
+
+            // ── Push → participants connectés ──
+            // Les données push sont déjà disponibles via le populate
+            for (const inv of invitations) {
+              if (!inv.user?._id) continue;
+
+              const participant = inv.user;
+              if (
+                !participant ||
+                participant.pushEnabled !== true ||
+                participant.pushEvents?.events === false
+              )
+                continue;
+
+              const pushTimings = participant.pushEventTimings || [1];
+              if (pushTimings.includes(reminder.daysBeforeEvent)) {
+                await sendPushToUser(
+                  participant._id,
+                  buildEventPushPayload(event, reminder.daysBeforeEvent),
+                );
               }
             }
 
