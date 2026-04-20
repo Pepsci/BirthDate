@@ -327,11 +327,9 @@ router.delete("/:shortId/leave", isAuthenticated, async (req, res) => {
 
     // Vérifier que l'utilisateur n'est pas l'organisateur
     if (event.organizer.toString() === req.payload._id) {
-      return res
-        .status(403)
-        .json({
-          message: "L'organisateur ne peut pas quitter son propre événement",
-        });
+      return res.status(403).json({
+        message: "L'organisateur ne peut pas quitter son propre événement",
+      });
     }
 
     // Supprimer l'invitation
@@ -393,10 +391,7 @@ router.post("/:shortId/invite", isAuthenticated, async (req, res) => {
       return res.status(403).json({ message: "Non autorisé" });
 
     const { userIds, externalEmails } = req.body;
-    const baseUrl =
-      process.env.NODE_ENV === "production"
-        ? "https://birthreminder.com"
-        : "http://localhost:5173";
+    const baseUrl = process.env.FRONTEND_URL || "https://birthreminder.com";
     const eventUrl = `${baseUrl}/event/${event.shortId}`;
 
     if (userIds && userIds.length > 0) {
@@ -546,12 +541,10 @@ router.put(
       const { status } = req.body;
       // req.event et req.invitation sont fournis par le middleware
       if (req.userRole === "organizer") {
-        return res
-          .status(400)
-          .json({
-            message:
-              "L'organisateur ne peut pas modifier son RSVP via cette route.",
-          });
+        return res.status(400).json({
+          message:
+            "L'organisateur ne peut pas modifier son RSVP via cette route.",
+        });
       }
 
       const invitation = req.invitation;
@@ -618,12 +611,10 @@ router.post(
       invitation.locationVote = locationId;
       await invitation.save();
 
-      res
-        .status(200)
-        .json({
-          message: "Vote enregistré",
-          locationVote: invitation.locationVote,
-        });
+      res.status(200).json({
+        message: "Vote enregistré",
+        locationVote: invitation.locationVote,
+      });
     } catch (error) {
       console.error("❌ Error voting for location:", error);
       res.status(500).json({ message: "Erreur serveur" });
@@ -775,10 +766,7 @@ router.get("/:shortId/share", async (req, res) => {
     if (!event)
       return res.status(404).json({ message: "Événement introuvable" });
 
-    const baseUrl =
-      process.env.NODE_ENV === "production"
-        ? "https://birthreminder.com"
-        : "http://localhost:5173";
+    const baseUrl = process.env.FRONTEND_URL || "https://birthreminder.com";
 
     res.status(200).json({
       url: `${baseUrl}/event/${event.shortId}`,

@@ -12,11 +12,7 @@ const initApp = (app) => {
   _app = app;
 };
 
-const frontendUrl =
-  process.env.FRONTEND_URL ||
-  (process.env.NODE_ENV === "production"
-    ? "https://birthreminder.com"
-    : "http://localhost:5173");
+const frontendUrl = process.env.FRONTEND_URL || "https://birthreminder.com";
 
 const isEventInXDays = (eventDate, daysFromNow) => {
   const today = new Date();
