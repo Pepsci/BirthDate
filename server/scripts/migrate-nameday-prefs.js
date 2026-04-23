@@ -3,7 +3,7 @@
 
 require("dotenv").config();
 const mongoose = require("mongoose");
-const dateModel = require("./models/date.model");
+const dateModel = require("../models/date.model");
 
 async function migrate() {
   try {

@@ -21,6 +21,74 @@ import "../UI/css/badge-notification.css";
 const ITEMS_PER_PAGE = 10;
 const ITEMS_PER_PAGE_MOBILE = 8;
 
+// ─── Icônes SVG pour les boutons ─────────────────────────
+const btnIcons = {
+  filter: (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+    >
+      <path d="M2 4h12M4 8h8M6 12h4" strokeLinecap="round" />
+    </svg>
+  ),
+  agenda: (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+    >
+      <rect x="2" y="3" width="12" height="11" rx="2" />
+      <path d="M2 7h12M5 1v3M11 1v3" strokeLinecap="round" />
+    </svg>
+  ),
+  chat: (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+    >
+      <path d="M13 2H3a1 1 0 00-1 1v7a1 1 0 001 1h2l2 2.5L9 11h4a1 1 0 001-1V3a1 1 0 00-1-1z" />
+    </svg>
+  ),
+  events: (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+    >
+      <path
+        d="M8 2l1.5 3 3.5.5-2.5 2.5.5 3.5L8 10l-3 1.5.5-3.5L3 5.5 6.5 5z"
+        strokeLinejoin="round"
+      />
+    </svg>
+  ),
+  form: (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
+      <path d="M8 2v12M2 8h12" strokeLinecap="round" />
+    </svg>
+  ),
+};
+
 // ─── Panel animé avec bouton fermer intégré ──────────────
 const CollapsiblePanel = ({
   isVisible,
@@ -158,13 +226,11 @@ const DateList = ({
   useEffect(() => {
     if (!onOpenChat) return;
     onOpenChat((conversationId) => {
-      // Ouvre le panel chat
       setIsChatVisible(true);
       setIsFormVisible(false);
       setIsFilterVisible(false);
       setIsEventsVisible(false);
       resetUnreadCount();
-      // Passe la conversationId au composant Chat
       if (conversationId) setInitialConversationId(conversationId);
     });
   }, []);
@@ -366,7 +432,6 @@ const DateList = ({
       ? "events"
       : "dates";
 
-  // Footer visible uniquement sur mobile, uniquement en vue cartes
   const showMobileFooter = activePanel === "dates" && viewMode === "card";
 
   return (
@@ -407,8 +472,8 @@ const DateList = ({
             const label = {
               filter: isFilterVisible ? "Cacher le filtre" : "Filtre",
               agenda: viewMode === "card" ? "Agenda" : "Carte",
-              chat: isChatVisible ? "Cacher le chat" : "💬 Chat",
-              events: isEventsVisible ? "Cacher Événements" : "🎉 Événements",
+              chat: isChatVisible ? "Cacher le chat" : "Chat",
+              events: isEventsVisible ? "Cacher Événements" : "Événements",
               form: isFormVisible ? "Cacher le formulaire" : "Ajouter une date",
             }[btn];
             const onClick = {
@@ -426,6 +491,7 @@ const DateList = ({
                 whileHover={{ scale: 1.04 }}
                 whileTap={{ scale: 0.96 }}
               >
+                {btnIcons[btn]}
                 {label}
                 {btn === "chat" && !isChatVisible && unreadCount > 0 && (
                   <span className="notification-badge">{unreadCount}</span>
@@ -679,7 +745,6 @@ const DateList = ({
         </ChatModal>
       )}
 
-      {/* Footer mobile uniquement, visible uniquement en vue cartes */}
       <div
         className={`footer-mobile-wrapper ${showMobileFooter ? "footer-mobile-visible" : ""}`}
       >

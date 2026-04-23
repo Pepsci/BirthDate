@@ -11,17 +11,17 @@
  */
 
 require("dotenv").config();
-require("./config/mongoDb");
+require("../config/mongoDb");
 
-const User = require("./models/user.model");
-const dateModel = require("./models/date.model");
+const User = require("../models/user.model");
+const dateModel = require("../models/date.model");
 const {
   sendMonthlyRecapEmail,
-} = require("./services/emailTemplates/monthlyRecapEmail");
+} = require("../services/emailTemplates/monthlyRecapEmail");
 const {
   getMonthlyRecapTemplate,
   getEmptyMonthTemplate,
-} = require("./services/emailTemplates/monthlyRecapEmail");
+} = require("../services/emailTemplates/monthlyRecapEmail");
 
 // ─── Parse les args ──────────────────────────────────────────────────────────
 const args = process.argv.slice(2);

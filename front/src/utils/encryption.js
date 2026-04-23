@@ -64,10 +64,12 @@ const BACKUP_OLD_KEY = "e2e_old_private_key_backup"; // ⭐ NOUVEAU
  * Vidé automatiquement à la fermeture de l'onglet (sessionStorage).
  */
 export function storePrivateKey(privateKeyBytes) {
+  console.log("📥 storePrivateKey called with:", privateKeyBytes);
   const b64 = encodeBase64(privateKeyBytes);
+  console.log("📥 base64:", b64);
   sessionStorage.setItem(SESSION_KEY, b64);
-  // ⭐ NOUVEAU - Backup dans localStorage
   localStorage.setItem(BACKUP_KEY, b64);
+  console.log("✅ Keys stored in sessionStorage + localStorage");
 }
 
 /**

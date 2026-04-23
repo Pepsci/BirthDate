@@ -2,272 +2,306 @@
    Header
 ================================ */
 .dateList {
-    margin-top: 120px;
+  margin-top: 120px;
 }
 
 .dateListHeader {
-    display: flex;
-    flex-direction: column;
+  display: flex;
+  flex-direction: column;
 }
 
 .dateList-tiltle {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0 1rem;
-    margin-bottom: 1.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 1rem;
+  margin-bottom: 1.5rem;
 }
 
 .dateListheaderConter {
-    padding: 1.5rem;
-    max-width: 1600px;
-    margin: 0 auto;
+  padding: 1.5rem;
+  max-width: 1600px;
+  margin: 0 auto;
 }
 
 .titleFont {
-    font-size: 1.75rem;
-    color: var(--text-primary);
-    transition: color 0.3s ease;
+  font-size: 1.75rem;
+  color: var(--text-primary);
+  transition: color 0.3s ease;
 }
 
 /* ─── Visibilité desktop / mobile ─────────────────────── */
 .fab-mobile-only {
-    display: none;
+  display: none;
 }
 
 .desktop-only {
-    display: flex;
+  display: flex;
 }
 
 @media (max-width: 768px) {
-    .fab-mobile-only {
-        display: flex;
-    }
-    .desktop-only {
-        display: none !important;
-    }
+  .fab-mobile-only {
+    display: flex;
+  }
+  .desktop-only {
+    display: none !important;
+  }
 }
 
 /* ================================
    Panel avec bouton fermer
 ================================ */
 
-/* Wrapper relatif pour positionner le × */
 .collapsible-panel {
-    position: relative;
+  position: relative;
 }
 
-/* Bouton × dans le coin haut-droit du panel */
 .panel-close-btn {
-    display: none; /* caché sur desktop */
-    position: absolute;
-    top: 18px;
-    right: 18px;
-    width: 26px;
-    height: 26px;
-    border-radius: 50%;
-    border: 1px solid var(--border-color);
-    background: var(--bg-tertiary);
-    color: var(--text-secondary);
-    cursor: pointer;
-    align-items: center;
-    justify-content: center;
-    z-index: 10;
-    transition: background 0.15s ease, color 0.15s ease;
+  display: none;
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid var(--border-color);
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
 }
 
 .panel-close-btn:hover {
-    background: var(--danger, #ef4444);
-    color: white;
-    border-color: transparent;
+  background: var(--danger, #ef4444);
+  color: white;
+  border-color: transparent;
 }
 
-/* Affiché uniquement sur mobile */
 @media (max-width: 768px) {
-    .panel-close-btn {
-        display: flex;
-    }
+  .panel-close-btn {
+    display: flex;
+  }
 }
 
 /* ================================
    Boutons desktop
 ================================ */
 .dateListHeader-btn {
-    justify-content: center;
-    align-items: center;
-    margin: 1rem;
+  justify-content: center;
+  align-items: center;
+  margin: 1rem;
 }
 
 .dateListHeader-btn .btnSwitch {
-    width: 200px;
+  width: 200px;
 }
 
 .btnSwitch {
-    padding: 0.65rem 1.25rem;
-    background-color: var(--bg-tertiary);
-    color: var(--text-primary);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    font-size: 0.9rem;
-    margin: 0 1rem;
+  position: relative;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0.65rem 1.25rem;
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease;
+  font-size: 0.9rem;
+  margin: 0 1rem;
+}
+
+.btnSwitch::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at 50% 0%,
+    rgba(96, 165, 250, 0.18) 0%,
+    transparent 70%
+  );
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  pointer-events: none;
 }
 
 .btnSwitch:hover {
-    background-color: var(--bg-secondary);
-    border-color: var(--border-color-hover);
+  color: var(--text-primary);
+  border-color: rgba(96, 165, 250, 0.45);
+}
+
+.btnSwitch:hover::before {
+  opacity: 1;
 }
 
 .btnSwitch.active {
-    background-color: var(--primary);
-    color: white;
-    border-color: var(--primary);
+  background-color: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+.btnSwitch.active::before {
+  display: none;
 }
 
 /* ================================
    Container des formulaires
 ================================ */
 .forms-container {
-    width: 100%;
-    max-width: 900px;
-    margin-left: auto;
-    margin-right: auto;
+  width: 100%;
+  max-width: 900px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .form-section {
-    background-color: var(--bg-primary);
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
-    padding: 0.8rem;
-    margin: 1rem;
-    box-shadow: var(--card-shadow);
-    animation: slideDown 0.3s ease-out;
-    opacity: 1;
-    transform: translateY(0);
-    text-align: center;
-    transition: all 0.3s ease;
+  background-color: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 0.8rem;
+  margin: 1rem;
+  box-shadow: var(--card-shadow);
+  animation: slideDown 0.3s ease-out;
+  opacity: 1;
+  transform: translateY(0);
+  text-align: center;
+  transition: all 0.3s ease;
 }
 
 @keyframes slideDown {
-    from { opacity: 0; transform: translateY(-20px); }
-    to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* ================================
    Pagination
 ================================ */
 .pagination {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 0.5rem;
-    margin: 2rem auto;
-    max-width: 1600px;
-    padding: 0 1.5rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 2rem auto;
+  max-width: 1600px;
+  padding: 0 1.5rem;
 }
 
 .pagination button {
-    min-width: 2.5rem;
-    height: 2.5rem;
-    padding: 0 0.75rem;
-    border: 1px solid var(--border-color);
-    background-color: var(--bg-primary);
-    color: var(--text-primary);
-    border-radius: 8px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 500;
+  min-width: 2.5rem;
+  height: 2.5rem;
+  padding: 0 0.75rem;
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 500;
 }
 
 .pagination button:hover:not([disabled]) {
-    background-color: var(--bg-secondary);
-    border-color: var(--border-color-hover);
+  background-color: var(--bg-secondary);
+  border-color: var(--border-color-hover);
 }
 
 .pagination button.active {
-    background-color: var(--primary);
-    color: white;
-    border-color: var(--primary);
+  background-color: var(--primary);
+  color: white;
+  border-color: var(--primary);
 }
 
 .pagination button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .pagination .ellipsis {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 2rem;
-    color: var(--text-tertiary);
-    font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+  color: var(--text-tertiary);
+  font-weight: bold;
 }
 
 .pagination button:first-child,
 .pagination button:last-child {
-    min-width: auto;
-    padding: 0 1rem;
-    font-weight: 600;
+  min-width: auto;
+  padding: 0 1rem;
+  font-weight: 600;
 }
 
 /* ================================
 Media Queries
 ================================ */
 @media (max-width: 768px) {
-    
-    .pagination {
-        gap: 0.25rem;
-        padding: 0 1rem;
-    }
+  .pagination {
+    gap: 0.25rem;
+    padding: 0 1rem;
+  }
 
-    .pagination button {
-        min-width: 2.25rem;
-        height: 2.25rem;
-        font-size: 0.8rem;
-    }
+  .pagination button {
+    min-width: 2.25rem;
+    height: 2.25rem;
+    font-size: 0.8rem;
+  }
 
-    .pagination button:first-child,
-    .pagination button:last-child {
-        padding: 0 0.75rem;
-        font-size: 0.8rem;
-    }
+  .pagination button:first-child,
+  .pagination button:last-child {
+    padding: 0 0.75rem;
+    font-size: 0.8rem;
+  }
 
-    .pagination .ellipsis {
-        min-width: 1.5rem;
-        height: 2.25rem;
-        font-size: 0.8rem;
-    }
+  .pagination .ellipsis {
+    min-width: 1.5rem;
+    height: 2.25rem;
+    font-size: 0.8rem;
+  }
 
-    .chat-in-datelist {
-        height: 500px;
-    }
+  .chat-in-datelist {
+    height: 500px;
+  }
 }
 
 @media (max-width: 600px) {
-    .dateList-tiltle {
-        padding: 0 0.75rem;
-    }
+  .dateList-tiltle {
+    padding: 0 0.75rem;
+  }
 
-    .pagination {
-        flex-wrap: wrap;
-        gap: 0.3rem;
-    }
+  .pagination {
+    flex-wrap: wrap;
+    gap: 0.3rem;
+  }
 
-    .pagination button {
-        min-width: 2rem;
-        height: 2rem;
-        padding: 0 0.5rem;
-        font-size: 0.85rem;
-    }
+  .pagination button {
+    min-width: 2rem;
+    height: 2rem;
+    padding: 0 0.5rem;
+    font-size: 0.85rem;
+  }
 
-    .pagination button:first-child,
-    .pagination button:last-child {
-        flex: 1;
-    }
+  .pagination button:first-child,
+  .pagination button:last-child {
+    flex: 1;
+  }
 }
