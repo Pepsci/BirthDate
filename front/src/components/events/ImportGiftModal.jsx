@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import apiHandler from "../../api/apiHandler";
 import "./css/importGiftModal.css";
 
@@ -35,6 +36,7 @@ const ImportGiftModal = ({
   const [importing, setImporting] = useState(false);
   const [imported, setImported] = useState(false);
 
+  // Fermeture au clavier
   useEffect(() => {
     const handler = (e) => {
       if (e.key === "Escape") onClose();
@@ -43,14 +45,20 @@ const ImportGiftModal = ({
     return () => document.removeEventListener("keydown", handler);
   }, [onClose]);
 
+  // Blocage du scroll body pendant que le modal est ouvert
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, []);
+
   useEffect(() => {
     setDatesLoading(true);
     apiHandler
       .get("/date")
       .then((res) => {
         const all = res.data || [];
-        // Mode import : seulement les cartes avec idées (source)
-        // Mode save : toutes les cartes (destination)
         setDates(
           isSaveMode ? all : all.filter((d) => d.gifts && d.gifts.length > 0),
         );
@@ -160,7 +168,7 @@ const ImportGiftModal = ({
       ? `${selectedDate.name}${selectedDate.surname ? " " + selectedDate.surname : ""}`
       : "";
 
-  // ── Rendu liste d'idées (réutilisé en étape 1 save et étape 2 import) ──
+  // ── Rendu liste d'idées ──────────────────────────────
   const renderGiftList = () =>
     gifts.length === 0 ? (
       <div className="igm-empty">
@@ -198,7 +206,7 @@ const ImportGiftModal = ({
       </>
     );
 
-  // ── Rendu liste de cartes (réutilisé en étape 1 import et étape 2 save) ──
+  // ── Rendu liste de cartes ────────────────────────────
   const renderDateList = (onSelect, withCheck = false) => (
     <>
       <input
@@ -259,7 +267,8 @@ const ImportGiftModal = ({
     </>
   );
 
-  return (
+  // ── Portal : monté sur document.body, hors du flux React ──
+  return createPortal(
     <div
       className="igm-overlay"
       onClick={(e) => {
@@ -339,6 +348,7 @@ const ImportGiftModal = ({
                   : `${selected.size} idée${selected.size > 1 ? "s" : ""} sélectionnée${selected.size > 1 ? "s" : ""}`
                 : null}
           </p>
+
           <div className="igm-footer-buttons">
             {/* Mode import — étape 2 */}
             {!isSaveMode && step === 2 && (
@@ -411,7 +421,8 @@ const ImportGiftModal = ({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 };
 
