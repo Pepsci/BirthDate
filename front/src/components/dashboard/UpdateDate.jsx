@@ -1,12 +1,21 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import apiHandler from "../../api/apiHandler";
 import DatePickerMobile from "./DatePickerMobile";
 import "../connect/authpage.css";
 import "./css/updateDate.css";
 
-const UpdateDate = ({ date, onCancel, onSaved, onDeleted, onMerge, compact = false }) => {
+const UpdateDate = ({
+  date,
+  onCancel,
+  onSaved,
+  onDeleted,
+  onMerge,
+  compact = false,
+}) => {
   const [dateToUpdate, setDateToUpdate] = useState(date);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [saveStatus, setSaveStatus] = useState(null); // null | "success" | "error"
+  const confirmRef = useRef(null);
 
   const isFriend = !!date.linkedUser;
 
@@ -27,11 +36,17 @@ const UpdateDate = ({ date, onCancel, onSaved, onDeleted, onMerge, compact = fal
 
   const handleUpdateDate = async (e) => {
     e.preventDefault();
+    setSaveStatus(null);
     try {
       await apiHandler.patch(`/date/${date._id}`, dateToUpdate);
-      onSaved ? onSaved(dateToUpdate) : onCancel();
+      setSaveStatus("success");
+      setTimeout(() => {
+        setSaveStatus(null);
+        onSaved ? onSaved(dateToUpdate) : onCancel();
+      }, 1800);
     } catch (error) {
       console.error(error);
+      setSaveStatus("error");
     }
   };
 
@@ -42,6 +57,17 @@ const UpdateDate = ({ date, onCancel, onSaved, onDeleted, onMerge, compact = fal
     } catch (error) {
       console.error(error);
     }
+  };
+
+  // Scroll vers la confirmation quand elle s'affiche
+  const handleShowConfirm = () => {
+    setShowConfirm(true);
+    setTimeout(() => {
+      confirmRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+      });
+    }, 80);
   };
 
   const panel = (
@@ -81,12 +107,18 @@ const UpdateDate = ({ date, onCancel, onSaved, onDeleted, onMerge, compact = fal
 
         <div className="auth-field">
           <label className="auth-label">Date d'anniversaire</label>
-          <DatePickerMobile
-            value={dateToUpdate.date.split("T")[0]}
-            onChange={(val) =>
-              setDateToUpdate({ ...dateToUpdate, date: val })
-            }
-          />
+          {/* Wrapper qui isole le scroll du DatePicker */}
+          <div
+            className="date-picker-scroll-trap"
+            onTouchMove={(e) => e.stopPropagation()}
+          >
+            <DatePickerMobile
+              value={dateToUpdate.date.split("T")[0]}
+              onChange={(val) =>
+                setDateToUpdate({ ...dateToUpdate, date: val })
+              }
+            />
+          </div>
         </div>
 
         {!isFriend && (
@@ -120,10 +152,26 @@ const UpdateDate = ({ date, onCancel, onSaved, onDeleted, onMerge, compact = fal
           </label>
         </div>
 
+        {/* ── FEEDBACK ── */}
+        {saveStatus === "success" && (
+          <div className="auth-msg auth-msg--success update-save-feedback">
+            ✓ Modifications enregistrées
+          </div>
+        )}
+        {saveStatus === "error" && (
+          <div className="auth-msg auth-msg--error update-save-feedback">
+            Une erreur est survenue, réessaie.
+          </div>
+        )}
+
         {/* ── ACTIONS PRINCIPALES ── */}
         <div className="update-actions">
-          <button type="submit" className="auth-btn-primary">
-            Enregistrer
+          <button
+            type="submit"
+            className="auth-btn-primary"
+            disabled={saveStatus === "success"}
+          >
+            {saveStatus === "success" ? "Enregistré ✓" : "Enregistrer"}
           </button>
           <button
             type="button"
@@ -144,12 +192,12 @@ const UpdateDate = ({ date, onCancel, onSaved, onDeleted, onMerge, compact = fal
         </div>
 
         {/* ── SUPPRESSION ── */}
-        <div className="update-delete-zone">
+        <div className="update-delete-zone" ref={confirmRef}>
           {!showConfirm ? (
             <button
               type="button"
               className="update-btn-delete-trigger"
-              onClick={() => setShowConfirm(true)}
+              onClick={handleShowConfirm}
             >
               Supprimer cette date
             </button>
@@ -183,19 +231,13 @@ const UpdateDate = ({ date, onCancel, onSaved, onDeleted, onMerge, compact = fal
 
   // ── Mode compact : dans FriendProfile ──
   if (compact) {
-    return (
-      <div className="update-compact-wrapper">
-        {panel}
-      </div>
-    );
+    return <div className="update-compact-wrapper">{panel}</div>;
   }
 
   // ── Mode standalone : page dédiée ──
   return (
     <div className="auth-page">
-      <div className="auth-shell auth-shell-update">
-        {panel}
-      </div>
+      <div className="auth-shell auth-shell-update">{panel}</div>
     </div>
   );
 };
