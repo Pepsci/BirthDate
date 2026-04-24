@@ -21,11 +21,17 @@ import "./authpage.css";
 //   2. Connexion normale                    → déchiffre la clé privée existante
 //   3. Déchiffrement échoue (corrompu)      → régénère (fallback silencieux)
 async function setupE2EKeys(password, userData) {
+  console.log("🔐 setupE2EKeys called with userData:", userData);
+
   const { _id, publicKey, encryptedPrivateKey, oldEncryptedPrivateKey } =
     userData;
   const userId = _id.toString();
 
+  console.log("🔐 publicKey:", publicKey);
+  console.log("🔐 encryptedPrivateKey:", encryptedPrivateKey);
+
   if (!publicKey || !encryptedPrivateKey) {
+    console.log("🆕 First login - generating new keypair");
     // Première connexion ou après un reset de mot de passe
     const { publicKey: newPubKey, secretKey } = generateKeyPair();
     const encKey = encryptPrivateKey(secretKey, password, userId);
@@ -33,14 +39,22 @@ async function setupE2EKeys(password, userData) {
       publicKey: newPubKey,
       encryptedPrivateKey: encKey,
     });
+    console.log("✅ New keys stored in DB, calling storePrivateKey...");
     storePrivateKey(secretKey);
+    console.log("✅ storePrivateKey completed");
     return;
   }
 
+  console.log("🔓 Decrypting existing private key...");
   // Connexion normale : déchiffre la clé privée stockée en DB
   const privateKey = decryptPrivateKey(encryptedPrivateKey, password, userId);
   if (privateKey) {
+    console.log(
+      "✅ Private key decrypted successfully, calling storePrivateKey...",
+    );
     storePrivateKey(privateKey);
+    console.log("✅ storePrivateKey completed");
+
     // Si une ancienne clé existe en DB (après changement de mode E2E),
     // la déchiffrer et la stocker pour accéder aux anciens messages
     const oldPrivateKey = oldEncryptedPrivateKey
@@ -54,15 +68,17 @@ async function setupE2EKeys(password, userData) {
     return;
   }
 
+  console.log("⚠️ Decryption failed, regenerating keypair...");
   // Fallback : déchiffrement échoué → régénère une nouvelle paire
-  // (ne devrait pas arriver en flux normal, mais garantit la robustesse)
   const { publicKey: newPubKey, secretKey } = generateKeyPair();
   const encKey = encryptPrivateKey(secretKey, password, userId);
   await apiHandler.storeE2EKeys({
     publicKey: newPubKey,
     encryptedPrivateKey: encKey,
   });
+  console.log("✅ Fallback keys stored, calling storePrivateKey...");
   storePrivateKey(secretKey);
+  console.log("✅ storePrivateKey completed");
 }
 
 const AuthPage = () => {
