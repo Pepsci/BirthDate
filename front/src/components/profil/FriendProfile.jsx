@@ -91,6 +91,15 @@ const FriendProfile = ({ date, onCancel, initialSection = "info" }) => {
       ? conversationUnreads[date.conversationId] || 0
       : 0;
 
+  // ── Helper : naviguer vers "info" sur desktop ET mobile ───────────────────
+  const goToInfo = () => {
+    setActiveSection("info");
+    const infoIndex = menuSections
+      .filter((s) => s.id !== "chat")
+      .findIndex((s) => s.id === "info");
+    setCurrentCarouselIndex(infoIndex >= 0 ? infoIndex : 0);
+  };
+
   // ── Effects ────────────────────────────────────────────────────────────────
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 768);
@@ -426,10 +435,6 @@ const FriendProfile = ({ date, onCancel, initialSection = "info" }) => {
         </div>
       );
 
-    // Filtrer les items visibles pour les amis :
-    // - items non réservés → visibles
-    // - items réservés par moi → visibles
-    // - items réservés par quelqu'un d'autre → cachés
     const visibleItems = wishlist.filter((item) => {
       if (!item.reservedBy) return true;
       const reservedById =
@@ -461,10 +466,10 @@ const FriendProfile = ({ date, onCancel, initialSection = "info" }) => {
     <UpdateDate
       compact
       date={currentDate}
-      onCancel={() => setActiveSection("info")}
+      onCancel={goToInfo}
       onSaved={(updated) => {
         setCurrentDate(updated);
-        setActiveSection("info");
+        goToInfo();
       }}
       onDeleted={onCancel}
     />

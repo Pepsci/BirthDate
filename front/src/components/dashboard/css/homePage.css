@@ -107,6 +107,7 @@ img {
 
   .homePageRoot {
     margin-top: 100px;
+    min-height: unset;
   }
 
   .btn-currentName {

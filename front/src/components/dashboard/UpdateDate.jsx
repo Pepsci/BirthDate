@@ -14,7 +14,7 @@ const UpdateDate = ({
 }) => {
   const [dateToUpdate, setDateToUpdate] = useState(date);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [saveStatus, setSaveStatus] = useState(null); // null | "success" | "error"
+  const [saveStatus, setSaveStatus] = useState(null);
   const confirmRef = useRef(null);
 
   const isFriend = !!date.linkedUser;
@@ -43,7 +43,7 @@ const UpdateDate = ({
       setTimeout(() => {
         setSaveStatus(null);
         onSaved ? onSaved(dateToUpdate) : onCancel();
-      }, 1800);
+      }, 1000);
     } catch (error) {
       console.error(error);
       setSaveStatus("error");
