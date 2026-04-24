@@ -410,7 +410,7 @@ const EventPage = () => {
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.97 }}
                 >
-                  <i className="fa-solid fa-trash"></i>
+                  <i className="fa-solid fa-trash"></i> Supprimer
                   {deleteConfirm ? "Confirmer ?" : ""}
                 </motion.button>
 
