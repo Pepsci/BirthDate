@@ -16,7 +16,6 @@ import GiftProposalPanel from "./GiftProposalPanel";
 import InviteModal from "./InviteModal";
 import "./css/eventPage.css";
 
-// ─── Fix icône Leaflet avec Vite ─────────────────────────
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl:
@@ -25,7 +24,6 @@ L.Icon.Default.mergeOptions({
   shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
 });
 
-// ─── Maps helpers ────────────────────────────────────────
 const getMapsUrl = (location) => {
   const isIos =
     /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
@@ -46,7 +44,6 @@ const getMapsUrl = (location) => {
     : `https://maps.google.com/?q=${query}`;
 };
 
-// ─── Animations ──────────────────────────────────────────
 const fadeUp = (delay = 0) => ({
   initial: { opacity: 0, y: 24 },
   animate: { opacity: 1, y: 0 },
@@ -72,15 +69,16 @@ const getStatusLabel = (status, isPast) => {
   return "Brouillon";
 };
 
-// ─── Composant card glassmorphism ────────────────────────
 const GlassCard = ({ children, className = "", style = {}, ...props }) => (
   <motion.div className={`ep-glass-card ${className}`} style={style} {...props}>
     {children}
   </motion.div>
 );
 
-// ─── Composant participant ───────────────────────────────
-const ParticipantRow = ({ inv }) => {
+// ─── Composant participant avec bouton retirer ───────────
+const ParticipantRow = ({ inv, isOrganizer, onRemove }) => {
+  const [confirmRemove, setConfirmRemove] = useState(false);
+
   const name = inv.user
     ? `${inv.user.name} ${inv.user.surname || ""}`.trim()
     : inv.guestName || inv.externalEmail || "Invité externe";
@@ -97,6 +95,7 @@ const ParticipantRow = ({ inv }) => {
     pending: { label: "En attente", color: "#95a5a6" },
   };
   const s = statusConfig[inv.status] || statusConfig.pending;
+
   return (
     <div className="ep-participant-row">
       <div className="ep-participant-avatar">{initials || "?"}</div>
@@ -104,11 +103,63 @@ const ParticipantRow = ({ inv }) => {
       <span className="ep-participant-badge" style={{ background: s.color }}>
         {s.label}
       </span>
+
+      {isOrganizer && onRemove && (
+        <div style={{ marginLeft: "auto", display: "flex", gap: "6px" }}>
+          {confirmRemove ? (
+            <>
+              <button
+                onClick={() => onRemove(inv._id)}
+                style={{
+                  padding: "3px 8px",
+                  background: "var(--danger, #e74c3c)",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: "6px",
+                  cursor: "pointer",
+                  fontSize: "0.75rem",
+                  fontWeight: "bold",
+                }}
+              >
+                Confirmer
+              </button>
+              <button
+                onClick={() => setConfirmRemove(false)}
+                style={{
+                  padding: "3px 8px",
+                  background: "var(--bg-tertiary)",
+                  color: "var(--text-secondary)",
+                  border: "none",
+                  borderRadius: "6px",
+                  cursor: "pointer",
+                  fontSize: "0.75rem",
+                }}
+              >
+                ✕
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={() => setConfirmRemove(true)}
+              style={{
+                padding: "3px 8px",
+                background: "transparent",
+                color: "var(--danger, #e74c3c)",
+                border: "1px solid var(--danger, #e74c3c)",
+                borderRadius: "6px",
+                cursor: "pointer",
+                fontSize: "0.75rem",
+              }}
+            >
+              Retirer
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 };
 
-// ─── Composant carte Leaflet ─────────────────────────────
 const LeafletMap = ({ coords, locationName }) => (
   <MapContainer
     center={coords}
@@ -126,12 +177,13 @@ const LeafletMap = ({ coords, locationName }) => (
   </MapContainer>
 );
 
-// ─── Page principale ─────────────────────────────────────
 const EventPage = () => {
   const { shortId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
   const { currentUser } = useAuth();
+
+  const guestToken = localStorage.getItem(`guestToken_${shortId}`);
 
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -145,8 +197,8 @@ const EventPage = () => {
   const [invitations, setInvitations] = useState([]);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [activeTab, setActiveTab] = useState("info");
+  const [myDateVotes, setMyDateVotes] = useState([]);
 
-  // Map { userId → publicKey } passé à EventChat pour le chiffrement E2E
   const participants = useMemo(() => {
     const map = {};
     if (event?.organizer?._id && event?.organizer?.publicKey) {
@@ -160,14 +212,34 @@ const EventPage = () => {
     return map;
   }, [event?.organizer, invitations]);
 
+  const fetchInvitations = (headers = {}) => {
+    return apiHandler
+      .get(`/events/${shortId}/invitations`, { headers })
+      .then((res) => {
+        setInvitations(res.data);
+        const guestName = localStorage.getItem(`guestName_${shortId}`);
+        const myInvitation = res.data.find((inv) =>
+          currentUser
+            ? inv.user?._id === currentUser._id
+            : inv.guestName === guestName,
+        );
+        setMyDateVotes(myInvitation?.dateVote || []);
+      })
+      .catch(console.error);
+  };
+
   useEffect(() => {
     const fetchEvent = async () => {
       try {
-        const guestCode = sessionStorage.getItem(`event_code_${shortId}`);
-        const config = guestCode
-          ? { headers: { "X-Event-Code": guestCode } }
-          : {};
-        const res = await apiHandler.get(`/events/${shortId}`, config);
+        const headers = {};
+        const storedGuestToken = localStorage.getItem(`guestToken_${shortId}`);
+        if (storedGuestToken) {
+          headers["x-guest-token"] = storedGuestToken;
+        } else {
+          const guestCode = sessionStorage.getItem(`event_code_${shortId}`);
+          if (guestCode) headers["X-Event-Code"] = guestCode;
+        }
+        const res = await apiHandler.get(`/events/${shortId}`, { headers });
         setEvent(res.data);
       } catch {
         setError("Événement introuvable ou vous n'avez pas accès.");
@@ -180,10 +252,8 @@ const EventPage = () => {
 
   useEffect(() => {
     if (!event?.hasFullAccess) return;
-    apiHandler
-      .get(`/events/${shortId}/invitations`)
-      .then((res) => setInvitations(res.data))
-      .catch(console.error);
+    const headers = guestToken ? { "x-guest-token": guestToken } : {};
+    fetchInvitations(headers);
   }, [shortId, event?.hasFullAccess, refreshKey]);
 
   useEffect(() => {
@@ -192,10 +262,8 @@ const EventPage = () => {
     if (!socket) return;
     const handleRsvpUpdate = ({ shortId: sId }) => {
       if (sId !== shortId) return;
-      apiHandler
-        .get(`/events/${shortId}/invitations`)
-        .then((res) => setInvitations(res.data))
-        .catch(console.error);
+      const headers = guestToken ? { "x-guest-token": guestToken } : {};
+      fetchInvitations(headers);
     };
     socket.on("event:rsvp_update", handleRsvpUpdate);
     return () => socket.off("event:rsvp_update", handleRsvpUpdate);
@@ -211,6 +279,15 @@ const EventPage = () => {
       navigate("/home?tab=events");
     } catch {
       setDeleteConfirm(false);
+    }
+  };
+
+  const handleRemoveInvitation = async (invitationId) => {
+    try {
+      await apiHandler.delete(`/events/${shortId}/invitations/${invitationId}`);
+      setInvitations((prev) => prev.filter((inv) => inv._id !== invitationId));
+    } catch (err) {
+      console.error("Error removing invitation", err);
     }
   };
 
@@ -235,6 +312,10 @@ const EventPage = () => {
         });
         if (res.data && (res.data.unlockSession || res.data.invitation)) {
           sessionStorage.setItem(`event_code_${shortId}`, accessCodeInput);
+          if (res.data.guestToken) {
+            localStorage.setItem(`guestToken_${shortId}`, res.data.guestToken);
+            localStorage.setItem(`guestName_${shortId}`, guestNameInput);
+          }
           setLoading(true);
           setRefreshKey((k) => k + 1);
         }
@@ -246,7 +327,6 @@ const EventPage = () => {
     }
   };
 
-  // ── États de chargement / erreur ──
   if (loading)
     return (
       <div className="ep-loading">
@@ -267,7 +347,6 @@ const EventPage = () => {
       </div>
     );
 
-  // ── Calculs dérivés ──
   const isPast = event.fixedDate && new Date(event.fixedDate) < new Date();
   const statusColor = getStatusColor(event.status, isPast);
   const statusLabel = getStatusLabel(event.status, isPast);
@@ -275,7 +354,6 @@ const EventPage = () => {
   const hasLocation =
     event.locationMode === "fixed" && event.fixedLocation?.name;
 
-  // Coordonnées Leaflet — null si absentes ou accès restreint
   const locationCoords =
     hasLocation &&
     event.hasFullAccess &&
@@ -287,7 +365,6 @@ const EventPage = () => {
         ]
       : null;
 
-  // Tabs disponibles
   const hasGifts = event.giftMode && event.giftMode !== "none";
 
   const tabs = [
@@ -312,7 +389,6 @@ const EventPage = () => {
 
   return (
     <div className="ep-root">
-      {/* ══════════════ HERO ══════════════ */}
       <div className="ep-hero" style={{ "--status-color": statusColor }}>
         <motion.button
           className="ep-back-btn"
@@ -327,7 +403,6 @@ const EventPage = () => {
           <motion.div className="ep-hero-emoji" {...fadeUp(0.05)}>
             {getEventEmoji(event.type)}
           </motion.div>
-
           <motion.div
             className="ep-status-badge"
             style={{ background: statusColor }}
@@ -335,11 +410,9 @@ const EventPage = () => {
           >
             {statusLabel}
           </motion.div>
-
           <motion.h1 className="ep-hero-title titleFont" {...fadeUp(0.15)}>
             {event.title}
           </motion.h1>
-
           <motion.p className="ep-hero-organizer" {...fadeUp(0.2)}>
             par{" "}
             <strong>
@@ -381,7 +454,6 @@ const EventPage = () => {
           )}
         </div>
 
-        {/* Actions organisateur */}
         {(isOrganizer || (event.hasFullAccess && event.allowGuestInvites)) && (
           <motion.div className="ep-hero-actions" {...fadeUp(0.3)}>
             <motion.button
@@ -392,7 +464,6 @@ const EventPage = () => {
             >
               <i className="fa-solid fa-user-plus"></i> Inviter
             </motion.button>
-
             {isOrganizer && (
               <>
                 <motion.button
@@ -403,7 +474,6 @@ const EventPage = () => {
                 >
                   <i className="fa-solid fa-pen"></i> Modifier
                 </motion.button>
-
                 <motion.button
                   className={`ep-btn ${deleteConfirm ? "ep-btn-danger-active" : "ep-btn-danger"}`}
                   onClick={handleDeleteEvent}
@@ -418,7 +488,6 @@ const EventPage = () => {
                     </>
                   )}
                 </motion.button>
-
                 {deleteConfirm && (
                   <motion.button
                     className="ep-btn ep-btn-ghost"
@@ -434,7 +503,6 @@ const EventPage = () => {
           </motion.div>
         )}
 
-        {/* RSVP invités */}
         {event.hasFullAccess && !isOrganizer && (
           <motion.div className="ep-hero-rsvp" {...fadeUp(0.35)}>
             <RSVPButton
@@ -442,21 +510,19 @@ const EventPage = () => {
               currentStatus={event.myRsvpStatus}
               onStatusChange={(status) => {
                 setEvent({ ...event, myRsvpStatus: status });
-                apiHandler
-                  .get(`/events/${shortId}/invitations`)
-                  .then((res) => setInvitations(res.data))
-                  .catch(console.error);
+                const headers = guestToken
+                  ? { "x-guest-token": guestToken }
+                  : {};
+                fetchInvitations(headers);
               }}
             />
           </motion.div>
         )}
       </div>
 
-      {/* ══════════════ BODY ══════════════ */}
       <div className="ep-body">
         {event.hasFullAccess ? (
           <>
-            {/* Tabs */}
             <motion.div className="ep-tabs" {...fadeUp(0.35)}>
               {tabs.map((tab) => (
                 <motion.button
@@ -472,9 +538,7 @@ const EventPage = () => {
               ))}
             </motion.div>
 
-            {/* Contenu tabs */}
             <AnimatePresence mode="wait">
-              {/* ── Tab Infos ── */}
               {activeTab === "info" && (
                 <motion.div
                   key="info"
@@ -485,7 +549,6 @@ const EventPage = () => {
                   transition={{ duration: 0.25 }}
                 >
                   <div className="ep-grid">
-                    {/* Card lieu + carte Leaflet */}
                     {hasLocation && (
                       <GlassCard
                         className="ep-card ep-card-location"
@@ -503,8 +566,6 @@ const EventPage = () => {
                             {event.fixedLocation.address}
                           </p>
                         )}
-
-                        {/* Carte Leaflet — toujours visible */}
                         {locationCoords && (
                           <div className="ep-map-container">
                             <LeafletMap
@@ -524,8 +585,6 @@ const EventPage = () => {
                             </a>
                           </div>
                         )}
-
-                        {/* Fallback si pas de coordonnées */}
                         {!locationCoords && (
                           <a
                             href={getMapsUrl(event.fixedLocation)}
@@ -541,8 +600,6 @@ const EventPage = () => {
                         )}
                       </GlassCard>
                     )}
-
-                    {/* Card description */}
                     {event.description && (
                       <GlassCard className="ep-card" {...fadeUp(0.15)}>
                         <div className="ep-card-header">
@@ -552,8 +609,6 @@ const EventPage = () => {
                         <p className="ep-description">{event.description}</p>
                       </GlassCard>
                     )}
-
-                    {/* Card partage */}
                     {(isOrganizer || event.allowGuestInvites) && (
                       <GlassCard className="ep-card" {...fadeUp(0.2)}>
                         <div className="ep-card-header">
@@ -588,7 +643,6 @@ const EventPage = () => {
                 </motion.div>
               )}
 
-              {/* ── Tab Participants ── */}
               {activeTab === "participants" && (
                 <motion.div
                   key="participants"
@@ -649,7 +703,6 @@ const EventPage = () => {
                         <span className="ep-stat-label">Déclinés</span>
                       </div>
                     </div>
-
                     <div className="ep-participants-list">
                       {invitations.length === 0 ? (
                         <p className="ep-empty">Aucun invité pour l'instant.</p>
@@ -661,7 +714,11 @@ const EventPage = () => {
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: i * 0.04 }}
                           >
-                            <ParticipantRow inv={inv} />
+                            <ParticipantRow
+                              inv={inv}
+                              isOrganizer={isOrganizer}
+                              onRemove={handleRemoveInvitation}
+                            />
                           </motion.div>
                         ))
                       )}
@@ -670,7 +727,6 @@ const EventPage = () => {
                 </motion.div>
               )}
 
-              {/* ── Tab Chat ── */}
               {activeTab === "chat" && (
                 <motion.div
                   key="chat"
@@ -689,7 +745,6 @@ const EventPage = () => {
                 </motion.div>
               )}
 
-              {/* ── Tab Cadeaux ── */}
               {activeTab === "cadeaux" && (
                 <motion.div
                   key="cadeaux"
@@ -741,7 +796,6 @@ const EventPage = () => {
                 </motion.div>
               )}
 
-              {/* ── Tab Votes ── */}
               {activeTab === "vote" && (
                 <motion.div
                   key="vote"
@@ -757,14 +811,28 @@ const EventPage = () => {
                         <DateVotePanel
                           shortId={shortId}
                           options={event.dateOptions}
-                          myVotes={
-                            event.myRsvpStatus === "pending"
-                              ? []
-                              : event.dateVote || []
-                          }
+                          myVotes={myDateVotes}
                           isOrganizer={isOrganizer}
-                          invitations={event.invitations || []}
-                          onVoteChange={() => setRefreshKey((k) => k + 1)}
+                          invitations={invitations}
+                          onVoteChange={(newVotes) => setMyDateVotes(newVotes)}
+                          onRefresh={() => {
+                            const headers = guestToken
+                              ? { "x-guest-token": guestToken }
+                              : {};
+                            fetchInvitations(headers);
+                          }}
+                          onConfirmDate={async (date) => {
+                            try {
+                              await apiHandler.put(`/events/${shortId}`, {
+                                selectedDate: date,
+                                dateMode: "fixed",
+                                fixedDate: date,
+                              });
+                              setRefreshKey((k) => k + 1);
+                            } catch (err) {
+                              console.error("Error confirming date", err);
+                            }
+                          }}
                         />
                       </GlassCard>
                     )}
@@ -775,7 +843,7 @@ const EventPage = () => {
                           options={event.locationOptions}
                           myVote={event.locationVote}
                           isOrganizer={isOrganizer}
-                          invitations={event.invitations || []}
+                          invitations={invitations}
                           onVoteChange={() => setRefreshKey((k) => k + 1)}
                         />
                       </GlassCard>
@@ -786,13 +854,11 @@ const EventPage = () => {
             </AnimatePresence>
           </>
         ) : (
-          /* ══ Accès restreint ══ */
           <motion.div className="ep-restricted" {...fadeUp(0.3)}>
             <GlassCard className="ep-card ep-card-restricted">
               <div className="ep-lock-icon">🔒</div>
               <h3>Événement privé</h3>
               <p>Rejoignez l'événement avec le code d'accès pour participer.</p>
-
               <form onSubmit={handleJoinCode} className="ep-join-form">
                 {!currentUser && event.allowExternalGuests && (
                   <input
@@ -838,7 +904,6 @@ const EventPage = () => {
         )}
       </div>
 
-      {/* ══════════════ MODALS ══════════════ */}
       <AnimatePresence>
         {showInviteModal && (
           <InviteModal

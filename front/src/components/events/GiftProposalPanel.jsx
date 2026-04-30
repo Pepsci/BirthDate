@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import apiHandler from "../../api/apiHandler";
 import socketService from "../services/socket.service";
 import GiftCardGrid from "../UI/GiftCardGrid";
 import ImportGiftModal from "./ImportGiftModal";
+import useGuestHeaders from "../../hooks/useGuestHeaders";
 
 const BLOCKED_DOMAINS = [
   { domain: "amazon", name: "Amazon" },
@@ -12,7 +13,14 @@ const BLOCKED_DOMAINS = [
 
 const DEFAULT_FORM = { name: "", url: "", price: "", image: "" };
 
-const GiftProposalPanel = ({ shortId, isOrganizer }) => {
+const GiftProposalPanel = ({
+  shortId,
+  isOrganizer,
+  maxGiftProposalsPerUser,
+}) => {
+  const guestHeaders = useGuestHeaders(shortId);
+  const editFormRef = useRef(null);
+
   const [proposals, setProposals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -21,15 +29,32 @@ const GiftProposalPanel = ({ shortId, isOrganizer }) => {
   const [newGift, setNewGift] = useState(DEFAULT_FORM);
   const [isFetchingUrl, setIsFetchingUrl] = useState(false);
   const [fetchMessage, setFetchMessage] = useState(null);
+  const [submitError, setSubmitError] = useState(null);
+  const [deletingGiftId, setDeletingGiftId] = useState(null);
 
   const authToken = localStorage.getItem("authToken");
   const currentUserId = authToken
     ? JSON.parse(atob(authToken.split(".")[1]))._id
     : null;
+  const currentGuestName = !currentUserId
+    ? localStorage.getItem(`guestName_${shortId}`)
+    : null;
+
+  const myProposalsCount = proposals.filter((p) =>
+    currentUserId
+      ? p.proposedBy?._id === currentUserId
+      : p.guestName === currentGuestName,
+  ).length;
+
+  const limitReached =
+    maxGiftProposalsPerUser && myProposalsCount >= maxGiftProposalsPerUser;
 
   const fetchProposals = async () => {
     try {
-      const res = await apiHandler.get(`/events/${shortId}/gifts`);
+      const res = await apiHandler.get(
+        `/events/${shortId}/gifts`,
+        guestHeaders,
+      );
       setProposals(res.data);
     } catch (err) {
       console.error("Error fetching gift proposals", err);
@@ -40,13 +65,21 @@ const GiftProposalPanel = ({ shortId, isOrganizer }) => {
 
   useEffect(() => {
     fetchProposals();
-    socketService.on("event:gift_proposal", () => {
-      fetchProposals();
-    });
-    return () => {
-      socketService.off("event:gift_proposal");
-    };
+    socketService.on("event:gift_proposal", () => fetchProposals());
+    return () => socketService.off("event:gift_proposal");
   }, [shortId]);
+
+  // Scroll vers le formulaire d'édition quand il s'ouvre
+  useEffect(() => {
+    if (editingGift && editFormRef.current) {
+      setTimeout(() => {
+        editFormRef.current.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }, 50);
+    }
+  }, [editingGift]);
 
   const handleUrlChange = (e) => {
     const value = e.target.value;
@@ -114,18 +147,21 @@ const GiftProposalPanel = ({ shortId, isOrganizer }) => {
 
   const handleAddGift = async (e) => {
     e.preventDefault();
+    setSubmitError(null);
     try {
-      await apiHandler.post(`/events/${shortId}/gifts`, {
-        name: newGift.name,
-        url: newGift.url,
-        price: newGift.price,
-      });
+      await apiHandler.post(
+        `/events/${shortId}/gifts`,
+        { name: newGift.name, url: newGift.url, price: newGift.price },
+        guestHeaders,
+      );
       setNewGift(DEFAULT_FORM);
       setFetchMessage(null);
       setShowAddForm(false);
       fetchProposals();
       socketService.emit("event:gift_proposed", { shortId });
     } catch (err) {
+      const msg = err?.response?.data?.message;
+      if (msg) setSubmitError(msg);
       console.error("Error proposing gift", err);
     }
   };
@@ -134,11 +170,15 @@ const GiftProposalPanel = ({ shortId, isOrganizer }) => {
     e.preventDefault();
     if (!editingGift?.name?.trim()) return;
     try {
-      await apiHandler.put(`/events/${shortId}/gifts/${editingGift._id}`, {
-        name: editingGift.name,
-        url: editingGift.url,
-        price: editingGift.price,
-      });
+      await apiHandler.put(
+        `/events/${shortId}/gifts/${editingGift._id}`,
+        {
+          name: editingGift.name,
+          url: editingGift.url,
+          price: editingGift.price,
+        },
+        guestHeaders,
+      );
       setEditingGift(null);
       fetchProposals();
     } catch (err) {
@@ -146,10 +186,36 @@ const GiftProposalPanel = ({ shortId, isOrganizer }) => {
     }
   };
 
+  const handleDeleteGift = async (giftId) => {
+    if (deletingGiftId !== giftId) {
+      setDeletingGiftId(giftId);
+      return;
+    }
+    try {
+      await apiHandler.delete(
+        `/events/${shortId}/gifts/${giftId}`,
+        guestHeaders,
+      );
+      setProposals((prev) => prev.filter((p) => p._id !== giftId));
+      setDeletingGiftId(null);
+      socketService.emit("event:gift_proposed", { shortId });
+    } catch (err) {
+      console.error("Error deleting gift proposal", err);
+    }
+  };
+
   const handleVote = async (giftId) => {
     try {
-      await apiHandler.post(`/events/${shortId}/gifts/${giftId}/vote`);
-      fetchProposals();
+      await apiHandler.post(
+        `/events/${shortId}/gifts/${giftId}/vote`,
+        {},
+        guestHeaders,
+      );
+      const res = await apiHandler.get(`/events/${shortId}/gifts`, {
+        ...guestHeaders,
+        headers: { ...guestHeaders.headers, "Cache-Control": "no-cache" },
+      });
+      setProposals(res.data);
       socketService.emit("event:gift_proposed", { shortId });
     } catch (err) {
       console.error("Error voting", err);
@@ -197,39 +263,64 @@ const GiftProposalPanel = ({ shortId, isOrganizer }) => {
           flexWrap: "wrap",
         }}
       >
-        <h3 style={{ margin: 0 }}>🎁 Idées de cadeaux</h3>
+        <div>
+          <h3 style={{ margin: 0 }}>🎁 Idées de cadeaux</h3>
+          {maxGiftProposalsPerUser && (
+            <p
+              style={{
+                margin: "4px 0 0 0",
+                fontSize: "0.8rem",
+                color: limitReached
+                  ? "var(--danger, #e74c3c)"
+                  : "var(--text-tertiary)",
+              }}
+            >
+              {limitReached
+                ? `⚠️ Limite atteinte (${maxGiftProposalsPerUser} max par personne)`
+                : `${myProposalsCount} / ${maxGiftProposalsPerUser} propositions utilisées`}
+            </p>
+          )}
+        </div>
         <div style={{ display: "flex", gap: "8px" }}>
+          {!limitReached && (
+            <button
+              onClick={() => {
+                setShowImportModal(true);
+                setShowAddForm(false);
+              }}
+              style={{
+                background: "transparent",
+                color: "var(--primary)",
+                border: "1px solid var(--primary)",
+                padding: "5px 12px",
+                borderRadius: "15px",
+                cursor: "pointer",
+                fontSize: "0.82rem",
+                fontWeight: "600",
+              }}
+            >
+              📋 Depuis une liste
+            </button>
+          )}
           <button
             onClick={() => {
-              setShowImportModal(true);
-              setShowAddForm(false);
+              if (!limitReached) {
+                setShowAddForm(!showAddForm);
+                setShowImportModal(false);
+                setFetchMessage(null);
+                setSubmitError(null);
+              }
             }}
+            disabled={limitReached && !showAddForm}
             style={{
-              background: "transparent",
-              color: "var(--primary)",
-              border: "1px solid var(--primary)",
-              padding: "5px 12px",
-              borderRadius: "15px",
-              cursor: "pointer",
-              fontSize: "0.82rem",
-              fontWeight: "600",
-            }}
-          >
-            📋 Depuis une liste
-          </button>
-          <button
-            onClick={() => {
-              setShowAddForm(!showAddForm);
-              setShowImportModal(false);
-              setFetchMessage(null);
-            }}
-            style={{
-              background: "var(--primary)",
-              color: "#fff",
+              background: limitReached
+                ? "var(--bg-tertiary)"
+                : "var(--primary)",
+              color: limitReached ? "var(--text-tertiary)" : "#fff",
               border: "none",
               padding: "5px 12px",
               borderRadius: "15px",
-              cursor: "pointer",
+              cursor: limitReached ? "not-allowed" : "pointer",
               fontSize: "0.85rem",
             }}
           >
@@ -241,18 +332,22 @@ const GiftProposalPanel = ({ shortId, isOrganizer }) => {
       {/* Formulaire édition */}
       {editingGift && (
         <form
+          ref={editFormRef}
           onSubmit={handleEditGift}
           style={{
             marginBottom: "20px",
             padding: "15px",
             background: "var(--bg-primary)",
             borderRadius: "10px",
-            border: "1px solid var(--border-color)",
+            border: "1px solid var(--primary)",
             display: "flex",
             flexDirection: "column",
             gap: "10px",
           }}
         >
+          <h4 style={{ margin: 0, color: "var(--primary)" }}>
+            ✏️ Modifier la proposition
+          </h4>
           <input
             type="text"
             placeholder="Nom du cadeau *"
@@ -315,8 +410,8 @@ const GiftProposalPanel = ({ shortId, isOrganizer }) => {
         </form>
       )}
 
-      {/* Formulaire ajout avec fetch auto */}
-      {showAddForm && (
+      {/* Formulaire ajout */}
+      {showAddForm && !limitReached && (
         <div className="gift-form-card" style={{ marginBottom: "20px" }}>
           <h3
             style={{
@@ -330,7 +425,6 @@ const GiftProposalPanel = ({ shortId, isOrganizer }) => {
           </h3>
           <form onSubmit={handleAddGift}>
             <div className="gift-form-input">
-              {/* URL + fetch */}
               <div className="gift-url-row">
                 <input
                   type="url"
@@ -348,7 +442,6 @@ const GiftProposalPanel = ({ shortId, isOrganizer }) => {
                   {isFetchingUrl ? "⏳" : "🔍 Récupérer les infos avec le lien"}
                 </button>
               </div>
-
               {fetchMessage && (
                 <p
                   className={`fetch-message fetch-message--${fetchMessage.type}`}
@@ -356,7 +449,6 @@ const GiftProposalPanel = ({ shortId, isOrganizer }) => {
                   {fetchMessage.text}
                 </p>
               )}
-
               {newGift.image && (
                 <div className="gift-image-preview">
                   <img
@@ -368,7 +460,6 @@ const GiftProposalPanel = ({ shortId, isOrganizer }) => {
                   />
                 </div>
               )}
-
               <input
                 type="text"
                 className="form-input"
@@ -391,7 +482,17 @@ const GiftProposalPanel = ({ shortId, isOrganizer }) => {
                 min="0"
               />
             </div>
-
+            {submitError && (
+              <p
+                style={{
+                  color: "var(--danger, #e74c3c)",
+                  fontSize: "0.85rem",
+                  margin: "8px 0 0 0",
+                }}
+              >
+                {submitError}
+              </p>
+            )}
             <div className="gift-form-buttons">
               <button type="submit" className="btn-profil btn-profilGreen">
                 Ajouter l'idée
@@ -403,6 +504,7 @@ const GiftProposalPanel = ({ shortId, isOrganizer }) => {
                   setShowAddForm(false);
                   setNewGift(DEFAULT_FORM);
                   setFetchMessage(null);
+                  setSubmitError(null);
                 }}
               >
                 Annuler
@@ -429,6 +531,8 @@ const GiftProposalPanel = ({ shortId, isOrganizer }) => {
           items={proposals}
           type="event"
           currentUserId={currentUserId}
+          currentGuestName={currentGuestName}
+          isOrganizer={isOrganizer}
           onEdit={(gift) =>
             setEditingGift({
               _id: gift._id,
@@ -437,6 +541,10 @@ const GiftProposalPanel = ({ shortId, isOrganizer }) => {
               price: gift.price || "",
             })
           }
+          onDelete={handleDeleteGift}
+          deletingId={deletingGiftId}
+          onDeleteConfirm={handleDeleteGift}
+          onDeleteCancel={() => setDeletingGiftId(null)}
           onVote={handleVote}
         />
       )}

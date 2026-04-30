@@ -58,7 +58,8 @@ app.use(
       }
     },
     methods: "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS",
-    allowedHeaders: "Content-Type,Authorization",
+    allowedHeaders:
+      "Content-Type,Authorization,X-Event-Code,x-guest-token,Cache-Control",
   }),
 );
 

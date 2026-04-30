@@ -13,6 +13,8 @@ const GiftCardGrid = ({
   onVote,
   onOffered,
   currentUserId,
+  currentGuestName,
+  isOrganizer = false,
   deletingId,
   onDeleteConfirm,
   onDeleteCancel,
@@ -44,6 +46,7 @@ const GiftCardGrid = ({
         raw: item,
       };
     }
+
     if (type === "gifts") {
       return {
         id: item._id,
@@ -60,11 +63,20 @@ const GiftCardGrid = ({
         raw: item,
       };
     }
+
     if (type === "event") {
-      const hasVoted = item.votes
-        ?.map((v) => v.toString())
-        .includes(currentUserId);
-      const isOwner = item.proposedBy?._id?.toString() === currentUserId;
+      const hasVoted = currentUserId
+        ? item.votes
+            ?.map((v) => v._id?.toString() || v.toString())
+            .includes(currentUserId)
+        : false;
+
+      const isOwner = currentUserId
+        ? item.proposedBy?._id?.toString() === currentUserId
+        : currentGuestName
+          ? item.guestName === currentGuestName
+          : false;
+
       return {
         id: item._id,
         title: item.name,
@@ -73,13 +85,14 @@ const GiftCardGrid = ({
         url: item.url,
         image: null,
         badge: null,
-        voteCount: item.votes?.length || 0,
+        voteCount: (item.votes?.length || 0) + (item.guestVotes?.length || 0),
         hasVoted,
         isOwner,
-        proposedBy: item.proposedBy?.name,
+        proposedBy: item.proposedBy?.name || item.guestName,
         raw: item,
       };
     }
+
     return {
       id: item._id,
       title: item.name || item.title || item.giftName,
@@ -103,7 +116,6 @@ const GiftCardGrid = ({
 
   return (
     <div className="gcg-grid">
-      {/* Carte "+ Ajouter" — toujours en premier */}
       {showAddCard && (
         <div className="gcg-card gcg-card--add" onClick={onAdd}>
           <div className="gcg-add-inner">
@@ -148,6 +160,10 @@ const GiftCardGrid = ({
           );
         }
 
+        // Pour le type event : canEdit = owner, canDelete = owner OU organisateur
+        const canEdit = type === "event" ? item.isOwner : true;
+        const canDelete = type === "event" ? item.isOwner || isOrganizer : true;
+
         return (
           <div
             key={item.id}
@@ -183,10 +199,10 @@ const GiftCardGrid = ({
                 </span>
               )}
 
-              {/* Overlay hover desktop */}
-              {!readOnly && (
+              {/* Overlay hover — pour event : edit seulement si owner, delete si owner ou organizer */}
+              {!readOnly && (type !== "event" || canEdit || canDelete) && (
                 <div className="gcg-hover-actions">
-                  {onEdit && (
+                  {onEdit && canEdit && type !== "event" && (
                     <button
                       className="gcg-action-btn gcg-action-btn--edit"
                       onClick={(e) => {
@@ -197,7 +213,7 @@ const GiftCardGrid = ({
                       ✏️
                     </button>
                   )}
-                  {onDelete && (
+                  {onDelete && canDelete && (
                     <button
                       className="gcg-action-btn gcg-action-btn--delete"
                       onClick={(e) => {
@@ -214,25 +230,20 @@ const GiftCardGrid = ({
 
             {/* ── Corps ── */}
             <div className="gcg-body">
-              {/* Haut — titre, description, meta */}
               <div className="gcg-body-top">
                 <h4 className="gcg-title">{item.title}</h4>
-
                 {item.description && (
                   <p className="gcg-desc">{item.description}</p>
                 )}
-
                 {type === "gifts" && item.occasion && (
                   <p className="gcg-meta">
                     {getOccasionEmoji(item.occasion)} {item.occasion}
                     {item.year ? ` · ${item.year}` : ""}
                   </p>
                 )}
-
                 {type === "event" && item.proposedBy && (
                   <p className="gcg-meta">Proposé par {item.proposedBy}</p>
                 )}
-
                 {type === "wishlist" && !readOnly && item.isReserved && (
                   <p className="gcg-reserved-owner">
                     🎁 Quelqu'un a réservé ce cadeau pour toi
@@ -240,9 +251,7 @@ const GiftCardGrid = ({
                 )}
               </div>
 
-              {/* Bas — prix + lien + actions — toujours collé en bas */}
               <div className="gcg-body-bottom">
-                {/* Prix + lien */}
                 <div className="gcg-footer">
                   {item.price && (
                     <span className="gcg-price">
@@ -263,7 +272,6 @@ const GiftCardGrid = ({
                   )}
                 </div>
 
-                {/* Actions */}
                 <div className="gcg-actions">
                   {type === "wishlist" && !readOnly && !item.isReserved && (
                     <>
@@ -399,6 +407,7 @@ const GiftCardGrid = ({
                     </>
                   )}
 
+                  {/* Pour event : edit dans gcg-vote-row (owner seulement), pas dans hover */}
                   {type === "event" && (
                     <div className="gcg-vote-row">
                       {item.isOwner && onEdit && (
@@ -408,6 +417,7 @@ const GiftCardGrid = ({
                             e.stopPropagation();
                             onEdit?.(rawItem);
                           }}
+                          style={{ flex: "0 0 auto", padding: "6px 8px" }}
                         >
                           ✏️
                         </button>

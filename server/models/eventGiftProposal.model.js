@@ -11,7 +11,15 @@ const eventGiftProposalSchema = new Schema(
     proposedBy: {
       type: Schema.Types.ObjectId,
       ref: "User",
-      required: true,
+      default: null,
+    },
+    guestName: {
+      type: String,
+      default: null,
+    },
+    guestVotes: {
+      type: [String],
+      default: [],
     },
     name: {
       type: String,

@@ -1,5 +1,6 @@
 const Event = require("../models/event.model");
 const EventInvitation = require("../models/eventInvitation.model");
+const { checkGuestOrAuth } = require("../middleware/checkGuestOrAuth");
 
 const checkEventAccess = async (req, res, next) => {
   try {
@@ -19,9 +20,17 @@ const checkEventAccess = async (req, res, next) => {
     }
 
     // Is invited?
-    const invitation = await EventInvitation.findOne({ event: event._id, user: userId });
+    const invitation = await EventInvitation.findOne({
+      event: event._id,
+      user: userId,
+    });
     if (!invitation) {
-      return res.status(403).json({ message: "Action non autorisée. Vous n'êtes pas invité à cet événement." });
+      return res
+        .status(403)
+        .json({
+          message:
+            "Action non autorisée. Vous n'êtes pas invité à cet événement.",
+        });
     }
 
     req.event = event;
@@ -30,7 +39,11 @@ const checkEventAccess = async (req, res, next) => {
     return next();
   } catch (err) {
     console.error("❌ checkEventAccess Error:", err);
-    res.status(500).json({ message: "Erreur de vérification des droits d'accès à l'événement" });
+    res
+      .status(500)
+      .json({
+        message: "Erreur de vérification des droits d'accès à l'événement",
+      });
   }
 };
 

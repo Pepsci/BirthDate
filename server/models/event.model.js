@@ -90,6 +90,10 @@ const eventSchema = new Schema(
         price: Number,
       },
     ],
+    maxGiftProposalsPerUser: {
+      type: Number,
+      default: null, // null = illimité
+    },
     // [CAGNOTTE — placeholder, à intégrer ultérieurement]
     giftPoolEnabled: {
       type: Boolean,
@@ -134,10 +138,10 @@ const eventSchema = new Schema(
       default: "draft",
     },
   },
-  { 
+  {
     timestamps: true,
     toJSON: { virtuals: true },
-    toObject: { virtuals: true }
+    toObject: { virtuals: true },
   },
 );
 

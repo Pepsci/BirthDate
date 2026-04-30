@@ -359,8 +359,8 @@
 }
 
 .gcg-btn--sm {
-  flex: 0;
-  padding: 6px 10px;
+  flex: 0 0 auto;
+  padding: 9px 25px;
 }
 
 /* Vote (event) */
@@ -376,7 +376,7 @@
   background: transparent;
   color: var(--text-secondary);
   border: 1px solid var(--border-color);
-  padding: 6px;
+  padding: 9px;
   border-radius: 8px;
   font-size: 12px;
   font-weight: 600;

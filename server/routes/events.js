@@ -8,11 +8,12 @@ const User = require("../models/user.model");
 const { nanoid } = require("nanoid");
 const { isAuthenticated } = require("../middleware/jwt.middleware");
 const { checkEventAccess } = require("../middleware/checkEventAccess");
+const { checkGuestOrAuth } = require("../middleware/checkGuestOrAuth");
+const { notify } = require("../utils/notify");
 const {
   sendEventInvitationEmail,
 } = require("../services/emailTemplates/eventEmails");
 
-// Utils pour générer code accès
 const generateAccessCode = () => {
   return Math.random().toString(36).substring(2, 8).toUpperCase();
 };
@@ -71,11 +72,10 @@ router.post("/", isAuthenticated, async (req, res) => {
       allowGuestInvites: allowGuestInvites === true,
       accessCode,
       reminders: reminders || [],
-      status: "published", // Publié par défaut à la création
+      status: "published",
     });
 
     await newEvent.save();
-
     res.status(201).json(newEvent);
   } catch (error) {
     console.error("❌ Error creating event:", error);
@@ -86,20 +86,17 @@ router.post("/", isAuthenticated, async (req, res) => {
 });
 
 /*
- * 2. GET /api/events/mine -> mes événements (organisateur ou invité)
- * DOIT ÊTRE AVANT /api/events/:shortId
+ * 2. GET /api/events/mine (DOIT ÊTRE AVANT /:shortId)
  */
 router.get("/mine", isAuthenticated, async (req, res) => {
   try {
     const userId = req.payload._id;
 
-    // Événements où je suis organisateur
     const organizedEvents = await Event.find({ organizer: userId }).populate(
       "forPerson",
       "name surname",
     );
 
-    // Événements où je suis invité
     const invitations = await EventInvitation.find({ user: userId }).populate({
       path: "event",
       populate: { path: "organizer forPerson", select: "name surname avatar" },
@@ -110,10 +107,9 @@ router.get("/mine", isAuthenticated, async (req, res) => {
       myRsvpStatus: inv.status,
     }));
 
-    res.status(200).json({
-      organized: organizedEvents,
-      invited: invitedEvents,
-    });
+    res
+      .status(200)
+      .json({ organized: organizedEvents, invited: invitedEvents });
   } catch (error) {
     console.error("❌ Error fetching my events:", error);
     res.status(500).json({ message: "Erreur serveur" });
@@ -121,8 +117,7 @@ router.get("/mine", isAuthenticated, async (req, res) => {
 });
 
 /*
- * 2.5 GET /api/events/check/:id -> vérifier si un événement existe déjà pour une personne/date
- * DOIT ÊTRE AVANT /:shortId (sinon "check" est interprété comme un shortId)
+ * 2.5 GET /api/events/check/:id (DOIT ÊTRE AVANT /:shortId)
  */
 router.get("/check/:id", isAuthenticated, async (req, res) => {
   try {
@@ -153,25 +148,19 @@ router.get("/:shortId", async (req, res) => {
       .populate("forPerson", "name surname avatar")
       .populate("forDate", "name date");
 
-    if (!event) {
+    if (!event)
       return res.status(404).json({ message: "Événement introuvable" });
-    }
 
-    // Identify user manually since route is not protected
     let userId = null;
-    if (
-      req.headers.authorization &&
-      req.headers.authorization.split(" ")[0] === "Bearer"
-    ) {
-      const token = req.headers.authorization.split(" ")[1];
+    if (req.headers.authorization?.split(" ")[0] === "Bearer") {
       try {
         const payload = require("jsonwebtoken").verify(
-          token,
+          req.headers.authorization.split(" ")[1],
           process.env.TOKEN_SECRET,
         );
         userId = payload._id;
       } catch (err) {}
-    } else if (req.cookies && req.cookies.authToken) {
+    } else if (req.cookies?.authToken) {
       try {
         const payload = require("jsonwebtoken").verify(
           req.cookies.authToken,
@@ -199,7 +188,19 @@ router.get("/:shortId", async (req, res) => {
       }
     }
 
-    // Check session code for guests
+    const guestToken = req.headers["x-guest-token"];
+    if (!hasFullAccess && guestToken) {
+      const guestInvitation = await EventInvitation.findOne({
+        event: event._id,
+        guestToken,
+        user: null,
+      });
+      if (guestInvitation) {
+        hasFullAccess = true;
+        myRsvpStatus = guestInvitation.status;
+      }
+    }
+
     const guestCode = req.headers["x-event-code"];
     if (!hasFullAccess && guestCode && guestCode === event.accessCode) {
       hasFullAccess = true;
@@ -210,7 +211,6 @@ router.get("/:shortId", async (req, res) => {
         .status(200)
         .json({ ...event.toObject(), hasFullAccess, myRsvpStatus });
     } else {
-      // Return public data only
       return res.status(200).json({
         shortId: event.shortId,
         title: event.title,
@@ -236,18 +236,15 @@ router.get("/:shortId", async (req, res) => {
 });
 
 /*
- * 4. PUT /api/events/:shortId -> modifier un événement (organizer only)
+ * 4. PUT /api/events/:shortId -> modifier (organizer only)
  */
 router.put("/:shortId", isAuthenticated, async (req, res) => {
   try {
     const event = await Event.findOne({ shortId: req.params.shortId });
-    if (!event) {
+    if (!event)
       return res.status(404).json({ message: "Événement introuvable" });
-    }
-
-    if (event.organizer.toString() !== req.payload._id) {
+    if (event.organizer.toString() !== req.payload._id)
       return res.status(403).json({ message: "Non autorisé" });
-    }
 
     const {
       title,
@@ -273,18 +270,15 @@ router.put("/:shortId", isAuthenticated, async (req, res) => {
     if (title) event.title = title;
     if (description !== undefined) event.description = description;
     if (type) event.type = type;
-
     if (dateMode) event.dateMode = dateMode;
     if (fixedDate !== undefined) event.fixedDate = fixedDate || null;
     if (dateOptions) event.dateOptions = dateOptions;
     if (selectedDate !== undefined) event.selectedDate = selectedDate;
-
     if (locationMode) event.locationMode = locationMode;
     if (fixedLocation !== undefined) event.fixedLocation = fixedLocation;
     if (locationOptions) event.locationOptions = locationOptions;
     if (selectedLocation !== undefined)
       event.selectedLocation = selectedLocation;
-
     if (giftMode) event.giftMode = giftMode;
     if (imposedGifts !== undefined) {
       event.imposedGifts = (imposedGifts || []).map((g) => ({
@@ -293,7 +287,6 @@ router.put("/:shortId", isAuthenticated, async (req, res) => {
         price: g.price ? Number(g.price) : undefined,
       }));
     }
-
     if (maxGuests !== undefined) event.maxGuests = maxGuests || null;
     if (allowExternalGuests !== undefined)
       event.allowExternalGuests = allowExternalGuests;
@@ -317,7 +310,7 @@ router.put("/:shortId", isAuthenticated, async (req, res) => {
 });
 
 /*
- * 17. DELETE /api/events/:shortId/leave -> quitter un événement (invité only)
+ * 5. DELETE /api/events/:shortId/leave -> quitter (invité only)
  */
 router.delete("/:shortId/leave", isAuthenticated, async (req, res) => {
   try {
@@ -325,22 +318,19 @@ router.delete("/:shortId/leave", isAuthenticated, async (req, res) => {
     if (!event)
       return res.status(404).json({ message: "Événement introuvable" });
 
-    // Vérifier que l'utilisateur n'est pas l'organisateur
     if (event.organizer.toString() === req.payload._id) {
       return res.status(403).json({
         message: "L'organisateur ne peut pas quitter son propre événement",
       });
     }
 
-    // Supprimer l'invitation
     const deleted = await EventInvitation.findOneAndDelete({
       event: event._id,
       user: req.payload._id,
     });
 
-    if (!deleted) {
+    if (!deleted)
       return res.status(404).json({ message: "Invitation introuvable" });
-    }
 
     res.status(200).json({ message: "Vous avez quitté l'événement" });
   } catch (error) {
@@ -350,20 +340,16 @@ router.delete("/:shortId/leave", isAuthenticated, async (req, res) => {
 });
 
 /*
- * 5. DELETE /api/events/:shortId -> annuler un événement (organizer only)
+ * 6. DELETE /api/events/:shortId -> supprimer (organizer only)
  */
 router.delete("/:shortId", isAuthenticated, async (req, res) => {
   try {
     const event = await Event.findOne({ shortId: req.params.shortId });
-    if (!event) {
+    if (!event)
       return res.status(404).json({ message: "Événement introuvable" });
-    }
-
-    if (event.organizer.toString() !== req.payload._id) {
+    if (event.organizer.toString() !== req.payload._id)
       return res.status(403).json({ message: "Non autorisé" });
-    }
 
-    // Cascade delete
     await EventInvitation.deleteMany({ event: event._id });
     await EventGiftProposal.deleteMany({ event: event._id });
     await EventMessage.deleteMany({ event: event._id });
@@ -377,7 +363,7 @@ router.delete("/:shortId", isAuthenticated, async (req, res) => {
 });
 
 /*
- * 6. POST /api/events/:shortId/invite -> inviter utilisateurs inscrits
+ * 7. POST /api/events/:shortId/invite -> inviter des utilisateurs inscrits
  */
 router.post("/:shortId/invite", isAuthenticated, async (req, res) => {
   try {
@@ -394,7 +380,7 @@ router.post("/:shortId/invite", isAuthenticated, async (req, res) => {
     const baseUrl = process.env.FRONTEND_URL || "https://birthreminder.com";
     const eventUrl = `${baseUrl}/event/${event.shortId}`;
 
-    if (userIds && userIds.length > 0) {
+    if (userIds?.length > 0) {
       for (const uid of userIds) {
         const existing = await EventInvitation.findOne({
           event: event._id,
@@ -402,6 +388,19 @@ router.post("/:shortId/invite", isAuthenticated, async (req, res) => {
         });
         if (!existing) {
           await EventInvitation.create({ event: event._id, user: uid });
+
+          // Notification in-app
+          await notify(req.app, {
+            userId: uid,
+            type: "event_reminder",
+            data: {
+              eventTitle: event.title,
+              eventShortId: event.shortId,
+              organizerName:
+                `${event.organizer.name} ${event.organizer.surname || ""}`.trim(),
+            },
+            link: `/event/${event.shortId}`,
+          });
 
           const targetedUser = await User.findById(uid);
           if (targetedUser) {
@@ -416,7 +415,7 @@ router.post("/:shortId/invite", isAuthenticated, async (req, res) => {
       }
     }
 
-    if (externalEmails && externalEmails.length > 0) {
+    if (externalEmails?.length > 0) {
       for (const email of externalEmails) {
         const existing = await EventInvitation.findOne({
           event: event._id,
@@ -445,7 +444,7 @@ router.post("/:shortId/invite", isAuthenticated, async (req, res) => {
 });
 
 /*
- * 7. POST /api/events/:shortId/join -> rejoindre via code
+ * 8. POST /api/events/:shortId/join -> rejoindre via code
  */
 router.post("/:shortId/join", async (req, res) => {
   try {
@@ -457,19 +456,17 @@ router.post("/:shortId/join", async (req, res) => {
     if (event.accessCode !== code)
       return res.status(403).json({ message: "Code d'accès invalide" });
 
-    // Identify user — app uses httpOnly cookie 'authToken', not Authorization header
     let tokenPayload = null;
-    const cookieToken = req.cookies && req.cookies.authToken;
+    const cookieToken = req.cookies?.authToken;
     if (cookieToken) {
       try {
-        const jwt = require("jsonwebtoken");
-        tokenPayload = jwt.verify(cookieToken, process.env.TOKEN_SECRET);
-      } catch (err) {
-        // Not authenticated or expired
-      }
+        tokenPayload = require("jsonwebtoken").verify(
+          cookieToken,
+          process.env.TOKEN_SECRET,
+        );
+      } catch (err) {}
     }
 
-    // Check if limits reached
     if (event.maxGuests !== null) {
       const currentGuests = await EventInvitation.countDocuments({
         event: event._id,
@@ -481,6 +478,7 @@ router.post("/:shortId/join", async (req, res) => {
     }
 
     let invitation;
+
     if (tokenPayload) {
       invitation = await EventInvitation.findOne({
         event: event._id,
@@ -494,12 +492,15 @@ router.post("/:shortId/join", async (req, res) => {
           status: "accepted",
         });
       }
+      return res
+        .status(200)
+        .json({ message: "Rejoint avec succès", invitation });
     } else {
       if (!event.allowExternalGuests)
         return res
           .status(403)
           .json({ message: "Les invités externes ne sont pas autorisés." });
-      // If we don't have guestName, it's just a session unlock, don't create an invitation yet.
+
       if (!guestName) {
         return res
           .status(200)
@@ -508,21 +509,29 @@ router.post("/:shortId/join", async (req, res) => {
 
       invitation = await EventInvitation.findOne({
         event: event._id,
-        externalEmail,
         guestName,
+        externalEmail: externalEmail || null,
+        user: null,
       });
+
       if (!invitation) {
+        const guestToken = nanoid(32);
         invitation = await EventInvitation.create({
           event: event._id,
-          externalEmail,
+          externalEmail: externalEmail || null,
           guestName,
           joinedViaCode: true,
           status: "accepted",
+          guestToken,
         });
       }
-    }
 
-    res.status(200).json({ message: "Rejoint avec succès", invitation });
+      return res.status(200).json({
+        message: "Rejoint avec succès",
+        invitation,
+        guestToken: invitation.guestToken,
+      });
+    }
   } catch (error) {
     console.error("❌ Error joining event:", error);
     res.status(500).json({ message: "Erreur serveur" });
@@ -530,170 +539,162 @@ router.post("/:shortId/join", async (req, res) => {
 });
 
 /*
- * 8. PUT /api/events/:shortId/rsvp -> répondre invitation
+ * 9. PUT /api/events/:shortId/rsvp -> répondre invitation
  */
-router.put(
-  "/:shortId/rsvp",
-  isAuthenticated,
-  checkEventAccess,
-  async (req, res) => {
-    try {
-      const { status } = req.body;
-      // req.event et req.invitation sont fournis par le middleware
-      if (req.userRole === "organizer") {
+router.put("/:shortId/rsvp", checkGuestOrAuth, async (req, res) => {
+  try {
+    const { status } = req.body;
+    if (req.userRole === "organizer") {
+      return res.status(400).json({
+        message:
+          "L'organisateur ne peut pas modifier son RSVP via cette route.",
+      });
+    }
+    const invitation = req.invitation;
+    invitation.status = status;
+    await invitation.save();
+    res.status(200).json(invitation);
+  } catch (error) {
+    console.error("❌ Error setting RSVP:", error);
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+});
+
+/*
+ * 10. POST /api/events/:shortId/vote/date -> vote date
+ */
+router.post("/:shortId/vote/date", checkGuestOrAuth, async (req, res) => {
+  try {
+    const { dates } = req.body;
+    if (req.userRole === "organizer") {
+      return res
+        .status(400)
+        .json({ message: "L'organisateur ne vote pas via cette route." });
+    }
+    const invitation = req.invitation;
+    invitation.dateVote = dates;
+    await invitation.save();
+    res
+      .status(200)
+      .json({ message: "Votes enregistrés", dateVote: invitation.dateVote });
+  } catch (error) {
+    console.error("❌ Error voting for date:", error);
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+});
+
+/*
+ * 11. POST /api/events/:shortId/vote/location -> vote lieu
+ */
+router.post("/:shortId/vote/location", checkGuestOrAuth, async (req, res) => {
+  try {
+    const { locationId } = req.body;
+    if (req.userRole === "organizer") {
+      return res
+        .status(400)
+        .json({ message: "L'organisateur ne vote pas via cette route." });
+    }
+    const invitation = req.invitation;
+    invitation.locationVote = locationId;
+    await invitation.save();
+    res.status(200).json({
+      message: "Vote enregistré",
+      locationVote: invitation.locationVote,
+    });
+  } catch (error) {
+    console.error("❌ Error voting for location:", error);
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+});
+
+/*
+ * 12. POST /api/events/:shortId/gifts -> proposer un cadeau
+ */
+router.post("/:shortId/gifts", checkGuestOrAuth, async (req, res) => {
+  try {
+    const { name, url, price } = req.body;
+    const event = req.event;
+
+    // Vérifier la limite de propositions par user
+    if (event.maxGiftProposalsPerUser) {
+      const count = await EventGiftProposal.countDocuments({
+        event: event._id,
+        ...(req.payload?._id
+          ? { proposedBy: req.payload._id }
+          : { guestName: req.guestName }),
+      });
+      if (count >= event.maxGiftProposalsPerUser) {
         return res.status(400).json({
-          message:
-            "L'organisateur ne peut pas modifier son RSVP via cette route.",
+          message: `Vous ne pouvez pas proposer plus de ${event.maxGiftProposalsPerUser} cadeau(x).`,
         });
       }
-
-      const invitation = req.invitation;
-      invitation.status = status;
-      await invitation.save();
-
-      res.status(200).json(invitation);
-    } catch (error) {
-      console.error("❌ Error setting RSVP:", error);
-      res.status(500).json({ message: "Erreur serveur" });
     }
-  },
-);
+
+    const newProposal = await EventGiftProposal.create({
+      event: event._id,
+      proposedBy: req.payload?._id || null,
+      guestName: req.guestName || null,
+      name,
+      url,
+      price,
+    });
+    res.status(201).json(newProposal);
+  } catch (error) {
+    console.error("❌ Error creating gift proposal:", error);
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+});
 
 /*
- * 9. POST /api/events/:shortId/vote/date -> vote date
+ * 13. GET /api/events/:shortId/gifts -> lister les propositions
  */
-router.post(
-  "/:shortId/vote/date",
-  isAuthenticated,
-  checkEventAccess,
-  async (req, res) => {
-    try {
-      const { dates } = req.body;
-
-      if (req.userRole === "organizer") {
-        return res
-          .status(400)
-          .json({ message: "L'organisateur ne vote pas via cette route." });
-      }
-
-      const invitation = req.invitation;
-      invitation.dateVote = dates;
-      await invitation.save();
-
-      res
-        .status(200)
-        .json({ message: "Votes enregistrés", dateVote: invitation.dateVote });
-    } catch (error) {
-      console.error("❌ Error voting for date:", error);
-      res.status(500).json({ message: "Erreur serveur" });
-    }
-  },
-);
+router.get("/:shortId/gifts", checkGuestOrAuth, async (req, res) => {
+  try {
+    const proposals = await EventGiftProposal.find({
+      event: req.event._id,
+    }).populate("proposedBy", "name surname");
+    res.status(200).json(proposals);
+  } catch (error) {
+    console.error("❌ Error loading gift proposals:", error);
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+});
 
 /*
- * 10. POST /api/events/:shortId/vote/location -> vote lieu
- */
-router.post(
-  "/:shortId/vote/location",
-  isAuthenticated,
-  checkEventAccess,
-  async (req, res) => {
-    try {
-      const { locationId } = req.body;
-
-      if (req.userRole === "organizer") {
-        return res
-          .status(400)
-          .json({ message: "L'organisateur ne vote pas via cette route." });
-      }
-
-      const invitation = req.invitation;
-      invitation.locationVote = locationId;
-      await invitation.save();
-
-      res.status(200).json({
-        message: "Vote enregistré",
-        locationVote: invitation.locationVote,
-      });
-    } catch (error) {
-      console.error("❌ Error voting for location:", error);
-      res.status(500).json({ message: "Erreur serveur" });
-    }
-  },
-);
-
-/*
- * 11. POST /api/events/:shortId/gifts -> proposer un cadeau
- */
-router.post(
-  "/:shortId/gifts",
-  isAuthenticated,
-  checkEventAccess,
-  async (req, res) => {
-    try {
-      const { name, url, price } = req.body;
-      const event = req.event;
-
-      const newProposal = await EventGiftProposal.create({
-        event: event._id,
-        proposedBy: req.payload._id,
-        name,
-        url,
-        price,
-      });
-
-      res.status(201).json(newProposal);
-    } catch (error) {
-      console.error("❌ Error creating gift proposal:", error);
-      res.status(500).json({ message: "Erreur serveur" });
-    }
-  },
-);
-
-/*
- * 12. GET /api/events/:shortId/gifts -> lister les propositions de cadeaux
- */
-router.get(
-  "/:shortId/gifts",
-  isAuthenticated,
-  checkEventAccess,
-  async (req, res) => {
-    try {
-      const event = req.event;
-
-      const proposals = await EventGiftProposal.find({
-        event: event._id,
-      }).populate("proposedBy", "name surname");
-      res.status(200).json(proposals);
-    } catch (error) {
-      console.error("❌ Error loading gift proposals:", error);
-      res.status(500).json({ message: "Erreur serveur" });
-    }
-  },
-);
-
-/*
- * 13. POST /api/events/:shortId/gifts/:giftId/vote -> vote cadeau
+ * 14. POST /api/events/:shortId/gifts/:giftId/vote -> voter pour un cadeau
  */
 router.post(
   "/:shortId/gifts/:giftId/vote",
-  isAuthenticated,
-  checkEventAccess,
+  checkGuestOrAuth,
   async (req, res) => {
     try {
       const proposal = await EventGiftProposal.findById(req.params.giftId);
       if (!proposal)
         return res.status(404).json({ message: "Proposition introuvable" });
 
-      const userId = req.payload._id;
-      const hasVoted = proposal.votes.includes(userId);
+      const userId = req.payload?._id;
+      const guestToken = req.headers["x-guest-token"];
 
-      if (hasVoted) {
-        proposal.votes = proposal.votes.filter(
-          (id) => id.toString() !== userId,
-        );
-      } else {
-        proposal.votes.push(userId);
+      if (userId) {
+        const hasVoted = proposal.votes
+          .map((v) => v.toString())
+          .includes(userId);
+        if (hasVoted) {
+          proposal.votes = proposal.votes.filter(
+            (id) => id.toString() !== userId,
+          );
+        } else {
+          proposal.votes.push(userId);
+        }
+      } else if (guestToken) {
+        const hasVoted = proposal.guestVotes.includes(guestToken);
+        if (hasVoted) {
+          proposal.guestVotes = proposal.guestVotes.filter(
+            (t) => t !== guestToken,
+          );
+        } else {
+          proposal.guestVotes.push(guestToken);
+        }
       }
 
       await proposal.save();
@@ -706,59 +707,109 @@ router.post(
 );
 
 /*
- * 14. PUT /api/events/:shortId/gifts/:giftId -> modifier une proposition de cadeau (proposeur only)
+ * 15. PUT /api/events/:shortId/gifts/:giftId -> modifier une proposition
  */
-router.put(
-  "/:shortId/gifts/:giftId",
-  isAuthenticated,
-  checkEventAccess,
-  async (req, res) => {
-    try {
-      const proposal = await EventGiftProposal.findById(req.params.giftId);
-      if (!proposal)
-        return res.status(404).json({ message: "Proposition introuvable" });
-      if (proposal.proposedBy.toString() !== req.payload._id) {
-        return res.status(403).json({ message: "Non autorisé" });
+router.put("/:shortId/gifts/:giftId", checkGuestOrAuth, async (req, res) => {
+  try {
+    const proposal = await EventGiftProposal.findById(req.params.giftId);
+    if (!proposal)
+      return res.status(404).json({ message: "Proposition introuvable" });
+
+    const isOwner =
+      (req.payload?._id &&
+        proposal.proposedBy?.toString() === req.payload._id) ||
+      (req.guestName && proposal.guestName === req.guestName);
+
+    if (!isOwner) return res.status(403).json({ message: "Non autorisé" });
+
+    const { name, url, price } = req.body;
+    if (name) proposal.name = name;
+    if (url !== undefined) proposal.url = url;
+    if (price !== undefined) proposal.price = price ? Number(price) : undefined;
+    await proposal.save();
+    res.status(200).json(proposal);
+  } catch (error) {
+    console.error("❌ Error updating gift proposal:", error);
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+});
+
+router.post("/:shortId/gifts", checkGuestOrAuth, async (req, res) => {
+  try {
+    const { name, url, price } = req.body;
+    const event = req.event;
+
+    // Vérifier la limite de propositions par user
+    if (event.maxGiftProposalsPerUser) {
+      const count = await EventGiftProposal.countDocuments({
+        event: event._id,
+        ...(req.payload?._id
+          ? { proposedBy: req.payload._id }
+          : { guestName: req.guestName }),
+      });
+      if (count >= event.maxGiftProposalsPerUser) {
+        return res.status(400).json({
+          message: `Vous ne pouvez pas proposer plus de ${event.maxGiftProposalsPerUser} cadeau(x).`,
+        });
       }
-      const { name, url, price } = req.body;
-      if (name) proposal.name = name;
-      if (url !== undefined) proposal.url = url;
-      if (price !== undefined)
-        proposal.price = price ? Number(price) : undefined;
-      await proposal.save();
-      res.status(200).json(proposal);
-    } catch (error) {
-      console.error("❌ Error updating gift proposal:", error);
-      res.status(500).json({ message: "Erreur serveur" });
     }
-  },
-);
+
+    const newProposal = await EventGiftProposal.create({
+      event: event._id,
+      proposedBy: req.payload?._id || null,
+      guestName: req.guestName || null,
+      name,
+      url,
+      price,
+    });
+    res.status(201).json(newProposal);
+  } catch (error) {
+    console.error("❌ Error creating gift proposal:", error);
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+});
+
+router.delete("/:shortId/gifts/:giftId", checkGuestOrAuth, async (req, res) => {
+  try {
+    const proposal = await EventGiftProposal.findById(req.params.giftId);
+    if (!proposal)
+      return res.status(404).json({ message: "Proposition introuvable" });
+
+    const isOwner =
+      (req.payload?._id &&
+        proposal.proposedBy?.toString() === req.payload._id) ||
+      (req.guestName && proposal.guestName === req.guestName);
+    const isOrganizer = req.userRole === "organizer";
+
+    if (!isOwner && !isOrganizer) {
+      return res.status(403).json({ message: "Non autorisé" });
+    }
+
+    await proposal.deleteOne();
+    res.status(200).json({ message: "Proposition supprimée" });
+  } catch (error) {
+    console.error("❌ Error deleting gift proposal:", error);
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+});
 
 /*
- * 15. GET /api/events/:shortId/messages -> chat (fallback HTTP)
+ * 16. GET /api/events/:shortId/messages -> chat fallback HTTP
  */
-router.get(
-  "/:shortId/messages",
-  isAuthenticated,
-  checkEventAccess,
-  async (req, res) => {
-    try {
-      const event = req.event;
-
-      const messages = await EventMessage.find({ event: event._id })
-        .populate("sender", "name surname avatar publicKey")
-        .sort({ createdAt: 1 });
-
-      res.status(200).json(messages);
-    } catch (error) {
-      console.error("❌ Error loading messages:", error);
-      res.status(500).json({ message: "Erreur serveur" });
-    }
-  },
-);
+router.get("/:shortId/messages", checkGuestOrAuth, async (req, res) => {
+  try {
+    const messages = await EventMessage.find({ event: req.event._id })
+      .populate("sender", "name surname avatar publicKey")
+      .sort({ createdAt: 1 });
+    res.status(200).json(messages);
+  } catch (error) {
+    console.error("❌ Error loading messages:", error);
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+});
 
 /*
- * 15. GET /api/events/:shortId/share -> générer/retourner { url, code }
+ * 17. GET /api/events/:shortId/share
  */
 router.get("/:shortId/share", async (req, res) => {
   try {
@@ -767,7 +818,6 @@ router.get("/:shortId/share", async (req, res) => {
       return res.status(404).json({ message: "Événement introuvable" });
 
     const baseUrl = process.env.FRONTEND_URL || "https://birthreminder.com";
-
     res.status(200).json({
       url: `${baseUrl}/event/${event.shortId}`,
       code: event.accessCode,
@@ -778,20 +828,49 @@ router.get("/:shortId/share", async (req, res) => {
   }
 });
 
-/* 16. GET /api/events/:shortId/invitations -> liste des invitations peuplées */
-router.get(
-  "/:shortId/invitations",
+/*
+ * 18. GET /api/events/:shortId/invitations
+ */
+router.get("/:shortId/invitations", checkGuestOrAuth, async (req, res) => {
+  try {
+    const invitations = await EventInvitation.find({ event: req.event._id })
+      .populate("user", "name surname avatar publicKey")
+      .sort({ createdAt: 1 });
+    res.status(200).json(invitations);
+  } catch (error) {
+    console.error("❌ Error fetching invitations:", error);
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+});
+
+/*
+ * 19. DELETE /api/events/:shortId/invitations/:invitationId -> retirer un invité (organizer only)
+ */
+router.delete(
+  "/:shortId/invitations/:invitationId",
   isAuthenticated,
-  checkEventAccess,
   async (req, res) => {
     try {
-      const invitations = await EventInvitation.find({ event: req.event._id })
-        .populate("user", "name surname avatar publicKey")
-        .sort({ createdAt: 1 });
+      const event = await Event.findOne({ shortId: req.params.shortId });
+      if (!event)
+        return res.status(404).json({ message: "Événement introuvable" });
+      if (event.organizer.toString() !== req.payload._id)
+        return res.status(403).json({ message: "Non autorisé" });
 
-      res.status(200).json(invitations);
+      const invitation = await EventInvitation.findById(
+        req.params.invitationId,
+      );
+      if (!invitation)
+        return res.status(404).json({ message: "Invitation introuvable" });
+      if (invitation.event.toString() !== event._id.toString())
+        return res.status(403).json({
+          message: "Cette invitation n'appartient pas à cet événement",
+        });
+
+      await invitation.deleteOne();
+      res.status(200).json({ message: "Invité retiré" });
     } catch (error) {
-      console.error("❌ Error fetching invitations:", error);
+      console.error("❌ Error removing invitation:", error);
       res.status(500).json({ message: "Erreur serveur" });
     }
   },

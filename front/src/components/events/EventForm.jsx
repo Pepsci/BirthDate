@@ -36,13 +36,10 @@ const stepVariants = {
   }),
 };
 
-// ─── Hook Google Places Autocomplete ────────────────────
 const usePlacesAutocomplete = (inputRef, onPlaceSelected) => {
   const autocompleteRef = useRef(null);
-
   useEffect(() => {
     if (!inputRef.current || !window.google?.maps?.places) return;
-
     autocompleteRef.current = new window.google.maps.places.Autocomplete(
       inputRef.current,
       {
@@ -50,13 +47,11 @@ const usePlacesAutocomplete = (inputRef, onPlaceSelected) => {
         fields: ["name", "formatted_address", "geometry"],
       },
     );
-
     const listener = autocompleteRef.current.addListener(
       "place_changed",
       () => {
         const place = autocompleteRef.current.getPlace();
         if (!place.geometry) return;
-
         onPlaceSelected({
           name: place.name || "",
           address: place.formatted_address || "",
@@ -65,14 +60,12 @@ const usePlacesAutocomplete = (inputRef, onPlaceSelected) => {
         });
       },
     );
-
     return () => {
       window.google.maps.event.removeListener(listener);
     };
   }, [inputRef.current, window.google?.maps?.places]);
 };
 
-// ─── Loader script Google Maps ───────────────────────────
 const loadGoogleMapsScript = () => {
   return new Promise((resolve) => {
     if (window.google?.maps?.places) {
@@ -80,7 +73,6 @@ const loadGoogleMapsScript = () => {
       return;
     }
     if (document.getElementById("google-maps-script")) {
-      // Script déjà en cours de chargement, attendre
       const interval = setInterval(() => {
         if (window.google?.maps?.places) {
           clearInterval(interval);
@@ -99,20 +91,16 @@ const loadGoogleMapsScript = () => {
   });
 };
 
-// ─── Composant champ lieu avec autocomplete ──────────────
 const LocationAutocomplete = ({ value, onChange, onPlaceSelected }) => {
   const inputRef = useRef(null);
   const [googleReady, setGoogleReady] = useState(false);
-
   useEffect(() => {
     loadGoogleMapsScript().then(() => setGoogleReady(true));
   }, []);
-
   usePlacesAutocomplete(
     googleReady ? inputRef : { current: null },
     onPlaceSelected,
   );
-
   return (
     <input
       ref={inputRef}
@@ -126,7 +114,6 @@ const LocationAutocomplete = ({ value, onChange, onPlaceSelected }) => {
   );
 };
 
-// ─── Composant principal ─────────────────────────────────
 const EventForm = ({
   onClose,
   defaultValues = {},
@@ -139,6 +126,8 @@ const EventForm = ({
   const [step, setStep] = useState(1);
   const [direction, setDirection] = useState(1);
   const [loading, setLoading] = useState(false);
+  const dateOptionInputRef = useRef(null);
+
   const [formData, setFormData] = useState(() => {
     if (editMode && existingEvent) {
       return {
@@ -164,6 +153,7 @@ const EventForm = ({
         giftMode: existingEvent.giftMode || "proposals",
         imposedGifts: existingEvent.imposedGifts || [],
         giftPoolEnabled: existingEvent.giftPoolEnabled || false,
+        maxGiftProposalsPerUser: existingEvent.maxGiftProposalsPerUser || null,
         maxGuests: existingEvent.maxGuests || "",
         allowExternalGuests: existingEvent.allowExternalGuests !== false,
         allowGuestInvites: existingEvent.allowGuestInvites || false,
@@ -195,6 +185,7 @@ const EventForm = ({
       giftMode: "proposals",
       imposedGifts: [],
       giftPoolEnabled: false,
+      maxGiftProposalsPerUser: null,
       maxGuests: "",
       allowExternalGuests: true,
       allowGuestInvites: false,
@@ -237,19 +228,25 @@ const EventForm = ({
     setStep((s) => s - 1);
   };
 
-  // Callback quand Google Places retourne un lieu
   const handlePlaceSelected = (place) => {
     setFormData((prev) => ({
       ...prev,
       fixedLocation: {
         name: place.name,
         address: place.address,
-        coordinates: {
-          lat: place.lat,
-          lng: place.lng,
-        },
+        coordinates: { lat: place.lat, lng: place.lng },
       },
     }));
+  };
+
+  const handleAddDateOption = () => {
+    const input = dateOptionInputRef.current;
+    if (!input || !input.value) return;
+    setFormData((prev) => ({
+      ...prev,
+      dateOptions: [...prev.dateOptions, input.value],
+    }));
+    input.value = "";
   };
 
   const handleSubmit = async (e) => {
@@ -258,6 +255,8 @@ const EventForm = ({
     try {
       const payload = { ...formData };
       if (!payload.maxGuests) payload.maxGuests = null;
+      if (!payload.maxGiftProposalsPerUser)
+        payload.maxGiftProposalsPerUser = null;
       if (payload.dateMode === "fixed" && formData.fixedDate) {
         payload.fixedDate = new Date(formData.fixedDate);
       }
@@ -313,7 +312,6 @@ const EventForm = ({
         </div>
 
         <div className="event-modal-body">
-          {/* Stepper */}
           <div className="event-stepper">
             {[1, 2, 3, 4, 5, 6].map((s) => {
               const clickable = editMode || s <= step;
@@ -348,7 +346,7 @@ const EventForm = ({
                 animate="center"
                 exit="exit"
               >
-                {/* ── Step 1 : Infos générales ── */}
+                {/* ── Step 1 ── */}
                 {step === 1 && (
                   <>
                     <h3>Étape 1 : Informations générales</h3>
@@ -390,7 +388,7 @@ const EventForm = ({
                   </>
                 )}
 
-                {/* ── Step 2 : Date ── */}
+                {/* ── Step 2 ── */}
                 {step === 2 && (
                   <>
                     <h3>Étape 2 : Date</h3>
@@ -421,31 +419,96 @@ const EventForm = ({
                     ) : (
                       <div className="event-form-group">
                         <label>Ajoutez les dates proposées :</label>
-                        <input
-                          type="datetime-local"
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              dateOptions: [
-                                ...formData.dateOptions,
-                                e.target.value,
-                              ],
-                            })
-                          }
-                        />
-                        <ul style={{ paddingLeft: "20px", marginTop: "10px" }}>
-                          {formData.dateOptions.map((opt, i) => (
-                            <li key={i}>
-                              {new Date(opt).toLocaleDateString("fr-FR")}
-                            </li>
-                          ))}
-                        </ul>
+                        <div
+                          style={{
+                            display: "flex",
+                            gap: "8px",
+                            alignItems: "center",
+                          }}
+                        >
+                          <input
+                            type="datetime-local"
+                            ref={dateOptionInputRef}
+                            style={{ flex: 1 }}
+                          />
+                          <button
+                            type="button"
+                            onClick={handleAddDateOption}
+                            style={{
+                              padding: "8px 14px",
+                              background: "var(--primary)",
+                              color: "#fff",
+                              border: "none",
+                              borderRadius: "8px",
+                              cursor: "pointer",
+                              fontWeight: "bold",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            + Ajouter
+                          </button>
+                        </div>
+                        {formData.dateOptions.length > 0 && (
+                          <div
+                            style={{
+                              display: "flex",
+                              flexDirection: "column",
+                              gap: "6px",
+                              marginTop: "12px",
+                            }}
+                          >
+                            {formData.dateOptions.map((opt, i) => (
+                              <div
+                                key={i}
+                                style={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "space-between",
+                                  padding: "8px 12px",
+                                  background: "var(--bg-secondary)",
+                                  borderRadius: "8px",
+                                  border: "1px solid var(--border-color)",
+                                }}
+                              >
+                                <span style={{ fontSize: "0.9rem" }}>
+                                  {new Date(opt).toLocaleDateString("fr-FR", {
+                                    weekday: "long",
+                                    day: "numeric",
+                                    month: "long",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    setFormData((prev) => ({
+                                      ...prev,
+                                      dateOptions: prev.dateOptions.filter(
+                                        (_, idx) => idx !== i,
+                                      ),
+                                    }))
+                                  }
+                                  style={{
+                                    background: "transparent",
+                                    border: "none",
+                                    color: "var(--danger, #e74c3c)",
+                                    cursor: "pointer",
+                                    fontSize: "1rem",
+                                  }}
+                                >
+                                  ✕
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     )}
                   </>
                 )}
 
-                {/* ── Step 3 : Lieu avec Google Places ── */}
+                {/* ── Step 3 ── */}
                 {step === 3 && (
                   <>
                     <h3>Étape 3 : Lieu</h3>
@@ -462,7 +525,6 @@ const EventForm = ({
                         </option>
                       </select>
                     </div>
-
                     {formData.locationMode === "fixed" && (
                       <div className="event-form-group">
                         <label>Rechercher un lieu</label>
@@ -481,8 +543,6 @@ const EventForm = ({
                           }
                           onPlaceSelected={handlePlaceSelected}
                         />
-
-                        {/* Adresse complète affichée après sélection */}
                         {formData.fixedLocation.address && (
                           <motion.div
                             initial={{ opacity: 0, y: -6 }}
@@ -512,8 +572,6 @@ const EventForm = ({
                             <span>{formData.fixedLocation.address}</span>
                           </motion.div>
                         )}
-
-                        {/* Champ adresse manuel si pas de sélection Google */}
                         {!formData.fixedLocation.coordinates?.lat && (
                           <input
                             type="text"
@@ -536,7 +594,7 @@ const EventForm = ({
                   </>
                 )}
 
-                {/* ── Step 4 : Cadeaux ── */}
+                {/* ── Step 4 ── */}
                 {step === 4 && (
                   <>
                     <h3>Étape 4 : Cadeaux</h3>
@@ -559,6 +617,33 @@ const EventForm = ({
                         </option>
                       </select>
                     </div>
+
+                    {/* Limite de propositions — mode proposals uniquement */}
+                    {formData.giftMode === "proposals" && (
+                      <div
+                        className="event-form-group"
+                        style={{ marginTop: "15px" }}
+                      >
+                        <label>
+                          Limite de propositions par personne (laisser vide si
+                          illimité)
+                        </label>
+                        <input
+                          type="number"
+                          value={formData.maxGiftProposalsPerUser || ""}
+                          onChange={(e) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              maxGiftProposalsPerUser: e.target.value
+                                ? Number(e.target.value)
+                                : null,
+                            }))
+                          }
+                          min="1"
+                          placeholder="Ex: 3"
+                        />
+                      </div>
+                    )}
 
                     {formData.giftMode === "imposed" && (
                       <div className="event-form-group">
@@ -736,7 +821,7 @@ const EventForm = ({
                   </>
                 )}
 
-                {/* ── Step 5 : Invitations ── */}
+                {/* ── Step 5 ── */}
                 {step === 5 && (
                   <>
                     <h3>Étape 5 : Invitations & Confidentialité</h3>
@@ -873,7 +958,7 @@ const EventForm = ({
                   </>
                 )}
 
-                {/* ── Step 6 : Rappels ── */}
+                {/* ── Step 6 ── */}
                 {step === 6 && (
                   <>
                     <h3>Étape 6 : Rappels</h3>
