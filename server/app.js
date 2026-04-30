@@ -19,7 +19,7 @@ const friendRouter = require("./routes/friends");
 const conversationsRouter = require("./routes/conversations");
 const mergeDatesRouter = require("./routes/mergeDates");
 const pushRoutes = require("./routes/push");
-const eventsRouter = require("./routes/events");
+const eventsRouter = require("./routes/events/index");
 const notificationsRouter = require("./routes/notifications");
 const statsRouter = require("./routes/stats");
 

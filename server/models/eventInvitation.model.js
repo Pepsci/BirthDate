@@ -28,6 +28,7 @@ const eventInvitationSchema = new Schema(
       type: Boolean,
       default: false,
     },
+
     guestToken: {
       type: String,
       default: null,

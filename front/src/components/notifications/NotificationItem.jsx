@@ -9,6 +9,11 @@ const TYPE_CONFIG = {
   new_message: { icon: "💬" },
   gift_reserved: { icon: "🎁" },
   event_reminder: { icon: "📅" },
+  event_rsvp: { icon: "🎉" },
+  event_date_vote: { icon: "📅" },
+  event_location_vote: { icon: "📍" },
+  event_gift_proposed: { icon: "🎁" },
+  event_gift_vote: { icon: "❤️" },
 };
 
 const timeAgo = (dateStr) => {
@@ -60,10 +65,56 @@ const buildText = (type, data) => {
         </>
       );
     case "event_reminder":
+      return data.message ? (
+        <>
+          {data.message} — <strong>{data.eventTitle}</strong>
+        </>
+      ) : (
+        <>
+          Tu es invité(e) à <strong>{data.eventTitle}</strong>
+        </>
+      );
+    case "event_rsvp": {
+      const label =
+        {
+          accepted: "sera présent(e)",
+          declined: "ne sera pas présent(e)",
+          maybe: "est peut-être présent(e)",
+        }[data.status] || data.status;
       return (
         <>
-          L'événement <strong>{data.eventName}</strong> est dans {data.daysLeft}{" "}
-          jour{data.daysLeft > 1 ? "s" : ""}
+          <strong>{data.guestName}</strong> {label} à{" "}
+          <strong>{data.eventTitle}</strong>
+        </>
+      );
+    }
+    case "event_date_vote":
+      return (
+        <>
+          <strong>{data.guestName}</strong> a voté pour une date —{" "}
+          <strong>{data.eventTitle}</strong>
+        </>
+      );
+    case "event_location_vote":
+      return (
+        <>
+          <strong>{data.guestName}</strong> a voté pour un lieu —{" "}
+          <strong>{data.eventTitle}</strong>
+        </>
+      );
+    case "event_gift_proposed":
+      return (
+        <>
+          <strong>{data.proposerName}</strong> propose{" "}
+          <strong>{data.giftName}</strong> en cadeau pour{" "}
+          <strong>{data.eventTitle}</strong>
+        </>
+      );
+    case "event_gift_vote":
+      return (
+        <>
+          <strong>{data.voterName}</strong> vote pour le cadeau{" "}
+          <strong>{data.giftName}</strong> — <strong>{data.eventTitle}</strong>
         </>
       );
     default:
@@ -77,7 +128,6 @@ const NotificationItem = ({ notification, onClose }) => {
   const config = TYPE_CONFIG[notification.type] || { icon: "🔔" };
 
   const handleClick = () => {
-    // Marquer comme lu puis supprimer
     deleteAppNotification(notification._id);
     if (notification.link) {
       navigate(notification.link);

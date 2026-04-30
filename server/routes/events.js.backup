@@ -10,6 +10,7 @@ const { isAuthenticated } = require("../middleware/jwt.middleware");
 const { checkEventAccess } = require("../middleware/checkEventAccess");
 const { checkGuestOrAuth } = require("../middleware/checkGuestOrAuth");
 const { notify } = require("../utils/notify");
+const { sendPushToUser } = require("../services/pushService");
 const {
   sendEventInvitationEmail,
 } = require("../services/emailTemplates/eventEmails");
@@ -17,6 +18,46 @@ const {
 const generateAccessCode = () => {
   return Math.random().toString(36).substring(2, 8).toUpperCase();
 };
+
+// ─── Helper : notifier l'organisateur si ses préférences le permettent ──────
+async function notifyOrganizer(app, { event, type, data, link, pushPayload }) {
+  try {
+    const organizer = await User.findById(event.organizer);
+    if (!organizer) return;
+
+    // Récupère l'invitation de l'organisateur pour vérifier ses préférences
+    const orgInvitation = await EventInvitation.findOne({
+      event: event._id,
+      user: organizer._id,
+    });
+
+    // Vérifie la préférence correspondante au type
+    const prefKey = {
+      event_rsvp: "rsvp",
+      event_date_vote: "dateVote",
+      event_location_vote: "locationVote",
+      event_gift_proposed: "giftProposed",
+      event_gift_vote: "giftVote",
+    }[type];
+
+    // Si l'organisateur a une invitation avec préférences, vérifier
+    if (
+      orgInvitation &&
+      prefKey &&
+      orgInvitation.notificationPreferences?.[prefKey] === false
+    ) {
+      return;
+    }
+
+    await notify(app, { userId: organizer._id, type, data, link });
+
+    if (organizer.pushEnabled && pushPayload) {
+      await sendPushToUser(organizer._id, pushPayload);
+    }
+  } catch (err) {
+    console.error("❌ notifyOrganizer error:", err);
+  }
+}
 
 /*
  * 1. POST /api/events -> créer un événement
@@ -43,6 +84,7 @@ router.post("/", isAuthenticated, async (req, res) => {
       allowExternalGuests,
       allowGuestInvites,
       reminders,
+      maxGiftProposalsPerUser,
       status,
     } = req.body;
 
@@ -68,6 +110,7 @@ router.post("/", isAuthenticated, async (req, res) => {
       imposedGifts: giftMode === "imposed" ? imposedGifts || [] : [],
       giftPoolEnabled: giftPoolEnabled || false,
       maxGuests: maxGuests || null,
+      maxGiftProposalsPerUser: maxGiftProposalsPerUser || null,
       allowExternalGuests: allowExternalGuests !== false,
       allowGuestInvites: allowGuestInvites === true,
       accessCode,
@@ -91,22 +134,18 @@ router.post("/", isAuthenticated, async (req, res) => {
 router.get("/mine", isAuthenticated, async (req, res) => {
   try {
     const userId = req.payload._id;
-
     const organizedEvents = await Event.find({ organizer: userId }).populate(
       "forPerson",
       "name surname",
     );
-
     const invitations = await EventInvitation.find({ user: userId }).populate({
       path: "event",
       populate: { path: "organizer forPerson", select: "name surname avatar" },
     });
-
     const invitedEvents = invitations.map((inv) => ({
       ...inv.event.toObject(),
       myRsvpStatus: inv.status,
     }));
-
     res
       .status(200)
       .json({ organized: organizedEvents, invited: invitedEvents });
@@ -126,7 +165,6 @@ router.get("/check/:id", isAuthenticated, async (req, res) => {
       organizer: req.payload._id,
       status: { $in: ["draft", "published"] },
     }).select("shortId");
-
     res.status(200).json({ exists: !!event, shortId: event?.shortId });
   } catch (error) {
     console.error("❌ Error checking event existence:", error);
@@ -135,7 +173,7 @@ router.get("/check/:id", isAuthenticated, async (req, res) => {
 });
 
 /*
- * 3. GET /api/events/:shortId -> récupérer un événement (public/guest view)
+ * 3. GET /api/events/:shortId -> récupérer un événement
  */
 router.get("/:shortId", async (req, res) => {
   try {
@@ -202,9 +240,8 @@ router.get("/:shortId", async (req, res) => {
     }
 
     const guestCode = req.headers["x-event-code"];
-    if (!hasFullAccess && guestCode && guestCode === event.accessCode) {
+    if (!hasFullAccess && guestCode && guestCode === event.accessCode)
       hasFullAccess = true;
-    }
 
     if (hasFullAccess) {
       return res
@@ -265,6 +302,7 @@ router.put("/:shortId", isAuthenticated, async (req, res) => {
       allowGuestInvites,
       reminders,
       status,
+      maxGiftProposalsPerUser,
     } = req.body;
 
     if (title) event.title = title;
@@ -288,6 +326,8 @@ router.put("/:shortId", isAuthenticated, async (req, res) => {
       }));
     }
     if (maxGuests !== undefined) event.maxGuests = maxGuests || null;
+    if (maxGiftProposalsPerUser !== undefined)
+      event.maxGiftProposalsPerUser = maxGiftProposalsPerUser || null;
     if (allowExternalGuests !== undefined)
       event.allowExternalGuests = allowExternalGuests;
     if (allowGuestInvites !== undefined)
@@ -302,6 +342,34 @@ router.put("/:shortId", isAuthenticated, async (req, res) => {
     if (status) event.status = status;
 
     await event.save();
+
+    // Si la date vient d'être confirmée, notifier tous les invités
+    if (selectedDate) {
+      const invitations = await EventInvitation.find({
+        event: event._id,
+        user: { $ne: null },
+      });
+      for (const inv of invitations) {
+        await notify(req.app, {
+          userId: inv.user,
+          type: "event_reminder",
+          data: {
+            eventTitle: event.title,
+            eventShortId: event.shortId,
+            message: "La date de l'événement a été confirmée !",
+          },
+          link: `/event/${event.shortId}`,
+        });
+        await sendPushToUser(inv.user, {
+          title: `📅 Date confirmée — ${event.title}`,
+          body: `La date de l'événement a été fixée !`,
+          url: `/event/${event.shortId}`,
+          tag: `event-date-confirmed-${event.shortId}`,
+          type: "default",
+        });
+      }
+    }
+
     res.status(200).json(event);
   } catch (error) {
     console.error("❌ Error updating event:", error);
@@ -317,18 +385,15 @@ router.delete("/:shortId/leave", isAuthenticated, async (req, res) => {
     const event = await Event.findOne({ shortId: req.params.shortId });
     if (!event)
       return res.status(404).json({ message: "Événement introuvable" });
-
-    if (event.organizer.toString() === req.payload._id) {
+    if (event.organizer.toString() === req.payload._id)
       return res.status(403).json({
         message: "L'organisateur ne peut pas quitter son propre événement",
       });
-    }
 
     const deleted = await EventInvitation.findOneAndDelete({
       event: event._id,
       user: req.payload._id,
     });
-
     if (!deleted)
       return res.status(404).json({ message: "Invitation introuvable" });
 
@@ -388,8 +453,6 @@ router.post("/:shortId/invite", isAuthenticated, async (req, res) => {
         });
         if (!existing) {
           await EventInvitation.create({ event: event._id, user: uid });
-
-          // Notification in-app
           await notify(req.app, {
             userId: uid,
             type: "event_reminder",
@@ -401,9 +464,15 @@ router.post("/:shortId/invite", isAuthenticated, async (req, res) => {
             },
             link: `/event/${event.shortId}`,
           });
-
           const targetedUser = await User.findById(uid);
           if (targetedUser) {
+            await sendPushToUser(uid, {
+              title: `🎉 Invitation — ${event.title}`,
+              body: `${event.organizer.name} vous invite à un événement`,
+              url: `/event/${event.shortId}`,
+              tag: `event-invite-${event.shortId}-${uid}`,
+              type: "default",
+            });
             await sendEventInvitationEmail(
               targetedUser.email,
               event,
@@ -472,9 +541,8 @@ router.post("/:shortId/join", async (req, res) => {
         event: event._id,
         status: { $in: ["accepted", "maybe"] },
       });
-      if (currentGuests >= event.maxGuests) {
+      if (currentGuests >= event.maxGuests)
         return res.status(400).json({ message: "L'événement est complet" });
-      }
     }
 
     let invitation;
@@ -500,12 +568,10 @@ router.post("/:shortId/join", async (req, res) => {
         return res
           .status(403)
           .json({ message: "Les invités externes ne sont pas autorisés." });
-
-      if (!guestName) {
+      if (!guestName)
         return res
           .status(200)
           .json({ message: "Code valide, accès accordé", unlockSession: true });
-      }
 
       invitation = await EventInvitation.findOne({
         event: event._id,
@@ -513,7 +579,6 @@ router.post("/:shortId/join", async (req, res) => {
         externalEmail: externalEmail || null,
         user: null,
       });
-
       if (!invitation) {
         const guestToken = nanoid(32);
         invitation = await EventInvitation.create({
@@ -544,15 +609,47 @@ router.post("/:shortId/join", async (req, res) => {
 router.put("/:shortId/rsvp", checkGuestOrAuth, async (req, res) => {
   try {
     const { status } = req.body;
-    if (req.userRole === "organizer") {
+    if (req.userRole === "organizer")
       return res.status(400).json({
         message:
           "L'organisateur ne peut pas modifier son RSVP via cette route.",
       });
-    }
+
     const invitation = req.invitation;
     invitation.status = status;
     await invitation.save();
+
+    // Notifier l'organisateur
+    const guestName =
+      invitation.guestName ||
+      (await User.findById(invitation.user))?.name ||
+      "Un invité";
+    const statusLabel =
+      {
+        accepted: "sera présent(e)",
+        declined: "ne sera pas présent(e)",
+        maybe: "est peut-être présent(e)",
+      }[status] || status;
+
+    await notifyOrganizer(req.app, {
+      event: req.event,
+      type: "event_rsvp",
+      data: {
+        eventTitle: req.event.title,
+        eventShortId: req.event.shortId,
+        guestName,
+        status,
+      },
+      link: `/event/${req.event.shortId}`,
+      pushPayload: {
+        title: `🎉 RSVP — ${req.event.title}`,
+        body: `${guestName} ${statusLabel}`,
+        url: `/event/${req.event.shortId}`,
+        tag: `event-rsvp-${req.event.shortId}`,
+        type: "default",
+      },
+    });
+
     res.status(200).json(invitation);
   } catch (error) {
     console.error("❌ Error setting RSVP:", error);
@@ -566,14 +663,38 @@ router.put("/:shortId/rsvp", checkGuestOrAuth, async (req, res) => {
 router.post("/:shortId/vote/date", checkGuestOrAuth, async (req, res) => {
   try {
     const { dates } = req.body;
-    if (req.userRole === "organizer") {
+    if (req.userRole === "organizer")
       return res
         .status(400)
         .json({ message: "L'organisateur ne vote pas via cette route." });
-    }
+
     const invitation = req.invitation;
     invitation.dateVote = dates;
     await invitation.save();
+
+    const guestName =
+      invitation.guestName ||
+      (await User.findById(invitation.user))?.name ||
+      "Un invité";
+
+    await notifyOrganizer(req.app, {
+      event: req.event,
+      type: "event_date_vote",
+      data: {
+        eventTitle: req.event.title,
+        eventShortId: req.event.shortId,
+        guestName,
+      },
+      link: `/event/${req.event.shortId}`,
+      pushPayload: {
+        title: `📅 Vote date — ${req.event.title}`,
+        body: `${guestName} a voté pour une date`,
+        url: `/event/${req.event.shortId}`,
+        tag: `event-date-vote-${req.event.shortId}`,
+        type: "default",
+      },
+    });
+
     res
       .status(200)
       .json({ message: "Votes enregistrés", dateVote: invitation.dateVote });
@@ -589,14 +710,38 @@ router.post("/:shortId/vote/date", checkGuestOrAuth, async (req, res) => {
 router.post("/:shortId/vote/location", checkGuestOrAuth, async (req, res) => {
   try {
     const { locationId } = req.body;
-    if (req.userRole === "organizer") {
+    if (req.userRole === "organizer")
       return res
         .status(400)
         .json({ message: "L'organisateur ne vote pas via cette route." });
-    }
+
     const invitation = req.invitation;
     invitation.locationVote = locationId;
     await invitation.save();
+
+    const guestName =
+      invitation.guestName ||
+      (await User.findById(invitation.user))?.name ||
+      "Un invité";
+
+    await notifyOrganizer(req.app, {
+      event: req.event,
+      type: "event_location_vote",
+      data: {
+        eventTitle: req.event.title,
+        eventShortId: req.event.shortId,
+        guestName,
+      },
+      link: `/event/${req.event.shortId}`,
+      pushPayload: {
+        title: `📍 Vote lieu — ${req.event.title}`,
+        body: `${guestName} a voté pour un lieu`,
+        url: `/event/${req.event.shortId}`,
+        tag: `event-location-vote-${req.event.shortId}`,
+        type: "default",
+      },
+    });
+
     res.status(200).json({
       message: "Vote enregistré",
       locationVote: invitation.locationVote,
@@ -615,7 +760,7 @@ router.post("/:shortId/gifts", checkGuestOrAuth, async (req, res) => {
     const { name, url, price } = req.body;
     const event = req.event;
 
-    // Vérifier la limite de propositions par user
+    // Vérifier la limite
     if (event.maxGiftProposalsPerUser) {
       const count = await EventGiftProposal.countDocuments({
         event: event._id,
@@ -638,6 +783,31 @@ router.post("/:shortId/gifts", checkGuestOrAuth, async (req, res) => {
       url,
       price,
     });
+
+    const proposerName =
+      req.guestName ||
+      (await User.findById(req.payload?._id))?.name ||
+      "Un invité";
+
+    await notifyOrganizer(req.app, {
+      event,
+      type: "event_gift_proposed",
+      data: {
+        eventTitle: event.title,
+        eventShortId: event.shortId,
+        proposerName,
+        giftName: name,
+      },
+      link: `/event/${event.shortId}`,
+      pushPayload: {
+        title: `🎁 Nouveau cadeau — ${event.title}`,
+        body: `${proposerName} propose : ${name}`,
+        url: `/event/${event.shortId}`,
+        tag: `event-gift-proposed-${event.shortId}`,
+        type: "default",
+      },
+    });
+
     res.status(201).json(newProposal);
   } catch (error) {
     console.error("❌ Error creating gift proposal:", error);
@@ -674,6 +844,7 @@ router.post(
 
       const userId = req.payload?._id;
       const guestToken = req.headers["x-guest-token"];
+      let voted = false;
 
       if (userId) {
         const hasVoted = proposal.votes
@@ -685,6 +856,7 @@ router.post(
           );
         } else {
           proposal.votes.push(userId);
+          voted = true;
         }
       } else if (guestToken) {
         const hasVoted = proposal.guestVotes.includes(guestToken);
@@ -694,10 +866,38 @@ router.post(
           );
         } else {
           proposal.guestVotes.push(guestToken);
+          voted = true;
         }
       }
 
       await proposal.save();
+
+      // Notifier l'organisateur seulement si c'est un nouveau vote (pas un dévote)
+      if (voted) {
+        const voterName =
+          req.invitation?.guestName ||
+          (await User.findById(userId))?.name ||
+          "Un invité";
+        await notifyOrganizer(req.app, {
+          event: req.event,
+          type: "event_gift_vote",
+          data: {
+            eventTitle: req.event.title,
+            eventShortId: req.event.shortId,
+            voterName,
+            giftName: proposal.name,
+          },
+          link: `/event/${req.event.shortId}`,
+          pushPayload: {
+            title: `♥ Vote cadeau — ${req.event.title}`,
+            body: `${voterName} vote pour : ${proposal.name}`,
+            url: `/event/${req.event.shortId}`,
+            tag: `event-gift-vote-${req.event.shortId}`,
+            type: "default",
+          },
+        });
+      }
+
       res.status(200).json(proposal);
     } catch (error) {
       console.error("❌ Error voting for gift:", error);
@@ -719,8 +919,10 @@ router.put("/:shortId/gifts/:giftId", checkGuestOrAuth, async (req, res) => {
       (req.payload?._id &&
         proposal.proposedBy?.toString() === req.payload._id) ||
       (req.guestName && proposal.guestName === req.guestName);
+    const isOrganizer = req.userRole === "organizer";
 
-    if (!isOwner) return res.status(403).json({ message: "Non autorisé" });
+    if (!isOwner && !isOrganizer)
+      return res.status(403).json({ message: "Non autorisé" });
 
     const { name, url, price } = req.body;
     if (name) proposal.name = name;
@@ -734,41 +936,9 @@ router.put("/:shortId/gifts/:giftId", checkGuestOrAuth, async (req, res) => {
   }
 });
 
-router.post("/:shortId/gifts", checkGuestOrAuth, async (req, res) => {
-  try {
-    const { name, url, price } = req.body;
-    const event = req.event;
-
-    // Vérifier la limite de propositions par user
-    if (event.maxGiftProposalsPerUser) {
-      const count = await EventGiftProposal.countDocuments({
-        event: event._id,
-        ...(req.payload?._id
-          ? { proposedBy: req.payload._id }
-          : { guestName: req.guestName }),
-      });
-      if (count >= event.maxGiftProposalsPerUser) {
-        return res.status(400).json({
-          message: `Vous ne pouvez pas proposer plus de ${event.maxGiftProposalsPerUser} cadeau(x).`,
-        });
-      }
-    }
-
-    const newProposal = await EventGiftProposal.create({
-      event: event._id,
-      proposedBy: req.payload?._id || null,
-      guestName: req.guestName || null,
-      name,
-      url,
-      price,
-    });
-    res.status(201).json(newProposal);
-  } catch (error) {
-    console.error("❌ Error creating gift proposal:", error);
-    res.status(500).json({ message: "Erreur serveur" });
-  }
-});
-
+/*
+ * 16. DELETE /api/events/:shortId/gifts/:giftId -> supprimer une proposition
+ */
 router.delete("/:shortId/gifts/:giftId", checkGuestOrAuth, async (req, res) => {
   try {
     const proposal = await EventGiftProposal.findById(req.params.giftId);
@@ -781,9 +951,8 @@ router.delete("/:shortId/gifts/:giftId", checkGuestOrAuth, async (req, res) => {
       (req.guestName && proposal.guestName === req.guestName);
     const isOrganizer = req.userRole === "organizer";
 
-    if (!isOwner && !isOrganizer) {
+    if (!isOwner && !isOrganizer)
       return res.status(403).json({ message: "Non autorisé" });
-    }
 
     await proposal.deleteOne();
     res.status(200).json({ message: "Proposition supprimée" });
@@ -794,7 +963,7 @@ router.delete("/:shortId/gifts/:giftId", checkGuestOrAuth, async (req, res) => {
 });
 
 /*
- * 16. GET /api/events/:shortId/messages -> chat fallback HTTP
+ * 17. GET /api/events/:shortId/messages -> chat fallback HTTP
  */
 router.get("/:shortId/messages", checkGuestOrAuth, async (req, res) => {
   try {
@@ -809,14 +978,13 @@ router.get("/:shortId/messages", checkGuestOrAuth, async (req, res) => {
 });
 
 /*
- * 17. GET /api/events/:shortId/share
+ * 18. GET /api/events/:shortId/share
  */
 router.get("/:shortId/share", async (req, res) => {
   try {
     const event = await Event.findOne({ shortId: req.params.shortId });
     if (!event)
       return res.status(404).json({ message: "Événement introuvable" });
-
     const baseUrl = process.env.FRONTEND_URL || "https://birthreminder.com";
     res.status(200).json({
       url: `${baseUrl}/event/${event.shortId}`,
@@ -829,7 +997,7 @@ router.get("/:shortId/share", async (req, res) => {
 });
 
 /*
- * 18. GET /api/events/:shortId/invitations
+ * 19. GET /api/events/:shortId/invitations
  */
 router.get("/:shortId/invitations", checkGuestOrAuth, async (req, res) => {
   try {
@@ -844,7 +1012,7 @@ router.get("/:shortId/invitations", checkGuestOrAuth, async (req, res) => {
 });
 
 /*
- * 19. DELETE /api/events/:shortId/invitations/:invitationId -> retirer un invité (organizer only)
+ * 20. DELETE /api/events/:shortId/invitations/:invitationId -> retirer un invité (organizer only)
  */
 router.delete(
   "/:shortId/invitations/:invitationId",
@@ -871,6 +1039,60 @@ router.delete(
       res.status(200).json({ message: "Invité retiré" });
     } catch (error) {
       console.error("❌ Error removing invitation:", error);
+      res.status(500).json({ message: "Erreur serveur" });
+    }
+  },
+);
+
+/*
+ * 21. PUT /api/events/:shortId/invitations/:invitationId/notifications -> préférences notifs
+ */
+router.put(
+  "/:shortId/invitations/:invitationId/notifications",
+  isAuthenticated,
+  async (req, res) => {
+    try {
+      const event = await Event.findOne({ shortId: req.params.shortId });
+      if (!event)
+        return res.status(404).json({ message: "Événement introuvable" });
+      if (event.organizer.toString() !== req.payload._id)
+        return res.status(403).json({ message: "Non autorisé" });
+
+      const invitation = await EventInvitation.findById(
+        req.params.invitationId,
+      );
+      if (!invitation)
+        return res.status(404).json({ message: "Invitation introuvable" });
+
+      const { rsvp, dateVote, locationVote, giftProposed, giftVote } = req.body;
+
+      invitation.notificationPreferences = {
+        rsvp:
+          rsvp !== undefined
+            ? rsvp
+            : (invitation.notificationPreferences?.rsvp ?? true),
+        dateVote:
+          dateVote !== undefined
+            ? dateVote
+            : (invitation.notificationPreferences?.dateVote ?? true),
+        locationVote:
+          locationVote !== undefined
+            ? locationVote
+            : (invitation.notificationPreferences?.locationVote ?? true),
+        giftProposed:
+          giftProposed !== undefined
+            ? giftProposed
+            : (invitation.notificationPreferences?.giftProposed ?? true),
+        giftVote:
+          giftVote !== undefined
+            ? giftVote
+            : (invitation.notificationPreferences?.giftVote ?? true),
+      };
+
+      await invitation.save();
+      res.status(200).json(invitation);
+    } catch (error) {
+      console.error("❌ Error updating notification preferences:", error);
       res.status(500).json({ message: "Erreur serveur" });
     }
   },

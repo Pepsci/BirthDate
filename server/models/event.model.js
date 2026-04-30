@@ -137,6 +137,14 @@ const eventSchema = new Schema(
       enum: ["draft", "published", "cancelled", "done"],
       default: "draft",
     },
+
+    organizerNotificationPrefs: {
+      rsvp: { type: Boolean, default: true },
+      dateVote: { type: Boolean, default: true },
+      locationVote: { type: Boolean, default: true },
+      giftProposed: { type: Boolean, default: true },
+      giftVote: { type: Boolean, default: true },
+    },
   },
   {
     timestamps: true,

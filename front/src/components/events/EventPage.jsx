@@ -14,6 +14,7 @@ import DateVotePanel from "./DateVotePanel";
 import LocationVotePanel from "./LocationVotePanel";
 import GiftProposalPanel from "./GiftProposalPanel";
 import InviteModal from "./InviteModal";
+import EventNotifPrefs from "./EventNotifPrefs";
 import "./css/eventPage.css";
 
 delete L.Icon.Default.prototype._getIconUrl;
@@ -75,10 +76,8 @@ const GlassCard = ({ children, className = "", style = {}, ...props }) => (
   </motion.div>
 );
 
-// ─── Composant participant avec bouton retirer ───────────
 const ParticipantRow = ({ inv, isOrganizer, onRemove }) => {
   const [confirmRemove, setConfirmRemove] = useState(false);
-
   const name = inv.user
     ? `${inv.user.name} ${inv.user.surname || ""}`.trim()
     : inv.guestName || inv.externalEmail || "Invité externe";
@@ -103,7 +102,6 @@ const ParticipantRow = ({ inv, isOrganizer, onRemove }) => {
       <span className="ep-participant-badge" style={{ background: s.color }}>
         {s.label}
       </span>
-
       {isOrganizer && onRemove && (
         <div style={{ marginLeft: "auto", display: "flex", gap: "6px" }}>
           {confirmRemove ? (
@@ -353,7 +351,6 @@ const EventPage = () => {
   const isOrganizer = event.organizer._id === currentUser?._id;
   const hasLocation =
     event.locationMode === "fixed" && event.fixedLocation?.name;
-
   const locationCoords =
     hasLocation &&
     event.hasFullAccess &&
@@ -364,7 +361,6 @@ const EventPage = () => {
           event.fixedLocation.coordinates.lng,
         ]
       : null;
-
   const hasGifts = event.giftMode && event.giftMode !== "none";
 
   const tabs = [
@@ -382,6 +378,9 @@ const EventPage = () => {
             : []),
           ...(event.dateMode === "vote" || event.locationMode === "vote"
             ? [{ id: "vote", label: "Votes", icon: "fa-check-to-slot" }]
+            : []),
+          ...(isOrganizer
+            ? [{ id: "notifications", label: "Notifs", icon: "fa-bell" }]
             : []),
         ]
       : []),
@@ -790,6 +789,9 @@ const EventPage = () => {
                       <GiftProposalPanel
                         shortId={shortId}
                         isOrganizer={isOrganizer}
+                        maxGiftProposalsPerUser={
+                          event.maxGiftProposalsPerUser || null
+                        }
                       />
                     </GlassCard>
                   )}
@@ -849,6 +851,29 @@ const EventPage = () => {
                       </GlassCard>
                     )}
                   </div>
+                </motion.div>
+              )}
+
+              {/* ── Tab Notifications (organisateur uniquement) ── */}
+              {activeTab === "notifications" && isOrganizer && (
+                <motion.div
+                  key="notifications"
+                  className="ep-tab-content"
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -12 }}
+                  transition={{ duration: 0.25 }}
+                >
+                  <GlassCard className="ep-card">
+                    <div className="ep-card-header">
+                      <i className="fa-solid fa-bell ep-card-icon"></i>
+                      <h3>Mes notifications</h3>
+                    </div>
+                    <EventNotifPrefs
+                      shortId={shortId}
+                      initialPrefs={event.organizerNotificationPrefs || {}}
+                    />
+                  </GlassCard>
                 </motion.div>
               )}
             </AnimatePresence>
