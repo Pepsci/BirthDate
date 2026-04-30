@@ -417,7 +417,6 @@ const GiftCardGrid = ({
                             e.stopPropagation();
                             onEdit?.(rawItem);
                           }}
-                          style={{ flex: "0 0 auto", padding: "6px 8px" }}
                         >
                           ✏️
                         </button>
@@ -431,6 +430,21 @@ const GiftCardGrid = ({
                       >
                         ♥ {item.voteCount}
                       </button>
+                      {canDelete && onDelete && (
+                        <button
+                          className="gcg-btn gcg-btn--ghost gcg-btn--sm gcg-mobile-only"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onDelete?.(item.id);
+                          }}
+                          style={{
+                            color: "var(--danger, #e74c3c)",
+                            borderColor: "var(--danger, #e74c3c)",
+                          }}
+                        >
+                          🗑️
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
