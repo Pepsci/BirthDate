@@ -7,7 +7,7 @@ import PasswordInput from "../connect/PasswordInput";
 import Countdown from "../dashboard/Countdown";
 import DatePickerMobile from "../dashboard/DatePickerMobile";
 import GestionNotification from "./GestionNotifications";
-import Wishlist from "./Wishlist";
+import Wishlist from "../wishlist/Wishlist";
 import E2ESettings from "./E2ESettings";
 import FriendsMobileView from "../friends/FriendsMobileView";
 import MergeDuplicatesSection from "../friends/MergeDuplicatesSection";
@@ -27,8 +27,14 @@ const ProfilDetails = ({
 }) => {
   const { logOut } = useContext(AuthContext);
   const { friendRequestCount, clearFriendRequestCount } = useNotifications();
-  const { currentUser, isLoggedin, removeUser, storeToken, authenticateUser, updateUser } =
-    useAuth();
+  const {
+    currentUser,
+    isLoggedin,
+    removeUser,
+    storeToken,
+    authenticateUser,
+    updateUser,
+  } = useAuth();
 
   const [userToUpdate, setUserToUpdate] = useState({
     _id: "",
@@ -65,7 +71,10 @@ const ProfilDetails = ({
     { id: "wishlist", title: "Ma wishlist", icon: "🎁" },
     {
       id: "e2e",
-      title: currentUser?.e2eMode === "full" ? "Chiffrement Maximum actif" : "Confidentialité",
+      title:
+        currentUser?.e2eMode === "full"
+          ? "Chiffrement Maximum actif"
+          : "Confidentialité",
       icon: "🔐",
     },
   ];
@@ -245,7 +254,11 @@ const ProfilDetails = ({
       setUserToUpdate(updatedPayload);
 
       setIsEditing(false);
-      setPasswords({ currentPassword: "", newPassword: "", confirmPassword: "" });
+      setPasswords({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
       setShowPasswordFields(false);
     } catch (error) {
       console.error(error);
@@ -432,7 +445,10 @@ const ProfilDetails = ({
                       placeholder="Prénom"
                       value={userToUpdate.name || ""}
                       onChange={(e) =>
-                        setUserToUpdate({ ...userToUpdate, name: e.target.value })
+                        setUserToUpdate({
+                          ...userToUpdate,
+                          name: e.target.value,
+                        })
                       }
                     />
                   </div>
@@ -445,7 +461,10 @@ const ProfilDetails = ({
                       placeholder="Nom"
                       value={userToUpdate.surname || ""}
                       onChange={(e) =>
-                        setUserToUpdate({ ...userToUpdate, surname: e.target.value })
+                        setUserToUpdate({
+                          ...userToUpdate,
+                          surname: e.target.value,
+                        })
                       }
                     />
                   </div>
@@ -505,7 +524,10 @@ const ProfilDetails = ({
                         placeholder="••••••••"
                         value={passwords.currentPassword}
                         onChange={(e) =>
-                          setPasswords({ ...passwords, currentPassword: e.target.value })
+                          setPasswords({
+                            ...passwords,
+                            currentPassword: e.target.value,
+                          })
                         }
                       />
                     </div>
@@ -516,7 +538,10 @@ const ProfilDetails = ({
                         placeholder="••••••••"
                         value={passwords.newPassword}
                         onChange={(e) =>
-                          setPasswords({ ...passwords, newPassword: e.target.value })
+                          setPasswords({
+                            ...passwords,
+                            newPassword: e.target.value,
+                          })
                         }
                       />
                     </div>
@@ -529,7 +554,10 @@ const ProfilDetails = ({
                         placeholder="••••••••"
                         value={passwords.confirmPassword}
                         onChange={(e) =>
-                          setPasswords({ ...passwords, confirmPassword: e.target.value })
+                          setPasswords({
+                            ...passwords,
+                            confirmPassword: e.target.value,
+                          })
                         }
                       />
                     </div>

@@ -35,14 +35,15 @@ const GiftCardGrid = ({
         image: item.image,
         badge: item.isShared ? "shared" : "private",
         badgeLabel: item.isShared ? "🔓 Partagé" : "🔒 Privé",
-        isReserved: !!item.reservedBy,
+        // ← Prend en compte reservedByGuest (réservation depuis la page publique)
+        isReserved: !!item.reservedBy || !!item.reservedByGuest,
         isReservedByMe:
           item.reservedBy?._id?.toString() === currentUserId ||
           item.reservedBy?.toString() === currentUserId,
         isPurchased: item.isPurchased,
         reservedByName: item.reservedBy?.name
           ? `${item.reservedBy.name}${item.reservedBy.surname ? " " + item.reservedBy.surname : ""}`
-          : null,
+          : item.reservedByGuest || null,
         raw: item,
       };
     }
@@ -160,7 +161,6 @@ const GiftCardGrid = ({
           );
         }
 
-        // Pour le type event : canEdit = owner, canDelete = owner OU organisateur
         const canEdit = type === "event" ? item.isOwner : true;
         const canDelete = type === "event" ? item.isOwner || isOrganizer : true;
 
@@ -199,7 +199,6 @@ const GiftCardGrid = ({
                 </span>
               )}
 
-              {/* Overlay hover — pour event : edit seulement si owner, delete si owner ou organizer */}
               {!readOnly && (type !== "event" || canEdit || canDelete) && (
                 <div className="gcg-hover-actions">
                   {onEdit && canEdit && type !== "event" && (
@@ -400,6 +399,7 @@ const GiftCardGrid = ({
                           </button>
                         </>
                       ) : (
+                        // Réservé par quelqu'un d'autre (ami inscrit ou guest)
                         <p className="gcg-reserved-friend">
                           🧑 Réservé par {item.reservedByName || "un ami"}
                         </p>
@@ -407,7 +407,6 @@ const GiftCardGrid = ({
                     </>
                   )}
 
-                  {/* Pour event : edit dans gcg-vote-row (owner seulement), pas dans hover */}
                   {type === "event" && (
                     <div className="gcg-vote-row">
                       {item.isOwner && onEdit && (

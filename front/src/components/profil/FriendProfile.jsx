@@ -224,7 +224,14 @@ const FriendProfile = ({ date, onCancel, initialSection = "info" }) => {
       });
       loadFriendWishlist();
     } catch (error) {
-      console.error("Erreur réservation:", error);
+      const status = error.response?.status;
+      const message = error.response?.data?.message;
+      if (status === 400 && message === "Cet item est déjà réservé") {
+        // Réservé via la page publique — rafraîchir pour refléter l'état réel
+        loadFriendWishlist();
+      } else {
+        console.error("Erreur réservation:", error);
+      }
     }
   };
 
@@ -435,18 +442,13 @@ const FriendProfile = ({ date, onCancel, initialSection = "info" }) => {
         </div>
       );
 
-    const visibleItems = wishlist.filter((item) => {
-      if (!item.reservedBy) return true;
-      const reservedById =
-        item.reservedBy?._id?.toString() || item.reservedBy?.toString();
-      return reservedById === currentUser._id?.toString();
-    });
-
+    // Pas de filtre ici — GiftCardGrid gère l'affichage selon
+    // isReserved + isReservedByMe (réservé par moi ou par un guest)
     return (
       <div className="wishlist-section">
         <h2>🎁 Sa Wishlist</h2>
         <GiftCardGrid
-          items={visibleItems}
+          items={wishlist}
           type="wishlist"
           currentUserId={currentUser._id}
           readOnly

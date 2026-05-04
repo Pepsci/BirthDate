@@ -1,5 +1,5 @@
 require("dotenv").config();
-require("./config/mongoDb"); // Charger MongoDB EN PREMIER
+require("./config/mongoDb");
 
 const express = require("express");
 const path = require("path");
@@ -14,6 +14,7 @@ const dateRouter = require("./routes/date");
 const usersRouter = require("./routes/users");
 const verifyRouter = require("./routes/verify");
 const unsubscribeRouter = require("./routes/unsubscribe");
+const wishlistPublicRouter = require("./routes/wishlist.public"); // ← AVANT wishlist
 const wishlistRouter = require("./routes/wishlist");
 const friendRouter = require("./routes/friends");
 const conversationsRouter = require("./routes/conversations");
@@ -23,7 +24,7 @@ const eventsRouter = require("./routes/events/index");
 const notificationsRouter = require("./routes/notifications");
 const statsRouter = require("./routes/stats");
 
-// Charger les cron jobs
+// Cron jobs
 const purgeDeletedAccounts = require("./jobs/purgeDeletedAccounts");
 const sendReminders = require("./jobs/sendReminders");
 const eventReminders = require("./jobs/eventReminders");
@@ -80,6 +81,7 @@ app.use("/api/users", usersRouter);
 app.use("/api/date", dateRouter);
 app.use("/api/verify-email", verifyRouter);
 app.use("/api/unsubscribe", unsubscribeRouter);
+app.use("/api/wishlist/public", wishlistPublicRouter);
 app.use("/api/wishlist", wishlistRouter);
 app.use("/api/friends", friendRouter);
 app.use("/api/conversations", conversationsRouter);
@@ -89,7 +91,7 @@ app.use("/api/events", eventsRouter);
 app.use("/api/notifications", notificationsRouter);
 app.use("/api/stats", statsRouter);
 
-// Démarrer les cron jobs
+// Cron jobs
 purgeDeletedAccounts.start();
 sendReminders.start();
 eventReminders.start();
@@ -106,18 +108,12 @@ console.log("   ✅ Emails chat instantané (toutes les 5 minutes)");
 console.log("   ✅ Emails chat quotidien (tous les jours à 9h)");
 console.log("   ✅ Emails chat hebdomadaire (chaque lundi à 9h)");
 
-// IMPORTANT : Cette route doit rester AVANT le wildcard
 app.use("/api/*", (req, res, next) => {
   res.status(404).json({ message: "Ressource API non trouvée." });
 });
 
-// MODIFICATION : Servir le frontend React pour toutes les routes NON-API
 if (process.env.NODE_ENV === "production") {
-  // Servir les fichiers statiques du build React
   app.use(express.static(path.join(__dirname, "public")));
-
-  // Pour toutes les autres routes (non-API), servir index.html
-  // Cela permet au React Router de gérer les routes côté client
   app.get("*", (req, res) => {
     res.sendFile(path.join(__dirname, "public", "index.html"));
   });

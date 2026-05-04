@@ -1,0 +1,119 @@
+/* ============================================================
+   WishlistReservations.css
+   front/src/components/wishlist/css/WishlistReservations.css
+   ============================================================ */
+
+.wrl-section {
+  background: var(--bg-primary);
+  border: 1px solid var(--warning);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.wrl-title {
+  margin: 0 0 0.25rem;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.wrl-subtitle {
+  margin: 0 0 0.75rem;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.wrl-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.wrl-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  padding: 0.6rem 0.75rem;
+}
+
+.wrl-item-info {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.wrl-item-img {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+.wrl-item-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.wrl-item-title {
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wrl-item-by {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.wrl-item-by strong {
+  color: var(--primary);
+}
+
+.wrl-cancel-btn {
+  flex-shrink: 0;
+  background: transparent;
+  border: 1px solid var(--danger);
+  color: var(--danger);
+  border-radius: 6px;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    color 0.2s;
+  white-space: nowrap;
+}
+
+.wrl-cancel-btn:hover:not(:disabled) {
+  background: var(--danger);
+  color: #fff;
+}
+
+.wrl-cancel-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (max-width: 480px) {
+  .wrl-item {
+    flex-wrap: wrap;
+  }
+
+  .wrl-cancel-btn {
+    width: 100%;
+    text-align: center;
+  }
+}

@@ -64,8 +64,16 @@
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(ellipse 60% 80% at 15% 50%, var(--primary-subtle, rgba(108, 99, 255, 0.12)) 0%, transparent 70%),
-    radial-gradient(ellipse 50% 70% at 85% 15%, rgba(108, 99, 255, 0.07) 0%, transparent 65%);
+    radial-gradient(
+      ellipse 60% 80% at 15% 50%,
+      var(--primary-subtle, rgba(108, 99, 255, 0.12)) 0%,
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 50% 70% at 85% 15%,
+      rgba(108, 99, 255, 0.07) 0%,
+      transparent 65%
+    );
   pointer-events: none;
   z-index: 0;
 }
@@ -106,7 +114,7 @@
   line-height: 1;
   margin-bottom: 1rem;
   display: block;
-  filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3));
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3));
 }
 
 .ep-status-badge {
@@ -213,7 +221,9 @@
   cursor: pointer;
   font-size: 0.88rem;
   font-weight: 600;
-  transition: background 0.2s, opacity 0.2s;
+  transition:
+    background 0.2s,
+    opacity 0.2s;
   white-space: nowrap;
 }
 
@@ -274,49 +284,51 @@
 }
 
 /* ═══════════════════════════════════════════════════════
-   TABS
+   TABS — style icône + label, grille adaptative
 ═══════════════════════════════════════════════════════ */
 .ep-tabs {
-  display: flex;
-  gap: 0.4rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+  gap: 0.5rem;
   margin-bottom: 1.75rem;
-  border-bottom: 1px solid var(--border-color);
-  padding-bottom: 0;
-  overflow-x: auto;
-  scrollbar-width: none;
 }
 
-.ep-tabs::-webkit-scrollbar { display: none; }
-
 .ep-tab {
-  display: inline-flex;
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 0.45rem;
-  padding: 0.65rem 1.1rem;
-  background: transparent;
-  border: none;
-  border-bottom: 2px solid transparent;
+  justify-content: center;
+  gap: 0.3rem;
+  padding: 0.7rem 0.5rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
   color: var(--text-secondary);
   cursor: pointer;
-  font-size: 0.88rem;
+  font-size: 0.72rem;
   font-weight: 500;
   white-space: nowrap;
-  transition: color 0.2s, border-color 0.2s;
-  margin-bottom: -1px;
+  transition:
+    color 0.2s,
+    border-color 0.2s,
+    background 0.2s;
+  line-height: 1.2;
+}
+
+.ep-tab i {
+  font-size: 1.1rem;
 }
 
 .ep-tab:hover {
   color: var(--text-primary);
+  background: var(--bg-tertiary);
 }
 
 .ep-tab.active {
   color: var(--primary);
-  border-bottom-color: var(--primary);
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
   font-weight: 700;
-}
-
-.ep-tab i {
-  font-size: 0.82rem;
 }
 
 .ep-tab-content {
@@ -366,7 +378,7 @@
 
 /* Card lieu */
 .ep-card-location {
-  grid-column: 1 / -1; /* pleine largeur */
+  grid-column: 1 / -1;
 }
 
 .ep-location-name {
@@ -382,7 +394,6 @@
   margin: 0 0 1rem;
 }
 
-/* Bouton reveal map */
 .ep-map-reveal-btn {
   display: inline-flex;
   align-items: center;
@@ -396,7 +407,9 @@
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
-  transition: border-color 0.2s, color 0.2s;
+  transition:
+    border-color 0.2s,
+    color 0.2s;
 }
 
 .ep-map-reveal-btn:hover {
@@ -408,7 +421,6 @@
   font-size: 0.82rem;
 }
 
-/* Static map */
 .ep-map-container {
   position: relative;
   border-radius: 12px;
@@ -464,9 +476,10 @@
   transition: opacity 0.2s;
 }
 
-.ep-maps-link:hover { opacity: 0.85; }
+.ep-maps-link:hover {
+  opacity: 0.85;
+}
 
-/* Description */
 .ep-description {
   font-size: 0.92rem;
   color: var(--text-secondary);
@@ -684,23 +697,18 @@
   .ep-hero {
     padding: 1.5rem 1.25rem 2.5rem;
   }
-
   .ep-hero-title {
     font-size: 1.9rem;
   }
-
   .ep-body {
     padding: 1.5rem 1rem 3rem;
   }
-
   .ep-grid {
     grid-template-columns: 1fr;
   }
-
   .ep-card-location {
     grid-column: auto;
   }
-
   .ep-stats-row {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -713,55 +721,52 @@
   .ep-hero {
     padding: 1.25rem 1rem 2rem;
   }
-
   .ep-hero-emoji {
     font-size: 2.8rem;
   }
-
   .ep-hero-title {
     font-size: 1.6rem;
   }
-
   .ep-hero-pill {
     font-size: 0.8rem;
     padding: 0.4rem 0.85rem;
   }
-
   .ep-hero-actions {
     gap: 0.5rem;
   }
-
   .ep-btn {
     padding: 0.5rem 0.9rem;
     font-size: 0.82rem;
   }
 
   .ep-tabs {
-    gap: 0;
+    grid-template-columns: repeat(auto-fit, minmax(56px, 1fr));
+    gap: 0.35rem;
   }
 
   .ep-tab {
-    padding: 0.6rem 0.85rem;
-    font-size: 0.82rem;
+    padding: 0.6rem 0.3rem;
+    font-size: 0.65rem;
+    border-radius: 10px;
+  }
+
+  .ep-tab i {
+    font-size: 1rem;
   }
 
   .ep-body {
     padding: 1.25rem 0.85rem 2.5rem;
   }
-
   .ep-glass-card {
     padding: 1.1rem;
   }
-
   .ep-stats-row {
     grid-template-columns: repeat(2, 1fr);
     gap: 0.5rem;
   }
-
   .ep-stat-num {
     font-size: 1.3rem;
   }
-
   .ep-map-img {
     height: 150px;
   }

@@ -28,6 +28,22 @@ const userSchema = new Schema({
   isVerified: { type: Boolean, default: false },
   lastVerificationEmailSent: Date,
 
+  // ── Wishlist publique ──────────────────────────────────────────
+  wishlistPublic: {
+    type: Boolean,
+    default: false,
+  },
+  wishlistPublicSlug: {
+    type: String,
+    default: null,
+    unique: true,
+    sparse: true, // autorise null sur plusieurs documents
+  },
+  wishlistFriendCode: {
+    type: String,
+    default: null,
+  },
+
   // ── Emails anniversaires ───────────────────────────────────────────────────
   receiveBirthdayEmails: { type: Boolean, default: true },
   receiveFriendRequestEmails: { type: Boolean, default: true },

@@ -2,10 +2,14 @@ import React, { useState, useEffect } from "react";
 import apiHandler from "../../api/apiHandler";
 import useAuth from "../../context/useAuth";
 import GiftCardGrid from "../UI/GiftCardGrid";
+import WishlistPublicSettings from "./WishlistPublicSettings";
 import "../UI/css/gifts-common.css";
+import "./css/WishlistReservations.css";
 
 const Wishlist = () => {
   const { currentUser } = useAuth();
+
+  // ─── Wishlist items ───────────────────────────────────────
   const [wishlistItems, setWishlistItems] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -22,14 +26,31 @@ const Wishlist = () => {
     isShared: true,
   });
 
+  // ─── Settings partage public ──────────────────────────────
+  const [publicSettings, setPublicSettings] = useState({
+    isPublic: false,
+    publicSlug: null,
+    friendCode: null,
+    publicUrl: null,
+  });
+  const [settingsLoading, setSettingsLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  // ─── Annulation réservation guest ────────────────────────
+  const [cancellingReservationId, setCancellingReservationId] = useState(null);
+
   const blockedDomains = [
     { domain: "amazon", name: "Amazon" },
     { domain: "fnac", name: "Fnac" },
     { domain: "micromania", name: "Micromania" },
   ];
 
+  // ─── Init ─────────────────────────────────────────────────
   useEffect(() => {
-    if (currentUser) fetchWishlist();
+    if (currentUser) {
+      fetchWishlist();
+      fetchPublicSettings();
+    }
   }, [currentUser]);
 
   useEffect(() => {
@@ -51,6 +72,7 @@ const Wishlist = () => {
       );
   }, [formData.url]);
 
+  // ─── Wishlist CRUD ────────────────────────────────────────
   const fetchWishlist = async () => {
     try {
       setIsLoading(true);
@@ -169,6 +191,7 @@ const Wishlist = () => {
       isShared: true,
     });
   };
+
   const handleDelete = (id) => setDeletingItemId(id);
   const handleDeleteCancel = () => setDeletingItemId(null);
   const handleDeleteConfirm = async (id) => {
@@ -180,6 +203,7 @@ const Wishlist = () => {
       alert("Erreur lors de la suppression");
     }
   };
+
   const handleToggleSharing = async (item) => {
     try {
       await apiHandler.post(`/wishlist/${item._id}/toggle-sharing`);
@@ -189,6 +213,87 @@ const Wishlist = () => {
     }
   };
 
+  // ─── Annulation réservation (propriétaire) ────────────────
+  const handleCancelReservation = async (itemId) => {
+    try {
+      setCancellingReservationId(itemId);
+      await apiHandler.delete(`/wishlist/${itemId}/reservation`);
+      fetchWishlist();
+    } catch (err) {
+      console.error("Erreur annulation réservation:", err);
+    } finally {
+      setCancellingReservationId(null);
+    }
+  };
+
+  // ─── Settings partage public ──────────────────────────────
+  const fetchPublicSettings = async () => {
+    try {
+      const res = await apiHandler.get("/wishlist/settings");
+      setPublicSettings(res.data);
+    } catch (err) {
+      console.error("fetchPublicSettings error:", err);
+    }
+  };
+
+  const handleTogglePublic = async () => {
+    setSettingsLoading(true);
+    try {
+      const res = await apiHandler.patch("/wishlist/settings/toggle");
+      setPublicSettings(res.data);
+    } catch (err) {
+      console.error("toggle error:", err);
+    } finally {
+      setSettingsLoading(false);
+    }
+  };
+
+  const handleGenerateFriendCode = async () => {
+    setSettingsLoading(true);
+    try {
+      const res = await apiHandler.patch("/wishlist/settings/friendcode", {
+        action: "generate",
+      });
+      setPublicSettings((prev) => ({
+        ...prev,
+        friendCode: res.data.friendCode,
+      }));
+    } catch (err) {
+      console.error("friendcode error:", err);
+    } finally {
+      setSettingsLoading(false);
+    }
+  };
+
+  const handleRemoveFriendCode = async () => {
+    setSettingsLoading(true);
+    try {
+      await apiHandler.patch("/wishlist/settings/friendcode", {
+        action: "remove",
+      });
+      setPublicSettings((prev) => ({ ...prev, friendCode: null }));
+    } catch (err) {
+      console.error("remove friendcode error:", err);
+    } finally {
+      setSettingsLoading(false);
+    }
+  };
+
+  const handleCopyUrl = () => {
+    if (!publicSettings.publicUrl) return;
+    navigator.clipboard.writeText(publicSettings.publicUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  // ─── Items avec réservations guests ──────────────────────
+  // Séparer les items normaux des items réservés par un guest
+  const guestReservedItems = wishlistItems.filter(
+    (item) => item.reservedByGuest && !item.isPurchased,
+  );
+  const normalItems = wishlistItems.filter((item) => !item.reservedByGuest);
+
+  // ─── Render ───────────────────────────────────────────────
   if (isLoading) return <p className="loading">Chargement...</p>;
 
   return (
@@ -197,6 +302,59 @@ const Wishlist = () => {
         <h2>🎁 Ma Wishlist</h2>
       </div>
 
+      {/* Settings partage public */}
+      <WishlistPublicSettings
+        settings={publicSettings}
+        loading={settingsLoading}
+        copied={copied}
+        onToggle={handleTogglePublic}
+        onCopyUrl={handleCopyUrl}
+        onGenerateFriendCode={handleGenerateFriendCode}
+        onRemoveFriendCode={handleRemoveFriendCode}
+      />
+
+      {/* Réservations guests en attente */}
+      {guestReservedItems.length > 0 && (
+        <div className="wrl-section">
+          <h4 className="wrl-title">
+            🔔 Réservés par des visiteurs ({guestReservedItems.length})
+          </h4>
+          <p className="wrl-subtitle">
+            Ces cadeaux ont été réservés depuis ta page publique.
+          </p>
+          <div className="wrl-list">
+            {guestReservedItems.map((item) => (
+              <div key={item._id} className="wrl-item">
+                <div className="wrl-item-info">
+                  {item.image && (
+                    <img
+                      src={item.image}
+                      alt={item.title}
+                      className="wrl-item-img"
+                      onError={(e) => (e.target.style.display = "none")}
+                    />
+                  )}
+                  <div className="wrl-item-text">
+                    <span className="wrl-item-title">{item.title}</span>
+                    <span className="wrl-item-by">
+                      Réservé par <strong>{item.reservedByGuest}</strong>
+                    </span>
+                  </div>
+                </div>
+                <button
+                  className="wrl-cancel-btn"
+                  onClick={() => handleCancelReservation(item._id)}
+                  disabled={cancellingReservationId === item._id}
+                >
+                  {cancellingReservationId === item._id ? "…" : "Annuler"}
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Formulaire ajout / édition */}
       {showForm && (
         <div className="gift-form-card">
           <h3>{editingItem ? "Modifier l'idée" : "Nouvelle idée"}</h3>
@@ -305,13 +463,14 @@ const Wishlist = () => {
         </div>
       )}
 
-      {wishlistItems.length === 0 && !showForm ? (
+      {/* Liste */}
+      {normalItems.length === 0 && !showForm ? (
         <p className="gift-empty">
           Votre wishlist est vide. Ajoutez vos envies ! 🎁
         </p>
       ) : (
         <GiftCardGrid
-          items={wishlistItems}
+          items={normalItems}
           type="wishlist"
           currentUserId={currentUser._id}
           onEdit={handleEdit}

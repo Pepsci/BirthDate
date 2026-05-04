@@ -1,4 +1,4 @@
-import { Route, Routes } from "react-router-dom";
+import { Route, Routes, useLocation } from "react-router-dom";
 import React, { useState, useEffect } from "react";
 import "./App.css";
 import AuthPage from "./components/connect/AuthPage";
@@ -27,9 +27,14 @@ import EventsPanel from "./components/events/EventsPanel";
 import EventPage from "./components/events/EventPage";
 import EventForm from "./components/events/EventForm";
 import NotificationToast from "./components/notifications/NotificationToast";
+import PublicWishlist from "./components/wishlist/PublicWishlist";
+
+// Pages sans footer
+const NO_FOOTER_ROUTES = ["/wishlist"];
 
 function App() {
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const location = useLocation();
 
   useEffect(() => {
     const handler = () => setIsMobile(window.innerWidth <= 768);
@@ -37,11 +42,14 @@ function App() {
     return () => window.removeEventListener("resize", handler);
   }, []);
 
+  const showFooter =
+    !isMobile &&
+    !NO_FOOTER_ROUTES.some((path) => location.pathname.startsWith(path));
+
   return (
     <div className="App">
       <div className="routeContent">
         <ScrollToTop />
-        {/* Toast en dehors des Routes — toujours monté */}
         <NotificationToast />
         <Routes>
           <Route path="/" element={<LandingPage />} />
@@ -69,8 +77,9 @@ function App() {
           <Route path="/auth/reset/:token" element={<ResetPassword />} />
           <Route path="/verify-email" element={<VerifyEmail />} />
 
-          {/* Route publique */}
+          {/* ── Routes publiques ── */}
           <Route path="/event/:shortId" element={<EventPage />} />
+          <Route path="/wishlist/:publicSlug" element={<PublicWishlist />} />
 
           <Route element={<PrivateRoute />}>
             <Route path="/home" element={<Home />} />
@@ -94,7 +103,7 @@ function App() {
           </Route>
         </Routes>
         <CookieBanner />
-        {!isMobile && <Footer />}
+        {showFooter && <Footer />}
       </div>
     </div>
   );

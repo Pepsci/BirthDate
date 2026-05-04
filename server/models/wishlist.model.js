@@ -1,6 +1,5 @@
 const { Schema, model } = require("mongoose");
 
-// Wishlist ultra-simple
 const wishlistSchema = Schema({
   // À qui appartient cet item
   userId: {
@@ -29,7 +28,7 @@ const wishlistSchema = Schema({
     trim: true,
   },
 
-  // Image récupérée depuis l'URL (on stocke juste le lien, pas le fichier)
+  // Image récupérée depuis l'URL
   image: {
     type: String,
     trim: true,
@@ -44,12 +43,10 @@ const wishlistSchema = Schema({
     default: null,
   },
 
-  // Partage : simple ON/OFF
+  // Partage avec les amis inscrits
   isShared: {
     type: Boolean,
     default: false,
-    // false = privé (personne ne voit)
-    // true = partagé (tous mes contacts peuvent voir)
   },
 
   // Statut d'achat
@@ -58,19 +55,19 @@ const wishlistSchema = Schema({
     default: false,
   },
 
-  // Qui l'a acheté
+  // Qui l'a acheté (ami inscrit)
   purchasedBy: {
     type: Schema.Types.ObjectId,
     ref: "User",
     default: null,
   },
 
-  // Quand ça a été acheté
   purchasedAt: {
     type: Date,
     default: null,
   },
 
+  // Réservation par un ami inscrit
   reservedBy: {
     type: Schema.Types.ObjectId,
     ref: "User",
@@ -79,6 +76,13 @@ const wishlistSchema = Schema({
 
   reservedAt: {
     type: Date,
+    default: null,
+  },
+
+  // ── Réservation par un guest sans compte (page publique) ──
+  // Séparé de reservedBy pour ne pas casser la ref User existante
+  reservedByGuest: {
+    type: String,
     default: null,
   },
 
@@ -94,11 +98,9 @@ const wishlistSchema = Schema({
   },
 });
 
-// Index pour optimiser les recherches
 wishlistSchema.index({ userId: 1 });
 wishlistSchema.index({ userId: 1, isPurchased: 1 });
 
-// Mettre à jour la date de modification automatiquement
 wishlistSchema.pre("save", function (next) {
   this.updatedAt = Date.now();
   next();
