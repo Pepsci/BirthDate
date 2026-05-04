@@ -4,7 +4,7 @@ import useAuth from "../../context/useAuth";
 import GiftCardGrid from "../UI/GiftCardGrid";
 import WishlistPublicSettings from "./WishlistPublicSettings";
 import "../UI/css/gifts-common.css";
-import "./css/WishlistReservations.css";
+import "./css/wishlistReservations.css";
 
 const Wishlist = () => {
   const { currentUser } = useAuth();
