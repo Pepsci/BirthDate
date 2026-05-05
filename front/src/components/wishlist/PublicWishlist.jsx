@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
-import "./css/publicWishlist.css";
+import "./css/PublicWishlist.css";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000/api";
+const API_URL = import.meta.env.VITE_APP_BACKEND_URL
+  ? `${import.meta.env.VITE_APP_BACKEND_URL}/api`
+  : "http://localhost:4000/api";
 
 // Clé localStorage pour les réservations de ce visiteur sur ce slug
 function storageKey(slug) {
