@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
-import "./css/publicWishlist.css";
+import "./css/PublicWishlist.css";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000/api";
 
@@ -75,7 +75,7 @@ export default function PublicWishlist() {
     try {
       setLoading(true);
       const res = await axios.get(`${API_URL}/wishlist/public/${publicSlug}`);
-      setItems(res.data.items);
+      setItems(res.data.items || []);
       setHasFriendCode(res.data.hasFriendCode);
       if (!res.data.hasFriendCode) {
         setIsVerified(true);
@@ -213,7 +213,7 @@ export default function PublicWishlist() {
   }
 
   // Filtrer les items achetés — ils n'ont plus lieu d'être affichés
-  const visibleItems = items.filter((item) => !item.isPurchased);
+  const visibleItems = (items || []).filter((item) => !item.isPurchased);
 
   return (
     <div className="pwl-page">
