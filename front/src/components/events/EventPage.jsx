@@ -15,6 +15,7 @@ import LocationVotePanel from "./LocationVotePanel";
 import GiftProposalPanel from "./GiftProposalPanel";
 import InviteModal from "./InviteModal";
 import EventNotifPrefs from "./EventNotifPrefs";
+import ChatModal from "../chat/ChatModal";
 import "./css/eventPage.css";
 
 delete L.Icon.Default.prototype._getIconUrl;
@@ -196,6 +197,7 @@ const EventPage = () => {
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [activeTab, setActiveTab] = useState("info");
   const [myDateVotes, setMyDateVotes] = useState([]);
+  const [showChatModal, setShowChatModal] = useState(false);
 
   const participants = useMemo(() => {
     const map = {};
@@ -527,7 +529,13 @@ const EventPage = () => {
                 <motion.button
                   key={tab.id}
                   className={`ep-tab ${activeTab === tab.id ? "active" : ""}`}
-                  onClick={() => setActiveTab(tab.id)}
+                  onClick={() => {
+                    if (tab.id === "chat" && window.innerWidth <= 768) {
+                      setShowChatModal(true);
+                    } else {
+                      setActiveTab(tab.id);
+                    }
+                  }}
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.97 }}
                 >
@@ -854,7 +862,6 @@ const EventPage = () => {
                 </motion.div>
               )}
 
-              {/* ── Tab Notifications (organisateur uniquement) ── */}
               {activeTab === "notifications" && isOrganizer && (
                 <motion.div
                   key="notifications"
@@ -953,6 +960,14 @@ const EventPage = () => {
           />
         )}
       </AnimatePresence>
+
+      <ChatModal
+        isOpen={showChatModal}
+        onClose={() => setShowChatModal(false)}
+        title="Discussion"
+      >
+        <EventChat shortId={event?.shortId} participants={participants} />
+      </ChatModal>
     </div>
   );
 };
