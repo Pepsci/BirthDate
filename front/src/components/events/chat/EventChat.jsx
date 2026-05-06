@@ -8,7 +8,7 @@ import {
   encryptMessage,
   decryptMessage,
 } from "../../../utils/encryption";
-import "./css/eventchat.css";
+import "./css/eventChat.css";
 
 const EventChat = ({ shortId, participants = {} }) => {
   const [messages, setMessages] = useState([]);
