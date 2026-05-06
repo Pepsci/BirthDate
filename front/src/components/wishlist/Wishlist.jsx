@@ -98,13 +98,27 @@ const Wishlist = () => {
       const r = await apiHandler.post("/wishlist/fetch-url", {
         url: formData.url,
       });
+
+      // ── Appliquer l'URL affiliée si le backend en retourne une ──
+      // Le backend retourne toujours affiliateUrl pour les URLs Amazon
+      // (tag birthreminder-21 ajouté automatiquement)
+      if (r.data.affiliateUrl) {
+        setFormData((prev) => ({ ...prev, url: r.data.affiliateUrl }));
+      }
+
       if (!r.data.success) {
+        // Amazon bloqué mais lien affilié appliqué
+        const isAffiliated =
+          r.data.affiliateUrl && r.data.affiliateUrl !== formData.url;
         setFetchMessage({
           type: "warning",
-          text: `⚠️ ${r.data.message || "Ce site ne permet pas la récupération automatique"}`,
+          text: isAffiliated
+            ? `⚠️ ${r.data.message} — Lien affilié appliqué ✓`
+            : `⚠️ ${r.data.message || "Ce site ne permet pas la récupération automatique"}`,
         });
         return;
       }
+
       const { title, description, image, price } = r.data.data;
       setFormData((prev) => ({
         ...prev,
@@ -113,10 +127,12 @@ const Wishlist = () => {
         image: image || prev.image,
         price: price || prev.price,
       }));
+
       const missing = [];
       if (!title) missing.push("titre");
       if (!price) missing.push("prix");
       if (!image) missing.push("image");
+
       setFetchMessage(
         missing.length === 0
           ? { type: "success", text: "✓ Infos récupérées !" }
@@ -287,7 +303,6 @@ const Wishlist = () => {
   };
 
   // ─── Items avec réservations guests ──────────────────────
-  // Séparer les items normaux des items réservés par un guest
   const guestReservedItems = wishlistItems.filter(
     (item) => item.reservedByGuest && !item.isPurchased,
   );

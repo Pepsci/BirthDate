@@ -11,9 +11,58 @@ const { isAuthenticated } = require("../middleware/jwt.middleware");
 const { notify } = require("../utils/notify");
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Tag affilié Amazon
+// ─────────────────────────────────────────────────────────────────────────────
+const AMAZON_AFFILIATE_TAG = "birthreminder-21";
+
+const AMAZON_DOMAINS = [
+  "amazon.fr",
+  "amazon.com",
+  "amazon.co.uk",
+  "amazon.de",
+  "amazon.es",
+  "amazon.it",
+];
+
+function isAmazonUrl(url) {
+  try {
+    const hostname = new URL(url).hostname.toLowerCase().replace("www.", "");
+    return AMAZON_DOMAINS.some(
+      (domain) => hostname === domain || hostname.endsWith("." + domain),
+    );
+  } catch {
+    return false;
+  }
+}
+
+function addAffiliateTag(url) {
+  try {
+    const parsed = new URL(url);
+    // Garder uniquement les paramètres essentiels
+    const keepParams = ["dp", "node", "keywords", "th", "psc"];
+    const cleanParams = new URLSearchParams();
+    for (const [key, value] of parsed.searchParams) {
+      if (keepParams.includes(key)) {
+        cleanParams.set(key, value);
+      }
+    }
+    cleanParams.set("tag", AMAZON_AFFILIATE_TAG);
+    parsed.search = cleanParams.toString();
+    return parsed.toString();
+  } catch {
+    return url;
+  }
+}
+
+function processUrl(url) {
+  if (!url) return url;
+  if (isAmazonUrl(url)) return addAffiliateTag(url);
+  return url;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // IMPORTANT : L'ordre des routes est critique.
-// Les routes avec chemins fixes (/fetch-url, /settings, /user/:userId)
-// DOIVENT être déclarées AVANT les routes avec paramètres (/:id)
+// Les routes avec chemins fixes DOIVENT être déclarées AVANT /:id
 // ─────────────────────────────────────────────────────────────────────────────
 
 // POST /api/wishlist/fetch-url
@@ -25,22 +74,27 @@ router.post("/fetch-url", isAuthenticated, async (req, res) => {
       return res.status(400).json({ message: "URL requise" });
     }
 
-    const blockedDomains = [
+    // Toujours traiter l'URL pour générer le lien affilié si Amazon
+    const affiliateUrl = processUrl(url);
+
+    // Domaines qui bloquent le scraping
+    const blockedScraping = [
       { domain: "amazon", name: "Amazon" },
       { domain: "fnac", name: "Fnac" },
       { domain: "micromania", name: "Micromania" },
     ];
 
-    const matched = blockedDomains.find((site) =>
+    const matchedBlocked = blockedScraping.find((site) =>
       url.toLowerCase().includes(site.domain),
     );
 
-    if (matched) {
+    if (matchedBlocked) {
       return res.status(200).json({
         success: false,
         blocked: true,
-        message: `${matched.name} ne supporte pas le remplissage automatique — remplis les champs manuellement`,
+        message: `${matchedBlocked.name} ne supporte pas le remplissage automatique — remplis les champs manuellement`,
         data: null,
+        affiliateUrl,
       });
     }
 
@@ -69,6 +123,7 @@ router.post("/fetch-url", isAuthenticated, async (req, res) => {
             price: isNaN(price) ? null : price,
             currency: result.ogPriceCurrency || "EUR",
           },
+          affiliateUrl,
         });
       }
     } catch (ogsError) {
@@ -112,6 +167,7 @@ router.post("/fetch-url", isAuthenticated, async (req, res) => {
         success: false,
         message: "Impossible de récupérer les infos de ce site",
         data: null,
+        affiliateUrl,
       });
     }
 
@@ -124,6 +180,7 @@ router.post("/fetch-url", isAuthenticated, async (req, res) => {
         price: isNaN(cleanPrice) ? null : cleanPrice,
         currency: "EUR",
       },
+      affiliateUrl,
     });
   } catch (error) {
     console.error("Erreur fetch-url:", error.message);
@@ -136,7 +193,6 @@ router.post("/fetch-url", isAuthenticated, async (req, res) => {
 });
 
 // ─── Settings partage public ──────────────────────────────────────────────────
-// Ces 3 routes DOIVENT rester avant GET /:id et PATCH /:id
 
 // GET /api/wishlist/settings
 router.get("/settings", isAuthenticated, async (req, res) => {
@@ -172,7 +228,6 @@ router.patch("/settings/toggle", isAuthenticated, async (req, res) => {
       return res.status(404).json({ message: "Utilisateur introuvable" });
     }
 
-    // Générer le slug uniquement à la première activation
     if (!user.wishlistPublicSlug) {
       let slug;
       let exists = true;
@@ -199,7 +254,6 @@ router.patch("/settings/toggle", isAuthenticated, async (req, res) => {
 });
 
 // PATCH /api/wishlist/settings/friendcode
-// Body: { action: "generate" | "remove" }
 router.patch("/settings/friendcode", isAuthenticated, async (req, res) => {
   try {
     const { action } = req.body;
@@ -228,7 +282,6 @@ router.patch("/settings/friendcode", isAuthenticated, async (req, res) => {
 });
 
 // ─── GET /api/wishlist/user/:userId ──────────────────────────────────────────
-// Avant /:id pour éviter que "user" soit capturé comme un id
 router.get("/user/:userId", isAuthenticated, async (req, res, next) => {
   try {
     const { userId } = req.params;
@@ -280,12 +333,16 @@ router.get("/", isAuthenticated, async (req, res, next) => {
 // ─── POST /api/wishlist ───────────────────────────────────────────────────────
 router.post("/", isAuthenticated, async (req, res, next) => {
   try {
-    const { title, description, price, url, image, isShared } = req.body;
+    const { title, description, price, image, isShared } = req.body;
+    let { url } = req.body;
     const userId = req.payload._id;
 
     if (!title) {
       return res.status(400).json({ message: "title requis" });
     }
+
+    // Transformer l'URL en lien affilié si Amazon
+    url = processUrl(url);
 
     const item = await WishlistModel.create({
       userId,
@@ -305,6 +362,44 @@ router.post("/", isAuthenticated, async (req, res, next) => {
 });
 
 // ─── Routes avec /:id — toujours EN DERNIER ──────────────────────────────────
+
+// DELETE /api/wishlist/:id/reservation
+router.delete("/:id/reservation", isAuthenticated, async (req, res) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.id)) {
+      return res.status(400).json({ message: "Invalid Item ID" });
+    }
+
+    const item = await WishlistModel.findOne({
+      _id: req.params.id,
+      userId: req.payload._id,
+    });
+
+    if (!item) {
+      return res
+        .status(404)
+        .json({ message: "Item non trouvé ou non autorisé" });
+    }
+
+    if (!item.reservedBy && !item.reservedByGuest) {
+      return res.status(400).json({ message: "Cet item n'est pas réservé" });
+    }
+
+    item.reservedBy = null;
+    item.reservedByGuest = null;
+    item.reservedAt = null;
+    await item.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Réservation annulée",
+      data: item,
+    });
+  } catch (error) {
+    console.error("Erreur annulation réservation propriétaire:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+});
 
 // POST /api/wishlist/:id/reserve
 router.post("/:id/reserve", isAuthenticated, async (req, res) => {
@@ -485,51 +580,6 @@ router.post("/:id/gift-offered", isAuthenticated, async (req, res) => {
   }
 });
 
-// ============================================================
-// PATCH server/routes/wishlist.js
-// Ajouter cette route AVANT les routes /:id existantes
-// ============================================================
-
-// DELETE /api/wishlist/:id/reservation
-// Annule une réservation (guest ou ami) — réservé au propriétaire de l'item
-router.delete("/:id/reservation", isAuthenticated, async (req, res) => {
-  try {
-    if (!mongoose.isValidObjectId(req.params.id)) {
-      return res.status(400).json({ message: "Invalid Item ID" });
-    }
-
-    // Vérifier que c'est bien le propriétaire qui annule
-    const item = await WishlistModel.findOne({
-      _id: req.params.id,
-      userId: req.payload._id,
-    });
-
-    if (!item) {
-      return res
-        .status(404)
-        .json({ message: "Item non trouvé ou non autorisé" });
-    }
-
-    if (!item.reservedBy && !item.reservedByGuest) {
-      return res.status(400).json({ message: "Cet item n'est pas réservé" });
-    }
-
-    item.reservedBy = null;
-    item.reservedByGuest = null;
-    item.reservedAt = null;
-    await item.save();
-
-    res.status(200).json({
-      success: true,
-      message: "Réservation annulée",
-      data: item,
-    });
-  } catch (error) {
-    console.error("Erreur annulation réservation propriétaire:", error);
-    res.status(500).json({ message: "Internal Server Error" });
-  }
-});
-
 // POST /api/wishlist/:id/purchase
 router.post("/:id/purchase", isAuthenticated, async (req, res, next) => {
   try {
@@ -620,7 +670,11 @@ router.patch("/:id", isAuthenticated, async (req, res, next) => {
       return res.status(400).json({ message: "Invalid Item ID" });
     }
 
-    const { title, description, price, url, image, isShared } = req.body;
+    const { title, description, price, image, isShared } = req.body;
+    let { url } = req.body;
+
+    // Transformer l'URL en lien affilié si Amazon
+    url = processUrl(url);
 
     const updatedItem = await WishlistModel.findOneAndUpdate(
       { _id: req.params.id, userId: req.payload._id },

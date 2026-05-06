@@ -535,3 +535,40 @@
     gap: 0.25rem;
   }
 }
+
+/* ── Code input dans modal ── */
+.pwl-code-input--modal {
+  width: 100%;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: 0.3em;
+  text-align: center;
+  color: var(--text-primary);
+  outline: none;
+  transition: border-color 0.2s;
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+  box-sizing: border-box;
+}
+
+.pwl-code-input--modal:focus {
+  border-color: var(--primary);
+}
+
+.pwl-code-error {
+  color: var(--danger);
+  font-size: 0.85rem;
+  margin: 0 0 0.5rem;
+  text-align: center;
+}
+
+/* ── Notice RGPD dans modal nom ── */
+.pwl-rgpd-notice {
+  color: var(--text-tertiary);
+  font-size: 0.75rem;
+  line-height: 1.4;
+}

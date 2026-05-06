@@ -1,17 +1,17 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
-import "./css/publicWishlist.css";
+import "./css/PublicWishlist.css";
 
-const API_URL = import.meta.env.VITE_APP_BACKEND_URL
-  ? `${import.meta.env.VITE_APP_BACKEND_URL}/api`
-  : "http://localhost:4000/api";
+const API_URL =
+  window.location.hostname === "localhost"
+    ? "http://localhost:4000/api"
+    : "https://birthreminder.com/api";
 
-// Clé localStorage pour les réservations de ce visiteur sur ce slug
+// ─── LocalStorage helpers ─────────────────────────────────
 function storageKey(slug) {
   return `pwl_reserved_${slug}`;
 }
-
 function getMyReservations(slug) {
   try {
     return JSON.parse(localStorage.getItem(storageKey(slug)) || "[]");
@@ -19,7 +19,6 @@ function getMyReservations(slug) {
     return [];
   }
 }
-
 function saveMyReservation(slug, itemId) {
   const current = getMyReservations(slug);
   if (!current.includes(itemId)) {
@@ -29,7 +28,6 @@ function saveMyReservation(slug, itemId) {
     );
   }
 }
-
 function removeMyReservation(slug, itemId) {
   const current = getMyReservations(slug);
   localStorage.setItem(
@@ -43,14 +41,10 @@ export default function PublicWishlist() {
 
   const [items, setItems] = useState([]);
   const [hasFriendCode, setHasFriendCode] = useState(false);
+  // isVerified = le visiteur a entré le bon code ami
+  // Si pas de code requis, isVerified = true d'emblée
   const [isVerified, setIsVerified] = useState(false);
   const [verifiedCode, setVerifiedCode] = useState("");
-  const [codeInput, setCodeInput] = useState("");
-  const [codeError, setCodeError] = useState("");
-  const [guestName, setGuestName] = useState(
-    () => localStorage.getItem("wishlist_guest_name") || "",
-  );
-  const [guestNameInput, setGuestNameInput] = useState("");
   const [myReservations, setMyReservations] = useState(() =>
     getMyReservations(publicSlug),
   );
@@ -58,7 +52,18 @@ export default function PublicWishlist() {
   const [error, setError] = useState(null);
   const [reservingId, setReservingId] = useState(null);
   const [toast, setToast] = useState(null);
+
+  // Modal code ami (affiché au moment de réserver, pas à l'entrée)
+  const [showCodeModal, setShowCodeModal] = useState(false);
+  const [codeInput, setCodeInput] = useState("");
+  const [codeError, setCodeError] = useState("");
+
+  // Modal nom visiteur
   const [showNameModal, setShowNameModal] = useState(false);
+  const [guestName, setGuestName] = useState(
+    () => localStorage.getItem("wishlist_guest_name") || "",
+  );
+  const [guestNameInput, setGuestNameInput] = useState("");
   const [pendingAction, setPendingAction] = useState(null);
 
   useEffect(() => {
@@ -69,7 +74,6 @@ export default function PublicWishlist() {
       setVerifiedCode(sessionCode);
       setIsVerified(true);
     }
-    // Restaurer mes réservations
     setMyReservations(getMyReservations(publicSlug));
   }, [publicSlug]);
 
@@ -78,7 +82,8 @@ export default function PublicWishlist() {
       setLoading(true);
       const res = await axios.get(`${API_URL}/wishlist/public/${publicSlug}`);
       setItems(res.data.items || []);
-      setHasFriendCode(res.data.hasFriendCode);
+      setHasFriendCode(res.data.hasFriendCode || false);
+      // Si pas de code requis → accès direct aux actions
       if (!res.data.hasFriendCode) {
         setIsVerified(true);
       }
@@ -95,6 +100,7 @@ export default function PublicWishlist() {
     }
   }
 
+  // ─── Vérification du code ami ─────────────────────────────
   async function handleVerifyCode(e) {
     e.preventDefault();
     setCodeError("");
@@ -105,6 +111,12 @@ export default function PublicWishlist() {
       setVerifiedCode(codeInput);
       setIsVerified(true);
       sessionStorage.setItem(`code_${publicSlug}`, codeInput);
+      setShowCodeModal(false);
+      // Relancer l'action en attente
+      if (pendingAction?.type === "reserve") {
+        await doReserve(pendingAction.itemId, guestName || pendingAction.name);
+      }
+      setPendingAction(null);
     } catch (err) {
       setCodeError(err.response?.data?.message || "Code incorrect. Réessaie.");
     }
@@ -115,10 +127,18 @@ export default function PublicWishlist() {
     setTimeout(() => setToast(null), 3000);
   }
 
+  // ─── Réservation ──────────────────────────────────────────
   async function handleReserve(itemId) {
+    // Étape 1 : demander le nom si pas encore renseigné
     if (!guestName) {
       setPendingAction({ type: "reserve", itemId });
       setShowNameModal(true);
+      return;
+    }
+    // Étape 2 : demander le code si requis et pas encore vérifié
+    if (hasFriendCode && !isVerified) {
+      setPendingAction({ type: "reserve", itemId });
+      setShowCodeModal(true);
       return;
     }
     await doReserve(itemId, guestName);
@@ -134,7 +154,6 @@ export default function PublicWishlist() {
           guestName: name,
         },
       );
-      // Mémoriser que CE visiteur a réservé cet item
       saveMyReservation(publicSlug, itemId);
       setMyReservations(getMyReservations(publicSlug));
       showToast("Cadeau réservé ! 🎁");
@@ -143,7 +162,10 @@ export default function PublicWishlist() {
       if (err.response?.status === 409) {
         showToast("Ce cadeau est déjà réservé.", "error");
       } else if (err.response?.status === 401) {
-        showToast("Code ami invalide. Recharge la page.", "error");
+        // Code expiré ou invalide → redemander
+        setIsVerified(false);
+        setPendingAction({ type: "reserve", itemId });
+        setShowCodeModal(true);
       } else {
         showToast("Une erreur est survenue.", "error");
       }
@@ -153,11 +175,6 @@ export default function PublicWishlist() {
   }
 
   async function handleUnreserve(itemId) {
-    if (!guestName) {
-      setPendingAction({ type: "unreserve", itemId });
-      setShowNameModal(true);
-      return;
-    }
     setReservingId(itemId);
     try {
       await axios.post(
@@ -167,7 +184,6 @@ export default function PublicWishlist() {
           guestName,
         },
       );
-      // Retirer la réservation du localStorage
       removeMyReservation(publicSlug, itemId);
       setMyReservations(getMyReservations(publicSlug));
       showToast("Réservation annulée.");
@@ -179,6 +195,7 @@ export default function PublicWishlist() {
     }
   }
 
+  // ─── Modal nom visiteur ───────────────────────────────────
   function handleNameSubmit(e) {
     e.preventDefault();
     if (!guestNameInput.trim()) return;
@@ -186,16 +203,20 @@ export default function PublicWishlist() {
     setGuestName(name);
     localStorage.setItem("wishlist_guest_name", name);
     setShowNameModal(false);
+
     if (pendingAction?.type === "reserve") {
-      doReserve(pendingAction.itemId, name);
-    } else if (pendingAction?.type === "unreserve") {
-      handleUnreserve(pendingAction.itemId);
+      // Après le nom, vérifier si le code est encore requis
+      if (hasFriendCode && !isVerified) {
+        setPendingAction({ ...pendingAction, name });
+        setShowCodeModal(true);
+      } else {
+        doReserve(pendingAction.itemId, name);
+        setPendingAction(null);
+      }
     }
-    setPendingAction(null);
   }
 
   // ─── Render ───────────────────────────────────────────────
-
   if (loading) {
     return (
       <div className="pwl-loading">
@@ -214,7 +235,6 @@ export default function PublicWishlist() {
     );
   }
 
-  // Filtrer les items achetés — ils n'ont plus lieu d'être affichés
   const visibleItems = (items || []).filter((item) => !item.isPurchased);
 
   return (
@@ -229,75 +249,92 @@ export default function PublicWishlist() {
       </header>
 
       <main className="pwl-main">
-        {/* Code gate */}
-        {hasFriendCode && !isVerified ? (
-          <div className="pwl-code-gate">
-            <div className="pwl-code-card">
-              <span className="pwl-code-icon">🔒</span>
-              <h2>Liste privée</h2>
-              <p>Entre le code partagé par ton ami pour accéder aux cadeaux.</p>
-              <form onSubmit={handleVerifyCode} className="pwl-code-form">
-                <input
-                  type="text"
-                  value={codeInput}
-                  onChange={(e) => setCodeInput(e.target.value.toUpperCase())}
-                  placeholder="CODE AMI"
-                  maxLength={6}
-                  className="pwl-code-input"
-                  autoFocus
-                />
-                {codeError && <p className="pwl-code-error">{codeError}</p>}
-                <button type="submit" className="pwl-code-btn">
-                  Accéder à la liste
-                </button>
-              </form>
-            </div>
+        {visibleItems.length === 0 ? (
+          <div className="pwl-empty">
+            <span>🎁</span>
+            <p>Aucun cadeau disponible pour l'instant.</p>
           </div>
         ) : (
           <>
-            {visibleItems.length === 0 ? (
-              <div className="pwl-empty">
-                <span>🎁</span>
-                <p>Aucun cadeau disponible pour l'instant.</p>
-              </div>
-            ) : (
-              <>
-                <p className="pwl-count">
-                  {visibleItems.length} idée{visibleItems.length > 1 ? "s" : ""}{" "}
-                  cadeau
-                </p>
-                <div className="pwl-grid">
-                  {visibleItems.map((item) => (
-                    <WishlistCard
-                      key={item._id}
-                      item={item}
-                      isVerified={isVerified}
-                      reservingId={reservingId}
-                      // Est-ce que CE visiteur a réservé cet item ?
-                      isReservedByMe={myReservations.includes(item._id)}
-                      onReserve={handleReserve}
-                      onUnreserve={handleUnreserve}
-                    />
-                  ))}
-                </div>
-              </>
-            )}
-
-            <p className="pwl-affiliate-notice">
-              En tant que Partenaire Amazon, BirthReminder réalise un bénéfice
-              sur les achats remplissant les conditions requises.
+            <p className="pwl-count">
+              {visibleItems.length} idée{visibleItems.length > 1 ? "s" : ""}{" "}
+              cadeau
             </p>
+            <div className="pwl-grid">
+              {visibleItems.map((item) => (
+                <WishlistCard
+                  key={item._id}
+                  item={item}
+                  reservingId={reservingId}
+                  isReservedByMe={myReservations.includes(item._id)}
+                  onReserve={handleReserve}
+                  onUnreserve={handleUnreserve}
+                />
+              ))}
+            </div>
           </>
         )}
+
+        <p className="pwl-affiliate-notice">
+          En tant que Partenaire Amazon, BirthReminder réalise un bénéfice sur
+          les achats remplissant les conditions requises.
+        </p>
       </main>
 
-      {/* Modal nom visiteur */}
+      {/* ── Modal code ami (affiché au moment de réserver) ── */}
+      {showCodeModal && (
+        <div className="pwl-modal-overlay">
+          <div className="pwl-modal">
+            <h3>🔒 Code ami requis</h3>
+            <p>Entre le code partagé par ton ami pour réserver ce cadeau.</p>
+            <form onSubmit={handleVerifyCode}>
+              <input
+                type="text"
+                value={codeInput}
+                onChange={(e) => setCodeInput(e.target.value.toUpperCase())}
+                placeholder="CODE AMI"
+                maxLength={6}
+                autoFocus
+                className="pwl-code-input pwl-code-input--modal"
+              />
+              {codeError && <p className="pwl-code-error">{codeError}</p>}
+              <div className="pwl-modal-actions">
+                <button
+                  type="button"
+                  className="pwl-modal-cancel"
+                  onClick={() => {
+                    setShowCodeModal(false);
+                    setPendingAction(null);
+                    setCodeError("");
+                  }}
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  className="pwl-modal-confirm"
+                  disabled={!codeInput.trim()}
+                >
+                  Valider
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal nom visiteur ── */}
       {showNameModal && (
         <div className="pwl-modal-overlay">
           <div className="pwl-modal">
             <h3>Qui es-tu ?</h3>
             <p>
               Indique ton prénom pour que ton ami sache qui a réservé ce cadeau.
+              <br />
+              <small className="pwl-rgpd-notice">
+                Ton prénom sera visible uniquement par le propriétaire de cette
+                liste.
+              </small>
             </p>
             <form onSubmit={handleNameSubmit}>
               <input
@@ -333,7 +370,7 @@ export default function PublicWishlist() {
         </div>
       )}
 
-      {/* Toast */}
+      {/* ── Toast ── */}
       {toast && (
         <div className={`pwl-toast pwl-toast--${toast.type}`}>
           {toast.message}
@@ -347,7 +384,6 @@ export default function PublicWishlist() {
 
 function WishlistCard({
   item,
-  isVerified,
   reservingId,
   isReservedByMe,
   onReserve,
@@ -359,7 +395,7 @@ function WishlistCard({
     <article
       className={`pwl-card ${item.isReserved ? "pwl-card--reserved" : ""}`}
     >
-      {/* Badge — réservé par quelqu'un */}
+      {/* Badge */}
       {item.isReserved && !isReservedByMe && (
         <span className="pwl-badge pwl-badge--reserved">Réservé</span>
       )}
@@ -410,32 +446,26 @@ function WishlistCard({
           </a>
         )}
 
-        {isVerified && (
-          <>
-            {/* Pas encore réservé → bouton réserver */}
-            {!item.isReserved && (
-              <button
-                className="pwl-btn pwl-btn--reserve"
-                onClick={() => onReserve(item._id)}
-                disabled={isLoading}
-              >
-                {isLoading ? "…" : "🎁 Je l'offre"}
-              </button>
-            )}
+        {/* Pas encore réservé → bouton réserver */}
+        {!item.isReserved && (
+          <button
+            className="pwl-btn pwl-btn--reserve"
+            onClick={() => onReserve(item._id)}
+            disabled={isLoading}
+          >
+            {isLoading ? "…" : "🎁 Je l'offre"}
+          </button>
+        )}
 
-            {/* Réservé par MOI → bouton annuler */}
-            {item.isReserved && isReservedByMe && (
-              <button
-                className="pwl-btn pwl-btn--unreserve"
-                onClick={() => onUnreserve(item._id)}
-                disabled={isLoading}
-              >
-                {isLoading ? "…" : "Annuler ma réservation"}
-              </button>
-            )}
-
-            {/* Réservé par quelqu'un d'autre → rien */}
-          </>
+        {/* Réservé par moi → annuler */}
+        {item.isReserved && isReservedByMe && (
+          <button
+            className="pwl-btn pwl-btn--unreserve"
+            onClick={() => onUnreserve(item._id)}
+            disabled={isLoading}
+          >
+            {isLoading ? "…" : "Annuler ma réservation"}
+          </button>
         )}
       </div>
     </article>
