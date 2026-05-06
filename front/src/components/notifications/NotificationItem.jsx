@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import useNotifications from "../../context/useNotifications";
-import "./css/NotificationItem.css";
+import "./css/notificationItem.css";
 
 const TYPE_CONFIG = {
   birthday_soon: { icon: "🎂" },
@@ -14,6 +14,7 @@ const TYPE_CONFIG = {
   event_location_vote: { icon: "📍" },
   event_gift_proposed: { icon: "🎁" },
   event_gift_vote: { icon: "❤️" },
+  event_chat_message: { icon: "💬" },
 };
 
 const timeAgo = (dateStr) => {
@@ -115,6 +116,13 @@ const buildText = (type, data) => {
         <>
           <strong>{data.voterName}</strong> vote pour le cadeau{" "}
           <strong>{data.giftName}</strong> — <strong>{data.eventTitle}</strong>
+        </>
+      );
+    case "event_chat_message":
+      return (
+        <>
+          <strong>{data.senderName}</strong> a envoyé un message dans{" "}
+          <strong>{data.eventTitle}</strong>
         </>
       );
     default:

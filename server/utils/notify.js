@@ -2,8 +2,8 @@ const Notification = require("../models/notification.model");
 
 /**
  * Crée une notification en base et l'émet en temps réel via Socket.io.
- * Pour le type "new_message" : met à jour la notif existante non lue
- * pour la même conversation plutôt que d'en créer une nouvelle.
+ * - "new_message" : déduplique par conversationId
+ * - "event_chat_message" : déduplique par eventShortId
  *
  * @param {Express.Application} app
  * @param {Object} opts
@@ -15,7 +15,7 @@ const Notification = require("../models/notification.model");
 const notify = async (app, { userId, type, data = {}, link = null }) => {
   let notif;
 
-  // Déduplication pour les messages : une seule notif par conversation
+  // Déduplication messages DM : une seule notif non lue par conversation
   if (type === "new_message" && data.conversationId) {
     const existing = await Notification.findOne({
       userId,
@@ -25,6 +25,24 @@ const notify = async (app, { userId, type, data = {}, link = null }) => {
     });
 
     console.log("🔔 existing notif:", !!existing);
+
+    if (existing) {
+      existing.data = data;
+      existing.link = link;
+      existing.createdAt = new Date();
+      await existing.save();
+      notif = existing;
+    }
+  }
+
+  // Déduplication messages event : une seule notif non lue par event
+  if (type === "event_chat_message" && data.eventShortId) {
+    const existing = await Notification.findOne({
+      userId,
+      type: "event_chat_message",
+      read: false,
+      "data.eventShortId": data.eventShortId,
+    });
 
     if (existing) {
       existing.data = data;

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import apiHandler from "../../api/apiHandler";
 
 const PREFS = [
@@ -32,6 +32,13 @@ const PREFS = [
     description: "Quand un invité vote pour une idée cadeau",
     icon: "fa-heart",
   },
+  {
+    key: "chatMessage",
+    label: "Messages du chat",
+    description:
+      "Quand un participant envoie un message dans le chat de l'événement",
+    icon: "fa-comment",
+  },
 ];
 
 const EventNotifPrefs = ({ shortId, initialPrefs }) => {
@@ -41,9 +48,10 @@ const EventNotifPrefs = ({ shortId, initialPrefs }) => {
     locationVote: true,
     giftProposed: true,
     giftVote: true,
+    chatMessage: true,
     ...initialPrefs,
   });
-  const [saving, setSaving] = useState(null); // key en cours de sauvegarde
+  const [saving, setSaving] = useState(null);
 
   const handleToggle = async (key) => {
     const newValue = !prefs[key];
@@ -55,7 +63,6 @@ const EventNotifPrefs = ({ shortId, initialPrefs }) => {
         [key]: newValue,
       });
     } catch (err) {
-      // Rollback si erreur
       setPrefs((prev) => ({ ...prev, [key]: !newValue }));
       console.error("Error updating notification prefs", err);
     } finally {
@@ -145,7 +152,6 @@ const EventNotifPrefs = ({ shortId, initialPrefs }) => {
             </div>
           </div>
 
-          {/* Toggle switch */}
           <button
             onClick={() => handleToggle(pref.key)}
             disabled={saving === pref.key}

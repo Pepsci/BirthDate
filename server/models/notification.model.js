@@ -22,6 +22,7 @@ const notificationSchema = new mongoose.Schema(
         "event_location_vote",
         "event_gift_proposed",
         "event_gift_vote",
+        "event_chat_message", // ← ajouté
       ],
       required: true,
     },

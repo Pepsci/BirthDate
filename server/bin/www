@@ -69,8 +69,8 @@ app.set("connectedUsers", connectedUsers);
 
 io.on("connection", (socket) => {
   socket.join(`user:${socket.userId}`);
-  setupChatHandlers(io, socket, connectedUsers, app); // ← app passé ici
-  setupEventHandlers(io, socket);
+  setupChatHandlers(io, socket, connectedUsers, app);
+  setupEventHandlers(io, socket, app);
 });
 
 server.listen(port, () => {

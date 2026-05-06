@@ -36,10 +36,10 @@ io.app = app;
 // Un seul io.on("connection") — évite les doublons de listeners
 io.on("connection", (socket) => {
   socket.join(`user:${socket.userId}`);
+  console.log("🔍 app dans connection handler:", typeof app, !!app); // ← ajouter
   setupChatHandlers(io, socket, connectedUsers, app);
-  setupEventHandlers(io, socket);
+  setupEventHandlers(io, socket, app);
 });
-
 server.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📡 Socket.io ready`);
