@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import useNotifications from "../../context/useNotifications";
-import "./css/notificationItem.css";
+import "./css/NotificationItem.css";
 
 const TYPE_CONFIG = {
   birthday_soon: { icon: "🎂" },
