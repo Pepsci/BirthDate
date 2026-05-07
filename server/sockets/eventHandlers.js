@@ -110,7 +110,7 @@ module.exports = (io, socket, app) => {
       if (app) {
         try {
           const eventWithPrefs = await Event.findOne({ shortId }).select(
-            "organizerNotificationPrefs",
+            "organizerNotificationPrefs organizer",
           );
           const chatNotifEnabled =
             eventWithPrefs?.organizerNotificationPrefs?.event_chat_message !==
@@ -121,6 +121,11 @@ module.exports = (io, socket, app) => {
             const senderName = sender
               ? `${sender.name}${sender.surname ? " " + sender.surname : ""}`
               : "Quelqu'un";
+
+            const preview = isEncrypted
+              ? "Message chiffré 🔒"
+              : content.trim().slice(0, 60) +
+                (content.trim().length > 60 ? "…" : "");
 
             const invitations = await EventInvitation.find({
               event: event._id,
@@ -135,10 +140,10 @@ module.exports = (io, socket, app) => {
               if (s?.userId) onlineUserIds.add(s.userId.toString());
             }
 
+            // Notifier les invités absents de la room
             for (const invitation of invitations) {
               const participantId = invitation.user.toString();
               if (onlineUserIds.has(participantId)) continue;
-
               await notify(app, {
                 userId: participantId,
                 type: "event_chat_message",
@@ -146,10 +151,26 @@ module.exports = (io, socket, app) => {
                   eventShortId: event.shortId,
                   eventTitle: event.title,
                   senderName,
-                  preview: isEncrypted
-                    ? "Message chiffré 🔒"
-                    : content.trim().slice(0, 60) +
-                      (content.trim().length > 60 ? "…" : ""),
+                  preview,
+                },
+                link: `/event/${event.shortId}`,
+              });
+            }
+
+            // Notifier l'organisateur s'il n'est pas l'expéditeur et pas dans la room
+            const organizerId = eventWithPrefs.organizer.toString();
+            if (
+              organizerId !== socket.userId.toString() &&
+              !onlineUserIds.has(organizerId)
+            ) {
+              await notify(app, {
+                userId: organizerId,
+                type: "event_chat_message",
+                data: {
+                  eventShortId: event.shortId,
+                  eventTitle: event.title,
+                  senderName,
+                  preview,
                 },
                 link: `/event/${event.shortId}`,
               });

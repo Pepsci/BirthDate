@@ -1,7 +1,10 @@
 const Notification = require("../models/notification.model");
+const User = require("../models/user.model");
+const { sendPushToUser } = require("../services/pushService");
 
 /**
  * Crée une notification en base et l'émet en temps réel via Socket.io.
+ * Envoie également une push notification si l'utilisateur l'a activée.
  * - "new_message" : déduplique par conversationId
  * - "event_chat_message" : déduplique par eventShortId
  *
@@ -23,8 +26,6 @@ const notify = async (app, { userId, type, data = {}, link = null }) => {
       read: false,
       "data.conversationId": data.conversationId,
     });
-
-    console.log("🔔 existing notif:", !!existing);
 
     if (existing) {
       existing.data = data;
@@ -57,13 +58,7 @@ const notify = async (app, { userId, type, data = {}, link = null }) => {
     notif = await Notification.create({ userId, type, data, link });
   }
 
-  console.log(
-    "🔔 émission sur room:",
-    `user:${userId}`,
-    "notif._id:",
-    notif._id,
-  );
-
+  // Émission Socket.io in-app
   const io = app?.get("io");
   if (io) {
     io.to(`user:${userId}`).emit("new_notification", {
@@ -74,6 +69,24 @@ const notify = async (app, { userId, type, data = {}, link = null }) => {
       read: false,
       createdAt: notif.createdAt,
     });
+  }
+
+  // Push notification pour event_chat_message
+  if (type === "event_chat_message") {
+    try {
+      const user = await User.findById(userId).select("pushEnabled pushEvents");
+      if (user?.pushEnabled && user?.pushEvents?.events) {
+        await sendPushToUser(userId, {
+          title: `💬 ${data.eventTitle || "Événement"}`,
+          body: `${data.senderName} : ${data.preview || "Nouveau message"}`,
+          url: `${process.env.FRONTEND_URL}${link || "/"}`,
+          tag: `event-chat-${data.eventShortId}`,
+          type: "events",
+        });
+      }
+    } catch (pushErr) {
+      console.error("❌ Push event_chat_message failed:", pushErr);
+    }
   }
 
   return notif;
