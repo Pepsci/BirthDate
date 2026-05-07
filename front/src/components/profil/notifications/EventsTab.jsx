@@ -7,24 +7,21 @@ const TIMING_OPTIONS = [
   {
     value: 1,
     icon: "🔔",
-    label: "La veille",
-    desc: "1 jour avant l'événement",
+    label: "1 jour avant",
+    desc: "La veille de l'événement",
   },
   {
     value: 7,
     icon: "🗓️",
-    label: "Une semaine avant",
+    label: "1 semaine avant",
     desc: "7 jours avant l'événement",
   },
 ];
 
 const EventsTab = () => {
   const [receiveEventEmails, setReceiveEventEmails] = useState(true);
-  const [loadingEmailPref, setLoadingEmailPref] = useState(false);
-
-  const [eventTimings, setEventTimings] = useState([1]);
-  const [loadingTimings, setLoadingTimings] = useState(false);
-
+  const [eventEmailTimings, setEventEmailTimings] = useState([1]);
+  const [loading, setLoading] = useState(false);
   const [saveStatus, setSaveStatus] = useState(null);
 
   useEffect(() => {
@@ -36,61 +33,44 @@ const EventsTab = () => {
       const response = await apiHandler.get("/users/me");
       const u = response.data;
       setReceiveEventEmails(u.receiveEventEmails !== false);
-      if (u.pushEventTimings) setEventTimings(u.pushEventTimings);
+      if (u.eventEmailTimings !== undefined)
+        setEventEmailTimings(u.eventEmailTimings);
     } catch (err) {
       console.error("Erreur chargement préférences événements:", err);
     }
   };
 
-  const patchUser = async (field, value, setLoading, setState) => {
+  const toggleTiming = (value) => {
+    setEventEmailTimings((prev) =>
+      prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value],
+    );
+  };
+
+  const handleSave = async () => {
     setLoading(true);
+    setSaveStatus(null);
     try {
-      await apiHandler.patch("/users/me", { [field]: value });
-      setState(value);
+      await apiHandler.patch("/users/me", {
+        receiveEventEmails,
+        eventEmailTimings,
+      });
+      setSaveStatus("saved");
+      setTimeout(() => setSaveStatus(null), 3000);
     } catch (err) {
-      console.error("Erreur mise à jour préférence:", err);
+      console.error("Erreur sauvegarde préférences événements:", err);
+      setSaveStatus("error");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleTimingChange = (value) => {
-    setEventTimings((prev) =>
-      prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value],
-    );
-  };
-
-  const handleSaveTimings = async () => {
-    setLoadingTimings(true);
-    setSaveStatus(null);
-    try {
-      await apiHandler.patch("/users/me", { pushEventTimings: eventTimings });
-      setSaveStatus("saved");
-      setTimeout(() => setSaveStatus(null), 3000);
-    } catch (err) {
-      console.error("Erreur sauvegarde timings événements:", err);
-      setSaveStatus("error");
-    } finally {
-      setLoadingTimings(false);
-    }
-  };
-
   return (
     <div className="tab-content-inner">
-      {/* ── Préférences email ── */}
       <div className="user-email-preferences-simple">
         <PrefToggle
           label="📅 Recevoir les emails de rappel d'événements"
           checked={receiveEventEmails}
-          loading={loadingEmailPref}
-          onChange={(v) =>
-            patchUser(
-              "receiveEventEmails",
-              v,
-              setLoadingEmailPref,
-              setReceiveEventEmails,
-            )
-          }
+          onChange={setReceiveEventEmails}
           warning={
             !receiveEventEmails
               ? "⚠️ Les emails sont désactivés. Vous ne recevrez aucun rappel d'événement par email."
@@ -99,56 +79,54 @@ const EventsTab = () => {
         />
       </div>
 
-      {/* ── Timings ── */}
-      <div className="frequency-section">
-        <h3 className="section-subtitle">
-          Quand recevoir les rappels d'événements ?
-        </h3>
-
-        <div className="timing-options-grid">
-          {TIMING_OPTIONS.map(({ value, icon, label, desc }) => (
-            <label
-              key={value}
-              className="timing-checkbox"
-              onClick={() => handleTimingChange(value)}
-            >
-              <input
-                type="checkbox"
-                checked={eventTimings.includes(value)}
-                onChange={() => handleTimingChange(value)}
-                style={{
-                  position: "absolute",
-                  opacity: 0,
-                  width: 0,
-                  height: 0,
-                }}
-              />
-              <span className="timing-label">
-                <span className="timing-icon">{icon}</span>
-                <div className="timing-text">
-                  <span className="timing-title">{label}</span>
-                  <span className="timing-subtitle">{desc}</span>
-                </div>
-              </span>
-            </label>
-          ))}
+      {receiveEventEmails && (
+        <div className="frequency-section">
+          <h3 className="section-subtitle">Quand recevoir les rappels ?</h3>
+          <div className="timing-options-grid">
+            {TIMING_OPTIONS.map(({ value, icon, label, desc }) => (
+              <label
+                key={value}
+                className={`timing-checkbox ${eventEmailTimings.includes(value) ? "timing-checkbox--selected" : ""}`}
+                onClick={() => toggleTiming(value)}
+              >
+                <input
+                  type="checkbox"
+                  checked={eventEmailTimings.includes(value)}
+                  onChange={() => toggleTiming(value)}
+                  style={{
+                    position: "absolute",
+                    opacity: 0,
+                    width: 0,
+                    height: 0,
+                  }}
+                />
+                <span className="timing-label">
+                  <span className="timing-icon">{icon}</span>
+                  <div className="timing-text">
+                    <span className="timing-title">{label}</span>
+                    <span className="timing-subtitle">{desc}</span>
+                  </div>
+                </span>
+              </label>
+            ))}
+          </div>
         </div>
+      )}
 
-        <div className="push-save-row" style={{ marginTop: "1rem" }}>
-          <button
-            className="push-btn push-btn--save"
-            onClick={handleSaveTimings}
-            disabled={loadingTimings}
-          >
-            {loadingTimings ? "Sauvegarde..." : "Sauvegarder les préférences"}
-          </button>
-          {saveStatus === "saved" && (
-            <span className="push-save-status success">✓ Sauvegardé</span>
-          )}
-          {saveStatus === "error" && (
-            <span className="push-save-status error">✗ Erreur</span>
-          )}
-        </div>
+      <div className="push-save-row" style={{ marginTop: "1rem" }}>
+        <button
+          className="push-btn push-btn--save"
+          onClick={handleSave}
+          disabled={loading}
+        >
+          {loading ? "Sauvegarde..." : "Sauvegarder les préférences"}
+        </button>
+        {saveStatus === "saved" && (
+          <span className="push-save-status success">✓ Sauvegardé</span>
+        )}
+        {saveStatus === "error" && (
+          <span className="push-save-status error">✗ Erreur</span>
+        )}
       </div>
 
       <div className="notification-footer">

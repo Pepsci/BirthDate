@@ -37,7 +37,7 @@ const userSchema = new Schema({
     type: String,
     default: null,
     unique: true,
-    sparse: true, // autorise null sur plusieurs documents
+    sparse: true,
   },
   wishlistFriendCode: {
     type: String,
@@ -49,7 +49,7 @@ const userSchema = new Schema({
   receiveFriendRequestEmails: { type: Boolean, default: true },
   receiveOwnBirthdayEmail: { type: Boolean, default: true },
 
-  // ── Récap mensuel (NOUVEAU) ────────────────────────────────────────────────
+  // ── Récap mensuel ────────────────────────────────────────────────────────
   monthlyRecap: { type: Boolean, default: false },
 
   // ── Compte ────────────────────────────────────────────────────────────────
@@ -71,6 +71,13 @@ const userSchema = new Schema({
   },
   lastChatEmailSent: { type: Date, default: null },
 
+  // ── Notifications emails événements ───────────────────────────────────────
+  receiveEventEmails: { type: Boolean, default: true },
+  eventEmailTimings: {
+    type: [Number],
+    default: [1],
+  },
+
   // ── Push notifications ─────────────────────────────────────────────────────
   pushEnabled: { type: Boolean, default: false },
   pushEvents: {
@@ -89,17 +96,11 @@ const userSchema = new Schema({
     default: [1],
   },
 
-  // ── Emails événements ──────────────────────────────────────────────────────
-  receiveEventEmails: { type: Boolean, default: true },
-
   // ── Chiffrement E2E ────────────────────────────────────────────────────────
   publicKey: { type: String, default: null },
   encryptedPrivateKey: { type: String, default: null },
-  // Ancienne paire de clés — conservée lors d'un changement de mode E2E
-  // pour permettre de déchiffrer les messages émis avant le changement
   oldPublicKey: { type: String, default: null },
   oldEncryptedPrivateKey: { type: String, default: null },
-  // Seed phrase BIP39 chiffrée (uniquement en mode Full E2E)
   encryptedSeedPhrase: { type: String, default: null },
   e2eMode: { type: String, enum: ["standard", "full"], default: "standard" },
   e2eActivatedAt: { type: Date, default: null },

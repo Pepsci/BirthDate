@@ -31,10 +31,14 @@ function formatUser(user) {
     receiveChatEmails: user.receiveChatEmails,
     chatEmailFrequency: user.chatEmailFrequency,
     chatEmailDisabledFriends: user.chatEmailDisabledFriends,
+    // Emails événements
+    receiveEventEmails: user.receiveEventEmails,
+    eventEmailTimings: user.eventEmailTimings,
     // Push
     pushEnabled: user.pushEnabled,
     pushEvents: user.pushEvents,
     pushBirthdayTimings: user.pushBirthdayTimings,
+    pushEventTimings: user.pushEventTimings,
     // E2E
     publicKey: user.publicKey,
     encryptedPrivateKey: user.encryptedPrivateKey,
@@ -44,6 +48,88 @@ function formatUser(user) {
     e2eMode: user.e2eMode,
     e2eActivatedAt: user.e2eActivatedAt,
   };
+}
+
+// ─── Helper : appliquer les préférences communes aux deux routes PATCH ────────
+function applyPreferences(user, body) {
+  // Onboarding
+  if (body.onboardingDone !== undefined)
+    user.onboardingDone = body.onboardingDone;
+
+  // Emails anniversaires
+  if (body.receiveBirthdayEmails !== undefined)
+    user.receiveBirthdayEmails = body.receiveBirthdayEmails;
+  if (body.receiveFriendRequestEmails !== undefined)
+    user.receiveFriendRequestEmails = body.receiveFriendRequestEmails;
+  if (body.receiveOwnBirthdayEmail !== undefined)
+    user.receiveOwnBirthdayEmail = body.receiveOwnBirthdayEmail;
+  if (body.monthlyRecap !== undefined) user.monthlyRecap = body.monthlyRecap;
+
+  // Emails chat
+  if (body.receiveChatEmails !== undefined)
+    user.receiveChatEmails = body.receiveChatEmails;
+  if (body.chatEmailFrequency !== undefined)
+    user.chatEmailFrequency = body.chatEmailFrequency;
+
+  // Emails événements
+  if (body.receiveEventEmails !== undefined)
+    user.receiveEventEmails = body.receiveEventEmails;
+  if (body.eventEmailTimings !== undefined)
+    user.eventEmailTimings = body.eventEmailTimings;
+
+  // Push
+  if (body.pushEnabled !== undefined) user.pushEnabled = body.pushEnabled;
+  if (body.pushEvents !== undefined) user.pushEvents = body.pushEvents;
+  if (body.pushBirthdayTimings !== undefined)
+    user.pushBirthdayTimings = body.pushBirthdayTimings;
+  if (body.pushEventTimings !== undefined)
+    user.pushEventTimings = body.pushEventTimings;
+}
+
+// ─── Helper : synchroniser les dates amis si nom/prénom/date ont changé ──────
+async function syncFriendDates(updatedUser, oldName, oldSurname, oldBirthDate) {
+  const nameChanged = oldName !== updatedUser.name;
+  const surnameChanged = oldSurname !== updatedUser.surname;
+  const birthDateChanged =
+    oldBirthDate?.toString() !== updatedUser.birthDate?.toString();
+
+  if (!nameChanged && !surnameChanged && !birthDateChanged) return;
+
+  console.log(`🔄 Synchronisation nécessaire pour ${updatedUser.name}`);
+  try {
+    const friendships = await Friend.find({
+      $or: [
+        { user: updatedUser._id, status: "accepted" },
+        { friend: updatedUser._id, status: "accepted" },
+      ],
+    });
+    console.log(`👥 ${friendships.length} amis trouvés`);
+    let syncCount = 0;
+    for (const friendship of friendships) {
+      const friendId =
+        friendship.user.toString() === updatedUser._id.toString()
+          ? friendship.friend
+          : friendship.user;
+      const updateData = {};
+      if (nameChanged) updateData.name = updatedUser.name;
+      if (surnameChanged) updateData.surname = updatedUser.surname || "";
+      if (birthDateChanged) updateData.date = updatedUser.birthDate;
+      const result = await DateModel.findOneAndUpdate(
+        { owner: friendId, linkedUser: updatedUser._id },
+        updateData,
+        { new: true },
+      );
+      if (result) {
+        syncCount++;
+        console.log(`✅ Synchronisé chez l'ami ${friendId}`);
+      } else {
+        console.log(`⚠️  Aucune date trouvée chez l'ami ${friendId}`);
+      }
+    }
+    console.log(`✅ ${syncCount}/${friendships.length} dates synchronisées`);
+  } catch (syncError) {
+    console.error("❌ Erreur lors de la synchronisation:", syncError);
+  }
 }
 
 /* GET current user listing */
@@ -96,7 +182,7 @@ router.patch(
       const oldSurname = user.surname;
       const oldBirthDate = user.birthDate;
 
-      // Vérifie le mot de passe actuel
+      // Mot de passe
       if (currentPassword && newPassword) {
         const passwordCorrect = bcrypt.compareSync(
           currentPassword,
@@ -109,8 +195,6 @@ router.patch(
         }
         const salt = bcrypt.genSaltSync(10);
         user.password = bcrypt.hashSync(newPassword, salt);
-
-        // ── Re-chiffrement E2E : le front renvoie encryptedPrivateKey re-chiffrée
         if (req.body.encryptedPrivateKey) {
           user.encryptedPrivateKey = req.body.encryptedPrivateKey;
         }
@@ -123,95 +207,18 @@ router.patch(
       user.email = req.body.email || user.email;
       user.birthDate = req.body.birthDate || user.birthDate;
 
-      // Nameday
       if (req.body.nameday !== undefined) {
         user.nameday = req.body.nameday || null;
       }
 
       if (avatar) user.avatar = avatar;
 
-      // ── Onboarding ──────────────────────────────────────────────────────────
-      if (req.body.onboardingDone !== undefined) {
-        user.onboardingDone = req.body.onboardingDone;
-      }
-
-      // ── Préférences emails anniversaires ────────────────────────────────────
-      if (req.body.receiveBirthdayEmails !== undefined) {
-        user.receiveBirthdayEmails = req.body.receiveBirthdayEmails;
-      }
-      if (req.body.receiveFriendRequestEmails !== undefined) {
-        user.receiveFriendRequestEmails = req.body.receiveFriendRequestEmails;
-      }
-      if (req.body.receiveOwnBirthdayEmail !== undefined) {
-        user.receiveOwnBirthdayEmail = req.body.receiveOwnBirthdayEmail;
-      }
-
-      // ── Préférences emails chat ──────────────────────────────────────────────
-      if (req.body.receiveChatEmails !== undefined) {
-        user.receiveChatEmails = req.body.receiveChatEmails;
-      }
-      if (req.body.chatEmailFrequency !== undefined) {
-        user.chatEmailFrequency = req.body.chatEmailFrequency;
-      }
-
-      // ── Préférences push ─────────────────────────────────────────────────────
-      if (req.body.pushEnabled !== undefined) {
-        user.pushEnabled = req.body.pushEnabled;
-      }
-      if (req.body.pushEvents !== undefined) {
-        user.pushEvents = req.body.pushEvents;
-      }
-      if (req.body.pushBirthdayTimings !== undefined) {
-        user.pushBirthdayTimings = req.body.pushBirthdayTimings;
-      }
+      // Toutes les préférences
+      applyPreferences(user, req.body);
 
       const updatedUser = await user.save();
 
-      // Synchroniser avec les amis si nom/prénom/date ont changé
-      const nameChanged = oldName !== updatedUser.name;
-      const surnameChanged = oldSurname !== updatedUser.surname;
-      const birthDateChanged =
-        oldBirthDate?.toString() !== updatedUser.birthDate?.toString();
-
-      if (nameChanged || surnameChanged || birthDateChanged) {
-        console.log(`🔄 Synchronisation nécessaire pour ${updatedUser.name}`);
-        try {
-          const friendships = await Friend.find({
-            $or: [
-              { user: updatedUser._id, status: "accepted" },
-              { friend: updatedUser._id, status: "accepted" },
-            ],
-          });
-          console.log(`👥 ${friendships.length} amis trouvés`);
-          let syncCount = 0;
-          for (const friendship of friendships) {
-            const friendId =
-              friendship.user.toString() === updatedUser._id.toString()
-                ? friendship.friend
-                : friendship.user;
-            const updateData = {};
-            if (nameChanged) updateData.name = updatedUser.name;
-            if (surnameChanged) updateData.surname = updatedUser.surname || "";
-            if (birthDateChanged) updateData.date = updatedUser.birthDate;
-            const result = await DateModel.findOneAndUpdate(
-              { owner: friendId, linkedUser: updatedUser._id },
-              updateData,
-              { new: true },
-            );
-            if (result) {
-              syncCount++;
-              console.log(`✅ Synchronisé chez l'ami ${friendId}`);
-            } else {
-              console.log(`⚠️  Aucune date trouvée chez l'ami ${friendId}`);
-            }
-          }
-          console.log(
-            `✅ ${syncCount}/${friendships.length} dates synchronisées`,
-          );
-        } catch (syncError) {
-          console.error("❌ Erreur lors de la synchronisation:", syncError);
-        }
-      }
+      await syncFriendDates(updatedUser, oldName, oldSurname, oldBirthDate);
 
       const payload = formatUser(updatedUser);
       const authToken = jwt.sign(payload, process.env.TOKEN_SECRET, {
@@ -307,10 +314,10 @@ router.patch("/me/chat-email-prefs", isAuthenticated, async (req, res) => {
 
 // ─── E2E Encryption ──────────────────────────────────────────────────────────
 
-/* PUT /users/keys — Stocker/mettre à jour la paire de clés E2E.
- * Accepte aussi e2eMode, encryptedSeedPhrase (Full E2E) et e2eActivatedAt. */
+/* PUT /users/keys — Stocker/mettre à jour la paire de clés E2E. */
 router.put("/keys", isAuthenticated, async (req, res) => {
-  const { publicKey, encryptedPrivateKey, e2eMode, encryptedSeedPhrase } = req.body;
+  const { publicKey, encryptedPrivateKey, e2eMode, encryptedSeedPhrase } =
+    req.body;
 
   if (!publicKey || !encryptedPrivateKey) {
     return res
@@ -324,8 +331,6 @@ router.put("/keys", isAuthenticated, async (req, res) => {
       return res.status(404).json({ message: "Utilisateur non trouvé." });
     }
 
-    // Archiver l'ancienne paire avant remplacement (permet de déchiffrer
-    // les messages échangés avant le changement de mode E2E)
     if (user.publicKey) {
       user.oldPublicKey = user.publicKey;
       user.oldEncryptedPrivateKey = user.encryptedPrivateKey ?? null;
@@ -346,7 +351,6 @@ router.put("/keys", isAuthenticated, async (req, res) => {
 
     await user.save();
 
-    // Notifier les amis connectés que la clé publique a changé
     try {
       const io = req.app.get("io");
       const connectedUsers = req.app.get("connectedUsers");
@@ -359,7 +363,8 @@ router.put("/keys", isAuthenticated, async (req, res) => {
         });
         const userId = req.payload._id.toString();
         friendships.forEach(({ user: fUser, friend }) => {
-          const friendId = fUser.toString() === userId ? friend.toString() : fUser.toString();
+          const friendId =
+            fUser.toString() === userId ? friend.toString() : fUser.toString();
           const socketId = connectedUsers.get(friendId);
           if (socketId) {
             io.to(socketId).emit("contact:keyUpdated", {
@@ -371,7 +376,6 @@ router.put("/keys", isAuthenticated, async (req, res) => {
       }
     } catch (notifyErr) {
       console.error("Erreur notification contact:keyUpdated:", notifyErr);
-      // Non bloquant — la réponse HTTP est déjà envoyée si on arrive ici
     }
 
     return res.status(200).json({ message: "Clés E2E enregistrées." });
@@ -380,7 +384,6 @@ router.put("/keys", isAuthenticated, async (req, res) => {
     return res.status(500).json({ message: "Erreur serveur." });
   }
 });
-
 
 /* GET /users/:id/publicKey — Récupérer la clé publique d'un utilisateur */
 router.get("/:id/publicKey", isAuthenticated, async (req, res) => {
@@ -448,8 +451,6 @@ router.patch(
         }
         const salt = bcrypt.genSaltSync(10);
         user.password = bcrypt.hashSync(newPassword, salt);
-
-        // ── Re-chiffrement E2E : le front renvoie encryptedPrivateKey re-chiffrée
         if (req.body.encryptedPrivateKey) {
           user.encryptedPrivateKey = req.body.encryptedPrivateKey;
         }
@@ -468,86 +469,12 @@ router.patch(
 
       if (avatar) user.avatar = avatar;
 
-      // ── Onboarding ──────────────────────────────────────────────────────────
-      if (req.body.onboardingDone !== undefined) {
-        user.onboardingDone = req.body.onboardingDone;
-      }
-
-      // ── Préférences emails anniversaires ────────────────────────────────────
-      if (req.body.receiveBirthdayEmails !== undefined) {
-        user.receiveBirthdayEmails = req.body.receiveBirthdayEmails;
-      }
-      if (req.body.receiveFriendRequestEmails !== undefined) {
-        user.receiveFriendRequestEmails = req.body.receiveFriendRequestEmails;
-      }
-      if (req.body.receiveOwnBirthdayEmail !== undefined) {
-        user.receiveOwnBirthdayEmail = req.body.receiveOwnBirthdayEmail;
-      }
-
-      // ── Préférences emails chat ──────────────────────────────────────────────
-      if (req.body.receiveChatEmails !== undefined) {
-        user.receiveChatEmails = req.body.receiveChatEmails;
-      }
-      if (req.body.chatEmailFrequency !== undefined) {
-        user.chatEmailFrequency = req.body.chatEmailFrequency;
-      }
-
-      // ── Préférences push ─────────────────────────────────────────────────────
-      if (req.body.pushEnabled !== undefined) {
-        user.pushEnabled = req.body.pushEnabled;
-      }
-      if (req.body.pushEvents !== undefined) {
-        user.pushEvents = req.body.pushEvents;
-      }
-      if (req.body.pushBirthdayTimings !== undefined) {
-        user.pushBirthdayTimings = req.body.pushBirthdayTimings;
-      }
+      // Toutes les préférences
+      applyPreferences(user, req.body);
 
       const updatedUser = await user.save();
 
-      const nameChanged = oldName !== updatedUser.name;
-      const surnameChanged = oldSurname !== updatedUser.surname;
-      const birthDateChanged =
-        oldBirthDate?.toString() !== updatedUser.birthDate?.toString();
-
-      if (nameChanged || surnameChanged || birthDateChanged) {
-        console.log(`🔄 Synchronisation nécessaire pour ${updatedUser.name}`);
-        try {
-          const friendships = await Friend.find({
-            $or: [
-              { user: updatedUser._id, status: "accepted" },
-              { friend: updatedUser._id, status: "accepted" },
-            ],
-          });
-          let syncCount = 0;
-          for (const friendship of friendships) {
-            const friendId =
-              friendship.user.toString() === updatedUser._id.toString()
-                ? friendship.friend
-                : friendship.user;
-            const updateData = {};
-            if (nameChanged) updateData.name = updatedUser.name;
-            if (surnameChanged) updateData.surname = updatedUser.surname || "";
-            if (birthDateChanged) updateData.date = updatedUser.birthDate;
-            const result = await DateModel.findOneAndUpdate(
-              { owner: friendId, linkedUser: updatedUser._id },
-              updateData,
-              { new: true },
-            );
-            if (result) {
-              syncCount++;
-              console.log(`✅ Synchronisé chez l'ami ${friendId}`);
-            } else {
-              console.log(`⚠️  Aucune date trouvée chez l'ami ${friendId}`);
-            }
-          }
-          console.log(
-            `✅ ${syncCount}/${friendships.length} dates synchronisées`,
-          );
-        } catch (syncError) {
-          console.error("❌ Erreur lors de la synchronisation:", syncError);
-        }
-      }
+      await syncFriendDates(updatedUser, oldName, oldSurname, oldBirthDate);
 
       const payload = formatUser(updatedUser);
       const authToken = jwt.sign(payload, process.env.TOKEN_SECRET, {
