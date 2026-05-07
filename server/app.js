@@ -83,8 +83,8 @@ app.use("/api/stress", (req, res, next) => {
 // Route de test authentifiée qui tape MongoDB
 app.get("/api/stress/dates", async (req, res) => {
   try {
-    const Date = require("./models/Date"); // adapte le chemin si besoin
-    const dates = await Date.find({ user: req.user._id }).limit(20);
+    const DateModel = require("./models/date.model"); // adapte le chemin si besoin
+    const dates = await DateModel.find({ user: req.user._id }).limit(20);
     res.json({ count: dates.length, ok: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
