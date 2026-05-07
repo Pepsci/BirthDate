@@ -64,9 +64,11 @@ app.use(
   }),
 );
 
-// Vérification loader.io — à ajouter une fois
 app.get("/loaderio-bcebff5a81d031074a9b23b1ec9c73b4", (req, res) => {
-  res.send("loaderio-bcebff5a81d031074a9b23b1ec9c73b4");
+  res.type("text").send("loaderio-bcebff5a81d031074a9b23b1ec9c73b4");
+});
+app.get("/loaderio-bcebff5a81d031074a9b23b1ec9c73b4.html", (req, res) => {
+  res.type("text").send("loaderio-bcebff5a81d031074a9b23b1ec9c73b4");
 });
 
 app.use((req, res, next) => {
