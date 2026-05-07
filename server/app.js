@@ -68,6 +68,28 @@ app.use(
 app.get("/api/ping", (req, res) => {
   res.json({ status: "ok", ts: Date.now() });
 });
+// Token de test pour stress test — à supprimer après
+const STRESS_TEST_TOKEN = "stress-test-secret-2024";
+
+app.use("/api/stress", (req, res, next) => {
+  if (req.headers["x-stress-token"] !== STRESS_TEST_TOKEN) {
+    return res.status(401).json({ message: "Non autorisé" });
+  }
+  // Injecte un faux user pour que les routes protégées fonctionnent
+  req.user = { _id: "66900bfb7335dfcd9d25b6de" }; // ton vrai _id MongoDB
+  next();
+});
+
+// Route de test authentifiée qui tape MongoDB
+app.get("/api/stress/dates", async (req, res) => {
+  try {
+    const Date = require("./models/Date"); // adapte le chemin si besoin
+    const dates = await Date.find({ user: req.user._id }).limit(20);
+    res.json({ count: dates.length, ok: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 app.get("/loaderio-bcebff5a81d031074a9b23b1ec9c73b4", (req, res) => {
   res.type("text").send("loaderio-bcebff5a81d031074a9b23b1ec9c73b4");
 });
