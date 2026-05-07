@@ -64,6 +64,10 @@ app.use(
   }),
 );
 
+// Route de stress test temporaire — à supprimer après les tests
+app.get("/api/ping", (req, res) => {
+  res.json({ status: "ok", ts: Date.now() });
+});
 app.get("/loaderio-bcebff5a81d031074a9b23b1ec9c73b4", (req, res) => {
   res.type("text").send("loaderio-bcebff5a81d031074a9b23b1ec9c73b4");
 });
