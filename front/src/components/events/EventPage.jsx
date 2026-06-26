@@ -16,6 +16,8 @@ import GiftProposalPanel from "./GiftProposalPanel";
 import InviteModal from "./InviteModal";
 import EventNotifPrefs from "./EventNotifPrefs";
 import ChatModal from "../chat/ChatModal";
+import GiftPoolManager from "./stripe/GiftPoolManager";
+import GiftPoolWidget from "./stripe/GiftPoolWidget";
 import "./css/eventPage.css";
 
 delete L.Icon.Default.prototype._getIconUrl;
@@ -378,6 +380,9 @@ const EventPage = () => {
           ...(hasGifts
             ? [{ id: "cadeaux", label: "Cadeaux", icon: "fa-gift" }]
             : []),
+          ...(isOrganizer || event.giftPool?.active
+            ? [{ id: "cagnotte", label: "Cagnotte", icon: "fa-piggy-bank" }]
+            : []),
           ...(event.dateMode === "vote" || event.locationMode === "vote"
             ? [{ id: "vote", label: "Votes", icon: "fa-check-to-slot" }]
             : []),
@@ -649,7 +654,6 @@ const EventPage = () => {
                   </div>
                 </motion.div>
               )}
-
               {activeTab === "participants" && (
                 <motion.div
                   key="participants"
@@ -733,7 +737,6 @@ const EventPage = () => {
                   </GlassCard>
                 </motion.div>
               )}
-
               {activeTab === "chat" && (
                 <motion.div
                   key="chat"
@@ -751,7 +754,6 @@ const EventPage = () => {
                   </GlassCard>
                 </motion.div>
               )}
-
               {activeTab === "cadeaux" && (
                 <motion.div
                   key="cadeaux"
@@ -801,6 +803,45 @@ const EventPage = () => {
                           event.maxGiftProposalsPerUser || null
                         }
                       />
+                    </GlassCard>
+                  )}
+                </motion.div>
+              )}
+
+              {activeTab === "cagnotte" && (
+                <motion.div
+                  key="cagnotte"
+                  className="ep-tab-content"
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -12 }}
+                  transition={{ duration: 0.25 }}
+                >
+                  {isOrganizer ? (
+                    <>
+                      <GlassCard className="ep-card">
+                        <div className="ep-card-header">
+                          <i className="fa-solid fa-piggy-bank ep-card-icon"></i>
+                          <h3>Gérer la cagnotte</h3>
+                        </div>
+                        <GiftPoolManager
+                          shortId={shortId}
+                          pool={event.giftPool}
+                          onUpdated={() => setRefreshKey((k) => k + 1)}
+                        />
+                      </GlassCard>
+                      {event.giftPool?.active && (
+                        <GlassCard className="ep-card">
+                          <GiftPoolWidget
+                            shortId={shortId}
+                            isOrganizer={true}
+                          />
+                        </GlassCard>
+                      )}
+                    </>
+                  ) : (
+                    <GlassCard className="ep-card">
+                      <GiftPoolWidget shortId={shortId} isOrganizer={false} />
                     </GlassCard>
                   )}
                 </motion.div>
@@ -861,7 +902,6 @@ const EventPage = () => {
                   </div>
                 </motion.div>
               )}
-
               {activeTab === "notifications" && isOrganizer && (
                 <motion.div
                   key="notifications"

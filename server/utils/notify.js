@@ -89,6 +89,24 @@ const notify = async (app, { userId, type, data = {}, link = null }) => {
     }
   }
 
+  // Push notification pour event_pool_contribution
+  if (type === "event_pool_contribution") {
+    try {
+      const user = await User.findById(userId).select("pushEnabled pushEvents");
+      if (user?.pushEnabled && user?.pushEvents?.events) {
+        await sendPushToUser(userId, {
+          title: `💰 Nouvelle contribution — ${data.eventTitle || "Cagnotte"}`,
+          body: `${data.contributorName} a participé : ${data.amountLabel || ""}`,
+          url: `${process.env.FRONTEND_URL}${link || "/"}`,
+          tag: `event-pool-${data.eventShortId}`,
+          type: "events",
+        });
+      }
+    } catch (pushErr) {
+      console.error("❌ Push event_pool_contribution failed:", pushErr);
+    }
+  }
+
   return notif;
 };
 

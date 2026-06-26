@@ -39,6 +39,12 @@ const PREFS = [
       "Quand un participant envoie un message dans le chat de l'événement",
     icon: "fa-comment",
   },
+  {
+    key: "poolContribution",
+    label: "Contributions à la cagnotte",
+    description: "Quand un participant verse de l'argent dans la cagnotte",
+    icon: "fa-piggy-bank",
+  },
 ];
 
 const EventNotifPrefs = ({ shortId, initialPrefs }) => {
@@ -49,6 +55,7 @@ const EventNotifPrefs = ({ shortId, initialPrefs }) => {
     giftProposed: true,
     giftVote: true,
     chatMessage: true,
+    poolContribution: true,
     ...initialPrefs,
   });
   const [saving, setSaving] = useState(null);

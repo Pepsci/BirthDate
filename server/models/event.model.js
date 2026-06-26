@@ -94,12 +94,19 @@ const eventSchema = new Schema(
       type: Number,
       default: null, // null = illimité
     },
-    // [CAGNOTTE — placeholder, à intégrer ultérieurement]
+
+    // Cagnotte (Stripe Connect)
     giftPoolEnabled: {
       type: Boolean,
-      default: false,
+      default: false, // conservé pour compat UI ; la source de vérité est giftPool.active
     },
-    // giftPool: { type: ObjectId, ref: 'GiftPool' }
+    giftPool: {
+      active: { type: Boolean, default: false },
+      mode: { type: String, enum: ["free", "goal"], default: "free" },
+      goal: { type: Number, default: null }, // centimes ; null si mode "free"
+      currency: { type: String, default: "eur" },
+      deadline: { type: Date, default: null }, // optionnel ; couplé au reminder "pool_deadline"
+    },
 
     // Invitations
     maxGuests: {
@@ -144,6 +151,7 @@ const eventSchema = new Schema(
       locationVote: { type: Boolean, default: true },
       giftProposed: { type: Boolean, default: true },
       giftVote: { type: Boolean, default: true },
+      poolContribution: { type: Boolean, default: true },
     },
   },
   {

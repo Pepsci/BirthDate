@@ -418,7 +418,15 @@ router.put(
       if (event.organizer.toString() !== req.payload._id)
         return res.status(403).json({ message: "Non autorisé" });
 
-      const { rsvp, dateVote, locationVote, giftProposed, giftVote } = req.body;
+      const {
+        rsvp,
+        dateVote,
+        locationVote,
+        giftProposed,
+        giftVote,
+        chatMessage,
+        poolContribution,
+      } = req.body;
       const current = event.organizerNotificationPrefs || {};
 
       event.organizerNotificationPrefs = {
@@ -435,6 +443,14 @@ router.put(
             : (current.giftProposed ?? true),
         giftVote:
           giftVote !== undefined ? giftVote : (current.giftVote ?? true),
+        chatMessage:
+          chatMessage !== undefined
+            ? chatMessage
+            : (current.chatMessage ?? true),
+        poolContribution:
+          poolContribution !== undefined
+            ? poolContribution
+            : (current.poolContribution ?? true),
       };
 
       await event.save();

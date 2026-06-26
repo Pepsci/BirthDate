@@ -15,6 +15,8 @@ const TYPE_CONFIG = {
   event_gift_proposed: { icon: "🎁" },
   event_gift_vote: { icon: "❤️" },
   event_chat_message: { icon: "💬" },
+  event_chat_message: { icon: "💬" },
+  event_pool_contribution: { icon: "💰" },
 };
 
 const timeAgo = (dateStr) => {
@@ -122,6 +124,14 @@ const buildText = (type, data) => {
       return (
         <>
           <strong>{data.senderName}</strong> a envoyé un message dans{" "}
+          <strong>{data.eventTitle}</strong>
+        </>
+      );
+    case "event_pool_contribution":
+      return (
+        <>
+          <strong>{data.contributorName}</strong> a participé à la cagnotte
+          {data.amountLabel ? <> ({data.amountLabel})</> : null} —{" "}
           <strong>{data.eventTitle}</strong>
         </>
       );

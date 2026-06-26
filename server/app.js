@@ -23,6 +23,8 @@ const pushRoutes = require("./routes/push");
 const eventsRouter = require("./routes/events/index");
 const notificationsRouter = require("./routes/notifications");
 const statsRouter = require("./routes/stats");
+const stripeConnectRouter = require("./routes/stripe.connect");
+const stripeWebhookRouter = require("./routes/stripe.webhook");
 
 // Cron jobs
 const purgeDeletedAccounts = require("./jobs/purgeDeletedAccounts");
@@ -72,6 +74,14 @@ app.get("/loaderio-bcebff5a81d031074a9b23b1ec9c73b4.html", (req, res) => {
   res.type("text").send("loaderio-bcebff5a81d031074a9b23b1ec9c73b4");
 });
 
+// ⚠️ Webhook Stripe : DOIT être monté AVANT express.json().
+// Stripe vérifie la signature sur le body brut -> express.raw() ici uniquement.
+app.use(
+  "/api/stripe/webhook",
+  express.raw({ type: "application/json" }),
+  stripeWebhookRouter,
+);
+
 app.use((req, res, next) => {
   console.log(`📨 ${req.method} ${req.url}`);
   next();
@@ -98,6 +108,7 @@ app.use("/api/push", pushRoutes);
 app.use("/api/events", eventsRouter);
 app.use("/api/notifications", notificationsRouter);
 app.use("/api/stats", statsRouter);
+app.use("/api/stripe/connect", stripeConnectRouter);
 
 // Cron jobs
 purgeDeletedAccounts.start();
