@@ -77,11 +77,6 @@ const PaymentStep = ({ onSuccess, onBack }) => {
       <ExpressCheckoutElement
         onReady={({ availablePaymentMethods }) => {
           setExpressAvailable(!!availablePaymentMethods);
-          // Debug temporaire : affiche ce que Stripe détecte
-          setError(
-            "DEBUG méthodes dispo : " +
-              JSON.stringify(availablePaymentMethods || "aucune"),
-          );
         }}
         onConfirm={handleExpressConfirm}
       />
