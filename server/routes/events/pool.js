@@ -183,7 +183,10 @@ router.post("/:shortId/pool/contribute", async (req, res) => {
       {
         amount: amountInt,
         currency: pool.currency || "eur",
-        payment_method_types: ["card"],
+        automatic_payment_methods: {
+          enabled: true,
+          allow_redirects: "never",
+        },
         ...(receiptEmail ? { receipt_email: receiptEmail } : {}),
         metadata: {
           eventShortId: event.shortId,
