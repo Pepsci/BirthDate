@@ -4,6 +4,7 @@ import { motion } from "motion/react";
 import {
   Elements,
   PaymentElement,
+  ExpressCheckoutElement,
   useStripe,
   useElements,
 } from "@stripe/react-stripe-js";
@@ -19,7 +20,9 @@ const PaymentStep = ({ onSuccess, onBack }) => {
   const elements = useElements();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [expressAvailable, setExpressAvailable] = useState(false);
 
+  // Paiement classique (carte via PaymentElement)
   const handlePay = async () => {
     if (!stripe || !elements) return;
     setSubmitting(true);
@@ -45,17 +48,53 @@ const PaymentStep = ({ onSuccess, onBack }) => {
     }
   };
 
+  // Paiement via wallet (Apple Pay / Google Pay)
+  const handleExpressConfirm = async () => {
+    if (!stripe || !elements) return;
+    setError("");
+
+    const { error: submitError } = await elements.submit();
+    if (submitError) {
+      setError(submitError.message || "Paiement interrompu.");
+      return;
+    }
+
+    const { error: confirmError } = await stripe.confirmPayment({
+      elements,
+      redirect: "if_required",
+    });
+
+    if (confirmError) {
+      setError(confirmError.message || "Le paiement a échoué.");
+    } else {
+      onSuccess();
+    }
+  };
+
   return (
     <div className="gp-pay-step">
+      {/* Boutons Apple Pay / Google Pay — s'affichent seulement si dispo */}
+      <ExpressCheckoutElement
+        onReady={({ availablePaymentMethods }) => {
+          setExpressAvailable(!!availablePaymentMethods);
+        }}
+        onConfirm={handleExpressConfirm}
+      />
+
+      {expressAvailable && (
+        <div className="gp-pay-separator">
+          <span>ou payer par carte</span>
+        </div>
+      )}
+
       <PaymentElement
         options={{
-          wallets: {
-            applePay: "auto",
-            googlePay: "auto",
-          },
+          wallets: { applePay: "never", googlePay: "never" },
         }}
       />
+
       {error && <p className="gp-error">{error}</p>}
+
       <div className="gp-modal-actions">
         <button
           className="gp-btn gp-btn-ghost"
