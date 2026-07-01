@@ -10,6 +10,36 @@ const RETURN_URL =
 const REFRESH_URL =
   process.env.STRIPE_CONNECT_REFRESH_URL || `${FALLBACK}/events/mine`;
 
+// Domaine à enregistrer pour Apple Pay (extrait du FRONTEND_URL, sans protocole)
+const APPLE_PAY_DOMAIN = FALLBACK.replace(/^https?:\/\//, "").replace(
+  /\/$/,
+  "",
+);
+
+/*
+ * Enregistre le domaine Apple Pay SUR un compte connecté.
+ * Requis en charges directes : la session Apple Pay s'exécute sur le compte
+ * de l'organisateur, qui doit donc "connaître" le domaine. Idempotent :
+ * on ignore l'erreur si le domaine est déjà enregistré.
+ */
+async function registerApplePayDomain(stripeAccountId) {
+  try {
+    await stripe.applePayDomains.create(
+      { domain_name: APPLE_PAY_DOMAIN },
+      { stripeAccount: stripeAccountId },
+    );
+    console.log(
+      `✅ Apple Pay domain '${APPLE_PAY_DOMAIN}' registered on ${stripeAccountId}`,
+    );
+  } catch (err) {
+    const msg = String(err?.message || "");
+    // Déjà enregistré -> pas une vraie erreur
+    if (!msg.toLowerCase().includes("already")) {
+      console.error("⚠️ Apple Pay domain registration failed:", msg);
+    }
+  }
+}
+
 /*
  * POST /api/stripe/connect/onboard
  * Crée (ou réutilise) le compte Express de l'organisateur et renvoie
@@ -76,6 +106,8 @@ router.get("/status", isAuthenticated, async (req, res) => {
       account.stripeAccountId,
     );
 
+    const wasReady = account.chargesEnabled && account.detailsSubmitted;
+
     account.chargesEnabled = stripeAccount.charges_enabled;
     account.payoutsEnabled = stripeAccount.payouts_enabled;
     account.detailsSubmitted = stripeAccount.details_submitted;
@@ -84,12 +116,20 @@ router.get("/status", isAuthenticated, async (req, res) => {
     }
     await account.save();
 
+    const isReady = account.chargesEnabled && account.detailsSubmitted;
+
+    // Le compte est prêt : on s'assure que le domaine Apple Pay est enregistré
+    // sur ce compte connecté (idempotent, requis en charges directes).
+    if (isReady) {
+      await registerApplePayDomain(account.stripeAccountId);
+    }
+
     res.status(200).json({
       connected: true,
       chargesEnabled: account.chargesEnabled,
       payoutsEnabled: account.payoutsEnabled,
       detailsSubmitted: account.detailsSubmitted,
-      ready: account.chargesEnabled && account.detailsSubmitted,
+      ready: isReady,
     });
   } catch (error) {
     console.error("❌ Error fetching Connect status:", error);

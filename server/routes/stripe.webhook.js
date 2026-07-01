@@ -2,138 +2,130 @@ const express = require("express");
 const router = express.Router();
 const stripe = require("../config/stripe.config");
 const StripeAccount = require("../models/stripeAccount.model");
-const { isAuthenticated } = require("../middleware/jwt.middleware");
-
-const FALLBACK = process.env.FRONTEND_URL || "https://birthreminder.com";
-const RETURN_URL =
-  process.env.STRIPE_CONNECT_RETURN_URL || `${FALLBACK}/events/mine`;
-const REFRESH_URL =
-  process.env.STRIPE_CONNECT_REFRESH_URL || `${FALLBACK}/events/mine`;
-
-// Domaine à enregistrer pour Apple Pay (extrait du FRONTEND_URL, sans protocole)
-const APPLE_PAY_DOMAIN = FALLBACK.replace(/^https?:\/\//, "").replace(
-  /\/$/,
-  "",
-);
+const GiftPoolContribution = require("../models/giftPoolContribution.model");
+const Event = require("../models/event.model");
+const User = require("../models/user.model");
+const { notify } = require("../utils/notify");
 
 /*
- * Enregistre le domaine Apple Pay SUR un compte connecté.
- * Requis en charges directes : la session Apple Pay s'exécute sur le compte
- * de l'organisateur, qui doit donc "connaître" le domaine. Idempotent :
- * on ignore l'erreur si le domaine est déjà enregistré.
+ * POST /api/stripe/webhook
+ * ⚠️ Monté avec express.raw() AVANT express.json() dans app.js.
+ * Signature vérifiée sur le body BRUT. Handlers idempotents.
  */
-async function registerApplePayDomain(stripeAccountId) {
+router.post("/", async (req, res) => {
+  const sig = req.headers["stripe-signature"];
+  let event;
+
   try {
-    await stripe.applePayDomains.create(
-      { domain_name: APPLE_PAY_DOMAIN },
-      { stripeAccount: stripeAccountId },
-    );
-    console.log(
-      `✅ Apple Pay domain '${APPLE_PAY_DOMAIN}' registered on ${stripeAccountId}`,
+    event = stripe.webhooks.constructEvent(
+      req.body,
+      sig,
+      process.env.STRIPE_WEBHOOK_SECRET,
     );
   } catch (err) {
-    const msg = String(err?.message || "");
-    // Déjà enregistré -> pas une vraie erreur
-    if (!msg.toLowerCase().includes("already")) {
-      console.error("⚠️ Apple Pay domain registration failed:", msg);
-    }
+    console.error("❌ Webhook signature verification failed:", err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
   }
-}
 
-/*
- * POST /api/stripe/connect/onboard
- * Crée (ou réutilise) le compte Express de l'organisateur et renvoie
- * un lien d'onboarding Stripe hébergé. Le compte est unique par user et
- * réutilisé sur tous ses événements.
- */
-router.post("/onboard", isAuthenticated, async (req, res) => {
   try {
-    const userId = req.payload._id;
-    let account = await StripeAccount.findOne({ user: userId });
+    switch (event.type) {
+      case "account.updated": {
+        const acct = event.data.object;
+        await StripeAccount.findOneAndUpdate(
+          { stripeAccountId: acct.id },
+          {
+            chargesEnabled: acct.charges_enabled,
+            payoutsEnabled: acct.payouts_enabled,
+            detailsSubmitted: acct.details_submitted,
+            ...(acct.details_submitted
+              ? { onboardingCompletedAt: new Date() }
+              : {}),
+          },
+        );
+        break;
+      }
 
-    // Pas encore de compte Connect -> on en crée un (type Express)
-    if (!account) {
-      const stripeAccount = await stripe.accounts.create({
-        type: "express",
-        country: "FR",
-        capabilities: {
-          card_payments: { requested: true },
-          transfers: { requested: true },
-        },
-        business_type: "individual",
-        metadata: { birthReminderUserId: String(userId) },
-      });
+      case "payment_intent.succeeded": {
+        const pi = event.data.object;
 
-      account = await StripeAccount.create({
-        user: userId,
-        stripeAccountId: stripeAccount.id,
-      });
+        // Passe la contribution à succeeded (idempotent)
+        const contribution = await GiftPoolContribution.findOneAndUpdate(
+          { stripePaymentIntentId: pi.id },
+          { status: "succeeded" },
+          { new: true },
+        );
+
+        // Si pas trouvée (ex: trigger CLI générique), on s'arrête là proprement
+        if (!contribution) break;
+
+        const eventDoc = await Event.findById(contribution.event).select(
+          "shortId title organizer organizerNotificationPrefs",
+        );
+        if (!eventDoc) break;
+
+        // a) Temps réel : signale au widget de se rafraîchir
+        const io = req.app.get("io");
+        if (io) {
+          io.to(`event:${eventDoc.shortId}`).emit("event:pool_update", {
+            shortId: eventDoc.shortId,
+          });
+        }
+
+        // b) Notifier l'organisateur (selon ses préférences)
+        const prefs = eventDoc.organizerNotificationPrefs || {};
+        if (prefs.poolContribution !== false) {
+          // Nom du contributeur (compte ou invité)
+          let contributorName = contribution.guestName || "Quelqu'un";
+          if (contribution.contributor) {
+            const u = await User.findById(
+              contribution.contributor,
+              "name surname",
+            );
+            if (u) {
+              contributorName = `${u.name}${u.surname ? " " + u.surname : ""}`;
+            }
+          }
+          if (contribution.anonymous) contributorName = "Un participant";
+
+          const amountEuros = (contribution.amount / 100).toLocaleString(
+            "fr-FR",
+            { style: "currency", currency: "EUR" },
+          );
+
+          await notify(req.app, {
+            userId: eventDoc.organizer.toString(),
+            type: "event_pool_contribution",
+            data: {
+              eventShortId: eventDoc.shortId,
+              eventTitle: eventDoc.title,
+              contributorName,
+              amount: contribution.amount,
+              amountLabel: amountEuros,
+            },
+            link: `/event/${eventDoc.shortId}`,
+          });
+        }
+
+        break;
+      }
+
+      case "payment_intent.payment_failed": {
+        const pi = event.data.object;
+        await GiftPoolContribution.findOneAndUpdate(
+          { stripePaymentIntentId: pi.id },
+          { status: "failed" },
+        );
+        break;
+      }
+
+      default:
+        break;
     }
 
-    // Lien d'onboarding hébergé par Stripe (usage unique, courte durée de vie)
-    const accountLink = await stripe.accountLinks.create({
-      account: account.stripeAccountId,
-      refresh_url: REFRESH_URL,
-      return_url: RETURN_URL,
-      type: "account_onboarding",
-    });
-
-    res.status(200).json({ url: accountLink.url });
+    res.status(200).json({ received: true });
   } catch (error) {
-    console.error("❌ Error creating Connect onboarding link:", error);
-    res
-      .status(500)
-      .json({ message: "Erreur lors de la création du lien Stripe" });
-  }
-});
-
-/*
- * GET /api/stripe/connect/status
- * Renvoie l'état du compte Connect, synchronisé depuis Stripe.
- * `ready: true` => l'organisateur peut encaisser une cagnotte.
- */
-router.get("/status", isAuthenticated, async (req, res) => {
-  try {
-    const userId = req.payload._id;
-    const account = await StripeAccount.findOne({ user: userId });
-
-    if (!account) {
-      return res.status(200).json({ connected: false, ready: false });
-    }
-
-    // Source de vérité = Stripe ; on rafraîchit la copie locale
-    const stripeAccount = await stripe.accounts.retrieve(
-      account.stripeAccountId,
-    );
-
-    const wasReady = account.chargesEnabled && account.detailsSubmitted;
-
-    account.chargesEnabled = stripeAccount.charges_enabled;
-    account.payoutsEnabled = stripeAccount.payouts_enabled;
-    account.detailsSubmitted = stripeAccount.details_submitted;
-    if (stripeAccount.details_submitted && !account.onboardingCompletedAt) {
-      account.onboardingCompletedAt = new Date();
-    }
-    await account.save();
-
-    const isReady = account.chargesEnabled && account.detailsSubmitted;
-
-    // Le compte est prêt : on s'assure que le domaine Apple Pay est enregistré
-    // sur ce compte connecté (idempotent, requis en charges directes).
-    if (isReady) {
-      await registerApplePayDomain(account.stripeAccountId);
-    }
-
-    res.status(200).json({
-      connected: true,
-      chargesEnabled: account.chargesEnabled,
-      payoutsEnabled: account.payoutsEnabled,
-      detailsSubmitted: account.detailsSubmitted,
-      ready: isReady,
-    });
-  } catch (error) {
-    console.error("❌ Error fetching Connect status:", error);
-    res.status(500).json({ message: "Erreur serveur" });
+    console.error("❌ Error handling webhook event:", error);
+    res.status(500).json({ received: false });
   }
 });
 
