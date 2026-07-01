@@ -47,7 +47,14 @@ const PaymentStep = ({ onSuccess, onBack }) => {
 
   return (
     <div className="gp-pay-step">
-      <PaymentElement />
+      <PaymentElement
+        options={{
+          wallets: {
+            applePay: "auto",
+            googlePay: "auto",
+          },
+        }}
+      />
       {error && <p className="gp-error">{error}</p>}
       <div className="gp-modal-actions">
         <button
