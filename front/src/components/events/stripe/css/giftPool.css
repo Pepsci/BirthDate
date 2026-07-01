@@ -485,6 +485,24 @@
   color: var(--success);
 }
 
+.gp-pay-separator {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 16px 0;
+  color: var(--text-tertiary);
+  font-size: 0.82rem;
+}
+.gp-pay-separator::before,
+.gp-pay-separator::after {
+  content: "";
+  flex: 1;
+  border-bottom: 1px solid var(--border-color);
+}
+.gp-pay-separator span {
+  padding: 0 12px;
+}
+
 /* ---------- Responsive ---------- */
 @media (max-width: 480px) {
   .gp-modal {
