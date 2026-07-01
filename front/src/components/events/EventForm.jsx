@@ -153,6 +153,10 @@ const EventForm = ({
         giftMode: existingEvent.giftMode || "proposals",
         imposedGifts: existingEvent.imposedGifts || [],
         giftPoolEnabled: existingEvent.giftPoolEnabled || false,
+        giftPoolMode: existingEvent.giftPool?.mode || "free",
+        giftPoolGoal: existingEvent.giftPool?.goal
+          ? String(existingEvent.giftPool.goal / 100)
+          : "",
         maxGiftProposalsPerUser: existingEvent.maxGiftProposalsPerUser || null,
         maxGuests: existingEvent.maxGuests || "",
         allowExternalGuests: existingEvent.allowExternalGuests !== false,
@@ -185,6 +189,8 @@ const EventForm = ({
       giftMode: "proposals",
       imposedGifts: [],
       giftPoolEnabled: false,
+      giftPoolMode: "free",
+      giftPoolGoal: "",
       maxGiftProposalsPerUser: null,
       maxGuests: "",
       allowExternalGuests: true,
@@ -260,7 +266,17 @@ const EventForm = ({
       if (payload.dateMode === "fixed" && formData.fixedDate) {
         payload.fixedDate = new Date(formData.fixedDate);
       }
+
+      // La cagnotte n'est pas persistée via le POST/PUT principal : elle est
+      // gérée séparément par la route /pool (qui exige un compte Stripe prêt).
+      // On retire donc les champs de config cagnotte du payload principal.
+      delete payload.giftPoolMode;
+      delete payload.giftPoolGoal;
+
       if (editMode && existingEvent) {
+        // En édition, la cagnotte se gère exclusivement dans l'onglet Cagnotte.
+        // On ne touche pas à giftPoolEnabled ici pour ne rien écraser.
+        delete payload.giftPoolEnabled;
         await apiHandler.put(`/events/${existingEvent.shortId}`, payload);
         if (selectedFriends.length > 0)
           await apiHandler.post(`/events/${existingEvent.shortId}/invite`, {
@@ -268,8 +284,31 @@ const EventForm = ({
           });
         onClose(true);
       } else {
+        // À la création, on crée l'événement sans cagnotte active…
+        payload.giftPoolEnabled = false;
         const res = await apiHandler.post("/events", payload);
         const shortId = res.data.shortId;
+
+        // …puis on tente d'activer la cagnotte via /pool si demandé.
+        // Si Stripe n'est pas connecté, la route renvoie une erreur qu'on
+        // ignore : l'organisateur finalisera dans l'onglet Cagnotte.
+        if (formData.giftPoolEnabled) {
+          try {
+            await apiHandler.put(`/events/${shortId}/pool`, {
+              active: true,
+              mode: formData.giftPoolMode,
+              goal:
+                formData.giftPoolMode === "goal" && formData.giftPoolGoal
+                  ? Math.round(Number(formData.giftPoolGoal) * 100)
+                  : null,
+            });
+          } catch {
+            console.warn(
+              "Cagnotte non activée immédiatement (compte Stripe non connecté). À finaliser dans l'onglet Cagnotte.",
+            );
+          }
+        }
+
         if (selectedFriends.length > 0)
           await apiHandler.post(`/events/${shortId}/invite`, {
             userIds: selectedFriends,
@@ -803,21 +842,104 @@ const EventForm = ({
                       </div>
                     )}
 
-                    <div className="cagnotte-placeholder">
-                      <div className="badge">Bientôt disponible</div>
-                      <h4
-                        style={{
-                          margin: "0 0 10px 0",
-                          color: "var(--text-primary)",
-                        }}
-                      >
-                        💳 Cagnotte partagée
-                      </h4>
-                      <p style={{ margin: 0, fontSize: "0.9rem" }}>
-                        Activez cette option pour collecter de l'argent
-                        ensemble.
-                      </p>
-                    </div>
+                    {/* ── Cagnotte ── */}
+                    {!editMode ? (
+                      <div className="cagnotte-activate">
+                        <label className="cagnotte-toggle">
+                          <input
+                            type="checkbox"
+                            name="giftPoolEnabled"
+                            checked={formData.giftPoolEnabled}
+                            onChange={handleChange}
+                          />
+                          <span>
+                            💳 Activer une cagnotte pour cet événement
+                          </span>
+                        </label>
+
+                        {formData.giftPoolEnabled && (
+                          <div className="cagnotte-config">
+                            <div className="event-form-group">
+                              <label>Type de cagnotte</label>
+                              <div className="cagnotte-mode-group">
+                                <button
+                                  type="button"
+                                  className={`cagnotte-mode-btn ${
+                                    formData.giftPoolMode === "free"
+                                      ? "active"
+                                      : ""
+                                  }`}
+                                  onClick={() =>
+                                    setFormData((prev) => ({
+                                      ...prev,
+                                      giftPoolMode: "free",
+                                    }))
+                                  }
+                                >
+                                  Libre
+                                </button>
+                                <button
+                                  type="button"
+                                  className={`cagnotte-mode-btn ${
+                                    formData.giftPoolMode === "goal"
+                                      ? "active"
+                                      : ""
+                                  }`}
+                                  onClick={() =>
+                                    setFormData((prev) => ({
+                                      ...prev,
+                                      giftPoolMode: "goal",
+                                    }))
+                                  }
+                                >
+                                  Avec objectif
+                                </button>
+                              </div>
+                            </div>
+
+                            {formData.giftPoolMode === "goal" && (
+                              <div className="event-form-group">
+                                <label>Montant objectif (€)</label>
+                                <input
+                                  type="number"
+                                  min="1"
+                                  step="1"
+                                  value={formData.giftPoolGoal}
+                                  onChange={(e) =>
+                                    setFormData((prev) => ({
+                                      ...prev,
+                                      giftPoolGoal: e.target.value,
+                                    }))
+                                  }
+                                  placeholder="Ex : 150"
+                                />
+                              </div>
+                            )}
+
+                            <div className="cagnotte-info-notice">
+                              <i className="fa-solid fa-circle-info"></i>
+                              <p>
+                                Pour recevoir les fonds, vous devrez connecter
+                                votre compte Stripe depuis l'onglet{" "}
+                                <strong>Cagnotte</strong> de l'événement après
+                                sa création. La cagnotte ne sera visible et
+                                active pour les participants qu'une fois votre
+                                compte Stripe connecté.
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="cagnotte-info-notice cagnotte-edit-hint">
+                        <i className="fa-solid fa-circle-info"></i>
+                        <p>
+                          La cagnotte et les moyens de paiement (RIB, PayPal) se
+                          gèrent directement dans l'onglet{" "}
+                          <strong>Cagnotte</strong> de l'événement.
+                        </p>
+                      </div>
+                    )}
                   </>
                 )}
 

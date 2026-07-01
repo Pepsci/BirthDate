@@ -9,6 +9,7 @@ const GiftPoolManager = ({ shortId, pool, onUpdated }) => {
   const [loadingStatus, setLoadingStatus] = useState(true);
   const [onboarding, setOnboarding] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [savedOk, setSavedOk] = useState(false);
   const [error, setError] = useState("");
 
   // Form state
@@ -39,7 +40,6 @@ const GiftPoolManager = ({ shortId, pool, onUpdated }) => {
     setError("");
     try {
       const res = await apiHandler.post("/stripe/connect/onboard");
-      // Redirection vers l'onboarding hébergé par Stripe
       window.location.href = res.data.url;
     } catch (err) {
       setError(
@@ -53,6 +53,7 @@ const GiftPoolManager = ({ shortId, pool, onUpdated }) => {
   const handleSave = async () => {
     setSaving(true);
     setError("");
+    setSavedOk(false);
     try {
       const payload = {
         active,
@@ -64,6 +65,8 @@ const GiftPoolManager = ({ shortId, pool, onUpdated }) => {
       };
       const res = await apiHandler.put(`/events/${shortId}/pool`, payload);
       onUpdated?.(res.data);
+      setSavedOk(true);
+      setTimeout(() => setSavedOk(false), 3000);
     } catch (err) {
       if (err?.response?.data?.code === "STRIPE_NOT_READY") {
         setError(
@@ -81,7 +84,6 @@ const GiftPoolManager = ({ shortId, pool, onUpdated }) => {
 
   const ready = connectStatus?.ready;
 
-  // Exemple de frais pour une contribution de 20 € (carte FR standard)
   const exampleGross = 2000;
   const exampleFee = Math.round(exampleGross * 0.015) + 25;
   const exampleNet = exampleGross - exampleFee;
@@ -199,12 +201,26 @@ const GiftPoolManager = ({ shortId, pool, onUpdated }) => {
                   votre compte bancaire. Exemple : pour une contribution de{" "}
                   {euro(exampleGross)}, vous recevez environ {euro(exampleNet)}.
                 </p>
+                <p className="gp-fee-notice-text">
+                  Les contributions sont{" "}
+                  <strong>versées automatiquement</strong> sur le compte
+                  bancaire associé à votre compte Stripe.
+                </p>
               </div>
             </div>
           </>
         )}
 
         {error && <p className="gp-error">{error}</p>}
+        {savedOk && (
+          <motion.p
+            className="gp-saved-ok"
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <i className="fa-solid fa-circle-check"></i> Cagnotte enregistrée.
+          </motion.p>
+        )}
 
         <motion.button
           className="gp-btn gp-btn-primary gp-btn-full"
@@ -213,7 +229,11 @@ const GiftPoolManager = ({ shortId, pool, onUpdated }) => {
           whileHover={{ scale: 1.01 }}
           whileTap={{ scale: 0.99 }}
         >
-          {saving ? "Enregistrement…" : "Enregistrer"}
+          {saving
+            ? "Enregistrement…"
+            : savedOk
+              ? "Enregistré ✓"
+              : "Enregistrer"}
         </motion.button>
       </div>
     </div>

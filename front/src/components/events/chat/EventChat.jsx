@@ -102,7 +102,6 @@ const EventChat = ({ shortId, participants = {} }) => {
       socket.off("event:message_error", handleMessageError);
       socket.off("event:typing_start", handleTypingStart);
       socket.off("event:typing_stop", handleTypingStop);
-      socketService.emit("event:leave", { shortId });
     };
   }, [shortId]); // eslint-disable-line react-hooks/exhaustive-deps
 

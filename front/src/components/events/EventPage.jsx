@@ -18,6 +18,9 @@ import EventNotifPrefs from "./EventNotifPrefs";
 import ChatModal from "../chat/ChatModal";
 import GiftPoolManager from "./stripe/GiftPoolManager";
 import GiftPoolWidget from "./stripe/GiftPoolWidget";
+import BankInfoManager from "./stripe/BankInfoManager";
+import PaypalManager from "./stripe/PaypalManager";
+import DirectTransferViewer from "./stripe/DirectTransferViewer";
 import "./css/eventPage.css";
 
 delete L.Icon.Default.prototype._getIconUrl;
@@ -269,6 +272,32 @@ const EventPage = () => {
     };
     socket.on("event:rsvp_update", handleRsvpUpdate);
     return () => socket.off("event:rsvp_update", handleRsvpUpdate);
+  }, [shortId, event?.hasFullAccess]);
+
+  useEffect(() => {
+    if (!event?.hasFullAccess) return;
+    const socket = socketService.getSocket();
+    if (!socket) return;
+    const handleTransferUpdate = ({ shortId: sId }) => {
+      console.log("🔔 transfer_update reçu", sId, shortId);
+      if (sId === shortId) setRefreshKey((k) => k + 1);
+    };
+    socket.on("event:transfer_update", handleTransferUpdate);
+    return () => socket.off("event:transfer_update", handleTransferUpdate);
+  }, [shortId, event?.hasFullAccess]);
+
+  // Rejoindre la room de l'événement dès qu'on a accès (pour tout le temps réel :
+  // cagnotte, virements, etc.) — indépendamment de l'onglet Discussion.
+  useEffect(() => {
+    if (!event?.hasFullAccess) return;
+    const socket = socketService.getSocket();
+    if (!socket) return;
+
+    socketService.emit("event:join", { shortId });
+
+    return () => {
+      socketService.emit("event:leave", { shortId });
+    };
   }, [shortId, event?.hasFullAccess]);
 
   const handleDeleteEvent = async () => {
@@ -838,11 +867,48 @@ const EventPage = () => {
                           />
                         </GlassCard>
                       )}
+                      <GlassCard className="ep-card">
+                        <div className="ep-card-header">
+                          <i className="fa-solid fa-building-columns ep-card-icon"></i>
+                          <h3>Virement direct (RIB)</h3>
+                        </div>
+                        <BankInfoManager
+                          shortId={shortId}
+                          ibanEnabled={event.directTransfer?.ibanEnabled}
+                        />
+                      </GlassCard>
+                      <GlassCard className="ep-card">
+                        <div className="ep-card-header">
+                          <i className="fa-brands fa-paypal ep-card-icon"></i>
+                          <h3>Paiement PayPal</h3>
+                        </div>
+                        <PaypalManager
+                          shortId={shortId}
+                          paypalEnabled={event.directTransfer?.paypalEnabled}
+                          paypalLink={event.directTransfer?.paypalLink}
+                        />
+                      </GlassCard>
                     </>
                   ) : (
-                    <GlassCard className="ep-card">
-                      <GiftPoolWidget shortId={shortId} isOrganizer={false} />
-                    </GlassCard>
+                    <>
+                      <GlassCard className="ep-card">
+                        <GiftPoolWidget shortId={shortId} isOrganizer={false} />
+                      </GlassCard>
+                      {currentUser &&
+                        (event.directTransfer?.ibanEnabled ||
+                          event.directTransfer?.paypalEnabled) && (
+                          <GlassCard className="ep-card">
+                            <div className="ep-card-header">
+                              <i className="fa-solid fa-money-bill-transfer ep-card-icon"></i>
+                              <h3>Autres moyens de participer</h3>
+                            </div>
+                            <DirectTransferViewer
+                              shortId={shortId}
+                              directTransfer={event.directTransfer}
+                            />
+                          </GlassCard>
+                        )}
+                    </>
                   )}
                 </motion.div>
               )}

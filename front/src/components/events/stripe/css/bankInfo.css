@@ -1,0 +1,268 @@
+/* ============================================
+   BANK INFO — RIB organisateur (chiffré)
+   ============================================ */
+.bi-manager,
+.bi-viewer {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.bi-muted {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+/* ---------- Avertissement ---------- */
+.bi-warning {
+  padding: 1rem;
+  background: color-mix(in srgb, var(--warning) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--warning) 40%, transparent);
+  border-radius: 12px;
+}
+
+.bi-warning-title {
+  margin: 0 0 0.4rem;
+  font-weight: 700;
+  color: var(--warning);
+  font-size: 0.95rem;
+}
+
+.bi-warning-text {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+/* ---------- Champs ---------- */
+.bi-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.bi-label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.bi-input {
+  width: 100%;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 0.95rem;
+}
+
+.bi-input:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+/* ---------- Durées ---------- */
+.bi-duration-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.bi-duration {
+  padding: 0.5rem 0.85rem;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--bg-primary);
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.bi-duration.active {
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 10%, transparent);
+  color: var(--primary);
+  font-weight: 600;
+}
+
+/* ---------- Checkbox d'acceptation ---------- */
+.bi-ack {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.bi-ack input {
+  margin-top: 0.2rem;
+  accent-color: var(--primary);
+}
+
+/* ---------- Statut RIB enregistré ---------- */
+.bi-status {
+  display: flex;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: color-mix(in srgb, var(--success) 8%, transparent);
+  border-radius: 12px;
+}
+
+.bi-status > i {
+  color: var(--success);
+  font-size: 1.2rem;
+  margin-top: 0.1rem;
+}
+
+.bi-status-title {
+  margin: 0 0 0.2rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.bi-status-sub {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+/* ---------- Détails RIB (viewer) ---------- */
+.bi-viewer-intro,
+.bi-viewer-note {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.bi-viewer-note {
+  font-size: 0.78rem;
+  color: var(--text-tertiary);
+}
+
+.bi-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: var(--bg-secondary);
+  border-radius: 10px;
+}
+
+.bi-detail-label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.bi-detail-value {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.bi-iban {
+  font-family: monospace;
+  letter-spacing: 0.5px;
+}
+
+/* ---------- Boutons ---------- */
+.bi-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.bi-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.1rem;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.bi-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.bi-btn-primary {
+  background: var(--primary);
+  color: #fff;
+}
+
+.bi-btn-primary:hover:not(:disabled) {
+  background: var(--primary-dark);
+}
+
+.bi-btn-ghost {
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+
+.bi-btn-danger {
+  background: transparent;
+  color: var(--danger);
+  border: 1px solid var(--danger);
+}
+
+.bi-btn-danger-active {
+  background: var(--danger);
+  color: #fff;
+}
+
+.bi-btn-full {
+  width: 100%;
+}
+
+.bi-error {
+  color: var(--danger);
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+/* ---------- Toggle option ---------- */
+.bi-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 0;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.bi-toggle-row input[type="checkbox"] {
+  width: 1.1rem;
+  height: 1.1rem;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+/* ---------- Méthode (viewer) ---------- */
+.bi-method {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.bi-method:last-of-type {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+a.bi-btn {
+  text-decoration: none;
+}

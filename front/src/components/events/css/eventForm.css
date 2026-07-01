@@ -80,7 +80,7 @@
 }
 
 .event-stepper::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 50%;
   left: 10px;
@@ -257,4 +257,77 @@
   border-radius: 12px;
   font-size: 0.75rem;
   font-weight: bold;
+}
+
+/* ── Cagnotte (étape 4) ── */
+.cagnotte-activate {
+  margin-top: 20px;
+  padding: 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--bg-secondary);
+}
+
+.cagnotte-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.cagnotte-config {
+  margin-top: 16px;
+}
+
+.cagnotte-mode-group {
+  display: flex;
+  gap: 10px;
+}
+
+.cagnotte-mode-btn {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-primary);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.15s ease;
+}
+
+.cagnotte-mode-btn.active {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 8%, transparent);
+}
+
+.cagnotte-info-notice {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin-top: 16px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--primary) 6%, transparent);
+  border: 1px solid color-mix(in srgb, var(--primary) 20%, transparent);
+}
+
+.cagnotte-info-notice i {
+  color: var(--primary);
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.cagnotte-info-notice p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.cagnotte-edit-hint {
+  margin-top: 20px;
 }

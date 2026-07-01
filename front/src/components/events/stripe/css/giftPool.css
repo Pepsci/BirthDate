@@ -476,6 +476,15 @@
   border-radius: 8px;
 }
 
+.gp-saved-ok {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--success);
+}
+
 /* ---------- Responsive ---------- */
 @media (max-width: 480px) {
   .gp-modal {

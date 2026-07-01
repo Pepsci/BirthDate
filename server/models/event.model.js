@@ -108,6 +108,13 @@ const eventSchema = new Schema(
       deadline: { type: Date, default: null }, // optionnel ; couplé au reminder "pool_deadline"
     },
 
+    // Virement direct (hors plateforme) — IBAN chiffré + PayPal.Me
+    directTransfer: {
+      ibanEnabled: { type: Boolean, default: false },
+      paypalEnabled: { type: Boolean, default: false },
+      paypalLink: { type: String, default: "" }, // PayPal.Me — lien public, en clair
+    },
+
     // Invitations
     maxGuests: {
       type: Number,
