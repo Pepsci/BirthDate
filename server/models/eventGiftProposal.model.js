@@ -27,6 +27,7 @@ const eventGiftProposalSchema = new Schema(
     },
     url: String,
     price: Number,
+    image: { type: String, default: null },
     votes: [
       {
         type: Schema.Types.ObjectId,

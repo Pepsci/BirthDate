@@ -10,7 +10,7 @@ const { notifyOrganizer } = require("./notifyOrganizer");
  */
 router.post("/:shortId/gifts", checkGuestOrAuth, async (req, res) => {
   try {
-    const { name, url, price } = req.body;
+    const { name, url, price, image } = req.body;
     const event = req.event;
 
     // Vérifier la limite par user
@@ -35,6 +35,7 @@ router.post("/:shortId/gifts", checkGuestOrAuth, async (req, res) => {
       name,
       url,
       price,
+      image: image || null,
     });
 
     // Ne notifier que si ce n'est pas l'organisateur lui-même

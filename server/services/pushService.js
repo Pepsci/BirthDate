@@ -30,6 +30,11 @@ function initVapid() {
  *   type: "chat" | "birthday" | "friend" | "gift" | "default"
  */
 async function sendPushToUser(userId, payload) {
+  // Push natif mobile (Expo) — indépendant du web push, jamais bloquant
+  sendExpoPushToUser(userId, payload).catch((err) =>
+    console.error("[ExpoPush] error:", err.message),
+  );
+
   if (!initVapid()) return; // Skip silencieux si VAPID pas configuré
 
   const subs = await PushSubscription.find({ user: userId });
@@ -63,4 +68,57 @@ async function sendPushToUser(userId, payload) {
   console.log(`[Push] userId=${userId} → ${sent} envoyées, ${failed} échouées`);
 }
 
-module.exports = { sendPushToUser };
+/**
+ * Envoie une notification native (iOS/Android) via l'API Expo Push.
+ * Les credentials FCM/APNs sont gérés côté Expo (eas credentials),
+ * le backend n'a besoin d'aucune clé.
+ */
+async function sendExpoPushToUser(userId, payload) {
+  const User = require("../models/user.model");
+  const axios = require("axios");
+
+  const user = await User.findById(userId).select("expoPushTokens");
+  const tokens = user?.expoPushTokens || [];
+  if (!tokens.length) return;
+
+  const messages = tokens.map((to) => ({
+    to,
+    title: payload.title || "BirthReminder",
+    body: payload.body || "",
+    sound: "default",
+    data: {
+      url: payload.url || "/home",
+      type: payload.type || "default",
+      friendId: payload.friendId || null,
+    },
+  }));
+
+  const { data } = await axios.post(
+    "https://exp.host/--/api/v2/push/send",
+    messages,
+    { headers: { "Content-Type": "application/json" }, timeout: 10000 },
+  );
+
+  // Nettoyage des tokens invalides (app désinstallée, etc.)
+  const tickets = data?.data || [];
+  const deadTokens = [];
+  tickets.forEach((ticket, i) => {
+    if (
+      ticket.status === "error" &&
+      ticket.details?.error === "DeviceNotRegistered"
+    ) {
+      deadTokens.push(tokens[i]);
+    }
+  });
+  if (deadTokens.length) {
+    await User.findByIdAndUpdate(userId, {
+      $pull: { expoPushTokens: { $in: deadTokens } },
+    });
+    console.log(`[ExpoPush] ${deadTokens.length} token(s) mort(s) supprimé(s)`);
+  }
+
+  const ok = tickets.filter((t) => t.status === "ok").length;
+  console.log(`[ExpoPush] userId=${userId} → ${ok}/${tokens.length} envoyées`);
+}
+
+module.exports = { sendPushToUser, sendExpoPushToUser };

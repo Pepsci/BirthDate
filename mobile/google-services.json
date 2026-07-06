@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "705990229198",
+    "project_id": "birthreminder-bbcb2",
+    "storage_bucket": "birthreminder-bbcb2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:705990229198:android:db26bf25742b547b99649f",
+        "android_client_info": {
+          "package_name": "com.birthreminder.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCK8caYXCZaOriT0iO1MRNbx11_S64MAIo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

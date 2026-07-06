@@ -197,7 +197,9 @@ router.patch("/:id/gifts", isAuthenticated, async (req, res, next) => {
       return res.status(400).json({ message: "Invalid Date ID" });
     }
 
-    const { giftName, occasion, year, purchased } = req.body;
+    // url/price/image étaient envoyés par le front mais ignorés ici — corrigé
+    const { giftName, occasion, year, purchased, url, price, image } =
+      req.body;
 
     const updatedDate = await dateModel.findOneAndUpdate(
       {
@@ -211,6 +213,9 @@ router.patch("/:id/gifts", isAuthenticated, async (req, res, next) => {
             occasion,
             year,
             purchased,
+            url: url || null,
+            price: price ?? null,
+            image: image || null,
           },
         },
       },

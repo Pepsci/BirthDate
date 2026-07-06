@@ -9,13 +9,24 @@ const PORT = process.env.PORT || 3000;
 
 const server = http.createServer(app);
 
+// Même politique que le CORS Express (app.js) : les requêtes sans Origin
+// (app mobile React Native, outils) sont autorisées — l'auth reste assurée
+// par le middleware socketAuth (JWT obligatoire).
+const allowedSocketOrigins = [
+  "http://localhost:5173",
+  "https://birthreminder.com",
+  "https://www.birthreminder.com",
+];
+
 const io = new Server(server, {
   cors: {
-    origin: [
-      "http://localhost:5173",
-      "https://birthreminder.com",
-      "https://www.birthreminder.com",
-    ],
+    origin: function (origin, callback) {
+      if (!origin || allowedSocketOrigins.includes(origin)) {
+        callback(null, origin);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     methods: ["GET", "POST"],
     credentials: true,
   },

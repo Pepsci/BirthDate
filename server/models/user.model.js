@@ -80,6 +80,8 @@ const userSchema = new Schema({
 
   // ── Push notifications ─────────────────────────────────────────────────────
   pushEnabled: { type: Boolean, default: false },
+  // Tokens Expo Push (app mobile) — un par appareil
+  expoPushTokens: { type: [String], default: [] },
   pushEvents: {
     birthdays: { type: Boolean, default: true },
     chat: { type: Boolean, default: true },

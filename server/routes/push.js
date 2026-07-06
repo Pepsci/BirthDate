@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const PushSubscription = require("../models/PushSubscription.model");
+const User = require("../models/user.model");
 const { isAuthenticated } = require("../middleware/jwt.middleware");
 
 // POST /push/subscribe
@@ -44,6 +45,40 @@ router.delete("/unsubscribe", isAuthenticated, async (req, res) => {
 // GET /push/vapid-public-key  (le frontend en a besoin pour s'abonner)
 router.get("/vapid-public-key", (req, res) => {
   res.json({ publicKey: process.env.VAPID_PUBLIC_KEY });
+});
+
+// ── Expo Push (app mobile) ────────────────────────────────────────────────────
+
+// POST /push/expo-token — enregistre le token de l'appareil
+router.post("/expo-token", isAuthenticated, async (req, res) => {
+  try {
+    const { token } = req.body;
+    if (!token || !/^ExponentPushToken\[.+\]$/.test(token)) {
+      return res.status(400).json({ error: "Token Expo invalide" });
+    }
+    await User.findByIdAndUpdate(req.payload._id, {
+      $addToSet: { expoPushTokens: token },
+      // Activer le push automatiquement à l'enregistrement mobile
+      $set: { pushEnabled: true },
+    });
+    res.json({ success: true });
+  } catch (err) {
+    console.error("[Push] expo-token error:", err);
+    res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+// DELETE /push/expo-token — retire le token (déconnexion)
+router.delete("/expo-token", isAuthenticated, async (req, res) => {
+  try {
+    const { token } = req.body;
+    await User.findByIdAndUpdate(req.payload._id, {
+      $pull: { expoPushTokens: token },
+    });
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: "Erreur serveur" });
+  }
 });
 
 module.exports = router;
