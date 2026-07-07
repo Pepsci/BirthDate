@@ -41,14 +41,18 @@ function RootNavigator() {
     );
   }
 
-  // Garde d'auth : non connecté → /login, connecté sur /login → tabs
-  if (!user && pathname !== "/login") return <Redirect href="/login" />;
-  if (user && pathname === "/login") return <Redirect href="/" />;
+  // Garde d'auth : non connecté → /login (sauf inscription / mdp oublié)
+  const publicRoutes = ["/login", "/signup", "/forgot-password"];
+  if (!user && !publicRoutes.includes(pathname))
+    return <Redirect href="/login" />;
+  if (user && publicRoutes.includes(pathname)) return <Redirect href="/" />;
 
   return (
     <Stack>
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="login" options={{ headerShown: false }} />
+      <Stack.Screen name="signup" />
+      <Stack.Screen name="forgot-password" />
     </Stack>
   );
 }

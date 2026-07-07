@@ -346,10 +346,18 @@ async function sendChatNotifications(frequency) {
         const total = enrichedGroups.reduce((s, g) => s + g.count, 0);
         const senderNames = enrichedGroups.map((g) => g.senderName).join(", ");
 
+        // Un seul expéditeur → deep-link direct vers la conversation.
+        // enrichedGroups[i]._id = id de l'expéditeur = friendId côté client.
+        // Plusieurs expéditeurs → on reste sur /home (push groupée).
+        const pushUrl =
+          enrichedGroups.length === 1
+            ? `/home?tab=chat&friendId=${enrichedGroups[0]._id}`
+            : "/home";
+
         await sendPushToUser(user._id, {
           title: `💬 ${total} message${total > 1 ? "s" : ""} non lu${total > 1 ? "s" : ""}`,
           body: `De : ${senderNames}`,
-          url: "/home",
+          url: pushUrl,
           tag: "birthreminder-chat",
         });
 

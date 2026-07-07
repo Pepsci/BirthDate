@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { Stack, useLocalSearchParams } from "expo-router";
 import { useHeaderHeight } from "@react-navigation/elements";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useKeyboardPadding } from "../../../lib/use-keyboard-padding";
 import type { Socket } from "socket.io-client";
 import { useAuth } from "../../../lib/auth-context";
@@ -32,6 +33,9 @@ export default function EventChatScreen() {
   const { user } = useAuth();
   const headerHeight = useHeaderHeight();
   const keyboardPadding = useKeyboardPadding();
+  const insets = useSafeAreaInsets();
+  // Clavier ouvert → hauteur clavier ; fermé → barre système (edge-to-edge)
+  const bottomPad = keyboardPadding > 0 ? keyboardPadding : insets.bottom;
   const [messages, setMessages] = useState<EventChatMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -210,7 +214,7 @@ export default function EventChatScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={[styles.container, { paddingBottom: keyboardPadding }]}
+      style={[styles.container, { paddingBottom: bottomPad }]}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
       keyboardVerticalOffset={Platform.OS === "ios" ? headerHeight : 0}
     >

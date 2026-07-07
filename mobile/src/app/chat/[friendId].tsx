@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { Stack, useLocalSearchParams } from "expo-router";
 import { useHeaderHeight } from "@react-navigation/elements";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useKeyboardPadding } from "../../lib/use-keyboard-padding";
 import type { Socket } from "socket.io-client";
 import { useAuth } from "../../lib/auth-context";
@@ -38,6 +39,9 @@ export default function DMChatScreen() {
   const { user } = useAuth();
   const headerHeight = useHeaderHeight();
   const keyboardPadding = useKeyboardPadding();
+  const insets = useSafeAreaInsets();
+  // Clavier ouvert → hauteur clavier ; fermé → barre système (edge-to-edge)
+  const bottomPad = keyboardPadding > 0 ? keyboardPadding : insets.bottom;
   const { refresh: refreshUnread } = useUnread();
   const [messages, setMessages] = useState<DMMessage[]>([]);
   const [loading, setLoading] = useState(true);
@@ -198,7 +202,7 @@ export default function DMChatScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={[styles.container, { paddingBottom: keyboardPadding }]}
+      style={[styles.container, { paddingBottom: bottomPad }]}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
       keyboardVerticalOffset={Platform.OS === "ios" ? headerHeight : 0}
     >

@@ -103,6 +103,15 @@ export function webLinkToMobileRoute(url: string | null | undefined): string {
     const m = url.match(/dateId=([a-f0-9]+)/i);
     if (m) return `/date/${m[1]}`;
   }
+  // Notif de message DM → écran relais qui résout la bonne conversation.
+  // Le lien peut porter un friendId (id de l'expéditeur) ou un conversationId.
+  if (url.includes("tab=chat")) {
+    const f = url.match(/friendId=([a-f0-9]+)/i);
+    if (f) return `/chat-open?friendId=${f[1]}`;
+    const c = url.match(/conversationId=([a-f0-9]+)/i);
+    if (c) return `/chat-open?conversationId=${c[1]}`;
+    return "/chats";
+  }
   if (url.includes("tab=friends")) return "/friends";
   return "/";
 }

@@ -39,7 +39,7 @@ const validatePassword = (password) => {
 // POST /auth/signup
 // ========================================
 router.post("/signup", async (req, res) => {
-  const { email, password, name, surname } = req.body;
+  const { email, password, name, surname, birthDate } = req.body;
 
   if (!email || !password || !name || !surname) {
     return res
@@ -51,6 +51,18 @@ router.post("/signup", async (req, res) => {
     return res
       .status(400)
       .json({ message: "Please provide a valid email address." });
+  }
+
+  // La date de naissance est obligatoire : elle doit être une date valide et non future.
+  const parsedBirthDate = birthDate ? new Date(birthDate) : null;
+  if (
+    !parsedBirthDate ||
+    isNaN(parsedBirthDate.getTime()) ||
+    parsedBirthDate > new Date()
+  ) {
+    return res
+      .status(400)
+      .json({ message: "Please provide a valid birth date." });
   }
 
   if (!validatePassword(password)) {
@@ -79,7 +91,7 @@ router.post("/signup", async (req, res) => {
       password: hashedPassword,
       name,
       surname,
-      birthDate: req.body.birthDate || null,
+      birthDate: parsedBirthDate,
       nameday,
       avatar: `https://api.dicebear.com/8.x/bottts/svg?seed=${surname}`,
       verificationToken,
