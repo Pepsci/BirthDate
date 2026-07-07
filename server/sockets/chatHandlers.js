@@ -148,29 +148,58 @@ module.exports = (io, socket, connectedUsers, app) => {
 
       // ── Push notification pour le destinataire hors ligne ──────────────────
       if (recipientId && !connectedUsers.has(recipientId.toString())) {
-        const sender = await User.findById(socket.userId, "name surname");
+        // publicKey nécessaire pour le déchiffrement sur l'appareil (façon WhatsApp)
+        const sender = await User.findById(
+          socket.userId,
+          "name surname publicKey",
+        );
         const senderName = sender
           ? `${sender.name} ${sender.surname || ""}`.trim()
           : "Quelqu'un";
 
-        let pushBody;
-        if (messageType === "gift_share") {
-          const personName = metadata?.personName || "quelqu'un";
-          pushBody = `🎁 Idées cadeaux pour ${personName}`;
-        } else if (isEncrypted) {
-          pushBody = "🔒 Nouveau message chiffré";
+        if (
+          messageType === "text" &&
+          isEncrypted &&
+          encryptedForRecipient &&
+          sender?.publicKey
+        ) {
+          // 🔓 Notif lisible côté appareil : on envoie le CHIFFRÉ, jamais le texte.
+          // Le mobile déchiffre localement avec sa clé privée (Keychain/Keystore).
+          sendPushToUser(recipientId, {
+            dataOnly: true,
+            type: "chat",
+            encrypted: true,
+            cipher: encryptedForRecipient,
+            senderPublicKey: sender.publicKey,
+            senderName,
+            conversationId,
+            messageId: message._id.toString(),
+            url: `/home?tab=chat&conversationId=${conversationId}`,
+            tag: `chat-${conversationId}`,
+            friendId: socket.userId,
+            // Fallback affiché si déchiffrement impossible / iOS sans NSE :
+            title: `💬 ${senderName}`,
+            body: "🔒 Nouveau message chiffré",
+          }).catch((err) => console.error("❌ Push chat error:", err));
         } else {
-          pushBody = content.trim().slice(0, 100);
-        }
+          // Cas non chiffrés (gift_share, chat en clair) : comportement inchangé.
+          let pushBody;
+          if (messageType === "gift_share") {
+            const personName = metadata?.personName || "quelqu'un";
+            pushBody = `🎁 Idées cadeaux pour ${personName}`;
+          } else {
+            pushBody = content.trim().slice(0, 100);
+          }
 
-        sendPushToUser(recipientId, {
-          title: `💬 ${senderName}`,
-          body: pushBody,
-          url: "/home",
-          tag: `chat-${conversationId}`,
-          type: "chat",
-          friendId: socket.userId,
-        }).catch((err) => console.error("❌ Push chat error:", err));
+          sendPushToUser(recipientId, {
+            title: `💬 ${senderName}`,
+            body: pushBody,
+            url: "/home",
+            tag: `chat-${conversationId}`,
+            type: "chat",
+            friendId: socket.userId,
+          }).catch((err) => console.error("❌ Push chat error:", err));
+        }
       }
 
       // ── Notif applicative si le destinataire n'a pas la conversation ouverte ──

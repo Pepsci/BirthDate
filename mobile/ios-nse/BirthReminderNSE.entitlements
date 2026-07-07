@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- App Group partagé entre l'app et l'extension : permet à la NSE de lire
+	     la clé privée E2E dans le Keychain partagé. -->
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>group.com.birthreminder.app</string>
+	</array>
+	<!-- Groupe Keychain partagé (le préfixe $(AppIdentifierPrefix) est ajouté
+	     automatiquement par Xcode). -->
+	<key>keychain-access-groups</key>
+	<array>
+		<string>$(AppIdentifierPrefix)group.com.birthreminder.app</string>
+	</array>
+</dict>
+</plist>

@@ -81,17 +81,37 @@ async function sendExpoPushToUser(userId, payload) {
   const tokens = user?.expoPushTokens || [];
   if (!tokens.length) return;
 
-  const messages = tokens.map((to) => ({
-    to,
-    title: payload.title || "BirthReminder",
-    body: payload.body || "",
-    sound: "default",
-    data: {
-      url: payload.url || "/home",
-      type: payload.type || "default",
-      friendId: payload.friendId || null,
-    },
-  }));
+  const messages = tokens.map((to) => {
+    const msg = {
+      to,
+      sound: "default",
+      priority: "high",
+      data: {
+        url: payload.url || "/home",
+        type: payload.type || "default",
+        friendId: payload.friendId || null,
+        // Champs E2E (présents seulement pour les messages chiffrés) :
+        // l'appareil déchiffre `cipher` localement et affiche une notif lisible.
+        encrypted: payload.encrypted || false,
+        cipher: payload.cipher || null, // = encryptedForRecipient
+        senderPublicKey: payload.senderPublicKey || null,
+        senderName: payload.senderName || null,
+        conversationId: payload.conversationId || null,
+        messageId: payload.messageId || null, // anti-doublon côté mobile
+        tag: payload.tag || null,
+      },
+    };
+    if (payload.dataOnly) {
+      // Pas de title/body → rien affiché automatiquement : la tâche de fond
+      // mobile déchiffre et présente elle-même la notif.
+      // _contentAvailable réveille l'app iOS en arrière-plan.
+      msg._contentAvailable = true;
+    } else {
+      msg.title = payload.title || "BirthReminder";
+      msg.body = payload.body || "";
+    }
+    return msg;
+  });
 
   const { data } = await axios.post(
     "https://exp.host/--/api/v2/push/send",

@@ -2,6 +2,10 @@ import { useEffect } from "react";
 import { Stack, Redirect, usePathname, useRouter } from "expo-router";
 import * as Notifications from "expo-notifications";
 import { webLinkToMobileRoute } from "../lib/push";
+import {
+  registerBackgroundNotifTask,
+  subscribeForegroundDecrypt,
+} from "../lib/notif-decrypt";
 import { ActivityIndicator, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { AuthProvider, useAuth } from "../lib/auth-context";
@@ -32,6 +36,14 @@ function RootNavigator() {
     });
     return () => sub.remove();
   }, [router]);
+
+  // Notifs de message chiffrées → déchiffrement sur l'appareil (façon WhatsApp).
+  // Tâche de fond (app tuée/arrière-plan) + listener premier plan.
+  useEffect(() => {
+    registerBackgroundNotifTask();
+    const unsubscribe = subscribeForegroundDecrypt();
+    return unsubscribe;
+  }, []);
 
   if (isLoading) {
     return (

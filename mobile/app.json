@@ -15,6 +15,9 @@
         "LSApplicationQueriesSchemes": [
           "comgooglemaps",
           "waze"
+        ],
+        "UIBackgroundModes": [
+          "remote-notification"
         ]
       }
     },
