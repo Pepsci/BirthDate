@@ -10,16 +10,25 @@ import {
   RefreshControl,
   Linking,
   Alert,
+  Switch,
+  Share,
 } from "react-native";
 import { Stack, useFocusEffect } from "expo-router";
 import { Image } from "react-native";
 import {
   WishlistItem,
+  WishlistSettings,
   fetchMyWishlist,
   addWishlistItem,
   deleteWishlistItem,
+  unreserveItem,
   fetchUrlInfo,
+  fetchWishlistSettings,
+  toggleWishlistPublic,
+  setWishlistFriendCode,
 } from "../../lib/wishlist";
+import GiftGridCard, { giftGridStyles } from "../../components/GiftGridCard";
+import BottomSheet from "../../components/BottomSheet";
 
 export default function MyWishlistScreen() {
   const [items, setItems] = useState<WishlistItem[] | null>(null);
@@ -33,6 +42,10 @@ export default function MyWishlistScreen() {
   const [fetchMsg, setFetchMsg] = useState<string | null>(null);
   const [fetching, setFetching] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [selected, setSelected] = useState<WishlistItem | null>(null);
+  const [settings, setSettings] = useState<WishlistSettings | null>(null);
+  const [shareBusy, setShareBusy] = useState(false);
+  const [showShare, setShowShare] = useState(false);
 
   const fetchInfos = async () => {
     const u = url.trim();
@@ -63,11 +76,45 @@ export default function MyWishlistScreen() {
   const load = useCallback(async () => {
     try {
       setError(null);
-      setItems(await fetchMyWishlist());
+      const [list, s] = await Promise.all([
+        fetchMyWishlist(),
+        fetchWishlistSettings().catch(() => null),
+      ]);
+      setItems(list);
+      if (s) setSettings(s);
     } catch (e: any) {
       setError(e?.message ?? "Erreur de chargement.");
     }
   }, []);
+
+  const onTogglePublic = async () => {
+    if (shareBusy) return;
+    setShareBusy(true);
+    try {
+      setSettings(await toggleWishlistPublic());
+    } catch (e: any) {
+      setError(e?.message ?? "Erreur.");
+    } finally {
+      setShareBusy(false);
+    }
+  };
+
+  const onFriendCode = async (action: "generate" | "remove") => {
+    if (shareBusy) return;
+    setShareBusy(true);
+    try {
+      const { friendCode } = await setWishlistFriendCode(action);
+      setSettings((prev) => (prev ? { ...prev, friendCode } : prev));
+    } catch (e: any) {
+      setError(e?.message ?? "Erreur.");
+    } finally {
+      setShareBusy(false);
+    }
+  };
+
+  const shareLink = () => {
+    if (settings?.publicUrl) Share.share({ message: settings.publicUrl });
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -146,9 +193,93 @@ export default function MyWishlistScreen() {
       <FlatList
         data={items}
         keyExtractor={(item) => item._id}
+        numColumns={2}
+        columnWrapperStyle={giftGridStyles.grid}
         contentContainerStyle={styles.list}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+        ListHeaderComponent={
+          <View style={styles.shareCard}>
+            <Pressable
+              style={styles.shareHeader}
+              onPress={() => setShowShare((v) => !v)}
+            >
+              <Text style={styles.shareTitle}>
+                🔗 Partage public{settings?.isPublic ? "  · Actif" : ""}
+              </Text>
+              <Text style={styles.shareChevron}>{showShare ? "▾" : "▸"}</Text>
+            </Pressable>
+
+            {showShare && settings && (
+              <>
+                <View style={styles.shareRow}>
+                  <View style={{ flex: 1, paddingRight: 10 }}>
+                    <Text style={styles.shareRowTitle}>
+                      Rendre ma wishlist publique
+                    </Text>
+                    <Text style={styles.shareRowSub}>
+                      Accessible via un lien, sans compte. Aucun nom affiché.
+                    </Text>
+                  </View>
+                  <Switch
+                    value={settings.isPublic}
+                    onValueChange={onTogglePublic}
+                    disabled={shareBusy}
+                    trackColor={{ true: "#3b82f6" }}
+                  />
+                </View>
+
+                {settings.isPublic && !!settings.publicUrl && (
+                  <Pressable style={styles.shareBtn} onPress={shareLink}>
+                    <Text style={styles.shareBtnText}>📤 Partager le lien</Text>
+                  </Pressable>
+                )}
+
+                {settings.isPublic && (
+                  <View style={styles.shareRow}>
+                    <View style={{ flex: 1, paddingRight: 10 }}>
+                      <Text style={styles.shareRowTitle}>
+                        Code de réservation
+                      </Text>
+                      <Text style={styles.shareRowSub}>
+                        Permet à tes amis de réserver un cadeau
+                      </Text>
+                    </View>
+                    {settings.friendCode ? (
+                      <View style={styles.codeRow}>
+                        <Text style={styles.friendCode}>
+                          {settings.friendCode}
+                        </Text>
+                        <Pressable
+                          hitSlop={8}
+                          disabled={shareBusy}
+                          onPress={() => onFriendCode("generate")}
+                        >
+                          <Text style={styles.codeAction}>↻</Text>
+                        </Pressable>
+                        <Pressable
+                          hitSlop={8}
+                          disabled={shareBusy}
+                          onPress={() => onFriendCode("remove")}
+                        >
+                          <Text style={styles.codeRemove}>✕</Text>
+                        </Pressable>
+                      </View>
+                    ) : (
+                      <Pressable
+                        style={styles.codeGenBtn}
+                        disabled={shareBusy}
+                        onPress={() => onFriendCode("generate")}
+                      >
+                        <Text style={styles.codeGenText}>Générer</Text>
+                      </Pressable>
+                    )}
+                  </View>
+                )}
+              </>
+            )}
+          </View>
         }
         ListEmptyComponent={
           <Text style={styles.empty}>
@@ -159,35 +290,83 @@ export default function MyWishlistScreen() {
         renderItem={({ item }) => {
           const reserved = !!item.reservedBy || !!item.reservedByGuest;
           return (
-            <View style={styles.itemRow}>
-              {item.image ? (
-                <Image source={{ uri: item.image }} style={styles.itemImage} />
-              ) : null}
-              <View style={{ flex: 1 }}>
-                <Text style={styles.itemTitle} numberOfLines={1}>
-                  {item.title}
-                </Text>
-                <Text style={styles.muted}>
-                  {item.price != null ? `${item.price} €` : "Prix libre"}
-                  {reserved ? " · 🎁 réservé par quelqu'un" : ""}
-                </Text>
-                {item.url ? (
-                  <Text
-                    style={styles.link}
-                    numberOfLines={1}
-                    onPress={() => Linking.openURL(item.url!)}
-                  >
-                    Voir l'article
-                  </Text>
-                ) : null}
-              </View>
-              <Pressable hitSlop={8} onPress={() => confirmDelete(item)}>
-                <Text style={styles.deleteX}>✕</Text>
-              </Pressable>
-            </View>
+            <GiftGridCard
+              imageUri={item.image}
+              title={item.title}
+              price={item.price ?? null}
+              badge={
+                reserved
+                  ? { label: "🎁 Réservé", color: "#047857", bg: "#d1fae5" }
+                  : { label: "Disponible", color: "#6b7280", bg: "#f3f4f6" }
+              }
+              onPress={() => setSelected(item)}
+            />
           );
         }}
       />
+
+      <BottomSheet visible={!!selected} onClose={() => setSelected(null)}>
+        {selected && (
+          <>
+            {selected.image ? (
+              <Image source={{ uri: selected.image }} style={styles.sheetImage} />
+            ) : (
+              <View style={[styles.sheetImage, styles.sheetImagePlaceholder]}>
+                <Text style={{ fontSize: 56 }}>🎁</Text>
+              </View>
+            )}
+            <Text style={styles.sheetTitle}>{selected.title}</Text>
+            <View style={styles.sheetInfoRow}>
+              <Text style={styles.sheetPrice}>
+                {selected.price != null ? `${selected.price} €` : "Prix libre"}
+              </Text>
+              {selected.url ? (
+                <Text
+                  style={styles.link}
+                  onPress={() => Linking.openURL(selected.url!)}
+                >
+                  🔗 Voir le produit
+                </Text>
+              ) : null}
+            </View>
+            {(!!selected.reservedBy || !!selected.reservedByGuest) && (
+              <>
+                <Text style={styles.sheetReserved}>
+                  🎁 Quelqu'un a réservé ce cadeau pour toi
+                </Text>
+                <Pressable
+                  style={styles.sheetUnreserveBtn}
+                  disabled={busy}
+                  onPress={async () => {
+                    const item = selected;
+                    setSelected(null);
+                    try {
+                      await unreserveItem(item._id);
+                      await load();
+                    } catch (e: any) {
+                      setError(e?.message ?? "Erreur.");
+                    }
+                  }}
+                >
+                  <Text style={styles.sheetUnreserveText}>
+                    ↩️ Annuler la réservation
+                  </Text>
+                </Pressable>
+              </>
+            )}
+            <Pressable
+              style={styles.sheetDeleteBtn}
+              onPress={() => {
+                const item = selected;
+                setSelected(null);
+                confirmDelete(item);
+              }}
+            >
+              <Text style={styles.sheetDeleteText}>🗑️ Supprimer</Text>
+            </Pressable>
+          </>
+        )}
+      </BottomSheet>
 
       <View style={styles.form}>
         <View style={styles.formRow}>
@@ -315,4 +494,97 @@ const styles = StyleSheet.create({
   },
   previewImage: { width: 64, height: 64, borderRadius: 8 },
   itemImage: { width: 48, height: 48, borderRadius: 8 },
+
+  // Partage public
+  shareCard: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#eef2f7",
+    marginBottom: 12,
+    paddingHorizontal: 12,
+  },
+  shareHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 12,
+  },
+  shareTitle: { fontSize: 14, fontWeight: "700", color: "#111827" },
+  shareChevron: { fontSize: 16, color: "#9ca3af", fontWeight: "700" },
+  shareRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 10,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: "#eef2f7",
+  },
+  shareRowTitle: { fontSize: 13, fontWeight: "700", color: "#111827" },
+  shareRowSub: { fontSize: 11, color: "#6b7280", marginTop: 2 },
+  shareBtn: {
+    backgroundColor: "#3b82f6",
+    borderRadius: 10,
+    paddingVertical: 10,
+    alignItems: "center",
+    marginTop: 10,
+  },
+  shareBtnText: { color: "#fff", fontWeight: "700", fontSize: 14 },
+  codeRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+  friendCode: {
+    fontSize: 14,
+    fontWeight: "800",
+    color: "#2563eb",
+    letterSpacing: 1,
+  },
+  codeAction: { fontSize: 16, color: "#3b82f6", fontWeight: "700" },
+  codeRemove: { fontSize: 15, color: "#ef4444", fontWeight: "700" },
+  codeGenBtn: {
+    borderWidth: 1,
+    borderColor: "#3b82f6",
+    borderRadius: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+  },
+  codeGenText: { color: "#3b82f6", fontWeight: "600", fontSize: 13 },
+
+  // Bottom sheet détail
+  sheetImage: { width: "100%", height: 180, borderRadius: 14 },
+  sheetImagePlaceholder: {
+    backgroundColor: "#f3f4f6",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  sheetTitle: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: "#111827",
+    marginTop: 14,
+  },
+  sheetDesc: { color: "#6b7280", fontSize: 13, marginTop: 6, lineHeight: 19 },
+  sheetInfoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 12,
+  },
+  sheetPrice: { fontSize: 20, fontWeight: "800", color: "#111827" },
+  sheetReserved: { color: "#047857", fontSize: 13, marginTop: 10 },
+  sheetUnreserveBtn: {
+    borderWidth: 1.5,
+    borderColor: "#3b82f6",
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: "center",
+    marginTop: 12,
+  },
+  sheetUnreserveText: { color: "#3b82f6", fontWeight: "700", fontSize: 15 },
+  sheetDeleteBtn: {
+    borderWidth: 1.5,
+    borderColor: "#ef4444",
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: "center",
+    marginTop: 20,
+  },
+  sheetDeleteText: { color: "#ef4444", fontWeight: "700", fontSize: 15 },
 });

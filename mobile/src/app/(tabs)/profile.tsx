@@ -1,7 +1,24 @@
-import { View, Text, Pressable, StyleSheet, Image, Alert, ScrollView } from "react-native";
+import {
+  View,
+  Text,
+  Pressable,
+  StyleSheet,
+  Image,
+  Alert,
+  ScrollView,
+  Linking,
+} from "react-native";
 import { useRouter } from "expo-router";
 import { useAuth } from "../../lib/auth-context";
 import { deleteAccount } from "../../lib/users";
+
+const SITE = "https://birthreminder.com";
+const LEGAL_LINKS: { emoji: string; label: string; url: string }[] = [
+  { emoji: "📄", label: "Conditions d'utilisation (CGU)", url: `${SITE}/cgu` },
+  { emoji: "🔒", label: "Politique de confidentialité", url: `${SITE}/privacy` },
+  { emoji: "🍪", label: "Cookies", url: `${SITE}/cookies` },
+  { emoji: "⚖️", label: "Mentions légales", url: `${SITE}/mentions-legales` },
+];
 
 export default function ProfileScreen() {
   const { user, signOut } = useAuth();
@@ -75,12 +92,36 @@ export default function ProfileScreen() {
         />
       </View>
 
+      <Text style={styles.sectionLabel}>Légal & support</Text>
+      <View style={styles.menu}>
+        <MenuRow
+          emoji="📖"
+          label="Guide d'utilisation"
+          onPress={() => router.push("/guide")}
+        />
+        {LEGAL_LINKS.map((l) => (
+          <MenuRow
+            key={l.url}
+            emoji={l.emoji}
+            label={l.label}
+            onPress={() => Linking.openURL(l.url)}
+          />
+        ))}
+      </View>
+
       <Pressable style={styles.logout} onPress={signOut}>
         <Text style={styles.logoutText}>Se déconnecter</Text>
       </Pressable>
 
       <Pressable onPress={confirmDelete}>
         <Text style={styles.deleteText}>Supprimer mon compte</Text>
+      </Pressable>
+
+      <Pressable
+        style={styles.contactBtn}
+        onPress={() => router.push("/support")}
+      >
+        <Text style={styles.contactBtnText}>✉️ Contacter le support</Text>
       </Pressable>
     </ScrollView>
   );
@@ -129,6 +170,15 @@ const styles = StyleSheet.create({
     marginTop: 20,
     overflow: "hidden",
   },
+  sectionLabel: {
+    alignSelf: "flex-start",
+    color: "#6b7280",
+    fontSize: 12,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    marginTop: 24,
+    marginBottom: -8,
+  },
   row: {
     flexDirection: "row",
     alignItems: "center",
@@ -155,4 +205,13 @@ const styles = StyleSheet.create({
     textDecorationLine: "underline",
     marginTop: 16,
   },
+  contactBtn: {
+    marginTop: 24,
+    borderWidth: 1,
+    borderColor: "#3b82f6",
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+  },
+  contactBtnText: { color: "#3b82f6", fontWeight: "600" },
 });

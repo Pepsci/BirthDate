@@ -1,0 +1,287 @@
+import { useEffect, useRef } from "react";
+import {
+  Modal,
+  View,
+  Text,
+  Image,
+  Pressable,
+  StyleSheet,
+  ScrollView,
+  Linking,
+  Animated,
+  PanResponder,
+  Dimensions,
+} from "react-native";
+
+const SCREEN_H = Dimensions.get("window").height;
+import { Gift } from "../lib/dates";
+import { occasionEmoji } from "../lib/occasions";
+import {
+  GIFT_STATUSES,
+  GIFT_STATUS_META,
+  GiftStatus,
+  giftStatusOf,
+} from "../lib/giftStatus";
+
+/**
+ * Modal détail d'un cadeau — bottom sheet (façon web affichage mobile).
+ * Gros boutons de statut (À acheter / Acheté / Acheté & à offrir) + Modifier / Supprimer.
+ */
+export default function GiftDetailModal({
+  gift,
+  busy,
+  onClose,
+  onEdit,
+  onDelete,
+  onSetStatus,
+}: {
+  gift: Gift | null;
+  busy: boolean;
+  onClose: () => void;
+  onEdit: (g: Gift) => void;
+  onDelete: (g: Gift) => void;
+  onSetStatus: (g: Gift, status: GiftStatus) => void;
+}) {
+  const translateY = useRef(new Animated.Value(0)).current;
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
+  // Réinitialise la position à chaque ouverture
+  useEffect(() => {
+    if (gift) translateY.setValue(0);
+  }, [gift, translateY]);
+
+  const panResponder = useRef(
+    PanResponder.create({
+      // La barre capture le geste dès qu'on la touche
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dy) > 2,
+      onPanResponderMove: (_, g) => {
+        translateY.setValue(Math.max(0, g.dy));
+      },
+      onPanResponderRelease: (_, g) => {
+        if (g.dy > 110 || g.vy > 0.7) {
+          Animated.timing(translateY, {
+            toValue: SCREEN_H,
+            duration: 220,
+            useNativeDriver: true,
+          }).start(() => onCloseRef.current());
+        } else {
+          Animated.spring(translateY, {
+            toValue: 0,
+            useNativeDriver: true,
+            bounciness: 4,
+          }).start();
+        }
+      },
+    }),
+  ).current;
+
+  if (!gift) return null;
+  const current = giftStatusOf(gift);
+
+  return (
+    <Modal
+      visible={!!gift}
+      transparent
+      animationType="slide"
+      onRequestClose={onClose}
+    >
+      <Pressable style={styles.overlay} onPress={onClose}>
+        <Animated.View
+          style={[styles.sheet, { transform: [{ translateY }] }]}
+        >
+          {/* Zone de préhension : glisser vers le bas pour fermer */}
+          <View style={styles.handleZone} {...panResponder.panHandlers}>
+            <View style={styles.handle} />
+          </View>
+          {/* Absorbe les taps pour ne pas fermer via l'overlay */}
+          <Pressable onPress={() => {}}>
+          <ScrollView showsVerticalScrollIndicator={false}>
+            {gift.image ? (
+              <Image source={{ uri: gift.image }} style={styles.image} />
+            ) : (
+              <View style={[styles.image, styles.imagePlaceholder]}>
+                <Text style={styles.imageEmoji}>
+                  {occasionEmoji(gift.occasion)}
+                </Text>
+              </View>
+            )}
+
+            <Text style={styles.title}>{gift.giftName}</Text>
+
+            <View style={styles.metaRow}>
+              {!!gift.occasion && (
+                <View style={styles.metaChip}>
+                  <Text style={styles.metaChipText}>
+                    {occasionEmoji(gift.occasion)} {gift.occasion}
+                  </Text>
+                </View>
+              )}
+              {!!gift.year && (
+                <View style={styles.metaChip}>
+                  <Text style={styles.metaChipText}>{gift.year}</Text>
+                </View>
+              )}
+            </View>
+
+            <View style={styles.infoRow}>
+              {gift.price != null && (
+                <Text style={styles.price}>{gift.price} €</Text>
+              )}
+              {gift.url ? (
+                <Text
+                  style={styles.link}
+                  onPress={() => Linking.openURL(gift.url!)}
+                >
+                  🔗 Voir le produit
+                </Text>
+              ) : null}
+            </View>
+
+            {/* Statut */}
+            <Text style={styles.sectionLabel}>Statut</Text>
+            <View style={styles.statusCol}>
+              {GIFT_STATUSES.map((s) => {
+                const meta = GIFT_STATUS_META[s];
+                const active = current === s;
+                return (
+                  <Pressable
+                    key={s}
+                    disabled={busy}
+                    onPress={() => onSetStatus(gift, s)}
+                    style={[
+                      styles.statusBtn,
+                      active && {
+                        backgroundColor: meta.bg,
+                        borderColor: meta.color,
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.statusBtnText,
+                        active && { color: meta.color },
+                      ]}
+                    >
+                      {meta.emoji} {meta.label}
+                    </Text>
+                    {active && <Text style={styles.statusCheck}>✓</Text>}
+                  </Pressable>
+                );
+              })}
+            </View>
+
+            {/* Actions */}
+            <View style={styles.actions}>
+              <Pressable
+                style={[styles.actionBtn, styles.editBtn]}
+                disabled={busy}
+                onPress={() => onEdit(gift)}
+              >
+                <Text style={styles.editBtnText}>✏️ Modifier</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.actionBtn, styles.deleteBtn]}
+                disabled={busy}
+                onPress={() => onDelete(gift)}
+              >
+                <Text style={styles.deleteBtnText}>🗑️ Supprimer</Text>
+              </Pressable>
+            </View>
+          </ScrollView>
+          </Pressable>
+        </Animated.View>
+      </Pressable>
+    </Modal>
+  );
+}
+
+const styles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.4)",
+    justifyContent: "flex-end",
+  },
+  sheet: {
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 16,
+    paddingBottom: 28,
+    maxHeight: "85%",
+  },
+  handleZone: {
+    alignItems: "center",
+    paddingTop: 4,
+    paddingBottom: 10,
+    marginTop: -4,
+  },
+  handle: {
+    width: 40,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: "#d1d5db",
+  },
+  image: { width: "100%", height: 180, borderRadius: 14 },
+  imagePlaceholder: {
+    backgroundColor: "#f3f4f6",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  imageEmoji: { fontSize: 64 },
+  title: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: "#111827",
+    marginTop: 14,
+  },
+  metaRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 8 },
+  metaChip: {
+    backgroundColor: "#f3f4f6",
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  metaChipText: { fontSize: 13, color: "#374151", fontWeight: "600" },
+  infoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 12,
+  },
+  price: { fontSize: 20, fontWeight: "800", color: "#111827" },
+  link: { color: "#3b82f6", fontWeight: "600", fontSize: 14 },
+  sectionLabel: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#6b7280",
+    marginTop: 18,
+    marginBottom: 8,
+  },
+  statusCol: { gap: 8 },
+  statusBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderWidth: 1.5,
+    borderColor: "#e5e7eb",
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    backgroundColor: "#f9fafb",
+  },
+  statusBtnText: { fontSize: 16, fontWeight: "700", color: "#374151" },
+  statusCheck: { fontSize: 16, fontWeight: "800", color: "#111827" },
+  actions: { flexDirection: "row", gap: 12, marginTop: 20 },
+  actionBtn: {
+    flex: 1,
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: "center",
+  },
+  editBtn: { backgroundColor: "#3b82f6" },
+  editBtnText: { color: "#fff", fontWeight: "700", fontSize: 15 },
+  deleteBtn: { borderWidth: 1.5, borderColor: "#ef4444" },
+  deleteBtnText: { color: "#ef4444", fontWeight: "700", fontSize: 15 },
+});

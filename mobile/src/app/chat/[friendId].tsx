@@ -40,8 +40,11 @@ export default function DMChatScreen() {
   const headerHeight = useHeaderHeight();
   const keyboardPadding = useKeyboardPadding();
   const insets = useSafeAreaInsets();
-  // Clavier ouvert → hauteur clavier ; fermé → barre système (edge-to-edge)
-  const bottomPad = keyboardPadding > 0 ? keyboardPadding : insets.bottom;
+  // Clavier ouvert → hauteur clavier ; fermé → safe-area + petite marge de confort
+  const bottomPad =
+    keyboardPadding > 0
+      ? keyboardPadding
+      : insets.bottom + (Platform.OS === "ios" ? 10 : 6);
   const { refresh: refreshUnread } = useUnread();
   const [messages, setMessages] = useState<DMMessage[]>([]);
   const [loading, setLoading] = useState(true);

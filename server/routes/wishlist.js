@@ -454,14 +454,19 @@ router.post("/:id/unreserve", isAuthenticated, async (req, res) => {
       return res.status(404).json({ message: "Item non trouvé" });
     }
 
-    if (item.reservedBy?.toString() !== req.payload._id) {
+    const isReserver = item.reservedBy?.toString() === req.payload._id;
+    const isOwner = item.userId?.toString() === req.payload._id;
+    // Le réservateur OU le propriétaire de la wishlist peut annuler
+    if (!isReserver && !isOwner) {
       return res
         .status(403)
-        .json({ message: "Vous n'avez pas réservé cet item" });
+        .json({ message: "Vous ne pouvez pas annuler cette réservation" });
     }
 
     item.reservedBy = null;
     item.reservedAt = null;
+    // Le propriétaire peut aussi libérer une réservation faite par un invité
+    if (item.reservedByGuest !== undefined) item.reservedByGuest = null;
     await item.save();
 
     res

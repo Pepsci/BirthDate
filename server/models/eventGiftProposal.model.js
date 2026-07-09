@@ -34,6 +34,11 @@ const eventGiftProposalSchema = new Schema(
         ref: "User",
       },
     ],
+    // Cadeau retenu par l'organisateur (peut y en avoir plusieurs)
+    selected: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true },
 );

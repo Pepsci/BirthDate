@@ -22,6 +22,8 @@ import PrivacyPolicy from "./components/pages/PrivacyPolicy";
 import CGU from "./components/pages/CGU";
 import Footer from "./components/layout/Footer";
 import GuidePage from "./components/pages/GuidePage";
+import ContactPage from "./components/pages/ContactPage";
+import SharedInvites from "./components/profil/SharedInvites";
 import ScrollToTop from "./components/layout/ScrollToTop";
 import EventsPanel from "./components/events/EventsPanel";
 import EventPage from "./components/events/EventPage";
@@ -58,6 +60,7 @@ function App() {
           <Route path="/privacy" element={<PrivacyPolicy />} />
           <Route path="/cgu" element={<CGU />} />
           <Route path="/guide" element={<GuidePage />} />
+          <Route path="/contact" element={<ContactPage />} />
 
           {/* ── AUTH ── */}
           <Route path="/auth" element={<AuthPage />} />
@@ -84,6 +87,7 @@ function App() {
           <Route element={<PrivateRoute />}>
             <Route path="/home" element={<Home />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/shared-invites" element={<SharedInvites />} />
             <Route path="/birthday/:id" element={<BirthdayView />} />
             <Route path="/update-date/:id" element={<UpdateDate />} />
             <Route path="/merge-duplicates" element={<MergeDuplicates />} />

@@ -24,7 +24,7 @@ export default function EventInviteScreen() {
 
   useEffect(() => {
     fetchFriends()
-      .then(setFriends)
+      .then((list) => setFriends(list.filter((x) => x?.friendUser?._id)))
       .catch((e) => setError(e?.message ?? "Erreur de chargement."));
   }, []);
 

@@ -4,6 +4,14 @@ import GiftCardGrid from "../UI/GiftCardGrid";
 import GiftShareModal from "../chat/GiftShareModal";
 import "../UI/css/gifts-common.css";
 
+import {
+  GIFT_STATUSES,
+  GIFT_STATUS_META,
+  giftStatusOf,
+  nextGiftStatus,
+  purchasedFromStatus,
+} from "../../utils/giftStatus";
+
 const OCCASIONS = [
   { value: "Anniversaire", emoji: "🎂", label: "Anniversaire" },
   { value: "Noël", emoji: "🎄", label: "Noël" },
@@ -197,7 +205,7 @@ const FriendGiftList = ({
     }
   };
 
-  const handleTogglePurchased = async (gift) => {
+  const handleSetStatus = async (gift, status) => {
     try {
       const response = await apiHandler.patch(
         `/date/${currentDate._id}/gifts/${gift._id}`,
@@ -205,7 +213,8 @@ const FriendGiftList = ({
           giftName: gift.giftName,
           occasion: gift.occasion,
           year: gift.year,
-          purchased: !gift.purchased,
+          status,
+          purchased: purchasedFromStatus(status),
           url: gift.url,
           price: gift.price,
           image: gift.image,
@@ -213,18 +222,18 @@ const FriendGiftList = ({
       );
       onUpdate(response.data);
     } catch {
-      console.error("Erreur toggle");
+      console.error("Erreur statut");
     }
   };
+
+  const handleCycleStatus = (gift) =>
+    handleSetStatus(gift, nextGiftStatus(giftStatusOf(gift)));
 
   const gifts = currentDate.gifts || [];
   const validGifts = gifts.filter((g) => g && g.giftName && g._id);
   const filteredGifts = validGifts.filter((gift) => {
     const mo = filterOccasion === "all" || gift.occasion === filterOccasion;
-    const ms =
-      filterStatus === "all" ||
-      (filterStatus === "purchased" && gift.purchased) ||
-      (filterStatus === "pending" && !gift.purchased);
+    const ms = filterStatus === "all" || giftStatusOf(gift) === filterStatus;
     return mo && ms;
   });
   const activeFiltersCount =
@@ -413,18 +422,16 @@ const FriendGiftList = ({
               >
                 Tous
               </button>
-              <button
-                className={`filter-btn ${filterStatus === "pending" ? "active" : ""}`}
-                onClick={() => setFilterStatus("pending")}
-              >
-                ⭕
-              </button>
-              <button
-                className={`filter-btn ${filterStatus === "purchased" ? "active" : ""}`}
-                onClick={() => setFilterStatus("purchased")}
-              >
-                ✅
-              </button>
+              {GIFT_STATUSES.map((s) => (
+                <button
+                  key={s}
+                  className={`filter-btn ${filterStatus === s ? "active" : ""}`}
+                  onClick={() => setFilterStatus(s)}
+                  title={GIFT_STATUS_META[s].label}
+                >
+                  {GIFT_STATUS_META[s].emoji}
+                </button>
+              ))}
             </div>
           </div>
         </div>
@@ -443,7 +450,8 @@ const FriendGiftList = ({
           type="gifts"
           onEdit={handleEdit}
           onDelete={handleDelete}
-          onToggle={handleTogglePurchased}
+          onToggle={handleCycleStatus}
+          onSetStatus={handleSetStatus}
           deletingId={deletingGiftId}
           onDeleteConfirm={handleDeleteConfirm}
           onDeleteCancel={handleDeleteCancel}

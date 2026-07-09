@@ -20,6 +20,7 @@ import {
   useFocusEffect,
 } from "expo-router";
 import { Platform } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAuth } from "../../lib/auth-context";
 import { fetchUrlInfo } from "../../lib/wishlist";
 import {
@@ -33,6 +34,7 @@ import {
   fetchGifts,
   proposeGift,
   toggleGiftVote,
+  toggleGiftSelection,
   fetchShare,
   joinEventByCode,
   deleteEvent,
@@ -49,6 +51,8 @@ import {
   STATUS_LABELS,
   RSVP_LABELS,
 } from "../../lib/events";
+import GiftGridCard, { giftGridStyles } from "../../components/GiftGridCard";
+import BottomSheet from "../../components/BottomSheet";
 
 const RSVP_OPTIONS: { status: Exclude<RsvpStatus, "pending">; label: string }[] = [
   { status: "accepted", label: "✅ J'y vais" },
@@ -67,6 +71,15 @@ export default function EventDetailScreen() {
   const [rsvpSending, setRsvpSending] = useState(false);
   const [voteSending, setVoteSending] = useState(false);
   const [gifts, setGifts] = useState<GiftProposal[]>([]);
+  const [selectedProposal, setSelectedProposal] = useState<GiftProposal | null>(
+    null,
+  );
+  const [eventView, setEventView] = useState<"info" | "gifts">("info");
+  const [showGiftForm, setShowGiftForm] = useState(false);
+  const [showPool, setShowPool] = useState(true);
+  const [showInvite, setShowInvite] = useState(true);
+  const [showParticipants, setShowParticipants] = useState(true);
+  const insets = useSafeAreaInsets();
   const [giftName, setGiftName] = useState("");
   const [giftUrl, setGiftUrl] = useState("");
   const [giftPrice, setGiftPrice] = useState("");
@@ -209,6 +222,7 @@ export default function EventDetailScreen() {
       setGiftPrice("");
       setGiftImage(null);
       setGiftFetchMsg(null);
+      setShowGiftForm(false);
       await load();
     } catch (e: any) {
       setError(e?.message ?? "Erreur lors de la proposition.");
@@ -225,6 +239,19 @@ export default function EventDetailScreen() {
       await load();
     } catch (e: any) {
       setError(e?.message ?? "Erreur lors du vote.");
+    } finally {
+      setGiftSending(false);
+    }
+  };
+
+  const onToggleGiftSelection = async (giftId: string) => {
+    if (!shortId || giftSending) return;
+    setGiftSending(true);
+    try {
+      await toggleGiftSelection(shortId, giftId);
+      await load();
+    } catch (e: any) {
+      setError(e?.message ?? "Erreur lors de la sélection.");
     } finally {
       setGiftSending(false);
     }
@@ -386,7 +413,10 @@ export default function EventDetailScreen() {
   return (
     <ScrollView
       style={styles.container}
-      contentContainerStyle={styles.content}
+      contentContainerStyle={[
+        styles.content,
+        { paddingBottom: 40 + insets.bottom },
+      ]}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
@@ -444,6 +474,8 @@ export default function EventDetailScreen() {
         </Text>
       </View>
 
+      {eventView === "info" && (
+        <>
       {/* RSVP */}
       {event.hasFullAccess && !isOrganizer && (
         <View style={styles.card}>
@@ -548,148 +580,243 @@ export default function EventDetailScreen() {
         </View>
       )}
 
+        </>
+      )}
+
+      {eventView === "gifts" && (
+        <>
+      <Pressable style={styles.backBtn} onPress={() => setEventView("info")}>
+        <Text style={styles.backBtnText}>‹ Retour à l'événement</Text>
+      </Pressable>
+
       {/* Cadeaux imposés */}
       {event.hasFullAccess &&
         event.giftMode === "imposed" &&
         (event.imposedGifts?.length ?? 0) > 0 && (
           <View style={styles.card}>
             <Text style={styles.sectionTitle}>🎁 Cadeaux</Text>
-            {event.imposedGifts!.map((g, i) => (
-              <View key={g._id ?? i} style={styles.giftRow}>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.giftName}>{g.name}</Text>
-                  {g.url ? (
-                    <Text
-                      style={styles.giftLink}
-                      numberOfLines={1}
-                      onPress={() => Linking.openURL(g.url!)}
-                    >
-                      {g.url}
-                    </Text>
-                  ) : null}
-                </View>
-                {g.price != null && (
-                  <Text style={styles.giftPrice}>{g.price} €</Text>
-                )}
-              </View>
-            ))}
+            <View style={giftGridStyles.grid}>
+              {event.imposedGifts!.map((g, i) => (
+                <GiftGridCard
+                  key={g._id ?? i}
+                  imageUri={(g as { image?: string }).image}
+                  title={g.name}
+                  price={g.price ?? null}
+                  onPress={() => g.url && Linking.openURL(g.url)}
+                />
+              ))}
+            </View>
           </View>
         )}
 
       {/* Propositions de cadeaux */}
       {event.hasFullAccess && event.giftMode === "proposals" && (
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>🎁 Propositions de cadeaux</Text>
-          {gifts.length === 0 && (
-            <Text style={styles.detail}>Aucune proposition pour l'instant.</Text>
-          )}
-          {gifts.map((g) => {
-            const votedByMe = !!user && g.votes.includes(user._id);
-            return (
-              <View key={g._id} style={styles.giftRow}>
-                {g.image ? (
-                  <Image source={{ uri: g.image }} style={styles.giftThumb} />
-                ) : null}
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.giftName}>{g.name}</Text>
-                  <Text style={styles.giftMeta} numberOfLines={1}>
-                    {g.proposedBy
-                      ? `par ${g.proposedBy.name}`
-                      : g.guestName
-                        ? `par ${g.guestName}`
-                        : ""}
-                    {g.price != null ? ` · ${g.price} €` : ""}
-                  </Text>
-                  {g.url ? (
-                    <Text
-                      style={styles.giftLink}
-                      numberOfLines={1}
-                      onPress={() => Linking.openURL(g.url!)}
-                    >
-                      {g.url}
-                    </Text>
-                  ) : null}
-                </View>
-                <Pressable
-                  onPress={() => onToggleGiftVote(g._id)}
-                  disabled={giftSending}
-                  style={[styles.giftVote, votedByMe && styles.giftVoteActive]}
-                >
-                  <Text
-                    style={[
-                      styles.giftVoteText,
-                      votedByMe && styles.giftVoteTextActive,
-                    ]}
-                  >
-                    ❤️ {g.votes.length}
-                  </Text>
-                </Pressable>
-              </View>
-            );
-          })}
-
-          <Text style={styles.giftFormTitle}>Proposer un cadeau</Text>
-          <View style={{ flexDirection: "row", gap: 8 }}>
-            <TextInput placeholderTextColor="#9ca3af"
-              style={[styles.input, { flex: 1 }]}
-              placeholder="Lien du produit (optionnel)"
-              autoCapitalize="none"
-              keyboardType="url"
-              value={giftUrl}
-              onChangeText={setGiftUrl}
-            />
+          <View style={styles.giftsHeaderRow}>
+            <Text style={styles.sectionTitle}>🎁 Propositions</Text>
             <Pressable
-              style={[
-                styles.giftFetchBtn,
-                (!giftUrl.trim() || giftFetching) && { opacity: 0.5 },
-              ]}
-              disabled={!giftUrl.trim() || giftFetching}
-              onPress={onFetchGiftInfos}
+              style={styles.proposeTopBtn}
+              onPress={() => setShowGiftForm((v) => !v)}
             >
-              <Text style={styles.giftFetchText}>
-                {giftFetching ? "…" : "🔍 Remplir"}
+              <Text style={styles.proposeTopText}>
+                {showGiftForm ? "✕ Fermer" : "＋ Proposer un cadeau"}
               </Text>
             </Pressable>
           </View>
-          {giftFetchMsg && (
-            <Text style={styles.giftFetchMsg}>{giftFetchMsg}</Text>
-          )}
-          {giftImage && (
-            <View style={styles.giftPreview}>
-              <Image source={{ uri: giftImage }} style={styles.giftPreviewImg} />
-              <Pressable hitSlop={8} onPress={() => setGiftImage(null)}>
-                <Text style={{ color: "#ef4444", fontWeight: "700" }}>✕</Text>
+
+          {showGiftForm && (
+            <>
+              <View style={{ flexDirection: "row", gap: 8 }}>
+                <TextInput placeholderTextColor="#9ca3af"
+                  style={[styles.input, { flex: 1 }]}
+                  placeholder="Lien du produit (optionnel)"
+                  autoCapitalize="none"
+                  keyboardType="url"
+                  value={giftUrl}
+                  onChangeText={setGiftUrl}
+                />
+                <Pressable
+                  style={[
+                    styles.giftFetchBtn,
+                    (!giftUrl.trim() || giftFetching) && { opacity: 0.5 },
+                  ]}
+                  disabled={!giftUrl.trim() || giftFetching}
+                  onPress={onFetchGiftInfos}
+                >
+                  <Text style={styles.giftFetchText}>
+                    {giftFetching ? "…" : "🔍 Remplir"}
+                  </Text>
+                </Pressable>
+              </View>
+              {giftFetchMsg && (
+                <Text style={styles.giftFetchMsg}>{giftFetchMsg}</Text>
+              )}
+              {giftImage && (
+                <View style={styles.giftPreview}>
+                  <Image source={{ uri: giftImage }} style={styles.giftPreviewImg} />
+                  <Pressable hitSlop={8} onPress={() => setGiftImage(null)}>
+                    <Text style={{ color: "#ef4444", fontWeight: "700" }}>✕</Text>
+                  </Pressable>
+                </View>
+              )}
+              <TextInput placeholderTextColor="#9ca3af"
+                style={styles.input}
+                placeholder="Nom du cadeau *"
+                value={giftName}
+                onChangeText={setGiftName}
+              />
+              <TextInput placeholderTextColor="#9ca3af"
+                style={styles.input}
+                placeholder="Prix en € (optionnel)"
+                keyboardType="decimal-pad"
+                value={giftPrice}
+                onChangeText={setGiftPrice}
+              />
+              <Pressable
+                onPress={onProposeGift}
+                disabled={giftSending || !giftName.trim()}
+                style={[
+                  styles.giftSubmit,
+                  (!giftName.trim() || giftSending) && { opacity: 0.5 },
+                ]}
+              >
+                <Text style={styles.giftSubmitText}>
+                  {giftSending ? "Envoi…" : "Proposer"}
+                </Text>
               </Pressable>
-            </View>
+            </>
           )}
-          <TextInput placeholderTextColor="#9ca3af"
-            style={styles.input}
-            placeholder="Nom du cadeau *"
-            value={giftName}
-            onChangeText={setGiftName}
-          />
-          <TextInput placeholderTextColor="#9ca3af"
-            style={styles.input}
-            placeholder="Prix en € (optionnel)"
-            keyboardType="decimal-pad"
-            value={giftPrice}
-            onChangeText={setGiftPrice}
-          />
-          <Pressable
-            onPress={onProposeGift}
-            disabled={giftSending || !giftName.trim()}
-            style={[
-              styles.giftSubmit,
-              (!giftName.trim() || giftSending) && { opacity: 0.5 },
-            ]}
+
+          {gifts.length === 0 && (
+            <Text style={styles.detail}>Aucune proposition pour l'instant.</Text>
+          )}
+          <View style={giftGridStyles.grid}>
+            {gifts.map((g) => {
+              const votedByMe = !!user && g.votes.includes(user._id);
+              const by = g.proposedBy
+                ? `par ${g.proposedBy.name}`
+                : g.guestName
+                  ? `par ${g.guestName}`
+                  : "";
+              const lines = [
+                by,
+                `❤️ ${g.votes.length} vote${g.votes.length > 1 ? "s" : ""}`,
+              ].filter(Boolean) as string[];
+              return (
+                <GiftGridCard
+                  key={g._id}
+                  imageUri={g.image}
+                  title={g.name}
+                  lines={lines}
+                  price={g.price ?? null}
+                  dimmed={false}
+                  badge={
+                    g.selected
+                      ? { label: "⭐ Retenu", color: "#b45309", bg: "#fef3c7" }
+                      : votedByMe
+                        ? { label: "❤️ Voté", color: "#be185d", bg: "#fce7f3" }
+                        : null
+                  }
+                  onPress={() => setSelectedProposal(g)}
+                />
+              );
+            })}
+          </View>
+
+          <BottomSheet
+            visible={!!selectedProposal}
+            onClose={() => setSelectedProposal(null)}
           >
-            <Text style={styles.giftSubmitText}>
-              {giftSending ? "Envoi…" : "Proposer"}
-            </Text>
-          </Pressable>
+            {selectedProposal &&
+              (() => {
+                const g = selectedProposal;
+                const votedByMe = !!user && g.votes.includes(user._id);
+                const by = g.proposedBy
+                  ? `Proposé par ${g.proposedBy.name}`
+                  : g.guestName
+                    ? `Proposé par ${g.guestName}`
+                    : "";
+                return (
+                  <>
+                    {g.image ? (
+                      <Image source={{ uri: g.image }} style={styles.sheetImage} />
+                    ) : (
+                      <View
+                        style={[styles.sheetImage, styles.sheetImgPlaceholder]}
+                      >
+                        <Text style={{ fontSize: 56 }}>🎁</Text>
+                      </View>
+                    )}
+                    <Text style={styles.sheetTitle}>{g.name}</Text>
+                    {!!by && <Text style={styles.sheetMeta}>{by}</Text>}
+                    <View style={styles.sheetInfoRow}>
+                      <Text style={styles.sheetPrice}>
+                        {g.price != null ? `${g.price} €` : ""}
+                      </Text>
+                      {g.url ? (
+                        <Text
+                          style={styles.giftLink}
+                          onPress={() => Linking.openURL(g.url!)}
+                        >
+                          🔗 Voir le produit
+                        </Text>
+                      ) : null}
+                    </View>
+                    <Pressable
+                      disabled={giftSending}
+                      style={[
+                        styles.sheetVoteBtn,
+                        votedByMe && styles.sheetVoteBtnActive,
+                      ]}
+                      onPress={() => {
+                        setSelectedProposal(null);
+                        onToggleGiftVote(g._id);
+                      }}
+                    >
+                      <Text
+                        style={[
+                          styles.sheetVoteText,
+                          votedByMe && styles.sheetVoteTextActive,
+                        ]}
+                      >
+                        {votedByMe ? "❤️ Voté" : "🤍 Voter"} · {g.votes.length}
+                      </Text>
+                    </Pressable>
+                    {isOrganizer && (
+                      <Pressable
+                        disabled={giftSending}
+                        style={[
+                          styles.sheetSelectBtn,
+                          g.selected && styles.sheetSelectBtnActive,
+                        ]}
+                        onPress={() => {
+                          setSelectedProposal(null);
+                          onToggleGiftSelection(g._id);
+                        }}
+                      >
+                        <Text
+                          style={[
+                            styles.sheetSelectText,
+                            g.selected && styles.sheetSelectTextActive,
+                          ]}
+                        >
+                          {g.selected
+                            ? "⭐ Retiré de la sélection"
+                            : "⭐ Retenir ce cadeau"}
+                        </Text>
+                      </Pressable>
+                    )}
+                  </>
+                );
+              })()}
+          </BottomSheet>
         </View>
       )}
+        </>
+      )}
 
+      {eventView === "info" && (
+        <>
       {/* Organisation (organizer) */}
       {isOrganizer && (
         <View style={styles.card}>
@@ -722,44 +849,65 @@ export default function EventDetailScreen() {
       {/* Cagnotte */}
       {pool?.active && (
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>💝 Cagnotte</Text>
-          <Text style={styles.poolTotal}>
-            {((pool.totalCollected ?? 0) / 100).toFixed(2).replace(".", ",")} €
-            {pool.mode === "goal" && pool.goal
-              ? ` / ${(pool.goal / 100).toFixed(0)} €`
-              : ""}
-            <Text style={styles.detail}>
-              {"  ·  "}
-              {pool.contributionsCount ?? 0} participation
-              {(pool.contributionsCount ?? 0) > 1 ? "s" : ""}
-            </Text>
-          </Text>
-          {pool.mode === "goal" && pool.goal ? (
-            <View style={styles.poolBarBg}>
-              <View
-                style={[
-                  styles.poolBarFill,
-                  {
-                    width: `${Math.min(100, Math.round(((pool.totalCollected ?? 0) / pool.goal) * 100))}%`,
-                  },
-                ]}
-              />
-            </View>
-          ) : null}
-          {(pool.contributions ?? []).slice(0, 3).map((c) => (
-            <Text key={c.id} style={styles.detail}>
-              🎁 {c.contributor ? c.contributor.name : "Anonyme"} —{" "}
-              {(c.amount / 100).toFixed(2).replace(".", ",")} €
-              {c.message ? ` · « ${c.message} »` : ""}
-            </Text>
-          ))}
-          {!isOrganizer && (
-            <Pressable
-              style={styles.poolBtn}
-              onPress={() => router.push(`/event/pool/${event.shortId}`)}
-            >
-              <Text style={styles.poolBtnText}>💝 Contribuer</Text>
-            </Pressable>
+          <SectionHeader
+            title={
+              showPool
+                ? "💝 Cagnotte"
+                : `💝 Cagnotte · ${((pool.totalCollected ?? 0) / 100)
+                    .toFixed(2)
+                    .replace(".", ",")} €${
+                    pool.mode === "goal" && pool.goal
+                      ? ` / ${(pool.goal / 100).toFixed(0)} €`
+                      : ""
+                  }`
+            }
+            open={showPool}
+            onToggle={() => setShowPool((v) => !v)}
+          />
+          {showPool && (
+            <>
+              <Text style={styles.poolTotal}>
+                {((pool.totalCollected ?? 0) / 100)
+                  .toFixed(2)
+                  .replace(".", ",")}{" "}
+                €
+                {pool.mode === "goal" && pool.goal
+                  ? ` / ${(pool.goal / 100).toFixed(0)} €`
+                  : ""}
+                <Text style={styles.detail}>
+                  {"  ·  "}
+                  {pool.contributionsCount ?? 0} participation
+                  {(pool.contributionsCount ?? 0) > 1 ? "s" : ""}
+                </Text>
+              </Text>
+              {pool.mode === "goal" && pool.goal ? (
+                <View style={styles.poolBarBg}>
+                  <View
+                    style={[
+                      styles.poolBarFill,
+                      {
+                        width: `${Math.min(100, Math.round(((pool.totalCollected ?? 0) / pool.goal) * 100))}%`,
+                      },
+                    ]}
+                  />
+                </View>
+              ) : null}
+              {(pool.contributions ?? []).slice(0, 3).map((c) => (
+                <Text key={c.id} style={styles.detail}>
+                  🎁 {c.contributor ? c.contributor.name : "Anonyme"} —{" "}
+                  {(c.amount / 100).toFixed(2).replace(".", ",")} €
+                  {c.message ? ` · « ${c.message} »` : ""}
+                </Text>
+              ))}
+              {!isOrganizer && (
+                <Pressable
+                  style={styles.poolBtn}
+                  onPress={() => router.push(`/event/pool/${event.shortId}`)}
+                >
+                  <Text style={styles.poolBtnText}>💝 Contribuer</Text>
+                </Pressable>
+              )}
+            </>
           )}
         </View>
       )}
@@ -767,22 +915,31 @@ export default function EventDetailScreen() {
       {/* Partage */}
       {event.hasFullAccess && (isOrganizer || event.allowGuestInvites) && (
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>🔗 Inviter du monde</Text>
-          {isOrganizer && (
-            <Pressable
-              style={styles.shareBtn}
-              onPress={() => router.push(`/event/invite/${event.shortId}`)}
-            >
-              <Text style={styles.shareBtnText}>👥 Inviter mes amis</Text>
-            </Pressable>
-          )}
-          <Pressable style={styles.shareBtn} onPress={onShare}>
-            <Text style={styles.shareBtnText}>Partager le lien + code</Text>
-          </Pressable>
-          {share && (
-            <Text style={styles.detail}>
-              Code d'accès : <Text style={styles.shareCode}>{share.code}</Text>
-            </Text>
+          <SectionHeader
+            title="🔗 Inviter du monde"
+            open={showInvite}
+            onToggle={() => setShowInvite((v) => !v)}
+          />
+          {showInvite && (
+            <>
+              {(isOrganizer || event.allowGuestInvites) && (
+                <Pressable
+                  style={styles.shareBtn}
+                  onPress={() => router.push(`/event/invite/${event.shortId}`)}
+                >
+                  <Text style={styles.shareBtnText}>👥 Inviter mes amis</Text>
+                </Pressable>
+              )}
+              <Pressable style={styles.shareBtn} onPress={onShare}>
+                <Text style={styles.shareBtnText}>Partager le lien + code</Text>
+              </Pressable>
+              {share && (
+                <Text style={styles.detail}>
+                  Code d'accès :{" "}
+                  <Text style={styles.shareCode}>{share.code}</Text>
+                </Text>
+              )}
+            </>
           )}
         </View>
       )}
@@ -790,32 +947,54 @@ export default function EventDetailScreen() {
       {/* Participants */}
       {event.hasFullAccess && (
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>
-            Participants ({acceptedCount} confirmé{acceptedCount > 1 ? "s" : ""}
-            {" / "}
-            {invitations.length} invité{invitations.length > 1 ? "s" : ""})
-          </Text>
-          {invitations.length === 0 && (
-            <Text style={styles.detail}>Personne d'invité pour l'instant.</Text>
-          )}
-          {invitations.map((inv) => (
-            <View key={inv._id} style={styles.participantRow}>
-              {inv.user?.avatar ? (
-                <Image source={{ uri: inv.user.avatar }} style={styles.pAvatar} />
-              ) : (
-                <View style={styles.pAvatarFallback}>
-                  <Text style={styles.pInitial}>
-                    {invitationName(inv)[0]?.toUpperCase()}
-                  </Text>
-                </View>
+          <SectionHeader
+            title={`Participants (${acceptedCount} / ${invitations.length})`}
+            open={showParticipants}
+            onToggle={() => setShowParticipants((v) => !v)}
+          />
+          {showParticipants && (
+            <>
+              {invitations.length === 0 && (
+                <Text style={styles.detail}>
+                  Personne d'invité pour l'instant.
+                </Text>
               )}
-              <Text style={styles.pName} numberOfLines={1}>
-                {invitationName(inv)}
-              </Text>
-              <Text style={styles.pStatus}>{RSVP_LABELS[inv.status]}</Text>
-            </View>
-          ))}
+              {invitations.map((inv) => (
+                <View key={inv._id} style={styles.participantRow}>
+                  {inv.user?.avatar ? (
+                    <Image
+                      source={{ uri: inv.user.avatar }}
+                      style={styles.pAvatar}
+                    />
+                  ) : (
+                    <View style={styles.pAvatarFallback}>
+                      <Text style={styles.pInitial}>
+                        {invitationName(inv)[0]?.toUpperCase()}
+                      </Text>
+                    </View>
+                  )}
+                  <Text style={styles.pName} numberOfLines={1}>
+                    {invitationName(inv)}
+                  </Text>
+                  <Text style={styles.pStatus}>{RSVP_LABELS[inv.status]}</Text>
+                </View>
+              ))}
+            </>
+          )}
         </View>
+      )}
+
+      {event.hasFullAccess && (
+        <Pressable
+          style={styles.giftsBtn}
+          onPress={() => setEventView("gifts")}
+        >
+          <Text style={styles.giftsBtnText} numberOfLines={1}>
+            🎁 Voir les cadeaux
+          </Text>
+        </Pressable>
+      )}
+        </>
       )}
 
       {!event.hasFullAccess && (
@@ -850,7 +1029,30 @@ export default function EventDetailScreen() {
   );
 }
 
+function SectionHeader({
+  title,
+  open,
+  onToggle,
+}: {
+  title: string;
+  open: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <Pressable style={styles.collapseHeader} onPress={onToggle} hitSlop={6}>
+      <Text style={styles.sectionTitle}>{title}</Text>
+      <Text style={styles.collapseChevron}>{open ? "▾" : "▸"}</Text>
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
+  collapseHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  collapseChevron: { fontSize: 16, color: "#9ca3af", fontWeight: "700" },
   container: { flex: 1, backgroundColor: "#f9fafb" },
   content: { padding: 12, gap: 10, paddingBottom: 32 },
   center: {
@@ -948,6 +1150,80 @@ const styles = StyleSheet.create({
   giftVoteActive: { backgroundColor: "#fee2e2", borderColor: "#ef4444" },
   giftVoteText: { fontSize: 12, fontWeight: "700", color: "#374151" },
   giftVoteTextActive: { color: "#ef4444" },
+
+  // Bottom sheet proposition
+  sheetImage: { width: "100%", height: 180, borderRadius: 14 },
+  sheetImgPlaceholder: {
+    backgroundColor: "#f3f4f6",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  sheetTitle: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: "#111827",
+    marginTop: 14,
+  },
+  sheetMeta: { color: "#6b7280", fontSize: 13, marginTop: 4 },
+  sheetInfoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 12,
+  },
+  sheetPrice: { fontSize: 20, fontWeight: "800", color: "#111827" },
+  sheetVoteBtn: {
+    borderWidth: 1.5,
+    borderColor: "#e5e7eb",
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: "center",
+    marginTop: 18,
+    backgroundColor: "#f9fafb",
+  },
+  sheetVoteBtnActive: { backgroundColor: "#fce7f3", borderColor: "#ec4899" },
+  sheetVoteText: { fontSize: 15, fontWeight: "700", color: "#374151" },
+  sheetVoteTextActive: { color: "#be185d" },
+  sheetSelectBtn: {
+    borderWidth: 1.5,
+    borderColor: "#e5e7eb",
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: "center",
+    marginTop: 10,
+    backgroundColor: "#f9fafb",
+  },
+  sheetSelectBtnActive: { backgroundColor: "#fef3c7", borderColor: "#f59e0b" },
+  sheetSelectText: { fontSize: 15, fontWeight: "700", color: "#374151" },
+  sheetSelectTextActive: { color: "#b45309" },
+
+  // En-tête section propositions + bouton "Proposer" en haut
+  giftsHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
+  },
+  proposeTopBtn: {
+    backgroundColor: "#3b82f6",
+    borderRadius: 10,
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+  },
+  proposeTopText: { color: "#fff", fontWeight: "700", fontSize: 13 },
+
+  // Vues accueil/cadeaux
+  backBtn: { paddingVertical: 6, paddingHorizontal: 2 },
+  backBtnText: { color: "#3b82f6", fontWeight: "700", fontSize: 15 },
+  giftsBtn: {
+    backgroundColor: "#fff",
+    borderWidth: 1.5,
+    borderColor: "#3b82f6",
+    borderRadius: 14,
+    padding: 14,
+    alignItems: "center",
+  },
+  giftsBtnText: { color: "#3b82f6", fontWeight: "700", fontSize: 15 },
   giftFormTitle: {
     fontSize: 13,
     fontWeight: "700",

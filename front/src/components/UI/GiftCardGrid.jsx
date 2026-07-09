@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import "./css/giftCardGrid.css";
 import GiftDetailModal from "./GiftDetailModal";
+import { GIFT_STATUS_META, giftStatusOf } from "../../utils/giftStatus";
 
 const GiftCardGrid = ({
   items = [],
@@ -8,6 +9,7 @@ const GiftCardGrid = ({
   onEdit,
   onDelete,
   onToggle,
+  onSetStatus,
   onReserve,
   onUnreserve,
   onVote,
@@ -49,6 +51,8 @@ const GiftCardGrid = ({
     }
 
     if (type === "gifts") {
+      const st = giftStatusOf(item);
+      const meta = GIFT_STATUS_META[st];
       return {
         id: item._id,
         title: item.giftName,
@@ -56,11 +60,12 @@ const GiftCardGrid = ({
         price: item.price ? `${item.price} €` : null,
         url: item.url || null,
         image: item.image || null,
-        badge: item.purchased ? "purchased" : "pending",
-        badgeLabel: item.purchased ? "✅ Acheté" : "⭕ À acheter",
+        badge: meta.badge,
+        badgeLabel: `${meta.emoji} ${meta.label}`,
         occasion: item.occasion,
         year: item.year,
-        isPurchased: item.purchased,
+        status: st,
+        isPurchased: st !== "to_buy",
         raw: item,
       };
     }
@@ -317,12 +322,13 @@ const GiftCardGrid = ({
                     <>
                       <button
                         className="gcg-btn gcg-btn--secondary gcg-mobile-only"
+                        title={`Statut : ${GIFT_STATUS_META[item.status].label} (cliquer pour changer)`}
                         onClick={(e) => {
                           e.stopPropagation();
                           onToggle?.(rawItem);
                         }}
                       >
-                        {rawItem.purchased ? "✅" : "⭕"}
+                        {GIFT_STATUS_META[item.status].emoji}
                       </button>
                       <button
                         className="gcg-btn gcg-btn--secondary gcg-mobile-only"
@@ -344,12 +350,14 @@ const GiftCardGrid = ({
                       </button>
                       <button
                         className="gcg-btn gcg-btn--ghost gcg-desktop-only"
+                        title="Cliquer pour changer le statut"
                         onClick={(e) => {
                           e.stopPropagation();
                           onToggle?.(rawItem);
                         }}
                       >
-                        {rawItem.purchased ? "⭕ Non acheté" : "✅ Acheté"}
+                        {GIFT_STATUS_META[item.status].emoji}{" "}
+                        {GIFT_STATUS_META[item.status].short}
                       </button>
                     </>
                   )}
@@ -469,6 +477,10 @@ const GiftCardGrid = ({
           }}
           onToggle={(raw) => {
             onToggle?.(raw);
+            setSelectedItem(null);
+          }}
+          onSetStatus={(raw, status) => {
+            onSetStatus?.(raw, status);
             setSelectedItem(null);
           }}
           onReserve={(id) => {

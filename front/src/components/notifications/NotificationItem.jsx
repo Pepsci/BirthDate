@@ -17,6 +17,8 @@ const TYPE_CONFIG = {
   event_chat_message: { icon: "💬" },
   event_chat_message: { icon: "💬" },
   event_pool_contribution: { icon: "💰" },
+  shared_gift_invite: { icon: "👥" },
+  shared_gift_accepted: { icon: "🎁" },
 };
 
 const timeAgo = (dateStr) => {
@@ -133,6 +135,20 @@ const buildText = (type, data) => {
           <strong>{data.contributorName}</strong> a participé à la cagnotte
           {data.amountLabel ? <> ({data.amountLabel})</> : null} —{" "}
           <strong>{data.eventTitle}</strong>
+        </>
+      );
+    case "shared_gift_invite":
+      return (
+        <>
+          <strong>{data.fromName}</strong> veut créer une liste de cadeaux
+          commune{data.personName ? <> pour {data.personName}</> : null}
+        </>
+      );
+    case "shared_gift_accepted":
+      return (
+        <>
+          <strong>{data.fromName}</strong> a rejoint votre liste de cadeaux
+          commune{data.personName ? <> — {data.personName}</> : null}
         </>
       );
     default:

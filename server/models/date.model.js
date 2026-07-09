@@ -49,6 +49,13 @@ const dateSchema = Schema({
     {
       giftName: { type: String, required: true },
       purchased: { type: Boolean, default: false },
+      // Statut détaillé : "to_buy" (à acheter), "bought" (acheté),
+      // "to_give" (acheté & à offrir). `purchased` reste synchro pour le web.
+      status: {
+        type: String,
+        enum: ["to_buy", "bought", "to_give", "offered"],
+        default: "to_buy",
+      },
 
       // String libre — plus d'enum restrictif
       // Valeurs courantes : "Anniversaire", "Noël", "Saint-Valentin", etc.
@@ -76,6 +83,13 @@ const dateSchema = Schema({
   linkedUser: {
     type: Schema.Types.ObjectId,
     ref: "User",
+    default: null,
+  },
+
+  // Liste d'idées cadeaux commune reliée à cette carte (optionnel)
+  sharedGiftList: {
+    type: Schema.Types.ObjectId,
+    ref: "SharedGiftList",
     default: null,
   },
 });

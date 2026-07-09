@@ -1,6 +1,47 @@
 import { Tabs, useRouter } from "expo-router";
 import { useUnread } from "../../lib/unread-context";
 import { Text, Pressable, View, StyleSheet } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import LogoBanner from "../../components/LogoBanner";
+
+/**
+ * Header personnalisé : bannière logo tout en haut, puis la ligne
+ * titre + actions (cloche, +) en dessous.
+ */
+function AppHeader({ options, route }: any) {
+  const insets = useSafeAreaInsets();
+  const title = options.title ?? route.name;
+  return (
+    <View style={[headerStyles.wrap, { paddingTop: insets.top }]}>
+      <LogoBanner />
+      <View style={headerStyles.row}>
+        <View style={headerStyles.side}>{options.headerLeft?.({})}</View>
+        <Text style={headerStyles.title} numberOfLines={1}>
+          {title}
+        </Text>
+        <View style={[headerStyles.side, headerStyles.sideRight]}>
+          {options.headerRight?.({})}
+        </View>
+      </View>
+    </View>
+  );
+}
+
+const headerStyles = StyleSheet.create({
+  wrap: {
+    backgroundColor: "#fff",
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: "#e5e7eb",
+  },
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    height: 44,
+  },
+  side: { minWidth: 60, justifyContent: "center" },
+  sideRight: { alignItems: "flex-end" },
+  title: { flex: 1, fontSize: 17, fontWeight: "700", color: "#111827", textAlign: "center" },
+});
 
 function HeaderBell() {
   const router = useRouter();
@@ -54,6 +95,7 @@ export default function TabsLayout() {
         tabBarActiveTintColor: "#3b82f6",
         tabBarInactiveTintColor: "#9ca3af",
         tabBarLabelStyle: { fontSize: 11, fontWeight: "600" },
+        header: (props) => <AppHeader {...props} />,
       }}
     >
       <Tabs.Screen

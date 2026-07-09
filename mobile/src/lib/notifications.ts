@@ -13,7 +13,9 @@ export type NotifType =
   | "event_gift_proposed"
   | "event_gift_vote"
   | "event_chat_message"
-  | "event_pool_contribution";
+  | "event_pool_contribution"
+  | "shared_gift_invite"
+  | "shared_gift_accepted";
 
 export interface AppNotification {
   _id: string;
@@ -41,6 +43,10 @@ export async function markAllNotificationsRead(): Promise<void> {
 
 export async function deleteNotification(id: string): Promise<void> {
   await api(`/notifications/${id}`, { method: "DELETE" });
+}
+
+export async function deleteAllNotifications(): Promise<void> {
+  await api("/notifications", { method: "DELETE" });
 }
 
 /** Emoji + texte lisible pour chaque type (mêmes données que le web) */
@@ -112,6 +118,16 @@ export function notifDisplay(n: AppNotification): {
       return {
         emoji: "💝",
         text: `${who} a contribué à la cagnotte${d.eventTitle ? ` — « ${d.eventTitle} »` : ""}`,
+      };
+    case "shared_gift_invite":
+      return {
+        emoji: "👥",
+        text: `${d.fromName ?? who} veut créer une liste de cadeaux commune${d.personName ? ` pour ${d.personName}` : ""}`,
+      };
+    case "shared_gift_accepted":
+      return {
+        emoji: "🎁",
+        text: `${d.fromName ?? who} a rejoint votre liste de cadeaux commune${d.personName ? ` — ${d.personName}` : ""}`,
       };
     default:
       return { emoji: "🔔", text: "Nouvelle notification" };

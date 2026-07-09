@@ -31,7 +31,7 @@ export default function LoginScreen() {
     setError(null);
     setLoading(true);
     try {
-      await signIn(email.trim(), password);
+      await signIn(email.trim().toLowerCase(), password);
     } catch (e: any) {
       setError(e?.message ?? "Erreur de connexion.");
     } finally {
@@ -56,10 +56,11 @@ export default function LoginScreen() {
           style={styles.input}
           placeholder="Email"
           autoCapitalize="none"
+          autoCorrect={false}
           autoComplete="email"
           keyboardType="email-address"
           value={email}
-          onChangeText={setEmail}
+          onChangeText={(t) => setEmail(t.toLowerCase())}
         />
         <TextInput
           placeholderTextColor="#9ca3af"

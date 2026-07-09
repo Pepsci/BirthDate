@@ -98,6 +98,7 @@ export async function unregisterPush(): Promise<void> {
 export function webLinkToMobileRoute(url: string | null | undefined): string {
   if (!url) return "/";
   if (url.startsWith("/event/")) return url;
+  if (url.includes("/shared-invites")) return "/shared-invites";
   if (url.includes("tab=events")) return "/events";
   if (url.includes("tab=date") && url.includes("dateId=")) {
     const m = url.match(/dateId=([a-f0-9]+)/i);

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import Countdown from "../dashboard/Countdown";
 import UpdateDate from "../dashboard/UpdateDate";
 import FriendGiftList from "./FriendGiftList";
+import SharedGiftSection from "./SharedGiftSection";
 import DirectChat from "../chat/DirectChat";
 import ChatModal from "../chat/ChatModal";
 import GiftOfferedModal from "../friends/GiftOfferedModal";
@@ -29,6 +30,7 @@ const MENU_SECTIONS_FRIEND = [
   { id: "notifications", title: "Notifications", icon: "🔔" },
   { id: "wishlist", title: "Sa Wishlist", icon: "🎁" },
   { id: "gifts", title: "Mes Cadeaux", icon: "📦" },
+  { id: "shared", title: "Commune", icon: "👥" },
   { id: "chat", title: "Messages", icon: "💬" },
 ];
 
@@ -36,6 +38,7 @@ const MENU_SECTIONS_DEFAULT = [
   { id: "info", title: "Infos", icon: "👤" },
   { id: "notifications", title: "Notifications", icon: "🔔" },
   { id: "gifts", title: "Cadeaux", icon: "🎁" },
+  { id: "shared", title: "Commune", icon: "👥" },
   { id: "edit", title: "Modifier", icon: "✏️" },
 ];
 
@@ -340,6 +343,23 @@ const FriendProfile = ({ date, onCancel, initialSection = "info" }) => {
     }
   };
 
+  // ── (Dé)marquer comme famille ────────────────────────────────────────────
+  const [familyLoading, setFamilyLoading] = useState(false);
+  const handleToggleFamily = async () => {
+    if (familyLoading) return;
+    setFamilyLoading(true);
+    try {
+      const res = await apiHandler.patch(`/date/${currentDate._id}/family`, {
+        family: !currentDate.family,
+      });
+      setCurrentDate(res.data);
+    } catch (err) {
+      console.error("Erreur famille:", err);
+    } finally {
+      setFamilyLoading(false);
+    }
+  };
+
   // ── Sections ───────────────────────────────────────────────────────────────
   const renderInfoSection = () => (
     <div className="profile_info">
@@ -356,6 +376,17 @@ const FriendProfile = ({ date, onCancel, initialSection = "info" }) => {
         </div>
         <Countdown birthdate={currentDate.date} />
       </div>
+
+      {date.linkedUser && (
+        <button
+          type="button"
+          onClick={handleToggleFamily}
+          disabled={familyLoading}
+          className={`family-toggle-btn ${currentDate.family ? "family-toggle-btn--active" : ""}`}
+        >
+          🏠 {currentDate.family ? "Retirer de la famille" : "Ajouter à la famille"}
+        </button>
+      )}
     </div>
   );
 
@@ -464,6 +495,10 @@ const FriendProfile = ({ date, onCancel, initialSection = "info" }) => {
     <FriendGiftList currentDate={currentDate} onUpdate={setCurrentDate} />
   );
 
+  const renderSharedSection = () => (
+    <SharedGiftSection currentDate={currentDate} onUpdate={setCurrentDate} />
+  );
+
   const renderEditSection = () => (
     <UpdateDate
       compact
@@ -501,6 +536,8 @@ const FriendProfile = ({ date, onCancel, initialSection = "info" }) => {
         return renderWishlistSection();
       case "gifts":
         return renderGiftsSection();
+      case "shared":
+        return renderSharedSection();
       case "chat":
         return renderChatSection();
       case "edit":

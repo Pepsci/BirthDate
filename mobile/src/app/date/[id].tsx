@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -10,6 +10,8 @@ import {
   RefreshControl,
   Image,
   Linking,
+  Animated,
+  Alert,
 } from "react-native";
 import {
   Stack,
@@ -26,14 +28,14 @@ import {
   addGift,
   updateGift,
   deleteGift,
+  setDateFamily,
   setDateNotifications,
   setBirthdayPrefs,
   setNamedayPrefs,
   daysUntil,
-  upcomingAge,
-  formatBirthday,
+  currentAge,
+  formatFullDate,
   formatNameday,
-  countdownLabel,
 } from "../../lib/dates";
 import {
   WishlistItem,
@@ -42,6 +44,32 @@ import {
   unreserveItem,
 } from "../../lib/wishlist";
 import GiftIdeaForm from "../../components/GiftIdeaForm";
+import GiftDetailModal from "../../components/GiftDetailModal";
+import GiftGridCard, { giftGridStyles } from "../../components/GiftGridCard";
+import BottomSheet from "../../components/BottomSheet";
+import BirthdayCountdown from "../../components/BirthdayCountdown";
+import { FriendEntry, fetchFriends } from "../../lib/friends";
+import {
+  SharedGiftList,
+  SharedGift,
+  SentInvitation,
+  fetchSharedList,
+  inviteSharedList,
+  addSharedGift,
+  updateSharedGift,
+  deleteSharedGift,
+  leaveSharedList,
+  fetchSentSharedInvitations,
+  cancelSharedInvitation,
+} from "../../lib/sharedGifts";
+import { OCCASIONS, occasionEmoji } from "../../lib/occasions";
+import {
+  GIFT_STATUS_META,
+  GiftStatus,
+  giftStatusOf,
+  nextGiftStatus,
+  purchasedFromStatus,
+} from "../../lib/giftStatus";
 import { checkExistingEvent } from "../../lib/events";
 import { useUnread } from "../../lib/unread-context";
 
@@ -58,6 +86,35 @@ export default function DateDetailScreen() {
   const [existingEventId, setExistingEventId] = useState<string | null>(null);
   const [editingGift, setEditingGift] = useState<Gift | null>(null);
   const [busy, setBusy] = useState(false);
+  // Vue de la carte : "info" (accueil) ou "gifts" (cadeaux plein écran)
+  const [view, setView] = useState<"info" | "gifts">("info");
+  // Mode "liste commune seule" (ouvert via son bouton dédié) → masque les onglets
+  const [sharedOnly, setSharedOnly] = useState(false);
+  // Vue cadeaux : mes idées / sa wishlist / liste commune
+  const [giftTab, setGiftTab] = useState<"ideas" | "wishlist" | "shared">(
+    "ideas",
+  );
+  // Filtre des idées par occasion ("all" ou une valeur d'occasion)
+  const [giftFilter, setGiftFilter] = useState<string>("all");
+  const [showFilters, setShowFilters] = useState(false);
+  const [selectedGift, setSelectedGift] = useState<Gift | null>(null);
+  const [selectedWish, setSelectedWish] = useState<WishlistItem | null>(null);
+  // Liste commune
+  const [sharedList, setSharedList] = useState<SharedGiftList | null>(null);
+  const [sentInvites, setSentInvites] = useState<SentInvitation[]>([]);
+  const [showFriendPicker, setShowFriendPicker] = useState(false);
+  const [friends, setFriends] = useState<FriendEntry[]>([]);
+  const [inviteMsg, setInviteMsg] = useState<string | null>(null);
+  const [showSharedForm, setShowSharedForm] = useState(false);
+  const [editingSharedGift, setEditingSharedGift] = useState<SharedGift | null>(
+    null,
+  );
+  const [selectedSharedGift, setSelectedSharedGift] =
+    useState<SharedGift | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<Gift | null>(null);
+  const deleteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const deleteProgress = useRef(new Animated.Value(0)).current;
+  const DELETE_DELAY = 5000;
 
   const load = useCallback(async () => {
     if (!id) return;
@@ -74,6 +131,21 @@ export default function DateDetailScreen() {
           setWishlist(wl.data);
         } catch {
           setWishlist(null); // wishlist privée ou désactivée
+        }
+      }
+      if (d.sharedGiftList) {
+        try {
+          setSharedList(await fetchSharedList(d.sharedGiftList));
+        } catch {
+          setSharedList(null);
+        }
+        setSentInvites([]);
+      } else {
+        setSharedList(null);
+        try {
+          setSentInvites(await fetchSentSharedInvitations(d._id));
+        } catch {
+          setSentInvites([]);
         }
       }
     } catch (e: any) {
@@ -106,6 +178,161 @@ export default function DateDetailScreen() {
     }
   };
 
+  const setGiftStatus = (g: Gift, status: GiftStatus) => {
+    setSelectedGift((prev) =>
+      prev && prev._id === g._id
+        ? { ...prev, status, purchased: purchasedFromStatus(status) }
+        : prev,
+    );
+    run(() =>
+      updateGift(entry!._id, {
+        ...g,
+        status,
+        purchased: purchasedFromStatus(status),
+      }),
+    );
+  };
+
+  const cycleGiftStatus = (g: Gift) =>
+    setGiftStatus(g, nextGiftStatus(giftStatusOf(g)));
+
+  // Suppression avec délai + annulation (bandeau bas d'écran)
+  const finalizeDelete = (g: Gift) => {
+    deleteTimer.current = null;
+    setPendingDelete(null);
+    run(() => deleteGift(entry!._id, g._id));
+  };
+
+  const requestDelete = (g: Gift) => {
+    // Une suppression déjà en attente ? on la confirme d'abord.
+    if (deleteTimer.current) clearTimeout(deleteTimer.current);
+    if (pendingDelete && pendingDelete._id !== g._id) {
+      run(() => deleteGift(entry!._id, pendingDelete._id));
+    }
+    setPendingDelete(g);
+    deleteProgress.setValue(0);
+    Animated.timing(deleteProgress, {
+      toValue: 1,
+      duration: DELETE_DELAY,
+      useNativeDriver: false,
+    }).start();
+    deleteTimer.current = setTimeout(() => finalizeDelete(g), DELETE_DELAY);
+  };
+
+  const undoDelete = () => {
+    if (deleteTimer.current) {
+      clearTimeout(deleteTimer.current);
+      deleteTimer.current = null;
+    }
+    deleteProgress.stopAnimation();
+    setPendingDelete(null);
+  };
+
+  // Nettoyage du timer si on quitte l'écran (le cadeau reste)
+  useEffect(() => {
+    return () => {
+      if (deleteTimer.current) clearTimeout(deleteTimer.current);
+    };
+  }, []);
+
+  // ── Liste commune ──────────────────────────────────────────────────────────
+  const reloadShared = async () => {
+    if (entry?.sharedGiftList) {
+      try {
+        setSharedList(await fetchSharedList(entry.sharedGiftList));
+      } catch {
+        /* ignore */
+      }
+    }
+  };
+
+  const runShared = async (fn: () => Promise<unknown>) => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await fn();
+      await reloadShared();
+    } catch (e: any) {
+      setError(e?.message ?? "Erreur.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const setSharedGiftStatus = (g: SharedGift, status: GiftStatus) => {
+    setSelectedSharedGift((prev) =>
+      prev && prev._id === g._id
+        ? { ...prev, status, purchased: purchasedFromStatus(status) }
+        : prev,
+    );
+    runShared(() =>
+      updateSharedGift(entry!.sharedGiftList!, g._id, {
+        status,
+        purchased: purchasedFromStatus(status),
+      }),
+    );
+  };
+
+  const openFriendPicker = async () => {
+    setInviteMsg(null);
+    setShowFriendPicker(true);
+    try {
+      const list = await fetchFriends();
+      setFriends(list.filter((f) => f?.friendUser?._id));
+    } catch {
+      setFriends([]);
+    }
+  };
+
+  const inviteFriend = async (friendId: string) => {
+    setShowFriendPicker(false);
+    try {
+      await inviteSharedList(friendId, entry!._id);
+      setInviteMsg("Invitation envoyée ✅ En attente de la réponse.");
+      try {
+        setSentInvites(await fetchSentSharedInvitations(entry!._id));
+      } catch {
+        /* ignore */
+      }
+    } catch (e: any) {
+      setError(e?.message ?? "Erreur lors de l'invitation.");
+    }
+  };
+
+  const cancelInvite = async (id: string) => {
+    try {
+      await cancelSharedInvitation(id);
+      setSentInvites((prev) => prev.filter((i) => i._id !== id));
+      setInviteMsg(null);
+    } catch (e: any) {
+      setError(e?.message ?? "Erreur.");
+    }
+  };
+
+  const onLeaveShared = () => {
+    if (!entry?.sharedGiftList) return;
+    Alert.alert(
+      "Quitter la liste commune ?",
+      "Tu ne verras plus cette liste. Les autres membres la gardent.",
+      [
+        { text: "Annuler", style: "cancel" },
+        {
+          text: "Quitter",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await leaveSharedList(entry.sharedGiftList!);
+              setSharedList(null);
+              await load();
+            } catch (e: any) {
+              setError(e?.message ?? "Erreur.");
+            }
+          },
+        },
+      ],
+    );
+  };
+
   if (!entry) {
     return (
       <View style={styles.center}>
@@ -119,11 +346,22 @@ export default function DateDetailScreen() {
     );
   }
 
-  const days = daysUntil(entry.date);
-  const gifts = (entry as DateEntry & { gifts?: Gift[] }).gifts ?? [];
+  // Date d'anniversaire : sur l'entrée manuelle, sinon sur l'ami lié.
+  const birthISO = entry.date || entry.linkedUser?.birthDate || null;
+  const days = birthISO ? daysUntil(birthISO) : null;
+  const allGifts = (entry as DateEntry & { gifts?: Gift[] }).gifts ?? [];
+  // Masque le cadeau en cours de suppression (annulable)
+  const gifts = pendingDelete
+    ? allGifts.filter((g) => g._id !== pendingDelete._id)
+    : allGifts;
+  const filteredGifts =
+    giftFilter === "all"
+      ? gifts
+      : gifts.filter((g) => g.occasion === giftFilter);
   const nameday = entry.nameday ?? entry.linkedUser?.nameday;
 
   return (
+    <View style={{ flex: 1 }}>
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.content}
@@ -167,38 +405,69 @@ export default function DateDetailScreen() {
 
       {error && <Text style={styles.error}>{error}</Text>}
 
+      {view === "info" && (
+        <>
       {/* Infos */}
       <View style={[styles.card, styles.infoCard]}>
-        {entry.linkedUser?.avatar ? (
-          <Image
-            source={{ uri: entry.linkedUser.avatar }}
-            style={styles.avatar}
-          />
-        ) : (
-          <View style={styles.avatarFallback}>
-            <Text style={styles.initials}>
-              {entry.name?.[0]?.toUpperCase()}
-              {entry.surname?.[0]?.toUpperCase() ?? ""}
-            </Text>
-          </View>
-        )}
+        <View style={styles.avatarFallback}>
+          <Text style={styles.initials}>
+            {`${(entry.name || entry.linkedUser?.name)?.[0] ?? ""}${
+              (entry.surname || entry.linkedUser?.surname)?.[0] ?? ""
+            }`.toUpperCase() || "?"}
+          </Text>
+          {!!entry.linkedUser?.avatar &&
+            entry.linkedUser.avatar.trim().length > 0 && (
+              <Image
+                source={{ uri: entry.linkedUser.avatar }}
+                style={StyleSheet.absoluteFill as any}
+                borderRadius={36}
+              />
+            )}
+        </View>
         <View style={styles.badgeRow}>
           {entry.linkedUser && <Badge label="AMI" color="#3b82f6" />}
           {entry.family && <Badge label="FAMILLE" color="#f59e0b" />}
         </View>
-        <Text style={styles.detail}>
-          🎂 {formatBirthday(entry.date)} · {upcomingAge(entry.date)} ans
-        </Text>
+        {birthISO && (
+          <Text style={styles.detail}>
+            🎂 {formatFullDate(birthISO)} · {currentAge(birthISO)} ans
+          </Text>
+        )}
         {nameday && (
           <Text style={styles.detail}>🎉 Fête : {formatNameday(nameday)}</Text>
         )}
-        <View style={[styles.countdown, days === 0 && styles.countdownToday]}>
-          <Text
-            style={[styles.countdownText, days === 0 && { color: "#fff" }]}
+        {birthISO &&
+          (days === 0 ? (
+            <View style={styles.countdownTodayBox}>
+              <Text style={styles.countdownTodayText}>Aujourd'hui 🎂</Text>
+            </View>
+          ) : (
+            <BirthdayCountdown iso={birthISO} />
+          ))}
+
+        {entry.linkedUser && (
+          <Pressable
+            style={[
+              styles.familyBtn,
+              entry.family && styles.familyBtnActive,
+            ]}
+            disabled={busy}
+            onPress={() =>
+              run(() => setDateFamily(entry._id, !entry.family))
+            }
           >
-            {countdownLabel(days)}
-          </Text>
-        </View>
+            <Text
+              style={[
+                styles.familyBtnText,
+                entry.family && styles.familyBtnTextActive,
+              ]}
+            >
+              {entry.family
+                ? "🏠 Retirer de la famille"
+                : "🏠 Ajouter à la famille"}
+            </Text>
+          </Pressable>
+        )}
       </View>
 
       {/* Notifications pour cette date */}
@@ -315,7 +584,7 @@ export default function DateDetailScreen() {
         )}
       </View>
 
-      {/* Événement pour cette personne */}
+      {/* Boutons sous les infos */}
       <Pressable
         style={styles.eventBtn}
         onPress={() =>
@@ -335,74 +604,113 @@ export default function DateDetailScreen() {
         </Text>
       </Pressable>
 
-      {/* Mes Cadeaux (mes idées pour cette personne) */}
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>🎁 Mes idées cadeaux</Text>
-        {gifts.length === 0 && (
-          <Text style={styles.muted}>Aucune idée pour l'instant.</Text>
-        )}
-        {gifts.map((g) => (
-          <View key={g._id} style={styles.giftRow}>
-            {g.image ? (
-              <Image source={{ uri: g.image }} style={styles.wishImage} />
-            ) : null}
-            <Pressable
-              style={[styles.checkbox, g.purchased && styles.checkboxOn]}
-              disabled={busy}
-              onPress={() =>
-                run(() =>
-                  updateGift(entry._id, { ...g, purchased: !g.purchased }),
-                )
-              }
-            >
-              {g.purchased && <Text style={styles.checkmark}>✓</Text>}
-            </Pressable>
-            <View style={{ flex: 1 }}>
-              <Text
-                style={[styles.giftName, g.purchased && styles.giftDone]}
-                numberOfLines={1}
-              >
-                {g.giftName}
-              </Text>
-              <Text style={styles.muted}>
-                {g.occasion} {g.year}
-                {g.price != null ? ` · ${g.price} €` : ""}
-              </Text>
-              {g.url ? (
-                <Text
-                  style={styles.link}
-                  numberOfLines={1}
-                  onPress={() => Linking.openURL(g.url!)}
-                >
-                  Voir l'article
-                </Text>
-              ) : null}
-            </View>
-            <Pressable
-              hitSlop={8}
-              disabled={busy}
-              onPress={() =>
-                setEditingGift(editingGift?._id === g._id ? null : g)
-              }
-            >
-              <Text style={{ fontSize: 14 }}>✏️</Text>
-            </Pressable>
-            <Pressable
-              hitSlop={8}
-              disabled={busy}
-              onPress={() => run(() => deleteGift(entry._id, g._id))}
-            >
-              <Text style={styles.deleteX}>✕</Text>
-            </Pressable>
-          </View>
-        ))}
+      <Pressable
+        style={styles.giftsBtn}
+        onPress={() => {
+          setSharedOnly(false);
+          setGiftTab("ideas");
+          setView("gifts");
+        }}
+      >
+        <Text style={styles.giftsBtnText}>🎁 Voir les cadeaux</Text>
+      </Pressable>
 
+      <Pressable
+        style={styles.sharedBtn}
+        onPress={() => {
+          setSharedOnly(true);
+          setGiftTab("shared");
+          setView("gifts");
+        }}
+      >
+        <Text style={styles.sharedBtnText}>👥 Liste commune</Text>
+      </Pressable>
+        </>
+      )}
+
+      {view === "gifts" && (
+        <>
+      {/* Retour à l'accueil de la carte */}
+      <Pressable
+        style={styles.backBtn}
+        onPress={() => {
+          setSharedOnly(false);
+          setView("info");
+        }}
+      >
+        <Text style={styles.backBtnText}>‹ Retour à la carte</Text>
+      </Pressable>
+
+      {!sharedOnly && (
+        <View style={styles.giftTabs}>
+          <Pressable
+            style={[styles.giftTab, giftTab === "ideas" && styles.giftTabActive]}
+            onPress={() => setGiftTab("ideas")}
+          >
+            <Text
+              style={[
+                styles.giftTabText,
+                giftTab === "ideas" && styles.giftTabTextActive,
+              ]}
+            >
+              🎁 Mes idées
+            </Text>
+          </Pressable>
+          {entry.linkedUser && (
+            <Pressable
+              style={[
+                styles.giftTab,
+                giftTab === "wishlist" && styles.giftTabActive,
+              ]}
+              onPress={() => setGiftTab("wishlist")}
+            >
+              <Text
+                style={[
+                  styles.giftTabText,
+                  giftTab === "wishlist" && styles.giftTabTextActive,
+                ]}
+              >
+                🎀 Sa wishlist
+              </Text>
+            </Pressable>
+          )}
+        </View>
+      )}
+
+      {giftTab === "ideas" && (
+      <View style={styles.card}>
+        <View style={styles.giftsHeader}>
+          <Text style={styles.sectionTitle}>🎁 Mes idées cadeaux</Text>
+          <Pressable
+            style={styles.newIdeaBtnTop}
+            onPress={() => {
+              setEditingGift(null);
+              setShowGiftForm((v) => !v);
+            }}
+          >
+            <Text style={styles.newIdeaTopText}>
+              {showGiftForm ? "✕ Fermer" : "＋ Nouvelle idée"}
+            </Text>
+          </Pressable>
+        </View>
+
+        {showGiftForm && (
+          <GiftIdeaForm
+            busy={busy}
+            onCancel={() => setShowGiftForm(false)}
+            onSubmit={async (gift) => {
+              await run(() => addGift(entry._id, gift));
+              setShowGiftForm(false);
+            }}
+          />
+        )}
         {editingGift && (
           <GiftIdeaForm
             key={editingGift._id}
             title={`Modifier « ${editingGift.giftName} »`}
             submitLabel="Enregistrer"
             busy={busy}
+            onCancel={() => setEditingGift(null)}
             initial={{
               giftName: editingGift.giftName,
               occasion: editingGift.occasion,
@@ -425,26 +733,141 @@ export default function DateDetailScreen() {
             }}
           />
         )}
-        {showGiftForm ? (
-          <GiftIdeaForm
-            busy={busy}
-            onSubmit={async (gift) => {
-              await run(() => addGift(entry._id, gift));
-              setShowGiftForm(false);
-            }}
-          />
-        ) : (
-          <Pressable
-            style={styles.newIdeaBtn}
-            onPress={() => setShowGiftForm(true)}
-          >
-            <Text style={styles.newIdeaText}>＋ Nouvelle idée</Text>
-          </Pressable>
+
+        {/* Filtre par occasion — bouton déroulant */}
+        {gifts.length > 0 && (
+          <>
+            <Pressable
+              style={[
+                styles.filterToggle,
+                (showFilters || giftFilter !== "all") && styles.filterToggleOn,
+              ]}
+              onPress={() => {
+                if (showFilters) setGiftFilter("all"); // fermer → réaffiche tout
+                setShowFilters((v) => !v);
+              }}
+            >
+              <Text
+                style={[
+                  styles.filterToggleText,
+                  (showFilters || giftFilter !== "all") &&
+                    styles.filterToggleTextOn,
+                ]}
+              >
+                {showFilters
+                  ? "✕ Fermer le filtre"
+                  : giftFilter === "all"
+                    ? "🔎 Filtrer par occasion"
+                    : `🔎 ${occasionEmoji(giftFilter)} ${giftFilter}`}
+              </Text>
+            </Pressable>
+
+            {showFilters && (
+              <View style={styles.filterWrap}>
+                <Pressable
+                  style={[
+                    styles.filterChip,
+                    giftFilter === "all" && styles.filterChipOn,
+                  ]}
+                  onPress={() => setGiftFilter("all")}
+                >
+                  <Text
+                    style={[
+                      styles.filterChipText,
+                      giftFilter === "all" && styles.filterChipTextOn,
+                    ]}
+                  >
+                    Tous
+                  </Text>
+                </Pressable>
+                {OCCASIONS.filter((o) =>
+                  gifts.some((g) => g.occasion === o.value),
+                ).map((o) => (
+                  <Pressable
+                    key={o.value}
+                    style={[
+                      styles.filterChip,
+                      giftFilter === o.value && styles.filterChipOn,
+                    ]}
+                    onPress={() => setGiftFilter(o.value)}
+                  >
+                    <Text
+                      style={[
+                        styles.filterChipText,
+                        giftFilter === o.value && styles.filterChipTextOn,
+                      ]}
+                    >
+                      {o.emoji} {o.label}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            )}
+          </>
         )}
+
+        {filteredGifts.length === 0 && (
+          <Text style={styles.muted}>
+            {gifts.length === 0
+              ? "Aucune idée pour l'instant."
+              : "Aucune idée pour ce filtre."}
+          </Text>
+        )}
+
+        <View style={styles.giftGrid}>
+          {filteredGifts.map((g) => {
+            const st = giftStatusOf(g);
+            const meta = GIFT_STATUS_META[st];
+            return (
+              <Pressable
+                key={g._id}
+                style={[
+                  styles.giftGridCard,
+                  st !== "to_buy" && styles.giftCardDone,
+                ]}
+                onPress={() => setSelectedGift(g)}
+              >
+                {g.image ? (
+                  <Image source={{ uri: g.image }} style={styles.giftGridImg} />
+                ) : (
+                  <View style={[styles.giftGridImg, styles.giftCardNoImg]}>
+                    <Text style={styles.giftGridEmoji}>
+                      {occasionEmoji(g.occasion)}
+                    </Text>
+                  </View>
+                )}
+                <Text style={styles.giftName} numberOfLines={2}>
+                  {g.giftName}
+                </Text>
+                <Text style={styles.giftMeta} numberOfLines={1}>
+                  {occasionEmoji(g.occasion)} {g.occasion}
+                  {g.year ? ` · ${g.year}` : ""}
+                </Text>
+                <View style={styles.giftGridRow}>
+                  {g.price != null && (
+                    <View style={styles.pricePill}>
+                      <Text style={styles.pricePillText}>{g.price} €</Text>
+                    </View>
+                  )}
+                  <Pressable
+                    disabled={busy}
+                    onPress={() => cycleGiftStatus(g)}
+                    style={[styles.giftBadge, { backgroundColor: meta.bg }]}
+                  >
+                    <Text style={[styles.giftBadgeText, { color: meta.color }]}>
+                      {meta.emoji} {meta.short}
+                    </Text>
+                  </Pressable>
+                </View>
+              </Pressable>
+            );
+          })}
+        </View>
       </View>
+      )}
 
       {/* Sa Wishlist (amis inscrits) */}
-      {entry.linkedUser && (
+      {entry.linkedUser && giftTab === "wishlist" && (
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>
             🎀 La wishlist de {entry.name}
@@ -457,60 +880,383 @@ export default function DateDetailScreen() {
           {wishlist?.length === 0 && (
             <Text style={styles.muted}>Sa wishlist est vide.</Text>
           )}
-          {wishlist?.map((item) => {
-            const reservedByMe = item.reservedBy?._id === user?._id;
-            const reserved = !!item.reservedBy || !!item.reservedByGuest;
+          {(() => {
+            // On masque les cadeaux déjà réservés par quelqu'un d'autre ;
+            // on garde les disponibles + ceux qu'on a réservés soi-même.
+            const visibleWishlist = (wishlist ?? []).filter((item) => {
+              const reservedByMe = item.reservedBy?._id === user?._id;
+              const reservedByOther =
+                (!!item.reservedBy && !reservedByMe) || !!item.reservedByGuest;
+              return !reservedByOther;
+            });
+            if ((wishlist?.length ?? 0) > 0 && visibleWishlist.length === 0) {
+              return (
+                <Text style={styles.muted}>
+                  Tous les cadeaux disponibles ont été réservés 🎁
+                </Text>
+              );
+            }
             return (
-              <View key={item._id} style={styles.giftRow}>
-                {item.image ? (
-                  <Image source={{ uri: item.image }} style={styles.wishImage} />
-                ) : null}
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.giftName} numberOfLines={1}>
-                    {item.title}
+              <View style={giftGridStyles.grid}>
+                {visibleWishlist.map((item) => {
+                  const reservedByMe = item.reservedBy?._id === user?._id;
+                  return (
+                    <GiftGridCard
+                      key={item._id}
+                      imageUri={item.image}
+                      placeholderEmoji="🎀"
+                      title={item.title}
+                      price={item.price ?? null}
+                      badge={
+                        reservedByMe
+                          ? {
+                              label: "Réservé par toi",
+                              color: "#047857",
+                              bg: "#d1fae5",
+                            }
+                          : {
+                              label: "Disponible",
+                              color: "#6b7280",
+                              bg: "#f3f4f6",
+                            }
+                      }
+                      onPress={() => setSelectedWish(item)}
+                    />
+                  );
+                })}
+              </View>
+            );
+          })()}
+        </View>
+      )}
+
+      {giftTab === "shared" && (
+        <View style={styles.card}>
+          {!entry.sharedGiftList ? (
+            <>
+              <Text style={styles.sectionTitle}>👥 Liste commune</Text>
+              <Text style={styles.muted}>
+                Partage une liste d'idées cadeaux avec un proche : vous la voyez
+                et l'éditez tous les deux.
+              </Text>
+              {inviteMsg && <Text style={styles.inviteMsg}>{inviteMsg}</Text>}
+              <Pressable style={styles.eventBtn} onPress={openFriendPicker}>
+                <Text style={styles.eventBtnText}>
+                  ＋ Créer une liste commune
+                </Text>
+              </Pressable>
+
+              {sentInvites.map((inv) => (
+                <View key={inv._id} style={styles.sentRow}>
+                  <Text style={styles.muted} numberOfLines={1}>
+                    En attente de {inv.toUser?.name} {inv.toUser?.surname ?? ""}…
                   </Text>
-                  <Text style={styles.muted}>
-                    {item.price != null ? `${item.price} € · ` : ""}
-                    {reserved
-                      ? reservedByMe
-                        ? "Réservé par toi"
-                        : `Réservé par ${item.reservedBy?.name ?? "un invité"}`
-                      : "Disponible"}
+                  <Pressable
+                    hitSlop={8}
+                    disabled={busy}
+                    onPress={() => cancelInvite(inv._id)}
+                  >
+                    <Text style={styles.cancelInvite}>Annuler</Text>
+                  </Pressable>
+                </View>
+              ))}
+            </>
+          ) : !sharedList ? (
+            <ActivityIndicator color="#3b82f6" style={{ marginVertical: 16 }} />
+          ) : (
+            <>
+              <View style={styles.giftsHeader}>
+                <Text style={styles.sectionTitle}>👥 Idées communes</Text>
+                <Pressable
+                  style={styles.newIdeaBtnTop}
+                  onPress={() => {
+                    setEditingSharedGift(null);
+                    setShowSharedForm((v) => !v);
+                  }}
+                >
+                  <Text style={styles.newIdeaTopText}>
+                    {showSharedForm ? "✕ Fermer" : "＋ Ajouter"}
                   </Text>
-                  {item.url ? (
+                </Pressable>
+              </View>
+              <Text style={styles.muted}>
+                Membres :{" "}
+                {sharedList.members
+                  .map((m) => `${m.name}${m.surname ? " " + m.surname : ""}`)
+                  .join(", ")}
+              </Text>
+
+              {showSharedForm && (
+                <GiftIdeaForm
+                  busy={busy}
+                  onCancel={() => setShowSharedForm(false)}
+                  onSubmit={async (gift) => {
+                    await runShared(() =>
+                      addSharedGift(entry.sharedGiftList!, gift),
+                    );
+                    setShowSharedForm(false);
+                  }}
+                />
+              )}
+              {editingSharedGift && (
+                <GiftIdeaForm
+                  key={editingSharedGift._id}
+                  title={`Modifier « ${editingSharedGift.giftName} »`}
+                  submitLabel="Enregistrer"
+                  busy={busy}
+                  onCancel={() => setEditingSharedGift(null)}
+                  initial={{
+                    giftName: editingSharedGift.giftName,
+                    occasion: editingSharedGift.occasion,
+                    year: editingSharedGift.year,
+                    url: editingSharedGift.url ?? undefined,
+                    price: editingSharedGift.price ?? undefined,
+                    image: editingSharedGift.image ?? undefined,
+                  }}
+                  onSubmit={async (gift) => {
+                    await runShared(() =>
+                      updateSharedGift(
+                        entry.sharedGiftList!,
+                        editingSharedGift._id,
+                        {
+                          ...gift,
+                          url: gift.url ?? null,
+                          price: gift.price ?? null,
+                          image: gift.image ?? null,
+                        },
+                      ),
+                    );
+                    setEditingSharedGift(null);
+                  }}
+                />
+              )}
+
+              {sharedList.gifts.length === 0 && (
+                <Text style={styles.muted}>Aucune idée commune pour l'instant.</Text>
+              )}
+
+              <View style={styles.giftGrid}>
+                {sharedList.gifts.map((g) => {
+                  const st = giftStatusOf(g);
+                  const meta = GIFT_STATUS_META[st];
+                  return (
+                    <Pressable
+                      key={g._id}
+                      style={[
+                        styles.giftGridCard,
+                        st !== "to_buy" && styles.giftCardDone,
+                      ]}
+                      onPress={() => setSelectedSharedGift(g)}
+                    >
+                      {g.image ? (
+                        <Image
+                          source={{ uri: g.image }}
+                          style={styles.giftGridImg}
+                        />
+                      ) : (
+                        <View style={[styles.giftGridImg, styles.giftCardNoImg]}>
+                          <Text style={styles.giftGridEmoji}>
+                            {occasionEmoji(g.occasion)}
+                          </Text>
+                        </View>
+                      )}
+                      <Text style={styles.giftName} numberOfLines={2}>
+                        {g.giftName}
+                      </Text>
+                      <Text style={styles.giftMeta} numberOfLines={1}>
+                        {occasionEmoji(g.occasion)} {g.occasion}
+                        {g.addedBy?.name ? ` · ${g.addedBy.name}` : ""}
+                      </Text>
+                      <View style={styles.giftGridRow}>
+                        {g.price != null && (
+                          <View style={styles.pricePill}>
+                            <Text style={styles.pricePillText}>{g.price} €</Text>
+                          </View>
+                        )}
+                        <Pressable
+                          disabled={busy}
+                          onPress={() =>
+                            setSharedGiftStatus(g, nextGiftStatus(st))
+                          }
+                          style={[styles.giftBadge, { backgroundColor: meta.bg }]}
+                        >
+                          <Text
+                            style={[styles.giftBadgeText, { color: meta.color }]}
+                          >
+                            {meta.emoji} {meta.short}
+                          </Text>
+                        </Pressable>
+                      </View>
+                    </Pressable>
+                  );
+                })}
+              </View>
+
+              <Pressable onPress={onLeaveShared} style={{ marginTop: 6 }}>
+                <Text style={styles.leaveShared}>Quitter la liste commune</Text>
+              </Pressable>
+            </>
+          )}
+        </View>
+      )}
+        </>
+      )}
+
+      <GiftDetailModal
+        gift={selectedGift}
+        busy={busy}
+        onClose={() => setSelectedGift(null)}
+        onSetStatus={(g, status) => setGiftStatus(g, status)}
+        onEdit={(g) => {
+          setSelectedGift(null);
+          setShowGiftForm(false);
+          setEditingGift(g);
+        }}
+        onDelete={(g) => {
+          setSelectedGift(null);
+          requestDelete(g);
+        }}
+      />
+
+      <BottomSheet
+        visible={!!selectedWish}
+        onClose={() => setSelectedWish(null)}
+      >
+        {selectedWish &&
+          (() => {
+            const w = selectedWish;
+            const reservedByMe = w.reservedBy?._id === user?._id;
+            const reserved = !!w.reservedBy || !!w.reservedByGuest;
+            return (
+              <>
+                {w.image ? (
+                  <Image source={{ uri: w.image }} style={styles.sheetImage} />
+                ) : (
+                  <View style={[styles.sheetImage, styles.sheetImgPlaceholder]}>
+                    <Text style={{ fontSize: 56 }}>🎀</Text>
+                  </View>
+                )}
+                <Text style={styles.sheetTitle}>{w.title}</Text>
+                <View style={styles.sheetInfoRow}>
+                  <Text style={styles.sheetPrice}>
+                    {w.price != null ? `${w.price} €` : "Prix libre"}
+                  </Text>
+                  {w.url ? (
                     <Text
                       style={styles.link}
-                      numberOfLines={1}
-                      onPress={() => Linking.openURL(item.url!)}
+                      onPress={() => Linking.openURL(w.url!)}
                     >
-                      Voir l'article
+                      🔗 Voir le produit
                     </Text>
                   ) : null}
                 </View>
+                {reserved && !reservedByMe && (
+                  <Text style={styles.sheetReserved}>
+                    🧑 Déjà réservé par quelqu'un
+                  </Text>
+                )}
                 {!reserved && (
                   <Pressable
-                    style={styles.reserveBtn}
+                    style={styles.sheetPrimaryBtn}
                     disabled={busy}
-                    onPress={() => run(() => reserveItem(item._id))}
+                    onPress={() => {
+                      setSelectedWish(null);
+                      run(() => reserveItem(w._id));
+                    }}
                   >
-                    <Text style={styles.reserveText}>Réserver</Text>
+                    <Text style={styles.sheetPrimaryText}>🎁 Je réserve</Text>
                   </Pressable>
                 )}
                 {reservedByMe && (
                   <Pressable
-                    style={[styles.reserveBtn, styles.unreserveBtn]}
+                    style={styles.sheetGhostBtn}
                     disabled={busy}
-                    onPress={() => run(() => unreserveItem(item._id))}
+                    onPress={() => {
+                      setSelectedWish(null);
+                      run(() => unreserveItem(w._id));
+                    }}
                   >
-                    <Text style={styles.unreserveText}>Annuler</Text>
+                    <Text style={styles.sheetGhostText}>
+                      ↩️ Annuler ma réservation
+                    </Text>
                   </Pressable>
                 )}
-              </View>
+              </>
             );
-          })}
+          })()}
+      </BottomSheet>
+
+      {/* Détail d'un cadeau commun (réutilise le modal cadeau) */}
+      <GiftDetailModal
+        gift={selectedSharedGift as Gift | null}
+        busy={busy}
+        onClose={() => setSelectedSharedGift(null)}
+        onSetStatus={(g, status) =>
+          setSharedGiftStatus(g as SharedGift, status)
+        }
+        onEdit={(g) => {
+          setSelectedSharedGift(null);
+          setShowSharedForm(false);
+          setEditingSharedGift(g as SharedGift);
+        }}
+        onDelete={(g) => {
+          setSelectedSharedGift(null);
+          runShared(() => deleteSharedGift(entry.sharedGiftList!, g._id));
+        }}
+      />
+
+      {/* Sélecteur d'ami pour créer une liste commune */}
+      <BottomSheet
+        visible={showFriendPicker}
+        onClose={() => setShowFriendPicker(false)}
+      >
+        <Text style={styles.sheetTitle}>Avec qui créer la liste ?</Text>
+        <Text style={styles.muted}>
+          Choisis un ami. Il recevra une invitation à rejoindre la liste.
+        </Text>
+        {friends.map((f) => (
+          <Pressable
+            key={f.friendship._id}
+            style={styles.friendRow}
+            onPress={() => inviteFriend(f.friendUser._id)}
+          >
+            <Text style={styles.friendName}>
+              {f.friendUser.name} {f.friendUser.surname ?? ""}
+            </Text>
+          </Pressable>
+        ))}
+        {friends.length === 0 && (
+          <Text style={styles.muted}>Aucun ami disponible.</Text>
+        )}
+      </BottomSheet>
+    </ScrollView>
+
+      {pendingDelete && (
+        <View style={styles.undoBar}>
+          <View style={styles.undoRow}>
+            <Text style={styles.undoText} numberOfLines={1}>
+              « {pendingDelete.giftName} » supprimé
+            </Text>
+            <Pressable onPress={undoDelete} hitSlop={8}>
+              <Text style={styles.undoAction}>Annuler la suppression</Text>
+            </Pressable>
+          </View>
+          <View style={styles.undoTrack}>
+            <Animated.View
+              style={[
+                styles.undoProgress,
+                {
+                  width: deleteProgress.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: ["100%", "0%"],
+                  }),
+                },
+              ]}
+            />
+          </View>
         </View>
       )}
-    </ScrollView>
+    </View>
   );
 }
 
@@ -605,6 +1351,27 @@ const styles = StyleSheet.create({
   },
   countdownToday: { backgroundColor: "#3b82f6" },
   countdownText: { color: "#2563eb", fontWeight: "700" },
+  countdownTodayBox: {
+    alignSelf: "stretch",
+    alignItems: "center",
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: "#e5e7eb",
+  },
+  countdownTodayText: { color: "#10b981", fontWeight: "800", fontSize: 15 },
+  familyBtn: {
+    alignSelf: "stretch",
+    marginTop: 12,
+    borderWidth: 1.5,
+    borderColor: "#f59e0b",
+    borderRadius: 10,
+    paddingVertical: 10,
+    alignItems: "center",
+  },
+  familyBtnActive: { backgroundColor: "#fef3c7" },
+  familyBtnText: { color: "#b45309", fontWeight: "700", fontSize: 14 },
+  familyBtnTextActive: { color: "#b45309" },
   sectionTitle: { fontSize: 15, fontWeight: "700", color: "#111827" },
   muted: { color: "#6b7280", fontSize: 12 },
   giftRow: {
@@ -695,4 +1462,285 @@ const styles = StyleSheet.create({
   reserveText: { color: "#3b82f6", fontWeight: "600", fontSize: 12 },
   unreserveBtn: { borderColor: "#ef4444" },
   unreserveText: { color: "#ef4444", fontWeight: "600", fontSize: 12 },
+
+  // Bouton "Voir les cadeaux" (accueil carte)
+  giftsBtn: {
+    backgroundColor: "#fff",
+    borderWidth: 1.5,
+    borderColor: "#3b82f6",
+    borderRadius: 14,
+    padding: 14,
+    alignItems: "center",
+  },
+  giftsBtnText: { color: "#3b82f6", fontWeight: "700", fontSize: 15 },
+  sharedBtn: {
+    backgroundColor: "#fff",
+    borderWidth: 1.5,
+    borderColor: "#8b5cf6",
+    borderRadius: 14,
+    padding: 14,
+    alignItems: "center",
+  },
+  sharedBtnText: { color: "#7c3aed", fontWeight: "700", fontSize: 15 },
+
+  // Retour + bascule (vue cadeaux)
+  backBtn: { paddingVertical: 6, paddingHorizontal: 2 },
+  backBtnText: { color: "#3b82f6", fontWeight: "700", fontSize: 15 },
+  giftTabs: {
+    flexDirection: "row",
+    gap: 8,
+    backgroundColor: "#eef2f7",
+    borderRadius: 12,
+    padding: 4,
+  },
+  giftTab: {
+    flex: 1,
+    paddingVertical: 8,
+    alignItems: "center",
+    borderRadius: 9,
+  },
+  giftTabActive: {
+    backgroundColor: "#fff",
+    shadowColor: "#000",
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 1 },
+    elevation: 1,
+  },
+  giftTabText: { fontSize: 13, fontWeight: "700", color: "#6b7280" },
+  giftTabTextActive: { color: "#111827" },
+
+  // Cartes cadeaux (style web)
+  giftCard: {
+    flexDirection: "row",
+    gap: 12,
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#eef2f7",
+    padding: 10,
+    marginBottom: 10,
+  },
+  giftCardDone: { opacity: 0.7, backgroundColor: "#f9fafb" },
+  giftCardImg: { width: 64, height: 64, borderRadius: 10 },
+  giftCardNoImg: {
+    backgroundColor: "#f3f4f6",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  giftCardNoImgTxt: { fontSize: 26 },
+  giftCardBody: { flex: 1, gap: 4 },
+  giftCardTop: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: 8,
+  },
+  giftMeta: { color: "#6b7280", fontSize: 12 },
+  giftCardFooter: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    flexWrap: "wrap",
+  },
+  pricePill: {
+    backgroundColor: "#eff6ff",
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  pricePillText: { color: "#2563eb", fontWeight: "700", fontSize: 12 },
+  giftBadge: { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
+  giftBadgePending: { backgroundColor: "#fef3c7" },
+  giftBadgeDone: { backgroundColor: "#d1fae5" },
+  giftBadgeText: { fontSize: 10, fontWeight: "800" },
+  giftBadgeTextPending: { color: "#b45309" },
+  giftBadgeTextDone: { color: "#047857" },
+  giftCardActions: {
+    flexDirection: "row",
+    gap: 16,
+    marginTop: 4,
+  },
+  giftActionEdit: { color: "#3b82f6", fontWeight: "600", fontSize: 14 },
+  giftActionDel: { color: "#ef4444", fontWeight: "600", fontSize: 14 },
+  giftCardActionBtn: { alignSelf: "flex-start", marginTop: 4 },
+
+  // En-tête section idées + bouton "Nouvelle idée" en haut
+  giftsHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
+  },
+  newIdeaBtnTop: {
+    backgroundColor: "#3b82f6",
+    borderRadius: 10,
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+  },
+  newIdeaTopText: { color: "#fff", fontWeight: "700", fontSize: 13 },
+
+  // Filtre par occasion (bouton déroulant + panneau qui revient à la ligne)
+  filterToggle: {
+    alignSelf: "flex-start",
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    borderRadius: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: "#f9fafb",
+  },
+  filterToggleOn: { borderColor: "#3b82f6", backgroundColor: "#eff6ff" },
+  filterToggleText: { fontSize: 13, fontWeight: "700", color: "#374151" },
+  filterToggleTextOn: { color: "#2563eb" },
+  filterWrap: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    paddingVertical: 4,
+  },
+  filterRow: { gap: 8, paddingVertical: 4, paddingRight: 8 },
+  filterChip: {
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    borderRadius: 16,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    backgroundColor: "#f9fafb",
+  },
+  filterChipOn: { backgroundColor: "#3b82f6", borderColor: "#3b82f6" },
+  filterChipText: { fontSize: 12, fontWeight: "600", color: "#374151" },
+  filterChipTextOn: { color: "#fff" },
+
+  // Grille 2 colonnes
+  giftGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    rowGap: 10,
+  },
+  giftGridCard: {
+    width: "48.5%",
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#eef2f7",
+    padding: 8,
+    gap: 4,
+  },
+  giftGridImg: { width: "100%", height: 90, borderRadius: 8 },
+  giftGridEmoji: { fontSize: 30 },
+  giftGridRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    flexWrap: "wrap",
+  },
+  giftGridActions: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: 16,
+    marginTop: 2,
+  },
+
+  // Bottom sheet wishlist
+  sheetImage: { width: "100%", height: 180, borderRadius: 14 },
+  sheetImgPlaceholder: {
+    backgroundColor: "#f3f4f6",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  sheetTitle: {
+    fontSize: 20,
+    fontWeight: "800",
+    color: "#111827",
+    marginTop: 14,
+  },
+  sheetInfoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 12,
+  },
+  sheetPrice: { fontSize: 20, fontWeight: "800", color: "#111827" },
+  sheetReserved: { color: "#6b7280", fontSize: 13, marginTop: 10 },
+  sheetPrimaryBtn: {
+    backgroundColor: "#3b82f6",
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: "center",
+    marginTop: 18,
+  },
+  sheetPrimaryText: { color: "#fff", fontWeight: "700", fontSize: 15 },
+  sheetGhostBtn: {
+    borderWidth: 1.5,
+    borderColor: "#d1d5db",
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: "center",
+    marginTop: 18,
+  },
+  sheetGhostText: { color: "#374151", fontWeight: "700", fontSize: 15 },
+  inviteMsg: { color: "#047857", fontSize: 13, marginTop: 4 },
+  sentRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: "#eef2f7",
+  },
+  cancelInvite: { color: "#ef4444", fontWeight: "700", fontSize: 13 },
+  leaveShared: {
+    color: "#ef4444",
+    fontSize: 13,
+    fontWeight: "600",
+    textAlign: "center",
+    marginTop: 8,
+  },
+  friendRow: {
+    paddingVertical: 12,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: "#eef2f7",
+  },
+  friendName: { fontSize: 15, fontWeight: "600", color: "#111827" },
+
+  // Bandeau "annuler la suppression"
+  undoBar: {
+    position: "absolute",
+    left: 12,
+    right: 12,
+    bottom: 20,
+    backgroundColor: "#111827",
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingTop: 12,
+    paddingBottom: 10,
+    shadowColor: "#000",
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 6,
+  },
+  undoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  undoText: { color: "#f9fafb", fontSize: 13, flex: 1 },
+  undoAction: { color: "#93c5fd", fontWeight: "700", fontSize: 13 },
+  undoTrack: {
+    height: 3,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    borderRadius: 2,
+    marginTop: 10,
+    overflow: "hidden",
+  },
+  undoProgress: {
+    height: 3,
+    backgroundColor: "#60a5fa",
+    borderRadius: 2,
+  },
 });

@@ -195,6 +195,7 @@ export interface GiftProposal {
   proposedBy: { _id: string; name: string; surname?: string } | null;
   guestName?: string | null;
   votes: string[]; // userIds
+  selected?: boolean; // retenu par l'organisateur
 }
 
 export async function fetchGifts(shortId: string): Promise<GiftProposal[]> {
@@ -217,6 +218,14 @@ export async function toggleGiftVote(
   giftId: string,
 ): Promise<void> {
   await api(`/events/${shortId}/gifts/${giftId}/vote`, { method: "POST" });
+}
+
+/** (Dé)sélectionne un cadeau — organisateur uniquement */
+export async function toggleGiftSelection(
+  shortId: string,
+  giftId: string,
+): Promise<void> {
+  await api(`/events/${shortId}/gifts/${giftId}/select`, { method: "PATCH" });
 }
 
 // ---- Chat événement ----

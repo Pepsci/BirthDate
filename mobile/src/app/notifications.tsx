@@ -7,6 +7,7 @@ import {
   StyleSheet,
   RefreshControl,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { Stack, useRouter, useFocusEffect } from "expo-router";
 import {
@@ -15,6 +16,7 @@ import {
   markNotificationRead,
   markAllNotificationsRead,
   deleteNotification,
+  deleteAllNotifications,
   notifDisplay,
   timeAgo,
 } from "../lib/notifications";
@@ -75,6 +77,31 @@ export default function NotificationsScreen() {
     }
   };
 
+  const removeAll = () => {
+    Alert.alert(
+      "Tout supprimer ?",
+      "Toutes tes notifications seront définitivement supprimées.",
+      [
+        { text: "Annuler", style: "cancel" },
+        {
+          text: "Tout supprimer",
+          style: "destructive",
+          onPress: async () => {
+            const prev = items;
+            setItems([]); // optimiste
+            try {
+              await deleteAllNotifications();
+              refreshNotifs();
+            } catch (e: any) {
+              setItems(prev); // rollback
+              setError(e?.message ?? "Erreur.");
+            }
+          },
+        },
+      ],
+    );
+  };
+
   const remove = async (n: AppNotification) => {
     try {
       await deleteNotification(n._id);
@@ -106,10 +133,17 @@ export default function NotificationsScreen() {
         options={{
           title: "Notifications",
           headerRight: () =>
-            hasUnread ? (
-              <Pressable onPress={readAll} hitSlop={10}>
-                <Text style={styles.readAll}>Tout lire</Text>
-              </Pressable>
+            items.length > 0 ? (
+              <View style={styles.headerActions}>
+                {hasUnread && (
+                  <Pressable onPress={readAll} hitSlop={10}>
+                    <Text style={styles.readAll}>Tout lire</Text>
+                  </Pressable>
+                )}
+                <Pressable onPress={removeAll} hitSlop={10}>
+                  <Text style={styles.deleteAll}>Tout supprimer</Text>
+                </Pressable>
+              </View>
             ) : null,
         }}
       />
@@ -165,7 +199,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#f9fafb",
   },
   error: { color: "#b91c1c", textAlign: "center", padding: 6 },
+  headerActions: { flexDirection: "row", alignItems: "center", gap: 16 },
   readAll: { color: "#3b82f6", fontWeight: "600", fontSize: 13 },
+  deleteAll: { color: "#ef4444", fontWeight: "600", fontSize: 13 },
   list: { padding: 12, gap: 8, paddingBottom: 8 },
   empty: { textAlign: "center", color: "#6b7280", marginTop: 48 },
   row: {

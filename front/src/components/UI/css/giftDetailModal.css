@@ -301,6 +301,29 @@
   background: rgba(239, 68, 68, 0.2);
 }
 
+/* ── Statut cadeau (3 états) ── */
+.gdm-status-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.gdm-status-btn {
+  text-align: left;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1.5px solid var(--border-color);
+}
+.gdm-status-btn:hover {
+  border-color: var(--primary);
+}
+.gdm-status-btn--active {
+  background: rgba(59, 130, 246, 0.12);
+  border-color: var(--primary);
+  color: var(--primary);
+  font-weight: 700;
+}
+
 .gdm-btn--vote {
   background: transparent;
   color: var(--text-secondary);

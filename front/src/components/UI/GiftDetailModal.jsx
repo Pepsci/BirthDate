@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import "./css/giftDetailModal.css";
+import { GIFT_STATUSES, GIFT_STATUS_META } from "../../utils/giftStatus";
 
 /**
  * GiftDetailModal
@@ -31,6 +32,7 @@ const GiftDetailModal = ({
   onEdit,
   onDelete,
   onToggle,
+  onSetStatus,
   onReserve,
   onUnreserve,
   onOffered,
@@ -72,6 +74,10 @@ const GiftDetailModal = ({
   };
   const handleToggleClick = () => {
     onToggle?.(item.raw);
+    onClose();
+  };
+  const handleSetStatusClick = (status) => {
+    onSetStatus?.(item.raw, status);
     onClose();
   };
   const handleReserveClick = () => {
@@ -222,17 +228,24 @@ const GiftDetailModal = ({
               </>
             )}
 
-            {/* Gifts — vue propriétaire */}
+            {/* Gifts — vue propriétaire : statut à 3 états + éditer/supprimer */}
             {type === "gifts" && !readOnly && (
               <>
-                <button
-                  className="gdm-btn gdm-btn--secondary"
-                  onClick={handleToggleClick}
-                >
-                  {item.isPurchased
-                    ? "⭕ Marquer non acheté"
-                    : "✅ Marquer acheté"}
-                </button>
+                <div className="gdm-status-group">
+                  {GIFT_STATUSES.map((s) => {
+                    const meta = GIFT_STATUS_META[s];
+                    const active = item.status === s;
+                    return (
+                      <button
+                        key={s}
+                        className={`gdm-btn gdm-status-btn ${active ? "gdm-status-btn--active" : ""}`}
+                        onClick={() => handleSetStatusClick(s)}
+                      >
+                        {meta.emoji} {meta.label} {active ? "✓" : ""}
+                      </button>
+                    );
+                  })}
+                </div>
                 <button
                   className="gdm-btn gdm-btn--primary"
                   onClick={handleEditClick}

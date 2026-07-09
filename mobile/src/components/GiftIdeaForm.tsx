@@ -8,6 +8,7 @@ import {
   Image,
 } from "react-native";
 import { fetchUrlInfo } from "../lib/wishlist";
+import { OCCASIONS } from "../lib/occasions";
 
 export interface GiftIdeaPayload {
   giftName: string;
@@ -18,20 +19,20 @@ export interface GiftIdeaPayload {
   image?: string;
 }
 
-const OCCASIONS = ["🎂 Anniversaire", "🎄 Noël", "💝 Saint-Valentin", "🎁 Autre"];
-
 /**
  * Formulaire complet d'idée cadeau — miroir de "Nouvelle idée" du web :
  * lien produit + récupération auto des infos, ou saisie 100 % manuelle.
  */
 export default function GiftIdeaForm({
   onSubmit,
+  onCancel,
   busy,
   initial,
   submitLabel = "Ajouter",
   title = "Nouvelle idée",
 }: {
   onSubmit: (gift: GiftIdeaPayload) => Promise<void>;
+  onCancel?: () => void;
   busy: boolean;
   initial?: Partial<GiftIdeaPayload>;
   submitLabel?: string;
@@ -133,16 +134,15 @@ export default function GiftIdeaForm({
 
       <View style={styles.chips}>
         {OCCASIONS.map((o) => {
-          const value = o.split(" ").slice(1).join(" ");
-          const active = occasion === value;
+          const active = occasion === o.value;
           return (
             <Pressable
-              key={o}
+              key={o.value}
               style={[styles.chip, active && styles.chipActive]}
-              onPress={() => setOccasion(value)}
+              onPress={() => setOccasion(o.value)}
             >
               <Text style={[styles.chipText, active && styles.chipTextActive]}>
-                {o}
+                {o.emoji} {o.label}
               </Text>
             </Pressable>
           );
@@ -176,13 +176,28 @@ export default function GiftIdeaForm({
         onChangeText={setImage}
       />
 
-      <Pressable
-        style={[styles.submit, (!name.trim() || busy) && { opacity: 0.5 }]}
-        disabled={!name.trim() || busy}
-        onPress={submit}
-      >
-        <Text style={styles.submitText}>{busy ? "…" : submitLabel}</Text>
-      </Pressable>
+      <View style={styles.submitRow}>
+        {onCancel && (
+          <Pressable
+            style={styles.cancel}
+            disabled={busy}
+            onPress={onCancel}
+          >
+            <Text style={styles.cancelText}>Annuler</Text>
+          </Pressable>
+        )}
+        <Pressable
+          style={[
+            styles.submit,
+            { flex: 1 },
+            (!name.trim() || busy) && { opacity: 0.5 },
+          ]}
+          disabled={!name.trim() || busy}
+          onPress={submit}
+        >
+          <Text style={styles.submitText}>{busy ? "…" : submitLabel}</Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -228,6 +243,7 @@ const styles = StyleSheet.create({
   chipText: { fontSize: 12, fontWeight: "600", color: "#374151" },
   chipTextActive: { color: "#fff" },
   row: { flexDirection: "row", gap: 8 },
+  submitRow: { flexDirection: "row", gap: 8 },
   submit: {
     backgroundColor: "#10b981",
     borderRadius: 10,
@@ -235,4 +251,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   submitText: { color: "#fff", fontWeight: "600", fontSize: 15 },
+  cancel: {
+    borderWidth: 1,
+    borderColor: "#d1d5db",
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  cancelText: { color: "#6b7280", fontWeight: "600", fontSize: 15 },
 });

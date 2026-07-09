@@ -11,14 +11,14 @@ import {
   Image,
   TextInput,
 } from "react-native";
+import BirthdayCountdown from "../../components/BirthdayCountdown";
 import {
   DateEntry,
   fetchDates,
   daysUntil,
-  upcomingAge,
+  currentAge,
   formatBirthday,
   formatNameday,
-  countdownLabel,
 } from "../../lib/dates";
 
 export default function BirthdaysScreen() {
@@ -76,7 +76,7 @@ export default function BirthdaysScreen() {
           normalize(d.surname ?? "").startsWith(q)
         );
       })
-      .sort((a, b) => daysUntil(a.date) - daysUntil(b.date));
+      .sort((a, b) => daysUntil(birthISOOf(a)) - daysUntil(birthISOOf(b)));
   }, [dates, search, filter]);
 
   if (loading) {
@@ -159,12 +159,24 @@ export default function BirthdaysScreen() {
   );
 }
 
+/** Date d'anniversaire : sur l'entrée manuelle, sinon sur l'ami lié. */
+function birthISOOf(entry: DateEntry): string | null {
+  return entry.date || entry.linkedUser?.birthDate || null;
+}
+
 function BirthdayCard({ entry }: { entry: DateEntry }) {
   const router = useRouter();
-  const days = daysUntil(entry.date);
-  const age = upcomingAge(entry.date);
+  const birthISO = birthISOOf(entry);
+  const days = birthISO ? daysUntil(birthISO) : null;
+  const age = birthISO ? currentAge(birthISO) : null;
   const isToday = days === 0;
   const avatar = entry.linkedUser?.avatar;
+
+  // Nom/prénom : sur l'entrée, sinon sur l'ami lié.
+  const name = entry.name || entry.linkedUser?.name || "";
+  const surname = entry.surname || entry.linkedUser?.surname || "";
+  const initials =
+    `${name[0] ?? ""}${surname[0] ?? ""}`.toUpperCase() || "?";
 
   return (
     <Pressable
@@ -175,19 +187,19 @@ function BirthdayCard({ entry }: { entry: DateEntry }) {
       ]}
       onPress={() => router.push(`/date/${entry._id}`)}
     >
-      {avatar ? (
-        <Image source={{ uri: avatar }} style={styles.avatar} />
-      ) : (
-        <View style={styles.avatarFallback}>
-          <Text style={styles.avatarInitials}>
-            {entry.name?.[0]?.toUpperCase()}
-            {entry.surname?.[0]?.toUpperCase() ?? ""}
-          </Text>
-        </View>
-      )}
+      <View style={styles.avatarFallback}>
+        <Text style={styles.avatarInitials}>{initials}</Text>
+        {!!avatar && avatar.trim().length > 0 && (
+          <Image
+            source={{ uri: avatar }}
+            style={StyleSheet.absoluteFill as any}
+            borderRadius={28}
+          />
+        )}
+      </View>
 
       <Text style={styles.name} numberOfLines={1}>
-        {entry.name} {entry.surname ?? ""}
+        {name} {surname}
       </Text>
 
       <View style={styles.nameRow}>
@@ -195,22 +207,29 @@ function BirthdayCard({ entry }: { entry: DateEntry }) {
         {entry.family && <Badge label="FAMILLE" color="#f59e0b" />}
       </View>
 
-      <Text style={styles.detail}>
-        🎂 {formatBirthday(entry.date)} · {age} ans
-      </Text>
-      {(entry.nameday || entry.linkedUser?.nameday) && (
+      {birthISO && (
+        <Text style={styles.detail}>
+          🎂 {formatBirthday(birthISO)}
+          {age !== null ? ` · ${age} ans` : ""}
+        </Text>
+      )}
+      {entry.nameday || entry.linkedUser?.nameday ? (
         <Text style={styles.detail}>
           🎉 {formatNameday(entry.nameday ?? entry.linkedUser!.nameday!)}
         </Text>
+      ) : (
+        // Espace réservé pour aligner les cartes sans fête
+        <Text style={styles.detail}>{" "}</Text>
       )}
 
-      <View style={[styles.countdown, isToday && styles.countdownToday]}>
-        <Text
-          style={[styles.countdownText, isToday && styles.countdownTextToday]}
-        >
-          {countdownLabel(days)}
-        </Text>
-      </View>
+      {birthISO &&
+        (isToday ? (
+          <View style={styles.countdownToday}>
+            <Text style={styles.countdownTodayText}>Aujourd'hui 🎂</Text>
+          </View>
+        ) : (
+          <BirthdayCountdown iso={birthISO} />
+        ))}
     </Pressable>
   );
 }
@@ -313,16 +332,13 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   badgeText: { color: "#fff", fontSize: 10, fontWeight: "700" },
-  countdown: {
-    backgroundColor: "#eff6ff",
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    marginTop: 4,
+  countdownToday: {
     alignSelf: "stretch",
     alignItems: "center",
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: "#e5e7eb",
   },
-  countdownToday: { backgroundColor: "#3b82f6" },
-  countdownText: { color: "#2563eb", fontWeight: "700" },
-  countdownTextToday: { color: "#fff" },
+  countdownTodayText: { color: "#10b981", fontWeight: "800", fontSize: 15 },
 });

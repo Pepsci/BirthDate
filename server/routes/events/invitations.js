@@ -17,7 +17,19 @@ router.post("/:shortId/invite", isAuthenticated, async (req, res) => {
   try {
     const event = await Event.findOne({ shortId: req.params.shortId }).populate("organizer", "name surname");
     if (!event) return res.status(404).json({ message: "Événement introuvable" });
-    if (event.organizer._id.toString() !== req.payload._id) return res.status(403).json({ message: "Non autorisé" });
+
+    const isOrganizer = event.organizer._id.toString() === req.payload._id;
+    if (!isOrganizer) {
+      // Un invité peut inviter ses amis uniquement si l'organisateur l'a autorisé
+      if (!event.allowGuestInvites)
+        return res.status(403).json({ message: "Non autorisé" });
+      const isParticipant = await EventInvitation.findOne({
+        event: event._id,
+        user: req.payload._id,
+      });
+      if (!isParticipant)
+        return res.status(403).json({ message: "Non autorisé" });
+    }
 
     const { userIds, externalEmails } = req.body;
     const baseUrl = process.env.FRONTEND_URL || "https://birthreminder.com";

@@ -24,6 +24,8 @@ const notificationSchema = new mongoose.Schema(
         "event_gift_vote",
         "event_chat_message",
         "event_pool_contribution",
+        "shared_gift_invite",
+        "shared_gift_accepted",
       ],
       required: true,
     },

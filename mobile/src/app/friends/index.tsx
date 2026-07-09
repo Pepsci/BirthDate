@@ -25,6 +25,7 @@ import {
   rejectRequest,
   removeFriend,
 } from "../../lib/friends";
+import { fetchDates } from "../../lib/dates";
 
 type Tab = "friends" | "received" | "sent";
 
@@ -35,6 +36,8 @@ export default function FriendsScreen() {
   const [friends, setFriends] = useState<FriendEntry[] | null>(null);
   const [requests, setRequests] = useState<FriendRequest[]>([]);
   const [sent, setSent] = useState<SentItems>({ requests: [], invitations: [] });
+  // Map userId d'un ami → id de sa carte (Date), pour naviguer même si linkedDate manque.
+  const [dateByUser, setDateByUser] = useState<Record<string, string>>({});
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
@@ -44,10 +47,11 @@ export default function FriendsScreen() {
   const load = useCallback(async () => {
     try {
       setError(null);
-      const [f, r, s] = await Promise.all([
+      const [f, r, s, dates] = await Promise.all([
         fetchFriends(),
         fetchFriendRequests(),
         fetchSent(),
+        fetchDates().catch(() => []),
       ]);
       setFriends(f.filter((x) => x?.friendUser?._id));
       setRequests(r.filter((x) => x?.user?._id));
@@ -55,6 +59,13 @@ export default function FriendsScreen() {
         requests: (s?.requests ?? []).filter((x) => x?.friend),
         invitations: s?.invitations ?? [],
       });
+      // Résout la carte de chaque ami via sa date liée (date.linkedUser === ami).
+      const map: Record<string, string> = {};
+      for (const d of dates) {
+        const uid = d.linkedUser?._id;
+        if (uid) map[uid] = d._id;
+      }
+      setDateByUser(map);
     } catch (e: any) {
       setError(e?.message ?? "Erreur de chargement.");
     }
@@ -188,9 +199,11 @@ export default function FriendsScreen() {
               <Pressable
                 key={f.friendship._id}
                 style={styles.row}
-                onPress={() =>
-                  f.linkedDate?._id && router.push(`/date/${f.linkedDate._id}`)
-                }
+                onPress={() => {
+                  const dateId =
+                    f.linkedDate?._id || dateByUser[f.friendUser._id];
+                  if (dateId) router.push(`/date/${dateId}`);
+                }}
                 onLongPress={() => confirmRemove(f)}
               >
                 <Avatar user={f.friendUser} />
@@ -327,15 +340,20 @@ function TabBtn({
 }
 
 function Avatar({ user }: { user: { name: string; surname?: string; avatar?: string | null } }) {
-  if (user?.avatar) {
-    return <Image source={{ uri: user.avatar }} style={styles.avatar} />;
-  }
+  const initials =
+    `${user?.name?.[0] ?? ""}${user?.surname?.[0] ?? ""}`.toUpperCase() || "?";
+  const hasAvatar = !!user?.avatar && user.avatar.trim().length > 0;
   return (
+    // Le rond d'initiales sert de fond : visible même si la photo charge/échoue.
     <View style={styles.avatarFallback}>
-      <Text style={styles.initials}>
-        {user?.name?.[0]?.toUpperCase()}
-        {user?.surname?.[0]?.toUpperCase() ?? ""}
-      </Text>
+      <Text style={styles.initials}>{initials}</Text>
+      {hasAvatar && (
+        <Image
+          source={{ uri: user.avatar! }}
+          style={StyleSheet.absoluteFill as any}
+          borderRadius={20}
+        />
+      )}
     </View>
   );
 }

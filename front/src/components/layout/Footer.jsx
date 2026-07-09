@@ -29,7 +29,7 @@ export default function Footer() {
               <Link to="/guide">📖 Guide d'utilisation</Link>
             </li>
             <li>
-              <a href="mailto:contact@birthreminder.com">Contact</a>
+              <Link to="/contact">Contact</Link>
             </li>
             <li>
               <a href="mailto:support@birthreminder.com">Aide</a>

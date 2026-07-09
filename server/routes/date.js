@@ -188,6 +188,32 @@ router.patch("/:id", isAuthenticated, async (req, res, next) => {
 });
 
 // ========================================
+// PATCH /:id/family - (dé)marquer comme famille
+// Autorisé même pour une date liée à un ami (owner only)
+// ========================================
+router.patch("/:id/family", isAuthenticated, async (req, res) => {
+  try {
+    if (!mongoose.isValidObjectId(req.params.id)) {
+      return res.status(400).json({ message: "Invalid Date ID" });
+    }
+    const updated = await dateModel
+      .findOneAndUpdate(
+        { _id: req.params.id, owner: req.payload._id },
+        { family: !!req.body.family },
+        { new: true },
+      )
+      .populate("linkedUser", "name surname email avatar birthDate nameday");
+    if (!updated) {
+      return res.status(404).json({ message: "Date not found" });
+    }
+    res.status(200).json(updated);
+  } catch (error) {
+    console.error("Error updating family flag:", error);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
+// ========================================
 // PATCH /:id/gifts - Ajouter un cadeau
 // 🔒 SÉCURISÉ
 // ========================================
@@ -198,7 +224,7 @@ router.patch("/:id/gifts", isAuthenticated, async (req, res, next) => {
     }
 
     // url/price/image étaient envoyés par le front mais ignorés ici — corrigé
-    const { giftName, occasion, year, purchased, url, price, image } =
+    const { giftName, occasion, year, purchased, status, url, price, image } =
       req.body;
 
     const updatedDate = await dateModel.findOneAndUpdate(
@@ -213,6 +239,7 @@ router.patch("/:id/gifts", isAuthenticated, async (req, res, next) => {
             occasion,
             year,
             purchased,
+            status: status || (purchased ? "bought" : "to_buy"),
             url: url || null,
             price: price ?? null,
             image: image || null,
@@ -248,7 +275,13 @@ router.patch("/:id/gifts/:giftId", isAuthenticated, async (req, res, next) => {
       return res.status(400).json({ message: "Invalid Date ID or Gift ID" });
     }
 
-    const { giftName, occasion, year, purchased, url, price, image } = req.body;
+    const { giftName, occasion, year, purchased, status, url, price, image } =
+      req.body;
+
+    // Statut détaillé ; `purchased` gardé synchro pour le web.
+    const resolvedStatus = status || (purchased ? "bought" : "to_buy");
+    const resolvedPurchased =
+      status != null ? status !== "to_buy" : !!purchased;
 
     const updatedDate = await dateModel.findOneAndUpdate(
       {
@@ -261,7 +294,8 @@ router.patch("/:id/gifts/:giftId", isAuthenticated, async (req, res, next) => {
           "gifts.$.giftName": giftName,
           "gifts.$.occasion": occasion,
           "gifts.$.year": year,
-          "gifts.$.purchased": purchased,
+          "gifts.$.purchased": resolvedPurchased,
+          "gifts.$.status": resolvedStatus,
           "gifts.$.url": url || null,
           "gifts.$.price": price ? Number(price) : null,
           "gifts.$.image": image || null,

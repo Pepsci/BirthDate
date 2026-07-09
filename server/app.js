@@ -109,6 +109,8 @@ app.use("/api/events", eventsRouter);
 app.use("/api/notifications", notificationsRouter);
 app.use("/api/stats", statsRouter);
 app.use("/api/stripe/connect", stripeConnectRouter);
+app.use("/api/support", require("./routes/support"));
+app.use("/api/shared-gifts", require("./routes/sharedGifts"));
 
 // Cron jobs
 purgeDeletedAccounts.start();

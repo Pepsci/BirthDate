@@ -1,4 +1,5 @@
 import { api } from "./api";
+import { GiftStatus } from "./giftStatus";
 
 export interface LinkedUser {
   _id: string;
@@ -18,6 +19,7 @@ export interface DateEntry {
   nameday?: string | null; // "MM-DD"
   family: boolean;
   linkedUser: LinkedUser | null;
+  sharedGiftList?: string | null;
   conversationId?: string;
   gifts?: Gift[];
   receiveNotifications?: boolean;
@@ -61,6 +63,42 @@ export function upcomingAge(iso: string, from = new Date()): number {
   return nextOccurrence(iso, from).getFullYear() - birth.getFullYear();
 }
 
+/** Âge ACTUEL de la personne (celui qu'elle a aujourd'hui) */
+export function currentAge(iso: string, from = new Date()): number {
+  const birth = new Date(iso);
+  let age = from.getFullYear() - birth.getFullYear();
+  const monthDiff = from.getMonth() - birth.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && from.getDate() < birth.getDate())) {
+    age--;
+  }
+  return age;
+}
+
+export interface TimeLeft {
+  days: number;
+  hours: number;
+  minutes: number;
+  seconds: number;
+  total: number; // ms restants
+}
+
+/** Temps restant (j/h/m/s) jusqu'à la prochaine occurrence, façon Countdown web */
+export function timeUntilNext(iso: string, from = new Date()): TimeLeft {
+  const birth = new Date(iso);
+  let next = new Date(from.getFullYear(), birth.getMonth(), birth.getDate());
+  if (next.getTime() <= from.getTime()) {
+    next = new Date(from.getFullYear() + 1, birth.getMonth(), birth.getDate());
+  }
+  const total = Math.max(0, next.getTime() - from.getTime());
+  return {
+    days: Math.floor(total / 86_400_000),
+    hours: Math.floor((total % 86_400_000) / 3_600_000),
+    minutes: Math.floor((total % 3_600_000) / 60_000),
+    seconds: Math.floor((total % 60_000) / 1_000),
+    total,
+  };
+}
+
 const MONTHS_FR = [
   "janvier", "février", "mars", "avril", "mai", "juin",
   "juillet", "août", "septembre", "octobre", "novembre", "décembre",
@@ -70,6 +108,12 @@ const MONTHS_FR = [
 export function formatBirthday(iso: string): string {
   const d = new Date(iso);
   return `${d.getDate()} ${MONTHS_FR[d.getMonth()]}`;
+}
+
+/** "13 mars 1990" — date de naissance complète */
+export function formatFullDate(iso: string): string {
+  const d = new Date(iso);
+  return `${d.getDate()} ${MONTHS_FR[d.getMonth()]} ${d.getFullYear()}`;
 }
 
 /** "13 mars" depuis un nameday "MM-DD" */
@@ -116,6 +160,17 @@ export async function deleteDate(id: string): Promise<void> {
   await api(`/date/${id}`, { method: "DELETE" });
 }
 
+/** (Dé)marque une date comme "famille" — fonctionne aussi pour un ami lié. */
+export async function setDateFamily(
+  id: string,
+  family: boolean,
+): Promise<DateEntry> {
+  return api<DateEntry>(`/date/${id}/family`, {
+    method: "PATCH",
+    body: JSON.stringify({ family }),
+  });
+}
+
 export async function fetchDate(id: string): Promise<DateEntry> {
   return api<DateEntry>(`/date/${id}`);
 }
@@ -126,6 +181,7 @@ export interface Gift {
   _id: string;
   giftName: string;
   purchased: boolean;
+  status?: GiftStatus;
   occasion: string;
   year: number;
   purchasedAt?: string | null;
@@ -149,6 +205,7 @@ export async function addGift(
     method: "PATCH",
     body: JSON.stringify({
       purchased: false,
+      status: "to_buy",
       occasion: "Anniversaire",
       year: new Date().getFullYear(),
       ...gift,

@@ -28,6 +28,32 @@ export async function unreserveItem(itemId: string): Promise<void> {
   await api(`/wishlist/${itemId}/unreserve`, { method: "POST" });
 }
 
+// ---- Partage public de la wishlist ----
+
+export interface WishlistSettings {
+  isPublic: boolean;
+  publicSlug: string | null;
+  friendCode: string | null;
+  publicUrl: string | null;
+}
+
+export async function fetchWishlistSettings(): Promise<WishlistSettings> {
+  return api<WishlistSettings>("/wishlist/settings");
+}
+
+export async function toggleWishlistPublic(): Promise<WishlistSettings> {
+  return api<WishlistSettings>("/wishlist/settings/toggle", { method: "PATCH" });
+}
+
+export async function setWishlistFriendCode(
+  action: "generate" | "remove",
+): Promise<{ friendCode: string | null }> {
+  return api<{ friendCode: string | null }>("/wishlist/settings/friendcode", {
+    method: "PATCH",
+    body: JSON.stringify({ action }),
+  });
+}
+
 // ---- Ma wishlist ----
 
 export async function fetchMyWishlist(): Promise<WishlistItem[]> {

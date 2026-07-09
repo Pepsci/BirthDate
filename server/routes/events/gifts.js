@@ -166,6 +166,32 @@ router.post(
 );
 
 /*
+ * PATCH /api/events/:shortId/gifts/:giftId/select -> (dé)sélectionner un cadeau
+ * Réservé à l'organisateur. Plusieurs cadeaux peuvent être retenus.
+ */
+router.patch(
+  "/:shortId/gifts/:giftId/select",
+  checkGuestOrAuth,
+  async (req, res) => {
+    try {
+      if (req.userRole !== "organizer")
+        return res.status(403).json({ message: "Non autorisé" });
+
+      const proposal = await EventGiftProposal.findById(req.params.giftId);
+      if (!proposal)
+        return res.status(404).json({ message: "Proposition introuvable" });
+
+      proposal.selected = !proposal.selected;
+      await proposal.save();
+      res.status(200).json(proposal);
+    } catch (error) {
+      console.error("❌ Error selecting gift:", error);
+      res.status(500).json({ message: "Erreur serveur" });
+    }
+  },
+);
+
+/*
  * PUT /api/events/:shortId/gifts/:giftId -> modifier une proposition
  */
 router.put("/:shortId/gifts/:giftId", checkGuestOrAuth, async (req, res) => {
