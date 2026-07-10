@@ -229,24 +229,36 @@ const ContributeModal = ({ shortId, onClose, onSuccess }) => {
             </div>
 
             <div className="gp-field">
-              <label className="gp-label">Votre nom (si non connecté)</label>
+              <label className="gp-label">Nom affiché (optionnel)</label>
               <input
                 type="text"
                 value={guestName}
                 onChange={(e) => setGuestName(e.target.value)}
                 className="gp-input"
-                placeholder="Votre prénom"
+                placeholder="Votre prénom ou un pseudonyme"
               />
+              <p className="gp-help">
+                Laissez vide pour utiliser votre nom de compte. Un pseudonyme
+                masque votre vrai nom, y compris pour l'organisateur.
+              </p>
             </div>
 
             <label className="gp-toggle-row">
-              <span>Rester anonyme</span>
+              <span>Apparaître anonymement</span>
               <input
                 type="checkbox"
                 checked={anonymous}
                 onChange={(e) => setAnonymous(e.target.checked)}
               />
             </label>
+
+            {anonymous && (
+              <p className="gp-help gp-help-notice">
+                ℹ️ Votre participation sera masquée pour les autres participants,
+                mais restera visible par l'organisateur. Pour rester anonyme
+                aussi vis-à-vis de lui, utilisez un pseudonyme ci-dessus.
+              </p>
+            )}
 
             {error && <p className="gp-error">{error}</p>}
 

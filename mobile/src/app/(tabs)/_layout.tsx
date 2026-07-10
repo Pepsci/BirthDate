@@ -100,6 +100,12 @@ export default function TabsLayout() {
     >
       <Tabs.Screen
         name="index"
+        listeners={{
+          tabPress: () => {
+            // Sur une carte (ou tout écran empilé) → revenir à la liste
+            if (router.canDismiss()) router.dismissAll();
+          },
+        }}
         options={{
           title: "Anniversaires",
           tabBarIcon: ({ focused }) => <TabIcon emoji="🎂" focused={focused} />,

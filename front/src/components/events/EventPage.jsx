@@ -846,6 +846,28 @@ const EventPage = () => {
                   exit={{ opacity: 0, y: -12 }}
                   transition={{ duration: 0.25 }}
                 >
+                  {event.giftPool?.active && (
+                    <button
+                      className="ep-share-pool-btn"
+                      onClick={() => {
+                        const url = `${window.location.origin}/pool/${shortId}`;
+                        if (navigator.share) {
+                          navigator
+                            .share({
+                              title: `Cagnotte — ${event.title}`,
+                              url,
+                            })
+                            .catch(() => {});
+                        } else {
+                          navigator.clipboard?.writeText(url);
+                          alert("Lien de la cagnotte copié :\n" + url);
+                        }
+                      }}
+                    >
+                      <i className="fa-solid fa-share-nodes"></i> Partager la
+                      cagnotte
+                    </button>
+                  )}
                   {isOrganizer ? (
                     <>
                       <GlassCard className="ep-card">

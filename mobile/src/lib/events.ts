@@ -121,6 +121,41 @@ export interface EventDetail extends EventEntry {
   } | null;
   invitations?: EventInvitationEntry[];
   hasFullAccess: boolean;
+  giftPoolEnabled?: boolean;
+  directTransfer?: DirectTransfer;
+}
+
+// ---- Virement direct (IBAN / PayPal) ----
+
+export interface DirectTransfer {
+  ibanEnabled?: boolean;
+  paypalEnabled?: boolean;
+  paypalLink?: string;
+}
+
+export interface BankInfo {
+  exists: boolean;
+  iban?: string;
+  holderName?: string;
+  expiresAt?: string;
+  isOrganizer?: boolean;
+}
+
+/** Indique juste si un RIB existe (sans le déchiffrer). Compte requis. */
+export async function bankInfoExists(shortId: string): Promise<boolean> {
+  try {
+    const r = await api<{ exists: boolean }>(
+      `/events/${shortId}/bank-info/exists`,
+    );
+    return !!r.exists;
+  } catch {
+    return false;
+  }
+}
+
+/** Renvoie le RIB déchiffré. Compte + accès à l'événement requis. */
+export async function fetchBankInfo(shortId: string): Promise<BankInfo> {
+  return api<BankInfo>(`/events/${shortId}/bank-info`);
 }
 
 export async function fetchEvent(shortId: string): Promise<EventDetail> {
@@ -228,6 +263,17 @@ export async function toggleGiftSelection(
   await api(`/events/${shortId}/gifts/${giftId}/select`, { method: "PATCH" });
 }
 
+/**
+ * Supprime une proposition — autorisé au proposeur (son propre cadeau)
+ * ou à l'organisateur (n'importe quel cadeau). Le backend valide les droits.
+ */
+export async function deleteGiftProposal(
+  shortId: string,
+  giftId: string,
+): Promise<void> {
+  await api(`/events/${shortId}/gifts/${giftId}`, { method: "DELETE" });
+}
+
 // ---- Chat événement ----
 
 export interface EventChatMessage {
@@ -295,6 +341,7 @@ export interface CreateEventPayload {
   giftMode: "imposed" | "proposals";
   imposedGifts?: { name: string; url?: string; price?: number }[];
   maxGiftProposalsPerUser?: number | null;
+  giftPoolEnabled?: boolean;
   maxGuests?: number | null;
   allowExternalGuests?: boolean;
   allowGuestInvites?: boolean;
@@ -356,6 +403,9 @@ export interface PoolContribution {
 
 export interface PoolInfo {
   active: boolean;
+  eventTitle?: string;
+  eventShortId?: string;
+  isOrganizer?: boolean;
   mode?: "free" | "goal";
   goal?: number | null; // centimes
   currency?: string;
@@ -387,7 +437,12 @@ export async function updatePool(
 /** amount en CENTIMES (min 100 = 1 €) → clientSecret + compte connecté */
 export async function contributeToPool(
   shortId: string,
-  params: { amount: number; message?: string; anonymous?: boolean },
+  params: {
+    amount: number;
+    message?: string;
+    anonymous?: boolean;
+    guestName?: string;
+  },
 ): Promise<{ clientSecret: string; stripeAccountId: string }> {
   return api(`/events/${shortId}/pool/contribute`, {
     method: "POST",

@@ -58,6 +58,7 @@ function ContributeForm({
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
   const [amount, setAmount] = useState("");
   const [message, setMessage] = useState("");
+  const [displayName, setDisplayName] = useState("");
   const [anonymous, setAnonymous] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [paying, setPaying] = useState(false);
@@ -76,6 +77,7 @@ function ContributeForm({
           amount: amountCents,
           message: message.trim() || undefined,
           anonymous,
+          guestName: displayName.trim() || undefined,
         });
       onIntentCreated(cs, acc);
 
@@ -152,14 +154,38 @@ function ContributeForm({
         onChangeText={setMessage}
       />
 
+      <Text style={styles.label}>Nom affiché (optionnel)</Text>
+      <TextInput
+        placeholderTextColor="#9ca3af"
+        style={styles.input}
+        placeholder="Ton prénom ou un pseudonyme"
+        maxLength={60}
+        value={displayName}
+        onChangeText={setDisplayName}
+      />
+      <Text style={styles.help}>
+        Laisse vide pour utiliser ton nom de compte. Un pseudonyme masque ton
+        vrai nom, y compris pour l'organisateur.
+      </Text>
+
       <View style={styles.switchRow}>
-        <Text style={styles.switchLabel}>Contribuer anonymement</Text>
+        <Text style={styles.switchLabel}>Apparaître anonymement</Text>
         <Switch
           value={anonymous}
           onValueChange={setAnonymous}
           trackColor={{ true: "#3b82f6" }}
         />
       </View>
+
+      {anonymous && (
+        <View style={styles.noticeBox}>
+          <Text style={styles.noticeText}>
+            ℹ️ Ta participation sera masquée pour les autres participants, mais
+            restera visible par l'organisateur. Pour rester anonyme aussi
+            vis-à-vis de lui, utilise un pseudonyme ci-dessus.
+          </Text>
+        </View>
+      )}
 
       {error && <Text style={styles.error}>{error}</Text>}
 
@@ -218,6 +244,14 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   switchLabel: { fontSize: 14, fontWeight: "600", color: "#111827" },
+  help: { color: "#9ca3af", fontSize: 12, lineHeight: 16, marginTop: 2 },
+  noticeBox: {
+    backgroundColor: "#fef3c7",
+    borderRadius: 10,
+    padding: 12,
+    marginTop: 4,
+  },
+  noticeText: { color: "#92400e", fontSize: 12, lineHeight: 17 },
   error: { color: "#b91c1c", textAlign: "center", marginTop: 8 },
   payBtn: {
     backgroundColor: "#10b981",

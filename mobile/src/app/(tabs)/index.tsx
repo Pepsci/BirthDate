@@ -28,6 +28,8 @@ export default function BirthdaysScreen() {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "friends" | "family">("all");
+  const PAGE_SIZE = 20;
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   const load = useCallback(async () => {
     try {
@@ -78,6 +80,17 @@ export default function BirthdaysScreen() {
       })
       .sort((a, b) => daysUntil(birthISOOf(a)) - daysUntil(birthISOOf(b)));
   }, [dates, search, filter]);
+
+  // Réinitialise la pagination quand la recherche/filtre change
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [search, filter]);
+
+  const visible = useMemo(
+    () => sorted.slice(0, visibleCount),
+    [sorted, visibleCount],
+  );
+  const hasMore = visibleCount < sorted.length;
 
   if (loading) {
     return (
@@ -138,13 +151,30 @@ export default function BirthdaysScreen() {
       </View>
 
       <FlatList
-        data={sorted}
+        data={visible}
         keyExtractor={(item) => item._id}
         numColumns={2}
         columnWrapperStyle={styles.column}
         contentContainerStyle={styles.list}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+        onEndReachedThreshold={0.4}
+        onEndReached={() => {
+          if (hasMore) setVisibleCount((c) => c + PAGE_SIZE);
+        }}
+        ListFooterComponent={
+          hasMore ? (
+            <Pressable
+              style={styles.loadMore}
+              onPress={() => setVisibleCount((c) => c + PAGE_SIZE)}
+            >
+              <Text style={styles.loadMoreText}>
+                Afficher plus ({sorted.length - visibleCount} restant
+                {sorted.length - visibleCount > 1 ? "s" : ""})
+              </Text>
+            </Pressable>
+          ) : null
         }
         ListEmptyComponent={
           <Text style={styles.empty}>
@@ -341,4 +371,15 @@ const styles = StyleSheet.create({
     borderTopColor: "#e5e7eb",
   },
   countdownTodayText: { color: "#10b981", fontWeight: "800", fontSize: 15 },
+  loadMore: {
+    marginTop: 6,
+    marginHorizontal: 24,
+    paddingVertical: 11,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#3b82f6",
+    alignItems: "center",
+    backgroundColor: "#fff",
+  },
+  loadMoreText: { color: "#3b82f6", fontWeight: "700", fontSize: 14 },
 });

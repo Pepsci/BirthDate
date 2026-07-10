@@ -33,6 +33,17 @@ export interface DMMessage {
   createdAt: string;
   isEncrypted?: boolean;
   encryptedFor?: Record<string, string>;
+  type?: string;
+  metadata?: {
+    personName?: string;
+    personId?: string;
+    gifts?: {
+      giftName: string;
+      occasion?: string;
+      year?: number;
+      purchased?: boolean;
+    }[];
+  } | null;
 }
 
 /** Trouve ou crée la conversation avec un ami (403 si pas amis) */

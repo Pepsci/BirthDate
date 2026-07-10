@@ -1,0 +1,65 @@
+.pool-page {
+  min-height: 100vh;
+  background: var(--bg-secondary);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 2rem 1rem 4rem;
+}
+
+.pool-page-inner {
+  width: 100%;
+  max-width: 480px;
+}
+
+.pool-page-header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.pool-page-emoji {
+  font-size: 2.4rem;
+}
+
+.pool-page-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0.4rem 0 0.25rem;
+}
+
+.pool-page-sub {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.pool-page-muted {
+  text-align: center;
+  color: var(--text-secondary);
+  padding: 2rem 0;
+}
+
+.pool-page-footer {
+  margin-top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pool-page-link {
+  color: var(--primary);
+  font-weight: 600;
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.pool-page-link:hover {
+  text-decoration: underline;
+}
+
+.pool-page-brand {
+  color: var(--text-tertiary);
+  font-size: 0.8rem;
+}

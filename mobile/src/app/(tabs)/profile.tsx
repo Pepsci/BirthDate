@@ -90,6 +90,11 @@ export default function ProfileScreen() {
           label="Changer mon mot de passe"
           onPress={() => router.push("/profile/password")}
         />
+        <MenuRow
+          emoji="🔐"
+          label="Chiffrement & sécurité"
+          onPress={() => router.push("/profile/e2e")}
+        />
       </View>
 
       <Text style={styles.sectionLabel}>Légal & support</Text>

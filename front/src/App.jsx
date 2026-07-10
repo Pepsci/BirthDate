@@ -30,6 +30,7 @@ import EventPage from "./components/events/EventPage";
 import EventForm from "./components/events/EventForm";
 import NotificationToast from "./components/notifications/NotificationToast";
 import PublicWishlist from "./components/wishlist/PublicWishlist";
+import PoolPage from "./components/events/PoolPage";
 
 // Pages sans footer
 const NO_FOOTER_ROUTES = ["/wishlist"];
@@ -83,6 +84,7 @@ function App() {
           {/* ── Routes publiques ── */}
           <Route path="/event/:shortId" element={<EventPage />} />
           <Route path="/wishlist/:publicSlug" element={<PublicWishlist />} />
+          <Route path="/pool/:shortId" element={<PoolPage />} />
 
           <Route element={<PrivateRoute />}>
             <Route path="/home" element={<Home />} />

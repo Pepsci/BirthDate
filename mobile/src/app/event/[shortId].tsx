@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import {
   Linking,
   Share,
   Alert,
+  Animated,
 } from "react-native";
 import {
   Stack,
@@ -35,6 +36,7 @@ import {
   proposeGift,
   toggleGiftVote,
   toggleGiftSelection,
+  deleteGiftProposal,
   fetchShare,
   joinEventByCode,
   deleteEvent,
@@ -53,6 +55,8 @@ import {
 } from "../../lib/events";
 import GiftGridCard, { giftGridStyles } from "../../components/GiftGridCard";
 import BottomSheet from "../../components/BottomSheet";
+import ImportGiftSheet, { ImportedGift } from "../../components/ImportGiftSheet";
+import DirectTransferViewer from "../../components/DirectTransferViewer";
 
 const RSVP_OPTIONS: { status: Exclude<RsvpStatus, "pending">; label: string }[] = [
   { status: "accepted", label: "✅ J'y vais" },
@@ -76,6 +80,11 @@ export default function EventDetailScreen() {
   );
   const [eventView, setEventView] = useState<"info" | "gifts">("info");
   const [showGiftForm, setShowGiftForm] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<GiftProposal | null>(null);
+  const deleteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const deleteProgress = useRef(new Animated.Value(0)).current;
+  const DELETE_DELAY = 5000;
   const [showPool, setShowPool] = useState(true);
   const [showInvite, setShowInvite] = useState(true);
   const [showParticipants, setShowParticipants] = useState(true);
@@ -231,6 +240,27 @@ export default function EventDetailScreen() {
     }
   };
 
+  const importGifts = async (imported: ImportedGift[]) => {
+    if (!shortId) return;
+    setGiftSending(true);
+    try {
+      for (const g of imported) {
+        await proposeGift(shortId, {
+          name: g.giftName,
+          url: g.url || undefined,
+          price: g.price ?? undefined,
+          image: g.image ?? undefined,
+        });
+      }
+      setImportOpen(false);
+      await load();
+    } catch (e: any) {
+      setError(e?.message ?? "Erreur lors de l'import.");
+    } finally {
+      setGiftSending(false);
+    }
+  };
+
   const onToggleGiftVote = async (giftId: string) => {
     if (!shortId || giftSending) return;
     setGiftSending(true);
@@ -256,6 +286,50 @@ export default function EventDetailScreen() {
       setGiftSending(false);
     }
   };
+
+  // Suppression avec délai + annulation (bandeau bas d'écran)
+  const finalizeDelete = async (g: GiftProposal) => {
+    deleteTimer.current = null;
+    setPendingDelete(null);
+    if (!shortId) return;
+    try {
+      await deleteGiftProposal(shortId, g._id);
+      await load();
+    } catch (e: any) {
+      setError(e?.message ?? "Erreur lors de la suppression.");
+    }
+  };
+
+  const onDeleteGift = (g: GiftProposal) => {
+    // Une suppression déjà en attente ? on la confirme d'abord.
+    if (deleteTimer.current) clearTimeout(deleteTimer.current);
+    if (pendingDelete && pendingDelete._id !== g._id) {
+      finalizeDelete(pendingDelete);
+    }
+    setPendingDelete(g);
+    deleteProgress.setValue(0);
+    Animated.timing(deleteProgress, {
+      toValue: 1,
+      duration: DELETE_DELAY,
+      useNativeDriver: false,
+    }).start();
+    deleteTimer.current = setTimeout(() => finalizeDelete(g), DELETE_DELAY);
+  };
+
+  const undoDelete = () => {
+    if (deleteTimer.current) {
+      clearTimeout(deleteTimer.current);
+      deleteTimer.current = null;
+    }
+    deleteProgress.stopAnimation();
+    setPendingDelete(null);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (deleteTimer.current) clearTimeout(deleteTimer.current);
+    };
+  }, []);
 
   const onJoin = async () => {
     if (!shortId || !joinCode.trim() || joining) return;
@@ -350,6 +424,20 @@ export default function EventDetailScreen() {
     }
   };
 
+  const onSharePool = async () => {
+    if (!shortId) return;
+    try {
+      const s = share ?? (await fetchShare(shortId));
+      setShare(s);
+      const poolUrl = s.url.replace("/event/", "/pool/");
+      await Share.share({
+        message: `Participe à la cagnotte pour « ${event?.title} » sur BirthReminder : ${poolUrl}`,
+      });
+    } catch (e: any) {
+      if (e?.message) setError(e.message);
+    }
+  };
+
   const confirmDelete = () => {
     Alert.alert(
       "Supprimer cet événement ?",
@@ -410,7 +498,13 @@ export default function EventDetailScreen() {
     event.locationMode === "vote" &&
     !event.selectedLocation?.name;
 
+  // Cadeau en cours de suppression masqué de la liste (annulable)
+  const visibleGifts = pendingDelete
+    ? gifts.filter((g) => g._id !== pendingDelete._id)
+    : gifts;
+
   return (
+    <View style={{ flex: 1 }}>
     <ScrollView
       style={styles.container}
       contentContainerStyle={[
@@ -612,15 +706,21 @@ export default function EventDetailScreen() {
       {/* Propositions de cadeaux */}
       {event.hasFullAccess && event.giftMode === "proposals" && (
         <View style={styles.card}>
-          <View style={styles.giftsHeaderRow}>
-            <Text style={styles.sectionTitle}>🎁 Propositions</Text>
+          <Text style={styles.sectionTitle}>🎁 Propositions</Text>
+          <View style={styles.giftBtnRow}>
             <Pressable
-              style={styles.proposeTopBtn}
+              style={[styles.proposeTopBtn, { flex: 1 }]}
               onPress={() => setShowGiftForm((v) => !v)}
             >
               <Text style={styles.proposeTopText}>
                 {showGiftForm ? "✕ Fermer" : "＋ Proposer un cadeau"}
               </Text>
+            </Pressable>
+            <Pressable
+              style={[styles.importBtn, { flex: 1, marginTop: 0 }]}
+              onPress={() => setImportOpen(true)}
+            >
+              <Text style={styles.importText}>📋 Importer</Text>
             </Pressable>
           </View>
 
@@ -687,11 +787,11 @@ export default function EventDetailScreen() {
             </>
           )}
 
-          {gifts.length === 0 && (
+          {visibleGifts.length === 0 && (
             <Text style={styles.detail}>Aucune proposition pour l'instant.</Text>
           )}
           <View style={giftGridStyles.grid}>
-            {gifts.map((g) => {
+            {visibleGifts.map((g) => {
               const votedByMe = !!user && g.votes.includes(user._id);
               const by = g.proposedBy
                 ? `par ${g.proposedBy.name}`
@@ -806,6 +906,24 @@ export default function EventDetailScreen() {
                         </Text>
                       </Pressable>
                     )}
+                    {(isOrganizer ||
+                      g.proposedBy?._id === user?._id) && (
+                      <Pressable
+                        disabled={giftSending}
+                        style={styles.sheetDeleteBtn}
+                        onPress={() => {
+                          setSelectedProposal(null);
+                          onDeleteGift(g);
+                        }}
+                      >
+                        <Text style={styles.sheetDeleteText}>
+                          🗑️ Supprimer{" "}
+                          {isOrganizer && g.proposedBy?._id !== user?._id
+                            ? "(organisateur)"
+                            : ""}
+                        </Text>
+                      </Pressable>
+                    )}
                   </>
                 );
               })()}
@@ -892,13 +1010,36 @@ export default function EventDetailScreen() {
                   />
                 </View>
               ) : null}
-              {(pool.contributions ?? []).slice(0, 3).map((c) => (
-                <Text key={c.id} style={styles.detail}>
-                  🎁 {c.contributor ? c.contributor.name : "Anonyme"} —{" "}
-                  {(c.amount / 100).toFixed(2).replace(".", ",")} €
-                  {c.message ? ` · « ${c.message} »` : ""}
-                </Text>
-              ))}
+              {(pool.contributions ?? []).length > 0 && (
+                <View style={styles.contribList}>
+                  <Text style={styles.contribHeader}>
+                    Participants ({pool.contributions!.length})
+                  </Text>
+                  {pool.contributions!.map((c) => (
+                    <View key={c.id} style={styles.contribRow}>
+                      <View style={{ flex: 1, paddingRight: 8 }}>
+                        <Text style={styles.contribName} numberOfLines={1}>
+                          {c.contributor
+                            ? `${c.contributor.name}${
+                                c.contributor.surname
+                                  ? " " + c.contributor.surname
+                                  : ""
+                              }`
+                            : "🕶️ Anonyme"}
+                        </Text>
+                        {!!c.message && (
+                          <Text style={styles.contribMsg} numberOfLines={2}>
+                            « {c.message} »
+                          </Text>
+                        )}
+                      </View>
+                      <Text style={styles.contribAmount}>
+                        {(c.amount / 100).toFixed(2).replace(".", ",")} €
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              )}
               {!isOrganizer && (
                 <Pressable
                   style={styles.poolBtn}
@@ -907,6 +1048,21 @@ export default function EventDetailScreen() {
                   <Text style={styles.poolBtnText}>💝 Contribuer</Text>
                 </Pressable>
               )}
+
+              <Pressable style={styles.poolShareBtn} onPress={onSharePool}>
+                <Text style={styles.poolShareText}>
+                  📤 Partager la cagnotte
+                </Text>
+              </Pressable>
+
+              {event.hasFullAccess &&
+                (event.directTransfer?.ibanEnabled ||
+                  event.directTransfer?.paypalEnabled) && (
+                  <DirectTransferViewer
+                    shortId={event.shortId}
+                    directTransfer={event.directTransfer}
+                  />
+                )}
             </>
           )}
         </View>
@@ -1025,7 +1181,41 @@ export default function EventDetailScreen() {
           </Pressable>
         </View>
       )}
+
+      <ImportGiftSheet
+        visible={importOpen}
+        onClose={() => setImportOpen(false)}
+        onImport={importGifts}
+        busy={giftSending}
+      />
     </ScrollView>
+
+      {pendingDelete && (
+        <View style={styles.undoBar}>
+          <View style={styles.undoRow}>
+            <Text style={styles.undoText} numberOfLines={1}>
+              « {pendingDelete.name} » supprimé
+            </Text>
+            <Pressable onPress={undoDelete} hitSlop={8}>
+              <Text style={styles.undoAction}>Annuler la suppression</Text>
+            </Pressable>
+          </View>
+          <View style={styles.undoTrack}>
+            <Animated.View
+              style={[
+                styles.undoProgress,
+                {
+                  width: deleteProgress.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: ["100%", "0%"],
+                  }),
+                },
+              ]}
+            />
+          </View>
+        </View>
+      )}
+    </View>
   );
 }
 
@@ -1196,6 +1386,51 @@ const styles = StyleSheet.create({
   sheetSelectBtnActive: { backgroundColor: "#fef3c7", borderColor: "#f59e0b" },
   sheetSelectText: { fontSize: 15, fontWeight: "700", color: "#374151" },
   sheetSelectTextActive: { color: "#b45309" },
+  sheetDeleteBtn: {
+    borderWidth: 1,
+    borderColor: "#fca5a5",
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: "center",
+    marginTop: 8,
+  },
+  sheetDeleteText: { fontSize: 15, fontWeight: "700", color: "#dc2626" },
+  undoBar: {
+    position: "absolute",
+    left: 12,
+    right: 12,
+    bottom: 20,
+    backgroundColor: "#111827",
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingTop: 12,
+    paddingBottom: 10,
+    shadowColor: "#000",
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 6,
+  },
+  undoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  undoText: { color: "#f9fafb", fontSize: 13, flex: 1 },
+  undoAction: { color: "#93c5fd", fontWeight: "700", fontSize: 13 },
+  undoTrack: {
+    height: 3,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    borderRadius: 2,
+    marginTop: 10,
+    overflow: "hidden",
+  },
+  undoProgress: {
+    height: 3,
+    backgroundColor: "#60a5fa",
+    borderRadius: 2,
+  },
 
   // En-tête section propositions + bouton "Proposer" en haut
   giftsHeaderRow: {
@@ -1209,8 +1444,21 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     paddingVertical: 7,
     paddingHorizontal: 12,
+    alignItems: "center",
+    justifyContent: "center",
   },
   proposeTopText: { color: "#fff", fontWeight: "700", fontSize: 13 },
+  importBtn: {
+    borderWidth: 1,
+    borderColor: "#3b82f6",
+    borderStyle: "dashed",
+    borderRadius: 10,
+    paddingVertical: 9,
+    alignItems: "center",
+    marginTop: 8,
+  },
+  importText: { color: "#3b82f6", fontWeight: "600", fontSize: 13 },
+  giftBtnRow: { flexDirection: "row", gap: 8, marginTop: 8 },
 
   // Vues accueil/cadeaux
   backBtn: { paddingVertical: 6, paddingHorizontal: 2 },
@@ -1284,6 +1532,39 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   poolBtnText: { color: "#fff", fontWeight: "700" },
+  poolShareBtn: {
+    borderWidth: 1,
+    borderColor: "#3b82f6",
+    borderStyle: "dashed",
+    borderRadius: 10,
+    paddingVertical: 10,
+    alignItems: "center",
+    marginTop: 8,
+  },
+  poolShareText: { color: "#3b82f6", fontWeight: "700", fontSize: 13 },
+  contribList: {
+    marginTop: 4,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: "#e5e7eb",
+    paddingTop: 8,
+  },
+  contribHeader: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#6b7280",
+    marginBottom: 4,
+  },
+  contribRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 7,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: "#f3f4f6",
+  },
+  contribName: { fontSize: 14, fontWeight: "600", color: "#111827" },
+  contribMsg: { fontSize: 12, color: "#6b7280", marginTop: 1 },
+  contribAmount: { fontSize: 15, fontWeight: "800", color: "#10b981" },
   chatBadge: {
     backgroundColor: "#ef4444",
     borderRadius: 9,

@@ -15,6 +15,7 @@ import { useHeaderHeight } from "@react-navigation/elements";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useKeyboardPadding } from "../../lib/use-keyboard-padding";
 import type { Socket } from "socket.io-client";
+import GiftShareCard from "../../components/GiftShareCard";
 import { useAuth } from "../../lib/auth-context";
 import { useUnread } from "../../lib/unread-context";
 import { getSocket } from "../../lib/socket";
@@ -218,14 +219,21 @@ export default function DMChatScreen() {
         inverted
         keyExtractor={(item) => item._id}
         contentContainerStyle={styles.list}
-        renderItem={({ item }) => (
-          <Bubble
-            message={item}
-            isMine={item.sender?._id === user?._id}
-            myUserId={user?._id ?? null}
-            privateKey={privateKeyRef.current}
-          />
-        )}
+        renderItem={({ item }) =>
+          item.type === "gift_share" ? (
+            <GiftShareCard
+              message={item}
+              isMine={item.sender?._id === user?._id}
+            />
+          ) : (
+            <Bubble
+              message={item}
+              isMine={item.sender?._id === user?._id}
+              myUserId={user?._id ?? null}
+              privateKey={privateKeyRef.current}
+            />
+          )
+        }
         ListEmptyComponent={
           <Text style={styles.empty}>
             Aucun message. Dis bonjour à {name ?? "ton ami·e"} !

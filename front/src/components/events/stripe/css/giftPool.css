@@ -77,6 +77,20 @@
   color: var(--text-secondary);
 }
 
+.gp-help {
+  font-size: 0.78rem;
+  color: var(--text-tertiary);
+  margin-top: 0.35rem;
+  line-height: 1.35;
+}
+
+.gp-help-notice {
+  background: var(--bg-tertiary);
+  border-radius: 8px;
+  padding: 0.6rem 0.75rem;
+  color: var(--text-secondary);
+}
+
 .gp-input {
   width: 100%;
   padding: 0.65rem 0.85rem;

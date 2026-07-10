@@ -48,7 +48,10 @@ import GiftDetailModal from "../../components/GiftDetailModal";
 import GiftGridCard, { giftGridStyles } from "../../components/GiftGridCard";
 import BottomSheet from "../../components/BottomSheet";
 import BirthdayCountdown from "../../components/BirthdayCountdown";
+import ImportGiftSheet, { ImportedGift } from "../../components/ImportGiftSheet";
 import { FriendEntry, fetchFriends } from "../../lib/friends";
+import { getSocket } from "../../lib/socket";
+import { startConversation } from "../../lib/conversations";
 import {
   SharedGiftList,
   SharedGift,
@@ -111,6 +114,14 @@ export default function DateDetailScreen() {
   );
   const [selectedSharedGift, setSelectedSharedGift] =
     useState<SharedGift | null>(null);
+  // Partage d'idées cadeaux dans le chat
+  const [shareOpen, setShareOpen] = useState(false);
+  const [shareStep, setShareStep] = useState<1 | 2>(1);
+  const [shareSel, setShareSel] = useState<Set<string>>(new Set());
+  const [shareFriends, setShareFriends] = useState<FriendEntry[]>([]);
+  const [shareSending, setShareSending] = useState(false);
+  const [shareSent, setShareSent] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<Gift | null>(null);
   const deleteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const deleteProgress = useRef(new Animated.Value(0)).current;
@@ -307,6 +318,80 @@ export default function DateDetailScreen() {
     } catch (e: any) {
       setError(e?.message ?? "Erreur.");
     }
+  };
+
+  // ── Partage d'idées cadeaux dans le chat ────────────────────────────────────
+  const openShare = () => {
+    setShareStep(1);
+    setShareSel(new Set());
+    setShareSent(false);
+    setShareOpen(true);
+  };
+  const toggleShareGift = (id: string) =>
+    setShareSel((prev) => {
+      const n = new Set(prev);
+      n.has(id) ? n.delete(id) : n.add(id);
+      return n;
+    });
+  const goShareStep2 = async () => {
+    setShareStep(2);
+    try {
+      const list = await fetchFriends();
+      const excl = entry?.linkedUser?._id;
+      setShareFriends(
+        list.filter((f) => f?.friendUser?._id && f.friendUser._id !== excl),
+      );
+    } catch {
+      setShareFriends([]);
+    }
+  };
+  const sendShare = async (friendId: string) => {
+    if (shareSending || !entry) return;
+    setShareSending(true);
+    try {
+      const conv = await startConversation(friendId);
+      const selectedGifts = (
+        (entry as DateEntry & { gifts?: Gift[] }).gifts ?? []
+      )
+        .filter((g) => shareSel.has(g._id))
+        .map((g) => ({
+          giftName: g.giftName,
+          occasion: g.occasion,
+          year: g.year,
+          purchased: g.purchased,
+        }));
+      const personName = `${entry.name}${entry.surname ? " " + entry.surname : ""}`.trim();
+      const s = await getSocket();
+      s.emit("message:send", {
+        conversationId: conv._id,
+        content: `🎁 Idées cadeaux pour ${personName}`,
+        type: "gift_share",
+        metadata: { personName, personId: entry._id, gifts: selectedGifts },
+        tempId: `temp-${Date.now()}`,
+      });
+      setShareSent(true);
+      setTimeout(() => setShareOpen(false), 900);
+    } catch (e: any) {
+      setError(e?.message ?? "Erreur d'envoi.");
+    } finally {
+      setShareSending(false);
+    }
+  };
+
+  const importGifts = async (imported: ImportedGift[]) => {
+    await run(async () => {
+      for (const g of imported) {
+        await addGift(entry!._id, {
+          giftName: g.giftName,
+          occasion: g.occasion,
+          year: g.year,
+          url: g.url,
+          price: g.price,
+          image: g.image,
+        });
+      }
+    });
+    setImportOpen(false);
   };
 
   const onLeaveShared = () => {
@@ -693,6 +778,21 @@ export default function DateDetailScreen() {
             </Text>
           </Pressable>
         </View>
+
+        <Pressable
+          style={styles.importBtn}
+          onPress={() => setImportOpen(true)}
+        >
+          <Text style={styles.importText}>📋 Importer depuis une liste</Text>
+        </Pressable>
+
+        {((entry as DateEntry & { gifts?: Gift[] }).gifts?.length ?? 0) > 0 && (
+          <Pressable style={styles.shareChatBtn} onPress={openShare}>
+            <Text style={styles.shareChatText}>
+              📤 Partager ces idées dans le chat
+            </Text>
+          </Pressable>
+        )}
 
         {showGiftForm && (
           <GiftIdeaForm
@@ -1229,6 +1329,76 @@ export default function DateDetailScreen() {
           <Text style={styles.muted}>Aucun ami disponible.</Text>
         )}
       </BottomSheet>
+
+      {/* Partage d'idées cadeaux dans le chat */}
+      <BottomSheet visible={shareOpen} onClose={() => setShareOpen(false)}>
+        {shareStep === 1 ? (
+          <>
+            <Text style={styles.sheetTitle}>Partager des idées</Text>
+            <Text style={styles.muted}>Sélectionne les idées à partager.</Text>
+            {allGifts.map((g) => (
+              <Pressable
+                key={g._id}
+                style={styles.shareGiftRow}
+                onPress={() => toggleShareGift(g._id)}
+              >
+                <Text style={styles.shareCheck}>
+                  {shareSel.has(g._id) ? "☑" : "☐"}
+                </Text>
+                <Text style={styles.shareGiftName} numberOfLines={1}>
+                  {g.giftName}
+                  {g.purchased ? " · ✅" : ""}
+                </Text>
+              </Pressable>
+            ))}
+            <Pressable
+              style={[
+                styles.sheetPrimaryBtn,
+                shareSel.size === 0 && { opacity: 0.5 },
+              ]}
+              disabled={shareSel.size === 0}
+              onPress={goShareStep2}
+            >
+              <Text style={styles.sheetPrimaryText}>
+                Suivant → ({shareSel.size})
+              </Text>
+            </Pressable>
+          </>
+        ) : (
+          <>
+            <Text style={styles.sheetTitle}>Envoyer à…</Text>
+            {shareSent ? (
+              <Text style={styles.savedShare}>✅ Envoyé !</Text>
+            ) : (
+              <>
+                {shareFriends.map((f) => (
+                  <Pressable
+                    key={f.friendship._id}
+                    style={styles.friendRow}
+                    disabled={shareSending}
+                    onPress={() => sendShare(f.friendUser._id)}
+                  >
+                    <Text style={styles.friendName}>
+                      {f.friendUser.name} {f.friendUser.surname ?? ""}
+                    </Text>
+                  </Pressable>
+                ))}
+                {shareFriends.length === 0 && (
+                  <Text style={styles.muted}>Aucun ami disponible.</Text>
+                )}
+              </>
+            )}
+          </>
+        )}
+      </BottomSheet>
+
+      <ImportGiftSheet
+        visible={importOpen}
+        onClose={() => setImportOpen(false)}
+        onImport={importGifts}
+        excludeDateId={entry?._id}
+        busy={busy}
+      />
     </ScrollView>
 
       {pendingDelete && (
@@ -1705,6 +1875,44 @@ const styles = StyleSheet.create({
     borderTopColor: "#eef2f7",
   },
   friendName: { fontSize: 15, fontWeight: "600", color: "#111827" },
+  shareChatBtn: {
+    borderWidth: 1,
+    borderColor: "#3b82f6",
+    borderStyle: "dashed",
+    borderRadius: 10,
+    paddingVertical: 9,
+    alignItems: "center",
+    marginTop: 4,
+  },
+  shareChatText: { color: "#3b82f6", fontWeight: "600", fontSize: 13 },
+  importBtn: {
+    borderWidth: 1,
+    borderColor: "#3b82f6",
+    borderStyle: "dashed",
+    borderRadius: 10,
+    paddingVertical: 9,
+    alignItems: "center",
+    marginTop: 4,
+    marginBottom: 4,
+  },
+  importText: { color: "#3b82f6", fontWeight: "600", fontSize: 13 },
+  shareGiftRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingVertical: 10,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: "#eef2f7",
+  },
+  shareCheck: { fontSize: 18, color: "#3b82f6" },
+  shareGiftName: { flex: 1, fontSize: 14, color: "#111827" },
+  savedShare: {
+    color: "#047857",
+    fontWeight: "800",
+    fontSize: 16,
+    textAlign: "center",
+    marginVertical: 16,
+  },
 
   // Bandeau "annuler la suppression"
   undoBar: {

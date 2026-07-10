@@ -29,7 +29,7 @@ function initialLocation(ev?: EventDetail): LocationValue | null {
   };
 }
 
-const STEPS = ["Essentiel", "Date", "Lieu", "Cadeaux", "Options"];
+const STEPS = ["Essentiel", "Date", "Lieu", "Cadeaux", "Cagnotte", "Invitation"];
 
 export default function EventFormStepper({
   initial,
@@ -45,8 +45,16 @@ export default function EventFormStepper({
   onSubmit: (payload: CreateEventPayload) => Promise<void>;
 }) {
   const [step, setStep] = useState(0);
+  // Étape la plus loin atteinte → permet de revenir sur n'importe quelle
+  // étape déjà visitée (en édition, toutes sont accessibles d'emblée).
+  const [maxReached, setMaxReached] = useState(initial ? STEPS.length - 1 : 0);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+
+  const goStep = (i: number) => {
+    setStep(i);
+    setMaxReached((m) => Math.max(m, i));
+  };
 
   // Étape 1 — essentiel
   const [type, setType] = useState<EventType>(
@@ -101,7 +109,18 @@ export default function EventFormStepper({
   const [giftName, setGiftName] = useState("");
   const [giftPrice, setGiftPrice] = useState("");
 
-  // Étape 5 — options
+  // Étape 5 — cagnotte (finalisée après création)
+  const [poolEnabled, setPoolEnabled] = useState(
+    initial?.giftPoolEnabled ?? false,
+  );
+  const [wantIban, setWantIban] = useState(
+    initial?.directTransfer?.ibanEnabled ?? false,
+  );
+  const [wantPaypal, setWantPaypal] = useState(
+    initial?.directTransfer?.paypalEnabled ?? false,
+  );
+
+  // Étape 6 — invitation
   const [maxGuests, setMaxGuests] = useState(
     initial?.maxGuests ? String(initial.maxGuests) : "",
   );
@@ -141,6 +160,7 @@ export default function EventFormStepper({
         locationOptions: locationMode === "vote" ? locationOptions : undefined,
         giftMode,
         imposedGifts: giftMode === "imposed" ? imposedGifts : undefined,
+        giftPoolEnabled: poolEnabled,
         maxGuests: maxGuests ? parseInt(maxGuests, 10) : null,
         allowExternalGuests,
         allowGuestInvites,
@@ -159,7 +179,7 @@ export default function EventFormStepper({
           <Pressable
             key={s}
             style={styles.progressItem}
-            onPress={() => i < step && setStep(i)}
+            onPress={() => i <= maxReached && setStep(i)}
           >
             <View
               style={[
@@ -254,39 +274,43 @@ export default function EventFormStepper({
                 </>
               )}
               {showDate && (
-                <DateTimePicker
-                  value={fixedDate}
-                  mode="date"
-                  minimumDate={new Date()}
-                  display={Platform.OS === "ios" ? "spinner" : "default"}
-                  onChange={(e, d) => {
-                    if (Platform.OS === "android") setShowDate(false);
-                    if (d)
-                      setFixedDate(
-                        new Date(
-                          d.getFullYear(), d.getMonth(), d.getDate(),
-                          fixedDate.getHours(), fixedDate.getMinutes(),
-                        ),
-                      );
-                  }}
-                />
+                <View style={styles.pickerWrap}>
+                  <DateTimePicker
+                    value={fixedDate}
+                    mode="date"
+                    minimumDate={new Date()}
+                    display={Platform.OS === "ios" ? "spinner" : "default"}
+                    onChange={(e, d) => {
+                      if (Platform.OS === "android") setShowDate(false);
+                      if (d)
+                        setFixedDate(
+                          new Date(
+                            d.getFullYear(), d.getMonth(), d.getDate(),
+                            fixedDate.getHours(), fixedDate.getMinutes(),
+                          ),
+                        );
+                    }}
+                  />
+                </View>
               )}
               {showTime && (
-                <DateTimePicker
-                  value={fixedDate}
-                  mode="time"
-                  display={Platform.OS === "ios" ? "spinner" : "default"}
-                  onChange={(e, d) => {
-                    if (Platform.OS === "android") setShowTime(false);
-                    if (d)
-                      setFixedDate(
-                        new Date(
-                          fixedDate.getFullYear(), fixedDate.getMonth(),
-                          fixedDate.getDate(), d.getHours(), d.getMinutes(),
-                        ),
-                      );
-                  }}
-                />
+                <View style={styles.pickerWrap}>
+                  <DateTimePicker
+                    value={fixedDate}
+                    mode="time"
+                    display={Platform.OS === "ios" ? "spinner" : "default"}
+                    onChange={(e, d) => {
+                      if (Platform.OS === "android") setShowTime(false);
+                      if (d)
+                        setFixedDate(
+                          new Date(
+                            fixedDate.getFullYear(), fixedDate.getMonth(),
+                            fixedDate.getDate(), d.getHours(), d.getMinutes(),
+                          ),
+                        );
+                    }}
+                  />
+                </View>
               )}
             </>
           ) : (
@@ -314,21 +338,23 @@ export default function EventFormStepper({
                 <Text style={styles.addOptionText}>＋ Ajouter une date</Text>
               </Pressable>
               {showOptionPicker && (
-                <DateTimePicker
-                  value={new Date()}
-                  mode="date"
-                  minimumDate={new Date()}
-                  display={Platform.OS === "ios" ? "spinner" : "default"}
-                  onChange={(e, d) => {
-                    setShowOptionPicker(false);
-                    if (d && e.type !== "dismissed") {
-                      const day = new Date(
-                        d.getFullYear(), d.getMonth(), d.getDate(), 19, 0,
-                      );
-                      setDateOptions([...dateOptions, day]);
-                    }
-                  }}
-                />
+                <View style={styles.pickerWrap}>
+                  <DateTimePicker
+                    value={new Date()}
+                    mode="date"
+                    minimumDate={new Date()}
+                    display={Platform.OS === "ios" ? "spinner" : "default"}
+                    onChange={(e, d) => {
+                      setShowOptionPicker(false);
+                      if (d && e.type !== "dismissed") {
+                        const day = new Date(
+                          d.getFullYear(), d.getMonth(), d.getDate(), 19, 0,
+                        );
+                        setDateOptions([...dateOptions, day]);
+                      }
+                    }}
+                  />
+                </View>
               )}
             </>
           )}
@@ -472,15 +498,69 @@ export default function EventFormStepper({
               </View>
             </>
           )}
-
-          <View style={styles.poolPlaceholder}>
-            <Text style={styles.poolText}>💳 Cagnotte — Bientôt disponible</Text>
-          </View>
         </View>
       )}
 
-      {/* ÉTAPE 5 — Options */}
+      {/* ÉTAPE 5 — Cagnotte */}
       {step === 4 && (
+        <View style={styles.card}>
+          <View style={styles.switchRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.switchLabel}>💳 Activer une cagnotte</Text>
+              <Text style={styles.hint}>
+                Permets à tes invités de participer financièrement au cadeau.
+              </Text>
+            </View>
+            <Switch
+              value={poolEnabled}
+              onValueChange={setPoolEnabled}
+              trackColor={{ true: "#3b82f6" }}
+            />
+          </View>
+
+          {poolEnabled && (
+            <>
+              <Text style={styles.label}>Moyens de participation</Text>
+              <Pressable
+                style={[styles.methodBtn, wantIban && styles.methodBtnActive]}
+                onPress={() => setWantIban((v) => !v)}
+              >
+                <Text
+                  style={[
+                    styles.methodText,
+                    wantIban && styles.methodTextActive,
+                  ]}
+                >
+                  🏦 Virement IBAN {wantIban ? "✓" : ""}
+                </Text>
+              </Pressable>
+              <Pressable
+                style={[styles.methodBtn, wantPaypal && styles.methodBtnActive]}
+                onPress={() => setWantPaypal((v) => !v)}
+              >
+                <Text
+                  style={[
+                    styles.methodText,
+                    wantPaypal && styles.methodTextActive,
+                  ]}
+                >
+                  💰 Lien PayPal {wantPaypal ? "✓" : ""}
+                </Text>
+              </Pressable>
+
+              <View style={styles.noticeBox}>
+                <Text style={styles.noticeText}>
+                  ℹ️ Tu finaliseras la cagnotte (montant/objectif, RIB, lien
+                  PayPal) depuis la page de l'événement, une fois celui-ci créé.
+                </Text>
+              </View>
+            </>
+          )}
+        </View>
+      )}
+
+      {/* ÉTAPE 6 — Invitation */}
+      {step === 5 && (
         <View style={styles.card}>
           <Text style={styles.label}>Nombre max d'invités</Text>
           <TextInput placeholderTextColor="#9ca3af"
@@ -534,7 +614,7 @@ export default function EventFormStepper({
           <Pressable
             style={[styles.nextBtn, !canNext() && { opacity: 0.5 }]}
             disabled={!canNext()}
-            onPress={() => setStep(step + 1)}
+            onPress={() => goStep(step + 1)}
           >
             <Text style={styles.nextText}>Suivant ›</Text>
           </Pressable>
@@ -686,15 +766,24 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   smallAddText: { color: "#fff", fontSize: 18, fontWeight: "600" },
-  poolPlaceholder: {
-    backgroundColor: "#f3f4f6",
+  pickerWrap: { alignItems: "center", width: "100%" },
+  methodBtn: {
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
     borderRadius: 10,
     padding: 12,
-    alignItems: "center",
-    marginTop: 6,
-    opacity: 0.7,
+    backgroundColor: "#f9fafb",
   },
-  poolText: { color: "#9ca3af", fontWeight: "600", fontSize: 13 },
+  methodBtnActive: { borderColor: "#3b82f6", backgroundColor: "#eff6ff" },
+  methodText: { color: "#374151", fontWeight: "600", fontSize: 14 },
+  methodTextActive: { color: "#2563eb" },
+  noticeBox: {
+    backgroundColor: "#fef3c7",
+    borderRadius: 10,
+    padding: 12,
+    marginTop: 4,
+  },
+  noticeText: { color: "#92400e", fontSize: 12, lineHeight: 17 },
   switchRow: {
     flexDirection: "row",
     alignItems: "center",

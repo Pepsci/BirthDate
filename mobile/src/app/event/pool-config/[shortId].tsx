@@ -181,16 +181,18 @@ export default function PoolConfigScreen() {
             </Pressable>
           )}
           {showPicker && (
-            <DateTimePicker
-              value={deadline ?? new Date()}
-              mode="date"
-              minimumDate={new Date()}
-              display={Platform.OS === "ios" ? "spinner" : "default"}
-              onChange={(e, d) => {
-                if (Platform.OS === "android") setShowPicker(false);
-                if (d && e.type !== "dismissed") setDeadline(d);
-              }}
-            />
+            <View style={{ alignItems: "center", width: "100%" }}>
+              <DateTimePicker
+                value={deadline ?? new Date()}
+                mode="date"
+                minimumDate={new Date()}
+                display={Platform.OS === "ios" ? "spinner" : "default"}
+                onChange={(e, d) => {
+                  if (Platform.OS === "android") setShowPicker(false);
+                  if (d && e.type !== "dismissed") setDeadline(d);
+                }}
+              />
+            </View>
           )}
         </>
       )}

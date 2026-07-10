@@ -22,9 +22,23 @@ router.get("/:shortId/pool", async (req, res) => {
     if (!event)
       return res.status(404).json({ message: "Événement introuvable" });
 
+    // Auth optionnelle : on cherche à savoir si le demandeur est l'organisateur.
+    // (endpoint public, mais l'organisateur voit plus de détails — façon Leetchi)
+    let requesterId = null;
+    const jwt = require("jsonwebtoken");
+    const token =
+      req.headers.authorization?.split(" ")[1] || req.cookies?.authToken;
+    if (token) {
+      try {
+        requesterId = jwt.verify(token, process.env.TOKEN_SECRET)._id;
+      } catch (_) {}
+    }
+    const isOrganizer =
+      requesterId && event.organizer.toString() === String(requesterId);
+
     const pool = event.giftPool || {};
     if (!pool.active) {
-      return res.status(200).json({ active: false });
+      return res.status(200).json({ active: false, eventTitle: event.title });
     }
 
     // Total réellement encaissé (statut succeeded uniquement)
@@ -37,8 +51,32 @@ router.get("/:shortId/pool", async (req, res) => {
 
     const totalCollected = contributions.reduce((sum, c) => sum + c.amount, 0);
 
+    // Règles d'affichage (modèle Leetchi) :
+    //  - pseudonyme (guestName) renseigné  → affiché à TOUT LE MONDE (org compris)
+    //  - sinon, identité réelle du contributeur (ou "Invité")
+    //  - anonymous = true → masqué pour les AUTRES participants ("Anonyme"),
+    //    mais l'organisateur voit toujours l'identité de base.
+    const display = (c) => {
+      const pseudonym = c.guestName ? c.guestName.trim() : "";
+      let base;
+      if (pseudonym) base = { name: pseudonym, surname: "", avatar: null };
+      else if (c.contributor)
+        base = {
+          name: c.contributor.name,
+          surname: c.contributor.surname,
+          avatar: c.contributor.avatar,
+        };
+      else base = { name: "Invité", surname: "", avatar: null };
+
+      if (c.anonymous && !isOrganizer) return null; // masqué pour les autres
+      return base;
+    };
+
     res.status(200).json({
       active: true,
+      eventTitle: event.title,
+      eventShortId: event.shortId,
+      isOrganizer: !!isOrganizer,
       mode: pool.mode,
       goal: pool.goal,
       currency: pool.currency || "eur",
@@ -50,15 +88,8 @@ router.get("/:shortId/pool", async (req, res) => {
         amount: c.amount,
         message: c.message,
         createdAt: c.createdAt,
-        contributor: c.anonymous
-          ? null
-          : c.contributor
-            ? {
-                name: c.contributor.name,
-                surname: c.contributor.surname,
-                avatar: c.contributor.avatar,
-              }
-            : { name: c.guestName || "Invité", surname: "", avatar: null },
+        anonymous: !!c.anonymous,
+        contributor: display(c),
       })),
     });
   } catch (error) {
@@ -202,11 +233,13 @@ router.post("/:shortId/pool/contribute", async (req, res) => {
       },
     );
 
-    // Trace la contribution en pending ; le webhook la passera à succeeded
+    // Trace la contribution en pending ; le webhook la passera à succeeded.
+    // guestName sert de "nom affiché / pseudonyme" — valable aussi pour un
+    // utilisateur connecté qui veut masquer son vrai nom (y compris à l'organisateur).
     await GiftPoolContribution.create({
       event: event._id,
       contributor: contributorId,
-      guestName: contributorId ? undefined : guestName,
+      guestName: guestName ? String(guestName).trim().slice(0, 60) : undefined,
       amount: amountInt,
       currency: pool.currency || "eur",
       message: message || undefined,

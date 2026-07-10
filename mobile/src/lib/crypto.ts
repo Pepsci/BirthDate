@@ -14,6 +14,8 @@
 
 import nacl from "tweetnacl";
 import { scrypt } from "@noble/hashes/scrypt.js";
+import * as bip39 from "@scure/bip39";
+import { wordlist as frenchWordlist } from "@scure/bip39/wordlists/french.js";
 import * as Crypto from "expo-crypto";
 import * as SecureStore from "expo-secure-store";
 
@@ -83,6 +85,23 @@ export async function getPrivateKey(): Promise<Uint8Array | null> {
 
 export async function clearPrivateKey(): Promise<void> {
   await SecureStore.deleteItemAsync(PRIVATE_KEY_STORE);
+}
+
+// Archive de l'ancienne clé (pour déchiffrer l'historique après changement)
+const OLD_PRIVATE_KEY_STORE = "e2eOldPrivateKey";
+
+export async function storeOldPrivateKey(
+  privateKeyBytes: Uint8Array,
+): Promise<void> {
+  await SecureStore.setItemAsync(
+    OLD_PRIVATE_KEY_STORE,
+    encodeBase64(privateKeyBytes),
+  );
+}
+
+export async function getOldPrivateKey(): Promise<Uint8Array | null> {
+  const b64 = await SecureStore.getItemAsync(OLD_PRIVATE_KEY_STORE);
+  return b64 ? decodeBase64(b64) : null;
 }
 
 // ── Génération de paire de clés ──────────────────────────────────────────────
@@ -171,6 +190,67 @@ export function decryptMessage(
   } catch {
     return null;
   }
+}
+
+// ── Seed phrase BIP39 (Full E2E) — miroir du web ─────────────────────────────
+//
+// Identique à front/src/utils/encryption.js : la seed 12 mots (français) dérive
+// une clé NaCl déterministe via PBKDF2-SHA512 (mnemonicToSeed). @scure/bip39
+// produit exactement les mêmes octets que `bip39` (BitcoinJS) côté web, donc une
+// clé activée sur le web se récupère sur mobile avec la même phrase, et inversement.
+
+/** Génère une phrase de récupération de 12 mots (128 bits, wordlist FR). */
+export function generateSeedPhrase(): string {
+  return bip39.generateMnemonic(frenchWordlist, 128);
+}
+
+/** Valide une phrase BIP39 (checksum + wordlist française). */
+export function validateSeedPhrase(seedPhrase: string): boolean {
+  return bip39.validateMnemonic(
+    seedPhrase.trim().toLowerCase(),
+    frenchWordlist,
+  );
+}
+
+/** Dérive une clé privée NaCl (32 octets) depuis la seed. Déterministe. */
+export function deriveKeyFromSeed(seedPhrase: string): Uint8Array {
+  if (!validateSeedPhrase(seedPhrase)) {
+    throw new Error("Phrase de récupération invalide");
+  }
+  const seed = bip39.mnemonicToSeedSync(seedPhrase.trim().toLowerCase());
+  return seed.slice(0, 32);
+}
+
+/** Paire de clés NaCl déterministe depuis la seed (activation Full E2E). */
+export function keyPairFromSeed(seedPhrase: string): {
+  publicKey: string;
+  secretKey: Uint8Array;
+} {
+  const secretKey = deriveKeyFromSeed(seedPhrase);
+  const keyPair = nacl.box.keyPair.fromSecretKey(secretKey);
+  return {
+    publicKey: encodeBase64(keyPair.publicKey),
+    secretKey: keyPair.secretKey,
+  };
+}
+
+/** Chiffre la seed avec le mot de passe (pour affichage ultérieur). */
+export function encryptSeedPhrase(
+  seedPhrase: string,
+  password: string,
+  userId: string,
+): string {
+  return encryptPrivateKey(utf8ToBytes(seedPhrase), password, userId);
+}
+
+/** Déchiffre la seed. Renvoie null si mot de passe incorrect. */
+export function decryptSeedPhrase(
+  encryptedB64: string,
+  password: string,
+  userId: string,
+): string | null {
+  const bytes = decryptPrivateKey(encryptedB64, password, userId);
+  return bytes ? bytesToUtf8(bytes) : null;
 }
 
 // ── Setup des clés au login (miroir de setupE2EKeys du web) ──────────────────
