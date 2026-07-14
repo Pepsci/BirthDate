@@ -32,7 +32,10 @@ const authLimiter = rateLimit({
 });
 
 const validatePassword = (password) => {
-  return /(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,}/.test(password);
+  return (
+    typeof password === "string" &&
+    /(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}/.test(password)
+  );
 };
 
 // ========================================
@@ -68,7 +71,7 @@ router.post("/signup", async (req, res) => {
   if (!validatePassword(password)) {
     return res.status(400).json({
       message:
-        "Password must have at least 6 characters and contain at least one number, one lowercase and one uppercase letter.",
+        "Password must have at least 8 characters and contain at least one number, one lowercase and one uppercase letter.",
     });
   }
 
@@ -165,14 +168,21 @@ router.post("/signup", async (req, res) => {
 router.post("/login", authLimiter, async (req, res) => {
   const { email, password, rememberMe } = req.body;
 
-  if (!email || !password) {
+  if (
+    !email ||
+    !password ||
+    typeof email !== "string" ||
+    typeof password !== "string"
+  ) {
     return res.status(400).json({ message: "Provide email and password." });
   }
 
   try {
     const foundUser = await userModel.findOne({ email });
     if (!foundUser) {
-      return res.status(401).json({ message: "Utilisateur non trouvé." });
+      return res
+        .status(401)
+        .json({ message: "Email ou mot de passe incorrect." });
     }
 
     if (foundUser.deletedAt) {
@@ -209,7 +219,7 @@ router.post("/login", authLimiter, async (req, res) => {
     if (!passwordCorrect) {
       return res
         .status(401)
-        .json({ message: "Unable to authenticate the user" });
+        .json({ message: "Email ou mot de passe incorrect." });
     }
 
     try {
@@ -325,8 +335,12 @@ router.post("/forgot-password", authLimiter, async (req, res) => {
   try {
     const user = await userModel.findOne({ email });
     if (user) {
-      const resetToken = crypto.randomBytes(20).toString("hex");
-      user.resetToken = resetToken;
+      const resetToken = crypto.randomBytes(32).toString("hex");
+      // On ne stocke que le HASH du token en base ; le token en clair part par email.
+      user.resetToken = crypto
+        .createHash("sha256")
+        .update(resetToken)
+        .digest("hex");
       user.resetTokenExpires = Date.now() + 3600000;
       await user.save();
       await sendPasswordResetEmail(email, resetToken);
@@ -351,12 +365,16 @@ router.post("/reset/:token", async (req, res) => {
   if (!validatePassword(newPassword)) {
     return res.status(400).json({
       message:
-        "Password must have at least 6 characters and contain at least one number, one lowercase and one uppercase letter.",
+        "Password must have at least 8 characters and contain at least one number, one lowercase and one uppercase letter.",
     });
   }
 
   try {
-    const user = await userModel.findOne({ resetToken: token });
+    const hashedToken = crypto
+      .createHash("sha256")
+      .update(String(token))
+      .digest("hex");
+    const user = await userModel.findOne({ resetToken: hashedToken });
 
     if (!user || user.resetTokenExpires < Date.now()) {
       return res.status(400).json({ message: "Invalid or expired token" });

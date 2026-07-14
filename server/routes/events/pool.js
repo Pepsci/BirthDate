@@ -242,7 +242,7 @@ router.post("/:shortId/pool/contribute", async (req, res) => {
       guestName: guestName ? String(guestName).trim().slice(0, 60) : undefined,
       amount: amountInt,
       currency: pool.currency || "eur",
-      message: message || undefined,
+      message: message ? String(message).trim().slice(0, 500) : undefined,
       anonymous: anonymous === true,
       stripePaymentIntentId: paymentIntent.id,
       status: "pending",

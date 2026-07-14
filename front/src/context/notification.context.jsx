@@ -101,10 +101,7 @@ export const NotificationProvider = ({ children }) => {
   useEffect(() => {
     if (!isLoggedIn || !currentUser) return;
 
-    const token = localStorage.getItem("authToken");
-    if (!token) return;
-
-    const socket = socketService.connect(token);
+    const socket = socketService.connect();
 
     const handleNewMessage = ({ conversationId, message }) => {
       const messageSenderId =
@@ -159,10 +156,7 @@ export const NotificationProvider = ({ children }) => {
   useEffect(() => {
     if (!isLoggedIn || !currentUser) return;
 
-    const token = localStorage.getItem("authToken");
-    if (!token) return;
-
-    const socket = socketService.connect(token);
+    const socket = socketService.connect();
 
     const handleNewAppNotification = (notif) => {
       // On utilise un flag pour savoir si c'est une nouvelle notif ou une mise à jour

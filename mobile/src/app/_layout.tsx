@@ -10,6 +10,7 @@ import { ActivityIndicator, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { AuthProvider, useAuth } from "../lib/auth-context";
 import { UnreadProvider } from "../lib/unread-context";
+import { hasSeenWelcome, markWelcomeSeen } from "../lib/welcome-gate";
 
 function RootNavigator() {
   const { user, isLoading } = useAuth();
@@ -24,6 +25,7 @@ function RootNavigator() {
           | string
           | undefined;
         const route = webLinkToMobileRoute(url);
+        markWelcomeSeen(); // deep link : ne pas détourner vers /welcome
         router.push(route as never);
       },
     );
@@ -32,7 +34,10 @@ function RootNavigator() {
       const url = response?.notification.request.content.data?.url as
         | string
         | undefined;
-      if (url) router.push(webLinkToMobileRoute(url) as never);
+      if (url) {
+        markWelcomeSeen(); // deep link : ne pas détourner vers /welcome
+        router.push(webLinkToMobileRoute(url) as never);
+      }
     });
     return () => sub.remove();
   }, [router]);
@@ -53,15 +58,22 @@ function RootNavigator() {
     );
   }
 
-  // Garde d'auth : non connecté → /login (sauf inscription / mdp oublié)
-  const publicRoutes = ["/login", "/signup", "/forgot-password"];
+  // Écran de bienvenue : affiché à chaque lancement (flag en mémoire),
+  // sauf si l'app est ouverte via une notification (deep link).
+  if (!hasSeenWelcome() && pathname !== "/welcome")
+    return <Redirect href="/welcome" />;
+
+  // Garde d'auth : non connecté → /login (sauf welcome / inscription / mdp oublié)
+  const publicRoutes = ["/welcome", "/login", "/signup", "/forgot-password"];
+  const authRoutes = ["/login", "/signup", "/forgot-password"];
   if (!user && !publicRoutes.includes(pathname))
     return <Redirect href="/login" />;
-  if (user && publicRoutes.includes(pathname)) return <Redirect href="/" />;
+  if (user && authRoutes.includes(pathname)) return <Redirect href="/" />;
 
   return (
     <Stack>
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="welcome" options={{ headerShown: false }} />
       <Stack.Screen name="login" options={{ headerShown: false }} />
       <Stack.Screen name="signup" />
       <Stack.Screen name="forgot-password" />

@@ -31,8 +31,10 @@ function AuthProviderWrapper({ children }) {
       .isLoggedIn()
       .then((data) => {
         const { authToken, ...user } = data;
-        if (authToken) {
-          localStorage.setItem("authToken", authToken);
+        // On ne persiste PAS le JWT (volable par XSS) : seulement l'userId,
+        // qui n'est pas un secret. L'auth passe par le cookie httpOnly.
+        if (user?._id) {
+          localStorage.setItem("userId", user._id);
         }
         setAuth({
           currentUser: user,
@@ -42,14 +44,19 @@ function AuthProviderWrapper({ children }) {
         });
       })
       .catch(() => {
-        localStorage.removeItem("authToken");
+        localStorage.removeItem("userId");
+        localStorage.removeItem("authToken"); // nettoyage d'anciens tokens persistés
         setAuth({ currentUser: null, isLoading: false, isLoggedIn: false, authToken: null });
       });
   };
 
   const storeToken = (token) => {
-    localStorage.setItem("authToken", token);
+    // Le token reste en mémoire (state) pour la session ; jamais dans localStorage.
     setAuth((prev) => ({ ...prev, authToken: token }));
+    try {
+      const id = JSON.parse(atob(token.split(".")[1]))._id;
+      if (id) localStorage.setItem("userId", id);
+    } catch (_) {}
   };
 
   // ── Mise à jour immédiate de currentUser sans appel API ──────────────────
@@ -58,6 +65,7 @@ function AuthProviderWrapper({ children }) {
   };
 
   const logOut = () => {
+    localStorage.removeItem("userId");
     localStorage.removeItem("authToken");
     clearPrivateKey();
     clearOldPrivateKey(); // Supprime les clés E2E de sessionStorage
@@ -81,6 +89,7 @@ function AuthProviderWrapper({ children }) {
   };
 
   const removeToken = () => {
+    localStorage.removeItem("userId");
     localStorage.removeItem("authToken");
     setAuth((prev) => ({ ...prev, authToken: null }));
   };

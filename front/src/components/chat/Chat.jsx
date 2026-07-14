@@ -28,12 +28,12 @@ function Chat({ initialConversationId = null }) {
   }, []);
 
   useEffect(() => {
-    const token = localStorage.getItem("authToken");
-    if (!token) {
+    const userId = localStorage.getItem("userId");
+    if (!userId) {
       navigate("/login");
       return;
     }
-    const socket = socketService.connect(token);
+    const socket = socketService.connect();
     socket.emit("conversations:join");
     loadConversations();
 
@@ -89,9 +89,7 @@ function Chat({ initialConversationId = null }) {
           typeof message.sender === "object"
             ? message.sender._id
             : message.sender;
-        const currentUserId = JSON.parse(
-          atob(localStorage.getItem("authToken").split(".")[1]),
-        )._id;
+        const currentUserId = localStorage.getItem("userId");
         const isOwnMessage = senderId === currentUserId;
         const isSelected = activeConversationRef.current === conversationId;
         return {
@@ -176,9 +174,7 @@ function Chat({ initialConversationId = null }) {
   }
 
   const getOtherParticipant = (conversation) => {
-    const currentUserId = JSON.parse(
-      atob(localStorage.getItem("authToken").split(".")[1]),
-    )._id;
+    const currentUserId = localStorage.getItem("userId");
     return conversation.participants?.find(
       (p) => p?._id && p._id !== currentUserId,
     );

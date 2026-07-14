@@ -32,10 +32,7 @@ const GiftProposalPanel = ({
   const [submitError, setSubmitError] = useState(null);
   const [deletingGiftId, setDeletingGiftId] = useState(null);
 
-  const authToken = localStorage.getItem("authToken");
-  const currentUserId = authToken
-    ? JSON.parse(atob(authToken.split(".")[1]))._id
-    : null;
+  const currentUserId = localStorage.getItem("userId") || null;
   const currentGuestName = !currentUserId
     ? localStorage.getItem(`guestName_${shortId}`)
     : null;

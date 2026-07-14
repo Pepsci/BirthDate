@@ -30,9 +30,9 @@ export default function PasswordScreen() {
       setError("Les deux nouveaux mots de passe ne correspondent pas.");
       return;
     }
-    if (!/(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,}/.test(next)) {
+    if (!/(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}/.test(next)) {
       setError(
-        "6 caractères minimum, avec au moins une majuscule, une minuscule et un chiffre.",
+        "8 caractères minimum, avec au moins une majuscule, une minuscule et un chiffre.",
       );
       return;
     }

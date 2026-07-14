@@ -19,8 +19,10 @@ module.exports = (socket, next) => {
       return next(new Error("Authentication error: No token provided"));
     }
 
-    // Vérifier et décoder le token
-    const decoded = jwt.verify(token, process.env.TOKEN_SECRET);
+    // Vérifier et décoder le token (algorithme explicite pour éviter toute confusion d'algo)
+    const decoded = jwt.verify(token, process.env.TOKEN_SECRET, {
+      algorithms: ["HS256"],
+    });
 
     // Attacher l'userId au socket pour l'utiliser dans les handlers
     socket.userId = decoded._id; // Adapte selon la structure de ton token

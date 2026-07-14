@@ -20,9 +20,7 @@ function ConversationList({
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
   const navigate = useNavigate();
 
-  const currentUserId = JSON.parse(
-    atob(localStorage.getItem("authToken").split(".")[1]),
-  )._id;
+  const currentUserId = localStorage.getItem("userId");
 
   const getMessagePreview = (message) => {
     if (!message) return "";

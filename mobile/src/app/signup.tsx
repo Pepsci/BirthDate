@@ -42,9 +42,9 @@ export default function SignupScreen() {
       setError("Les deux mots de passe ne correspondent pas.");
       return;
     }
-    if (!/(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,}/.test(password)) {
+    if (!/(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}/.test(password)) {
       setError(
-        "6 caractères minimum, avec au moins une majuscule, une minuscule et un chiffre.",
+        "8 caractères minimum, avec au moins une majuscule, une minuscule et un chiffre.",
       );
       return;
     }
@@ -139,7 +139,7 @@ export default function SignupScreen() {
         )}
 
         <Text style={styles.hint}>
-          6 caractères min., une majuscule, une minuscule et un chiffre.
+          8 caractères min., une majuscule, une minuscule et un chiffre.
         </Text>
 
         {error && <Text style={styles.error}>{error}</Text>}

@@ -21,7 +21,10 @@ class SocketService {
     console.log("🔌 Connecting to:", apiUrl);
 
     this.socket = io(apiUrl, {
-      auth: { token },
+      // Auth via le cookie httpOnly (withCredentials). `token` reste optionnel
+      // pour compat, mais n'est plus lu depuis localStorage côté web.
+      withCredentials: true,
+      auth: token ? { token } : {},
       transports: ["websocket", "polling"],
       reconnection: true,
       reconnectionDelay: 1000,

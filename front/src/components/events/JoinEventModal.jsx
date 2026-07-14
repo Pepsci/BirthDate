@@ -23,10 +23,7 @@ const JoinEventModal = ({ shortId, onClose }) => {
 
       if (res.data.guestToken) {
         localStorage.setItem(`guestToken_${shortId}`, res.data.guestToken);
-        localStorage.setItem(
-          `guestName_${shortId}`,
-          guestNameInput || guestName,
-        );
+        localStorage.setItem(`guestName_${shortId}`, guestName);
       }
 
       onClose(true);
@@ -73,7 +70,7 @@ const JoinEventModal = ({ shortId, onClose }) => {
             marginBottom: "20px",
           }}
         >
-          Entrez le code d'accès à 6 caractères pour participer.
+          Entrez le code d'accès (6 à 8 caractères) pour participer.
         </p>
 
         <form
@@ -124,7 +121,7 @@ const JoinEventModal = ({ shortId, onClose }) => {
               value={code}
               onChange={(e) => setCode(e.target.value.toUpperCase())}
               required
-              maxLength={6}
+              maxLength={8}
               placeholder="A1B2C3"
               style={{
                 width: "100%",

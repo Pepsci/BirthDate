@@ -7,6 +7,8 @@ const cookieParser = require("cookie-parser");
 const logger = require("morgan");
 const cors = require("cors");
 const helmet = require("helmet");
+const rateLimit = require("express-rate-limit");
+const mongoSanitize = require("./middleware/sanitize");
 
 const dateStatsRouter = require("./routes/date.stats");
 const authRouter = require("./routes/auth");
@@ -39,10 +41,22 @@ const {
 
 const app = express();
 
+// Derrière nginx : nécessaire pour que req.ip / le rate-limit lisent la vraie IP
+app.set("trust proxy", 1);
+
 sendReminders.initApp(app);
 eventReminders.initApp(app);
 
 app.use(helmet());
+
+// Rate-limit global sur l'API (garde-fou anti brute-force / énumération / abus)
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 500,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: "Trop de requêtes. Réessayez plus tard." },
+});
 
 const allowedOrigins = [
   "http://localhost:5173",
@@ -82,16 +96,25 @@ app.use(
   stripeWebhookRouter,
 );
 
-app.use((req, res, next) => {
-  console.log(`📨 ${req.method} ${req.url}`);
-  next();
-});
+// Logs verbeux uniquement hors production
+if (process.env.NODE_ENV !== "production") {
+  app.use((req, res, next) => {
+    console.log(`📨 ${req.method} ${req.url}`);
+    next();
+  });
+  app.use(logger("dev"));
+}
 
-app.use(logger("dev"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
+
+// Sanitisation anti-injection NoSQL sur toutes les entrées
+app.use(mongoSanitize);
+
+// Rate-limit global sur l'API
+app.use("/api", generalLimiter);
 
 app.use("/api/date", dateStatsRouter);
 app.use("/api/auth", authRouter);

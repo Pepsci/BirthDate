@@ -1,14 +1,39 @@
 const express = require("express");
 const router = express.Router();
-const ogs = require("open-graph-scraper");
+const crypto = require("crypto");
+const rateLimit = require("express-rate-limit");
 const WishlistModel = require("../models/wishlist.model");
 const UserModel = require("../models/user.model");
+const Friend = require("../models/friend.model");
 const mongoose = require("mongoose");
 const cheerio = require("cheerio");
 const axios = require("axios");
 const { nanoid } = require("nanoid");
 const { isAuthenticated } = require("../middleware/jwt.middleware");
 const { notify } = require("../utils/notify");
+const {
+  assertSafeUrl,
+  safeHttpAgent,
+  safeHttpsAgent,
+} = require("../utils/urlGuard");
+
+// Rate-limit sur le scraping d'URL (anti-abus / anti-SSRF de masse)
+const fetchUrlLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: "Trop de requêtes, réessayez dans une minute." },
+});
+
+// Vérifie qu'un utilisateur peut accéder à un item de wishlist d'autrui :
+// propriétaire, OU item partagé ET amitié acceptée avec le propriétaire.
+async function canAccessItem(requesterId, item) {
+  if (!item) return false;
+  if (item.userId.toString() === requesterId.toString()) return true;
+  if (!item.isShared) return false;
+  return Friend.areFriends(requesterId, item.userId);
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Tag affilié Amazon
@@ -66,11 +91,11 @@ function processUrl(url) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 // POST /api/wishlist/fetch-url
-router.post("/fetch-url", isAuthenticated, async (req, res) => {
+router.post("/fetch-url", fetchUrlLimiter, isAuthenticated, async (req, res) => {
   try {
     const { url } = req.body;
 
-    if (!url) {
+    if (!url || typeof url !== "string") {
       return res.status(400).json({ message: "URL requise" });
     }
 
@@ -98,6 +123,20 @@ router.post("/fetch-url", isAuthenticated, async (req, res) => {
       });
     }
 
+    // ── Protection anti-SSRF ────────────────────────────────────────────────
+    // Valide le schéma (http/https) et rejette toute résolution vers une IP
+    // interne (localhost, réseau privé, 169.254.169.254...) AVANT de fetcher.
+    try {
+      await assertSafeUrl(url);
+    } catch (guardErr) {
+      return res.status(400).json({
+        success: false,
+        message: "URL non autorisée",
+        data: null,
+        affiliateUrl,
+      });
+    }
+
     const headers = {
       "user-agent":
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36",
@@ -105,32 +144,17 @@ router.post("/fetch-url", isAuthenticated, async (req, res) => {
       accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
     };
 
-    try {
-      const { result, error } = await ogs({ url, timeout: 5000, headers });
-
-      if (!error && result.ogTitle) {
-        const rawPrice = result.ogPriceAmount || null;
-        const price = rawPrice ? parseFloat(rawPrice.replace(",", ".")) : null;
-
-        return res.status(200).json({
-          success: true,
-          data: {
-            title: result.ogTitle || result.twitterTitle || null,
-            description:
-              result.ogDescription || result.twitterDescription || null,
-            image:
-              result.ogImage?.[0]?.url || result.twitterImage?.[0]?.url || null,
-            price: isNaN(price) ? null : price,
-            currency: result.ogPriceCurrency || "EUR",
-          },
-          affiliateUrl,
-        });
-      }
-    } catch (ogsError) {
-      console.log("OGS échoué, tentative cheerio...");
-    }
-
-    const response = await axios.get(url, { headers, timeout: 8000 });
+    // Fetch via des agents dont le lookup DNS re-valide l'IP à chaque saut
+    // (les redirections vers une cible interne sont donc aussi bloquées).
+    const response = await axios.get(url, {
+      headers,
+      timeout: 8000,
+      maxRedirects: 5,
+      maxContentLength: 5 * 1024 * 1024, // 5 Mo max
+      httpAgent: safeHttpAgent,
+      httpsAgent: safeHttpsAgent,
+      responseType: "text",
+    });
     const $ = cheerio.load(response.data);
 
     const title =
@@ -266,10 +290,8 @@ router.patch("/settings/friendcode", isAuthenticated, async (req, res) => {
     if (action === "remove") {
       user.wishlistFriendCode = null;
     } else {
-      user.wishlistFriendCode = Math.random()
-        .toString(36)
-        .substring(2, 8)
-        .toUpperCase();
+      // Jeton cryptographiquement sûr (8 caractères hex)
+      user.wishlistFriendCode = crypto.randomBytes(4).toString("hex").toUpperCase();
     }
 
     await user.save();
@@ -290,6 +312,12 @@ router.get("/user/:userId", isAuthenticated, async (req, res, next) => {
       return res.status(400).json({ message: "Invalid User ID" });
     }
 
+    // Contrôle d'accès : on ne peut voir la wishlist d'autrui que si l'on est ami.
+    const isSelf = userId === req.payload._id.toString();
+    if (!isSelf && !(await Friend.areFriends(req.payload._id, userId))) {
+      return res.status(403).json({ message: "Accès non autorisé" });
+    }
+
     const targetUser = await UserModel.findById(userId).select(
       "name surname avatar",
     );
@@ -298,7 +326,9 @@ router.get("/user/:userId", isAuthenticated, async (req, res, next) => {
       return res.status(404).json({ message: "Utilisateur non trouvé" });
     }
 
-    const items = await WishlistModel.find({ userId })
+    // Un ami ne voit que les items partagés ; le propriétaire voit tout.
+    const query = isSelf ? { userId } : { userId, isShared: true };
+    const items = await WishlistModel.find(query)
       .populate("purchasedBy", "name surname avatar")
       .populate("reservedBy", "name surname")
       .sort({ isPurchased: 1, createdAt: -1 });
@@ -413,6 +443,10 @@ router.post("/:id/reserve", isAuthenticated, async (req, res) => {
 
     if (!item) {
       return res.status(404).json({ message: "Item non trouvé" });
+    }
+
+    if (!(await canAccessItem(reservingUserId, item))) {
+      return res.status(403).json({ message: "Accès non autorisé" });
     }
 
     if (item.reservedBy || item.reservedByGuest) {
@@ -535,6 +569,10 @@ router.post("/:id/gift-offered", isAuthenticated, async (req, res) => {
       return res.status(404).json({ message: "Item non trouvé" });
     }
 
+    if (!(await canAccessItem(userId, item))) {
+      return res.status(403).json({ message: "Accès non autorisé" });
+    }
+
     if (item.isPurchased) {
       return res.status(400).json({ message: "Cet item a déjà été acheté" });
     }
@@ -599,6 +637,10 @@ router.post("/:id/purchase", isAuthenticated, async (req, res, next) => {
       return res.status(404).json({ message: "Item non trouvé" });
     }
 
+    if (!(await canAccessItem(userId, item))) {
+      return res.status(403).json({ message: "Accès non autorisé" });
+    }
+
     if (item.isPurchased) {
       return res.status(400).json({ message: "Cet item a déjà été acheté" });
     }
@@ -659,6 +701,10 @@ router.get("/:id", isAuthenticated, async (req, res, next) => {
 
     if (!item) {
       return res.status(404).json({ message: "Item non trouvé" });
+    }
+
+    if (!(await canAccessItem(req.payload._id, item))) {
+      return res.status(403).json({ message: "Accès non autorisé" });
     }
 
     res.status(200).json({ success: true, data: item });

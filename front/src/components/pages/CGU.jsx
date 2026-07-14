@@ -46,8 +46,8 @@ export default function CGU() {
             <li>Une adresse email valide</li>
             <li>Un nom et un prénom</li>
             <li>
-              Un mot de passe sécurisé (minimum 6 caractères, 1 majuscule, 1
-              chiffre)
+              Un mot de passe sécurisé (minimum 8 caractères, 1 majuscule, 1
+              minuscule, 1 chiffre)
             </li>
           </ul>
 

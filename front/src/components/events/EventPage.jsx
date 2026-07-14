@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import apiHandler from "../../api/apiHandler";
 import useAuth from "../../context/useAuth";
 import socketService from "../services/socket.service";
@@ -203,6 +203,8 @@ const EventPage = () => {
   const [activeTab, setActiveTab] = useState("info");
   const [myDateVotes, setMyDateVotes] = useState([]);
   const [showChatModal, setShowChatModal] = useState(false);
+  // Coordonnées retrouvées par géocodage quand le lieu n'en a pas d'enregistrées
+  const [geoCoords, setGeoCoords] = useState(null);
 
   const participants = useMemo(() => {
     const map = {};
@@ -254,6 +256,41 @@ const EventPage = () => {
     };
     fetchEvent();
   }, [shortId, refreshKey]);
+
+  // Géocodage de secours : si le lieu fixe n'a pas de coordonnées enregistrées
+  // (adresse saisie en texte libre), on les retrouve via Nominatim (OSM, gratuit)
+  // pour pouvoir afficher la carte Leaflet.
+  useEffect(() => {
+    setGeoCoords(null);
+    const loc = event?.fixedLocation;
+    if (
+      !event?.hasFullAccess ||
+      event?.locationMode !== "fixed" ||
+      !loc?.name
+    )
+      return;
+    if (loc?.coordinates?.lat && loc?.coordinates?.lng) return; // déjà des coords
+    const query = [loc.name, loc.address].filter(Boolean).join(", ");
+    if (!query) return;
+
+    let active = true;
+    fetch(
+      `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(
+        query,
+      )}`,
+      { headers: { Accept: "application/json" } },
+    )
+      .then((r) => r.json())
+      .then((data) => {
+        if (active && data?.[0]?.lat && data?.[0]?.lon) {
+          setGeoCoords([parseFloat(data[0].lat), parseFloat(data[0].lon)]);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [event?.fixedLocation, event?.hasFullAccess, event?.locationMode]);
 
   useEffect(() => {
     if (!event?.hasFullAccess) return;
@@ -384,7 +421,7 @@ const EventPage = () => {
   const isOrganizer = event.organizer._id === currentUser?._id;
   const hasLocation =
     event.locationMode === "fixed" && event.fixedLocation?.name;
-  const locationCoords =
+  const storedCoords =
     hasLocation &&
     event.hasFullAccess &&
     event.fixedLocation?.coordinates?.lat &&
@@ -394,6 +431,9 @@ const EventPage = () => {
           event.fixedLocation.coordinates.lng,
         ]
       : null;
+  // Coords enregistrées, sinon celles retrouvées par géocodage
+  const locationCoords =
+    storedCoords || (hasLocation && event.hasFullAccess ? geoCoords : null);
   const hasGifts = event.giftMode && event.giftMode !== "none";
 
   const tabs = [
@@ -613,32 +653,21 @@ const EventPage = () => {
                               coords={locationCoords}
                               locationName={event.fixedLocation.name}
                             />
-                            <a
-                              href={getMapsUrl(event.fixedLocation)}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="ep-map-overlay-btn"
-                            >
-                              <i className="fa-solid fa-diamond-turn-right"></i>
-                              {/iPad|iPhone|iPod/.test(navigator.userAgent)
-                                ? "Ouvrir dans Plans"
-                                : "Ouvrir dans Google Maps"}
-                            </a>
                           </div>
                         )}
-                        {!locationCoords && (
-                          <a
-                            href={getMapsUrl(event.fixedLocation)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="ep-maps-link"
-                          >
-                            <i className="fa-solid fa-diamond-turn-right"></i>
-                            {/iPad|iPhone|iPod/.test(navigator.userAgent)
-                              ? "Ouvrir dans Plans"
-                              : "Ouvrir dans Google Maps"}
-                          </a>
-                        )}
+
+                        {/* Bouton d'itinéraire — sous la carte */}
+                        <a
+                          href={getMapsUrl(event.fixedLocation)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="ep-maps-link"
+                        >
+                          <i className="fa-solid fa-diamond-turn-right"></i>
+                          {/iPad|iPhone|iPod/.test(navigator.userAgent)
+                            ? "Ouvrir dans Plans"
+                            : "Ouvrir dans Google Maps"}
+                        </a>
                       </GlassCard>
                     )}
                     {event.description && (

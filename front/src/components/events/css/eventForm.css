@@ -1,5 +1,15 @@
 /* eventForm.css */
 
+/*
+ * Autocomplétion Google Places (.pac-container) : Google l'attache à
+ * <body> avec un z-index par défaut (~1000). En mode édition, le formulaire
+ * est dans une modale (z-index 9999) → le menu passait DERRIÈRE la modale.
+ * On force donc le menu au-dessus de tout.
+ */
+.pac-container {
+  z-index: 100000 !important;
+}
+
 .event-modal-overlay {
   position: fixed;
   top: 0;

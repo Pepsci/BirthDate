@@ -24,10 +24,7 @@ const EventChat = ({ shortId, participants = {} }) => {
   const plaintextCacheRef = useRef({});
   const participantKeysRef = useRef(participants);
 
-  const authToken = localStorage.getItem("authToken");
-  const currentUserId = authToken
-    ? JSON.parse(atob(authToken.split(".")[1]))._id
-    : null;
+  const currentUserId = localStorage.getItem("userId") || null;
 
   shortIdRef.current = shortId;
 

@@ -57,6 +57,7 @@ import GiftGridCard, { giftGridStyles } from "../../components/GiftGridCard";
 import BottomSheet from "../../components/BottomSheet";
 import ImportGiftSheet, { ImportedGift } from "../../components/ImportGiftSheet";
 import DirectTransferViewer from "../../components/DirectTransferViewer";
+import EventLocationMap from "../../components/EventLocationMap";
 
 const RSVP_OPTIONS: { status: Exclude<RsvpStatus, "pending">; label: string }[] = [
   { status: "accepted", label: "✅ J'y vais" },
@@ -88,6 +89,8 @@ export default function EventDetailScreen() {
   const [showPool, setShowPool] = useState(true);
   const [showInvite, setShowInvite] = useState(true);
   const [showParticipants, setShowParticipants] = useState(true);
+  const [showDateVoteSection, setShowDateVoteSection] = useState(true);
+  const [showLocationVoteSection, setShowLocationVoteSection] = useState(true);
   const insets = useSafeAreaInsets();
   const [giftName, setGiftName] = useState("");
   const [giftUrl, setGiftUrl] = useState("");
@@ -483,10 +486,6 @@ export default function EventDetailScreen() {
   }
 
   const d = eventDate(event);
-  const location =
-    typeof event.fixedLocation === "string"
-      ? event.fixedLocation
-      : event.fixedLocation?.name ?? event.fixedLocation?.address;
   const isOrganizer = event.organizer?._id === user?._id;
   const invitations = event.invitations ?? [];
   const acceptedCount = invitations.filter((i) => i.status === "accepted").length;
@@ -553,15 +552,6 @@ export default function EventDetailScreen() {
         <Text style={styles.detail}>
           📅 {d ? formatEventDate(d) : "Date au vote"}
         </Text>
-        {location ? (
-          <Pressable onPress={openMaps} hitSlop={6}>
-            <Text style={[styles.detail, styles.mapLink]}>
-              📍 {location}  <Text style={styles.mapHint}>· Itinéraire ›</Text>
-            </Text>
-          </Pressable>
-        ) : event.locationMode === "vote" ? (
-          <Text style={styles.detail}>📍 Lieu au vote</Text>
-        ) : null}
         <Text style={styles.detail}>
           👤 Organisé par {event.organizer.name} {event.organizer.surname}
           {isOrganizer ? " (toi)" : ""}
@@ -570,6 +560,61 @@ export default function EventDetailScreen() {
 
       {eventView === "info" && (
         <>
+      {/* Lieu + carte */}
+      {event.hasFullAccess &&
+        event.locationMode === "fixed" &&
+        (typeof event.fixedLocation === "object"
+          ? event.fixedLocation?.name || event.fixedLocation?.address
+          : !!event.fixedLocation) && (
+          <EventLocationMap
+            name={
+              typeof event.fixedLocation === "object"
+                ? event.fixedLocation?.name
+                : event.fixedLocation
+            }
+            address={
+              typeof event.fixedLocation === "object"
+                ? event.fixedLocation?.address
+                : undefined
+            }
+            coordinates={
+              typeof event.fixedLocation === "object"
+                ? event.fixedLocation?.coordinates
+                : null
+            }
+            onOpenMaps={openMaps}
+          />
+        )}
+
+      {/* Organisation (organizer) — juste après les infos */}
+      {isOrganizer && (
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>⚙️ Organisation</Text>
+          <View style={styles.orgRow}>
+            <Pressable
+              style={styles.orgBtn}
+              onPress={() => router.push(`/event/edit/${event.shortId}`)}
+            >
+              <Text style={styles.orgBtnText}>✏️ Modifier</Text>
+            </Pressable>
+            <Pressable
+              style={styles.orgBtn}
+              onPress={() => router.push(`/event/pool-config/${event.shortId}`)}
+            >
+              <Text style={styles.orgBtnText}>💳 Cagnotte</Text>
+            </Pressable>
+            <Pressable
+              style={[styles.orgBtn, styles.orgBtnDanger]}
+              onPress={confirmDelete}
+            >
+              <Text style={[styles.orgBtnText, { color: "#ef4444" }]}>
+                🗑️ Supprimer
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+      )}
+
       {/* RSVP */}
       {event.hasFullAccess && !isOrganizer && (
         <View style={styles.card}>
@@ -599,10 +644,13 @@ export default function EventDetailScreen() {
       {/* Vote date */}
       {showDateVote && (event.dateOptions?.length ?? 0) > 0 && (
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>
-            📅 Vote pour la date{isOrganizer ? " (résultats)" : ""}
-          </Text>
-          {event.dateOptions!.map((opt) => {
+          <SectionHeader
+            title={`📅 Vote pour la date${isOrganizer ? " (résultats)" : ""}`}
+            open={showDateVoteSection}
+            onToggle={() => setShowDateVoteSection((v) => !v)}
+          />
+          {showDateVoteSection &&
+            event.dateOptions!.map((opt) => {
             const votes = countDateVotes(invitations, opt);
             const votedByMe = (mine?.dateVote ?? []).some(
               (v) => dateKey(v) === dateKey(opt),
@@ -625,7 +673,7 @@ export default function EventDetailScreen() {
               </Pressable>
             );
           })}
-          {!isOrganizer && (
+          {showDateVoteSection && !isOrganizer && (
             <Text style={styles.voteHint}>
               Plusieurs choix possibles — appuie pour (dé)cocher.
             </Text>
@@ -636,10 +684,13 @@ export default function EventDetailScreen() {
       {/* Vote lieu */}
       {showLocationVote && (event.locationOptions?.length ?? 0) > 0 && (
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>
-            📍 Vote pour le lieu{isOrganizer ? " (résultats)" : ""}
-          </Text>
-          {event.locationOptions!.map((opt) => {
+          <SectionHeader
+            title={`📍 Vote pour le lieu${isOrganizer ? " (résultats)" : ""}`}
+            open={showLocationVoteSection}
+            onToggle={() => setShowLocationVoteSection((v) => !v)}
+          />
+          {showLocationVoteSection &&
+            event.locationOptions!.map((opt) => {
             const votes = countLocationVotes(invitations, opt._id);
             const votedByMe = mine?.locationVote === opt._id;
             return (
@@ -935,35 +986,6 @@ export default function EventDetailScreen() {
 
       {eventView === "info" && (
         <>
-      {/* Organisation (organizer) */}
-      {isOrganizer && (
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>⚙️ Organisation</Text>
-          <View style={styles.orgRow}>
-            <Pressable
-              style={styles.orgBtn}
-              onPress={() => router.push(`/event/edit/${event.shortId}`)}
-            >
-              <Text style={styles.orgBtnText}>✏️ Modifier</Text>
-            </Pressable>
-            <Pressable
-              style={styles.orgBtn}
-              onPress={() => router.push(`/event/pool-config/${event.shortId}`)}
-            >
-              <Text style={styles.orgBtnText}>💳 Cagnotte</Text>
-            </Pressable>
-            <Pressable
-              style={[styles.orgBtn, styles.orgBtnDanger]}
-              onPress={confirmDelete}
-            >
-              <Text style={[styles.orgBtnText, { color: "#ef4444" }]}>
-                🗑️ Supprimer
-              </Text>
-            </Pressable>
-          </View>
-        </View>
-      )}
-
       {/* Cagnotte */}
       {pool?.active && (
         <View style={styles.card}>
@@ -1161,9 +1183,9 @@ export default function EventDetailScreen() {
           <Text style={styles.sectionTitle}>Rejoindre avec un code</Text>
           <TextInput placeholderTextColor="#9ca3af"
             style={styles.input}
-            placeholder="Code à 6 caractères"
+            placeholder="Code d'accès (6 à 8 caractères)"
             autoCapitalize="characters"
-            maxLength={6}
+            maxLength={8}
             value={joinCode}
             onChangeText={setJoinCode}
           />

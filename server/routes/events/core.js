@@ -4,13 +4,15 @@ const Event = require("../../models/event.model");
 const EventInvitation = require("../../models/eventInvitation.model");
 const EventGiftProposal = require("../../models/eventGiftProposal.model");
 const EventMessage = require("../../models/eventMessage.model");
+const crypto = require("crypto");
 const { nanoid } = require("nanoid");
 const { isAuthenticated } = require("../../middleware/jwt.middleware");
 const { notify } = require("../../utils/notify");
 const { sendPushToUser } = require("../../services/pushService");
 
+// Code d'accès cryptographiquement sûr (8 caractères hex majuscules)
 const generateAccessCode = () =>
-  Math.random().toString(36).substring(2, 8).toUpperCase();
+  crypto.randomBytes(4).toString("hex").toUpperCase();
 
 /*
  * POST /api/events -> créer un événement
@@ -210,7 +212,15 @@ router.get("/:shortId", async (req, res) => {
       locationMode: event.locationMode,
       fixedLocation: event.fixedLocation,
       locationOptions: event.locationOptions,
-      organizer: event.organizer,
+      // Vue publique : on n'expose PAS l'email ni la clé publique de l'organisateur
+      organizer: event.organizer
+        ? {
+            _id: event.organizer._id,
+            name: event.organizer.name,
+            surname: event.organizer.surname,
+            avatar: event.organizer.avatar,
+          }
+        : null,
       forPerson: event.forPerson,
       allowExternalGuests: event.allowExternalGuests,
       hasFullAccess: false,

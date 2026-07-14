@@ -82,6 +82,12 @@ export default function EventFormStepper({
     (initial?.dateOptions ?? []).map((d) => new Date(d)),
   );
   const [showOptionPicker, setShowOptionPicker] = useState(false);
+  const [optionDraft, setOptionDraft] = useState<Date>(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    d.setHours(19, 0, 0, 0);
+    return d;
+  });
 
   // Étape 3 — lieu
   const [locationMode, setLocationMode] = useState<"fixed" | "vote">(
@@ -333,27 +339,68 @@ export default function EventFormStepper({
               ))}
               <Pressable
                 style={styles.addOptionBtn}
-                onPress={() => setShowOptionPicker(true)}
+                onPress={() => {
+                  const d = new Date();
+                  d.setDate(d.getDate() + 1);
+                  d.setHours(19, 0, 0, 0);
+                  setOptionDraft(d);
+                  setShowOptionPicker(true);
+                }}
               >
                 <Text style={styles.addOptionText}>＋ Ajouter une date</Text>
               </Pressable>
               {showOptionPicker && (
                 <View style={styles.pickerWrap}>
                   <DateTimePicker
-                    value={new Date()}
+                    value={optionDraft}
                     mode="date"
                     minimumDate={new Date()}
                     display={Platform.OS === "ios" ? "spinner" : "default"}
                     onChange={(e, d) => {
-                      setShowOptionPicker(false);
-                      if (d && e.type !== "dismissed") {
-                        const day = new Date(
-                          d.getFullYear(), d.getMonth(), d.getDate(), 19, 0,
-                        );
-                        setDateOptions([...dateOptions, day]);
+                      // Android : la boîte se ferme et valide sur "OK"/"Annuler".
+                      // iOS : la roue émet onChange en continu → on met juste à
+                      // jour le brouillon, la validation se fait via le bouton.
+                      if (Platform.OS === "android") {
+                        setShowOptionPicker(false);
+                        if (d && e.type === "set") {
+                          const day = new Date(
+                            d.getFullYear(), d.getMonth(), d.getDate(), 19, 0,
+                          );
+                          setDateOptions([...dateOptions, day]);
+                        }
+                      } else if (d) {
+                        setOptionDraft(d);
                       }
                     }}
                   />
+                  {Platform.OS === "ios" && (
+                    <View style={styles.pickerActions}>
+                      <Pressable
+                        style={styles.pickerCancel}
+                        onPress={() => setShowOptionPicker(false)}
+                      >
+                        <Text style={styles.pickerCancelText}>Annuler</Text>
+                      </Pressable>
+                      <Pressable
+                        style={styles.pickerConfirm}
+                        onPress={() => {
+                          const day = new Date(
+                            optionDraft.getFullYear(),
+                            optionDraft.getMonth(),
+                            optionDraft.getDate(),
+                            19,
+                            0,
+                          );
+                          setDateOptions([...dateOptions, day]);
+                          setShowOptionPicker(false);
+                        }}
+                      >
+                        <Text style={styles.pickerConfirmText}>
+                          Ajouter cette date
+                        </Text>
+                      </Pressable>
+                    </View>
+                  )}
                 </View>
               )}
             </>
@@ -767,6 +814,25 @@ const styles = StyleSheet.create({
   },
   smallAddText: { color: "#fff", fontSize: 18, fontWeight: "600" },
   pickerWrap: { alignItems: "center", width: "100%" },
+  pickerActions: { flexDirection: "row", gap: 10, marginTop: 8, width: "100%" },
+  pickerCancel: {
+    borderWidth: 1,
+    borderColor: "#d1d5db",
+    borderRadius: 10,
+    paddingVertical: 11,
+    paddingHorizontal: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  pickerCancelText: { color: "#6b7280", fontWeight: "600" },
+  pickerConfirm: {
+    flex: 1,
+    backgroundColor: "#3b82f6",
+    borderRadius: 10,
+    paddingVertical: 11,
+    alignItems: "center",
+  },
+  pickerConfirmText: { color: "#fff", fontWeight: "700", fontSize: 15 },
   methodBtn: {
     borderWidth: 1,
     borderColor: "#e5e7eb",

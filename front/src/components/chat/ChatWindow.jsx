@@ -42,10 +42,7 @@ function ChatWindow({ conversation, onBack, onRead }) {
   const conversationIdRef = useRef(conversation._id);
   const plaintextCacheRef = useRef({});
 
-  const authToken = localStorage.getItem("authToken");
-  const currentUserId = authToken
-    ? JSON.parse(atob(authToken.split(".")[1]))._id
-    : null;
+  const currentUserId = localStorage.getItem("userId") || null;
 
   useEffect(() => {
     conversationIdRef.current = conversation._id;
