@@ -42,7 +42,14 @@ const validatePassword = (password) => {
 // POST /auth/signup
 // ========================================
 router.post("/signup", async (req, res) => {
-  const { email, password, name, surname, birthDate } = req.body;
+  const { email, password, name, surname, birthDate, acceptedTerms } = req.body;
+
+  // CGU « tolérance zéro » (conformité Apple 1.2) — requis si le client l'envoie explicitement à false
+  if (acceptedTerms === false) {
+    return res
+      .status(400)
+      .json({ message: "Vous devez accepter les conditions d'utilisation." });
+  }
 
   if (!email || !password || !name || !surname) {
     return res
@@ -99,6 +106,7 @@ router.post("/signup", async (req, res) => {
       avatar: `https://api.dicebear.com/8.x/bottts/svg?seed=${surname}`,
       verificationToken,
       isVerified: false,
+      ...(acceptedTerms ? { acceptedTermsAt: new Date() } : {}),
     });
 
     if (nameday) {

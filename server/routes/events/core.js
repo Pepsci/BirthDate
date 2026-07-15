@@ -404,7 +404,17 @@ router.get("/:shortId/share", async (req, res) => {
 const { checkGuestOrAuth } = require("../../middleware/checkGuestOrAuth");
 router.get("/:shortId/messages", checkGuestOrAuth, async (req, res) => {
   try {
-    const messages = await EventMessage.find({ event: req.event._id })
+    // Modération : exclure les messages des utilisateurs que j'ai bloqués
+    let excluded = [];
+    if (req.payload?._id) {
+      const User = require("../../models/user.model");
+      const me = await User.findById(req.payload._id).select("blockedUsers");
+      excluded = me?.blockedUsers || [];
+    }
+    const messages = await EventMessage.find({
+      event: req.event._id,
+      ...(excluded.length ? { sender: { $nin: excluded } } : {}),
+    })
       .populate("sender", "name surname avatar publicKey")
       .sort({ createdAt: 1 });
     res.status(200).json(messages);

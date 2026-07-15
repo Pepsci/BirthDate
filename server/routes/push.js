@@ -52,12 +52,15 @@ router.get("/vapid-public-key", (req, res) => {
 // POST /push/expo-token — enregistre le token de l'appareil
 router.post("/expo-token", isAuthenticated, async (req, res) => {
   try {
-    const { token } = req.body;
+    const { token, platform } = req.body;
     if (!token || !/^ExponentPushToken\[.+\]$/.test(token)) {
       return res.status(400).json({ error: "Token Expo invalide" });
     }
     await User.findByIdAndUpdate(req.payload._id, {
-      $addToSet: { expoPushTokens: token },
+      $addToSet:
+        platform === "ios"
+          ? { expoPushTokens: token, expoPushTokensIos: token }
+          : { expoPushTokens: token },
       // Activer le push automatiquement à l'enregistrement mobile
       $set: { pushEnabled: true },
     });
@@ -73,7 +76,7 @@ router.delete("/expo-token", isAuthenticated, async (req, res) => {
   try {
     const { token } = req.body;
     await User.findByIdAndUpdate(req.payload._id, {
-      $pull: { expoPushTokens: token },
+      $pull: { expoPushTokens: token, expoPushTokensIos: token },
     });
     res.json({ success: true });
   } catch (err) {

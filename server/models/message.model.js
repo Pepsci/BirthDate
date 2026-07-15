@@ -51,6 +51,13 @@ const messageSchema = new mongoose.Schema(
         },
       },
     ],
+    // Réponse à un autre message — la citation est résolue côté client
+    // (compatible E2E : le serveur ne connaît jamais le texte cité)
+    replyTo: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Message",
+      default: null,
+    },
     edited: {
       type: Boolean,
       default: false,

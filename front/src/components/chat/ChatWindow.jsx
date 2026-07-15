@@ -23,6 +23,7 @@ function ChatWindow({ conversation, onBack, onRead }) {
   const [isTyping, setIsTyping] = useState(false);
   const [contextMenu, setContextMenu] = useState(null);
   const [longPressMessageId, setLongPressMessageId] = useState(null);
+  const [reportTarget, setReportTarget] = useState(null);
 
   const [firstUnreadId, setFirstUnreadId] = useState(null);
   const [showUnreadSeparator, setShowUnreadSeparator] = useState(false);
@@ -491,13 +492,12 @@ function ChatWindow({ conversation, onBack, onRead }) {
     e.preventDefault();
     // Pas de menu contextuel sur les cartes cadeaux
     if (message.type === "gift_share") return;
-    if (message.sender._id !== currentUserId) return;
+    // Ses messages : modifier/supprimer — ceux des autres : signaler
     setContextMenu({ x: e.clientX, y: e.clientY, message });
   };
 
   const handleTouchStart = (e, message) => {
     if (message.type === "gift_share") return;
-    if (message.sender._id !== currentUserId) return;
     longPressTimer.current = setTimeout(() => {
       setLongPressMessageId(message._id);
       if (navigator.vibrate) navigator.vibrate(50);
@@ -515,6 +515,48 @@ function ChatWindow({ conversation, onBack, onRead }) {
     });
     setLongPressMessageId(null);
     setContextMenu(null);
+  };
+
+  // ── Modération : signalement + blocage (conformité stores) ──────────────
+  const handleReportMessage = (message) => {
+    setReportTarget(message);
+    setContextMenu(null);
+    setLongPressMessageId(null);
+  };
+
+  const submitReport = async (reason) => {
+    const message = reportTarget;
+    setReportTarget(null);
+    if (!message) return;
+    try {
+      const { text } = resolveDisplayContent(message);
+      await apiHandler.reportContent({
+        contentType: "message",
+        contentId: message._id,
+        targetUserId: message.sender?._id,
+        reason,
+        contentPreview: typeof text === "string" ? text.slice(0, 500) : "",
+      });
+      alert("Merci, ton signalement a été envoyé. Il sera traité sous 24 h.");
+    } catch (e) {
+      alert(e?.message ?? "Signalement impossible.");
+    }
+  };
+
+  const handleBlockUser = async () => {
+    const other = getOtherParticipant();
+    if (!other) return;
+    const ok = window.confirm(
+      `Bloquer ${other.name ?? "cet utilisateur"} ? Ses messages ne te seront plus visibles. Tu pourras le débloquer depuis ton profil.`,
+    );
+    if (!ok) return;
+    try {
+      await apiHandler.blockUser(other._id);
+      alert(`${other.name ?? "Utilisateur"} a été bloqué·e.`);
+      onBack?.();
+    } catch (e) {
+      alert(e?.message ?? "Blocage impossible.");
+    }
   };
 
   const handleDeleteMessage = () => {
@@ -639,6 +681,13 @@ function ChatWindow({ conversation, onBack, onRead }) {
             🔒 Chiffrement E2E
           </div>
         )}
+        <button
+          className="block-user-button"
+          title="Bloquer cet utilisateur"
+          onClick={handleBlockUser}
+        >
+          🚫
+        </button>
       </div>
 
       <div className="messages-container" ref={messagesContainerRef}>
@@ -743,6 +792,16 @@ function ChatWindow({ conversation, onBack, onRead }) {
                       </button>
                     </div>
                   )}
+                  {!isOwn && longPressMessageId === message._id && (
+                    <div className="mobile-actions">
+                      <button
+                        className="delete-button-mobile"
+                        onClick={() => handleReportMessage(message)}
+                      >
+                        🚩 Signaler
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -769,20 +828,57 @@ function ChatWindow({ conversation, onBack, onRead }) {
           className="context-menu"
           style={{ top: contextMenu.y, left: contextMenu.x }}
         >
-          {canEditMessage(contextMenu.message) && (
+          {contextMenu.message.sender._id === currentUserId ? (
+            <>
+              {canEditMessage(contextMenu.message) && (
+                <button
+                  onClick={() => handleStartEdit(contextMenu.message)}
+                  className="context-menu-item edit"
+                >
+                  ✏️ Modifier
+                </button>
+              )}
+              <button
+                onClick={handleDeleteMessage}
+                className="context-menu-item delete"
+              >
+                🗑️ Supprimer
+              </button>
+            </>
+          ) : (
             <button
-              onClick={() => handleStartEdit(contextMenu.message)}
-              className="context-menu-item edit"
+              onClick={() => handleReportMessage(contextMenu.message)}
+              className="context-menu-item delete"
             >
-              ✏️ Modifier
+              🚩 Signaler
             </button>
           )}
-          <button
-            onClick={handleDeleteMessage}
-            className="context-menu-item delete"
-          >
-            🗑️ Supprimer
-          </button>
+        </div>
+      )}
+
+      {reportTarget && (
+        <div className="report-modal-overlay" onClick={() => setReportTarget(null)}>
+          <div className="report-modal" onClick={(e) => e.stopPropagation()}>
+            <h4>Signaler ce message</h4>
+            <p>Pourquoi signales-tu ce contenu ?</p>
+            <button onClick={() => submitReport("spam")}>Spam</button>
+            <button onClick={() => submitReport("harassment")}>
+              Harcèlement
+            </button>
+            <button onClick={() => submitReport("inappropriate")}>
+              Contenu inapproprié
+            </button>
+            <button onClick={() => submitReport("scam")}>
+              Arnaque / fraude
+            </button>
+            <button onClick={() => submitReport("other")}>Autre</button>
+            <button
+              className="report-cancel"
+              onClick={() => setReportTarget(null)}
+            >
+              Annuler
+            </button>
+          </div>
         </div>
       )}
 

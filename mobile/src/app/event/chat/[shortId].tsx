@@ -27,6 +27,7 @@ import {
   encryptMessage,
   decryptMessage,
 } from "../../../lib/crypto";
+import { promptReport } from "../../../lib/moderation";
 
 export default function EventChatScreen() {
   const { shortId } = useLocalSearchParams<{ shortId: string }>();
@@ -242,6 +243,21 @@ export default function EventChatScreen() {
             isMine={item.sender?._id === user?._id}
             myUserId={user?._id ?? null}
             privateKey={privateKeyRef.current}
+            onReport={
+              item.sender?._id !== user?._id
+                ? () =>
+                    promptReport({
+                      contentType: "eventMessage",
+                      contentId: item._id,
+                      targetUserId: item.sender?._id,
+                      contentPreview: displayContent(
+                        item,
+                        user?._id ?? null,
+                        privateKeyRef.current,
+                      ),
+                    })
+                : undefined
+            }
           />
         )}
         ListEmptyComponent={
@@ -279,11 +295,13 @@ function MessageBubble({
   isMine,
   myUserId,
   privateKey,
+  onReport,
 }: {
   message: EventChatMessage;
   isMine: boolean;
   myUserId: string | null;
   privateKey: Uint8Array | null;
+  onReport?: () => void;
 }) {
   const time = new Date(message.createdAt).toLocaleTimeString("fr-FR", {
     hour: "2-digit",
@@ -292,7 +310,11 @@ function MessageBubble({
 
   return (
     <View style={[styles.bubbleRow, isMine && styles.bubbleRowMine]}>
-      <View style={[styles.bubble, isMine ? styles.bubbleMine : styles.bubbleOther]}>
+      <Pressable
+        onLongPress={onReport}
+        delayLongPress={400}
+        style={[styles.bubble, isMine ? styles.bubbleMine : styles.bubbleOther]}
+      >
         {!isMine && (
           <Text style={styles.senderName}>
             {message.sender?.name ?? "Invité"}
@@ -302,7 +324,7 @@ function MessageBubble({
           {displayContent(message, myUserId, privateKey)}
         </Text>
         <Text style={[styles.time, isMine && styles.timeMine]}>{time}</Text>
-      </View>
+      </Pressable>
     </View>
   );
 }

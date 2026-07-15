@@ -359,6 +359,9 @@ async function sendChatNotifications(frequency) {
           body: `De : ${senderNames}`,
           url: pushUrl,
           tag: "birthreminder-chat",
+          // Web uniquement : sur mobile chaque message a déjà sa propre notif,
+          // ce récap ferait doublon.
+          webOnly: true,
         });
 
         pushSent++;

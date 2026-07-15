@@ -20,7 +20,6 @@
 
 import * as Notifications from "expo-notifications";
 import * as TaskManager from "expo-task-manager";
-import { Platform } from "react-native";
 import { getPrivateKey, decryptMessage } from "./crypto";
 
 export const BACKGROUND_NOTIF_TASK = "birthreminder-background-notif";
@@ -191,9 +190,11 @@ export function subscribeForegroundDecrypt(): () => void {
       title: content.title,
     };
     decryptAndPresent(raw).then((handled) => {
-      if (handled && Platform.OS === "android") {
-        // Masque la notif "brute" au cas où une notif fallback serait déjà
-        // présentée (data-only n'affiche normalement rien).
+      if (handled) {
+        // Masque la notif "brute" pour éviter le doublon :
+        // - Android : fallback éventuel du data-only
+        // - iOS : notif alerte "🔒 Nouveau message chiffré" envoyée par le
+        //   backend (remplacée ici par la version déchiffrée)
         Notifications.dismissNotificationAsync(
           notification.request.identifier,
         ).catch(() => {});

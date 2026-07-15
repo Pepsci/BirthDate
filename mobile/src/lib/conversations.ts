@@ -33,6 +33,9 @@ export interface DMMessage {
   createdAt: string;
   isEncrypted?: boolean;
   encryptedFor?: Record<string, string>;
+  replyTo?: string | null;
+  edited?: boolean;
+  editedAt?: string;
   type?: string;
   metadata?: {
     personName?: string;

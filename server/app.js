@@ -133,6 +133,7 @@ app.use("/api/notifications", notificationsRouter);
 app.use("/api/stats", statsRouter);
 app.use("/api/stripe/connect", stripeConnectRouter);
 app.use("/api/support", require("./routes/support"));
+app.use("/api/moderation", require("./routes/moderation"));
 app.use("/api/shared-gifts", require("./routes/sharedGifts"));
 app.use("/api/admin", require("./routes/admin/index"));
 

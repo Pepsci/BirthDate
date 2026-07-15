@@ -31,9 +31,13 @@ function initVapid() {
  */
 async function sendPushToUser(userId, payload) {
   // Push natif mobile (Expo) — indépendant du web push, jamais bloquant
-  sendExpoPushToUser(userId, payload).catch((err) =>
-    console.error("[ExpoPush] error:", err.message),
-  );
+  // `webOnly: true` = uniquement web push (ex : récap "messages non lus" du cron,
+  // redondant sur mobile où chaque message a déjà sa propre notification)
+  if (!payload.webOnly) {
+    sendExpoPushToUser(userId, payload).catch((err) =>
+      console.error("[ExpoPush] error:", err.message),
+    );
+  }
 
   if (!initVapid()) return; // Skip silencieux si VAPID pas configuré
 
@@ -77,9 +81,12 @@ async function sendExpoPushToUser(userId, payload) {
   const User = require("../models/user.model");
   const axios = require("axios");
 
-  const user = await User.findById(userId).select("expoPushTokens");
+  const user = await User.findById(userId).select(
+    "expoPushTokens expoPushTokensIos",
+  );
   const tokens = user?.expoPushTokens || [];
   if (!tokens.length) return;
+  const iosTokens = new Set(user?.expoPushTokensIos || []);
 
   const messages = tokens.map((to) => {
     const msg = {
@@ -101,14 +108,19 @@ async function sendExpoPushToUser(userId, payload) {
         tag: payload.tag || null,
       },
     };
-    if (payload.dataOnly) {
-      // Pas de title/body → rien affiché automatiquement : la tâche de fond
-      // mobile déchiffre et présente elle-même la notif.
-      // _contentAvailable réveille l'app iOS en arrière-plan.
+    if (payload.dataOnly && !iosTokens.has(to)) {
+      // Android : pas de title/body → rien affiché automatiquement, la tâche
+      // de fond déchiffre et présente elle-même la notif lisible.
       msg._contentAvailable = true;
     } else {
+      // iOS (et pushes classiques) : notif alerte — fiable à chaque message.
+      // ⚠️ Les pushes silencieuses (_contentAvailable seul) sont throttlées par
+      // iOS (~quelques réveils/h) → on affiche le fallback "🔒 Nouveau message
+      // chiffré" à chaque message. mutableContent prépare la NSE (phase 2) qui
+      // remplacera ce texte par le message déchiffré, façon WhatsApp.
       msg.title = payload.title || "BirthReminder";
       msg.body = payload.body || "";
+      if (payload.dataOnly) msg.mutableContent = true;
     }
     return msg;
   });

@@ -7,6 +7,7 @@ import {
   CalendarDays,
   ScrollText,
   ShieldAlert,
+  Flag,
   ArrowLeft,
 } from "lucide-react";
 import apiHandler from "../../api/apiHandler";
@@ -15,11 +16,16 @@ import "./css/admin.css";
 const AdminLayout = () => {
   const navigate = useNavigate();
   const [alertCount, setAlertCount] = useState(0);
+  const [reportCount, setReportCount] = useState(0);
 
   useEffect(() => {
     apiHandler
       .get("/admin/pools/alerts")
       .then((res) => setAlertCount(res.data.alerts?.length || 0))
+      .catch(() => {});
+    apiHandler
+      .get("/moderation/reports?status=pending")
+      .then((res) => setReportCount(res.data?.length || 0))
       .catch(() => {});
   }, []);
 
@@ -47,6 +53,12 @@ const AdminLayout = () => {
             <ShieldAlert size={18} /> Alertes
             {alertCount > 0 && (
               <span className="admin-nav-badge">{alertCount}</span>
+            )}
+          </NavLink>
+          <NavLink to="/admin/reports">
+            <Flag size={18} /> Signalements
+            {reportCount > 0 && (
+              <span className="admin-nav-badge">{reportCount}</span>
             )}
           </NavLink>
           <NavLink to="/admin/logs">

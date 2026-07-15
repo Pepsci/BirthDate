@@ -830,3 +830,76 @@
         display: none !important;
     }
 }
+/* ================================
+   MODÉRATION (signalement / blocage)
+================================ */
+
+.block-user-button {
+    margin-left: auto;
+    background: none;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+    opacity: 0.6;
+    padding: 6px;
+}
+
+.block-user-button:hover {
+    opacity: 1;
+}
+
+.report-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.report-modal {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    padding: 20px;
+    width: min(320px, 90vw);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    box-shadow: var(--card-shadow-hover);
+}
+
+.report-modal h4 {
+    margin: 0;
+    color: var(--text-primary);
+}
+
+.report-modal p {
+    margin: 0 0 6px;
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+.report-modal button {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 10px;
+    cursor: pointer;
+    color: var(--text-primary);
+    font-size: 14px;
+    text-align: left;
+}
+
+.report-modal button:hover {
+    background: var(--bg-tertiary);
+}
+
+.report-modal .report-cancel {
+    text-align: center;
+    color: var(--text-secondary);
+    border: none;
+    background: none;
+    margin-top: 4px;
+}

@@ -55,6 +55,13 @@ const userSchema = new Schema({
   // ── Compte ────────────────────────────────────────────────────────────────
   deletedAt: Date,
 
+  // ── Modération (conformité stores : Apple 1.2 / Google UGC) ───────────────
+  blockedUsers: {
+    type: [{ type: Schema.Types.ObjectId, ref: "User" }],
+    default: [],
+  },
+  acceptedTermsAt: Date,
+
   // ── Rôle (admin) ────────────────────────────────────────────────────────────
   role: {
     type: String,
@@ -89,6 +96,9 @@ const userSchema = new Schema({
   pushEnabled: { type: Boolean, default: false },
   // Tokens Expo Push (app mobile) — un par appareil
   expoPushTokens: { type: [String], default: [] },
+  // Sous-ensemble des tokens ci-dessus appartenant à des appareils iOS.
+  // iOS throttle les pushes silencieuses → on leur envoie des notifs alerte.
+  expoPushTokensIos: { type: [String], default: [] },
   pushEvents: {
     birthdays: { type: Boolean, default: true },
     chat: { type: Boolean, default: true },

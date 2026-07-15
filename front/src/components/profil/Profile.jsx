@@ -9,6 +9,7 @@ import DatePickerMobile from "../dashboard/DatePickerMobile";
 import GestionNotification from "./GestionNotifications";
 import Wishlist from "../wishlist/Wishlist";
 import E2ESettings from "./E2ESettings";
+import BlockedUsers from "./BlockedUsers";
 import FriendsMobileView from "../friends/FriendsMobileView";
 import MergeDuplicatesSection from "../friends/MergeDuplicatesSection";
 import ThemeToggle from "./ThemeToggle";
@@ -338,7 +339,12 @@ const ProfilDetails = ({
       case "wishlist":
         return <Wishlist />;
       case "e2e":
-        return <E2ESettings />;
+        return (
+          <>
+            <E2ESettings />
+            <BlockedUsers />
+          </>
+        );
       default:
         return null;
     }

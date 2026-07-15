@@ -14,8 +14,15 @@ router.get("/", isAuthenticated, async (req, res) => {
     const userId = req.payload._id;
 
     console.log("📊 Recherche des conversations...");
+    // Modération : masquer les conversations avec les utilisateurs bloqués
+    const me = await User.findById(userId).select("blockedUsers");
+    const blocked = (me?.blockedUsers || []).map(String);
+
     const conversations = await Conversation.find({
       participants: userId,
+      ...(blocked.length
+        ? { participants: { $all: [userId], $nin: blocked } }
+        : {}),
     })
       .populate("participants", "name surname email publicKey oldPublicKey")
       .populate({

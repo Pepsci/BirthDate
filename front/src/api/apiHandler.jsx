@@ -205,6 +205,35 @@ const apiHandler = {
       .then((res) => res.data)
       .catch(errorHandler);
   },
+
+  // ── Modération (conformité stores : signalement + blocage) ──────────────
+  reportContent(payload) {
+    return service
+      .post("/moderation/reports", payload)
+      .then((res) => res.data)
+      .catch(errorHandler);
+  },
+
+  blockUser(userId) {
+    return service
+      .post(`/moderation/block/${userId}`)
+      .then((res) => res.data)
+      .catch(errorHandler);
+  },
+
+  unblockUser(userId) {
+    return service
+      .delete(`/moderation/block/${userId}`)
+      .then((res) => res.data)
+      .catch(errorHandler);
+  },
+
+  getBlockedUsers() {
+    return service
+      .get("/moderation/blocked")
+      .then((res) => res.data)
+      .catch(errorHandler);
+  },
 };
 
 export default apiHandler;

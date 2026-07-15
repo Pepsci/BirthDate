@@ -8,6 +8,8 @@ import {
   Platform,
   ActivityIndicator,
   ScrollView,
+  View,
+  Linking,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Stack, useRouter } from "expo-router";
@@ -35,6 +37,7 @@ export default function SignupScreen() {
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   const submit = async () => {
     if (!name.trim() || !surname.trim() || !email.trim() || !password) {
@@ -53,6 +56,10 @@ export default function SignupScreen() {
       setError(
         "8 caractères minimum, avec au moins une majuscule, une minuscule et un chiffre.",
       );
+      return;
+    }
+    if (!acceptedTerms) {
+      setError("Tu dois accepter les conditions d'utilisation.");
       return;
     }
     setError(null);
@@ -74,6 +81,7 @@ export default function SignupScreen() {
               12,
             ),
           ).toISOString(),
+          acceptedTerms: true,
         }),
       });
       setDone(true);
@@ -149,6 +157,25 @@ export default function SignupScreen() {
           8 caractères min., une majuscule, une minuscule et un chiffre.
         </Text>
 
+        <Pressable
+          style={styles.termsRow}
+          onPress={() => setAcceptedTerms((v) => !v)}
+        >
+          <View style={[styles.checkbox, acceptedTerms && styles.checkboxOn]}>
+            {acceptedTerms && <Text style={styles.checkmark}>✓</Text>}
+          </View>
+          <Text style={styles.termsText}>
+            J'accepte les{" "}
+            <Text
+              style={styles.termsLink}
+              onPress={() => Linking.openURL("https://birthreminder.com/cgu")}
+            >
+              conditions d'utilisation
+            </Text>
+            , dont la tolérance zéro envers les contenus abusifs. *
+          </Text>
+        </Pressable>
+
         {error && <Text style={styles.error}>{error}</Text>}
 
         <Pressable
@@ -200,4 +227,25 @@ const makeStyles = (c: ThemeColors) =>
     },
     buttonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
     doneText: { color: c.sub, textAlign: "center", lineHeight: 22 },
+    termsRow: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      gap: 10,
+      marginTop: 4,
+    },
+    checkbox: {
+      width: 22,
+      height: 22,
+      borderRadius: 6,
+      borderWidth: 1.5,
+      borderColor: c.inputBorder,
+      backgroundColor: c.inputBg,
+      justifyContent: "center",
+      alignItems: "center",
+      marginTop: 1,
+    },
+    checkboxOn: { backgroundColor: c.primary, borderColor: c.primary },
+    checkmark: { color: "#fff", fontSize: 14, fontWeight: "700" },
+    termsText: { flex: 1, color: c.sub, fontSize: 13, lineHeight: 18 },
+    termsLink: { color: c.primary, textDecorationLine: "underline" },
   });

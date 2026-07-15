@@ -78,6 +78,7 @@ module.exports = (io, socket, connectedUsers, app) => {
       isEncrypted,
       encryptedForRecipient,
       encryptedForSender,
+      replyTo,
       tempId,
     } = data;
 
@@ -125,6 +126,19 @@ module.exports = (io, socket, connectedUsers, app) => {
 
       if (messageType === "gift_share" && metadata) {
         messageData.metadata = metadata;
+      }
+
+      // Réponse à un message : vérifier qu'il appartient bien à la conversation
+      if (replyTo) {
+        const repliedMessage = await Message.findById(replyTo).select(
+          "conversation",
+        );
+        if (
+          repliedMessage &&
+          repliedMessage.conversation.toString() === conversationId
+        ) {
+          messageData.replyTo = replyTo;
+        }
       }
 
       if (
@@ -350,7 +364,15 @@ module.exports = (io, socket, connectedUsers, app) => {
     }
   });
 
-  socket.on("message:edit", async ({ messageId, content, conversationId }) => {
+  socket.on(
+    "message:edit",
+    async ({
+      messageId,
+      content,
+      conversationId,
+      encryptedForRecipient,
+      encryptedForSender,
+    }) => {
     try {
       const message = await Message.findById(messageId);
       if (!message)
@@ -360,7 +382,11 @@ module.exports = (io, socket, connectedUsers, app) => {
           message: "You can only edit your own messages",
         });
       }
-      if (message.isEncrypted) {
+      // Messages chiffrés : modifiables uniquement si le client fournit les
+      // deux copies re-chiffrées (mobile E2E) — sinon comportement historique.
+      const isEncryptedEdit =
+        message.isEncrypted && encryptedForRecipient && encryptedForSender;
+      if (message.isEncrypted && !isEncryptedEdit) {
         return socket.emit("error", {
           message: "Les messages chiffrés ne peuvent pas être modifiés",
         });
@@ -382,15 +408,40 @@ module.exports = (io, socket, connectedUsers, app) => {
       if (!content || content.trim().length === 0) {
         return socket.emit("error", { message: "Content cannot be empty" });
       }
-      message.content = content.trim();
+
+      if (isEncryptedEdit) {
+        // Re-chiffrement complet : content = copie expéditeur (même règle que send)
+        const conversation = await Conversation.findById(
+          message.conversation,
+        ).select("participants");
+        const recipientId = conversation?.participants.find(
+          (p) => p.toString() !== socket.userId,
+        );
+        const encFor = {};
+        if (recipientId)
+          encFor[recipientId.toString()] = encryptedForRecipient;
+        encFor[socket.userId] = encryptedForSender;
+        message.encryptedFor = encFor;
+        message.content = encryptedForSender;
+      } else {
+        message.content = content.trim();
+      }
       message.edited = true;
       message.editedAt = new Date();
       await message.save();
       await message.populate("sender", "name surname email publicKey");
+
+      const encryptedForObj =
+        message.encryptedFor instanceof Map
+          ? Object.fromEntries(message.encryptedFor)
+          : message.encryptedFor;
+
       io.to(`conversation:${conversationId}`).emit("message:edited", {
         messageId,
         conversationId,
         content: message.content,
+        isEncrypted: message.isEncrypted,
+        encryptedFor: encryptedForObj,
         edited: true,
         editedAt: message.editedAt,
       });

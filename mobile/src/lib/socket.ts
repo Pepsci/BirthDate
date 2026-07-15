@@ -1,9 +1,25 @@
 import { io, Socket } from "socket.io-client";
+import { AppState } from "react-native";
 import { API_URL, getToken } from "./api";
 
 // Service socket singleton — même pattern que le web (socket.service.js) :
 // auth par token dans le handshake (auth: { token }), pas par cookie.
 let socket: Socket | null = null;
+
+// ── Arrière-plan : déconnexion immédiate ────────────────────────────────────
+// Sans ça, le serveur nous croit "en ligne" pendant le timeout socket.io
+// (~45 s) après la mise en arrière-plan et n'envoie AUCUNE push pendant ce
+// temps (pushService ne pushe qu'aux utilisateurs hors de connectedUsers).
+// Retour au premier plan → reconnexion (les écrans ré-joignent leurs rooms
+// via leur handler "connect", pattern anti-stale-closure existant).
+AppState.addEventListener("change", (state) => {
+  if (!socket) return;
+  if (state === "background") {
+    socket.disconnect();
+  } else if (state === "active" && !socket.connected) {
+    socket.connect();
+  }
+});
 
 export async function getSocket(): Promise<Socket> {
   if (socket?.connected) return socket;

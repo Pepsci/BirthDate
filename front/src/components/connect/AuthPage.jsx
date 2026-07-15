@@ -156,6 +156,7 @@ const AuthPage = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [signupError, setSignupError] = useState("");
   const [signupSuccess, setSignupSuccess] = useState("");
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   const handleSignup = async (e) => {
     e.preventDefault();
@@ -175,11 +176,16 @@ const AuthPage = () => {
       setSignupError("Veuillez renseigner votre date de naissance.");
       return;
     }
+    if (!acceptedTerms) {
+      setSignupError("Vous devez accepter les conditions d'utilisation.");
+      return;
+    }
 
     try {
       await apiHandler.signup({
         ...signupData,
         email: signupData.email.toLowerCase(),
+        acceptedTerms: true,
       });
       setSignupSuccess(
         "Compte créé ! Vérifiez votre boîte mail avant de vous connecter. 📧",
@@ -434,6 +440,23 @@ const AuthPage = () => {
                     Généré depuis votre prénom
                   </span>
                 </div>
+              </div>
+
+              <div className="auth-remember">
+                <label className="auth-remember-label">
+                  <input
+                    type="checkbox"
+                    checked={acceptedTerms}
+                    onChange={(e) => setAcceptedTerms(e.target.checked)}
+                  />
+                  <span>
+                    J'accepte les{" "}
+                    <a href="/cgu" target="_blank" rel="noreferrer">
+                      conditions d'utilisation
+                    </a>
+                    , dont la tolérance zéro envers les contenus abusifs.
+                  </span>
+                </label>
               </div>
 
               {signupError && (

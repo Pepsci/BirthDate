@@ -18,7 +18,8 @@
         ],
         "UIBackgroundModes": [
           "remote-notification"
-        ]
+        ],
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -50,6 +51,14 @@
         "expo-notifications",
         {
           "color": "#3b82f6"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "BirthReminder accède à tes photos uniquement pour choisir ta photo de profil.",
+          "cameraPermission": false,
+          "microphonePermission": false
         }
       ]
     ],

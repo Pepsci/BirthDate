@@ -66,7 +66,9 @@ export async function registerForPush(): Promise<string | null> {
 
     await api("/push/expo-token", {
       method: "POST",
-      body: JSON.stringify({ token }),
+      // platform : le backend envoie des notifs alerte aux appareils iOS
+      // (les pushes silencieuses y sont throttlées) et data-only à Android.
+      body: JSON.stringify({ token, platform: Platform.OS }),
     });
     console.log("🔔 Push: token enregistré", token);
     return token;
