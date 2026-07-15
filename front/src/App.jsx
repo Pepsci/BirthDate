@@ -31,6 +31,15 @@ import EventForm from "./components/events/EventForm";
 import NotificationToast from "./components/notifications/NotificationToast";
 import PublicWishlist from "./components/wishlist/PublicWishlist";
 import PoolPage from "./components/events/PoolPage";
+import AdminRoute from "./protectedRoutes/AdminRoute";
+import AdminLayout from "./components/admin/AdminLayout";
+import AdminDashboard from "./components/admin/AdminDashboard";
+import AdminUsers from "./components/admin/AdminUsers";
+import AdminPools from "./components/admin/AdminPools";
+import AdminEvents from "./components/admin/AdminEvents";
+import AdminLogs from "./components/admin/AdminLogs";
+import AdminAlerts from "./components/admin/AdminAlerts";
+import AnalyticsTracker from "./analytics/AnalyticsTracker";
 
 // Pages sans footer
 const NO_FOOTER_ROUTES = ["/wishlist"];
@@ -53,6 +62,7 @@ function App() {
     <div className="App">
       <div className="routeContent">
         <ScrollToTop />
+        <AnalyticsTracker />
         <NotificationToast />
         <Routes>
           <Route path="/" element={<LandingPage />} />
@@ -106,6 +116,18 @@ function App() {
                 />
               }
             />
+          </Route>
+
+          {/* ── ADMIN ── */}
+          <Route element={<AdminRoute />}>
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route index element={<AdminDashboard />} />
+              <Route path="users" element={<AdminUsers />} />
+              <Route path="pools" element={<AdminPools />} />
+              <Route path="events" element={<AdminEvents />} />
+              <Route path="alerts" element={<AdminAlerts />} />
+              <Route path="logs" element={<AdminLogs />} />
+            </Route>
           </Route>
         </Routes>
         <CookieBanner />

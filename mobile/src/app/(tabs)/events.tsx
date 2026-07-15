@@ -18,8 +18,15 @@ import {
   STATUS_LABELS,
   RSVP_LABELS,
 } from "../../lib/events";
+import {
+  useTheme,
+  useThemedStyles,
+  ThemeColors,
+} from "../../lib/theme-context";
 
 export default function EventsScreen() {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const [organized, setOrganized] = useState<EventEntry[]>([]);
   const [invited, setInvited] = useState<EventEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -59,7 +66,7 @@ export default function EventsScreen() {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#3b82f6" />
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -97,6 +104,7 @@ export default function EventsScreen() {
 
 function EventCard({ event }: { event: EventEntry }) {
   const router = useRouter();
+  const styles = useThemedStyles(makeStyles);
   const d = eventDate(event);
   const location =
     typeof event.fixedLocation === "string"
@@ -149,52 +157,60 @@ function statusStyle(status: EventEntry["status"]) {
   }
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f9fafb" },
-  center: { flex: 1, justifyContent: "center", alignItems: "center" },
-  list: { padding: 12, gap: 10 },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#6b7280",
-    textTransform: "uppercase",
-    marginTop: 8,
-    marginBottom: 2,
-  },
-  empty: {
-    textAlign: "center",
-    color: "#6b7280",
-    marginTop: 48,
-    paddingHorizontal: 24,
-    lineHeight: 20,
-  },
-  errorBanner: { backgroundColor: "#fee2e2", padding: 10 },
-  errorText: { color: "#b91c1c", textAlign: "center", fontSize: 13 },
-  card: {
-    backgroundColor: "#fff",
-    borderRadius: 14,
-    padding: 14,
-    gap: 4,
-    shadowColor: "#000",
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
-  },
-  cardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: 8,
-  },
-  title: { fontSize: 16, fontWeight: "600", color: "#111827", flexShrink: 1 },
-  type: { fontSize: 12, color: "#6b7280" },
-  detail: { color: "#6b7280", fontSize: 13 },
-  footer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 6,
-  },
-  status: { fontSize: 12, fontWeight: "700" },
-  rsvp: { fontSize: 12, color: "#374151", fontWeight: "600" },
-});
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: c.bg },
+    center: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: c.bg,
+    },
+    list: { padding: 12, gap: 10 },
+    sectionTitle: {
+      fontSize: 14,
+      fontWeight: "700",
+      color: c.sub,
+      textTransform: "uppercase",
+      marginTop: 8,
+      marginBottom: 2,
+    },
+    empty: {
+      textAlign: "center",
+      color: c.sub,
+      marginTop: 48,
+      paddingHorizontal: 24,
+      lineHeight: 20,
+    },
+    errorBanner: { backgroundColor: "rgba(239,68,68,0.15)", padding: 10 },
+    errorText: { color: c.danger, textAlign: "center", fontSize: 13 },
+    card: {
+      backgroundColor: c.card,
+      borderRadius: 14,
+      padding: 14,
+      gap: 4,
+      borderWidth: 1,
+      borderColor: c.border,
+      shadowColor: c.shadow,
+      shadowOpacity: 0.06,
+      shadowRadius: 6,
+      shadowOffset: { width: 0, height: 2 },
+      elevation: 2,
+    },
+    cardHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      gap: 8,
+    },
+    title: { fontSize: 16, fontWeight: "600", color: c.text, flexShrink: 1 },
+    type: { fontSize: 12, color: c.sub },
+    detail: { color: c.sub, fontSize: 13 },
+    footer: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      marginTop: 6,
+    },
+    status: { fontSize: 12, fontWeight: "700" },
+    rsvp: { fontSize: 12, color: c.sub, fontWeight: "600" },
+  });

@@ -55,6 +55,13 @@ const userSchema = new Schema({
   // ── Compte ────────────────────────────────────────────────────────────────
   deletedAt: Date,
 
+  // ── Rôle (admin) ────────────────────────────────────────────────────────────
+  role: {
+    type: String,
+    enum: ["user", "admin"],
+    default: "user",
+  },
+
   // ── Onboarding ─────────────────────────────────────────────────────────────
   onboardingDone: { type: Boolean, default: false },
 

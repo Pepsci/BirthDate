@@ -11,6 +11,12 @@ import {
 import { useRouter } from "expo-router";
 import { useAuth } from "../../lib/auth-context";
 import { deleteAccount } from "../../lib/users";
+import {
+  useTheme,
+  useThemedStyles,
+  ThemeColors,
+  ThemeMode,
+} from "../../lib/theme-context";
 
 const SITE = "https://birthreminder.com";
 const LEGAL_LINKS: { emoji: string; label: string; url: string }[] = [
@@ -20,8 +26,16 @@ const LEGAL_LINKS: { emoji: string; label: string; url: string }[] = [
   { emoji: "⚖️", label: "Mentions légales", url: `${SITE}/mentions-legales` },
 ];
 
+const THEME_OPTIONS: { v: ThemeMode; l: string }[] = [
+  { v: "system", l: "⚙️ Système" },
+  { v: "light", l: "☀️ Clair" },
+  { v: "dark", l: "🌙 Sombre" },
+];
+
 export default function ProfileScreen() {
   const { user, signOut } = useAuth();
+  const { mode, setMode } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const avatar = (user as { avatar?: string } | null)?.avatar;
 
@@ -97,6 +111,27 @@ export default function ProfileScreen() {
         />
       </View>
 
+      {/* ── Apparence ── */}
+      <Text style={styles.sectionLabel}>Apparence</Text>
+      <View style={styles.themeRow}>
+        {THEME_OPTIONS.map(({ v, l }) => (
+          <Pressable
+            key={v}
+            style={[styles.themeChip, mode === v && styles.themeChipActive]}
+            onPress={() => setMode(v)}
+          >
+            <Text
+              style={[
+                styles.themeChipText,
+                mode === v && styles.themeChipTextActive,
+              ]}
+            >
+              {l}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+
       <Text style={styles.sectionLabel}>Légal & support</Text>
       <View style={styles.menu}>
         <MenuRow
@@ -141,6 +176,7 @@ function MenuRow({
   label: string;
   onPress: () => void;
 }) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <Pressable
       style={({ pressed }) => [styles.row, pressed && { opacity: 0.7 }]}
@@ -153,70 +189,91 @@ function MenuRow({
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f9fafb" },
-  content: { alignItems: "center", padding: 24, gap: 6, paddingBottom: 48 },
-  avatar: { width: 88, height: 88, borderRadius: 44 },
-  avatarFallback: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    backgroundColor: "#dbeafe",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  initials: { fontSize: 30, fontWeight: "700", color: "#2563eb" },
-  name: { fontSize: 22, fontWeight: "700", color: "#111827", marginTop: 8 },
-  email: { color: "#6b7280" },
-  menu: {
-    alignSelf: "stretch",
-    backgroundColor: "#fff",
-    borderRadius: 14,
-    marginTop: 20,
-    overflow: "hidden",
-  },
-  sectionLabel: {
-    alignSelf: "flex-start",
-    color: "#6b7280",
-    fontSize: 12,
-    fontWeight: "700",
-    textTransform: "uppercase",
-    marginTop: 24,
-    marginBottom: -8,
-  },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    padding: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#e5e7eb",
-  },
-  rowEmoji: { fontSize: 18 },
-  rowLabel: { flex: 1, fontSize: 15, color: "#111827", fontWeight: "500" },
-  chevron: { fontSize: 20, color: "#9ca3af" },
-  logout: {
-    marginTop: 28,
-    borderWidth: 1,
-    borderColor: "#ef4444",
-    borderRadius: 10,
-    paddingVertical: 12,
-    paddingHorizontal: 28,
-  },
-  logoutText: { color: "#ef4444", fontWeight: "600" },
-  deleteText: {
-    color: "#9ca3af",
-    fontSize: 12,
-    textDecorationLine: "underline",
-    marginTop: 16,
-  },
-  contactBtn: {
-    marginTop: 24,
-    borderWidth: 1,
-    borderColor: "#3b82f6",
-    borderRadius: 10,
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-  },
-  contactBtnText: { color: "#3b82f6", fontWeight: "600" },
-});
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: c.bg },
+    content: { alignItems: "center", padding: 24, gap: 6, paddingBottom: 48 },
+    avatar: { width: 88, height: 88, borderRadius: 44 },
+    avatarFallback: {
+      width: 88,
+      height: 88,
+      borderRadius: 44,
+      backgroundColor: c.primarySoft,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    initials: { fontSize: 30, fontWeight: "700", color: c.primary },
+    name: { fontSize: 22, fontWeight: "700", color: c.text, marginTop: 8 },
+    email: { color: c.sub },
+    menu: {
+      alignSelf: "stretch",
+      backgroundColor: c.card,
+      borderRadius: 14,
+      marginTop: 20,
+      overflow: "hidden",
+      borderWidth: 1,
+      borderColor: c.border,
+    },
+    sectionLabel: {
+      alignSelf: "flex-start",
+      color: c.sub,
+      fontSize: 12,
+      fontWeight: "700",
+      textTransform: "uppercase",
+      marginTop: 24,
+      marginBottom: -8,
+    },
+    themeRow: {
+      alignSelf: "stretch",
+      flexDirection: "row",
+      gap: 8,
+      marginTop: 20,
+    },
+    themeChip: {
+      flex: 1,
+      borderWidth: 1,
+      borderColor: c.border,
+      borderRadius: 12,
+      paddingVertical: 10,
+      alignItems: "center",
+      backgroundColor: c.card,
+    },
+    themeChipActive: { backgroundColor: c.primary, borderColor: c.primary },
+    themeChipText: { fontSize: 13, fontWeight: "600", color: c.sub },
+    themeChipTextActive: { color: "#fff" },
+    row: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+      padding: 14,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: c.border,
+    },
+    rowEmoji: { fontSize: 18 },
+    rowLabel: { flex: 1, fontSize: 15, color: c.text, fontWeight: "500" },
+    chevron: { fontSize: 20, color: c.faint },
+    logout: {
+      marginTop: 28,
+      borderWidth: 1,
+      borderColor: c.danger,
+      borderRadius: 10,
+      paddingVertical: 12,
+      paddingHorizontal: 28,
+    },
+    logoutText: { color: c.danger, fontWeight: "600" },
+    deleteText: {
+      color: c.faint,
+      fontSize: 12,
+      textDecorationLine: "underline",
+      marginTop: 16,
+    },
+    contactBtn: {
+      marginTop: 24,
+      borderWidth: 1,
+      borderColor: c.primary,
+      borderRadius: 10,
+      paddingVertical: 12,
+      paddingHorizontal: 24,
+    },
+    contactBtnText: { color: c.primary, fontWeight: "600" },
+  });

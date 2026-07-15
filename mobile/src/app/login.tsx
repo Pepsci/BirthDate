@@ -13,9 +13,16 @@ import {
 import { useRouter } from "expo-router";
 import { useAuth } from "../lib/auth-context";
 import { useKeyboardPadding } from "../lib/use-keyboard-padding";
+import {
+  useTheme,
+  useThemedStyles,
+  ThemeColors,
+} from "../lib/theme-context";
 
 export default function LoginScreen() {
   const { signIn } = useAuth();
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const router = useRouter();
   const keyboardPadding = useKeyboardPadding();
   const [email, setEmail] = useState("");
@@ -52,7 +59,7 @@ export default function LoginScreen() {
         <Text style={styles.subtitle}>Connexion</Text>
 
         <TextInput
-          placeholderTextColor="#9ca3af"
+          placeholderTextColor={colors.placeholder}
           style={styles.input}
           placeholder="Email"
           autoCapitalize="none"
@@ -63,7 +70,7 @@ export default function LoginScreen() {
           onChangeText={(t) => setEmail(t.toLowerCase())}
         />
         <TextInput
-          placeholderTextColor="#9ca3af"
+          placeholderTextColor={colors.placeholder}
           style={styles.input}
           placeholder="Mot de passe"
           secureTextEntry
@@ -103,56 +110,57 @@ export default function LoginScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: "#f9fafb" },
-  container: {
-    flexGrow: 1,
-    justifyContent: "center",
-    padding: 24,
-    gap: 12,
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: "700",
-    textAlign: "center",
-    color: "#208AEF",
-  },
-  subtitle: {
-    fontSize: 18,
-    textAlign: "center",
-    marginBottom: 16,
-    color: "#666",
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 10,
-    padding: 14,
-    fontSize: 16,
-    backgroundColor: "#fff",
-    color: "#111827",
-  },
-  error: { color: "#d33", textAlign: "center" },
-  button: {
-    backgroundColor: "#208AEF",
-    borderRadius: 10,
-    padding: 15,
-    alignItems: "center",
-    marginTop: 8,
-  },
-  buttonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
-  link: { color: "#3b82f6", textAlign: "center", marginTop: 10, fontSize: 14 },
-  divider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: "#e5e7eb",
-    marginVertical: 14,
-  },
-  secondaryBtn: {
-    borderWidth: 1,
-    borderColor: "#208AEF",
-    borderRadius: 10,
-    padding: 13,
-    alignItems: "center",
-  },
-  secondaryText: { color: "#208AEF", fontWeight: "600", fontSize: 15 },
-});
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    flex: { flex: 1, backgroundColor: c.bg },
+    container: {
+      flexGrow: 1,
+      justifyContent: "center",
+      padding: 24,
+      gap: 12,
+    },
+    title: {
+      fontSize: 32,
+      fontWeight: "700",
+      textAlign: "center",
+      color: c.primary,
+    },
+    subtitle: {
+      fontSize: 18,
+      textAlign: "center",
+      marginBottom: 16,
+      color: c.sub,
+    },
+    input: {
+      borderWidth: 1,
+      borderColor: c.inputBorder,
+      borderRadius: 10,
+      padding: 14,
+      fontSize: 16,
+      backgroundColor: c.inputBg,
+      color: c.text,
+    },
+    error: { color: c.danger, textAlign: "center" },
+    button: {
+      backgroundColor: c.primary,
+      borderRadius: 10,
+      padding: 15,
+      alignItems: "center",
+      marginTop: 8,
+    },
+    buttonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
+    link: { color: c.primary, textAlign: "center", marginTop: 10, fontSize: 14 },
+    divider: {
+      height: StyleSheet.hairlineWidth,
+      backgroundColor: c.border,
+      marginVertical: 14,
+    },
+    secondaryBtn: {
+      borderWidth: 1,
+      borderColor: c.primary,
+      borderRadius: 10,
+      padding: 13,
+      alignItems: "center",
+    },
+    secondaryText: { color: c.primary, fontWeight: "600", fontSize: 15 },
+  });

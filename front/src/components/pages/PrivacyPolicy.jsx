@@ -163,12 +163,18 @@ export default function PrivacyPolicy() {
               hébergées en Europe
             </li>
             <li>
-              <strong>Emails transactionnels :</strong> (à définir : Brevo,
-              SendGrid, etc.)
+              <strong>Emails transactionnels :</strong> Amazon Web Services
+              (SES)
             </li>
             <li>
-              <strong>Analytics :</strong> (si applicable : Google Analytics
-              avec anonymisation IP)
+              <strong>Paiements (cagnottes) :</strong> Stripe - nous n'avons
+              jamais accès à vos données bancaires complètes
+            </li>
+            <li>
+              <strong>Mesure d'audience :</strong> PostHog (hébergé dans
+              l'Union européenne) - activé uniquement avec votre consentement,
+              données pseudonymisées (identifiant technique, sans nom ni
+              email), contenu des formulaires jamais enregistré
             </li>
           </ul>
           <p>

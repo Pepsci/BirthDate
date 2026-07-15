@@ -1,4 +1,5 @@
 import CookieConsent from "react-cookie-consent";
+import { enableAnalytics, disableAnalytics } from "../../analytics/analytics";
 import "./css/cookieBanner.css";
 
 export default function CookieBanner() {
@@ -11,6 +12,7 @@ export default function CookieBanner() {
         functional: true,
       }),
     );
+    enableAnalytics(); // démarre PostHog dès le consentement
     console.log("Tous les cookies acceptés");
   };
 
@@ -23,6 +25,7 @@ export default function CookieBanner() {
         functional: false,
       }),
     );
+    disableAnalytics();
     console.log("Cookies refusés (sauf nécessaires)");
   };
 

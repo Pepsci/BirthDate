@@ -134,11 +134,13 @@ app.use("/api/stats", statsRouter);
 app.use("/api/stripe/connect", stripeConnectRouter);
 app.use("/api/support", require("./routes/support"));
 app.use("/api/shared-gifts", require("./routes/sharedGifts"));
+app.use("/api/admin", require("./routes/admin/index"));
 
 // Cron jobs
 purgeDeletedAccounts.start();
 sendReminders.start();
 eventReminders.start();
+require("./jobs/poolFraudAlerts").start();
 chatCronInstant.start();
 chatCronDaily.start();
 chatCronTwiceDaily.start();
@@ -151,6 +153,7 @@ console.log("   ✅ Emails rappels événements (tous les jours à 6h)");
 console.log("   ✅ Emails chat instantané (toutes les 5 minutes)");
 console.log("   ✅ Emails chat quotidien (tous les jours à 9h)");
 console.log("   ✅ Emails chat hebdomadaire (chaque lundi à 9h)");
+console.log("   ✅ Contrôle anti-fraude cagnottes (tous les jours à 8h)");
 
 app.use("/api/*", (req, res, next) => {
   res.status(404).json({ message: "Ressource API non trouvée." });

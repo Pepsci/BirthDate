@@ -466,9 +466,23 @@ export default function DateDetailScreen() {
                   )
                 }
                 hitSlop={10}
-                style={{ flexDirection: "row" }}
+                style={{
+                  flexDirection: "row",
+                  minWidth: 36,
+                  height: 36,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
               >
-                <Text style={{ fontSize: 18 }}>💬</Text>
+                <Text
+                  style={{
+                    fontSize: 18,
+                    includeFontPadding: false,
+                    textAlignVertical: "center",
+                  }}
+                >
+                  💬
+                </Text>
                 {(byFriend[entry.linkedUser!._id] ?? 0) > 0 && (
                   <View style={styles.headerBadge}>
                     <Text style={styles.headerBadgeText}>
@@ -481,8 +495,22 @@ export default function DateDetailScreen() {
               <Pressable
                 onPress={() => router.push(`/date/edit/${entry._id}`)}
                 hitSlop={10}
+                style={{
+                  width: 36,
+                  height: 36,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
               >
-                <Text style={{ fontSize: 18 }}>✏️</Text>
+                <Text
+                  style={{
+                    fontSize: 18,
+                    includeFontPadding: false,
+                    textAlignVertical: "center",
+                  }}
+                >
+                  ✏️
+                </Text>
               </Pressable>
             ),
         }}

@@ -14,9 +14,16 @@ import { Stack, useRouter } from "expo-router";
 import { api } from "../lib/api";
 import { formatBirthday } from "../lib/dates";
 import { useKeyboardPadding } from "../lib/use-keyboard-padding";
+import {
+  useTheme,
+  useThemedStyles,
+  ThemeColors,
+} from "../lib/theme-context";
 
 export default function SignupScreen() {
   const router = useRouter();
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const keyboardPadding = useKeyboardPadding();
   const [name, setName] = useState("");
   const [surname, setSurname] = useState("");
@@ -104,17 +111,17 @@ export default function SignupScreen() {
       >
         <Text style={styles.title}>Bienvenue ! 🎂</Text>
 
-        <TextInput placeholderTextColor="#9ca3af" style={styles.input}
+        <TextInput placeholderTextColor={colors.placeholder} style={styles.input}
           placeholder="Prénom *" value={name} onChangeText={setName} />
-        <TextInput placeholderTextColor="#9ca3af" style={styles.input}
+        <TextInput placeholderTextColor={colors.placeholder} style={styles.input}
           placeholder="Nom *" value={surname} onChangeText={setSurname} />
-        <TextInput placeholderTextColor="#9ca3af" style={styles.input}
+        <TextInput placeholderTextColor={colors.placeholder} style={styles.input}
           placeholder="Email *" autoCapitalize="none" keyboardType="email-address"
           value={email} onChangeText={setEmail} />
-        <TextInput placeholderTextColor="#9ca3af" style={styles.input}
+        <TextInput placeholderTextColor={colors.placeholder} style={styles.input}
           placeholder="Mot de passe *" secureTextEntry
           value={password} onChangeText={setPassword} />
-        <TextInput placeholderTextColor="#9ca3af" style={styles.input}
+        <TextInput placeholderTextColor={colors.placeholder} style={styles.input}
           placeholder="Confirmer le mot de passe *" secureTextEntry
           value={confirm} onChangeText={setConfirm} />
 
@@ -160,36 +167,37 @@ export default function SignupScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  flex: { flex: 1, backgroundColor: "#f9fafb" },
-  container: { flexGrow: 1, justifyContent: "center", padding: 24, gap: 10 },
-  title: {
-    fontSize: 24,
-    fontWeight: "700",
-    textAlign: "center",
-    color: "#208AEF",
-    marginBottom: 8,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 10,
-    padding: 14,
-    fontSize: 16,
-    backgroundColor: "#fff",
-    color: "#111827",
-  },
-  dateText: { fontSize: 16, color: "#111827" },
-  datePlaceholder: { fontSize: 16, color: "#9ca3af" },
-  hint: { color: "#9ca3af", fontSize: 12, textAlign: "center" },
-  error: { color: "#d33", textAlign: "center" },
-  button: {
-    backgroundColor: "#208AEF",
-    borderRadius: 10,
-    padding: 15,
-    alignItems: "center",
-    marginTop: 8,
-  },
-  buttonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
-  doneText: { color: "#374151", textAlign: "center", lineHeight: 22 },
-});
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    flex: { flex: 1, backgroundColor: c.bg },
+    container: { flexGrow: 1, justifyContent: "center", padding: 24, gap: 10 },
+    title: {
+      fontSize: 24,
+      fontWeight: "700",
+      textAlign: "center",
+      color: c.primary,
+      marginBottom: 8,
+    },
+    input: {
+      borderWidth: 1,
+      borderColor: c.inputBorder,
+      borderRadius: 10,
+      padding: 14,
+      fontSize: 16,
+      backgroundColor: c.inputBg,
+      color: c.text,
+    },
+    dateText: { fontSize: 16, color: c.text },
+    datePlaceholder: { fontSize: 16, color: c.placeholder },
+    hint: { color: c.faint, fontSize: 12, textAlign: "center" },
+    error: { color: c.danger, textAlign: "center" },
+    button: {
+      backgroundColor: c.primary,
+      borderRadius: 10,
+      padding: 15,
+      alignItems: "center",
+      marginTop: 8,
+    },
+    buttonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
+    doneText: { color: c.sub, textAlign: "center", lineHeight: 22 },
+  });

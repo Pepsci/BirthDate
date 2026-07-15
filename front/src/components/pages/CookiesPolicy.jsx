@@ -83,26 +83,31 @@ export default function CookiesPolicy() {
               <tbody>
                 <tr>
                   <td>
-                    <code>_ga</code>
+                    <code>ph_*_posthog</code>
                   </td>
                   <td>
-                    Google Analytics - Identifier les utilisateurs uniques
+                    PostHog - Mesure d'audience et analyse d'usage (pages
+                    visitées, parcours, interactions)
                   </td>
-                  <td>2 ans</td>
-                </tr>
-                <tr>
-                  <td>
-                    <code>_gid</code>
-                  </td>
-                  <td>Google Analytics - Distinguer les sessions</td>
-                  <td>24 heures</td>
+                  <td>1 an</td>
                 </tr>
               </tbody>
             </table>
             <p className="note">
-              <strong>Note :</strong> Actuellement, nous n'utilisons pas encore
-              Google Analytics. Cette catégorie est réservée pour une
-              utilisation future.
+              <strong>Note :</strong> Nous utilisons{" "}
+              <a
+                href="https://posthog.com"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                PostHog
+              </a>
+              , hébergé dans l'Union européenne, pour comprendre l'usage du
+              site et l'améliorer. Ces cookies ne sont déposés{" "}
+              <strong>qu'après votre consentement</strong> via la bannière. Les
+              données sont pseudonymisées (identifiant technique, pas de nom ni
+              d'email) et le contenu des champs de formulaire n'est jamais
+              enregistré.
             </p>
           </div>
 

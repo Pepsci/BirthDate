@@ -3,6 +3,11 @@ import { useUnread } from "../../lib/unread-context";
 import { Text, Pressable, View, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import LogoBanner from "../../components/LogoBanner";
+import {
+  useTheme,
+  useThemedStyles,
+  ThemeColors,
+} from "../../lib/theme-context";
 
 /**
  * Header personnalisé : bannière logo tout en haut, puis la ligne
@@ -10,6 +15,7 @@ import LogoBanner from "../../components/LogoBanner";
  */
 function AppHeader({ options, route }: any) {
   const insets = useSafeAreaInsets();
+  const headerStyles = useThemedStyles(makeHeaderStyles);
   const title = options.title ?? route.name;
   return (
     <View style={[headerStyles.wrap, { paddingTop: insets.top }]}>
@@ -27,21 +33,28 @@ function AppHeader({ options, route }: any) {
   );
 }
 
-const headerStyles = StyleSheet.create({
-  wrap: {
-    backgroundColor: "#fff",
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#e5e7eb",
-  },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    height: 44,
-  },
-  side: { minWidth: 60, justifyContent: "center" },
-  sideRight: { alignItems: "flex-end" },
-  title: { flex: 1, fontSize: 17, fontWeight: "700", color: "#111827", textAlign: "center" },
-});
+const makeHeaderStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    wrap: {
+      backgroundColor: c.headerBg,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: c.border,
+    },
+    row: {
+      flexDirection: "row",
+      alignItems: "center",
+      height: 44,
+    },
+    side: { minWidth: 60, justifyContent: "center" },
+    sideRight: { alignItems: "flex-end" },
+    title: {
+      flex: 1,
+      fontSize: 17,
+      fontWeight: "700",
+      color: c.text,
+      textAlign: "center",
+    },
+  });
 
 function HeaderBell() {
   const router = useRouter();
@@ -89,12 +102,18 @@ function TabIcon({ emoji, focused }: { emoji: string; focused: boolean }) {
 export default function TabsLayout() {
   const router = useRouter();
   const { total } = useUnread();
+  const { colors } = useTheme();
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: "#3b82f6",
-        tabBarInactiveTintColor: "#9ca3af",
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.faint,
         tabBarLabelStyle: { fontSize: 11, fontWeight: "600" },
+        tabBarStyle: {
+          backgroundColor: colors.tabBarBg,
+          borderTopColor: colors.border,
+        },
+        sceneStyle: { backgroundColor: colors.bg },
         header: (props) => <AppHeader {...props} />,
       }}
     >
@@ -113,7 +132,7 @@ export default function TabsLayout() {
             <View style={{ flexDirection: "row", alignItems: "center", gap: 14, marginRight: 16 }}>
               <HeaderBell />
               <Pressable onPress={() => router.push("/date/new")} hitSlop={10}>
-                <Text style={{ fontSize: 24, color: "#3b82f6" }}>＋</Text>
+                <Text style={{ fontSize: 24, color: colors.primary }}>＋</Text>
               </Pressable>
             </View>
           ),
@@ -137,7 +156,7 @@ export default function TabsLayout() {
             <View style={{ flexDirection: "row", alignItems: "center", gap: 14, marginRight: 16 }}>
               <HeaderBell />
               <Pressable onPress={() => router.push("/event/new")} hitSlop={10}>
-                <Text style={{ fontSize: 24, color: "#3b82f6" }}>＋</Text>
+                <Text style={{ fontSize: 24, color: colors.primary }}>＋</Text>
               </Pressable>
             </View>
           ),

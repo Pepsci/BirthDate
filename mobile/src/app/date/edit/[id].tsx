@@ -58,7 +58,7 @@ export default function EditDateScreen() {
         options={{
           title: `Modifier ${entry.name}`,
           headerRight: () => (
-            <Pressable onPress={confirmDelete} hitSlop={10}>
+            <Pressable onPress={confirmDelete} hitSlop={10} style={styles.deleteBtn}>
               <Text style={styles.delete}>🗑️</Text>
             </Pressable>
           ),
@@ -85,5 +85,15 @@ const styles = StyleSheet.create({
     backgroundColor: "#f9fafb",
   },
   error: { color: "#b91c1c", textAlign: "center", padding: 8 },
-  delete: { fontSize: 18 },
+  deleteBtn: {
+    width: 36,
+    height: 36,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  delete: {
+    fontSize: 18,
+    includeFontPadding: false,
+    textAlignVertical: "center",
+  },
 });

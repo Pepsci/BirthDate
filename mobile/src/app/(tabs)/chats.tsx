@@ -16,10 +16,17 @@ import {
   fetchConversations,
 } from "../../lib/conversations";
 import { timeAgo } from "../../lib/notifications";
+import {
+  useTheme,
+  useThemedStyles,
+  ThemeColors,
+} from "../../lib/theme-context";
 
 export default function ChatsScreen() {
   const router = useRouter();
   const { user } = useAuth();
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const { byFriend } = useUnread();
   const [convs, setConvs] = useState<ConversationSummary[] | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -52,7 +59,7 @@ export default function ChatsScreen() {
         {error ? (
           <Text style={styles.error}>{error}</Text>
         ) : (
-          <ActivityIndicator size="large" color="#3b82f6" />
+          <ActivityIndicator size="large" color={colors.primary} />
         )}
       </View>
     );
@@ -127,58 +134,61 @@ export default function ChatsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f9fafb" },
-  center: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#f9fafb",
-  },
-  error: { color: "#b91c1c", textAlign: "center", padding: 6 },
-  list: { padding: 12, gap: 8 },
-  empty: {
-    textAlign: "center",
-    color: "#6b7280",
-    marginTop: 48,
-    paddingHorizontal: 24,
-    lineHeight: 20,
-  },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 12,
-  },
-  avatar: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    backgroundColor: "#dbeafe",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  initials: { color: "#2563eb", fontWeight: "700", fontSize: 15 },
-  topLine: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: 8,
-  },
-  name: { fontWeight: "600", color: "#111827", fontSize: 15, flexShrink: 1 },
-  time: { color: "#9ca3af", fontSize: 11 },
-  preview: { color: "#6b7280", fontSize: 13, marginTop: 1 },
-  previewUnread: { color: "#111827", fontWeight: "600" },
-  badge: {
-    backgroundColor: "#ef4444",
-    borderRadius: 10,
-    minWidth: 20,
-    height: 20,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 5,
-  },
-  badgeText: { color: "#fff", fontSize: 11, fontWeight: "700" },
-});
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: c.bg },
+    center: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: c.bg,
+    },
+    error: { color: c.danger, textAlign: "center", padding: 6 },
+    list: { padding: 12, gap: 8 },
+    empty: {
+      textAlign: "center",
+      color: c.sub,
+      marginTop: 48,
+      paddingHorizontal: 24,
+      lineHeight: 20,
+    },
+    row: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+      backgroundColor: c.card,
+      borderRadius: 12,
+      padding: 12,
+      borderWidth: 1,
+      borderColor: c.border,
+    },
+    avatar: {
+      width: 46,
+      height: 46,
+      borderRadius: 23,
+      backgroundColor: c.primarySoft,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    initials: { color: c.primary, fontWeight: "700", fontSize: 15 },
+    topLine: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      gap: 8,
+    },
+    name: { fontWeight: "600", color: c.text, fontSize: 15, flexShrink: 1 },
+    time: { color: c.faint, fontSize: 11 },
+    preview: { color: c.sub, fontSize: 13, marginTop: 1 },
+    previewUnread: { color: c.text, fontWeight: "600" },
+    badge: {
+      backgroundColor: "#ef4444",
+      borderRadius: 10,
+      minWidth: 20,
+      height: 20,
+      justifyContent: "center",
+      alignItems: "center",
+      paddingHorizontal: 5,
+    },
+    badgeText: { color: "#fff", fontSize: 11, fontWeight: "700" },
+  });

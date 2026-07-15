@@ -1,4 +1,5 @@
 import axios from "axios";
+import { trackEvent } from "../analytics/analytics";
 
 const isLocal = window.location.hostname === "localhost";
 
@@ -8,6 +9,33 @@ const service = axios.create({
     : "https://birthreminder.com/api", // En production
   withCredentials: true,
 });
+
+// ── Analytics produit (PostHog) ───────────────────────────────────────────
+// Événements métier capturés au succès des appels API — un seul point d'entrée.
+// No-op si l'utilisateur n'a pas consenti aux cookies analytics.
+service.interceptors.response.use(
+  (response) => {
+    try {
+      const method = response.config?.method;
+      const url = (response.config?.url || "").split("?")[0];
+      if (method === "post") {
+        if (url.includes("/auth/signup")) trackEvent("signup");
+        else if (url.includes("/auth/login")) trackEvent("login");
+        else if (/\/?events\/?$/.test(url)) trackEvent("event_created");
+        else if (url.includes("/pool/contribute"))
+          trackEvent("pool_contribution_started");
+        else if (url.includes("/events/") && url.endsWith("/join"))
+          trackEvent("event_joined_via_code");
+        else if (url.includes("/friends")) trackEvent("friend_request_sent");
+      }
+      if (method === "put" && url.includes("/rsvp")) trackEvent("event_rsvp");
+    } catch (_) {
+      /* jamais bloquant */
+    }
+    return response;
+  },
+  (error) => Promise.reject(error),
+);
 
 // Les requêtes API utilisent le cookie httpOnly authToken (envoyé automatiquement via withCredentials)
 // Pas de lecture de localStorage

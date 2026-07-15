@@ -13,6 +13,11 @@ import {
 } from "react-native";
 import BirthdayCountdown from "../../components/BirthdayCountdown";
 import {
+  useTheme,
+  useThemedStyles,
+  ThemeColors,
+} from "../../lib/theme-context";
+import {
   DateEntry,
   fetchDates,
   daysUntil,
@@ -22,6 +27,8 @@ import {
 } from "../../lib/dates";
 
 export default function BirthdaysScreen() {
+  const { colors } = useTheme();
+  const styles = useThemedStyles(makeStyles);
   const [dates, setDates] = useState<DateEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -64,7 +71,7 @@ export default function BirthdaysScreen() {
       str
         .toLowerCase()
         .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "");
+        .replace(/[̀-ͯ]/g, "");
     const q = normalize(search.trim());
 
     return [...dates]
@@ -95,7 +102,7 @@ export default function BirthdaysScreen() {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#3b82f6" />
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -111,7 +118,7 @@ export default function BirthdaysScreen() {
 
       <View style={styles.searchBar}>
         <TextInput
-          placeholderTextColor="#9ca3af"
+          placeholderTextColor={colors.placeholder}
           style={styles.searchInput}
           placeholder="🔍 Rechercher un prénom ou un nom…"
           value={search}
@@ -196,6 +203,7 @@ function birthISOOf(entry: DateEntry): string | null {
 
 function BirthdayCard({ entry }: { entry: DateEntry }) {
   const router = useRouter();
+  const styles = useThemedStyles(makeStyles);
   const birthISO = birthISOOf(entry);
   const days = birthISO ? daysUntil(birthISO) : null;
   const age = birthISO ? currentAge(birthISO) : null;
@@ -249,7 +257,7 @@ function BirthdayCard({ entry }: { entry: DateEntry }) {
         </Text>
       ) : (
         // Espace réservé pour aligner les cartes sans fête
-        <Text style={styles.detail}>{" "}</Text>
+        <Text style={styles.detail}>{" "}</Text>
       )}
 
       {birthISO &&
@@ -265,6 +273,7 @@ function BirthdayCard({ entry }: { entry: DateEntry }) {
 }
 
 function Badge({ label, color }: { label: string; color: string }) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={[styles.badge, { backgroundColor: color }]}>
       <Text style={styles.badgeText}>{label}</Text>
@@ -272,114 +281,128 @@ function Badge({ label, color }: { label: string; color: string }) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f9fafb" },
-  center: { flex: 1, justifyContent: "center", alignItems: "center" },
-  logout: { color: "#ef4444", fontWeight: "600" },
-  list: { padding: 12, paddingTop: 4, gap: 10 },
-  searchBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    marginHorizontal: 12,
-    marginTop: 10,
-    paddingRight: 12,
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-  },
-  searchInput: {
-    flex: 1,
-    padding: 11,
-    fontSize: 15,
-    color: "#111827",
-  },
-  searchClear: { color: "#9ca3af", fontWeight: "700", fontSize: 14 },
-  filterRow: {
-    flexDirection: "row",
-    gap: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  filterChip: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-    borderRadius: 16,
-    paddingVertical: 7,
-    alignItems: "center",
-    backgroundColor: "#fff",
-  },
-  filterChipActive: { backgroundColor: "#3b82f6", borderColor: "#3b82f6" },
-  filterText: { fontSize: 13, fontWeight: "600", color: "#374151" },
-  filterTextActive: { color: "#fff" },
-  empty: {
-    textAlign: "center",
-    color: "#6b7280",
-    marginTop: 48,
-    paddingHorizontal: 24,
-    lineHeight: 20,
-  },
-  errorBanner: {
-    backgroundColor: "#fee2e2",
-    padding: 10,
-  },
-  errorText: { color: "#b91c1c", textAlign: "center", fontSize: 13 },
-  column: { gap: 10 },
-  card: {
-    flex: 1,
-    alignItems: "center",
-    backgroundColor: "#ffffff",
-    borderRadius: 14,
-    padding: 12,
-    gap: 4,
-    shadowColor: "#000",
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
-  },
-  cardToday: {
-    borderWidth: 1.5,
-    borderColor: "#3b82f6",
-  },
-  avatar: { width: 56, height: 56, borderRadius: 28 },
-  avatarFallback: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: "#dbeafe",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  avatarInitials: { color: "#2563eb", fontWeight: "700", fontSize: 16 },
-  nameRow: { flexDirection: "row", alignItems: "center", gap: 6, minHeight: 18 },
-  name: { fontSize: 15, fontWeight: "700", color: "#111827", textAlign: "center", marginTop: 2 },
-  detail: { color: "#6b7280", fontSize: 12, textAlign: "center" },
-  badge: {
-    borderRadius: 6,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-  },
-  badgeText: { color: "#fff", fontSize: 10, fontWeight: "700" },
-  countdownToday: {
-    alignSelf: "stretch",
-    alignItems: "center",
-    marginTop: 8,
-    paddingTop: 8,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: "#e5e7eb",
-  },
-  countdownTodayText: { color: "#10b981", fontWeight: "800", fontSize: 15 },
-  loadMore: {
-    marginTop: 6,
-    marginHorizontal: 24,
-    paddingVertical: 11,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#3b82f6",
-    alignItems: "center",
-    backgroundColor: "#fff",
-  },
-  loadMoreText: { color: "#3b82f6", fontWeight: "700", fontSize: 14 },
-});
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: c.bg },
+    center: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: c.bg,
+    },
+    logout: { color: c.danger, fontWeight: "600" },
+    list: { padding: 12, paddingTop: 4, gap: 10 },
+    searchBar: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: c.card,
+      borderRadius: 12,
+      marginHorizontal: 12,
+      marginTop: 10,
+      paddingRight: 12,
+      borderWidth: 1,
+      borderColor: c.border,
+    },
+    searchInput: {
+      flex: 1,
+      padding: 11,
+      fontSize: 15,
+      color: c.text,
+    },
+    searchClear: { color: c.faint, fontWeight: "700", fontSize: 14 },
+    filterRow: {
+      flexDirection: "row",
+      gap: 8,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+    },
+    filterChip: {
+      flex: 1,
+      borderWidth: 1,
+      borderColor: c.border,
+      borderRadius: 16,
+      paddingVertical: 7,
+      alignItems: "center",
+      backgroundColor: c.card,
+    },
+    filterChipActive: { backgroundColor: c.primary, borderColor: c.primary },
+    filterText: { fontSize: 13, fontWeight: "600", color: c.sub },
+    filterTextActive: { color: "#fff" },
+    empty: {
+      textAlign: "center",
+      color: c.sub,
+      marginTop: 48,
+      paddingHorizontal: 24,
+      lineHeight: 20,
+    },
+    errorBanner: {
+      backgroundColor: "rgba(239,68,68,0.15)",
+      padding: 10,
+    },
+    errorText: { color: c.danger, textAlign: "center", fontSize: 13 },
+    column: { gap: 10 },
+    card: {
+      flex: 1,
+      alignItems: "center",
+      backgroundColor: c.card,
+      borderRadius: 14,
+      padding: 12,
+      gap: 4,
+      borderWidth: 1,
+      borderColor: c.border,
+      shadowColor: c.shadow,
+      shadowOpacity: 0.06,
+      shadowRadius: 6,
+      shadowOffset: { width: 0, height: 2 },
+      elevation: 2,
+    },
+    cardToday: {
+      borderWidth: 1.5,
+      borderColor: c.primary,
+    },
+    avatar: { width: 56, height: 56, borderRadius: 28 },
+    avatarFallback: {
+      width: 56,
+      height: 56,
+      borderRadius: 28,
+      backgroundColor: c.primarySoft,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    avatarInitials: { color: c.primary, fontWeight: "700", fontSize: 16 },
+    nameRow: { flexDirection: "row", alignItems: "center", gap: 6, minHeight: 18 },
+    name: {
+      fontSize: 15,
+      fontWeight: "700",
+      color: c.text,
+      textAlign: "center",
+      marginTop: 2,
+    },
+    detail: { color: c.sub, fontSize: 12, textAlign: "center" },
+    badge: {
+      borderRadius: 6,
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+    },
+    badgeText: { color: "#fff", fontSize: 10, fontWeight: "700" },
+    countdownToday: {
+      alignSelf: "stretch",
+      alignItems: "center",
+      marginTop: 8,
+      paddingTop: 8,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: c.border,
+    },
+    countdownTodayText: { color: c.success, fontWeight: "800", fontSize: 15 },
+    loadMore: {
+      marginTop: 6,
+      marginHorizontal: 24,
+      paddingVertical: 11,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: c.primary,
+      alignItems: "center",
+      backgroundColor: c.card,
+    },
+    loadMoreText: { color: c.primary, fontWeight: "700", fontSize: 14 },
+  });

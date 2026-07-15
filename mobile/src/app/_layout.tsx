@@ -10,10 +10,12 @@ import { ActivityIndicator, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { AuthProvider, useAuth } from "../lib/auth-context";
 import { UnreadProvider } from "../lib/unread-context";
+import { ThemeProvider, useTheme } from "../lib/theme-context";
 import { hasSeenWelcome, markWelcomeSeen } from "../lib/welcome-gate";
 
 function RootNavigator() {
   const { user, isLoading } = useAuth();
+  const { colors } = useTheme();
   const pathname = usePathname();
   const router = useRouter();
 
@@ -52,8 +54,15 @@ function RootNavigator() {
 
   if (isLoading) {
     return (
-      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-        <ActivityIndicator size="large" color="#3b82f6" />
+      <View
+        style={{
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          backgroundColor: colors.bg,
+        }}
+      >
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -71,7 +80,14 @@ function RootNavigator() {
   if (user && authRoutes.includes(pathname)) return <Redirect href="/" />;
 
   return (
-    <Stack>
+    <Stack
+      screenOptions={{
+        headerStyle: { backgroundColor: colors.headerBg },
+        headerTintColor: colors.text,
+        headerTitleStyle: { color: colors.text },
+        contentStyle: { backgroundColor: colors.bg },
+      }}
+    >
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="welcome" options={{ headerShown: false }} />
       <Stack.Screen name="login" options={{ headerShown: false }} />
@@ -81,13 +97,20 @@ function RootNavigator() {
   );
 }
 
+function ThemedStatusBar() {
+  const { resolved } = useTheme();
+  return <StatusBar style={resolved === "dark" ? "light" : "dark"} />;
+}
+
 export default function RootLayout() {
   return (
-    <AuthProvider>
-      <UnreadProvider>
-        <StatusBar style="auto" />
-        <RootNavigator />
-      </UnreadProvider>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <UnreadProvider>
+          <ThemedStatusBar />
+          <RootNavigator />
+        </UnreadProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
