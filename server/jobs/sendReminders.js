@@ -77,7 +77,8 @@ function buildBirthdayPushPayload(date, daysFromNow) {
     return {
       title: `🎂 C'est l'anniversaire de ${firstName} !`,
       body: `Pensez à lui souhaiter un joyeux anniversaire 🎉`,
-      url: "/home",
+      // Deep link vers la carte de la personne (web : FriendProfile, mobile : /date/:id)
+      url: `/home?tab=date&dateId=${date._id}`,
       tag: `birthday-${date._id}-today`,
       type: "birthday",
     };
@@ -97,7 +98,7 @@ function buildBirthdayPushPayload(date, daysFromNow) {
   return {
     title: `🎂 Anniversaire de ${firstName} ${dayLabel}`,
     body: `N'oubliez pas de préparer quelque chose !`,
-    url: "/home",
+    url: `/home?tab=date&dateId=${date._id}`,
     tag: `birthday-${date._id}-${daysFromNow}`,
     type: "birthday",
   };
@@ -113,7 +114,7 @@ function buildNamedayPushPayload(date, daysFromNow) {
     return {
       title: `🌸 C'est la fête de ${firstName} !`,
       body: `Pensez à lui souhaiter une bonne fête 🎉`,
-      url: "/home",
+      url: `/home?tab=date&dateId=${date._id}`,
       tag: `nameday-${date._id}-today`,
       type: "nameday",
     };
@@ -129,7 +130,7 @@ function buildNamedayPushPayload(date, daysFromNow) {
   return {
     title: `🌸 Fête de ${firstName} ${dayLabel}`,
     body: `N'oubliez pas de lui souhaiter !`,
-    url: "/home",
+    url: `/home?tab=date&dateId=${date._id}`,
     tag: `nameday-${date._id}-${daysFromNow}`,
     type: "nameday",
   };

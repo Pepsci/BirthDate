@@ -60,7 +60,15 @@ export default function DMChatScreen() {
 
   const socketRef = useRef<Socket | null>(null);
   const conversationIdRef = useRef<string | null>(null);
+  // Ref (accès depuis les callbacks socket/menus) + state (le ref seul ne
+  // déclenche pas de re-render → messages affichés « chiffrés » si la clé
+  // arrive après le premier rendu, ex. ouverture via une notification).
   const privateKeyRef = useRef<Uint8Array | null>(null);
+  const [privateKey, setPrivateKeyState] = useState<Uint8Array | null>(null);
+  const setPrivateKey = useCallback((k: Uint8Array | null) => {
+    privateKeyRef.current = k;
+    setPrivateKeyState(k);
+  }, []);
   const friendPublicKeyRef = useRef<string | null>(null);
   const myPublicKeyRef = useRef<string | null>(null);
   const typingTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -82,9 +90,24 @@ export default function DMChatScreen() {
           fetchUserPublicKey(friendId),
           user?._id ? fetchUserPublicKey(user._id) : Promise.resolve(null),
         ]);
-        privateKeyRef.current = privKey;
+        setPrivateKey(privKey);
         friendPublicKeyRef.current = friendKey;
         myPublicKeyRef.current = myKey;
+
+        // Clé absente ? Elle peut être brièvement indisponible (retour de
+        // veille, migration Keychain App Group) — on retente avant de
+        // laisser les messages affichés « chiffrés ».
+        if (!privKey) {
+          let attempts = 0;
+          const retry = async () => {
+            if (!mounted || privateKeyRef.current) return;
+            const k = await getPrivateKey();
+            if (!mounted) return;
+            if (k) setPrivateKey(k);
+            else if (++attempts < 3) setTimeout(retry, 800);
+          };
+          setTimeout(retry, 800);
+        }
 
         if (mounted) setMessages(history);
         markConversationRead(conv._id).then(refreshUnread).catch(() => {});
@@ -347,7 +370,7 @@ export default function DMChatScreen() {
     if (!ref) return { author: "", text: "Message d'origine indisponible" };
     return {
       author: ref.sender?._id === user?._id ? "Toi" : (ref.sender?.name ?? ""),
-      text: displayContent(ref, user?._id ?? null, privateKeyRef.current),
+      text: displayContent(ref, user?._id ?? null, privateKey),
     };
   };
 
@@ -426,7 +449,7 @@ export default function DMChatScreen() {
               message={item}
               isMine={item.sender?._id === user?._id}
               myUserId={user?._id ?? null}
-              privateKey={privateKeyRef.current}
+              privateKey={privateKey}
               quote={getQuote(item)}
               onLongPress={() => openMessageMenu(item)}
             />
@@ -457,7 +480,7 @@ export default function DMChatScreen() {
               {displayContent(
                 (editTarget ?? replyTarget)!,
                 user?._id ?? null,
-                privateKeyRef.current,
+                privateKey,
               )}
             </Text>
           </View>

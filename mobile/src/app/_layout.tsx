@@ -1,5 +1,11 @@
-import { useEffect } from "react";
-import { Stack, Redirect, usePathname, useRouter } from "expo-router";
+import { useEffect, useRef, useState } from "react";
+import {
+  Stack,
+  Redirect,
+  usePathname,
+  useRouter,
+  useRootNavigationState,
+} from "expo-router";
 import * as Notifications from "expo-notifications";
 import { webLinkToMobileRoute } from "../lib/push";
 import {
@@ -18,31 +24,57 @@ function RootNavigator() {
   const { colors } = useTheme();
   const pathname = usePathname();
   const router = useRouter();
+  // ⚠️ Au cold start (app lancée par un tap sur une notification), le listener
+  // se déclenche AVANT que le <Stack> soit monté : router.push lève alors une
+  // exception (« Attempted to navigate before mounting the Root Layout ») qui
+  // fige l'app sur le splash (écran bleu). On mémorise donc la route cible et
+  // on ne navigue que lorsque le navigateur est prêt ET l'auth chargée.
+  const navigationReady = !!useRootNavigationState()?.key;
+  const [pendingNotifRoute, setPendingNotifRoute] = useState<string | null>(
+    null,
+  );
+  const handledNotifIds = useRef<Set<string>>(new Set());
 
-  // Tap sur une notification → navigation vers l'élément concerné
+  // Tap sur une notification → on note la destination (navigation différée)
   useEffect(() => {
-    const sub = Notifications.addNotificationResponseReceivedListener(
-      (response) => {
-        const url = response.notification.request.content.data?.url as
-          | string
-          | undefined;
-        const route = webLinkToMobileRoute(url);
-        markWelcomeSeen(); // deep link : ne pas détourner vers /welcome
-        router.push(route as never);
-      },
-    );
-    // Notification qui a lancé l'app (cold start)
-    Notifications.getLastNotificationResponseAsync().then((response) => {
-      const url = response?.notification.request.content.data?.url as
+    const handleResponse = (
+      response: Notifications.NotificationResponse | null,
+    ) => {
+      if (!response) return;
+      // iOS déclenche le listener AU cold start en plus de
+      // getLastNotificationResponseAsync → dédoublonnage par identifiant.
+      const id = response.notification.request.identifier;
+      if (handledNotifIds.current.has(id)) return;
+      handledNotifIds.current.add(id);
+
+      const url = response.notification.request.content.data?.url as
         | string
         | undefined;
-      if (url) {
-        markWelcomeSeen(); // deep link : ne pas détourner vers /welcome
-        router.push(webLinkToMobileRoute(url) as never);
-      }
-    });
+      markWelcomeSeen(); // deep link : ne pas détourner vers /welcome
+      setPendingNotifRoute(webLinkToMobileRoute(url));
+    };
+
+    const sub =
+      Notifications.addNotificationResponseReceivedListener(handleResponse);
+    // Notification qui a lancé l'app (cold start)
+    Notifications.getLastNotificationResponseAsync().then(handleResponse);
     return () => sub.remove();
-  }, [router]);
+  }, []);
+
+  // Navigation différée : exécutée seulement quand tout est monté
+  useEffect(() => {
+    if (!pendingNotifRoute || !navigationReady || isLoading) return;
+    setPendingNotifRoute(null);
+    // setTimeout : laisse le Stack terminer son premier rendu au cold start
+    const t = setTimeout(() => {
+      try {
+        router.push(pendingNotifRoute as never);
+      } catch (e) {
+        console.warn("[notif] navigation impossible", e);
+      }
+    }, 0);
+    return () => clearTimeout(t);
+  }, [pendingNotifRoute, navigationReady, isLoading, router]);
 
   // Notifs de message chiffrées → déchiffrement sur l'appareil (façon WhatsApp).
   // Tâche de fond (app tuée/arrière-plan) + listener premier plan.

@@ -208,7 +208,7 @@ module.exports = (io, socket, connectedUsers, app) => {
           sendPushToUser(recipientId, {
             title: `💬 ${senderName}`,
             body: pushBody,
-            url: "/home",
+            url: `/home?tab=chat&conversationId=${conversationId}`,
             tag: `chat-${conversationId}`,
             type: "chat",
             friendId: socket.userId,

@@ -97,15 +97,34 @@ export async function storePrivateKey(privateKeyBytes: Uint8Array): Promise<void
 }
 
 export async function getPrivateKey(): Promise<Uint8Array | null> {
-  const b64 = await SecureStore.getItemAsync(PRIVATE_KEY_STORE, KEYCHAIN_OPTS);
-  if (b64) return decodeBase64(b64);
-  // Migration douce : clé écrite avant le passage à l'App Group
-  const legacy = await SecureStore.getItemAsync(PRIVATE_KEY_STORE);
-  if (legacy) {
-    const bytes = decodeBase64(legacy);
-    await storePrivateKey(bytes); // ré-écrit dans le groupe partagé
-    await SecureStore.deleteItemAsync(PRIVATE_KEY_STORE).catch(() => {});
-    return bytes;
+  // ⚠️ Ne doit JAMAIS throw : les écrans de chat et le déchiffrement des
+  // notifs en dépendent. Un souci Keychain (entitlement App Group, réveil
+  // de l'appareil…) doit dégrader en lecture legacy, pas en erreur.
+  try {
+    const b64 = await SecureStore.getItemAsync(
+      PRIVATE_KEY_STORE,
+      KEYCHAIN_OPTS,
+    );
+    if (b64) return decodeBase64(b64);
+  } catch (e) {
+    console.warn("[crypto] lecture Keychain App Group échouée", e);
+  }
+  try {
+    // Migration douce : clé écrite avant le passage à l'App Group
+    const legacy = await SecureStore.getItemAsync(PRIVATE_KEY_STORE);
+    if (legacy) {
+      const bytes = decodeBase64(legacy);
+      try {
+        await storePrivateKey(bytes); // ré-écrit dans le groupe partagé
+        await SecureStore.deleteItemAsync(PRIVATE_KEY_STORE);
+      } catch {
+        // Réécriture impossible pour l'instant → on garde la clé legacy,
+        // la migration sera retentée au prochain appel.
+      }
+      return bytes;
+    }
+  } catch (e) {
+    console.warn("[crypto] lecture Keychain legacy échouée", e);
   }
   return null;
 }

@@ -50,7 +50,15 @@ export default function EventChatScreen() {
   // Refs pour éviter les stale closures dans les handlers socket
   // (même règle que chatHandlers.js côté serveur / web)
   const socketRef = useRef<Socket | null>(null);
+  // Ref (callbacks socket) + state (re-render quand la clé arrive tard,
+  // ex. ouverture via une notification / retour de veille)
   const privateKeyRef = useRef<Uint8Array | null>(null);
+  const [privateKey, setPrivateKeyState] = useState<Uint8Array | null>(null);
+  const setPrivateKey = (k: Uint8Array | null) => {
+    privateKeyRef.current = k;
+    setPrivateKeyState(k);
+    setE2eReady(!!k);
+  };
   // publicKey de chaque participant (userId → clé), miroir de participantKeysRef web
   const participantKeysRef = useRef<Record<string, string>>({});
   const myPublicKeyRef = useRef<string | null>(null);
@@ -69,11 +77,23 @@ export default function EventChatScreen() {
           fetchEvent(shortId),
           getPrivateKey(),
         ]);
-        privateKeyRef.current = privKey;
-        setE2eReady(!!privKey);
+        setPrivateKey(privKey);
         console.log(
           `🔐 Chat: clé privée ${privKey ? "présente ✅" : "ABSENTE ❌"}`,
         );
+
+        // Clé brièvement indisponible (réveil, migration Keychain) → retry
+        if (!privKey) {
+          let attempts = 0;
+          const retry = async () => {
+            if (!mounted || privateKeyRef.current) return;
+            const k = await getPrivateKey();
+            if (!mounted) return;
+            if (k) setPrivateKey(k);
+            else if (++attempts < 3) setTimeout(retry, 800);
+          };
+          setTimeout(retry, 800);
+        }
 
         // Clés publiques des participants (invités + organisateur), sauf moi
         const keys: Record<string, string> = {};
@@ -242,7 +262,7 @@ export default function EventChatScreen() {
             message={item}
             isMine={item.sender?._id === user?._id}
             myUserId={user?._id ?? null}
-            privateKey={privateKeyRef.current}
+            privateKey={privateKey}
             onReport={
               item.sender?._id !== user?._id
                 ? () =>
