@@ -22,6 +22,12 @@ import {
   ThemeColors,
 } from "../lib/theme-context";
 
+// RGPD France : 15 ans minimum pour s'inscrire (aligné avec le contrôle serveur
+// dans server/routes/auth.js et les questionnaires d'âge des stores).
+const MIN_AGE = 15;
+const maxBirthDate = new Date();
+maxBirthDate.setFullYear(maxBirthDate.getFullYear() - MIN_AGE);
+
 export default function SignupScreen() {
   const router = useRouter();
   const { colors } = useTheme();
@@ -46,6 +52,12 @@ export default function SignupScreen() {
     }
     if (!birth) {
       setError("La date de naissance est obligatoire.");
+      return;
+    }
+    if (birth > maxBirthDate) {
+      setError(
+        `Tu dois avoir au moins ${MIN_AGE} ans pour créer un compte BirthReminder.`,
+      );
       return;
     }
     if (password !== confirm) {
@@ -145,7 +157,7 @@ export default function SignupScreen() {
             value={birth ?? new Date(2000, 0, 1)}
             mode="date"
             display={Platform.OS === "ios" ? "spinner" : "default"}
-            maximumDate={new Date()}
+            maximumDate={maxBirthDate}
             onChange={(event, selected) => {
               if (Platform.OS === "android") setShowPicker(false);
               if (selected) setBirth(selected);

@@ -18,6 +18,7 @@ import * as bip39 from "@scure/bip39";
 import { wordlist as frenchWordlist } from "@scure/bip39/wordlists/french.js";
 import * as Crypto from "expo-crypto";
 import * as SecureStore from "expo-secure-store";
+import { Platform } from "react-native";
 
 // ── PRNG : tweetnacl a besoin d'une source d'aléa — expo-crypto la fournit ──
 nacl.setPRNG((x: Uint8Array, n: number) => {
@@ -74,17 +75,44 @@ function bytesToUtf8(bytes: Uint8Array): string {
 
 const PRIVATE_KEY_STORE = "e2ePrivateKey";
 
+// iOS : la clé vit dans le Keychain de l'App Group pour que la Notification
+// Service Extension (déchiffrement des notifs, cf. ios-nse/) puisse la lire.
+// AFTER_FIRST_UNLOCK : lisible aussi quand une notif arrive téléphone verrouillé.
+// ⚠️ Changement de groupe → les utilisateurs iOS existants devront se
+// reconnecter une fois (getPrivateKey() null → resaisie du mot de passe).
+const KEYCHAIN_OPTS =
+  Platform.OS === "ios"
+    ? {
+        accessGroup: "group.com.birthreminder.app",
+        keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK,
+      }
+    : undefined;
+
 export async function storePrivateKey(privateKeyBytes: Uint8Array): Promise<void> {
-  await SecureStore.setItemAsync(PRIVATE_KEY_STORE, encodeBase64(privateKeyBytes));
+  await SecureStore.setItemAsync(
+    PRIVATE_KEY_STORE,
+    encodeBase64(privateKeyBytes),
+    KEYCHAIN_OPTS,
+  );
 }
 
 export async function getPrivateKey(): Promise<Uint8Array | null> {
-  const b64 = await SecureStore.getItemAsync(PRIVATE_KEY_STORE);
-  return b64 ? decodeBase64(b64) : null;
+  const b64 = await SecureStore.getItemAsync(PRIVATE_KEY_STORE, KEYCHAIN_OPTS);
+  if (b64) return decodeBase64(b64);
+  // Migration douce : clé écrite avant le passage à l'App Group
+  const legacy = await SecureStore.getItemAsync(PRIVATE_KEY_STORE);
+  if (legacy) {
+    const bytes = decodeBase64(legacy);
+    await storePrivateKey(bytes); // ré-écrit dans le groupe partagé
+    await SecureStore.deleteItemAsync(PRIVATE_KEY_STORE).catch(() => {});
+    return bytes;
+  }
+  return null;
 }
 
 export async function clearPrivateKey(): Promise<void> {
-  await SecureStore.deleteItemAsync(PRIVATE_KEY_STORE);
+  await SecureStore.deleteItemAsync(PRIVATE_KEY_STORE, KEYCHAIN_OPTS);
+  await SecureStore.deleteItemAsync(PRIVATE_KEY_STORE).catch(() => {});
 }
 
 // Archive de l'ancienne clé (pour déchiffrer l'historique après changement)

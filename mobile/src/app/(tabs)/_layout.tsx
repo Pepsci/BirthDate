@@ -8,6 +8,12 @@ import {
   useThemedStyles,
   ThemeColors,
 } from "../../lib/theme-context";
+import {
+  GuidedTourProvider,
+  TourOverlay,
+  TourTarget,
+  useGuidedTour,
+} from "../../lib/guided-tour";
 
 /**
  * Header personnalisé : bannière logo tout en haut, puis la ligne
@@ -100,9 +106,23 @@ function TabIcon({ emoji, focused }: { emoji: string; focused: boolean }) {
 }
 
 export default function TabsLayout() {
+  return (
+    <GuidedTourProvider>
+      {/* Le wrapper flex:1 permet à l'overlay du tour de couvrir tout
+          l'écran, header et tab bar compris. */}
+      <View style={{ flex: 1 }}>
+        <TabsInner />
+        <TourOverlay />
+      </View>
+    </GuidedTourProvider>
+  );
+}
+
+function TabsInner() {
   const router = useRouter();
   const { total } = useUnread();
   const { colors } = useTheme();
+  const tour = useGuidedTour();
   return (
     <Tabs
       screenOptions={{
@@ -131,19 +151,25 @@ export default function TabsLayout() {
           headerRight: () => (
             <View style={{ flexDirection: "row", alignItems: "center", gap: 14, marginRight: 16 }}>
               <HeaderBell />
-              <Pressable onPress={() => router.push("/date/new")} hitSlop={10}>
-                <Text style={{ fontSize: 24, color: colors.primary }}>＋</Text>
-              </Pressable>
+              <TourTarget id="tourAddDate">
+                <Pressable
+                  onPress={() => {
+                    tour.notifyTargetPress("tourAddDate"); // avance le tour guidé
+                    router.push("/date/new");
+                  }}
+                  hitSlop={10}
+                >
+                  <Text style={{ fontSize: 24, color: colors.primary }}>＋</Text>
+                </Pressable>
+              </TourTarget>
             </View>
           ),
           headerLeft: () => (
-            <Pressable
-              onPress={() => router.push("/agenda")}
-              hitSlop={10}
-              style={{ marginLeft: 16 }}
-            >
-              <Text style={{ fontSize: 20 }}>📅</Text>
-            </Pressable>
+            <TourTarget id="tourAgenda" style={{ marginLeft: 16 }}>
+              <Pressable onPress={() => router.push("/agenda")} hitSlop={10}>
+                <Text style={{ fontSize: 20 }}>📅</Text>
+              </Pressable>
+            </TourTarget>
           ),
         }}
       />
@@ -155,9 +181,17 @@ export default function TabsLayout() {
           headerRight: () => (
             <View style={{ flexDirection: "row", alignItems: "center", gap: 14, marginRight: 16 }}>
               <HeaderBell />
-              <Pressable onPress={() => router.push("/event/new")} hitSlop={10}>
-                <Text style={{ fontSize: 24, color: colors.primary }}>＋</Text>
-              </Pressable>
+              <TourTarget id="tourAddEvent">
+                <Pressable
+                  onPress={() => {
+                    tour.notifyTargetPress("tourAddEvent"); // avance le tour guidé
+                    router.push("/event/new");
+                  }}
+                  hitSlop={10}
+                >
+                  <Text style={{ fontSize: 24, color: colors.primary }}>＋</Text>
+                </Pressable>
+              </TourTarget>
             </View>
           ),
         }}

@@ -44,7 +44,8 @@ class NotificationService: UNNotificationServiceExtension {
             return
         }
 
-        let userInfo = request.content.userInfo
+        // userInfo est [AnyHashable: Any] → on le convertit en [String: Any].
+        let userInfo = (request.content.userInfo as? [String: Any]) ?? [:]
         // Les champs sont dans `body` (data-only Expo) ou à la racine selon l'envoi.
         let data = (userInfo["body"] as? [String: Any]) ?? userInfo
 
@@ -80,8 +81,8 @@ class NotificationService: UNNotificationServiceExtension {
         let sodium = Sodium()
 
         guard
-            let combined = sodium.utils.base642bin(cipherB64, variant: .original),
-            let senderPk = sodium.utils.base642bin(senderPkB64, variant: .original),
+            let combined = sodium.utils.base642bin(cipherB64, variant: .ORIGINAL),
+            let senderPk = sodium.utils.base642bin(senderPkB64, variant: .ORIGINAL),
             let mySk = loadPrivateKey(sodium: sodium)
         else { return nil }
 
@@ -114,6 +115,6 @@ class NotificationService: UNNotificationServiceExtension {
         // expo-secure-store enregistre la valeur en UTF-8 ; ici c'est le base64
         // de la clé privée (cf. storePrivateKey → encodeBase64).
         guard let b64 = String(data: data, encoding: .utf8) else { return nil }
-        return sodium.utils.base642bin(b64, variant: .original)
+        return sodium.utils.base642bin(b64, variant: .ORIGINAL)
     }
 }

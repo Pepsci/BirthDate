@@ -75,6 +75,18 @@ router.post("/signup", async (req, res) => {
       .json({ message: "Please provide a valid birth date." });
   }
 
+  // RGPD France : consentement autonome aux services en ligne à partir de 15 ans
+  // (art. 7-1 loi Informatique et Libertés). Déclaré aussi dans les
+  // questionnaires d'âge App Store / Play Store — garder cohérent.
+  const MIN_AGE = 15;
+  const ageLimit = new Date();
+  ageLimit.setFullYear(ageLimit.getFullYear() - MIN_AGE);
+  if (parsedBirthDate > ageLimit) {
+    return res.status(400).json({
+      message: `Tu dois avoir au moins ${MIN_AGE} ans pour créer un compte BirthReminder.`,
+    });
+  }
+
   if (!validatePassword(password)) {
     return res.status(400).json({
       message:

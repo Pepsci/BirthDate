@@ -27,7 +27,8 @@ import {
   clearPrivateKey,
 } from "../../lib/crypto";
 
-type View =
+// « E2EView » et non « View » pour ne pas masquer le composant View de react-native
+type E2EView =
   | "overview"
   | "step1"
   | "step2"
@@ -50,7 +51,7 @@ export default function E2EScreen() {
   const { user, refresh } = useAuth();
   const insets = useSafeAreaInsets();
 
-  const [view, setView] = useState<View>("overview");
+  const [view, setView] = useState<E2EView>("overview");
   const [seedPhrase, setSeedPhrase] = useState("");
   const [seedInput, setSeedInput] = useState("");
   const [password, setPassword] = useState("");
@@ -74,7 +75,7 @@ export default function E2EScreen() {
     setInfo("");
   };
 
-  const go = (v: View) => {
+  const go = (v: E2EView) => {
     setError("");
     setView(v);
   };

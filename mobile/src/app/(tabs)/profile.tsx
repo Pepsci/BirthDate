@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import {
   View,
   Text,
@@ -11,6 +12,11 @@ import {
 import { useRouter } from "expo-router";
 import { useAuth } from "../../lib/auth-context";
 import { deleteAccount } from "../../lib/users";
+import {
+  useGuidedTour,
+  TourTarget,
+  TOURS,
+} from "../../lib/guided-tour";
 import {
   useTheme,
   useThemedStyles,
@@ -37,7 +43,13 @@ export default function ProfileScreen() {
   const { mode, setMode } = useTheme();
   const styles = useThemedStyles(makeStyles);
   const router = useRouter();
+  const { startTour } = useGuidedTour();
   const avatar = (user as { avatar?: string } | null)?.avatar;
+
+  // Tour guidé détaillé du profil — première visite uniquement
+  useEffect(() => {
+    startTour(TOURS.profile);
+  }, [startTour]);
 
   const confirmDelete = () => {
     Alert.alert(
@@ -79,36 +91,44 @@ export default function ProfileScreen() {
       <Text style={styles.email}>{user?.email}</Text>
 
       <View style={styles.menu}>
-        <MenuRow
-          emoji="👥"
-          label="Mes amis"
-          onPress={() => router.push("/friends")}
-        />
+        <TourTarget id="tourFriends">
+          <MenuRow
+            emoji="👥"
+            label="Mes amis"
+            onPress={() => router.push("/friends")}
+          />
+        </TourTarget>
         <MenuRow
           emoji="✏️"
           label="Mes informations"
           onPress={() => router.push("/profile/edit")}
         />
-        <MenuRow
-          emoji="🔔"
-          label="Notifications email"
-          onPress={() => router.push("/profile/notifications")}
-        />
-        <MenuRow
-          emoji="🎀"
-          label="Ma wishlist"
-          onPress={() => router.push("/profile/wishlist")}
-        />
+        <TourTarget id="tourNotifs">
+          <MenuRow
+            emoji="🔔"
+            label="Notifications"
+            onPress={() => router.push("/profile/notifications")}
+          />
+        </TourTarget>
+        <TourTarget id="tourWishlist">
+          <MenuRow
+            emoji="🎀"
+            label="Ma wishlist"
+            onPress={() => router.push("/profile/wishlist")}
+          />
+        </TourTarget>
         <MenuRow
           emoji="🔑"
           label="Changer mon mot de passe"
           onPress={() => router.push("/profile/password")}
         />
-        <MenuRow
-          emoji="🔐"
-          label="Chiffrement & sécurité"
-          onPress={() => router.push("/profile/e2e")}
-        />
+        <TourTarget id="tourE2E">
+          <MenuRow
+            emoji="🔐"
+            label="Chiffrement & sécurité"
+            onPress={() => router.push("/profile/e2e")}
+          />
+        </TourTarget>
         <MenuRow
           emoji="🚫"
           label="Utilisateurs bloqués"

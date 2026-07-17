@@ -9,6 +9,7 @@ import {
   Pressable,
 } from "react-native";
 import { useRouter } from "expo-router";
+import { useGuidedTour, TOURS } from "../../lib/guided-tour";
 import {
   EventEntry,
   fetchMyEvents,
@@ -27,6 +28,7 @@ import {
 export default function EventsScreen() {
   const { colors } = useTheme();
   const styles = useThemedStyles(makeStyles);
+  const { startTour } = useGuidedTour();
   const [organized, setOrganized] = useState<EventEntry[]>([]);
   const [invited, setInvited] = useState<EventEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,6 +49,11 @@ export default function EventsScreen() {
   useEffect(() => {
     load().finally(() => setLoading(false));
   }, [load]);
+
+  // Tour guidé : créer son premier événement (＋) — première visite uniquement
+  useEffect(() => {
+    startTour(TOURS.events);
+  }, [startTour]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);

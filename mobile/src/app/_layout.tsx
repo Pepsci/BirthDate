@@ -86,6 +86,10 @@ function RootNavigator() {
         headerTintColor: colors.text,
         headerTitleStyle: { color: colors.text },
         contentStyle: { backgroundColor: colors.bg },
+        // iOS : sans ça, le bouton retour affiche le nom de la route
+        // précédente — littéralement « (tabs) ». Chevron seul, c'est mieux.
+        headerBackButtonDisplayMode: "minimal",
+        headerBackTitle: "Retour",
       }}
     >
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />

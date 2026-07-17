@@ -19,7 +19,8 @@
         "UIBackgroundModes": [
           "remote-notification"
         ],
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSCameraUsageDescription": "BirthReminder peut utiliser la caméra pour scanner une carte bancaire lors d'une participation à une cagnotte."
       }
     },
     "android": {
@@ -57,10 +58,18 @@
         "expo-image-picker",
         {
           "photosPermission": "BirthReminder accède à tes photos uniquement pour choisir ta photo de profil.",
-          "cameraPermission": false,
+          "cameraPermission": "BirthReminder peut utiliser la caméra pour scanner une carte bancaire lors d'une participation à une cagnotte.",
           "microphonePermission": false
         }
-      ]
+      ],
+      "./plugins/withAppGroupEntitlement",
+      [
+        "@bacons/apple-targets",
+        {
+          "appleTeamId": "8UHXMY6BW5"
+        }
+      ],
+      "./plugins/withNsePod"
     ],
     "experiments": {
       "typedRoutes": true,
@@ -69,7 +78,24 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "3c941838-86ec-422a-96dd-42982be00557"
+        "projectId": "3c941838-86ec-422a-96dd-42982be00557",
+        "build": {
+          "experimental": {
+            "ios": {
+              "appExtensions": [
+                {
+                  "targetName": "BirthReminderNSE",
+                  "bundleIdentifier": "com.birthreminder.app.BirthReminderNSE",
+                  "entitlements": {
+                    "com.apple.security.application-groups": [
+                      "group.com.birthreminder.app"
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        }
       }
     }
   }

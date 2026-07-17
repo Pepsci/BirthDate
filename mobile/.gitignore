@@ -39,5 +39,10 @@ yarn-error.*
 example
 
 # generated native folders
+# /ios reste généré par prebuild ; /android est VERSIONNÉ (manifest et gradle
+# personnalisés) — on n'ignore que ses sorties de build :
 /ios
-/android
+/android/app/build/
+/android/build/
+/android/.gradle/
+/android/local.properties

@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
 import { useAuth } from "../../lib/auth-context";
+import OnboardingTip from "../../lib/tips";
 import { useUnread } from "../../lib/unread-context";
 import {
   ConversationSummary,
@@ -67,6 +68,11 @@ export default function ChatsScreen() {
 
   return (
     <View style={styles.container}>
+      <OnboardingTip
+        id="chats"
+        emoji="🔒"
+        text="Tes messages sont chiffrés de bout en bout : personne d'autre que toi et ton ami ne peut les lire. Ajoute des amis depuis Profil → Mes amis."
+      />
       {error && <Text style={styles.error}>{error}</Text>}
       <FlatList
         data={convs}

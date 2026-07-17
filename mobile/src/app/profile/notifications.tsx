@@ -97,7 +97,7 @@ export default function NotificationsScreen() {
   if (!me) {
     return (
       <View style={styles.center}>
-        <Stack.Screen options={{ title: "Notifications email" }} />
+        <Stack.Screen options={{ title: "Notifications" }} />
         {error ? (
           <Text style={styles.error}>{error}</Text>
         ) : (
@@ -109,9 +109,10 @@ export default function NotificationsScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Stack.Screen options={{ title: "Notifications email" }} />
+      <Stack.Screen options={{ title: "Notifications" }} />
       {error && <Text style={styles.error}>{error}</Text>}
 
+      <Text style={styles.sectionHeader}>✉️ Notifications email</Text>
       <View style={styles.card}>
         {PREFS.map((pref) => (
           <View key={pref.key} style={styles.row}>

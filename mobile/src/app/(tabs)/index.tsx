@@ -12,6 +12,7 @@ import {
   TextInput,
 } from "react-native";
 import BirthdayCountdown from "../../components/BirthdayCountdown";
+import { useGuidedTour, TOURS } from "../../lib/guided-tour";
 import {
   useTheme,
   useThemedStyles,
@@ -29,6 +30,7 @@ import {
 export default function BirthdaysScreen() {
   const { colors } = useTheme();
   const styles = useThemedStyles(makeStyles);
+  const { startTour } = useGuidedTour();
   const [dates, setDates] = useState<DateEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -51,6 +53,11 @@ export default function BirthdaysScreen() {
   useEffect(() => {
     load().finally(() => setLoading(false));
   }, [load]);
+
+  // Tour guidé de première utilisation (agenda → ＋) — ne se lance qu'une fois
+  useEffect(() => {
+    startTour(TOURS.birthdays);
+  }, [startTour]);
 
   // Recharge quand on revient sur l'onglet (après ajout/édition)
   useFocusEffect(
@@ -85,7 +92,14 @@ export default function BirthdaysScreen() {
           normalize(d.surname ?? "").startsWith(q)
         );
       })
-      .sort((a, b) => daysUntil(birthISOOf(a)) - daysUntil(birthISOOf(b)));
+      .sort((a, b) => {
+        // Entrées sans date de naissance → en fin de liste
+        const days = (e: DateEntry) => {
+          const iso = birthISOOf(e);
+          return iso ? daysUntil(iso) : Number.MAX_SAFE_INTEGER;
+        };
+        return days(a) - days(b);
+      });
   }, [dates, search, filter]);
 
   // Réinitialise la pagination quand la recherche/filtre change
@@ -109,7 +123,6 @@ export default function BirthdaysScreen() {
 
   return (
     <View style={styles.container}>
-
       {error && (
         <Pressable style={styles.errorBanner} onPress={onRefresh}>
           <Text style={styles.errorText}>{error} — appuyer pour réessayer</Text>
