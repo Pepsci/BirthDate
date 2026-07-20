@@ -108,6 +108,12 @@ export default function DateDetailScreen() {
   const [showFriendPicker, setShowFriendPicker] = useState(false);
   const [friends, setFriends] = useState<FriendEntry[]>([]);
   const [inviteMsg, setInviteMsg] = useState<string | null>(null);
+  // Flux d'invitation liste commune : ami → mode de partage → (sélection)
+  const [inviteStep, setInviteStep] = useState<"friend" | "mode" | "select">(
+    "friend",
+  );
+  const [inviteFriendId, setInviteFriendId] = useState<string | null>(null);
+  const [inviteSel, setInviteSel] = useState<Set<string>>(new Set());
   const [showSharedForm, setShowSharedForm] = useState(false);
   const [editingSharedGift, setEditingSharedGift] = useState<SharedGift | null>(
     null,
@@ -122,6 +128,7 @@ export default function DateDetailScreen() {
   const [shareSending, setShareSending] = useState(false);
   const [shareSent, setShareSent] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+  const [importSharedOpen, setImportSharedOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<Gift | null>(null);
   const deleteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const deleteProgress = useRef(new Animated.Value(0)).current;
@@ -286,6 +293,10 @@ export default function DateDetailScreen() {
 
   const openFriendPicker = async () => {
     setInviteMsg(null);
+    // Réinitialise le flux d'invitation (ami → mode → sélection)
+    setInviteStep("friend");
+    setInviteFriendId(null);
+    setInviteSel(new Set());
     setShowFriendPicker(true);
     try {
       const list = await fetchFriends();
@@ -295,10 +306,35 @@ export default function DateDetailScreen() {
     }
   };
 
-  const inviteFriend = async (friendId: string) => {
+  // Étape 1 : ami choisi → s'il y a des idées sur la carte, proposer le mode ;
+  // sinon envoyer directement (liste vide, "tout partager").
+  const pickInviteFriend = (friendId: string) => {
+    setInviteFriendId(friendId);
+    const hasGifts = ((entry as DateEntry & { gifts?: Gift[] }).gifts?.length ?? 0) > 0;
+    if (hasGifts) {
+      setInviteSel(new Set());
+      setInviteStep("mode");
+    } else {
+      sendInvite(friendId, "full");
+    }
+  };
+
+  const toggleInviteGift = (id: string) =>
+    setInviteSel((prev) => {
+      const n = new Set(prev);
+      n.has(id) ? n.delete(id) : n.add(id);
+      return n;
+    });
+
+  const sendInvite = async (
+    friendId: string,
+    mode: "full" | "selective",
+    giftIds?: string[],
+  ) => {
     setShowFriendPicker(false);
+    setInviteStep("friend");
     try {
-      await inviteSharedList(friendId, entry!._id);
+      await inviteSharedList(friendId, entry!._id, { mode, giftIds });
       setInviteMsg("Invitation envoyée ✅ En attente de la réponse.");
       try {
         setSentInvites(await fetchSentSharedInvitations(entry!._id));
@@ -394,6 +430,24 @@ export default function DateDetailScreen() {
     setImportOpen(false);
   };
 
+  // Importer des idées (depuis une de mes cartes) dans la liste commune
+  const importSharedGifts = async (imported: ImportedGift[]) => {
+    if (!entry?.sharedGiftList) return;
+    await runShared(async () => {
+      for (const g of imported) {
+        await addSharedGift(entry.sharedGiftList!, {
+          giftName: g.giftName,
+          occasion: g.occasion,
+          year: g.year,
+          url: g.url,
+          price: g.price,
+          image: g.image,
+        });
+      }
+    });
+    setImportSharedOpen(false);
+  };
+
   const onLeaveShared = () => {
     if (!entry?.sharedGiftList) return;
     Alert.alert(
@@ -450,6 +504,9 @@ export default function DateDetailScreen() {
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.content}
+      keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="on-drag"
+      automaticallyAdjustKeyboardInsets
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
@@ -1114,6 +1171,15 @@ export default function DateDetailScreen() {
                   .join(", ")}
               </Text>
 
+              <Pressable
+                style={styles.importBtn}
+                onPress={() => setImportSharedOpen(true)}
+              >
+                <Text style={styles.importText}>
+                  📋 Importer des idées depuis une liste
+                </Text>
+              </Pressable>
+
               {showSharedForm && (
                 <GiftIdeaForm
                   busy={busy}
@@ -1333,28 +1399,114 @@ export default function DateDetailScreen() {
         }}
       />
 
-      {/* Sélecteur d'ami pour créer une liste commune */}
+      {/* Sélecteur d'ami + mode de partage pour créer une liste commune */}
       <BottomSheet
         visible={showFriendPicker}
         onClose={() => setShowFriendPicker(false)}
       >
-        <Text style={styles.sheetTitle}>Avec qui créer la liste ?</Text>
-        <Text style={styles.muted}>
-          Choisis un ami. Il recevra une invitation à rejoindre la liste.
-        </Text>
-        {friends.map((f) => (
-          <Pressable
-            key={f.friendship._id}
-            style={styles.friendRow}
-            onPress={() => inviteFriend(f.friendUser._id)}
-          >
-            <Text style={styles.friendName}>
-              {f.friendUser.name} {f.friendUser.surname ?? ""}
+        {inviteStep === "friend" && (
+          <>
+            <Text style={styles.sheetTitle}>Avec qui créer la liste ?</Text>
+            <Text style={styles.muted}>
+              Choisis un ami. Il recevra une invitation à rejoindre la liste.
             </Text>
-          </Pressable>
-        ))}
-        {friends.length === 0 && (
-          <Text style={styles.muted}>Aucun ami disponible.</Text>
+            {friends.map((f) => (
+              <Pressable
+                key={f.friendship._id}
+                style={styles.friendRow}
+                onPress={() => pickInviteFriend(f.friendUser._id)}
+              >
+                <Text style={styles.friendName}>
+                  {f.friendUser.name} {f.friendUser.surname ?? ""}
+                </Text>
+              </Pressable>
+            ))}
+            {friends.length === 0 && (
+              <Text style={styles.muted}>Aucun ami disponible.</Text>
+            )}
+          </>
+        )}
+
+        {inviteStep === "mode" && (
+          <>
+            <Text style={styles.sheetTitle}>Que partager ?</Text>
+            <Text style={styles.muted}>
+              Choisis les idées à inclure dans la liste commune.
+            </Text>
+            <Pressable
+              style={styles.sheetPrimaryBtn}
+              onPress={() =>
+                inviteFriendId && sendInvite(inviteFriendId, "full")
+              }
+            >
+              <Text style={styles.sheetPrimaryText}>
+                🎁 Tout partager ({allGifts.length} idée
+                {allGifts.length > 1 ? "s" : ""})
+              </Text>
+            </Pressable>
+            <Pressable
+              style={styles.inviteAltBtn}
+              onPress={() => {
+                setInviteSel(new Set());
+                setInviteStep("select");
+              }}
+            >
+              <Text style={styles.inviteAltText}>
+                ✅ Choisir les idées à partager
+              </Text>
+            </Pressable>
+          </>
+        )}
+
+        {inviteStep === "select" && (
+          <>
+            <Text style={styles.sheetTitle}>Idées à partager</Text>
+            <Text style={styles.muted}>
+              Sélectionne les idées à inclure dans la liste commune.
+            </Text>
+            {allGifts.map((g) => (
+              <Pressable
+                key={g._id}
+                style={styles.shareGiftRow}
+                onPress={() => toggleInviteGift(g._id)}
+              >
+                <Text style={styles.shareCheck}>
+                  {inviteSel.has(g._id) ? "☑" : "☐"}
+                </Text>
+                <Text style={styles.shareGiftName} numberOfLines={1}>
+                  {g.giftName}
+                </Text>
+              </Pressable>
+            ))}
+            <View style={styles.inviteFooter}>
+              <Pressable
+                style={styles.inviteBackBtn}
+                onPress={() => setInviteStep("mode")}
+              >
+                <Text style={styles.inviteBackText}>Retour</Text>
+              </Pressable>
+              <Pressable
+                style={[
+                  styles.sheetPrimaryBtn,
+                  { flex: 1 },
+                  inviteSel.size === 0 && { opacity: 0.5 },
+                ]}
+                disabled={inviteSel.size === 0}
+                onPress={() =>
+                  inviteFriendId &&
+                  sendInvite(
+                    inviteFriendId,
+                    "selective",
+                    Array.from(inviteSel),
+                  )
+                }
+              >
+                <Text style={styles.sheetPrimaryText}>
+                  Envoyer ({inviteSel.size})
+                </Text>
+              </Pressable>
+            </View>
+          </>
         )}
       </BottomSheet>
 
@@ -1424,6 +1576,15 @@ export default function DateDetailScreen() {
         visible={importOpen}
         onClose={() => setImportOpen(false)}
         onImport={importGifts}
+        excludeDateId={entry?._id}
+        busy={busy}
+      />
+
+      {/* Import d'idées vers la liste commune */}
+      <ImportGiftSheet
+        visible={importSharedOpen}
+        onClose={() => setImportSharedOpen(false)}
+        onImport={importSharedGifts}
         excludeDateId={entry?._id}
         busy={busy}
       />
@@ -1870,6 +2031,26 @@ const styles = StyleSheet.create({
     marginTop: 18,
   },
   sheetPrimaryText: { color: "#fff", fontWeight: "700", fontSize: 15 },
+  inviteAltBtn: {
+    borderWidth: 1.5,
+    borderColor: "#3b82f6",
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: "center",
+    marginTop: 10,
+  },
+  inviteAltText: { color: "#3b82f6", fontWeight: "700", fontSize: 15 },
+  inviteFooter: { flexDirection: "row", gap: 10, marginTop: 16 },
+  inviteBackBtn: {
+    borderWidth: 1,
+    borderColor: "#d1d5db",
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  inviteBackText: { color: "#6b7280", fontWeight: "600", fontSize: 15 },
   sheetGhostBtn: {
     borderWidth: 1.5,
     borderColor: "#d1d5db",

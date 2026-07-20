@@ -229,6 +229,10 @@ function BirthdayCard({ entry }: { entry: DateEntry }) {
   const initials =
     `${name[0] ?? ""}${surname[0] ?? ""}`.toUpperCase() || "?";
 
+  // Bandeau d'urgence en haut à droite : « Demain » (J-1) ou « J-X »
+  // quand il reste moins d'une semaine. (aujourd'hui → déjà signalé plus bas)
+  const soon = days !== null && days >= 1 && days <= 7;
+
   return (
     <Pressable
       style={({ pressed }) => [
@@ -238,6 +242,19 @@ function BirthdayCard({ entry }: { entry: DateEntry }) {
       ]}
       onPress={() => router.push(`/date/${entry._id}`)}
     >
+      {soon && (
+        <View
+          style={[
+            styles.soonBadge,
+            days! <= 2 ? styles.soonBadgeUrgent : styles.soonBadgeNormal,
+          ]}
+        >
+          <Text style={styles.soonBadgeText}>
+            {days === 1 ? "Demain" : `J-${days}`}
+          </Text>
+        </View>
+      )}
+
       <View style={styles.avatarFallback}>
         <Text style={styles.avatarInitials}>{initials}</Text>
         {!!avatar && avatar.trim().length > 0 && (
@@ -398,6 +415,18 @@ const makeStyles = (c: ThemeColors) =>
       paddingVertical: 2,
     },
     badgeText: { color: "#fff", fontSize: 10, fontWeight: "700" },
+    soonBadge: {
+      position: "absolute",
+      top: 8,
+      right: 8,
+      zIndex: 2,
+      borderRadius: 8,
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+    },
+    soonBadgeNormal: { backgroundColor: c.primary },
+    soonBadgeUrgent: { backgroundColor: "#f59e0b" },
+    soonBadgeText: { color: "#fff", fontSize: 11, fontWeight: "800" },
     countdownToday: {
       alignSelf: "stretch",
       alignItems: "center",

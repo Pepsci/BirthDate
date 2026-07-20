@@ -109,7 +109,13 @@ function ContributeForm({
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="on-drag"
+      automaticallyAdjustKeyboardInsets
+    >
       <Stack.Screen options={{ title: "Contribuer à la cagnotte" }} />
 
       <Text style={styles.label}>Montant (€)</Text>

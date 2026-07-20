@@ -119,7 +119,13 @@ export default function ProfileEditScreen() {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="on-drag"
+      automaticallyAdjustKeyboardInsets
+    >
       <Stack.Screen options={{ title: "Mes informations" }} />
 
       <Pressable style={styles.avatarWrap} onPress={pickAvatar}>
@@ -166,6 +172,7 @@ export default function ProfileEditScreen() {
           value={birthDate ?? new Date(2000, 0, 1)}
           mode="date"
           display={Platform.OS === "ios" ? "spinner" : "default"}
+          locale="fr-FR"
           maximumDate={new Date()}
           onChange={(event, selected) => {
             if (Platform.OS === "android") setShowPicker(false);

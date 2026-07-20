@@ -27,10 +27,14 @@ function AppHeader({ options, route }: any) {
     <View style={[headerStyles.wrap, { paddingTop: insets.top }]}>
       <LogoBanner />
       <View style={headerStyles.row}>
+        {/* Titre centré en absolu → aligné avec le logo, quelle que soit la
+            largeur des boutons de droite (sinon décalé vers la gauche). */}
+        <View style={headerStyles.titleWrap} pointerEvents="none">
+          <Text style={headerStyles.title} numberOfLines={1}>
+            {title}
+          </Text>
+        </View>
         <View style={headerStyles.side}>{options.headerLeft?.({})}</View>
-        <Text style={headerStyles.title} numberOfLines={1}>
-          {title}
-        </Text>
         <View style={[headerStyles.side, headerStyles.sideRight]}>
           {options.headerRight?.({})}
         </View>
@@ -49,12 +53,21 @@ const makeHeaderStyles = (c: ThemeColors) =>
     row: {
       flexDirection: "row",
       alignItems: "center",
+      justifyContent: "space-between",
       height: 44,
     },
     side: { minWidth: 60, justifyContent: "center" },
     sideRight: { alignItems: "flex-end" },
+    titleWrap: {
+      position: "absolute",
+      left: 60,
+      right: 60,
+      top: 0,
+      bottom: 0,
+      alignItems: "center",
+      justifyContent: "center",
+    },
     title: {
-      flex: 1,
       fontSize: 17,
       fontWeight: "700",
       color: c.text,

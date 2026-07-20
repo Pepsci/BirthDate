@@ -19,7 +19,15 @@ import {
   updatePool,
   stripeOnboardingLink,
   stripeStatus,
+  fetchEvent,
+  fetchBankInfo,
+  saveBankInfo,
+  deleteBankInfo,
+  toggleIbanOption,
+  setPaypalOption,
 } from "../../../lib/events";
+
+const IBAN_DURATIONS = [7, 14, 30, 60, 90];
 
 export default function PoolConfigScreen() {
   const { shortId } = useLocalSearchParams<{ shortId: string }>();
@@ -35,17 +43,45 @@ export default function PoolConfigScreen() {
   const [onboarding, setOnboarding] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  // Virement direct (indépendant de la cagnotte Stripe)
+  const [ibanEnabled, setIbanEnabled] = useState(false);
+  const [iban, setIban] = useState("");
+  const [holderName, setHolderName] = useState("");
+  const [ibanDuration, setIbanDuration] = useState(30);
+  const [ibanSaved, setIbanSaved] = useState(false);
+  const [paypalEnabled, setPaypalEnabled] = useState(false);
+  const [paypalLink, setPaypalLink] = useState("");
+
   useEffect(() => {
     if (!shortId) return;
-    fetchPool(shortId)
-      .then((p: PoolInfo) => {
-        setActive(p.active);
-        setMode(p.mode ?? "free");
-        setGoal(p.goal ? String(p.goal / 100) : "");
-        setDeadline(p.deadline ? new Date(p.deadline) : null);
-      })
-      .catch(() => {})
-      .finally(() => setLoaded(true));
+    Promise.all([
+      fetchPool(shortId)
+        .then((p: PoolInfo) => {
+          setActive(p.active);
+          setMode(p.mode ?? "free");
+          setGoal(p.goal ? String(p.goal / 100) : "");
+          setDeadline(p.deadline ? new Date(p.deadline) : null);
+        })
+        .catch(() => {}),
+      fetchEvent(shortId)
+        .then((ev) => {
+          const dt = ev.directTransfer ?? {};
+          setIbanEnabled(!!dt.ibanEnabled);
+          setPaypalEnabled(!!dt.paypalEnabled);
+          setPaypalLink(dt.paypalLink ?? "");
+        })
+        .catch(() => {}),
+      // RIB existant (organisateur → déchiffré) pour préremplir
+      fetchBankInfo(shortId)
+        .then((b) => {
+          if (b.exists) {
+            setIbanSaved(true);
+            if (b.iban) setIban(b.iban);
+            if (b.holderName) setHolderName(b.holderName);
+          }
+        })
+        .catch(() => {}),
+    ]).finally(() => setLoaded(true));
   }, [shortId]);
 
   const connectStripe = async () => {
@@ -77,8 +113,36 @@ export default function PoolConfigScreen() {
     if (saving) return;
     setError(null);
     setStripeNotReady(false);
+
+    // Garde-fou : IBAN activé mais aucun RIB (ni saisi, ni déjà enregistré)
+    const cleanIban = iban.replace(/\s+/g, "");
+    if (ibanEnabled && !ibanSaved && cleanIban.length < 14) {
+      setError("Saisis un IBAN valide ou désactive l'option virement IBAN.");
+      return;
+    }
+
     setSaving(true);
     try {
+      // 1. Virement direct (indépendant de la cagnotte Stripe)
+      if (ibanEnabled) {
+        if (cleanIban.length >= 14) {
+          await saveBankInfo(shortId!, {
+            iban: iban.trim(),
+            holderName: holderName.trim() || undefined,
+            durationDays: ibanDuration,
+          });
+        }
+        await toggleIbanOption(shortId!, true);
+      } else {
+        await toggleIbanOption(shortId!, false);
+      }
+      await setPaypalOption(
+        shortId!,
+        paypalEnabled,
+        paypalEnabled ? paypalLink.trim() : "",
+      );
+
+      // 2. Cagnotte Stripe (inchangée)
       await updatePool(shortId!, {
         active,
         mode,
@@ -106,7 +170,13 @@ export default function PoolConfigScreen() {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="on-drag"
+      automaticallyAdjustKeyboardInsets
+    >
       <Stack.Screen options={{ title: "Configurer la cagnotte" }} />
 
       <View style={styles.switchRow}>
@@ -187,6 +257,7 @@ export default function PoolConfigScreen() {
                 mode="date"
                 minimumDate={new Date()}
                 display={Platform.OS === "ios" ? "spinner" : "default"}
+                locale="fr-FR"
                 onChange={(e, d) => {
                   if (Platform.OS === "android") setShowPicker(false);
                   if (d && e.type !== "dismissed") setDeadline(d);
@@ -195,6 +266,94 @@ export default function PoolConfigScreen() {
             </View>
           )}
         </>
+      )}
+
+      {/* ── Virement direct — indépendant de la cagnotte Stripe ── */}
+      <View style={styles.dtDivider} />
+      <Text style={styles.dtTitle}>💳 Virement direct</Text>
+      <Text style={styles.hint}>
+        Propose ton IBAN et/ou ton lien PayPal : les invités t'envoient
+        l'argent directement, sans activer de cagnotte.
+      </Text>
+
+      <View style={[styles.switchRow, { marginTop: 6 }]}>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.switchLabel}>Proposer un IBAN</Text>
+          <Text style={styles.hint}>Visible par les invités connectés</Text>
+        </View>
+        <Switch
+          value={ibanEnabled}
+          onValueChange={setIbanEnabled}
+          trackColor={{ true: "#10b981" }}
+        />
+      </View>
+
+      {ibanEnabled && (
+        <>
+          <TextInput
+            placeholderTextColor="#9ca3af"
+            style={styles.input}
+            placeholder="FR76 3000 4000 0500 0012 3456 789"
+            autoCapitalize="characters"
+            autoCorrect={false}
+            value={iban}
+            onChangeText={setIban}
+          />
+          <TextInput
+            placeholderTextColor="#9ca3af"
+            style={styles.input}
+            placeholder="Nom du titulaire (optionnel)"
+            value={holderName}
+            onChangeText={setHolderName}
+          />
+          <Text style={styles.label}>Visible pendant</Text>
+          <View style={styles.modeSwitch}>
+            {IBAN_DURATIONS.map((d) => (
+              <Pressable
+                key={d}
+                style={[styles.modeBtn, ibanDuration === d && styles.modeBtnActive]}
+                onPress={() => setIbanDuration(d)}
+              >
+                <Text
+                  style={[
+                    styles.modeText,
+                    ibanDuration === d && styles.modeTextActive,
+                  ]}
+                >
+                  {d}j
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+          <Text style={styles.hint}>
+            🔒 L'IBAN est chiffré et supprimé automatiquement après ce délai.
+          </Text>
+        </>
+      )}
+
+      <View style={[styles.switchRow, { marginTop: 10 }]}>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.switchLabel}>Proposer PayPal</Text>
+          <Text style={styles.hint}>Lien PayPal.Me public</Text>
+        </View>
+        <Switch
+          value={paypalEnabled}
+          onValueChange={setPaypalEnabled}
+          trackColor={{ true: "#10b981" }}
+        />
+      </View>
+
+      {paypalEnabled && (
+        <TextInput
+          placeholderTextColor="#9ca3af"
+          style={styles.input}
+          placeholder="https://paypal.me/tonpseudo"
+          autoCapitalize="none"
+          autoCorrect={false}
+          keyboardType="url"
+          value={paypalLink}
+          onChangeText={setPaypalLink}
+        />
       )}
 
       {stripeNotReady && (
@@ -247,6 +406,18 @@ const styles = StyleSheet.create({
   },
   label: { fontSize: 13, fontWeight: "700", color: "#6b7280", marginTop: 10 },
   hint: { color: "#9ca3af", fontSize: 12 },
+  dtDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: "#e5e7eb",
+    marginTop: 20,
+    marginBottom: 6,
+  },
+  dtTitle: {
+    fontSize: 16,
+    fontWeight: "800",
+    color: "#111827",
+    marginTop: 4,
+  },
   switchRow: {
     flexDirection: "row",
     alignItems: "center",

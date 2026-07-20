@@ -76,7 +76,12 @@ export default function EventInviteScreen() {
 
       {error && <Text style={styles.error}>{error}</Text>}
 
-      <ScrollView contentContainerStyle={styles.list}>
+      <ScrollView
+        contentContainerStyle={styles.list}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        automaticallyAdjustKeyboardInsets
+      >
         <Text style={styles.sectionTitle}>Mes amis</Text>
         {friends.length === 0 && (
           <Text style={styles.muted}>

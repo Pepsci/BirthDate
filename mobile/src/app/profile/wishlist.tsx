@@ -20,7 +20,9 @@ import {
   WishlistSettings,
   fetchMyWishlist,
   addWishlistItem,
+  updateWishlistItem,
   deleteWishlistItem,
+  toggleWishlistItemSharing,
   unreserveItem,
   fetchUrlInfo,
   fetchWishlistSettings,
@@ -42,6 +44,8 @@ export default function MyWishlistScreen() {
   const [fetchMsg, setFetchMsg] = useState<string | null>(null);
   const [fetching, setFetching] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [selected, setSelected] = useState<WishlistItem | null>(null);
   const [settings, setSettings] = useState<WishlistSettings | null>(null);
   const [shareBusy, setShareBusy] = useState(false);
@@ -128,27 +132,78 @@ export default function MyWishlistScreen() {
     setRefreshing(false);
   }, [load]);
 
+  const resetForm = () => {
+    setTitle("");
+    setPrice("");
+    setUrl("");
+    setImage(null);
+    setDescription(null);
+    setFetchMsg(null);
+    setEditingId(null);
+  };
+
+  const openAddForm = () => {
+    if (showForm) {
+      setShowForm(false);
+      resetForm();
+    } else {
+      resetForm();
+      setShowForm(true);
+    }
+  };
+
+  const startEdit = (item: WishlistItem) => {
+    setEditingId(item._id);
+    setTitle(item.title);
+    setPrice(item.price != null ? String(item.price) : "");
+    setUrl(item.url ?? "");
+    setImage(item.image ?? null);
+    setDescription(item.description ?? null);
+    setFetchMsg(null);
+    setShowForm(true);
+  };
+
   const add = async () => {
     if (!title.trim() || busy) return;
     setBusy(true);
     setError(null);
     try {
-      await addWishlistItem({
+      const payload = {
         title: title.trim(),
         price: price ? Number(price.replace(",", ".")) : undefined,
         url: url.trim() || undefined,
         image: image ?? undefined,
         description: description ?? undefined,
-      });
-      setTitle("");
-      setPrice("");
-      setUrl("");
-      setImage(null);
-      setDescription(null);
-      setFetchMsg(null);
+      };
+      if (editingId) {
+        await updateWishlistItem(editingId, {
+          ...payload,
+          price: payload.price ?? null,
+          url: payload.url ?? null,
+          image: payload.image ?? null,
+          description: payload.description ?? null,
+        });
+      } else {
+        await addWishlistItem(payload);
+      }
+      resetForm();
+      setShowForm(false);
       await load();
     } catch (e: any) {
-      setError(e?.message ?? "Erreur lors de l'ajout.");
+      setError(e?.message ?? "Erreur lors de l'enregistrement.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const onToggleShare = async (item: WishlistItem) => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await toggleWishlistItemSharing(item._id);
+      await load();
+    } catch (e: any) {
+      setError(e?.message ?? "Erreur.");
     } finally {
       setBusy(false);
     }
@@ -196,10 +251,14 @@ export default function MyWishlistScreen() {
         numColumns={2}
         columnWrapperStyle={giftGridStyles.grid}
         contentContainerStyle={styles.list}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        automaticallyAdjustKeyboardInsets
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
         ListHeaderComponent={
+          <View>
           <View style={styles.shareCard}>
             <Pressable
               style={styles.shareHeader}
@@ -280,6 +339,88 @@ export default function MyWishlistScreen() {
               </>
             )}
           </View>
+
+          {/* Ajout / modification d'une idée — en haut, comme les autres listes */}
+          <View style={styles.topFormCard}>
+            <View style={styles.formHeaderRow}>
+              <Text style={styles.formHeaderTitle}>🎀 Mes souhaits</Text>
+              <Pressable style={styles.newIdeaBtnTop} onPress={openAddForm}>
+                <Text style={styles.newIdeaTopText}>
+                  {showForm && !editingId ? "✕ Fermer" : "＋ Nouvelle idée"}
+                </Text>
+              </Pressable>
+            </View>
+
+            {showForm && (
+              <View style={styles.formInner}>
+                {editingId && (
+                  <Text style={styles.editingHint}>✏️ Modification de l'idée</Text>
+                )}
+                <View style={styles.formRow}>
+                  <TextInput
+                    placeholderTextColor="#9ca3af"
+                    style={[styles.input, { flex: 1 }]}
+                    placeholder="Colle un lien produit…"
+                    autoCapitalize="none"
+                    keyboardType="url"
+                    value={url}
+                    onChangeText={setUrl}
+                  />
+                  <Pressable
+                    style={[
+                      styles.fetchBtn,
+                      (!url.trim() || fetching) && { opacity: 0.5 },
+                    ]}
+                    disabled={!url.trim() || fetching}
+                    onPress={fetchInfos}
+                  >
+                    <Text style={styles.fetchBtnText}>
+                      {fetching ? "…" : "🔍 Remplir"}
+                    </Text>
+                  </Pressable>
+                </View>
+                {fetchMsg && <Text style={styles.fetchMsg}>{fetchMsg}</Text>}
+                {image && (
+                  <View style={styles.preview}>
+                    <Image source={{ uri: image }} style={styles.previewImage} />
+                    <Pressable hitSlop={8} onPress={() => setImage(null)}>
+                      <Text style={styles.deleteX}>✕</Text>
+                    </Pressable>
+                  </View>
+                )}
+                <View style={styles.formRow}>
+                  <TextInput
+                    placeholderTextColor="#9ca3af"
+                    style={[styles.input, { flex: 2 }]}
+                    placeholder="Nom du souhait *"
+                    value={title}
+                    onChangeText={setTitle}
+                  />
+                  <TextInput
+                    placeholderTextColor="#9ca3af"
+                    style={[styles.input, { flex: 1 }]}
+                    placeholder="Prix €"
+                    keyboardType="decimal-pad"
+                    value={price}
+                    onChangeText={setPrice}
+                  />
+                </View>
+                <Pressable
+                  style={[
+                    styles.addBtn,
+                    (!title.trim() || busy) && { opacity: 0.5 },
+                  ]}
+                  disabled={!title.trim() || busy}
+                  onPress={add}
+                >
+                  <Text style={styles.addBtnText}>
+                    {busy ? "…" : editingId ? "Enregistrer" : "Ajouter"}
+                  </Text>
+                </Pressable>
+              </View>
+            )}
+          </View>
+          </View>
         }
         ListEmptyComponent={
           <Text style={styles.empty}>
@@ -297,7 +438,9 @@ export default function MyWishlistScreen() {
               badge={
                 reserved
                   ? { label: "🎁 Réservé", color: "#047857", bg: "#d1fae5" }
-                  : { label: "Disponible", color: "#6b7280", bg: "#f3f4f6" }
+                  : item.isShared === false
+                    ? { label: "🔒 Masqué", color: "#6b7280", bg: "#f3f4f6" }
+                    : { label: "Disponible", color: "#6b7280", bg: "#f3f4f6" }
               }
               onPress={() => setSelected(item)}
             />
@@ -354,6 +497,39 @@ export default function MyWishlistScreen() {
                 </Pressable>
               </>
             )}
+            {/* Visibilité pour les amis inscrits */}
+            <View style={styles.sheetShareRow}>
+              <View style={{ flex: 1, paddingRight: 10 }}>
+                <Text style={styles.sheetShareTitle}>Visible par mes amis</Text>
+                <Text style={styles.sheetShareSub}>
+                  {selected.isShared === false
+                    ? "Masqué : personne ne peut le voir ni le réserver"
+                    : "Tes amis peuvent le voir et le réserver"}
+                </Text>
+              </View>
+              <Switch
+                value={selected.isShared !== false}
+                disabled={busy}
+                trackColor={{ true: "#3b82f6" }}
+                onValueChange={() => {
+                  const item = selected;
+                  setSelected(null);
+                  onToggleShare(item);
+                }}
+              />
+            </View>
+
+            <Pressable
+              style={styles.sheetEditBtn}
+              onPress={() => {
+                const item = selected;
+                setSelected(null);
+                startEdit(item);
+              }}
+            >
+              <Text style={styles.sheetEditText}>✏️ Modifier</Text>
+            </Pressable>
+
             <Pressable
               style={styles.sheetDeleteBtn}
               onPress={() => {
@@ -367,59 +543,6 @@ export default function MyWishlistScreen() {
           </>
         )}
       </BottomSheet>
-
-      <View style={styles.form}>
-        <View style={styles.formRow}>
-          <TextInput placeholderTextColor="#9ca3af"
-            style={[styles.input, { flex: 1 }]}
-            placeholder="Colle un lien produit…"
-            autoCapitalize="none"
-            keyboardType="url"
-            value={url}
-            onChangeText={setUrl}
-          />
-          <Pressable
-            style={[styles.fetchBtn, (!url.trim() || fetching) && { opacity: 0.5 }]}
-            disabled={!url.trim() || fetching}
-            onPress={fetchInfos}
-          >
-            <Text style={styles.fetchBtnText}>
-              {fetching ? "…" : "🔍 Remplir"}
-            </Text>
-          </Pressable>
-        </View>
-        {fetchMsg && <Text style={styles.fetchMsg}>{fetchMsg}</Text>}
-        {image && (
-          <View style={styles.preview}>
-            <Image source={{ uri: image }} style={styles.previewImage} />
-            <Pressable hitSlop={8} onPress={() => setImage(null)}>
-              <Text style={styles.deleteX}>✕</Text>
-            </Pressable>
-          </View>
-        )}
-        <View style={styles.formRow}>
-          <TextInput placeholderTextColor="#9ca3af"
-            style={[styles.input, { flex: 2 }]}
-            placeholder="Nom du souhait *"
-            value={title}
-            onChangeText={setTitle}
-          />
-          <TextInput placeholderTextColor="#9ca3af"
-            style={[styles.input, { flex: 1 }]}
-            placeholder="Prix €"
-            keyboardType="decimal-pad"
-            value={price}
-            onChangeText={setPrice}
-          />
-        </View>
-        <Pressable
-          style={[styles.addBtn, (!title.trim() || busy) && { opacity: 0.5 }]}
-          disabled={!title.trim() || busy}
-          onPress={add}
-        >
-          <Text style={styles.addBtnText}>{busy ? "Ajout…" : "Ajouter"}</Text>
-        </Pressable>
-      </View>
     </View>
   );
 }
@@ -453,12 +576,36 @@ const styles = StyleSheet.create({
   muted: { color: "#6b7280", fontSize: 12 },
   link: { color: "#3b82f6", fontSize: 12 },
   deleteX: { color: "#ef4444", fontSize: 16, fontWeight: "700" },
-  form: {
-    padding: 10,
-    gap: 8,
+  topFormCard: {
     backgroundColor: "#fff",
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: "#e5e7eb",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#eef2f7",
+    marginBottom: 12,
+    paddingHorizontal: 12,
+    paddingBottom: 4,
+  },
+  formHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 12,
+  },
+  formHeaderTitle: { fontSize: 14, fontWeight: "700", color: "#111827" },
+  newIdeaBtnTop: {
+    borderWidth: 1,
+    borderColor: "#3b82f6",
+    borderRadius: 8,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+  },
+  newIdeaTopText: { color: "#3b82f6", fontWeight: "700", fontSize: 13 },
+  formInner: { gap: 8, paddingBottom: 10 },
+  editingHint: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#2563eb",
+    textAlign: "center",
   },
   formRow: { flexDirection: "row", gap: 8 },
   input: {
@@ -578,13 +725,32 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   sheetUnreserveText: { color: "#3b82f6", fontWeight: "700", fontSize: 15 },
+  sheetShareRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 18,
+    paddingTop: 14,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: "#e5e7eb",
+  },
+  sheetShareTitle: { fontSize: 15, fontWeight: "700", color: "#111827" },
+  sheetShareSub: { fontSize: 12, color: "#6b7280", marginTop: 2 },
+  sheetEditBtn: {
+    borderWidth: 1.5,
+    borderColor: "#3b82f6",
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: "center",
+    marginTop: 14,
+  },
+  sheetEditText: { color: "#3b82f6", fontWeight: "700", fontSize: 15 },
   sheetDeleteBtn: {
     borderWidth: 1.5,
     borderColor: "#ef4444",
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: "center",
-    marginTop: 20,
+    marginTop: 12,
   },
   sheetDeleteText: { color: "#ef4444", fontWeight: "700", fontSize: 15 },
 });

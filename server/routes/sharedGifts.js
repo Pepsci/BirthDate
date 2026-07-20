@@ -14,7 +14,7 @@ const personLabel = (dateDoc) =>
 // ── Inviter un ami à créer une liste commune ────────────────────────────────
 router.post("/invite", isAuthenticated, async (req, res) => {
   try {
-    const { friendId, dateId } = req.body;
+    const { friendId, dateId, mode, giftIds } = req.body;
     if (!mongoose.isValidObjectId(friendId) || !mongoose.isValidObjectId(dateId))
       return res.status(400).json({ message: "Paramètres invalides" });
     if (friendId === req.payload._id)
@@ -25,6 +25,17 @@ router.post("/invite", isAuthenticated, async (req, res) => {
       owner: req.payload._id,
     });
     if (!date) return res.status(404).json({ message: "Carte introuvable" });
+
+    // Mode de partage : "full" (défaut) ou "selective" avec une liste d'idées
+    const shareMode = mode === "selective" ? "selective" : "full";
+    const validGiftIds =
+      shareMode === "selective" && Array.isArray(giftIds)
+        ? giftIds.filter((id) => mongoose.isValidObjectId(id))
+        : [];
+    if (shareMode === "selective" && validGiftIds.length === 0)
+      return res
+        .status(400)
+        .json({ message: "Sélectionne au moins une idée à partager." });
 
     // Évite les doublons d'invitation en attente
     const existing = await SharedGiftListInvitation.findOne({
@@ -42,6 +53,8 @@ router.post("/invite", isAuthenticated, async (req, res) => {
       fromDate: dateId,
       sharedGiftList: date.sharedGiftList || null,
       label: personLabel(date),
+      shareMode,
+      giftIds: validGiftIds,
     });
 
     const me = await User.findById(req.payload._id).select("name surname");
@@ -139,11 +152,30 @@ router.post("/invitations/:id/accept", isAuthenticated, async (req, res) => {
     const existingListId = inv.sharedGiftList || fromDate.sharedGiftList;
     if (existingListId) list = await SharedGiftList.findById(existingListId);
     if (!list) {
+      // Idées à partager depuis la carte initiatrice, selon le mode choisi
+      const sourceGifts = fromDate.gifts || [];
+      let seed = sourceGifts;
+      if (inv.shareMode === "selective" && (inv.giftIds?.length ?? 0) > 0) {
+        const idSet = new Set(inv.giftIds.map((id) => id.toString()));
+        seed = sourceGifts.filter((g) => idSet.has(g._id.toString()));
+      }
+      const seededGifts = seed.map((g) => ({
+        giftName: g.giftName,
+        occasion: g.occasion,
+        year: g.year,
+        url: g.url ?? null,
+        price: g.price ?? null,
+        image: g.image ?? null,
+        status: g.status ?? "to_buy",
+        purchased: g.purchased ?? false,
+        addedBy: inv.fromUser,
+      }));
+
       list = await SharedGiftList.create({
         members: [inv.fromUser],
         createdBy: inv.fromUser,
         label: inv.label,
-        gifts: [],
+        gifts: seededGifts,
       });
     }
 
@@ -288,7 +320,9 @@ router.delete(
     try {
       const gift = req.sharedList.gifts.id(req.params.giftId);
       if (!gift) return res.status(404).json({ message: "Cadeau introuvable" });
-      gift.deleteOne();
+      // Mongoose 6 : les sous-documents n'ont pas .deleteOne() (ajouté en v7).
+      // .pull() retire l'élément du tableau, toutes versions confondues.
+      req.sharedList.gifts.pull(req.params.giftId);
       await req.sharedList.save();
       res.json(req.sharedList);
     } catch (err) {

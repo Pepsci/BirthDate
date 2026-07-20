@@ -14,6 +14,7 @@ import {
 } from "../lib/notif-decrypt";
 import { ActivityIndicator, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
+import HeaderBackButton from "../components/HeaderBackButton";
 import { AuthProvider, useAuth } from "../lib/auth-context";
 import { UnreadProvider } from "../lib/unread-context";
 import { ThemeProvider, useTheme } from "../lib/theme-context";
@@ -113,16 +114,18 @@ function RootNavigator() {
 
   return (
     <Stack
-      screenOptions={{
+      screenOptions={({ navigation }) => ({
         headerStyle: { backgroundColor: colors.headerBg },
         headerTintColor: colors.text,
         headerTitleStyle: { color: colors.text },
         contentStyle: { backgroundColor: colors.bg },
-        // iOS : sans ça, le bouton retour affiche le nom de la route
-        // précédente — littéralement « (tabs) ». Chevron seul, c'est mieux.
-        headerBackButtonDisplayMode: "minimal",
-        headerBackTitle: "Retour",
-      }}
+        // Bouton retour custom (piloté en JS) : le bouton natif iOS devient
+        // parfois inopérant sur les écrans empilés (cartes, profil…). On ne
+        // l'affiche que s'il y a un écran précédent.
+        headerLeft: navigation.canGoBack()
+          ? () => <HeaderBackButton />
+          : undefined,
+      })}
     >
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="welcome" options={{ headerShown: false }} />

@@ -60,7 +60,13 @@ export default function PasswordScreen() {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="on-drag"
+      automaticallyAdjustKeyboardInsets
+    >
       <Stack.Screen options={{ title: "Mot de passe" }} />
 
       <Text style={styles.label}>Mot de passe actuel</Text>

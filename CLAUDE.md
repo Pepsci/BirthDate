@@ -1,5 +1,12 @@
 # BirthReminder — CLAUDE.md
-*Mis à jour : mars 2026*
+*Mis à jour : juillet 2026*
+
+> **Changements récents (juillet 2026)** — en attente de redéploiement backend EC2 :
+> - **Contrôle d'âge 15 ans** : `routes/auth.js` rejette les inscriptions < 15 ans (RGPD France)
+> - **Deep links notifs push** : `jobs/sendReminders.js` → `/home?tab=date&dateId=…` (carte de la personne) ; `sockets/chatHandlers.js` (messages non chiffrés) → `/home?tab=chat&conversationId=…`
+> - **Modération UGC** (15/07/2026) : routes `/api/moderation`, `Report` model, `User.blockedUsers` — voir `AUDIT_STORES_2026.md`
+>
+> Côté mobile (`mobile/`, hors périmètre de ce fichier) : app iOS en TestFlight (build 13), NSE de déchiffrement des notifs, onboarding guidé — voir `ROADMAP_2026.md`.
 
 ---
 

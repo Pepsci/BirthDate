@@ -6,7 +6,9 @@ export interface WishlistItem {
   price?: number | null;
   url?: string | null;
   image?: string | null;
+  description?: string | null;
   isPurchased: boolean;
+  isShared?: boolean; // visible par les amis inscrits (défaut : true côté back)
   reservedBy?: { _id: string; name: string; surname?: string } | null;
   reservedByGuest?: string | null;
 }
@@ -67,8 +69,43 @@ export async function addWishlistItem(item: {
   url?: string;
   description?: string;
   image?: string;
+  isShared?: boolean;
 }): Promise<void> {
-  await api("/wishlist", { method: "POST", body: JSON.stringify(item) });
+  // isShared par défaut à true : sinon l'item est invisible pour les amis
+  // (le back a un défaut à false) et personne ne peut le réserver.
+  await api("/wishlist", {
+    method: "POST",
+    body: JSON.stringify({ isShared: true, ...item }),
+  });
+}
+
+/** Modifie un item existant (PATCH /wishlist/:id). */
+export async function updateWishlistItem(
+  id: string,
+  fields: {
+    title: string;
+    price?: number | null;
+    url?: string | null;
+    description?: string | null;
+    image?: string | null;
+    isShared?: boolean;
+  },
+): Promise<void> {
+  await api(`/wishlist/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(fields),
+  });
+}
+
+/** Bascule la visibilité d'un item pour les amis (POST /wishlist/:id/toggle-sharing). */
+export async function toggleWishlistItemSharing(
+  id: string,
+): Promise<WishlistItem> {
+  const { data } = await api<{ data: WishlistItem }>(
+    `/wishlist/${id}/toggle-sharing`,
+    { method: "POST" },
+  );
+  return data;
 }
 
 // ---- Récupération auto des infos produit depuis un lien ----

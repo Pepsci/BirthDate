@@ -134,7 +134,23 @@ if (recipientId && !connectedUsers.has(recipientId.toString())) {
 
 ---
 
-## Phase 2 — iOS fiable (Notification Service Extension)
+## Phase 2 — iOS fiable (Notification Service Extension) — ✅ FAIT (juillet 2026)
+
+> **Statut** : NSE implémentée et livrée (build 12+). Cible `targets/BirthReminderNSE/`
+> (@bacons/apple-targets), pod Sodium lié via `plugins/withNsePod.js` (fix libsodium
+> APFS — ne pas toucher), clé privée lue depuis le Keychain App Group
+> `group.com.birthreminder.app` (voir `crypto.ts`). Le backend envoie aux appareils
+> iOS un push **alerte** avec fallback « 🔒 Nouveau message chiffré » que la NSE
+> réécrit en clair avant affichage.
+>
+> **Corrections juillet 2026 (build 13)** : navigation depuis une notif différée
+> jusqu'au montage du navigateur (`_layout.tsx` — corrige l'app figée sur le splash
+> au cold start), `getPrivateKey()` ne throw plus (fallback legacy), clé privée en
+> state dans les écrans de chat (re-render quand elle arrive tard) + retry.
+> Deep links corrigés côté serveur : anniversaires → `/home?tab=date&dateId=…`,
+> messages → `/home?tab=chat&conversationId=…` (redéploiement backend requis).
+
+### Contexte d'origine (avant implémentation)
 
 Sur Android, la tâche de fond `expo-task-manager` suffit : elle s'exécute même app
 tuée et affiche la notif déchiffrée. **Sur iOS**, les pushes « data-only »

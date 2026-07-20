@@ -29,7 +29,12 @@ export default function EditDateScreen() {
           onPress: async () => {
             try {
               await deleteDate(id!);
-              router.back();
+              // On saute la carte détail (désormais supprimée → 404 « date
+              // introuvable ») et on revient directement à la liste. La
+              // transition native de la stack fait l'animation de sortie ;
+              // useFocusEffect de la liste recharge → la carte disparaît.
+              if (router.canDismiss()) router.dismissAll();
+              else router.replace("/(tabs)");
             } catch (e: any) {
               setError(e?.message ?? "Erreur lors de la suppression.");
             }

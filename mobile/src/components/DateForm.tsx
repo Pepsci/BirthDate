@@ -62,7 +62,13 @@ export default function DateForm({ initial, submitLabel, onSubmit }: Props) {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="on-drag"
+      automaticallyAdjustKeyboardInsets
+    >
       <Text style={styles.label}>Prénom *</Text>
       <TextInput placeholderTextColor={colors.placeholder}
         style={styles.input}
@@ -93,6 +99,7 @@ export default function DateForm({ initial, submitLabel, onSubmit }: Props) {
             value={date}
             mode="date"
             display={Platform.OS === "ios" ? "spinner" : "default"}
+            locale="fr-FR"
             maximumDate={new Date()}
             themeVariant={resolved}
             onChange={(event, selected) => {

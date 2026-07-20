@@ -8,7 +8,7 @@ import {
   ActivityIndicator,
   Pressable,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import { useGuidedTour, TOURS } from "../../lib/guided-tour";
 import {
   EventEntry,
@@ -49,6 +49,15 @@ export default function EventsScreen() {
   useEffect(() => {
     load().finally(() => setLoading(false));
   }, [load]);
+
+  // Recharge à chaque retour sur l'onglet : sans ça, un événement supprimé
+  // (ex. depuis le web) reste affiché en vignette jusqu'au redémarrage de
+  // l'app, et l'ouvrir mène à un écran « Événement introuvable ».
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load]),
+  );
 
   // Tour guidé : créer son premier événement (＋) — première visite uniquement
   useEffect(() => {

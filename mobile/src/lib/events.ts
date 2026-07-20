@@ -158,6 +158,45 @@ export async function fetchBankInfo(shortId: string): Promise<BankInfo> {
   return api<BankInfo>(`/events/${shortId}/bank-info`);
 }
 
+/** Enregistre / met à jour le RIB (chiffré côté serveur). Organisateur only. */
+export async function saveBankInfo(
+  shortId: string,
+  data: { iban: string; holderName?: string; durationDays: number },
+): Promise<void> {
+  await api(`/events/${shortId}/bank-info`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+}
+
+/** Supprime le RIB enregistré. Organisateur only. */
+export async function deleteBankInfo(shortId: string): Promise<void> {
+  await api(`/events/${shortId}/bank-info`, { method: "DELETE" });
+}
+
+/** Active/désactive l'option virement IBAN. Organisateur only. */
+export async function toggleIbanOption(
+  shortId: string,
+  enabled: boolean,
+): Promise<void> {
+  await api(`/events/${shortId}/direct-transfer/iban-toggle`, {
+    method: "PUT",
+    body: JSON.stringify({ enabled }),
+  });
+}
+
+/** Active/désactive PayPal + enregistre le lien PayPal.Me. Organisateur only. */
+export async function setPaypalOption(
+  shortId: string,
+  enabled: boolean,
+  paypalLink?: string,
+): Promise<void> {
+  await api(`/events/${shortId}/direct-transfer/paypal`, {
+    method: "PUT",
+    body: JSON.stringify({ enabled, paypalLink: paypalLink ?? "" }),
+  });
+}
+
 export async function fetchEvent(shortId: string): Promise<EventDetail> {
   return api<EventDetail>(`/events/${shortId}`);
 }

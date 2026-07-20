@@ -12,6 +12,12 @@
       "bundleIdentifier": "com.birthreminder.app",
       "supportsTablet": false,
       "infoPlist": {
+        "CFBundleDevelopmentRegion": "fr_FR",
+        "CFBundleAllowMixedLocalizations": true,
+        "CFBundleLocalizations": [
+          "fr",
+          "en"
+        ],
         "LSApplicationQueriesSchemes": [
           "comgooglemaps",
           "waze"

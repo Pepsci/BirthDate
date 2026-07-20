@@ -30,5 +30,3 @@ build/
 .claude/
 .DS_Store
 *.log
-
-mobile/

@@ -32,10 +32,16 @@ export interface SharedInvitation {
 export async function inviteSharedList(
   friendId: string,
   dateId: string,
+  options?: { mode?: "full" | "selective"; giftIds?: string[] },
 ): Promise<void> {
   await api("/shared-gifts/invite", {
     method: "POST",
-    body: JSON.stringify({ friendId, dateId }),
+    body: JSON.stringify({
+      friendId,
+      dateId,
+      mode: options?.mode ?? "full",
+      giftIds: options?.giftIds ?? [],
+    }),
   });
 }
 

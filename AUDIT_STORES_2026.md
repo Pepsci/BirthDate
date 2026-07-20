@@ -29,8 +29,12 @@ Reste (mineur) : signalement des propositions de cadeaux/wishlists (les types so
 ### 2. Page web publique de suppression de compte (Google, obligatoire depuis avril 2024)
 La suppression in-app existe ✅ (conforme Apple 5.1.1(v)), mais le formulaire Data safety de Play Console exige **une URL web** accessible sans login (ex. `birthreminder.com/delete-account`) décrivant : ce qui est supprimé, ce qui est conservé et pourquoi, les délais. → tâche front web (hors périmètre mobile).
 
-### 3. Âge minimum à l'inscription
-La date de naissance est collectée mais aucun contrôle d'âge. RGPD France : consentement autonome à partir de **15 ans**. À faire : blocage < 15 ans dans `signup.tsx` + côté serveur, et déclaration cohérente dans les questionnaires d'âge des deux stores. *(Non appliqué : changement de comportement — à valider avant que je l'implémente.)*
+### 3. Âge minimum à l'inscription — ✅ IMPLÉMENTÉ (juillet 2026)
+Blocage < 15 ans (RGPD France, consentement autonome art. 7-1) :
+- **Mobile** : `signup.tsx` — validation au submit + `maximumDate` sur le DateTimePicker
+- **Serveur** : `routes/auth.js` — contrôle après validation de `birthDate` (s'applique aussi au web) — ⚠️ **actif seulement après redéploiement EC2**
+
+Reste : déclarer « 15+ » dans les questionnaires d'âge des deux stores.
 
 ---
 
@@ -66,7 +70,7 @@ La date de naissance est collectée mais aucun contrôle d'âge. RGPD France : c
 - [ ] Labels de confidentialité : email, nom, date de naissance, photos, messages (E2E), infos de paiement (via Stripe) — liées à l'identité, **aucun tracking**
 - [ ] Nouveau questionnaire de classification d'âge (obligatoire depuis 2026)
 - [ ] Note de review : cagnotte (biens physiques, hors IAP) + E2E + compte de démo
-- [ ] Screenshots 6.9"/6.5", icône 1024 px
+- [ ] Screenshots 6.9"/6.5" — icône 1024 px ✅ (logo B bougie, générée juillet 2026, build 14)
 
 **Play Console**
 - [ ] Data safety (mêmes données) + **URL de suppression de compte** (bloquant n° 2)

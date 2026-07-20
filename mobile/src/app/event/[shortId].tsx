@@ -510,6 +510,9 @@ export default function EventDetailScreen() {
         styles.content,
         { paddingBottom: 40 + insets.bottom },
       ]}
+      keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="on-drag"
+      automaticallyAdjustKeyboardInsets
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
@@ -1076,19 +1079,23 @@ export default function EventDetailScreen() {
                   📤 Partager la cagnotte
                 </Text>
               </Pressable>
-
-              {event.hasFullAccess &&
-                (event.directTransfer?.ibanEnabled ||
-                  event.directTransfer?.paypalEnabled) && (
-                  <DirectTransferViewer
-                    shortId={event.shortId}
-                    directTransfer={event.directTransfer}
-                  />
-                )}
             </>
           )}
         </View>
       )}
+
+      {/* Virement direct — section autonome (visible même sans cagnotte) */}
+      {event.hasFullAccess &&
+        (event.directTransfer?.ibanEnabled ||
+          event.directTransfer?.paypalEnabled) && (
+          <View style={styles.card}>
+            <Text style={styles.sectionTitle}>💳 Virement direct</Text>
+            <DirectTransferViewer
+              shortId={event.shortId}
+              directTransfer={event.directTransfer}
+            />
+          </View>
+        )}
 
       {/* Partage */}
       {event.hasFullAccess && (isOrganizer || event.allowGuestInvites) && (

@@ -23,10 +23,15 @@
 **Backend (déployé EC2)** : routes expo-token, service Expo Push, CORS socket mobile, fixes cadeaux (url/prix/image), champ image sur les propositions.
 
 ### 🔜 Reste à faire (court terme)
-- [ ] Rebuild preview avec les derniers fixes (safe area, signup/forgot-password)
-- [ ] Dark theme + switch (extraire les couleurs vers un ThemeContext)
-- [ ] Polish : titre retour "(tabs)", icône/splash BirthReminder, écran large (Fold)
-- [ ] Compte Apple Developer → build iOS (`eas device:create` + `eas build -p ios`, APNs auto)
+- [x] Dark theme + switch (ThemeContext) ✅
+- [x] Polish : titre retour "(tabs)" ✅, icône/splash BirthReminder ✅ (build 14)
+- [x] Compte Apple Developer + build iOS production ✅ (juillet 2026)
+- [x] TestFlight : groupe externe en beta review, build 13 soumis (fix notifs : cold start figé + deep links) ✅
+- [x] NSE iOS (notifs déchiffrées app tuée) ✅ — voir mobile/docs/NOTIF_LISIBLES.md
+- [x] Contrôle d'âge 15 ans (mobile + serveur) + onboarding guidé (tours spotlight) ✅
+- [ ] Build 14 : icône + splash au logo BirthReminder (générés, dans le prochain build)
+- [ ] Redéployer le backend EC2 (contrôle d'âge serveur + deep links notifs)
+- [ ] Fiche App Store : screenshots, description, compte démo, note review (cagnotte Stripe + E2E)
 - [ ] Google Play : closed testing 12 testeurs / 14 jours (incompressible — lancer tôt)
 
 ---

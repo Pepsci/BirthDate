@@ -18,6 +18,16 @@ const sharedGiftListInvitationSchema = new Schema(
       default: null,
     },
     label: { type: String, default: null },
+    // Mode de partage choisi à l'invitation :
+    //  - "full"      : toutes les idées de la carte fromDate sont partagées
+    //  - "selective" : seules les idées listées dans giftIds le sont
+    shareMode: {
+      type: String,
+      enum: ["full", "selective"],
+      default: "full",
+    },
+    // Ids des sous-documents Date.gifts à partager (mode "selective")
+    giftIds: [{ type: Schema.Types.ObjectId }],
     status: {
       type: String,
       enum: ["pending", "accepted", "declined"],

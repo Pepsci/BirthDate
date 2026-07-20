@@ -157,6 +157,7 @@ export default function SignupScreen() {
             value={birth ?? new Date(2000, 0, 1)}
             mode="date"
             display={Platform.OS === "ios" ? "spinner" : "default"}
+            locale="fr-FR"
             maximumDate={maxBirthDate}
             onChange={(event, selected) => {
               if (Platform.OS === "android") setShowPicker(false);

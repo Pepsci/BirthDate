@@ -26,7 +26,7 @@ router.put("/:shortId/rsvp", checkGuestOrAuth, async (req, res) => {
       data: { eventTitle: req.event.title, eventShortId: req.event.shortId, guestName, status },
       link: `/event/${req.event.shortId}`,
       pushPayload: {
-        title: `🎉 RSVP — ${req.event.title}`,
+        title: `🎉 Nouvelle réponse — ${req.event.title}`,
         body: `${guestName} ${statusLabel}`,
         url: `/event/${req.event.shortId}`,
         tag: `event-rsvp-${req.event.shortId}`,

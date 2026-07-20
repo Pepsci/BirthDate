@@ -178,7 +178,13 @@ export default function EventFormStepper({
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="on-drag"
+      automaticallyAdjustKeyboardInsets
+    >
       {/* Progression */}
       <View style={styles.progress}>
         {STEPS.map((s, i) => (
@@ -286,6 +292,7 @@ export default function EventFormStepper({
                     mode="date"
                     minimumDate={new Date()}
                     display={Platform.OS === "ios" ? "spinner" : "default"}
+                    locale="fr-FR"
                     onChange={(e, d) => {
                       if (Platform.OS === "android") setShowDate(false);
                       if (d)
@@ -305,6 +312,7 @@ export default function EventFormStepper({
                     value={fixedDate}
                     mode="time"
                     display={Platform.OS === "ios" ? "spinner" : "default"}
+                    locale="fr-FR"
                     onChange={(e, d) => {
                       if (Platform.OS === "android") setShowTime(false);
                       if (d)
@@ -356,6 +364,7 @@ export default function EventFormStepper({
                     mode="date"
                     minimumDate={new Date()}
                     display={Platform.OS === "ios" ? "spinner" : "default"}
+                    locale="fr-FR"
                     onChange={(e, d) => {
                       // Android : la boîte se ferme et valide sur "OK"/"Annuler".
                       // iOS : la roue émet onChange en continu → on met juste à
