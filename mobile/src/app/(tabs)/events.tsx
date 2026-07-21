@@ -121,6 +121,7 @@ export default function EventsScreen() {
 function EventCard({ event }: { event: EventEntry }) {
   const router = useRouter();
   const styles = useThemedStyles(makeStyles);
+  const { colors } = useTheme();
   const d = eventDate(event);
   const location =
     typeof event.fixedLocation === "string"
@@ -149,7 +150,7 @@ function EventCard({ event }: { event: EventEntry }) {
       ) : null}
 
       <View style={styles.footer}>
-        <Text style={[styles.status, statusStyle(event.status)]}>
+        <Text style={[styles.status, statusStyle(event.status, colors)]}>
           {STATUS_LABELS[event.status]}
         </Text>
         {event.myRsvpStatus && (
@@ -160,16 +161,16 @@ function EventCard({ event }: { event: EventEntry }) {
   );
 }
 
-function statusStyle(status: EventEntry["status"]) {
+function statusStyle(status: EventEntry["status"], c: ThemeColors) {
   switch (status) {
     case "published":
-      return { color: "#10b981" };
+      return { color: c.success };
     case "cancelled":
-      return { color: "#ef4444" };
+      return { color: c.danger };
     case "done":
-      return { color: "#6b7280" };
+      return { color: c.sub };
     default:
-      return { color: "#f59e0b" };
+      return { color: c.warning };
   }
 }
 

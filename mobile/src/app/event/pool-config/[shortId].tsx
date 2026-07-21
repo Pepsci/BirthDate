@@ -26,12 +26,22 @@ import {
   toggleIbanOption,
   setPaypalOption,
 } from "../../../lib/events";
+import {
+  useTheme,
+  useThemedStyles,
+  ThemeColors,
+} from "../../../lib/theme-context";
 
 const IBAN_DURATIONS = [7, 14, 30, 60, 90];
+
+/** Violet de marque Stripe — volontairement hors thème. */
+const STRIPE_PURPLE = "#635bff";
 
 export default function PoolConfigScreen() {
   const { shortId } = useLocalSearchParams<{ shortId: string }>();
   const router = useRouter();
+  const styles = useThemedStyles(makeStyles);
+  const { colors, resolved } = useTheme();
   const [loaded, setLoaded] = useState(false);
   const [active, setActive] = useState(false);
   const [mode, setMode] = useState<"free" | "goal">("free");
@@ -164,7 +174,7 @@ export default function PoolConfigScreen() {
     return (
       <View style={styles.center}>
         <Stack.Screen options={{ title: "Cagnotte" }} />
-        <ActivityIndicator size="large" color="#3b82f6" />
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -189,7 +199,7 @@ export default function PoolConfigScreen() {
         <Switch
           value={active}
           onValueChange={setActive}
-          trackColor={{ true: "#10b981" }}
+          trackColor={{ true: colors.success }}
         />
       </View>
 
@@ -223,7 +233,7 @@ export default function PoolConfigScreen() {
             <>
               <Text style={styles.label}>Objectif (€)</Text>
               <TextInput
-                placeholderTextColor="#9ca3af"
+                placeholderTextColor={colors.placeholder}
                 style={styles.input}
                 placeholder="ex : 150"
                 keyboardType="decimal-pad"
@@ -258,6 +268,7 @@ export default function PoolConfigScreen() {
                 minimumDate={new Date()}
                 display={Platform.OS === "ios" ? "spinner" : "default"}
                 locale="fr-FR"
+                themeVariant={resolved}
                 onChange={(e, d) => {
                   if (Platform.OS === "android") setShowPicker(false);
                   if (d && e.type !== "dismissed") setDeadline(d);
@@ -284,14 +295,14 @@ export default function PoolConfigScreen() {
         <Switch
           value={ibanEnabled}
           onValueChange={setIbanEnabled}
-          trackColor={{ true: "#10b981" }}
+          trackColor={{ true: colors.success }}
         />
       </View>
 
       {ibanEnabled && (
         <>
           <TextInput
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor={colors.placeholder}
             style={styles.input}
             placeholder="FR76 3000 4000 0500 0012 3456 789"
             autoCapitalize="characters"
@@ -300,7 +311,7 @@ export default function PoolConfigScreen() {
             onChangeText={setIban}
           />
           <TextInput
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor={colors.placeholder}
             style={styles.input}
             placeholder="Nom du titulaire (optionnel)"
             value={holderName}
@@ -339,13 +350,13 @@ export default function PoolConfigScreen() {
         <Switch
           value={paypalEnabled}
           onValueChange={setPaypalEnabled}
-          trackColor={{ true: "#10b981" }}
+          trackColor={{ true: colors.success }}
         />
       </View>
 
       {paypalEnabled && (
         <TextInput
-          placeholderTextColor="#9ca3af"
+          placeholderTextColor={colors.placeholder}
           style={styles.input}
           placeholder="https://paypal.me/tonpseudo"
           autoCapitalize="none"
@@ -369,7 +380,7 @@ export default function PoolConfigScreen() {
             onPress={connectStripe}
           >
             {onboarding ? (
-              <ActivityIndicator color="#fff" />
+              <ActivityIndicator color={colors.white} />
             ) : (
               <Text style={styles.stripeBtnText}>
                 🔗 Connecter mon compte Stripe
@@ -386,7 +397,7 @@ export default function PoolConfigScreen() {
         onPress={save}
       >
         {saving ? (
-          <ActivityIndicator color="#fff" />
+          <ActivityIndicator color={colors.white} />
         ) : (
           <Text style={styles.saveText}>Enregistrer</Text>
         )}
@@ -395,76 +406,82 @@ export default function PoolConfigScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f9fafb" },
-  content: { padding: 16, gap: 8 },
-  center: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#f9fafb",
-  },
-  label: { fontSize: 13, fontWeight: "700", color: "#6b7280", marginTop: 10 },
-  hint: { color: "#9ca3af", fontSize: 12 },
-  dtDivider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: "#e5e7eb",
-    marginTop: 20,
-    marginBottom: 6,
-  },
-  dtTitle: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: "#111827",
-    marginTop: 4,
-  },
-  switchRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 14,
-  },
-  switchLabel: { fontSize: 15, fontWeight: "600", color: "#111827" },
-  modeSwitch: {
-    flexDirection: "row",
-    backgroundColor: "#f3f4f6",
-    borderRadius: 10,
-    padding: 3,
-  },
-  modeBtn: { flex: 1, paddingVertical: 9, borderRadius: 8, alignItems: "center" },
-  modeBtnActive: { backgroundColor: "#fff", elevation: 1 },
-  modeText: { fontSize: 13, fontWeight: "600", color: "#6b7280" },
-  modeTextActive: { color: "#111827" },
-  input: {
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-    borderRadius: 10,
-    padding: 12,
-    fontSize: 16,
-    backgroundColor: "#fff",
-    color: "#111827",
-  },
-  inputText: { fontSize: 15, color: "#111827" },
-  clearDeadline: { color: "#ef4444", fontSize: 12, textAlign: "center" },
-  warn: { backgroundColor: "#fef3c7", borderRadius: 10, padding: 12 },
-  warnText: { color: "#92400e", fontSize: 13, lineHeight: 18 },
-  stripeBtn: {
-    backgroundColor: "#635bff",
-    borderRadius: 10,
-    padding: 12,
-    alignItems: "center",
-    marginTop: 10,
-  },
-  stripeBtnText: { color: "#fff", fontWeight: "700" },
-  error: { color: "#b91c1c", textAlign: "center", marginTop: 8 },
-  saveBtn: {
-    backgroundColor: "#3b82f6",
-    borderRadius: 10,
-    padding: 14,
-    alignItems: "center",
-    marginTop: 12,
-  },
-  saveText: { color: "#fff", fontWeight: "700", fontSize: 15 },
-});
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: c.bg },
+    content: { padding: 16, gap: 8 },
+    center: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: c.bg,
+    },
+    label: { fontSize: 13, fontWeight: "700", color: c.sub, marginTop: 10 },
+    hint: { color: c.faint, fontSize: 12 },
+    dtDivider: {
+      height: StyleSheet.hairlineWidth,
+      backgroundColor: c.border,
+      marginTop: 20,
+      marginBottom: 6,
+    },
+    dtTitle: {
+      fontSize: 16,
+      fontWeight: "800",
+      color: c.text,
+      marginTop: 4,
+    },
+    switchRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+      backgroundColor: c.card,
+      borderRadius: 12,
+      padding: 14,
+    },
+    switchLabel: { fontSize: 15, fontWeight: "600", color: c.text },
+    modeSwitch: {
+      flexDirection: "row",
+      backgroundColor: c.bgSecondary,
+      borderRadius: 10,
+      padding: 3,
+    },
+    modeBtn: {
+      flex: 1,
+      paddingVertical: 9,
+      borderRadius: 8,
+      alignItems: "center",
+    },
+    modeBtnActive: { backgroundColor: c.card, elevation: 1 },
+    modeText: { fontSize: 13, fontWeight: "600", color: c.sub },
+    modeTextActive: { color: c.text },
+    input: {
+      borderWidth: 1,
+      borderColor: c.inputBorder,
+      borderRadius: 10,
+      padding: 12,
+      fontSize: 16,
+      backgroundColor: c.inputBg,
+      color: c.text,
+    },
+    inputText: { fontSize: 15, color: c.text },
+    clearDeadline: { color: c.danger, fontSize: 12, textAlign: "center" },
+    warn: { backgroundColor: c.warningSoft, borderRadius: 10, padding: 12 },
+    warnText: { color: c.warningStrong, fontSize: 13, lineHeight: 18 },
+    stripeBtn: {
+      backgroundColor: STRIPE_PURPLE,
+      borderRadius: 10,
+      padding: 12,
+      alignItems: "center",
+      marginTop: 10,
+    },
+    stripeBtnText: { color: c.white, fontWeight: "700" },
+    error: { color: c.danger, textAlign: "center", marginTop: 8 },
+    saveBtn: {
+      backgroundColor: c.primary,
+      borderRadius: 10,
+      padding: 14,
+      alignItems: "center",
+      marginTop: 12,
+    },
+    saveText: { color: c.white, fontWeight: "700", fontSize: 15 },
+  });

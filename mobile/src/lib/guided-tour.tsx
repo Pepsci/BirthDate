@@ -405,7 +405,7 @@ const makeStyles = (c: ThemeColors) =>
       borderRadius: 14,
       padding: 16,
       gap: 8,
-      shadowColor: "#000",
+      shadowColor: c.shadow,
       shadowOpacity: 0.3,
       shadowRadius: 12,
       shadowOffset: { width: 0, height: 4 },
@@ -421,7 +421,7 @@ const makeStyles = (c: ThemeColors) =>
       paddingHorizontal: 16,
       marginTop: 4,
     },
-    bubbleButtonText: { color: "#fff", fontWeight: "700", fontSize: 14 },
+    bubbleButtonText: { color: c.white, fontWeight: "700", fontSize: 14 },
     bubbleSkip: { alignSelf: "flex-end", marginTop: 4, padding: 4 },
     bubbleSkipText: { color: c.faint, fontSize: 13 },
   });

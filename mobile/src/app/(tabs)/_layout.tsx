@@ -77,6 +77,7 @@ const makeHeaderStyles = (c: ThemeColors) =>
 
 function HeaderBell() {
   const router = useRouter();
+  const bellStyles = useThemedStyles(makeBellStyles);
   const { notifCount } = useUnread();
   return (
     <Pressable
@@ -96,21 +97,22 @@ function HeaderBell() {
   );
 }
 
-const bellStyles = StyleSheet.create({
-  wrap: { flexDirection: "row", marginRight: 4 },
-  badge: {
-    backgroundColor: "#ef4444",
-    borderRadius: 9,
-    minWidth: 18,
-    height: 18,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 4,
-    marginLeft: -8,
-    marginTop: -6,
-  },
-  badgeText: { color: "#fff", fontSize: 10, fontWeight: "700" },
-});
+const makeBellStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    wrap: { flexDirection: "row", marginRight: 4 },
+    badge: {
+      backgroundColor: c.danger,
+      borderRadius: 9,
+      minWidth: 18,
+      height: 18,
+      justifyContent: "center",
+      alignItems: "center",
+      paddingHorizontal: 4,
+      marginLeft: -8,
+      marginTop: -6,
+    },
+    badgeText: { color: c.white, fontSize: 10, fontWeight: "700" },
+  });
 
 function TabIcon({ emoji, focused }: { emoji: string; focused: boolean }) {
   return (

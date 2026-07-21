@@ -22,6 +22,7 @@ import {
   GiftStatus,
   giftStatusOf,
 } from "../lib/giftStatus";
+import { useThemedStyles, ThemeColors } from "../lib/theme-context";
 
 /**
  * Modal détail d'un cadeau — bottom sheet (façon web affichage mobile).
@@ -42,6 +43,7 @@ export default function GiftDetailModal({
   onDelete: (g: Gift) => void;
   onSetStatus: (g: Gift, status: GiftStatus) => void;
 }) {
+  const styles = useThemedStyles(makeStyles);
   const translateY = useRef(new Animated.Value(0)).current;
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
@@ -197,91 +199,92 @@ export default function GiftDetailModal({
   );
 }
 
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.4)",
-    justifyContent: "flex-end",
-  },
-  sheet: {
-    backgroundColor: "#fff",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 16,
-    paddingBottom: 28,
-    maxHeight: "85%",
-  },
-  handleZone: {
-    alignItems: "center",
-    paddingTop: 4,
-    paddingBottom: 10,
-    marginTop: -4,
-  },
-  handle: {
-    width: 40,
-    height: 5,
-    borderRadius: 3,
-    backgroundColor: "#d1d5db",
-  },
-  image: { width: "100%", height: 180, borderRadius: 14 },
-  imagePlaceholder: {
-    backgroundColor: "#f3f4f6",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  imageEmoji: { fontSize: 64 },
-  title: {
-    fontSize: 20,
-    fontWeight: "800",
-    color: "#111827",
-    marginTop: 14,
-  },
-  metaRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 8 },
-  metaChip: {
-    backgroundColor: "#f3f4f6",
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-  },
-  metaChipText: { fontSize: 13, color: "#374151", fontWeight: "600" },
-  infoRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginTop: 12,
-  },
-  price: { fontSize: 20, fontWeight: "800", color: "#111827" },
-  link: { color: "#3b82f6", fontWeight: "600", fontSize: 14 },
-  sectionLabel: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: "#6b7280",
-    marginTop: 18,
-    marginBottom: 8,
-  },
-  statusCol: { gap: 8 },
-  statusBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    borderWidth: 1.5,
-    borderColor: "#e5e7eb",
-    borderRadius: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    backgroundColor: "#f9fafb",
-  },
-  statusBtnText: { fontSize: 16, fontWeight: "700", color: "#374151" },
-  statusCheck: { fontSize: 16, fontWeight: "800", color: "#111827" },
-  actions: { flexDirection: "row", gap: 12, marginTop: 20 },
-  actionBtn: {
-    flex: 1,
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: "center",
-  },
-  editBtn: { backgroundColor: "#3b82f6" },
-  editBtnText: { color: "#fff", fontWeight: "700", fontSize: 15 },
-  deleteBtn: { borderWidth: 1.5, borderColor: "#ef4444" },
-  deleteBtnText: { color: "#ef4444", fontWeight: "700", fontSize: 15 },
-});
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    overlay: {
+      flex: 1,
+      backgroundColor: c.overlay,
+      justifyContent: "flex-end",
+    },
+    sheet: {
+      backgroundColor: c.card,
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
+      padding: 16,
+      paddingBottom: 28,
+      maxHeight: "85%",
+    },
+    handleZone: {
+      alignItems: "center",
+      paddingTop: 4,
+      paddingBottom: 10,
+      marginTop: -4,
+    },
+    handle: {
+      width: 40,
+      height: 5,
+      borderRadius: 3,
+      backgroundColor: c.borderStrong,
+    },
+    image: { width: "100%", height: 180, borderRadius: 14 },
+    imagePlaceholder: {
+      backgroundColor: c.bgSecondary,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    imageEmoji: { fontSize: 64 },
+    title: {
+      fontSize: 20,
+      fontWeight: "800",
+      color: c.text,
+      marginTop: 14,
+    },
+    metaRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 8 },
+    metaChip: {
+      backgroundColor: c.bgSecondary,
+      borderRadius: 8,
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+    },
+    metaChipText: { fontSize: 13, color: c.text, fontWeight: "600" },
+    infoRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginTop: 12,
+    },
+    price: { fontSize: 20, fontWeight: "800", color: c.text },
+    link: { color: c.primary, fontWeight: "600", fontSize: 14 },
+    sectionLabel: {
+      fontSize: 13,
+      fontWeight: "700",
+      color: c.sub,
+      marginTop: 18,
+      marginBottom: 8,
+    },
+    statusCol: { gap: 8 },
+    statusBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      borderWidth: 1.5,
+      borderColor: c.border,
+      borderRadius: 12,
+      paddingVertical: 14,
+      paddingHorizontal: 16,
+      backgroundColor: c.cardSoft,
+    },
+    statusBtnText: { fontSize: 16, fontWeight: "700", color: c.text },
+    statusCheck: { fontSize: 16, fontWeight: "800", color: c.text },
+    actions: { flexDirection: "row", gap: 12, marginTop: 20 },
+    actionBtn: {
+      flex: 1,
+      borderRadius: 12,
+      paddingVertical: 14,
+      alignItems: "center",
+    },
+    editBtn: { backgroundColor: c.primary },
+    editBtnText: { color: c.white, fontWeight: "700", fontSize: 15 },
+    deleteBtn: { borderWidth: 1.5, borderColor: c.danger },
+    deleteBtnText: { color: c.danger, fontWeight: "700", fontSize: 15 },
+  });

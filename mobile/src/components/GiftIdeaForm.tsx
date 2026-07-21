@@ -9,6 +9,11 @@ import {
 } from "react-native";
 import { fetchUrlInfo } from "../lib/wishlist";
 import { OCCASIONS } from "../lib/occasions";
+import {
+  useTheme,
+  useThemedStyles,
+  ThemeColors,
+} from "../lib/theme-context";
 
 export interface GiftIdeaPayload {
   giftName: string;
@@ -38,6 +43,8 @@ export default function GiftIdeaForm({
   submitLabel?: string;
   title?: string;
 }) {
+  const styles = useThemedStyles(makeStyles);
+  const { colors } = useTheme();
   const [url, setUrl] = useState(initial?.url ?? "");
   const [name, setName] = useState(initial?.giftName ?? "");
   const [occasion, setOccasion] = useState(initial?.occasion ?? "Anniversaire");
@@ -96,7 +103,7 @@ export default function GiftIdeaForm({
       <Text style={styles.title}>{title}</Text>
 
       {/* Lien + fetch */}
-      <TextInput placeholderTextColor="#9ca3af"
+      <TextInput placeholderTextColor={colors.placeholder}
         style={styles.input}
         placeholder="Lien du produit (URL)"
         autoCapitalize="none"
@@ -125,7 +132,7 @@ export default function GiftIdeaForm({
       ) : null}
 
       {/* Saisie manuelle */}
-      <TextInput placeholderTextColor="#9ca3af"
+      <TextInput placeholderTextColor={colors.placeholder}
         style={styles.input}
         placeholder="Nom du cadeau *"
         value={name}
@@ -150,7 +157,7 @@ export default function GiftIdeaForm({
       </View>
 
       <View style={styles.row}>
-        <TextInput placeholderTextColor="#9ca3af"
+        <TextInput placeholderTextColor={colors.placeholder}
           style={[styles.input, { flex: 1 }]}
           placeholder="Année"
           keyboardType="number-pad"
@@ -158,7 +165,7 @@ export default function GiftIdeaForm({
           value={year}
           onChangeText={setYear}
         />
-        <TextInput placeholderTextColor="#9ca3af"
+        <TextInput placeholderTextColor={colors.placeholder}
           style={[styles.input, { flex: 1 }]}
           placeholder="Prix (€)"
           keyboardType="decimal-pad"
@@ -167,7 +174,7 @@ export default function GiftIdeaForm({
         />
       </View>
 
-      <TextInput placeholderTextColor="#9ca3af"
+      <TextInput placeholderTextColor={colors.placeholder}
         style={styles.input}
         placeholder="URL de l'image (optionnel)"
         autoCapitalize="none"
@@ -202,63 +209,69 @@ export default function GiftIdeaForm({
   );
 }
 
-const styles = StyleSheet.create({
-  form: { gap: 8, marginTop: 8 },
-  title: { fontSize: 14, fontWeight: "700", color: "#6b7280", textAlign: "center" },
-  input: {
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-    borderRadius: 10,
-    padding: 10,
-    fontSize: 14,
-    backgroundColor: "#fff",
-    color: "#111827",
-  },
-  fetchBtn: {
-    backgroundColor: "#3b82f6",
-    borderRadius: 10,
-    padding: 11,
-    alignItems: "center",
-  },
-  fetchBtnText: { color: "#fff", fontWeight: "600", fontSize: 13 },
-  msg: { color: "#6b7280", fontSize: 12, textAlign: "center" },
-  preview: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    alignSelf: "center",
-  },
-  previewImage: { width: 64, height: 64, borderRadius: 8 },
-  deleteX: { color: "#ef4444", fontSize: 16, fontWeight: "700" },
-  chips: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
-  chip: {
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-    borderRadius: 16,
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    backgroundColor: "#f9fafb",
-  },
-  chipActive: { backgroundColor: "#3b82f6", borderColor: "#3b82f6" },
-  chipText: { fontSize: 12, fontWeight: "600", color: "#374151" },
-  chipTextActive: { color: "#fff" },
-  row: { flexDirection: "row", gap: 8 },
-  submitRow: { flexDirection: "row", gap: 8 },
-  submit: {
-    backgroundColor: "#10b981",
-    borderRadius: 10,
-    padding: 12,
-    alignItems: "center",
-  },
-  submitText: { color: "#fff", fontWeight: "600", fontSize: 15 },
-  cancel: {
-    borderWidth: 1,
-    borderColor: "#d1d5db",
-    borderRadius: 10,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  cancelText: { color: "#6b7280", fontWeight: "600", fontSize: 15 },
-});
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    form: { gap: 8, marginTop: 8 },
+    title: {
+      fontSize: 14,
+      fontWeight: "700",
+      color: c.sub,
+      textAlign: "center",
+    },
+    input: {
+      borderWidth: 1,
+      borderColor: c.inputBorder,
+      borderRadius: 10,
+      padding: 10,
+      fontSize: 14,
+      backgroundColor: c.inputBg,
+      color: c.text,
+    },
+    fetchBtn: {
+      backgroundColor: c.primary,
+      borderRadius: 10,
+      padding: 11,
+      alignItems: "center",
+    },
+    fetchBtnText: { color: c.white, fontWeight: "600", fontSize: 13 },
+    msg: { color: c.sub, fontSize: 12, textAlign: "center" },
+    preview: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+      alignSelf: "center",
+    },
+    previewImage: { width: 64, height: 64, borderRadius: 8 },
+    deleteX: { color: c.danger, fontSize: 16, fontWeight: "700" },
+    chips: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
+    chip: {
+      borderWidth: 1,
+      borderColor: c.border,
+      borderRadius: 16,
+      paddingVertical: 6,
+      paddingHorizontal: 10,
+      backgroundColor: c.cardSoft,
+    },
+    chipActive: { backgroundColor: c.primary, borderColor: c.primary },
+    chipText: { fontSize: 12, fontWeight: "600", color: c.text },
+    chipTextActive: { color: c.white },
+    row: { flexDirection: "row", gap: 8 },
+    submitRow: { flexDirection: "row", gap: 8 },
+    submit: {
+      backgroundColor: c.success,
+      borderRadius: 10,
+      padding: 12,
+      alignItems: "center",
+    },
+    submitText: { color: c.white, fontWeight: "600", fontSize: 15 },
+    cancel: {
+      borderWidth: 1,
+      borderColor: c.borderStrong,
+      borderRadius: 10,
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    cancelText: { color: c.sub, fontWeight: "600", fontSize: 15 },
+  });

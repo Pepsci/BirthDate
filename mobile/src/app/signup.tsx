@@ -30,7 +30,7 @@ maxBirthDate.setFullYear(maxBirthDate.getFullYear() - MIN_AGE);
 
 export default function SignupScreen() {
   const router = useRouter();
-  const { colors } = useTheme();
+  const { colors, resolved } = useTheme();
   const styles = useThemedStyles(makeStyles);
   const keyboardPadding = useKeyboardPadding();
   const [name, setName] = useState("");
@@ -159,6 +159,7 @@ export default function SignupScreen() {
             display={Platform.OS === "ios" ? "spinner" : "default"}
             locale="fr-FR"
             maximumDate={maxBirthDate}
+            themeVariant={resolved}
             onChange={(event, selected) => {
               if (Platform.OS === "android") setShowPicker(false);
               if (selected) setBirth(selected);
@@ -197,7 +198,7 @@ export default function SignupScreen() {
           disabled={loading}
         >
           {loading ? (
-            <ActivityIndicator color="#fff" />
+            <ActivityIndicator color={colors.white} />
           ) : (
             <Text style={styles.buttonText}>Créer mon compte</Text>
           )}
@@ -238,7 +239,7 @@ const makeStyles = (c: ThemeColors) =>
       alignItems: "center",
       marginTop: 8,
     },
-    buttonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
+    buttonText: { color: c.white, fontSize: 16, fontWeight: "600" },
     doneText: { color: c.sub, textAlign: "center", lineHeight: 22 },
     termsRow: {
       flexDirection: "row",
@@ -258,7 +259,7 @@ const makeStyles = (c: ThemeColors) =>
       marginTop: 1,
     },
     checkboxOn: { backgroundColor: c.primary, borderColor: c.primary },
-    checkmark: { color: "#fff", fontSize: 14, fontWeight: "700" },
+    checkmark: { color: c.white, fontSize: 14, fontWeight: "700" },
     termsText: { flex: 1, color: c.sub, fontSize: 13, lineHeight: 18 },
     termsLink: { color: c.primary, textDecorationLine: "underline" },
   });

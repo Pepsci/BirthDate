@@ -11,6 +11,11 @@ import {
 import { Stack, useRouter, useFocusEffect } from "expo-router";
 import { DateEntry, fetchDates } from "../lib/dates";
 import { EventEntry, fetchMyEvents, eventDate } from "../lib/events";
+import {
+  useTheme,
+  useThemedStyles,
+  ThemeColors,
+} from "../lib/theme-context";
 
 const MONTHS = [
   "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
@@ -35,6 +40,8 @@ interface DayItems {
 
 export default function AgendaScreen() {
   const router = useRouter();
+  const styles = useThemedStyles(makeStyles);
+  const { colors } = useTheme();
   const today = new Date();
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth()); // 0-based
@@ -143,7 +150,7 @@ export default function AgendaScreen() {
         {error ? (
           <Text style={styles.error}>{error}</Text>
         ) : (
-          <ActivityIndicator size="large" color="#3b82f6" />
+          <ActivityIndicator size="large" color={colors.primary} />
         )}
       </View>
     );
@@ -157,6 +164,13 @@ export default function AgendaScreen() {
     ...Array(offset).fill(null),
     ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
   ];
+  // Complète la dernière ligne : sans ça, les cellules en flex:1 d'une ligne
+  // incomplète s'étireraient et casseraient l'alignement des colonnes.
+  while (cells.length % 7 !== 0) cells.push(null);
+  const weeks: (number | null)[][] = Array.from(
+    { length: cells.length / 7 },
+    (_, i) => cells.slice(i * 7, i * 7 + 7),
+  );
   const isCurrentMonth =
     year === today.getFullYear() && month === today.getMonth();
   const selected = selectedDay != null ? itemsByDay.get(selectedDay) : null;
@@ -227,10 +241,14 @@ export default function AgendaScreen() {
               onPress={() => count > 0 && openDay(day)}
             >
               <View style={styles.weekDayCol}>
-                <Text style={[styles.weekDayName, isToday && { color: "#2563eb" }]}>
+                <Text
+                  style={[styles.weekDayName, isToday && styles.weekTodayText]}
+                >
                   {WEEK_DAYS[i]}
                 </Text>
-                <Text style={[styles.weekDayNum, isToday && { color: "#2563eb" }]}>
+                <Text
+                  style={[styles.weekDayNum, isToday && styles.weekTodayText]}
+                >
                   {day.getDate()}
                 </Text>
               </View>
@@ -262,40 +280,51 @@ export default function AgendaScreen() {
       {/* En-têtes jours (vue mois) */}
       {view === "month" && (
       <View style={styles.grid}>
-        {DAYS.map((d, i) => (
-          <View key={i} style={styles.cell}>
-            <Text style={styles.dayHeader}>{d}</Text>
+        <View style={styles.gridRow}>
+          {DAYS.map((d, i) => (
+            <View key={i} style={styles.cell}>
+              <Text style={styles.dayHeader}>{d}</Text>
+            </View>
+          ))}
+        </View>
+        {weeks.map((week, w) => (
+          <View key={w} style={styles.gridRow}>
+            {week.map((day, i) => {
+              if (day === null)
+                return <View key={`e${w}-${i}`} style={styles.cell} />;
+              const items = itemsByDay.get(day);
+              const isToday = isCurrentMonth && day === today.getDate();
+              return (
+                <Pressable
+                  key={day}
+                  style={[
+                    styles.cell,
+                    styles.dayCell,
+                    isToday && styles.todayCell,
+                  ]}
+                  onPress={() => items && setSelectedDay(day)}
+                >
+                  <Text style={[styles.dayNum, isToday && styles.todayNum]}>
+                    {day}
+                  </Text>
+                  <View style={styles.dots}>
+                    {!!items?.birthdays.length && <Dot color={colors.primary} />}
+                    {!!items?.namedays.length && <Dot color={colors.warning} />}
+                    {!!items?.events.length && <Dot color={colors.success} />}
+                  </View>
+                </Pressable>
+              );
+            })}
           </View>
         ))}
-        {cells.map((day, i) => {
-          if (day === null) return <View key={`e${i}`} style={styles.cell} />;
-          const items = itemsByDay.get(day);
-          const isToday = isCurrentMonth && day === today.getDate();
-          return (
-            <Pressable
-              key={day}
-              style={[styles.cell, styles.dayCell, isToday && styles.todayCell]}
-              onPress={() => items && setSelectedDay(day)}
-            >
-              <Text style={[styles.dayNum, isToday && styles.todayNum]}>
-                {day}
-              </Text>
-              <View style={styles.dots}>
-                {!!items?.birthdays.length && <Dot color="#3b82f6" />}
-                {!!items?.namedays.length && <Dot color="#f59e0b" />}
-                {!!items?.events.length && <Dot color="#10b981" />}
-              </View>
-            </Pressable>
-          );
-        })}
       </View>
       )}
 
       {/* Légende */}
       <View style={styles.legend}>
-        <LegendItem color="#3b82f6" label="Anniversaire" />
-        <LegendItem color="#f59e0b" label="Fête" />
-        <LegendItem color="#10b981" label="Événement" />
+        <LegendItem color={colors.primary} label="Anniversaire" />
+        <LegendItem color={colors.warning} label="Fête" />
+        <LegendItem color={colors.success} label="Événement" />
       </View>
 
       {/* Modal jour */}
@@ -369,10 +398,12 @@ export default function AgendaScreen() {
 }
 
 function Dot({ color }: { color: string }) {
+  const styles = useThemedStyles(makeStyles);
   return <View style={[styles.dot, { backgroundColor: color }]} />;
 }
 
 function LegendItem({ color, label }: { color: string; label: string }) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.legendItem}>
       <Dot color={color} />
@@ -381,106 +412,110 @@ function LegendItem({ color, label }: { color: string; label: string }) {
   );
 }
 
-const CELL = `${100 / 7}%` as const;
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f9fafb" },
-  content: { padding: 12, paddingBottom: 40 },
-  center: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#f9fafb",
-  },
-  error: { color: "#b91c1c", textAlign: "center", padding: 6 },
-  viewToggle: {
-    flexDirection: "row",
-    backgroundColor: "#f3f4f6",
-    borderRadius: 10,
-    padding: 3,
-    marginBottom: 8,
-  },
-  viewBtn: { flex: 1, paddingVertical: 8, borderRadius: 8, alignItems: "center" },
-  viewBtnActive: { backgroundColor: "#fff", elevation: 1 },
-  viewText: { fontSize: 13, fontWeight: "600", color: "#6b7280" },
-  viewTextActive: { color: "#111827" },
-  weekRow: {
-    flexDirection: "row",
-    gap: 12,
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 8,
-    alignItems: "center",
-  },
-  weekRowToday: { borderWidth: 1.5, borderColor: "#3b82f6" },
-  weekDayCol: { width: 72 },
-  weekDayName: { fontSize: 12, fontWeight: "700", color: "#6b7280" },
-  weekDayNum: { fontSize: 20, fontWeight: "700", color: "#111827" },
-  weekEmpty: { color: "#d1d5db" },
-  weekItem: { color: "#374151", fontSize: 13 },
-  weekMore: { color: "#3b82f6", fontSize: 12, fontWeight: "600" },
-  monthNav: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 16,
-    marginBottom: 8,
-  },
-  navArrow: { fontSize: 30, color: "#3b82f6", fontWeight: "600" },
-  monthTitle: { fontSize: 18, fontWeight: "700", color: "#111827" },
-  grid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    backgroundColor: "#fff",
-    borderRadius: 14,
-    padding: 6,
-  },
-  cell: { width: CELL, alignItems: "center", paddingVertical: 6 },
-  dayCell: { minHeight: 52, borderRadius: 8 },
-  todayCell: { backgroundColor: "#eff6ff" },
-  dayHeader: { fontSize: 12, fontWeight: "700", color: "#9ca3af" },
-  dayNum: { fontSize: 14, color: "#111827" },
-  todayNum: { color: "#2563eb", fontWeight: "700" },
-  dots: { flexDirection: "row", gap: 3, marginTop: 3, minHeight: 6 },
-  dot: { width: 6, height: 6, borderRadius: 3 },
-  legend: {
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: 16,
-    marginTop: 12,
-  },
-  legendItem: { flexDirection: "row", alignItems: "center", gap: 5 },
-  legendText: { fontSize: 12, color: "#6b7280" },
-  overlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.4)",
-    justifyContent: "flex-end",
-  },
-  sheet: {
-    backgroundColor: "#fff",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 20,
-    gap: 4,
-    paddingBottom: 36,
-  },
-  sheetTitle: {
-    fontSize: 17,
-    fontWeight: "700",
-    color: "#111827",
-    marginBottom: 8,
-  },
-  sheetRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    paddingVertical: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#e5e7eb",
-  },
-  sheetEmoji: { fontSize: 18 },
-  sheetText: { fontSize: 15, color: "#111827", fontWeight: "500" },
-  closeBtn: { alignItems: "center", marginTop: 14 },
-  closeText: { color: "#3b82f6", fontWeight: "600" },
-});
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: c.bg },
+    content: { padding: 12, paddingBottom: 40 },
+    center: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: c.bg,
+    },
+    error: { color: c.danger, textAlign: "center", padding: 6 },
+    viewToggle: {
+      flexDirection: "row",
+      backgroundColor: c.bgSecondary,
+      borderRadius: 10,
+      padding: 3,
+      marginBottom: 8,
+    },
+    viewBtn: {
+      flex: 1,
+      paddingVertical: 8,
+      borderRadius: 8,
+      alignItems: "center",
+    },
+    viewBtnActive: { backgroundColor: c.card, elevation: 1 },
+    viewText: { fontSize: 13, fontWeight: "600", color: c.sub },
+    viewTextActive: { color: c.text },
+    weekRow: {
+      flexDirection: "row",
+      gap: 12,
+      backgroundColor: c.card,
+      borderRadius: 12,
+      padding: 12,
+      marginBottom: 8,
+      alignItems: "center",
+    },
+    weekRowToday: { borderWidth: 1.5, borderColor: c.primary },
+    weekDayCol: { width: 72 },
+    weekDayName: { fontSize: 12, fontWeight: "700", color: c.sub },
+    weekDayNum: { fontSize: 20, fontWeight: "700", color: c.text },
+    weekTodayText: { color: c.primaryStrong },
+    weekEmpty: { color: c.borderStrong },
+    weekItem: { color: c.text, fontSize: 13 },
+    weekMore: { color: c.primary, fontSize: 12, fontWeight: "600" },
+    monthNav: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      paddingHorizontal: 16,
+      marginBottom: 8,
+    },
+    navArrow: { fontSize: 30, color: c.primary, fontWeight: "600" },
+    monthTitle: { fontSize: 18, fontWeight: "700", color: c.text },
+    grid: {
+      backgroundColor: c.card,
+      borderRadius: 14,
+      padding: 6,
+    },
+    gridRow: { flexDirection: "row" },
+    cell: { flex: 1, alignItems: "center", paddingVertical: 6 },
+    dayCell: { minHeight: 52, borderRadius: 8 },
+    todayCell: { backgroundColor: c.primarySoft },
+    dayHeader: { fontSize: 12, fontWeight: "700", color: c.faint },
+    dayNum: { fontSize: 14, color: c.text },
+    todayNum: { color: c.primaryStrong, fontWeight: "700" },
+    dots: { flexDirection: "row", gap: 3, marginTop: 3, minHeight: 6 },
+    dot: { width: 6, height: 6, borderRadius: 3 },
+    legend: {
+      flexDirection: "row",
+      justifyContent: "center",
+      gap: 16,
+      marginTop: 12,
+    },
+    legendItem: { flexDirection: "row", alignItems: "center", gap: 5 },
+    legendText: { fontSize: 12, color: c.sub },
+    overlay: {
+      flex: 1,
+      backgroundColor: c.overlay,
+      justifyContent: "flex-end",
+    },
+    sheet: {
+      backgroundColor: c.card,
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
+      padding: 20,
+      gap: 4,
+      paddingBottom: 36,
+    },
+    sheetTitle: {
+      fontSize: 17,
+      fontWeight: "700",
+      color: c.text,
+      marginBottom: 8,
+    },
+    sheetRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+      paddingVertical: 10,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: c.border,
+    },
+    sheetEmoji: { fontSize: 18 },
+    sheetText: { fontSize: 15, color: c.text, fontWeight: "500" },
+    closeBtn: { alignItems: "center", marginTop: 14 },
+    closeText: { color: c.primary, fontWeight: "600" },
+  });

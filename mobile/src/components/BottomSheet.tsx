@@ -9,6 +9,7 @@ import {
   PanResponder,
   Dimensions,
 } from "react-native";
+import { useThemedStyles, ThemeColors } from "../lib/theme-context";
 
 const SCREEN_H = Dimensions.get("window").height;
 
@@ -25,6 +26,7 @@ export default function BottomSheet({
   onClose: () => void;
   children: ReactNode;
 }) {
+  const styles = useThemedStyles(makeStyles);
   const translateY = useRef(new Animated.Value(0)).current;
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
@@ -76,30 +78,31 @@ export default function BottomSheet({
   );
 }
 
-const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.4)",
-    justifyContent: "flex-end",
-  },
-  sheet: {
-    backgroundColor: "#fff",
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 16,
-    paddingBottom: 28,
-    maxHeight: "85%",
-  },
-  handleZone: {
-    alignItems: "center",
-    paddingTop: 4,
-    paddingBottom: 10,
-    marginTop: -4,
-  },
-  handle: {
-    width: 40,
-    height: 5,
-    borderRadius: 3,
-    backgroundColor: "#d1d5db",
-  },
-});
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    overlay: {
+      flex: 1,
+      backgroundColor: c.overlay,
+      justifyContent: "flex-end",
+    },
+    sheet: {
+      backgroundColor: c.card,
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
+      padding: 16,
+      paddingBottom: 28,
+      maxHeight: "85%",
+    },
+    handleZone: {
+      alignItems: "center",
+      paddingTop: 4,
+      paddingBottom: 10,
+      marginTop: -4,
+    },
+    handle: {
+      width: 40,
+      height: 5,
+      borderRadius: 3,
+      backgroundColor: c.borderStrong,
+    },
+  });

@@ -17,8 +17,15 @@ import {
 } from "../lib/sharedGifts";
 import { DateEntry, fetchDates } from "../lib/dates";
 import BottomSheet from "../components/BottomSheet";
+import {
+  useTheme,
+  useThemedStyles,
+  ThemeColors,
+} from "../lib/theme-context";
 
 export default function SharedInvitesScreen() {
+  const styles = useThemedStyles(makeStyles);
+  const { colors } = useTheme();
   const [invites, setInvites] = useState<SharedInvitation[] | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -91,7 +98,7 @@ export default function SharedInvitesScreen() {
         {error ? (
           <Text style={styles.error}>{error}</Text>
         ) : (
-          <ActivityIndicator size="large" color="#3b82f6" />
+          <ActivityIndicator size="large" color={colors.primary} />
         )}
       </View>
     );
@@ -170,53 +177,54 @@ export default function SharedInvitesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f9fafb" },
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+  container: { flex: 1, backgroundColor: c.bg },
   center: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f9fafb",
+    backgroundColor: c.bg,
   },
-  error: { color: "#b91c1c", textAlign: "center", padding: 8 },
+  error: { color: c.danger, textAlign: "center", padding: 8 },
   list: { padding: 12, gap: 10 },
-  empty: { textAlign: "center", color: "#6b7280", marginTop: 32 },
+  empty: { textAlign: "center", color: c.sub, marginTop: 32 },
   card: {
-    backgroundColor: "#fff",
+    backgroundColor: c.card,
     borderRadius: 12,
     padding: 14,
     gap: 12,
     borderWidth: 1,
-    borderColor: "#eef2f7",
+    borderColor: c.border,
   },
-  cardText: { color: "#374151", fontSize: 14, lineHeight: 20 },
-  bold: { fontWeight: "800", color: "#111827" },
+  cardText: { color: c.text, fontSize: 14, lineHeight: 20 },
+  bold: { fontWeight: "800", color: c.text },
   actions: { flexDirection: "row", gap: 10, justifyContent: "flex-end" },
   declineBtn: {
     borderWidth: 1,
-    borderColor: "#d1d5db",
+    borderColor: c.borderStrong,
     borderRadius: 10,
     paddingVertical: 9,
     paddingHorizontal: 16,
   },
-  declineText: { color: "#6b7280", fontWeight: "600" },
+  declineText: { color: c.sub, fontWeight: "600" },
   acceptBtn: {
-    backgroundColor: "#3b82f6",
+    backgroundColor: c.primary,
     borderRadius: 10,
     paddingVertical: 9,
     paddingHorizontal: 18,
   },
-  acceptText: { color: "#fff", fontWeight: "700" },
-  sheetTitle: { fontSize: 18, fontWeight: "800", color: "#111827" },
-  sheetSub: { color: "#6b7280", fontSize: 13, marginTop: 4, marginBottom: 12 },
+  acceptText: { color: c.white, fontWeight: "700" },
+  sheetTitle: { fontSize: 18, fontWeight: "800", color: c.text },
+  sheetSub: { color: c.sub, fontSize: 13, marginTop: 4, marginBottom: 12 },
   dateRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingVertical: 12,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: "#eef2f7",
+    borderTopColor: c.border,
   },
-  dateName: { fontSize: 15, fontWeight: "600", color: "#111827" },
-  dateBadge: { fontSize: 12, color: "#6b7280" },
+  dateName: { fontSize: 15, fontWeight: "600", color: c.text },
+  dateBadge: { fontSize: 12, color: c.sub },
 });

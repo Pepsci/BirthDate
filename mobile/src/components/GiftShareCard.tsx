@@ -4,6 +4,7 @@ import { DMMessage } from "../lib/conversations";
 import { occasionEmoji } from "../lib/occasions";
 import { DateEntry, fetchDates, addGift } from "../lib/dates";
 import BottomSheet from "./BottomSheet";
+import { useThemedStyles, ThemeColors } from "../lib/theme-context";
 
 /**
  * Carte "idées cadeaux partagées" dans le chat (message type gift_share).
@@ -16,6 +17,7 @@ export default function GiftShareCard({
   message: DMMessage;
   isMine: boolean;
 }) {
+  const styles = useThemedStyles(makeStyles);
   const [expanded, setExpanded] = useState(true);
   const [saving, setSaving] = useState(false);
   const [picker, setPicker] = useState(false);
@@ -118,53 +120,59 @@ export default function GiftShareCard({
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    maxWidth: "82%",
-    borderRadius: 14,
-    padding: 10,
-    marginVertical: 3,
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-    backgroundColor: "#fff",
-  },
-  cardMine: { alignSelf: "flex-end", backgroundColor: "#eff6ff" },
-  cardOther: { alignSelf: "flex-start" },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 8,
-  },
-  headerText: { fontWeight: "800", color: "#111827", fontSize: 13, flex: 1 },
-  count: { color: "#6b7280", fontSize: 12, fontWeight: "700" },
-  body: { marginTop: 8, gap: 4 },
-  empty: { color: "#6b7280", fontSize: 12 },
-  giftRow: { color: "#374151", fontSize: 13 },
-  giftDone: {
-    color: "#9ca3af",
-    fontSize: 13,
-    textDecorationLine: "line-through",
-  },
-  saveBtn: {
-    backgroundColor: "#3b82f6",
-    borderRadius: 8,
-    paddingVertical: 8,
-    alignItems: "center",
-    marginTop: 8,
-  },
-  saveBtnText: { color: "#fff", fontWeight: "700", fontSize: 13 },
-  savedMsg: { color: "#047857", fontWeight: "700", fontSize: 13, marginTop: 6 },
-  sheetTitle: {
-    fontSize: 17,
-    fontWeight: "800",
-    color: "#111827",
-    marginBottom: 8,
-  },
-  dateRow: {
-    paddingVertical: 12,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: "#eef2f7",
-  },
-  dateName: { fontSize: 15, fontWeight: "600", color: "#111827" },
-});
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    card: {
+      maxWidth: "82%",
+      borderRadius: 14,
+      padding: 10,
+      marginVertical: 3,
+      borderWidth: 1,
+      borderColor: c.border,
+      backgroundColor: c.card,
+    },
+    cardMine: { alignSelf: "flex-end", backgroundColor: c.primarySoft },
+    cardOther: { alignSelf: "flex-start" },
+    header: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 8,
+    },
+    headerText: { fontWeight: "800", color: c.text, fontSize: 13, flex: 1 },
+    count: { color: c.sub, fontSize: 12, fontWeight: "700" },
+    body: { marginTop: 8, gap: 4 },
+    empty: { color: c.sub, fontSize: 12 },
+    giftRow: { color: c.text, fontSize: 13 },
+    giftDone: {
+      color: c.faint,
+      fontSize: 13,
+      textDecorationLine: "line-through",
+    },
+    saveBtn: {
+      backgroundColor: c.primary,
+      borderRadius: 8,
+      paddingVertical: 8,
+      alignItems: "center",
+      marginTop: 8,
+    },
+    saveBtnText: { color: c.white, fontWeight: "700", fontSize: 13 },
+    savedMsg: {
+      color: c.successStrong,
+      fontWeight: "700",
+      fontSize: 13,
+      marginTop: 6,
+    },
+    sheetTitle: {
+      fontSize: 17,
+      fontWeight: "800",
+      color: c.text,
+      marginBottom: 8,
+    },
+    dateRow: {
+      paddingVertical: 12,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: c.border,
+    },
+    dateName: { fontSize: 15, fontWeight: "600", color: c.text },
+  });

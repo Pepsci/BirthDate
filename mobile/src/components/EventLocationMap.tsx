@@ -7,6 +7,11 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { WebView } from "react-native-webview";
+import {
+  useTheme,
+  useThemedStyles,
+  ThemeColors,
+} from "../lib/theme-context";
 
 /**
  * Cadre carte pour le lieu d'un événement (parité avec le web : Leaflet/OSM).
@@ -25,6 +30,8 @@ export default function EventLocationMap({
   coordinates?: { lat?: number; lng?: number } | null;
   onOpenMaps: () => void;
 }) {
+  const styles = useThemedStyles(makeStyles);
+  const { colors } = useTheme();
   const hasCoords = !!(coordinates?.lat && coordinates?.lng);
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(
     hasCoords ? { lat: coordinates!.lat!, lng: coordinates!.lng! } : null,
@@ -67,7 +74,11 @@ export default function EventLocationMap({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const html = coords ? leafletHtml(coords.lat, coords.lng) : "";
+  // Le fond de la WebView doit suivre le thème, sinon un rectangle clair
+  // clignote sur fond sombre pendant le chargement des tuiles.
+  const html = coords
+    ? leafletHtml(coords.lat, coords.lng, colors.bgSecondary)
+    : "";
 
   return (
     <View style={styles.card}>
@@ -79,7 +90,7 @@ export default function EventLocationMap({
 
       {loading ? (
         <View style={styles.placeholder}>
-          <ActivityIndicator color="#3b82f6" />
+          <ActivityIndicator color={colors.primary} />
         </View>
       ) : coords && !failed ? (
         <View style={styles.frame}>
@@ -103,7 +114,7 @@ export default function EventLocationMap({
   );
 }
 
-function leafletHtml(lat: number, lng: number): string {
+function leafletHtml(lat: number, lng: number, mapBg: string): string {
   return `<!DOCTYPE html>
 <html>
 <head>
@@ -111,7 +122,7 @@ function leafletHtml(lat: number, lng: number): string {
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
-  html, body, #map { height: 100%; margin: 0; padding: 0; background: #eef2f7; }
+  html, body, #map { height: 100%; margin: 0; padding: 0; background: ${mapBg}; }
 </style>
 </head>
 <body>
@@ -128,25 +139,26 @@ function leafletHtml(lat: number, lng: number): string {
 </html>`;
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
   card: {
-    backgroundColor: "#fff",
+    backgroundColor: c.card,
     borderRadius: 14,
     padding: 14,
     gap: 6,
-    shadowColor: "#000",
+    shadowColor: c.shadow,
     shadowOpacity: 0.06,
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 2 },
     elevation: 2,
   },
-  title: { fontSize: 15, fontWeight: "800", color: "#111827" },
-  name: { fontSize: 15, fontWeight: "600", color: "#111827" },
-  address: { fontSize: 13, color: "#6b7280" },
+  title: { fontSize: 15, fontWeight: "800", color: c.text },
+  name: { fontSize: 15, fontWeight: "600", color: c.text },
+  address: { fontSize: 13, color: c.sub },
   placeholder: {
     height: 180,
     borderRadius: 12,
-    backgroundColor: "#f3f4f6",
+    backgroundColor: c.bgSecondary,
     alignItems: "center",
     justifyContent: "center",
     marginTop: 6,
@@ -157,15 +169,15 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     marginTop: 6,
     borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: c.border,
   },
   web: { flex: 1, backgroundColor: "transparent" },
   mapsBtn: {
     marginTop: 8,
-    backgroundColor: "#3b82f6",
+    backgroundColor: c.primary,
     borderRadius: 10,
     paddingVertical: 11,
     alignItems: "center",
   },
-  mapsBtnText: { color: "#fff", fontWeight: "700", fontSize: 14 },
+  mapsBtnText: { color: c.white, fontWeight: "700", fontSize: 14 },
 });

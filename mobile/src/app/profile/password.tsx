@@ -11,8 +11,15 @@ import { Stack, useRouter } from "expo-router";
 import { useAuth } from "../../lib/auth-context";
 import { updateMe } from "../../lib/users";
 import { getPrivateKey, encryptPrivateKey } from "../../lib/crypto";
+import {
+  useTheme,
+  useThemedStyles,
+  ThemeColors,
+} from "../../lib/theme-context";
 
 export default function PasswordScreen() {
+  const styles = useThemedStyles(makeStyles);
+  const { colors } = useTheme();
   const router = useRouter();
   const { user } = useAuth();
   const [current, setCurrent] = useState("");
@@ -70,7 +77,7 @@ export default function PasswordScreen() {
       <Stack.Screen options={{ title: "Mot de passe" }} />
 
       <Text style={styles.label}>Mot de passe actuel</Text>
-      <TextInput placeholderTextColor="#9ca3af"
+      <TextInput placeholderTextColor={colors.placeholder}
         style={styles.input}
         secureTextEntry
         value={current}
@@ -78,7 +85,7 @@ export default function PasswordScreen() {
       />
 
       <Text style={styles.label}>Nouveau mot de passe</Text>
-      <TextInput placeholderTextColor="#9ca3af"
+      <TextInput placeholderTextColor={colors.placeholder}
         style={styles.input}
         secureTextEntry
         value={next}
@@ -86,7 +93,7 @@ export default function PasswordScreen() {
       />
 
       <Text style={styles.label}>Confirmer le nouveau mot de passe</Text>
-      <TextInput placeholderTextColor="#9ca3af"
+      <TextInput placeholderTextColor={colors.placeholder}
         style={styles.input}
         secureTextEntry
         value={confirm}
@@ -106,7 +113,7 @@ export default function PasswordScreen() {
         disabled={saving}
       >
         {saving ? (
-          <ActivityIndicator color="#fff" />
+          <ActivityIndicator color={colors.white} />
         ) : (
           <Text style={styles.submitText}>Changer le mot de passe</Text>
         )}
@@ -115,27 +122,28 @@ export default function PasswordScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f9fafb" },
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+  container: { flex: 1, backgroundColor: c.bg },
   content: { padding: 16, gap: 6 },
-  label: { fontSize: 13, fontWeight: "700", color: "#6b7280", marginTop: 10 },
+  label: { fontSize: 13, fontWeight: "700", color: c.sub, marginTop: 10 },
   input: {
     borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: c.inputBorder,
     borderRadius: 10,
     padding: 12,
     fontSize: 16,
-    backgroundColor: "#fff",
-    color: "#111827",
+    backgroundColor: c.inputBg,
+    color: c.text,
   },
-  hint: { color: "#9ca3af", fontSize: 12, marginTop: 10 },
-  error: { color: "#b91c1c", textAlign: "center", marginTop: 8 },
+  hint: { color: c.faint, fontSize: 12, marginTop: 10 },
+  error: { color: c.danger, textAlign: "center", marginTop: 8 },
   submit: {
-    backgroundColor: "#3b82f6",
+    backgroundColor: c.primary,
     borderRadius: 10,
     padding: 14,
     alignItems: "center",
     marginTop: 16,
   },
-  submitText: { color: "#fff", fontWeight: "600", fontSize: 16 },
+  submitText: { color: c.white, fontWeight: "600", fontSize: 16 },
 });

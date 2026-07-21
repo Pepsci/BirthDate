@@ -26,6 +26,11 @@ import {
   getPrivateKey,
   clearPrivateKey,
 } from "../../lib/crypto";
+import {
+  useTheme,
+  useThemedStyles,
+  ThemeColors,
+} from "../../lib/theme-context";
 
 // « E2EView » et non « View » pour ne pas masquer le composant View de react-native
 type E2EView =
@@ -48,6 +53,8 @@ const normalizeSeed = (s: string) =>
     .toLowerCase();
 
 export default function E2EScreen() {
+  const s = useThemedStyles(makeStyles);
+  const { colors } = useTheme();
   const { user, refresh } = useAuth();
   const insets = useSafeAreaInsets();
 
@@ -398,7 +405,7 @@ export default function E2EScreen() {
           <TextInput
             style={s.textarea}
             placeholder="mot1 mot2 mot3 … mot12"
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor={colors.placeholder}
             value={seedInput}
             onChangeText={(t) => {
               setSeedInput(t);
@@ -435,7 +442,7 @@ export default function E2EScreen() {
           <TextInput
             style={s.input}
             placeholder="Mot de passe"
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor={colors.placeholder}
             secureTextEntry
             value={password}
             onChangeText={(t) => {
@@ -478,7 +485,7 @@ export default function E2EScreen() {
           <TextInput
             style={s.input}
             placeholder="Mot de passe"
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor={colors.placeholder}
             secureTextEntry
             value={password}
             onChangeText={(t) => {
@@ -547,7 +554,7 @@ export default function E2EScreen() {
           <TextInput
             style={s.textarea}
             placeholder="mot1 mot2 … mot12"
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor={colors.placeholder}
             value={seedInput}
             onChangeText={(t) => {
               setSeedInput(t);
@@ -595,7 +602,7 @@ export default function E2EScreen() {
           <TextInput
             style={s.input}
             placeholder="Mot de passe"
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor={colors.placeholder}
             secureTextEntry
             value={password}
             onChangeText={(t) => {
@@ -629,32 +636,33 @@ export default function E2EScreen() {
       )}
 
       {loading && view === "overview" && (
-        <ActivityIndicator color="#3b82f6" style={{ marginTop: 12 }} />
+        <ActivityIndicator color={colors.primary} style={{ marginTop: 12 }} />
       )}
     </ScrollView>
   );
 }
 
-const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f9fafb" },
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+  container: { flex: 1, backgroundColor: c.bg },
   content: { padding: 16 },
   card: {
-    backgroundColor: "#fff",
+    backgroundColor: c.card,
     borderRadius: 14,
     padding: 16,
     gap: 12,
-    shadowColor: "#000",
+    shadowColor: c.shadow,
     shadowOpacity: 0.06,
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 2 },
     elevation: 2,
   },
-  title: { fontSize: 18, fontWeight: "800", color: "#111827" },
-  desc: { color: "#4b5563", fontSize: 14, lineHeight: 20 },
-  meta: { color: "#6b7280", fontSize: 12 },
+  title: { fontSize: 18, fontWeight: "800", color: c.text },
+  desc: { color: c.sub, fontSize: 14, lineHeight: 20 },
+  meta: { color: c.sub, fontSize: 12 },
   infoBanner: {
-    backgroundColor: "#d1fae5",
-    color: "#065f46",
+    backgroundColor: c.successSoft,
+    color: c.successStrong,
     fontWeight: "600",
     padding: 10,
     borderRadius: 10,
@@ -662,78 +670,78 @@ const s = StyleSheet.create({
     textAlign: "center",
   },
   infoBox: {
-    backgroundColor: "#eff6ff",
+    backgroundColor: c.primarySoft,
     borderRadius: 10,
     padding: 12,
     gap: 6,
   },
-  infoLine: { color: "#1e3a8a", fontSize: 13, lineHeight: 18 },
+  infoLine: { color: c.primaryStrong, fontSize: 13, lineHeight: 18 },
   warnBox: {
-    backgroundColor: "#fef3c7",
+    backgroundColor: c.warningSoft,
     borderRadius: 10,
     padding: 12,
   },
-  warnText: { color: "#92400e", fontSize: 13, lineHeight: 18 },
+  warnText: { color: c.warningStrong, fontSize: 13, lineHeight: 18 },
   activeBadge: {
-    backgroundColor: "#dcfce7",
+    backgroundColor: c.successSoft,
     borderRadius: 10,
     paddingVertical: 10,
     alignItems: "center",
   },
-  activeBadgeText: { color: "#166534", fontWeight: "800", fontSize: 15 },
+  activeBadgeText: { color: c.successStrong, fontWeight: "800", fontSize: 15 },
   primaryBtn: {
     flex: 1,
-    backgroundColor: "#3b82f6",
+    backgroundColor: c.primary,
     borderRadius: 10,
     paddingVertical: 12,
     alignItems: "center",
   },
-  primaryText: { color: "#fff", fontWeight: "700", fontSize: 15 },
+  primaryText: { color: c.white, fontWeight: "700", fontSize: 15 },
   secondaryBtn: {
     borderWidth: 1,
-    borderColor: "#3b82f6",
+    borderColor: c.primary,
     borderRadius: 10,
     paddingVertical: 12,
     alignItems: "center",
   },
-  secondaryText: { color: "#3b82f6", fontWeight: "700", fontSize: 14 },
+  secondaryText: { color: c.primary, fontWeight: "700", fontSize: 14 },
   dangerBtn: {
     flex: 1,
     borderWidth: 1,
-    borderColor: "#fca5a5",
+    borderColor: c.danger,
     borderRadius: 10,
     paddingVertical: 12,
     alignItems: "center",
   },
-  dangerText: { color: "#dc2626", fontWeight: "700", fontSize: 14 },
+  dangerText: { color: c.danger, fontWeight: "700", fontSize: 14 },
   ghostBtn: {
     borderWidth: 1,
-    borderColor: "#d1d5db",
+    borderColor: c.borderStrong,
     borderRadius: 10,
     paddingVertical: 12,
     paddingHorizontal: 16,
     alignItems: "center",
     justifyContent: "center",
   },
-  ghostText: { color: "#6b7280", fontWeight: "600" },
+  ghostText: { color: c.sub, fontWeight: "600" },
   navRow: { flexDirection: "row", gap: 10 },
   disabled: { opacity: 0.5 },
-  error: { color: "#b91c1c", fontSize: 13 },
+  error: { color: c.danger, fontSize: 13 },
   input: {
     borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: c.inputBorder,
     borderRadius: 10,
     padding: 12,
     fontSize: 15,
-    color: "#111827",
+    color: c.text,
   },
   textarea: {
     borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: c.inputBorder,
     borderRadius: 10,
     padding: 12,
     fontSize: 15,
-    color: "#111827",
+    color: c.text,
     minHeight: 80,
     textAlignVertical: "top",
   },
@@ -747,14 +755,14 @@ const s = StyleSheet.create({
     width: 30,
     height: 30,
     borderRadius: 15,
-    backgroundColor: "#e5e7eb",
+    backgroundColor: c.border,
     alignItems: "center",
     justifyContent: "center",
   },
-  stepDone: { backgroundColor: "#10b981" },
-  stepActive: { backgroundColor: "#3b82f6" },
-  stepText: { color: "#6b7280", fontWeight: "700" },
-  stepTextOn: { color: "#fff" },
+  stepDone: { backgroundColor: c.success },
+  stepActive: { backgroundColor: c.primary },
+  stepText: { color: c.sub, fontWeight: "700" },
+  stepTextOn: { color: c.white },
   seedGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -764,12 +772,12 @@ const s = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
-    backgroundColor: "#f3f4f6",
+    backgroundColor: c.bgSecondary,
     borderRadius: 8,
     paddingVertical: 8,
     paddingHorizontal: 10,
     width: "47%",
   },
-  seedNum: { color: "#9ca3af", fontSize: 12, fontWeight: "700", width: 18 },
-  seedText: { color: "#111827", fontSize: 14, fontWeight: "600" },
+  seedNum: { color: c.faint, fontSize: 12, fontWeight: "700", width: 18 },
+  seedText: { color: c.text, fontSize: 14, fontWeight: "600" },
 });

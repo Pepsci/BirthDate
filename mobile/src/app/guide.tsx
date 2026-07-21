@@ -1,5 +1,10 @@
 import { ScrollView, View, Text, Pressable, StyleSheet } from "react-native";
 import { Stack, useRouter } from "expo-router";
+import {
+  useTheme,
+  useThemedStyles,
+  ThemeColors,
+} from "../lib/theme-context";
 
 interface QA {
   q: string;
@@ -131,6 +136,8 @@ const SECTIONS: Section[] = [
 ];
 
 export default function GuideScreen() {
+  const styles = useThemedStyles(makeStyles);
+  const { colors } = useTheme();
   const router = useRouter();
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -171,45 +178,46 @@ export default function GuideScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f9fafb" },
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+  container: { flex: 1, backgroundColor: c.bg },
   content: { padding: 16, paddingBottom: 40, gap: 14 },
   hero: { alignItems: "center", gap: 6, paddingVertical: 8 },
   heroEmoji: { fontSize: 40 },
-  heroTitle: { fontSize: 22, fontWeight: "800", color: "#111827" },
+  heroTitle: { fontSize: 22, fontWeight: "800", color: c.text },
   heroDesc: {
-    color: "#6b7280",
+    color: c.sub,
     fontSize: 14,
     textAlign: "center",
     lineHeight: 20,
   },
   section: {
-    backgroundColor: "#fff",
+    backgroundColor: c.card,
     borderRadius: 14,
     padding: 14,
     gap: 12,
-    shadowColor: "#000",
+    shadowColor: c.shadow,
     shadowOpacity: 0.05,
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 2 },
     elevation: 1,
   },
-  sectionTitle: { fontSize: 16, fontWeight: "800", color: "#111827" },
+  sectionTitle: { fontSize: 16, fontWeight: "800", color: c.text },
   item: {
     gap: 4,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: "#eef2f7",
+    borderTopColor: c.border,
     paddingTop: 10,
   },
-  q: { fontSize: 14, fontWeight: "700", color: "#2563eb" },
-  a: { fontSize: 13, color: "#374151", lineHeight: 19 },
+  q: { fontSize: 14, fontWeight: "700", color: c.primaryStrong },
+  a: { fontSize: 13, color: c.text, lineHeight: 19 },
   footer: { alignItems: "center", gap: 10, marginTop: 4, paddingBottom: 8 },
-  footerText: { color: "#6b7280", fontSize: 14 },
+  footerText: { color: c.sub, fontSize: 14 },
   supportBtn: {
-    backgroundColor: "#3b82f6",
+    backgroundColor: c.primary,
     borderRadius: 10,
     paddingVertical: 12,
     paddingHorizontal: 20,
   },
-  supportBtnText: { color: "#fff", fontWeight: "700", fontSize: 15 },
+  supportBtnText: { color: c.white, fontWeight: "700", fontSize: 15 },
 });

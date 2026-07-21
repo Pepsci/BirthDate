@@ -14,6 +14,14 @@ import {
   bankInfoExists,
   fetchBankInfo,
 } from "../lib/events";
+import {
+  useTheme,
+  useThemedStyles,
+  ThemeColors,
+} from "../lib/theme-context";
+
+/** Bleu de marque PayPal — hors thème, comme le violet Stripe. */
+const PAYPAL_BLUE = "#0070ba";
 
 /**
  * Affiche les moyens de participation hors plateforme (PayPal + IBAN),
@@ -26,6 +34,8 @@ export default function DirectTransferViewer({
   shortId: string;
   directTransfer?: DirectTransfer;
 }) {
+  const styles = useThemedStyles(makeStyles);
+  const { colors } = useTheme();
   const dt = directTransfer ?? {};
   const [ibanExists, setIbanExists] = useState<boolean | null>(null);
   const [revealed, setRevealed] = useState(false);
@@ -82,7 +92,7 @@ export default function DirectTransferViewer({
       {/* IBAN */}
       {dt.ibanEnabled &&
         (ibanExists === null ? (
-          <ActivityIndicator color="#3b82f6" style={{ marginVertical: 8 }} />
+          <ActivityIndicator color={colors.primary} style={{ marginVertical: 8 }} />
         ) : ibanExists === false ? (
           <Text style={styles.muted}>
             L'organisateur a activé le virement par RIB mais n'a pas encore
@@ -135,36 +145,37 @@ export default function DirectTransferViewer({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
   wrap: {
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: "#e5e7eb",
+    borderTopColor: c.border,
     gap: 8,
   },
-  title: { fontSize: 14, fontWeight: "800", color: "#111827" },
-  muted: { color: "#6b7280", fontSize: 13, lineHeight: 18 },
+  title: { fontSize: 14, fontWeight: "800", color: c.text },
+  muted: { color: c.sub, fontSize: 13, lineHeight: 18 },
   payBtn: {
-    backgroundColor: "#0070ba",
+    backgroundColor: PAYPAL_BLUE,
     borderRadius: 10,
     paddingVertical: 11,
     alignItems: "center",
   },
-  payBtnText: { color: "#fff", fontWeight: "700", fontSize: 14 },
+  payBtnText: { color: c.white, fontWeight: "700", fontSize: 14 },
   revealBtn: {
-    backgroundColor: "#3b82f6",
+    backgroundColor: c.primary,
     borderRadius: 10,
     paddingVertical: 11,
     alignItems: "center",
   },
-  revealBtnText: { color: "#fff", fontWeight: "700", fontSize: 14 },
-  error: { color: "#b91c1c", fontSize: 13, marginTop: 4 },
+  revealBtnText: { color: c.white, fontWeight: "700", fontSize: 14 },
+  error: { color: c.danger, fontSize: 13, marginTop: 4 },
   ibanBox: {
-    backgroundColor: "#f9fafb",
+    backgroundColor: c.bg,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: c.border,
     padding: 12,
     gap: 4,
   },
@@ -173,25 +184,25 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: 4,
   },
-  label: { color: "#6b7280", fontSize: 12, fontWeight: "600" },
-  value: { color: "#111827", fontSize: 13, fontWeight: "600" },
+  label: { color: c.sub, fontSize: 12, fontWeight: "600" },
+  value: { color: c.text, fontSize: 13, fontWeight: "600" },
   iban: {
-    color: "#111827",
+    color: c.text,
     fontSize: 16,
     fontWeight: "700",
     letterSpacing: 1,
     marginBottom: 8,
   },
   copyBtn: {
-    backgroundColor: "#3b82f6",
+    backgroundColor: c.primary,
     borderRadius: 10,
     paddingVertical: 10,
     alignItems: "center",
   },
-  copyBtnText: { color: "#fff", fontWeight: "700", fontSize: 13 },
-  hint: { color: "#9ca3af", fontSize: 11, marginTop: 6, textAlign: "center" },
+  copyBtnText: { color: c.white, fontWeight: "700", fontSize: 13 },
+  hint: { color: c.faint, fontSize: 11, marginTop: 6, textAlign: "center" },
   note: {
-    color: "#9ca3af",
+    color: c.faint,
     fontSize: 11,
     lineHeight: 16,
     fontStyle: "italic",

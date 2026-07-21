@@ -10,6 +10,11 @@ import {
 import BottomSheet from "./BottomSheet";
 import { DateEntry, Gift, fetchDates } from "../lib/dates";
 import { occasionEmoji } from "../lib/occasions";
+import {
+  useTheme,
+  useThemedStyles,
+  ThemeColors,
+} from "../lib/theme-context";
 
 export interface ImportedGift {
   giftName: string;
@@ -39,6 +44,8 @@ export default function ImportGiftSheet({
   excludeDateId?: string;
   busy?: boolean;
 }) {
+  const styles = useThemedStyles(makeStyles);
+  const { colors } = useTheme();
   const [dates, setDates] = useState<DateEntry[] | null>(null);
   const [search, setSearch] = useState("");
   const [step, setStep] = useState<1 | 2>(1);
@@ -102,14 +109,17 @@ export default function ImportGiftSheet({
           <Text style={styles.title}>Importer depuis une liste</Text>
           <Text style={styles.sub}>Choisis une fiche source.</Text>
           <TextInput
-            placeholderTextColor="#9ca3af"
+            placeholderTextColor={colors.placeholder}
             style={styles.search}
             placeholder="🔍 Rechercher un prénom…"
             value={search}
             onChangeText={setSearch}
           />
           {dates === null ? (
-            <ActivityIndicator color="#3b82f6" style={{ marginVertical: 16 }} />
+            <ActivityIndicator
+              color={colors.primary}
+              style={{ marginVertical: 16 }}
+            />
           ) : filtered.length === 0 ? (
             <Text style={styles.empty}>
               Aucune fiche avec des idées cadeaux.
@@ -187,57 +197,58 @@ export default function ImportGiftSheet({
   );
 }
 
-const styles = StyleSheet.create({
-  title: { fontSize: 18, fontWeight: "800", color: "#111827" },
-  sub: { color: "#6b7280", fontSize: 13, marginTop: 4, marginBottom: 10 },
-  search: {
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-    borderRadius: 10,
-    padding: 10,
-    fontSize: 14,
-    color: "#111827",
-    marginBottom: 8,
-  },
-  empty: { color: "#6b7280", textAlign: "center", marginVertical: 16 },
-  dateRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 12,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: "#eef2f7",
-  },
-  dateName: { fontSize: 15, fontWeight: "600", color: "#111827" },
-  dateMeta: { fontSize: 12, color: "#6b7280", marginTop: 2 },
-  arrow: { fontSize: 22, color: "#9ca3af" },
-  giftRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    paddingVertical: 10,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: "#eef2f7",
-  },
-  check: { fontSize: 18, color: "#3b82f6" },
-  giftName: { fontSize: 14, fontWeight: "600", color: "#111827" },
-  giftMeta: { fontSize: 12, color: "#6b7280", marginTop: 1 },
-  footer: { flexDirection: "row", gap: 10, marginTop: 16 },
-  ghostBtn: {
-    borderWidth: 1,
-    borderColor: "#d1d5db",
-    borderRadius: 10,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  ghostText: { color: "#6b7280", fontWeight: "600" },
-  primaryBtn: {
-    flex: 1,
-    backgroundColor: "#3b82f6",
-    borderRadius: 10,
-    paddingVertical: 12,
-    alignItems: "center",
-  },
-  primaryText: { color: "#fff", fontWeight: "700", fontSize: 15 },
-});
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    title: { fontSize: 18, fontWeight: "800", color: c.text },
+    sub: { color: c.sub, fontSize: 13, marginTop: 4, marginBottom: 10 },
+    search: {
+      borderWidth: 1,
+      borderColor: c.inputBorder,
+      borderRadius: 10,
+      padding: 10,
+      fontSize: 14,
+      color: c.text,
+      marginBottom: 8,
+    },
+    empty: { color: c.sub, textAlign: "center", marginVertical: 16 },
+    dateRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingVertical: 12,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: c.border,
+    },
+    dateName: { fontSize: 15, fontWeight: "600", color: c.text },
+    dateMeta: { fontSize: 12, color: c.sub, marginTop: 2 },
+    arrow: { fontSize: 22, color: c.faint },
+    giftRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+      paddingVertical: 10,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: c.border,
+    },
+    check: { fontSize: 18, color: c.primary },
+    giftName: { fontSize: 14, fontWeight: "600", color: c.text },
+    giftMeta: { fontSize: 12, color: c.sub, marginTop: 1 },
+    footer: { flexDirection: "row", gap: 10, marginTop: 16 },
+    ghostBtn: {
+      borderWidth: 1,
+      borderColor: c.borderStrong,
+      borderRadius: 10,
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    ghostText: { color: c.sub, fontWeight: "600" },
+    primaryBtn: {
+      flex: 1,
+      backgroundColor: c.primary,
+      borderRadius: 10,
+      paddingVertical: 12,
+      alignItems: "center",
+    },
+    primaryText: { color: c.white, fontWeight: "700", fontSize: 15 },
+  });

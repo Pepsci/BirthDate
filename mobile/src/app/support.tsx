@@ -11,8 +11,15 @@ import {
 } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import { sendSupportMessage } from "../lib/support";
+import {
+  useTheme,
+  useThemedStyles,
+  ThemeColors,
+} from "../lib/theme-context";
 
 export default function SupportScreen() {
+  const styles = useThemedStyles(makeStyles);
+  const { colors } = useTheme();
   const router = useRouter();
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
@@ -75,7 +82,7 @@ export default function SupportScreen() {
           </Text>
         </View>
         <TextInput
-          placeholderTextColor="#9ca3af"
+          placeholderTextColor={colors.placeholder}
           style={styles.input}
           placeholder="Objet de ta demande"
           value={subject}
@@ -90,7 +97,7 @@ export default function SupportScreen() {
           </Text>
         </View>
         <TextInput
-          placeholderTextColor="#9ca3af"
+          placeholderTextColor={colors.placeholder}
           style={[styles.input, styles.textarea]}
           placeholder="Décris ta demande…"
           value={message}
@@ -114,19 +121,20 @@ export default function SupportScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f9fafb" },
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+  container: { flex: 1, backgroundColor: c.bg },
   content: { padding: 16, gap: 8 },
   center: {
     flex: 1,
-    backgroundColor: "#f9fafb",
+    backgroundColor: c.bg,
     justifyContent: "center",
     alignItems: "center",
     padding: 24,
     gap: 10,
   },
-  intro: { color: "#6b7280", fontSize: 14, lineHeight: 20, marginBottom: 6 },
-  error: { color: "#b91c1c", fontSize: 13 },
+  intro: { color: c.sub, fontSize: 14, lineHeight: 20, marginBottom: 6 },
+  error: { color: c.danger, fontSize: 13 },
   labelRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -136,31 +144,31 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#374151",
+    color: c.text,
   },
-  counter: { fontSize: 11, color: "#9ca3af" },
+  counter: { fontSize: 11, color: c.faint },
   input: {
     borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: c.inputBorder,
     borderRadius: 10,
     padding: 12,
     fontSize: 14,
-    backgroundColor: "#fff",
-    color: "#111827",
+    backgroundColor: c.inputBg,
+    color: c.text,
   },
   textarea: { minHeight: 160 },
   primaryBtn: {
-    backgroundColor: "#3b82f6",
+    backgroundColor: c.primary,
     borderRadius: 10,
     paddingVertical: 14,
     alignItems: "center",
     marginTop: 16,
   },
-  primaryBtnText: { color: "#fff", fontWeight: "700", fontSize: 15 },
+  primaryBtnText: { color: c.white, fontWeight: "700", fontSize: 15 },
   doneEmoji: { fontSize: 44 },
-  doneTitle: { fontSize: 20, fontWeight: "800", color: "#111827" },
+  doneTitle: { fontSize: 20, fontWeight: "800", color: c.text },
   doneDesc: {
-    color: "#6b7280",
+    color: c.sub,
     fontSize: 14,
     textAlign: "center",
     lineHeight: 20,

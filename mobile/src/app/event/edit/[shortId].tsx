@@ -3,8 +3,15 @@ import { View, Text, ActivityIndicator, StyleSheet } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import EventFormStepper from "../../../components/EventFormStepper";
 import { EventDetail, fetchEvent, updateEvent } from "../../../lib/events";
+import {
+  useTheme,
+  useThemedStyles,
+  ThemeColors,
+} from "../../../lib/theme-context";
 
 export default function EditEventScreen() {
+  const styles = useThemedStyles(makeStyles);
+  const { colors } = useTheme();
   const { shortId } = useLocalSearchParams<{ shortId: string }>();
   const router = useRouter();
   const [event, setEvent] = useState<EventDetail | null>(null);
@@ -24,7 +31,7 @@ export default function EditEventScreen() {
         {error ? (
           <Text style={styles.error}>{error}</Text>
         ) : (
-          <ActivityIndicator size="large" color="#3b82f6" />
+          <ActivityIndicator size="large" color={colors.primary} />
         )}
       </View>
     );
@@ -45,12 +52,13 @@ export default function EditEventScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
   center: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f9fafb",
+    backgroundColor: c.bg,
   },
-  error: { color: "#b91c1c", textAlign: "center", padding: 8 },
+  error: { color: c.danger, textAlign: "center", padding: 8 },
 });

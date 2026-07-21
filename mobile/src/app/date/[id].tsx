@@ -75,10 +75,27 @@ import {
 } from "../../lib/giftStatus";
 import { checkExistingEvent } from "../../lib/events";
 import { useUnread } from "../../lib/unread-context";
+import {
+  useTheme,
+  useThemedStyles,
+  ThemeColors,
+} from "../../lib/theme-context";
+
+/**
+ * Bandeau « annuler la suppression » : surface volontairement inversée,
+ * elle reste sombre dans les deux thèmes pour se détacher du contenu.
+ * Ces valeurs ne passent donc pas par les tokens.
+ */
+const UNDO_BG = "#111827";
+const UNDO_TEXT = "#f9fafb";
+const UNDO_ACTION = "#93c5fd";
+const UNDO_TRACK = "rgba(255,255,255,0.2)";
 
 export default function DateDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const styles = useThemedStyles(makeStyles);
+  const { colors } = useTheme();
   const { user } = useAuth();
   const { byFriend } = useUnread();
   const [entry, setEntry] = useState<DateEntry | null>(null);
@@ -479,7 +496,7 @@ export default function DateDetailScreen() {
         {error ? (
           <Text style={styles.error}>{error}</Text>
         ) : (
-          <ActivityIndicator size="large" color="#3b82f6" />
+          <ActivityIndicator size="large" color={colors.primary} />
         )}
       </View>
     );
@@ -595,8 +612,8 @@ export default function DateDetailScreen() {
             )}
         </View>
         <View style={styles.badgeRow}>
-          {entry.linkedUser && <Badge label="AMI" color="#3b82f6" />}
-          {entry.family && <Badge label="FAMILLE" color="#f59e0b" />}
+          {entry.linkedUser && <Badge label="AMI" color={colors.primary} />}
+          {entry.family && <Badge label="FAMILLE" color={colors.warning} />}
         </View>
         {birthISO && (
           <Text style={styles.detail}>
@@ -648,7 +665,7 @@ export default function DateDetailScreen() {
             value={entry.receiveNotifications !== false}
             disabled={busy}
             onValueChange={(v) => run(() => setDateNotifications(entry._id, v))}
-            trackColor={{ true: "#3b82f6" }}
+            trackColor={{ true: colors.primary }}
           />
         </View>
 
@@ -1096,13 +1113,13 @@ export default function DateDetailScreen() {
                         reservedByMe
                           ? {
                               label: "Réservé par toi",
-                              color: "#047857",
-                              bg: "#d1fae5",
+                              color: colors.successStrong,
+                              bg: colors.successSoft,
                             }
                           : {
                               label: "Disponible",
-                              color: "#6b7280",
-                              bg: "#f3f4f6",
+                              color: colors.sub,
+                              bg: colors.bgSecondary,
                             }
                       }
                       onPress={() => setSelectedWish(item)}
@@ -1147,7 +1164,10 @@ export default function DateDetailScreen() {
               ))}
             </>
           ) : !sharedList ? (
-            <ActivityIndicator color="#3b82f6" style={{ marginVertical: 16 }} />
+            <ActivityIndicator
+              color={colors.primary}
+              style={{ marginVertical: 16 }}
+            />
           ) : (
             <>
               <View style={styles.giftsHeader}>
@@ -1630,6 +1650,7 @@ function NotifChip({
   disabled: boolean;
   onPress: () => void;
 }) {
+  const chipStyles = useThemedStyles(makeChipStyles);
   return (
     <Pressable
       style={[chipStyles.chip, active && chipStyles.chipActive]}
@@ -1643,21 +1664,23 @@ function NotifChip({
   );
 }
 
-const chipStyles = StyleSheet.create({
-  chip: {
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-    borderRadius: 14,
-    paddingVertical: 5,
-    paddingHorizontal: 10,
-    backgroundColor: "#f9fafb",
-  },
-  chipActive: { backgroundColor: "#3b82f6", borderColor: "#3b82f6" },
-  text: { fontSize: 12, fontWeight: "600", color: "#6b7280" },
-  textActive: { color: "#fff" },
-});
+const makeChipStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    chip: {
+      borderWidth: 1,
+      borderColor: c.border,
+      borderRadius: 14,
+      paddingVertical: 5,
+      paddingHorizontal: 10,
+      backgroundColor: c.cardSoft,
+    },
+    chipActive: { backgroundColor: c.primary, borderColor: c.primary },
+    text: { fontSize: 12, fontWeight: "600", color: c.sub },
+    textActive: { color: c.white },
+  });
 
 function Badge({ label, color }: { label: string; color: string }) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={[styles.badge, { backgroundColor: color }]}>
       <Text style={styles.badgeText}>{label}</Text>
@@ -1665,22 +1688,23 @@ function Badge({ label, color }: { label: string; color: string }) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f9fafb" },
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+  container: { flex: 1, backgroundColor: c.bg },
   content: { padding: 12, gap: 10, paddingBottom: 40 },
   center: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f9fafb",
+    backgroundColor: c.bg,
   },
-  error: { color: "#b91c1c", textAlign: "center", padding: 8 },
+  error: { color: c.danger, textAlign: "center", padding: 8 },
   card: {
-    backgroundColor: "#fff",
+    backgroundColor: c.card,
     borderRadius: 14,
     padding: 14,
     gap: 8,
-    shadowColor: "#000",
+    shadowColor: c.shadow,
     shadowOpacity: 0.06,
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 2 },
@@ -1692,115 +1716,115 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: "#dbeafe",
+    backgroundColor: c.primarySoft,
     justifyContent: "center",
     alignItems: "center",
   },
-  initials: { fontSize: 24, fontWeight: "700", color: "#2563eb" },
+  initials: { fontSize: 24, fontWeight: "700", color: c.primaryStrong },
   badgeRow: { flexDirection: "row", gap: 6 },
   badge: { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2 },
-  badgeText: { color: "#fff", fontSize: 10, fontWeight: "700" },
-  detail: { color: "#374151", fontSize: 14 },
+  badgeText: { color: c.white, fontSize: 10, fontWeight: "700" },
+  detail: { color: c.text, fontSize: 14 },
   countdown: {
-    backgroundColor: "#eff6ff",
+    backgroundColor: c.primarySoft,
     borderRadius: 10,
     paddingHorizontal: 14,
     paddingVertical: 6,
     marginTop: 4,
   },
-  countdownToday: { backgroundColor: "#3b82f6" },
-  countdownText: { color: "#2563eb", fontWeight: "700" },
+  countdownToday: { backgroundColor: c.primary },
+  countdownText: { color: c.primaryStrong, fontWeight: "700" },
   countdownTodayBox: {
     alignSelf: "stretch",
     alignItems: "center",
     marginTop: 8,
     paddingTop: 8,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: "#e5e7eb",
+    borderTopColor: c.border,
   },
-  countdownTodayText: { color: "#10b981", fontWeight: "800", fontSize: 15 },
+  countdownTodayText: { color: c.success, fontWeight: "800", fontSize: 15 },
   familyBtn: {
     alignSelf: "stretch",
     marginTop: 12,
     borderWidth: 1.5,
-    borderColor: "#f59e0b",
+    borderColor: c.warning,
     borderRadius: 10,
     paddingVertical: 10,
     alignItems: "center",
   },
-  familyBtnActive: { backgroundColor: "#fef3c7" },
-  familyBtnText: { color: "#b45309", fontWeight: "700", fontSize: 14 },
-  familyBtnTextActive: { color: "#b45309" },
-  sectionTitle: { fontSize: 15, fontWeight: "700", color: "#111827" },
-  muted: { color: "#6b7280", fontSize: 12 },
+  familyBtnActive: { backgroundColor: c.warningSoft },
+  familyBtnText: { color: c.warningStrong, fontWeight: "700", fontSize: 14 },
+  familyBtnTextActive: { color: c.warningStrong },
+  sectionTitle: { fontSize: 15, fontWeight: "700", color: c.text },
+  muted: { color: c.sub, fontSize: 12 },
   giftRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
     paddingVertical: 6,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#e5e7eb",
+    borderBottomColor: c.border,
   },
   checkbox: {
     width: 24,
     height: 24,
     borderRadius: 6,
     borderWidth: 2,
-    borderColor: "#d1d5db",
+    borderColor: c.borderStrong,
     justifyContent: "center",
     alignItems: "center",
   },
-  checkboxOn: { backgroundColor: "#10b981", borderColor: "#10b981" },
-  checkmark: { color: "#fff", fontWeight: "700", fontSize: 14 },
-  giftName: { color: "#111827", fontWeight: "600" },
-  giftDone: { textDecorationLine: "line-through", color: "#9ca3af" },
-  deleteX: { color: "#ef4444", fontSize: 16, fontWeight: "700" },
+  checkboxOn: { backgroundColor: c.success, borderColor: c.success },
+  checkmark: { color: c.white, fontWeight: "700", fontSize: 14 },
+  giftName: { color: c.text, fontWeight: "600" },
+  giftDone: { textDecorationLine: "line-through", color: c.faint },
+  deleteX: { color: c.danger, fontSize: 16, fontWeight: "700" },
   newIdeaBtn: {
     borderWidth: 1,
-    borderColor: "#3b82f6",
+    borderColor: c.primary,
     borderStyle: "dashed",
     borderRadius: 10,
     padding: 12,
     alignItems: "center",
     marginTop: 6,
   },
-  newIdeaText: { color: "#3b82f6", fontWeight: "600" },
+  newIdeaText: { color: c.primary, fontWeight: "600" },
   input: {
     flex: 1,
     borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: c.inputBorder,
     borderRadius: 10,
     padding: 10,
     fontSize: 14,
-    backgroundColor: "#fff",
-    color: "#111827",
+    backgroundColor: c.inputBg,
+    color: c.text,
   },
   addBtn: {
-    backgroundColor: "#3b82f6",
+    backgroundColor: c.primary,
     borderRadius: 10,
     width: 42,
     justifyContent: "center",
     alignItems: "center",
   },
-  addBtnText: { color: "#fff", fontSize: 20, fontWeight: "600" },
-  link: { color: "#3b82f6", fontSize: 12 },
+  addBtnText: { color: c.white, fontSize: 20, fontWeight: "600" },
+  link: { color: c.primary, fontSize: 12 },
   wishImage: { width: 44, height: 44, borderRadius: 8 },
   eventBtn: {
-    backgroundColor: "#3b82f6",
+    backgroundColor: c.primary,
     borderRadius: 14,
     padding: 14,
     alignItems: "center",
   },
-  eventBtnText: { color: "#fff", fontWeight: "700", fontSize: 15 },
+  eventBtnText: { color: c.white, fontWeight: "700", fontSize: 15 },
   notifHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
-  notifLabel: { fontSize: 13, fontWeight: "700", color: "#6b7280", marginTop: 4 },
+  notifLabel: { fontSize: 13, fontWeight: "700", color: c.sub, marginTop: 4 },
   notifChips: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
   headerBadge: {
-    backgroundColor: "#ef4444",
+    backgroundColor: c.danger,
     borderRadius: 9,
     minWidth: 18,
     height: 18,
@@ -1810,45 +1834,45 @@ const styles = StyleSheet.create({
     marginLeft: -6,
     marginTop: -8,
   },
-  headerBadgeText: { color: "#fff", fontSize: 10, fontWeight: "700" },
+  headerBadgeText: { color: c.white, fontSize: 10, fontWeight: "700" },
   reserveBtn: {
     borderWidth: 1,
-    borderColor: "#3b82f6",
+    borderColor: c.primary,
     borderRadius: 8,
     paddingVertical: 6,
     paddingHorizontal: 10,
   },
-  reserveText: { color: "#3b82f6", fontWeight: "600", fontSize: 12 },
-  unreserveBtn: { borderColor: "#ef4444" },
-  unreserveText: { color: "#ef4444", fontWeight: "600", fontSize: 12 },
+  reserveText: { color: c.primary, fontWeight: "600", fontSize: 12 },
+  unreserveBtn: { borderColor: c.danger },
+  unreserveText: { color: c.danger, fontWeight: "600", fontSize: 12 },
 
   // Bouton "Voir les cadeaux" (accueil carte)
   giftsBtn: {
-    backgroundColor: "#fff",
+    backgroundColor: c.card,
     borderWidth: 1.5,
-    borderColor: "#3b82f6",
+    borderColor: c.primary,
     borderRadius: 14,
     padding: 14,
     alignItems: "center",
   },
-  giftsBtnText: { color: "#3b82f6", fontWeight: "700", fontSize: 15 },
+  giftsBtnText: { color: c.primary, fontWeight: "700", fontSize: 15 },
   sharedBtn: {
-    backgroundColor: "#fff",
+    backgroundColor: c.card,
     borderWidth: 1.5,
-    borderColor: "#8b5cf6",
+    borderColor: c.accent,
     borderRadius: 14,
     padding: 14,
     alignItems: "center",
   },
-  sharedBtnText: { color: "#7c3aed", fontWeight: "700", fontSize: 15 },
+  sharedBtnText: { color: c.accentStrong, fontWeight: "700", fontSize: 15 },
 
   // Retour + bascule (vue cadeaux)
   backBtn: { paddingVertical: 6, paddingHorizontal: 2 },
-  backBtnText: { color: "#3b82f6", fontWeight: "700", fontSize: 15 },
+  backBtnText: { color: c.primary, fontWeight: "700", fontSize: 15 },
   giftTabs: {
     flexDirection: "row",
     gap: 8,
-    backgroundColor: "#eef2f7",
+    backgroundColor: c.bgSecondary,
     borderRadius: 12,
     padding: 4,
   },
@@ -1859,31 +1883,31 @@ const styles = StyleSheet.create({
     borderRadius: 9,
   },
   giftTabActive: {
-    backgroundColor: "#fff",
-    shadowColor: "#000",
+    backgroundColor: c.card,
+    shadowColor: c.shadow,
     shadowOpacity: 0.06,
     shadowRadius: 4,
     shadowOffset: { width: 0, height: 1 },
     elevation: 1,
   },
-  giftTabText: { fontSize: 13, fontWeight: "700", color: "#6b7280" },
-  giftTabTextActive: { color: "#111827" },
+  giftTabText: { fontSize: 13, fontWeight: "700", color: c.sub },
+  giftTabTextActive: { color: c.text },
 
   // Cartes cadeaux (style web)
   giftCard: {
     flexDirection: "row",
     gap: 12,
-    backgroundColor: "#fff",
+    backgroundColor: c.card,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#eef2f7",
+    borderColor: c.border,
     padding: 10,
     marginBottom: 10,
   },
-  giftCardDone: { opacity: 0.7, backgroundColor: "#f9fafb" },
+  giftCardDone: { opacity: 0.7, backgroundColor: c.cardSoft },
   giftCardImg: { width: 64, height: 64, borderRadius: 10 },
   giftCardNoImg: {
-    backgroundColor: "#f3f4f6",
+    backgroundColor: c.bgSecondary,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -1895,7 +1919,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     gap: 8,
   },
-  giftMeta: { color: "#6b7280", fontSize: 12 },
+  giftMeta: { color: c.sub, fontSize: 12 },
   giftCardFooter: {
     flexDirection: "row",
     alignItems: "center",
@@ -1903,25 +1927,25 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
   },
   pricePill: {
-    backgroundColor: "#eff6ff",
+    backgroundColor: c.primarySoft,
     borderRadius: 8,
     paddingHorizontal: 8,
     paddingVertical: 2,
   },
-  pricePillText: { color: "#2563eb", fontWeight: "700", fontSize: 12 },
+  pricePillText: { color: c.primaryStrong, fontWeight: "700", fontSize: 12 },
   giftBadge: { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
-  giftBadgePending: { backgroundColor: "#fef3c7" },
-  giftBadgeDone: { backgroundColor: "#d1fae5" },
+  giftBadgePending: { backgroundColor: c.warningSoft },
+  giftBadgeDone: { backgroundColor: c.successSoft },
   giftBadgeText: { fontSize: 10, fontWeight: "800" },
-  giftBadgeTextPending: { color: "#b45309" },
-  giftBadgeTextDone: { color: "#047857" },
+  giftBadgeTextPending: { color: c.warningStrong },
+  giftBadgeTextDone: { color: c.successStrong },
   giftCardActions: {
     flexDirection: "row",
     gap: 16,
     marginTop: 4,
   },
-  giftActionEdit: { color: "#3b82f6", fontWeight: "600", fontSize: 14 },
-  giftActionDel: { color: "#ef4444", fontWeight: "600", fontSize: 14 },
+  giftActionEdit: { color: c.primary, fontWeight: "600", fontSize: 14 },
+  giftActionDel: { color: c.danger, fontWeight: "600", fontSize: 14 },
   giftCardActionBtn: { alignSelf: "flex-start", marginTop: 4 },
 
   // En-tête section idées + bouton "Nouvelle idée" en haut
@@ -1932,26 +1956,26 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   newIdeaBtnTop: {
-    backgroundColor: "#3b82f6",
+    backgroundColor: c.primary,
     borderRadius: 10,
     paddingVertical: 7,
     paddingHorizontal: 12,
   },
-  newIdeaTopText: { color: "#fff", fontWeight: "700", fontSize: 13 },
+  newIdeaTopText: { color: c.white, fontWeight: "700", fontSize: 13 },
 
   // Filtre par occasion (bouton déroulant + panneau qui revient à la ligne)
   filterToggle: {
     alignSelf: "flex-start",
     borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: c.border,
     borderRadius: 10,
     paddingVertical: 8,
     paddingHorizontal: 12,
-    backgroundColor: "#f9fafb",
+    backgroundColor: c.cardSoft,
   },
-  filterToggleOn: { borderColor: "#3b82f6", backgroundColor: "#eff6ff" },
-  filterToggleText: { fontSize: 13, fontWeight: "700", color: "#374151" },
-  filterToggleTextOn: { color: "#2563eb" },
+  filterToggleOn: { borderColor: c.primary, backgroundColor: c.primarySoft },
+  filterToggleText: { fontSize: 13, fontWeight: "700", color: c.text },
+  filterToggleTextOn: { color: c.primaryStrong },
   filterWrap: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -1961,15 +1985,15 @@ const styles = StyleSheet.create({
   filterRow: { gap: 8, paddingVertical: 4, paddingRight: 8 },
   filterChip: {
     borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: c.border,
     borderRadius: 16,
     paddingVertical: 6,
     paddingHorizontal: 12,
-    backgroundColor: "#f9fafb",
+    backgroundColor: c.cardSoft,
   },
-  filterChipOn: { backgroundColor: "#3b82f6", borderColor: "#3b82f6" },
-  filterChipText: { fontSize: 12, fontWeight: "600", color: "#374151" },
-  filterChipTextOn: { color: "#fff" },
+  filterChipOn: { backgroundColor: c.primary, borderColor: c.primary },
+  filterChipText: { fontSize: 12, fontWeight: "600", color: c.text },
+  filterChipTextOn: { color: c.white },
 
   // Grille 2 colonnes
   giftGrid: {
@@ -1980,10 +2004,10 @@ const styles = StyleSheet.create({
   },
   giftGridCard: {
     width: "48.5%",
-    backgroundColor: "#fff",
+    backgroundColor: c.card,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#eef2f7",
+    borderColor: c.border,
     padding: 8,
     gap: 4,
   },
@@ -2005,14 +2029,14 @@ const styles = StyleSheet.create({
   // Bottom sheet wishlist
   sheetImage: { width: "100%", height: 180, borderRadius: 14 },
   sheetImgPlaceholder: {
-    backgroundColor: "#f3f4f6",
+    backgroundColor: c.bgSecondary,
     justifyContent: "center",
     alignItems: "center",
   },
   sheetTitle: {
     fontSize: 20,
     fontWeight: "800",
-    color: "#111827",
+    color: c.text,
     marginTop: 14,
   },
   sheetInfoRow: {
@@ -2021,46 +2045,46 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginTop: 12,
   },
-  sheetPrice: { fontSize: 20, fontWeight: "800", color: "#111827" },
-  sheetReserved: { color: "#6b7280", fontSize: 13, marginTop: 10 },
+  sheetPrice: { fontSize: 20, fontWeight: "800", color: c.text },
+  sheetReserved: { color: c.sub, fontSize: 13, marginTop: 10 },
   sheetPrimaryBtn: {
-    backgroundColor: "#3b82f6",
+    backgroundColor: c.primary,
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: "center",
     marginTop: 18,
   },
-  sheetPrimaryText: { color: "#fff", fontWeight: "700", fontSize: 15 },
+  sheetPrimaryText: { color: c.white, fontWeight: "700", fontSize: 15 },
   inviteAltBtn: {
     borderWidth: 1.5,
-    borderColor: "#3b82f6",
+    borderColor: c.primary,
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: "center",
     marginTop: 10,
   },
-  inviteAltText: { color: "#3b82f6", fontWeight: "700", fontSize: 15 },
+  inviteAltText: { color: c.primary, fontWeight: "700", fontSize: 15 },
   inviteFooter: { flexDirection: "row", gap: 10, marginTop: 16 },
   inviteBackBtn: {
     borderWidth: 1,
-    borderColor: "#d1d5db",
+    borderColor: c.borderStrong,
     borderRadius: 12,
     paddingVertical: 14,
     paddingHorizontal: 18,
     alignItems: "center",
     justifyContent: "center",
   },
-  inviteBackText: { color: "#6b7280", fontWeight: "600", fontSize: 15 },
+  inviteBackText: { color: c.sub, fontWeight: "600", fontSize: 15 },
   sheetGhostBtn: {
     borderWidth: 1.5,
-    borderColor: "#d1d5db",
+    borderColor: c.borderStrong,
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: "center",
     marginTop: 18,
   },
-  sheetGhostText: { color: "#374151", fontWeight: "700", fontSize: 15 },
-  inviteMsg: { color: "#047857", fontSize: 13, marginTop: 4 },
+  sheetGhostText: { color: c.text, fontWeight: "700", fontSize: 15 },
+  inviteMsg: { color: c.successStrong, fontSize: 13, marginTop: 4 },
   sentRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -2068,11 +2092,11 @@ const styles = StyleSheet.create({
     marginTop: 10,
     paddingTop: 10,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: "#eef2f7",
+    borderTopColor: c.border,
   },
-  cancelInvite: { color: "#ef4444", fontWeight: "700", fontSize: 13 },
+  cancelInvite: { color: c.danger, fontWeight: "700", fontSize: 13 },
   leaveShared: {
-    color: "#ef4444",
+    color: c.danger,
     fontSize: 13,
     fontWeight: "600",
     textAlign: "center",
@@ -2081,22 +2105,22 @@ const styles = StyleSheet.create({
   friendRow: {
     paddingVertical: 12,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: "#eef2f7",
+    borderTopColor: c.border,
   },
-  friendName: { fontSize: 15, fontWeight: "600", color: "#111827" },
+  friendName: { fontSize: 15, fontWeight: "600", color: c.text },
   shareChatBtn: {
     borderWidth: 1,
-    borderColor: "#3b82f6",
+    borderColor: c.primary,
     borderStyle: "dashed",
     borderRadius: 10,
     paddingVertical: 9,
     alignItems: "center",
     marginTop: 4,
   },
-  shareChatText: { color: "#3b82f6", fontWeight: "600", fontSize: 13 },
+  shareChatText: { color: c.primary, fontWeight: "600", fontSize: 13 },
   importBtn: {
     borderWidth: 1,
-    borderColor: "#3b82f6",
+    borderColor: c.primary,
     borderStyle: "dashed",
     borderRadius: 10,
     paddingVertical: 9,
@@ -2104,19 +2128,19 @@ const styles = StyleSheet.create({
     marginTop: 4,
     marginBottom: 4,
   },
-  importText: { color: "#3b82f6", fontWeight: "600", fontSize: 13 },
+  importText: { color: c.primary, fontWeight: "600", fontSize: 13 },
   shareGiftRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
     paddingVertical: 10,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: "#eef2f7",
+    borderTopColor: c.border,
   },
-  shareCheck: { fontSize: 18, color: "#3b82f6" },
-  shareGiftName: { flex: 1, fontSize: 14, color: "#111827" },
+  shareCheck: { fontSize: 18, color: c.primary },
+  shareGiftName: { flex: 1, fontSize: 14, color: c.text },
   savedShare: {
-    color: "#047857",
+    color: c.successStrong,
     fontWeight: "800",
     fontSize: 16,
     textAlign: "center",
@@ -2129,12 +2153,12 @@ const styles = StyleSheet.create({
     left: 12,
     right: 12,
     bottom: 20,
-    backgroundColor: "#111827",
+    backgroundColor: UNDO_BG,
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingTop: 12,
     paddingBottom: 10,
-    shadowColor: "#000",
+    shadowColor: c.shadow,
     shadowOpacity: 0.2,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 3 },
@@ -2146,18 +2170,18 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     gap: 12,
   },
-  undoText: { color: "#f9fafb", fontSize: 13, flex: 1 },
-  undoAction: { color: "#93c5fd", fontWeight: "700", fontSize: 13 },
+  undoText: { color: UNDO_TEXT, fontSize: 13, flex: 1 },
+  undoAction: { color: UNDO_ACTION, fontWeight: "700", fontSize: 13 },
   undoTrack: {
     height: 3,
-    backgroundColor: "rgba(255,255,255,0.2)",
+    backgroundColor: UNDO_TRACK,
     borderRadius: 2,
     marginTop: 10,
     overflow: "hidden",
   },
   undoProgress: {
     height: 3,
-    backgroundColor: "#60a5fa",
+    backgroundColor: c.primaryLight,
     borderRadius: 2,
   },
-});
+  });

@@ -87,7 +87,7 @@ export default function LoginScreen() {
           disabled={loading}
         >
           {loading ? (
-            <ActivityIndicator color="#fff" />
+            <ActivityIndicator color={colors.white} />
           ) : (
             <Text style={styles.buttonText}>Se connecter</Text>
           )}
@@ -148,7 +148,7 @@ const makeStyles = (c: ThemeColors) =>
       alignItems: "center",
       marginTop: 8,
     },
-    buttonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
+    buttonText: { color: c.white, fontSize: 16, fontWeight: "600" },
     link: { color: c.primary, textAlign: "center", marginTop: 10, fontSize: 14 },
     divider: {
       height: StyleSheet.hairlineWidth,

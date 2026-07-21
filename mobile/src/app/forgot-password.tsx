@@ -87,7 +87,7 @@ export default function ForgotPasswordScreen() {
               disabled={loading || !email.trim()}
             >
               {loading ? (
-                <ActivityIndicator color="#fff" />
+                <ActivityIndicator color={colors.white} />
               ) : (
                 <Text style={styles.buttonText}>Envoyer le lien</Text>
               )}
@@ -130,7 +130,7 @@ const makeStyles = (c: ThemeColors) =>
       alignItems: "center",
       marginTop: 8,
     },
-    buttonText: { color: "#fff", fontSize: 16, fontWeight: "600" },
+    buttonText: { color: c.white, fontSize: 16, fontWeight: "600" },
     doneText: { color: c.sub, textAlign: "center", lineHeight: 22 },
     warn: { color: c.warning, fontSize: 12, textAlign: "center", marginTop: 10 },
   });

@@ -26,11 +26,18 @@ import {
   removeFriend,
 } from "../../lib/friends";
 import { fetchDates } from "../../lib/dates";
+import {
+  useTheme,
+  useThemedStyles,
+  ThemeColors,
+} from "../../lib/theme-context";
 
 type Tab = "friends" | "received" | "sent";
 
 export default function FriendsScreen() {
   const router = useRouter();
+  const styles = useThemedStyles(makeStyles);
+  const { colors } = useTheme();
   const { byFriend } = useUnread();
   const [tab, setTab] = useState<Tab>("friends");
   const [friends, setFriends] = useState<FriendEntry[] | null>(null);
@@ -128,7 +135,7 @@ export default function FriendsScreen() {
         {error ? (
           <Text style={styles.error}>{error}</Text>
         ) : (
-          <ActivityIndicator size="large" color="#3b82f6" />
+          <ActivityIndicator size="large" color={colors.primary} />
         )}
       </View>
     );
@@ -142,7 +149,7 @@ export default function FriendsScreen() {
 
       {/* Ajout par email */}
       <View style={styles.addRow}>
-        <TextInput placeholderTextColor="#9ca3af"
+        <TextInput placeholderTextColor={colors.placeholder}
           style={styles.input}
           placeholder="Email d'un ami à ajouter…"
           autoCapitalize="none"
@@ -321,6 +328,7 @@ function TabBtn({
   onPress: () => void;
   highlight?: boolean;
 }) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <Pressable
       style={[styles.tabBtn, active && styles.tabBtnActive]}
@@ -330,7 +338,7 @@ function TabBtn({
         style={[
           styles.tabText,
           active && styles.tabTextActive,
-          highlight && !active && { color: "#ef4444" },
+          highlight && !active && styles.tabTextHighlight,
         ]}
       >
         {label}
@@ -340,6 +348,7 @@ function TabBtn({
 }
 
 function Avatar({ user }: { user: { name: string; surname?: string; avatar?: string | null } }) {
+  const styles = useThemedStyles(makeStyles);
   const initials =
     `${user?.name?.[0] ?? ""}${user?.surname?.[0] ?? ""}`.toUpperCase() || "?";
   const hasAvatar = !!user?.avatar && user.avatar.trim().length > 0;
@@ -358,99 +367,111 @@ function Avatar({ user }: { user: { name: string; surname?: string; avatar?: str
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f9fafb" },
-  center: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#f9fafb",
-  },
-  error: { color: "#b91c1c", textAlign: "center", padding: 6 },
-  info: { color: "#065f46", textAlign: "center", padding: 6 },
-  addRow: { flexDirection: "row", gap: 8, padding: 12, paddingBottom: 4 },
-  input: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-    borderRadius: 10,
-    padding: 10,
-    fontSize: 14,
-    backgroundColor: "#fff",
-    color: "#111827",
-  },
-  addBtn: {
-    backgroundColor: "#3b82f6",
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    justifyContent: "center",
-  },
-  addBtnText: { color: "#fff", fontWeight: "600" },
-  tabs: { flexDirection: "row", gap: 6, paddingHorizontal: 12, paddingVertical: 8 },
-  tabBtn: {
-    flex: 1,
-    borderRadius: 10,
-    paddingVertical: 8,
-    alignItems: "center",
-    backgroundColor: "#fff",
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-  },
-  tabBtnActive: { backgroundColor: "#3b82f6", borderColor: "#3b82f6" },
-  tabText: { fontSize: 13, fontWeight: "600", color: "#374151" },
-  tabTextActive: { color: "#fff" },
-  list: { padding: 12, gap: 8, paddingBottom: 40 },
-  empty: { textAlign: "center", color: "#6b7280", marginTop: 32 },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 12,
-  },
-  avatar: { width: 40, height: 40, borderRadius: 20 },
-  avatarFallback: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "#dbeafe",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  initials: { color: "#2563eb", fontWeight: "700" },
-  name: { fontWeight: "600", color: "#111827" },
-  muted: { color: "#6b7280", fontSize: 12 },
-  hint: { textAlign: "center", color: "#9ca3af", fontSize: 11, marginTop: 8 },
-  acceptBtn: {
-    backgroundColor: "#10b981",
-    borderRadius: 16,
-    width: 32,
-    height: 32,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  acceptText: { color: "#fff", fontWeight: "700" },
-  rejectBtn: {
-    borderWidth: 1,
-    borderColor: "#ef4444",
-    borderRadius: 16,
-    width: 32,
-    height: 32,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  rejectText: { color: "#ef4444", fontWeight: "700" },
-  unreadBadge: {
-    backgroundColor: "#ef4444",
-    borderRadius: 9,
-    minWidth: 18,
-    height: 18,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 4,
-    marginLeft: -6,
-    marginTop: -12,
-  },
-  unreadText: { color: "#fff", fontSize: 10, fontWeight: "700" },
-});
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: c.bg },
+    center: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: c.bg,
+    },
+    error: { color: c.danger, textAlign: "center", padding: 6 },
+    info: { color: c.successStrong, textAlign: "center", padding: 6 },
+    addRow: { flexDirection: "row", gap: 8, padding: 12, paddingBottom: 4 },
+    input: {
+      flex: 1,
+      borderWidth: 1,
+      borderColor: c.inputBorder,
+      borderRadius: 10,
+      padding: 10,
+      fontSize: 14,
+      backgroundColor: c.inputBg,
+      color: c.text,
+    },
+    addBtn: {
+      backgroundColor: c.primary,
+      borderRadius: 10,
+      paddingHorizontal: 14,
+      justifyContent: "center",
+    },
+    addBtnText: { color: c.white, fontWeight: "600" },
+    tabs: {
+      flexDirection: "row",
+      gap: 6,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+    },
+    tabBtn: {
+      flex: 1,
+      borderRadius: 10,
+      paddingVertical: 8,
+      alignItems: "center",
+      backgroundColor: c.card,
+      borderWidth: 1,
+      borderColor: c.border,
+    },
+    tabBtnActive: { backgroundColor: c.primary, borderColor: c.primary },
+    tabText: { fontSize: 13, fontWeight: "600", color: c.text },
+    tabTextActive: { color: c.white },
+    tabTextHighlight: { color: c.danger },
+    list: { padding: 12, gap: 8, paddingBottom: 40 },
+    empty: { textAlign: "center", color: c.sub, marginTop: 32 },
+    row: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+      backgroundColor: c.card,
+      borderRadius: 12,
+      padding: 12,
+    },
+    avatar: { width: 40, height: 40, borderRadius: 20 },
+    avatarFallback: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: c.primarySoft,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    initials: { color: c.primaryStrong, fontWeight: "700" },
+    name: { fontWeight: "600", color: c.text },
+    muted: { color: c.sub, fontSize: 12 },
+    hint: {
+      textAlign: "center",
+      color: c.faint,
+      fontSize: 11,
+      marginTop: 8,
+    },
+    acceptBtn: {
+      backgroundColor: c.success,
+      borderRadius: 16,
+      width: 32,
+      height: 32,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    acceptText: { color: c.white, fontWeight: "700" },
+    rejectBtn: {
+      borderWidth: 1,
+      borderColor: c.danger,
+      borderRadius: 16,
+      width: 32,
+      height: 32,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    rejectText: { color: c.danger, fontWeight: "700" },
+    unreadBadge: {
+      backgroundColor: c.danger,
+      borderRadius: 9,
+      minWidth: 18,
+      height: 18,
+      justifyContent: "center",
+      alignItems: "center",
+      paddingHorizontal: 4,
+      marginLeft: -6,
+      marginTop: -12,
+    },
+    unreadText: { color: c.white, fontSize: 10, fontWeight: "700" },
+  });

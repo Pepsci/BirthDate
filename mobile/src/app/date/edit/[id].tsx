@@ -3,8 +3,15 @@ import { View, Text, Pressable, StyleSheet, Alert, ActivityIndicator } from "rea
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import DateForm from "../../../components/DateForm";
 import { DateEntry, fetchDate, updateDate, deleteDate } from "../../../lib/dates";
+import {
+  useTheme,
+  useThemedStyles,
+  ThemeColors,
+} from "../../../lib/theme-context";
 
 export default function EditDateScreen() {
+  const styles = useThemedStyles(makeStyles);
+  const { colors } = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const [entry, setEntry] = useState<DateEntry | null>(null);
@@ -51,7 +58,7 @@ export default function EditDateScreen() {
         {error ? (
           <Text style={styles.error}>{error}</Text>
         ) : (
-          <ActivityIndicator size="large" color="#3b82f6" />
+          <ActivityIndicator size="large" color={colors.primary} />
         )}
       </View>
     );
@@ -82,14 +89,15 @@ export default function EditDateScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
   center: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f9fafb",
+    backgroundColor: c.bg,
   },
-  error: { color: "#b91c1c", textAlign: "center", padding: 8 },
+  error: { color: c.danger, textAlign: "center", padding: 8 },
   deleteBtn: {
     width: 36,
     height: 36,

@@ -3,6 +3,11 @@ import { View, ActivityIndicator, StyleSheet } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { fetchConversations } from "../lib/conversations";
 import { useAuth } from "../lib/auth-context";
+import {
+  useTheme,
+  useThemedStyles,
+  ThemeColors,
+} from "../lib/theme-context";
 
 /**
  * Écran relais ouvert depuis une notification de message (centre de notif ou push).
@@ -10,6 +15,8 @@ import { useAuth } from "../lib/auth-context";
  * a besoin du friendId (l'autre participant). On résout ici puis on redirige.
  */
 export default function ChatOpen() {
+  const styles = useThemedStyles(makeStyles);
+  const { colors } = useTheme();
   const { conversationId, friendId } = useLocalSearchParams<{
     conversationId?: string;
     friendId?: string;
@@ -66,16 +73,17 @@ export default function ChatOpen() {
   return (
     <View style={styles.center}>
       <Stack.Screen options={{ title: "Ouverture…" }} />
-      <ActivityIndicator size="large" color="#3b82f6" />
+      <ActivityIndicator size="large" color={colors.primary} />
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
   center: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f9fafb",
+    backgroundColor: c.bg,
   },
 });

@@ -31,8 +31,15 @@ import {
 } from "../../lib/wishlist";
 import GiftGridCard, { giftGridStyles } from "../../components/GiftGridCard";
 import BottomSheet from "../../components/BottomSheet";
+import {
+  useTheme,
+  useThemedStyles,
+  ThemeColors,
+} from "../../lib/theme-context";
 
 export default function MyWishlistScreen() {
+  const styles = useThemedStyles(makeStyles);
+  const { colors } = useTheme();
   const [items, setItems] = useState<WishlistItem[] | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -234,7 +241,7 @@ export default function MyWishlistScreen() {
         {error ? (
           <Text style={styles.error}>{error}</Text>
         ) : (
-          <ActivityIndicator size="large" color="#3b82f6" />
+          <ActivityIndicator size="large" color={colors.primary} />
         )}
       </View>
     );
@@ -285,7 +292,7 @@ export default function MyWishlistScreen() {
                     value={settings.isPublic}
                     onValueChange={onTogglePublic}
                     disabled={shareBusy}
-                    trackColor={{ true: "#3b82f6" }}
+                    trackColor={{ true: colors.primary }}
                   />
                 </View>
 
@@ -358,7 +365,7 @@ export default function MyWishlistScreen() {
                 )}
                 <View style={styles.formRow}>
                   <TextInput
-                    placeholderTextColor="#9ca3af"
+                    placeholderTextColor={colors.placeholder}
                     style={[styles.input, { flex: 1 }]}
                     placeholder="Colle un lien produit…"
                     autoCapitalize="none"
@@ -390,14 +397,14 @@ export default function MyWishlistScreen() {
                 )}
                 <View style={styles.formRow}>
                   <TextInput
-                    placeholderTextColor="#9ca3af"
+                    placeholderTextColor={colors.placeholder}
                     style={[styles.input, { flex: 2 }]}
                     placeholder="Nom du souhait *"
                     value={title}
                     onChangeText={setTitle}
                   />
                   <TextInput
-                    placeholderTextColor="#9ca3af"
+                    placeholderTextColor={colors.placeholder}
                     style={[styles.input, { flex: 1 }]}
                     placeholder="Prix €"
                     keyboardType="decimal-pad"
@@ -437,10 +444,22 @@ export default function MyWishlistScreen() {
               price={item.price ?? null}
               badge={
                 reserved
-                  ? { label: "🎁 Réservé", color: "#047857", bg: "#d1fae5" }
+                  ? {
+                      label: "🎁 Réservé",
+                      color: colors.successStrong,
+                      bg: colors.successSoft,
+                    }
                   : item.isShared === false
-                    ? { label: "🔒 Masqué", color: "#6b7280", bg: "#f3f4f6" }
-                    : { label: "Disponible", color: "#6b7280", bg: "#f3f4f6" }
+                    ? {
+                        label: "🔒 Masqué",
+                        color: colors.sub,
+                        bg: colors.bgSecondary,
+                      }
+                    : {
+                        label: "Disponible",
+                        color: colors.sub,
+                        bg: colors.bgSecondary,
+                      }
               }
               onPress={() => setSelected(item)}
             />
@@ -510,7 +529,7 @@ export default function MyWishlistScreen() {
               <Switch
                 value={selected.isShared !== false}
                 disabled={busy}
-                trackColor={{ true: "#3b82f6" }}
+                trackColor={{ true: colors.primary }}
                 onValueChange={() => {
                   const item = selected;
                   setSelected(null);
@@ -547,210 +566,211 @@ export default function MyWishlistScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f9fafb" },
-  center: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#f9fafb",
-  },
-  error: { color: "#b91c1c", textAlign: "center", padding: 6 },
-  list: { padding: 12, gap: 8 },
-  empty: {
-    textAlign: "center",
-    color: "#6b7280",
-    marginTop: 40,
-    paddingHorizontal: 24,
-    lineHeight: 20,
-  },
-  itemRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 12,
-  },
-  itemTitle: { fontWeight: "600", color: "#111827" },
-  muted: { color: "#6b7280", fontSize: 12 },
-  link: { color: "#3b82f6", fontSize: 12 },
-  deleteX: { color: "#ef4444", fontSize: 16, fontWeight: "700" },
-  topFormCard: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#eef2f7",
-    marginBottom: 12,
-    paddingHorizontal: 12,
-    paddingBottom: 4,
-  },
-  formHeaderRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 12,
-  },
-  formHeaderTitle: { fontSize: 14, fontWeight: "700", color: "#111827" },
-  newIdeaBtnTop: {
-    borderWidth: 1,
-    borderColor: "#3b82f6",
-    borderRadius: 8,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-  },
-  newIdeaTopText: { color: "#3b82f6", fontWeight: "700", fontSize: 13 },
-  formInner: { gap: 8, paddingBottom: 10 },
-  editingHint: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: "#2563eb",
-    textAlign: "center",
-  },
-  formRow: { flexDirection: "row", gap: 8 },
-  input: {
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-    borderRadius: 10,
-    padding: 10,
-    fontSize: 14,
-    backgroundColor: "#f9fafb",
-    color: "#111827",
-  },
-  addBtn: {
-    backgroundColor: "#3b82f6",
-    borderRadius: 10,
-    padding: 12,
-    alignItems: "center",
-  },
-  addBtnText: { color: "#fff", fontWeight: "600" },
-  fetchBtn: {
-    borderWidth: 1,
-    borderColor: "#3b82f6",
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    justifyContent: "center",
-  },
-  fetchBtnText: { color: "#3b82f6", fontWeight: "600", fontSize: 13 },
-  fetchMsg: { color: "#6b7280", fontSize: 12, textAlign: "center" },
-  preview: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    alignSelf: "center",
-  },
-  previewImage: { width: 64, height: 64, borderRadius: 8 },
-  itemImage: { width: 48, height: 48, borderRadius: 8 },
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: c.bg },
+    center: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: c.bg,
+    },
+    error: { color: c.danger, textAlign: "center", padding: 6 },
+    list: { padding: 12, gap: 8 },
+    empty: {
+      textAlign: "center",
+      color: c.sub,
+      marginTop: 40,
+      paddingHorizontal: 24,
+      lineHeight: 20,
+    },
+    itemRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+      backgroundColor: c.card,
+      borderRadius: 12,
+      padding: 12,
+    },
+    itemTitle: { fontWeight: "600", color: c.text },
+    muted: { color: c.sub, fontSize: 12 },
+    link: { color: c.primary, fontSize: 12 },
+    deleteX: { color: c.danger, fontSize: 16, fontWeight: "700" },
+    topFormCard: {
+      backgroundColor: c.card,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: c.border,
+      marginBottom: 12,
+      paddingHorizontal: 12,
+      paddingBottom: 4,
+    },
+    formHeaderRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingVertical: 12,
+    },
+    formHeaderTitle: { fontSize: 14, fontWeight: "700", color: c.text },
+    newIdeaBtnTop: {
+      borderWidth: 1,
+      borderColor: c.primary,
+      borderRadius: 8,
+      paddingVertical: 6,
+      paddingHorizontal: 12,
+    },
+    newIdeaTopText: { color: c.primary, fontWeight: "700", fontSize: 13 },
+    formInner: { gap: 8, paddingBottom: 10 },
+    editingHint: {
+      fontSize: 12,
+      fontWeight: "700",
+      color: c.primaryStrong,
+      textAlign: "center",
+    },
+    formRow: { flexDirection: "row", gap: 8 },
+    input: {
+      borderWidth: 1,
+      borderColor: c.inputBorder,
+      borderRadius: 10,
+      padding: 10,
+      fontSize: 14,
+      backgroundColor: c.inputBg,
+      color: c.text,
+    },
+    addBtn: {
+      backgroundColor: c.primary,
+      borderRadius: 10,
+      padding: 12,
+      alignItems: "center",
+    },
+    addBtnText: { color: c.white, fontWeight: "600" },
+    fetchBtn: {
+      borderWidth: 1,
+      borderColor: c.primary,
+      borderRadius: 10,
+      paddingHorizontal: 12,
+      justifyContent: "center",
+    },
+    fetchBtnText: { color: c.primary, fontWeight: "600", fontSize: 13 },
+    fetchMsg: { color: c.sub, fontSize: 12, textAlign: "center" },
+    preview: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+      alignSelf: "center",
+    },
+    previewImage: { width: 64, height: 64, borderRadius: 8 },
+    itemImage: { width: 48, height: 48, borderRadius: 8 },
 
-  // Partage public
-  shareCard: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#eef2f7",
-    marginBottom: 12,
-    paddingHorizontal: 12,
-  },
-  shareHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 12,
-  },
-  shareTitle: { fontSize: 14, fontWeight: "700", color: "#111827" },
-  shareChevron: { fontSize: 16, color: "#9ca3af", fontWeight: "700" },
-  shareRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 10,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: "#eef2f7",
-  },
-  shareRowTitle: { fontSize: 13, fontWeight: "700", color: "#111827" },
-  shareRowSub: { fontSize: 11, color: "#6b7280", marginTop: 2 },
-  shareBtn: {
-    backgroundColor: "#3b82f6",
-    borderRadius: 10,
-    paddingVertical: 10,
-    alignItems: "center",
-    marginTop: 10,
-  },
-  shareBtnText: { color: "#fff", fontWeight: "700", fontSize: 14 },
-  codeRow: { flexDirection: "row", alignItems: "center", gap: 10 },
-  friendCode: {
-    fontSize: 14,
-    fontWeight: "800",
-    color: "#2563eb",
-    letterSpacing: 1,
-  },
-  codeAction: { fontSize: 16, color: "#3b82f6", fontWeight: "700" },
-  codeRemove: { fontSize: 15, color: "#ef4444", fontWeight: "700" },
-  codeGenBtn: {
-    borderWidth: 1,
-    borderColor: "#3b82f6",
-    borderRadius: 8,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-  },
-  codeGenText: { color: "#3b82f6", fontWeight: "600", fontSize: 13 },
+    // Partage public
+    shareCard: {
+      backgroundColor: c.card,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: c.border,
+      marginBottom: 12,
+      paddingHorizontal: 12,
+    },
+    shareHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingVertical: 12,
+    },
+    shareTitle: { fontSize: 14, fontWeight: "700", color: c.text },
+    shareChevron: { fontSize: 16, color: c.faint, fontWeight: "700" },
+    shareRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingVertical: 10,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: c.border,
+    },
+    shareRowTitle: { fontSize: 13, fontWeight: "700", color: c.text },
+    shareRowSub: { fontSize: 11, color: c.sub, marginTop: 2 },
+    shareBtn: {
+      backgroundColor: c.primary,
+      borderRadius: 10,
+      paddingVertical: 10,
+      alignItems: "center",
+      marginTop: 10,
+    },
+    shareBtnText: { color: c.white, fontWeight: "700", fontSize: 14 },
+    codeRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+    friendCode: {
+      fontSize: 14,
+      fontWeight: "800",
+      color: c.primaryStrong,
+      letterSpacing: 1,
+    },
+    codeAction: { fontSize: 16, color: c.primary, fontWeight: "700" },
+    codeRemove: { fontSize: 15, color: c.danger, fontWeight: "700" },
+    codeGenBtn: {
+      borderWidth: 1,
+      borderColor: c.primary,
+      borderRadius: 8,
+      paddingVertical: 6,
+      paddingHorizontal: 12,
+    },
+    codeGenText: { color: c.primary, fontWeight: "600", fontSize: 13 },
 
-  // Bottom sheet détail
-  sheetImage: { width: "100%", height: 180, borderRadius: 14 },
-  sheetImagePlaceholder: {
-    backgroundColor: "#f3f4f6",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  sheetTitle: {
-    fontSize: 20,
-    fontWeight: "800",
-    color: "#111827",
-    marginTop: 14,
-  },
-  sheetDesc: { color: "#6b7280", fontSize: 13, marginTop: 6, lineHeight: 19 },
-  sheetInfoRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginTop: 12,
-  },
-  sheetPrice: { fontSize: 20, fontWeight: "800", color: "#111827" },
-  sheetReserved: { color: "#047857", fontSize: 13, marginTop: 10 },
-  sheetUnreserveBtn: {
-    borderWidth: 1.5,
-    borderColor: "#3b82f6",
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: "center",
-    marginTop: 12,
-  },
-  sheetUnreserveText: { color: "#3b82f6", fontWeight: "700", fontSize: 15 },
-  sheetShareRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 18,
-    paddingTop: 14,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: "#e5e7eb",
-  },
-  sheetShareTitle: { fontSize: 15, fontWeight: "700", color: "#111827" },
-  sheetShareSub: { fontSize: 12, color: "#6b7280", marginTop: 2 },
-  sheetEditBtn: {
-    borderWidth: 1.5,
-    borderColor: "#3b82f6",
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: "center",
-    marginTop: 14,
-  },
-  sheetEditText: { color: "#3b82f6", fontWeight: "700", fontSize: 15 },
-  sheetDeleteBtn: {
-    borderWidth: 1.5,
-    borderColor: "#ef4444",
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: "center",
-    marginTop: 12,
-  },
-  sheetDeleteText: { color: "#ef4444", fontWeight: "700", fontSize: 15 },
-});
+    // Bottom sheet détail
+    sheetImage: { width: "100%", height: 180, borderRadius: 14 },
+    sheetImagePlaceholder: {
+      backgroundColor: c.bgSecondary,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    sheetTitle: {
+      fontSize: 20,
+      fontWeight: "800",
+      color: c.text,
+      marginTop: 14,
+    },
+    sheetDesc: { color: c.sub, fontSize: 13, marginTop: 6, lineHeight: 19 },
+    sheetInfoRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      marginTop: 12,
+    },
+    sheetPrice: { fontSize: 20, fontWeight: "800", color: c.text },
+    sheetReserved: { color: c.successStrong, fontSize: 13, marginTop: 10 },
+    sheetUnreserveBtn: {
+      borderWidth: 1.5,
+      borderColor: c.primary,
+      borderRadius: 12,
+      paddingVertical: 14,
+      alignItems: "center",
+      marginTop: 12,
+    },
+    sheetUnreserveText: { color: c.primary, fontWeight: "700", fontSize: 15 },
+    sheetShareRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginTop: 18,
+      paddingTop: 14,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: c.border,
+    },
+    sheetShareTitle: { fontSize: 15, fontWeight: "700", color: c.text },
+    sheetShareSub: { fontSize: 12, color: c.sub, marginTop: 2 },
+    sheetEditBtn: {
+      borderWidth: 1.5,
+      borderColor: c.primary,
+      borderRadius: 12,
+      paddingVertical: 14,
+      alignItems: "center",
+      marginTop: 14,
+    },
+    sheetEditText: { color: c.primary, fontWeight: "700", fontSize: 15 },
+    sheetDeleteBtn: {
+      borderWidth: 1.5,
+      borderColor: c.danger,
+      borderRadius: 12,
+      paddingVertical: 14,
+      alignItems: "center",
+      marginTop: 12,
+    },
+    sheetDeleteText: { color: c.danger, fontWeight: "700", fontSize: 15 },
+  });

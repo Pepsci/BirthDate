@@ -131,7 +131,7 @@ export default function DateForm({ initial, submitLabel, onSubmit }: Props) {
         disabled={saving}
       >
         {saving ? (
-          <ActivityIndicator color="#fff" />
+          <ActivityIndicator color={colors.white} />
         ) : (
           <Text style={styles.submitText}>{submitLabel}</Text>
         )}
@@ -172,5 +172,5 @@ const makeStyles = (c: ThemeColors) =>
       alignItems: "center",
       marginTop: 16,
     },
-    submitText: { color: "#fff", fontWeight: "600", fontSize: 16 },
+    submitText: { color: c.white, fontWeight: "600", fontSize: 16 },
   });

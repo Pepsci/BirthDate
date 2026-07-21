@@ -12,10 +12,17 @@ import {
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { FriendEntry, fetchFriends } from "../../../lib/friends";
 import { inviteToEvent } from "../../../lib/events";
+import {
+  useTheme,
+  useThemedStyles,
+  ThemeColors,
+} from "../../../lib/theme-context";
 
 export default function EventInviteScreen() {
   const { shortId } = useLocalSearchParams<{ shortId: string }>();
   const router = useRouter();
+  const styles = useThemedStyles(makeStyles);
+  const { colors } = useTheme();
   const [friends, setFriends] = useState<FriendEntry[] | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [emails, setEmails] = useState("");
@@ -64,7 +71,7 @@ export default function EventInviteScreen() {
         {error ? (
           <Text style={styles.error}>{error}</Text>
         ) : (
-          <ActivityIndicator size="large" color="#3b82f6" />
+          <ActivityIndicator size="large" color={colors.primary} />
         )}
       </View>
     );
@@ -120,7 +127,7 @@ export default function EventInviteScreen() {
         })}
 
         <Text style={styles.sectionTitle}>Par email (non-inscrits)</Text>
-        <TextInput placeholderTextColor="#9ca3af"
+        <TextInput placeholderTextColor={colors.placeholder}
           style={styles.input}
           placeholder="emails séparés par des virgules"
           autoCapitalize="none"
@@ -141,7 +148,7 @@ export default function EventInviteScreen() {
           onPress={send}
         >
           {sending ? (
-            <ActivityIndicator color="#fff" />
+            <ActivityIndicator color={colors.white} />
           ) : (
             <Text style={styles.sendText}>
               Inviter{selected.size > 0 ? ` (${selected.size})` : ""}
@@ -153,89 +160,90 @@ export default function EventInviteScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f9fafb" },
-  center: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#f9fafb",
-  },
-  error: { color: "#b91c1c", textAlign: "center", padding: 6 },
-  list: { padding: 12, gap: 8, paddingBottom: 24 },
-  sectionTitle: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: "#6b7280",
-    textTransform: "uppercase",
-    marginTop: 8,
-  },
-  muted: { color: "#6b7280", fontSize: 13, lineHeight: 18 },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 11,
-    borderWidth: 1.5,
-    borderColor: "transparent",
-  },
-  rowSelected: { borderColor: "#3b82f6", backgroundColor: "#eff6ff" },
-  avatar: { width: 38, height: 38, borderRadius: 19 },
-  avatarFallback: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: "#dbeafe",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  initials: { color: "#2563eb", fontWeight: "700" },
-  name: { flex: 1, fontWeight: "600", color: "#111827" },
-  check: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: "#d1d5db",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  checkOn: { backgroundColor: "#3b82f6", borderColor: "#3b82f6" },
-  checkMark: { color: "#fff", fontWeight: "700", fontSize: 13 },
-  input: {
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-    borderRadius: 10,
-    padding: 11,
-    fontSize: 14,
-    backgroundColor: "#fff",
-    color: "#111827",
-    minHeight: 60,
-  },
-  footer: {
-    flexDirection: "row",
-    gap: 10,
-    padding: 12,
-    backgroundColor: "#fff",
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: "#e5e7eb",
-  },
-  skipBtn: {
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-    borderRadius: 10,
-    paddingVertical: 13,
-    paddingHorizontal: 18,
-  },
-  skipText: { color: "#6b7280", fontWeight: "600" },
-  sendBtn: {
-    flex: 1,
-    backgroundColor: "#3b82f6",
-    borderRadius: 10,
-    paddingVertical: 13,
-    alignItems: "center",
-  },
-  sendText: { color: "#fff", fontWeight: "700" },
-});
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: c.bg },
+    center: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: c.bg,
+    },
+    error: { color: c.danger, textAlign: "center", padding: 6 },
+    list: { padding: 12, gap: 8, paddingBottom: 24 },
+    sectionTitle: {
+      fontSize: 13,
+      fontWeight: "700",
+      color: c.sub,
+      textTransform: "uppercase",
+      marginTop: 8,
+    },
+    muted: { color: c.sub, fontSize: 13, lineHeight: 18 },
+    row: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+      backgroundColor: c.card,
+      borderRadius: 12,
+      padding: 11,
+      borderWidth: 1.5,
+      borderColor: "transparent",
+    },
+    rowSelected: { borderColor: c.primary, backgroundColor: c.primarySoft },
+    avatar: { width: 38, height: 38, borderRadius: 19 },
+    avatarFallback: {
+      width: 38,
+      height: 38,
+      borderRadius: 19,
+      backgroundColor: c.primarySoft,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    initials: { color: c.primaryStrong, fontWeight: "700" },
+    name: { flex: 1, fontWeight: "600", color: c.text },
+    check: {
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      borderWidth: 2,
+      borderColor: c.borderStrong,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    checkOn: { backgroundColor: c.primary, borderColor: c.primary },
+    checkMark: { color: c.white, fontWeight: "700", fontSize: 13 },
+    input: {
+      borderWidth: 1,
+      borderColor: c.inputBorder,
+      borderRadius: 10,
+      padding: 11,
+      fontSize: 14,
+      backgroundColor: c.inputBg,
+      color: c.text,
+      minHeight: 60,
+    },
+    footer: {
+      flexDirection: "row",
+      gap: 10,
+      padding: 12,
+      backgroundColor: c.card,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: c.border,
+    },
+    skipBtn: {
+      borderWidth: 1,
+      borderColor: c.border,
+      borderRadius: 10,
+      paddingVertical: 13,
+      paddingHorizontal: 18,
+    },
+    skipText: { color: c.sub, fontWeight: "600" },
+    sendBtn: {
+      flex: 1,
+      backgroundColor: c.primary,
+      borderRadius: 10,
+      paddingVertical: 13,
+      alignItems: "center",
+    },
+    sendText: { color: c.white, fontWeight: "700" },
+  });

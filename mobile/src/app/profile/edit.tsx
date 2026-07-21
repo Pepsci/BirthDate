@@ -16,10 +16,17 @@ import * as ImagePicker from "expo-image-picker";
 import { useAuth } from "../../lib/auth-context";
 import { UserProfile, fetchMe, updateMe, updateAvatar } from "../../lib/users";
 import { formatBirthday } from "../../lib/dates";
+import {
+  useTheme,
+  useThemedStyles,
+  ThemeColors,
+} from "../../lib/theme-context";
 
 export default function ProfileEditScreen() {
   const router = useRouter();
   const { refresh } = useAuth();
+  const styles = useThemedStyles(makeStyles);
+  const { colors, resolved } = useTheme();
   const [me, setMe] = useState<UserProfile | null>(null);
   const [name, setName] = useState("");
   const [surname, setSurname] = useState("");
@@ -112,7 +119,7 @@ export default function ProfileEditScreen() {
         {error ? (
           <Text style={styles.error}>{error}</Text>
         ) : (
-          <ActivityIndicator size="large" color="#3b82f6" />
+          <ActivityIndicator size="large" color={colors.primary} />
         )}
       </View>
     );
@@ -145,13 +152,13 @@ export default function ProfileEditScreen() {
       </Pressable>
 
       <Text style={styles.label}>Prénom *</Text>
-      <TextInput placeholderTextColor="#9ca3af" style={styles.input} value={name} onChangeText={setName} />
+      <TextInput placeholderTextColor={colors.placeholder} style={styles.input} value={name} onChangeText={setName} />
 
       <Text style={styles.label}>Nom</Text>
-      <TextInput placeholderTextColor="#9ca3af" style={styles.input} value={surname} onChangeText={setSurname} />
+      <TextInput placeholderTextColor={colors.placeholder} style={styles.input} value={surname} onChangeText={setSurname} />
 
       <Text style={styles.label}>Email *</Text>
-      <TextInput placeholderTextColor="#9ca3af"
+      <TextInput placeholderTextColor={colors.placeholder}
         style={styles.input}
         value={email}
         onChangeText={setEmail}
@@ -174,6 +181,7 @@ export default function ProfileEditScreen() {
           display={Platform.OS === "ios" ? "spinner" : "default"}
           locale="fr-FR"
           maximumDate={new Date()}
+          themeVariant={resolved}
           onChange={(event, selected) => {
             if (Platform.OS === "android") setShowPicker(false);
             if (selected) setBirthDate(selected);
@@ -182,7 +190,7 @@ export default function ProfileEditScreen() {
       )}
 
       <Text style={styles.label}>Ma fête (format MM-JJ)</Text>
-      <TextInput placeholderTextColor="#9ca3af"
+      <TextInput placeholderTextColor={colors.placeholder}
         style={styles.input}
         value={nameday}
         onChangeText={setNameday}
@@ -199,7 +207,7 @@ export default function ProfileEditScreen() {
         disabled={saving}
       >
         {saving ? (
-          <ActivityIndicator color="#fff" />
+          <ActivityIndicator color={colors.white} />
         ) : (
           <Text style={styles.submitText}>Enregistrer</Text>
         )}
@@ -208,45 +216,46 @@ export default function ProfileEditScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f9fafb" },
-  content: { padding: 16, gap: 6, paddingBottom: 48 },
-  center: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#f9fafb",
-  },
-  avatarWrap: { alignItems: "center", gap: 4, marginBottom: 8 },
-  avatar: { width: 88, height: 88, borderRadius: 44 },
-  avatarFallback: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    backgroundColor: "#dbeafe",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  initials: { fontSize: 30, fontWeight: "700", color: "#2563eb" },
-  avatarHint: { color: "#3b82f6", fontSize: 13, fontWeight: "600" },
-  label: { fontSize: 13, fontWeight: "700", color: "#6b7280", marginTop: 10 },
-  input: {
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-    borderRadius: 10,
-    padding: 12,
-    fontSize: 16,
-    backgroundColor: "#fff",
-    color: "#111827",
-  },
-  inputText: { fontSize: 16, color: "#111827" },
-  error: { color: "#b91c1c", textAlign: "center", marginTop: 8 },
-  submit: {
-    backgroundColor: "#3b82f6",
-    borderRadius: 10,
-    padding: 14,
-    alignItems: "center",
-    marginTop: 16,
-  },
-  submitText: { color: "#fff", fontWeight: "600", fontSize: 16 },
-});
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: c.bg },
+    content: { padding: 16, gap: 6, paddingBottom: 48 },
+    center: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: c.bg,
+    },
+    avatarWrap: { alignItems: "center", gap: 4, marginBottom: 8 },
+    avatar: { width: 88, height: 88, borderRadius: 44 },
+    avatarFallback: {
+      width: 88,
+      height: 88,
+      borderRadius: 44,
+      backgroundColor: c.primarySoft,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    initials: { fontSize: 30, fontWeight: "700", color: c.primaryStrong },
+    avatarHint: { color: c.primary, fontSize: 13, fontWeight: "600" },
+    label: { fontSize: 13, fontWeight: "700", color: c.sub, marginTop: 10 },
+    input: {
+      borderWidth: 1,
+      borderColor: c.inputBorder,
+      borderRadius: 10,
+      padding: 12,
+      fontSize: 16,
+      backgroundColor: c.inputBg,
+      color: c.text,
+    },
+    inputText: { fontSize: 16, color: c.text },
+    error: { color: c.danger, textAlign: "center", marginTop: 8 },
+    submit: {
+      backgroundColor: c.primary,
+      borderRadius: 10,
+      padding: 14,
+      alignItems: "center",
+      marginTop: 16,
+    },
+    submitText: { color: c.white, fontWeight: "600", fontSize: 16 },
+  });

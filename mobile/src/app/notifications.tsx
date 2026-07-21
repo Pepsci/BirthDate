@@ -22,9 +22,16 @@ import {
 } from "../lib/notifications";
 import { useUnread } from "../lib/unread-context";
 import { webLinkToMobileRoute } from "../lib/push";
+import {
+  useTheme,
+  useThemedStyles,
+  ThemeColors,
+} from "../lib/theme-context";
 
 export default function NotificationsScreen() {
   const router = useRouter();
+  const styles = useThemedStyles(makeStyles);
+  const { colors } = useTheme();
   const { refreshNotifs } = useUnread();
   const [items, setItems] = useState<AppNotification[] | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -119,7 +126,7 @@ export default function NotificationsScreen() {
         {error ? (
           <Text style={styles.error}>{error}</Text>
         ) : (
-          <ActivityIndicator size="large" color="#3b82f6" />
+          <ActivityIndicator size="large" color={colors.primary} />
         )}
       </View>
     );
@@ -190,43 +197,44 @@ export default function NotificationsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f9fafb" },
-  center: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#f9fafb",
-  },
-  error: { color: "#b91c1c", textAlign: "center", padding: 6 },
-  headerActions: { flexDirection: "row", alignItems: "center", gap: 16 },
-  readAll: { color: "#3b82f6", fontWeight: "600", fontSize: 13 },
-  deleteAll: { color: "#ef4444", fontWeight: "600", fontSize: 13 },
-  list: { padding: 12, gap: 8, paddingBottom: 8 },
-  empty: { textAlign: "center", color: "#6b7280", marginTop: 48 },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    padding: 12,
-  },
-  rowUnread: { backgroundColor: "#eff6ff" },
-  emoji: { fontSize: 22 },
-  text: { color: "#374151", fontSize: 14, lineHeight: 19 },
-  textUnread: { color: "#111827", fontWeight: "600" },
-  time: { color: "#9ca3af", fontSize: 11, marginTop: 2 },
-  dot: {
-    width: 9,
-    height: 9,
-    borderRadius: 5,
-    backgroundColor: "#3b82f6",
-  },
-  hint: {
-    textAlign: "center",
-    color: "#c4c9d0",
-    fontSize: 11,
-    paddingBottom: 10,
-  },
-});
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: c.bg },
+    center: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: c.bg,
+    },
+    error: { color: c.danger, textAlign: "center", padding: 6 },
+    headerActions: { flexDirection: "row", alignItems: "center", gap: 16 },
+    readAll: { color: c.primary, fontWeight: "600", fontSize: 13 },
+    deleteAll: { color: c.danger, fontWeight: "600", fontSize: 13 },
+    list: { padding: 12, gap: 8, paddingBottom: 8 },
+    empty: { textAlign: "center", color: c.sub, marginTop: 48 },
+    row: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+      backgroundColor: c.card,
+      borderRadius: 12,
+      padding: 12,
+    },
+    rowUnread: { backgroundColor: c.primarySoft },
+    emoji: { fontSize: 22 },
+    text: { color: c.text, fontSize: 14, lineHeight: 19 },
+    textUnread: { color: c.text, fontWeight: "600" },
+    time: { color: c.faint, fontSize: 11, marginTop: 2 },
+    dot: {
+      width: 9,
+      height: 9,
+      borderRadius: 5,
+      backgroundColor: c.primary,
+    },
+    hint: {
+      textAlign: "center",
+      color: c.faint,
+      fontSize: 11,
+      paddingBottom: 10,
+    },
+  });

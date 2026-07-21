@@ -188,7 +188,7 @@ const makeStyles = (c: ThemeColors) =>
     preview: { color: c.sub, fontSize: 13, marginTop: 1 },
     previewUnread: { color: c.text, fontWeight: "600" },
     badge: {
-      backgroundColor: "#ef4444",
+      backgroundColor: c.danger,
       borderRadius: 10,
       minWidth: 20,
       height: 20,
@@ -196,5 +196,5 @@ const makeStyles = (c: ThemeColors) =>
       alignItems: "center",
       paddingHorizontal: 5,
     },
-    badgeText: { color: "#fff", fontSize: 11, fontWeight: "700" },
+    badgeText: { color: c.white, fontSize: 11, fontWeight: "700" },
   });

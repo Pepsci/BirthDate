@@ -58,6 +58,17 @@ import BottomSheet from "../../components/BottomSheet";
 import ImportGiftSheet, { ImportedGift } from "../../components/ImportGiftSheet";
 import DirectTransferViewer from "../../components/DirectTransferViewer";
 import EventLocationMap from "../../components/EventLocationMap";
+import {
+  useTheme,
+  useThemedStyles,
+  ThemeColors,
+} from "../../lib/theme-context";
+
+/** Bandeau d'annulation : surface inversée, sombre dans les deux thèmes. */
+const UNDO_BG = "#111827";
+const UNDO_TEXT = "#f9fafb";
+const UNDO_ACTION = "#93c5fd";
+const UNDO_TRACK = "rgba(255,255,255,0.2)";
 
 const RSVP_OPTIONS: { status: Exclude<RsvpStatus, "pending">; label: string }[] = [
   { status: "accepted", label: "✅ J'y vais" },
@@ -67,6 +78,8 @@ const RSVP_OPTIONS: { status: Exclude<RsvpStatus, "pending">; label: string }[] 
 
 export default function EventDetailScreen() {
   const { shortId } = useLocalSearchParams<{ shortId: string }>();
+  const styles = useThemedStyles(makeStyles);
+  const { colors } = useTheme();
   const { user } = useAuth();
   const router = useRouter();
   const [event, setEvent] = useState<EventDetail | null>(null);
@@ -471,7 +484,7 @@ export default function EventDetailScreen() {
     return (
       <View style={styles.center}>
         <Stack.Screen options={{ title: "Événement" }} />
-        <ActivityIndicator size="large" color="#3b82f6" />
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -610,7 +623,7 @@ export default function EventDetailScreen() {
               style={[styles.orgBtn, styles.orgBtnDanger]}
               onPress={confirmDelete}
             >
-              <Text style={[styles.orgBtnText, { color: "#ef4444" }]}>
+              <Text style={[styles.orgBtnText, { color: colors.danger }]}>
                 🗑️ Supprimer
               </Text>
             </Pressable>
@@ -781,7 +794,7 @@ export default function EventDetailScreen() {
           {showGiftForm && (
             <>
               <View style={{ flexDirection: "row", gap: 8 }}>
-                <TextInput placeholderTextColor="#9ca3af"
+                <TextInput placeholderTextColor={colors.placeholder}
                   style={[styles.input, { flex: 1 }]}
                   placeholder="Lien du produit (optionnel)"
                   autoCapitalize="none"
@@ -809,17 +822,19 @@ export default function EventDetailScreen() {
                 <View style={styles.giftPreview}>
                   <Image source={{ uri: giftImage }} style={styles.giftPreviewImg} />
                   <Pressable hitSlop={8} onPress={() => setGiftImage(null)}>
-                    <Text style={{ color: "#ef4444", fontWeight: "700" }}>✕</Text>
+                    <Text style={{ color: colors.danger, fontWeight: "700" }}>
+                      ✕
+                    </Text>
                   </Pressable>
                 </View>
               )}
-              <TextInput placeholderTextColor="#9ca3af"
+              <TextInput placeholderTextColor={colors.placeholder}
                 style={styles.input}
                 placeholder="Nom du cadeau *"
                 value={giftName}
                 onChangeText={setGiftName}
               />
-              <TextInput placeholderTextColor="#9ca3af"
+              <TextInput placeholderTextColor={colors.placeholder}
                 style={styles.input}
                 placeholder="Prix en € (optionnel)"
                 keyboardType="decimal-pad"
@@ -866,9 +881,17 @@ export default function EventDetailScreen() {
                   dimmed={false}
                   badge={
                     g.selected
-                      ? { label: "⭐ Retenu", color: "#b45309", bg: "#fef3c7" }
+                      ? {
+                          label: "⭐ Retenu",
+                          color: colors.warningStrong,
+                          bg: colors.warningSoft,
+                        }
                       : votedByMe
-                        ? { label: "❤️ Voté", color: "#be185d", bg: "#fce7f3" }
+                        ? {
+                            label: "❤️ Voté",
+                            color: colors.favoriteStrong,
+                            bg: colors.favoriteSoft,
+                          }
                         : null
                   }
                   onPress={() => setSelectedProposal(g)}
@@ -1188,7 +1211,7 @@ export default function EventDetailScreen() {
             Tu n'es pas invité·e à cet événement — vue publique limitée.
           </Text>
           <Text style={styles.sectionTitle}>Rejoindre avec un code</Text>
-          <TextInput placeholderTextColor="#9ca3af"
+          <TextInput placeholderTextColor={colors.placeholder}
             style={styles.input}
             placeholder="Code d'accès (6 à 8 caractères)"
             autoCapitalize="characters"
@@ -1257,6 +1280,7 @@ function SectionHeader({
   open: boolean;
   onToggle: () => void;
 }) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <Pressable style={styles.collapseHeader} onPress={onToggle} hitSlop={6}>
       <Text style={styles.sectionTitle}>{title}</Text>
@@ -1265,51 +1289,52 @@ function SectionHeader({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
   collapseHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
   },
-  collapseChevron: { fontSize: 16, color: "#9ca3af", fontWeight: "700" },
-  container: { flex: 1, backgroundColor: "#f9fafb" },
+  collapseChevron: { fontSize: 16, color: c.faint, fontWeight: "700" },
+  container: { flex: 1, backgroundColor: c.bg },
   content: { padding: 12, gap: 10, paddingBottom: 32 },
   center: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f9fafb",
+    backgroundColor: c.bg,
   },
-  error: { color: "#b91c1c", textAlign: "center", padding: 8 },
+  error: { color: c.danger, textAlign: "center", padding: 8 },
   card: {
-    backgroundColor: "#fff",
+    backgroundColor: c.card,
     borderRadius: 14,
     padding: 14,
     gap: 6,
-    shadowColor: "#000",
+    shadowColor: c.shadow,
     shadowOpacity: 0.06,
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 2 },
     elevation: 2,
   },
-  title: { fontSize: 20, fontWeight: "700", color: "#111827" },
-  type: { fontSize: 13, color: "#6b7280" },
-  description: { color: "#374151", lineHeight: 20, marginTop: 2 },
-  detail: { color: "#6b7280", fontSize: 14 },
-  sectionTitle: { fontSize: 15, fontWeight: "700", color: "#111827" },
+  title: { fontSize: 20, fontWeight: "700", color: c.text },
+  type: { fontSize: 13, color: c.sub },
+  description: { color: c.text, lineHeight: 20, marginTop: 2 },
+  detail: { color: c.sub, fontSize: 14 },
+  sectionTitle: { fontSize: 15, fontWeight: "700", color: c.text },
   rsvpRow: { flexDirection: "row", gap: 8, marginTop: 4 },
   rsvpBtn: {
     flex: 1,
     borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: c.border,
     borderRadius: 10,
     paddingVertical: 10,
     alignItems: "center",
-    backgroundColor: "#f9fafb",
+    backgroundColor: c.cardSoft,
   },
-  rsvpBtnActive: { backgroundColor: "#3b82f6", borderColor: "#3b82f6" },
-  rsvpBtnText: { fontSize: 13, fontWeight: "600", color: "#374151" },
-  rsvpBtnTextActive: { color: "#fff" },
+  rsvpBtnActive: { backgroundColor: c.primary, borderColor: c.primary },
+  rsvpBtnText: { fontSize: 13, fontWeight: "600", color: c.text },
+  rsvpBtnTextActive: { color: c.white },
   participantRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -1321,120 +1346,126 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: "#dbeafe",
+    backgroundColor: c.primarySoft,
     justifyContent: "center",
     alignItems: "center",
   },
-  pInitial: { color: "#2563eb", fontWeight: "700" },
-  pName: { flex: 1, color: "#111827", fontWeight: "500" },
-  pStatus: { fontSize: 12, color: "#6b7280" },
+  pInitial: { color: c.primaryStrong, fontWeight: "700" },
+  pName: { flex: 1, color: c.text, fontWeight: "500" },
+  pStatus: { fontSize: 12, color: c.sub },
   voteOption: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     gap: 8,
     borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: c.border,
     borderRadius: 10,
     paddingVertical: 10,
     paddingHorizontal: 12,
-    backgroundColor: "#f9fafb",
+    backgroundColor: c.cardSoft,
   },
-  voteOptionActive: { backgroundColor: "#3b82f6", borderColor: "#3b82f6" },
-  voteLabel: { color: "#374151", fontWeight: "600", flexShrink: 1 },
-  voteLabelActive: { color: "#fff" },
-  voteSub: { color: "#6b7280", fontSize: 12 },
-  voteCount: { color: "#6b7280", fontSize: 12, fontWeight: "700" },
-  voteHint: { color: "#9ca3af", fontSize: 12, marginTop: 2 },
+  voteOptionActive: { backgroundColor: c.primary, borderColor: c.primary },
+  voteLabel: { color: c.text, fontWeight: "600", flexShrink: 1 },
+  voteLabelActive: { color: c.white },
+  voteSub: { color: c.sub, fontSize: 12 },
+  voteCount: { color: c.sub, fontSize: 12, fontWeight: "700" },
+  voteHint: { color: c.faint, fontSize: 12, marginTop: 2 },
   giftRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
     paddingVertical: 6,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#e5e7eb",
+    borderBottomColor: c.border,
   },
-  giftName: { color: "#111827", fontWeight: "600" },
-  giftMeta: { color: "#6b7280", fontSize: 12 },
-  giftLink: { color: "#3b82f6", fontSize: 12 },
-  giftPrice: { color: "#111827", fontWeight: "700" },
+  giftName: { color: c.text, fontWeight: "600" },
+  giftMeta: { color: c.sub, fontSize: 12 },
+  giftLink: { color: c.primary, fontSize: 12 },
+  giftPrice: { color: c.text, fontWeight: "700" },
   giftVote: {
     borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: c.border,
     borderRadius: 16,
     paddingVertical: 6,
     paddingHorizontal: 10,
-    backgroundColor: "#f9fafb",
+    backgroundColor: c.cardSoft,
   },
-  giftVoteActive: { backgroundColor: "#fee2e2", borderColor: "#ef4444" },
-  giftVoteText: { fontSize: 12, fontWeight: "700", color: "#374151" },
-  giftVoteTextActive: { color: "#ef4444" },
+  giftVoteActive: { backgroundColor: c.dangerSoft, borderColor: c.danger },
+  giftVoteText: { fontSize: 12, fontWeight: "700", color: c.text },
+  giftVoteTextActive: { color: c.danger },
 
   // Bottom sheet proposition
   sheetImage: { width: "100%", height: 180, borderRadius: 14 },
   sheetImgPlaceholder: {
-    backgroundColor: "#f3f4f6",
+    backgroundColor: c.bgSecondary,
     justifyContent: "center",
     alignItems: "center",
   },
   sheetTitle: {
     fontSize: 20,
     fontWeight: "800",
-    color: "#111827",
+    color: c.text,
     marginTop: 14,
   },
-  sheetMeta: { color: "#6b7280", fontSize: 13, marginTop: 4 },
+  sheetMeta: { color: c.sub, fontSize: 13, marginTop: 4 },
   sheetInfoRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     marginTop: 12,
   },
-  sheetPrice: { fontSize: 20, fontWeight: "800", color: "#111827" },
+  sheetPrice: { fontSize: 20, fontWeight: "800", color: c.text },
   sheetVoteBtn: {
     borderWidth: 1.5,
-    borderColor: "#e5e7eb",
+    borderColor: c.border,
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: "center",
     marginTop: 18,
-    backgroundColor: "#f9fafb",
+    backgroundColor: c.cardSoft,
   },
-  sheetVoteBtnActive: { backgroundColor: "#fce7f3", borderColor: "#ec4899" },
-  sheetVoteText: { fontSize: 15, fontWeight: "700", color: "#374151" },
-  sheetVoteTextActive: { color: "#be185d" },
+  sheetVoteBtnActive: {
+    backgroundColor: c.favoriteSoft,
+    borderColor: c.favorite,
+  },
+  sheetVoteText: { fontSize: 15, fontWeight: "700", color: c.text },
+  sheetVoteTextActive: { color: c.favoriteStrong },
   sheetSelectBtn: {
     borderWidth: 1.5,
-    borderColor: "#e5e7eb",
+    borderColor: c.border,
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: "center",
     marginTop: 10,
-    backgroundColor: "#f9fafb",
+    backgroundColor: c.cardSoft,
   },
-  sheetSelectBtnActive: { backgroundColor: "#fef3c7", borderColor: "#f59e0b" },
-  sheetSelectText: { fontSize: 15, fontWeight: "700", color: "#374151" },
-  sheetSelectTextActive: { color: "#b45309" },
+  sheetSelectBtnActive: {
+    backgroundColor: c.warningSoft,
+    borderColor: c.warning,
+  },
+  sheetSelectText: { fontSize: 15, fontWeight: "700", color: c.text },
+  sheetSelectTextActive: { color: c.warningStrong },
   sheetDeleteBtn: {
     borderWidth: 1,
-    borderColor: "#fca5a5",
+    borderColor: c.danger,
     borderRadius: 12,
     paddingVertical: 12,
     alignItems: "center",
     marginTop: 8,
   },
-  sheetDeleteText: { fontSize: 15, fontWeight: "700", color: "#dc2626" },
+  sheetDeleteText: { fontSize: 15, fontWeight: "700", color: c.danger },
   undoBar: {
     position: "absolute",
     left: 12,
     right: 12,
     bottom: 20,
-    backgroundColor: "#111827",
+    backgroundColor: UNDO_BG,
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingTop: 12,
     paddingBottom: 10,
-    shadowColor: "#000",
+    shadowColor: c.shadow,
     shadowOpacity: 0.2,
     shadowRadius: 8,
     shadowOffset: { width: 0, height: 3 },
@@ -1446,18 +1477,18 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     gap: 12,
   },
-  undoText: { color: "#f9fafb", fontSize: 13, flex: 1 },
-  undoAction: { color: "#93c5fd", fontWeight: "700", fontSize: 13 },
+  undoText: { color: UNDO_TEXT, fontSize: 13, flex: 1 },
+  undoAction: { color: UNDO_ACTION, fontWeight: "700", fontSize: 13 },
   undoTrack: {
     height: 3,
-    backgroundColor: "rgba(255,255,255,0.2)",
+    backgroundColor: UNDO_TRACK,
     borderRadius: 2,
     marginTop: 10,
     overflow: "hidden",
   },
   undoProgress: {
     height: 3,
-    backgroundColor: "#60a5fa",
+    backgroundColor: c.primaryLight,
     borderRadius: 2,
   },
 
@@ -1469,118 +1500,118 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   proposeTopBtn: {
-    backgroundColor: "#3b82f6",
+    backgroundColor: c.primary,
     borderRadius: 10,
     paddingVertical: 7,
     paddingHorizontal: 12,
     alignItems: "center",
     justifyContent: "center",
   },
-  proposeTopText: { color: "#fff", fontWeight: "700", fontSize: 13 },
+  proposeTopText: { color: c.white, fontWeight: "700", fontSize: 13 },
   importBtn: {
     borderWidth: 1,
-    borderColor: "#3b82f6",
+    borderColor: c.primary,
     borderStyle: "dashed",
     borderRadius: 10,
     paddingVertical: 9,
     alignItems: "center",
     marginTop: 8,
   },
-  importText: { color: "#3b82f6", fontWeight: "600", fontSize: 13 },
+  importText: { color: c.primary, fontWeight: "600", fontSize: 13 },
   giftBtnRow: { flexDirection: "row", gap: 8, marginTop: 8 },
 
   // Vues accueil/cadeaux
   backBtn: { paddingVertical: 6, paddingHorizontal: 2 },
-  backBtnText: { color: "#3b82f6", fontWeight: "700", fontSize: 15 },
+  backBtnText: { color: c.primary, fontWeight: "700", fontSize: 15 },
   giftsBtn: {
-    backgroundColor: "#fff",
+    backgroundColor: c.card,
     borderWidth: 1.5,
-    borderColor: "#3b82f6",
+    borderColor: c.primary,
     borderRadius: 14,
     padding: 14,
     alignItems: "center",
   },
-  giftsBtnText: { color: "#3b82f6", fontWeight: "700", fontSize: 15 },
+  giftsBtnText: { color: c.primary, fontWeight: "700", fontSize: 15 },
   giftFormTitle: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#6b7280",
+    color: c.sub,
     marginTop: 10,
   },
   input: {
     borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: c.inputBorder,
     borderRadius: 10,
     padding: 10,
     fontSize: 14,
-    backgroundColor: "#fff",
-    color: "#111827",
+    backgroundColor: c.inputBg,
+    color: c.text,
   },
   giftSubmit: {
-    backgroundColor: "#3b82f6",
+    backgroundColor: c.primary,
     borderRadius: 10,
     padding: 12,
     alignItems: "center",
     marginTop: 4,
   },
-  giftSubmitText: { color: "#fff", fontWeight: "600" },
+  giftSubmitText: { color: c.white, fontWeight: "600" },
   shareBtn: {
     borderWidth: 1,
-    borderColor: "#3b82f6",
+    borderColor: c.primary,
     borderRadius: 10,
     padding: 12,
     alignItems: "center",
   },
-  shareBtnText: { color: "#3b82f6", fontWeight: "600" },
-  shareCode: { fontWeight: "700", color: "#111827", letterSpacing: 1 },
+  shareBtnText: { color: c.primary, fontWeight: "600" },
+  shareCode: { fontWeight: "700", color: c.text, letterSpacing: 1 },
   orgRow: { flexDirection: "row", gap: 8 },
   orgBtn: {
     flex: 1,
     borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: c.border,
     borderRadius: 10,
     paddingVertical: 10,
     alignItems: "center",
-    backgroundColor: "#f9fafb",
+    backgroundColor: c.cardSoft,
   },
-  orgBtnDanger: { borderColor: "#fecaca" },
-  orgBtnText: { fontSize: 12, fontWeight: "600", color: "#374151" },
-  poolTotal: { fontSize: 18, fontWeight: "700", color: "#111827" },
+  orgBtnDanger: { borderColor: c.danger },
+  orgBtnText: { fontSize: 12, fontWeight: "600", color: c.text },
+  poolTotal: { fontSize: 18, fontWeight: "700", color: c.text },
   poolBarBg: {
     height: 8,
     borderRadius: 4,
-    backgroundColor: "#e5e7eb",
+    backgroundColor: c.border,
     overflow: "hidden",
   },
-  poolBarFill: { height: 8, backgroundColor: "#10b981" },
+  poolBarFill: { height: 8, backgroundColor: c.success },
   poolBtn: {
-    backgroundColor: "#10b981",
+    backgroundColor: c.success,
     borderRadius: 10,
     padding: 12,
     alignItems: "center",
     marginTop: 4,
   },
-  poolBtnText: { color: "#fff", fontWeight: "700" },
+  poolBtnText: { color: c.white, fontWeight: "700" },
   poolShareBtn: {
     borderWidth: 1,
-    borderColor: "#3b82f6",
+    borderColor: c.primary,
     borderStyle: "dashed",
     borderRadius: 10,
     paddingVertical: 10,
     alignItems: "center",
     marginTop: 8,
   },
-  poolShareText: { color: "#3b82f6", fontWeight: "700", fontSize: 13 },
+  poolShareText: { color: c.primary, fontWeight: "700", fontSize: 13 },
   contribList: {
     marginTop: 4,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: "#e5e7eb",
+    borderTopColor: c.border,
     paddingTop: 8,
   },
   contribHeader: {
     fontSize: 12,
     fontWeight: "700",
-    color: "#6b7280",
+    color: c.sub,
     marginBottom: 4,
   },
   contribRow: {
@@ -1589,13 +1620,13 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingVertical: 7,
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: "#f3f4f6",
+    borderTopColor: c.border,
   },
-  contribName: { fontSize: 14, fontWeight: "600", color: "#111827" },
-  contribMsg: { fontSize: 12, color: "#6b7280", marginTop: 1 },
-  contribAmount: { fontSize: 15, fontWeight: "800", color: "#10b981" },
+  contribName: { fontSize: 14, fontWeight: "600", color: c.text },
+  contribMsg: { fontSize: 12, color: c.sub, marginTop: 1 },
+  contribAmount: { fontSize: 15, fontWeight: "800", color: c.success },
   chatBadge: {
-    backgroundColor: "#ef4444",
+    backgroundColor: c.danger,
     borderRadius: 9,
     minWidth: 18,
     height: 18,
@@ -1605,18 +1636,18 @@ const styles = StyleSheet.create({
     marginLeft: -6,
     marginTop: -8,
   },
-  chatBadgeText: { color: "#fff", fontSize: 10, fontWeight: "700" },
-  mapLink: { color: "#3b82f6" },
-  mapHint: { fontSize: 12, color: "#9ca3af" },
+  chatBadgeText: { color: c.white, fontSize: 10, fontWeight: "700" },
+  mapLink: { color: c.primary },
+  mapHint: { fontSize: 12, color: c.faint },
   giftFetchBtn: {
     borderWidth: 1,
-    borderColor: "#3b82f6",
+    borderColor: c.primary,
     borderRadius: 10,
     paddingHorizontal: 10,
     justifyContent: "center",
   },
-  giftFetchText: { color: "#3b82f6", fontWeight: "600", fontSize: 12 },
-  giftFetchMsg: { color: "#6b7280", fontSize: 12, textAlign: "center" },
+  giftFetchText: { color: c.primary, fontWeight: "600", fontSize: 12 },
+  giftFetchMsg: { color: c.sub, fontSize: 12, textAlign: "center" },
   giftPreview: {
     flexDirection: "row",
     alignItems: "center",
@@ -1625,4 +1656,4 @@ const styles = StyleSheet.create({
   },
   giftPreviewImg: { width: 56, height: 56, borderRadius: 8 },
   giftThumb: { width: 44, height: 44, borderRadius: 8 },
-});
+  });

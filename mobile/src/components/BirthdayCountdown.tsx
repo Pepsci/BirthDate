@@ -67,6 +67,6 @@ const makeStyles = (c: ThemeColors) =>
       alignItems: "center",
       justifyContent: "center",
     },
-    value: { color: "#fff", fontWeight: "800", fontSize: 15 },
+    value: { color: c.white, fontWeight: "800", fontSize: 15 },
     label: { color: c.sub, fontWeight: "700", fontSize: 10 },
   });

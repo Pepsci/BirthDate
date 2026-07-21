@@ -265,7 +265,7 @@ const makeStyles = (c: ThemeColors) =>
     },
     themeChipActive: { backgroundColor: c.primary, borderColor: c.primary },
     themeChipText: { fontSize: 13, fontWeight: "600", color: c.sub },
-    themeChipTextActive: { color: "#fff" },
+    themeChipTextActive: { color: c.white },
     row: {
       flexDirection: "row",
       alignItems: "center",

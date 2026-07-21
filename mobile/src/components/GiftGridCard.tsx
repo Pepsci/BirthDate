@@ -1,4 +1,5 @@
 import { View, Text, Image, Pressable, StyleSheet } from "react-native";
+import { useThemedStyles, ThemeColors } from "../lib/theme-context";
 
 export interface GiftBadge {
   label: string;
@@ -30,6 +31,7 @@ export default function GiftGridCard({
   dimmed?: boolean;
   onPress?: () => void;
 }) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <Pressable
       style={[styles.card, dimmed && styles.cardDimmed]}
@@ -77,40 +79,41 @@ export const giftGridStyles = StyleSheet.create({
   },
 });
 
-const styles = StyleSheet.create({
-  card: {
-    width: "48.5%",
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#eef2f7",
-    padding: 8,
-    gap: 4,
-  },
-  cardDimmed: { opacity: 0.7, backgroundColor: "#f9fafb" },
-  img: { width: "100%", height: 90, borderRadius: 8 },
-  imgPlaceholder: {
-    backgroundColor: "#f3f4f6",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  imgEmoji: { fontSize: 30 },
-  title: { color: "#111827", fontWeight: "700", fontSize: 13 },
-  line: { color: "#6b7280", fontSize: 12 },
-  footer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    flexWrap: "wrap",
-    marginTop: 2,
-  },
-  pricePill: {
-    backgroundColor: "#eff6ff",
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-  },
-  pricePillText: { color: "#2563eb", fontWeight: "700", fontSize: 12 },
-  badge: { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
-  badgeText: { fontSize: 10, fontWeight: "800" },
-});
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    card: {
+      width: "48.5%",
+      backgroundColor: c.card,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: c.border,
+      padding: 8,
+      gap: 4,
+    },
+    cardDimmed: { opacity: 0.7, backgroundColor: c.cardSoft },
+    img: { width: "100%", height: 90, borderRadius: 8 },
+    imgPlaceholder: {
+      backgroundColor: c.bgSecondary,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    imgEmoji: { fontSize: 30 },
+    title: { color: c.text, fontWeight: "700", fontSize: 13 },
+    line: { color: c.sub, fontSize: 12 },
+    footer: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+      flexWrap: "wrap",
+      marginTop: 2,
+    },
+    pricePill: {
+      backgroundColor: c.primarySoft,
+      borderRadius: 8,
+      paddingHorizontal: 8,
+      paddingVertical: 2,
+    },
+    pricePillText: { color: c.primaryStrong, fontWeight: "700", fontSize: 12 },
+    badge: { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
+    badgeText: { fontSize: 10, fontWeight: "800" },
+  });

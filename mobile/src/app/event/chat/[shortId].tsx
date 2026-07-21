@@ -28,9 +28,20 @@ import {
   decryptMessage,
 } from "../../../lib/crypto";
 import { promptReport } from "../../../lib/moderation";
+import {
+  useTheme,
+  useThemedStyles,
+  ThemeColors,
+} from "../../../lib/theme-context";
+
+/** Posé sur la bulle bleue, qui ne change pas avec le thème. */
+const ON_PRIMARY = "#ffffff";
+const ON_PRIMARY_SOFT = "#dbeafe";
 
 export default function EventChatScreen() {
   const { shortId } = useLocalSearchParams<{ shortId: string }>();
+  const styles = useThemedStyles(makeStyles);
+  const { colors } = useTheme();
   const { user } = useAuth();
   const headerHeight = useHeaderHeight();
   const keyboardPadding = useKeyboardPadding();
@@ -231,7 +242,7 @@ export default function EventChatScreen() {
     return (
       <View style={styles.center}>
         <Stack.Screen options={{ title: "Chat" }} />
-        <ActivityIndicator size="large" color="#3b82f6" />
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -290,7 +301,7 @@ export default function EventChatScreen() {
       )}
 
       <View style={styles.inputRow}>
-        <TextInput placeholderTextColor="#9ca3af"
+        <TextInput placeholderTextColor={colors.placeholder}
           style={styles.input}
           placeholder="Ton message…"
           value={input}
@@ -323,6 +334,7 @@ function MessageBubble({
   privateKey: Uint8Array | null;
   onReport?: () => void;
 }) {
+  const styles = useThemedStyles(makeStyles);
   const time = new Date(message.createdAt).toLocaleTimeString("fr-FR", {
     hour: "2-digit",
     minute: "2-digit",
@@ -366,81 +378,97 @@ function displayContent(
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f9fafb" },
-  center: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#f9fafb",
-  },
-  error: { color: "#b91c1c", textAlign: "center", padding: 6 },
-  e2eWarn: {
-    color: "#92400e",
-    backgroundColor: "#fef3c7",
-    textAlign: "center",
-    padding: 6,
-    fontSize: 12,
-  },
-  list: { padding: 12, gap: 6 },
-  empty: {
-    textAlign: "center",
-    color: "#6b7280",
-    transform: [{ scaleY: -1 }],
-    marginTop: 40,
-  },
-  bubbleRow: { flexDirection: "row" },
-  bubbleRowMine: { justifyContent: "flex-end" },
-  bubble: {
-    maxWidth: "80%",
-    borderRadius: 14,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-  },
-  bubbleMine: { backgroundColor: "#3b82f6", borderBottomRightRadius: 4 },
-  bubbleOther: {
-    backgroundColor: "#fff",
-    borderBottomLeftRadius: 4,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    shadowOffset: { width: 0, height: 1 },
-    elevation: 1,
-  },
-  senderName: { fontSize: 11, fontWeight: "700", color: "#3b82f6", marginBottom: 2 },
-  msgText: { color: "#111827", fontSize: 15, lineHeight: 20 },
-  msgTextMine: { color: "#fff" },
-  time: { fontSize: 10, color: "#9ca3af", alignSelf: "flex-end", marginTop: 2 },
-  timeMine: { color: "#dbeafe" },
-  typing: { color: "#9ca3af", fontSize: 12, paddingHorizontal: 14, paddingBottom: 2 },
-  inputRow: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    gap: 8,
-    padding: 10,
-    backgroundColor: "#fff",
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: "#e5e7eb",
-  },
-  input: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-    borderRadius: 18,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    fontSize: 15,
-    maxHeight: 100,
-    backgroundColor: "#f9fafb",
-    color: "#111827",
-  },
-  sendBtn: {
-    backgroundColor: "#3b82f6",
-    borderRadius: 18,
-    width: 38,
-    height: 38,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  sendText: { color: "#fff", fontSize: 16 },
-});
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: c.bg },
+    center: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: c.bg,
+    },
+    error: { color: c.danger, textAlign: "center", padding: 6 },
+    e2eWarn: {
+      color: c.warningStrong,
+      backgroundColor: c.warningSoft,
+      textAlign: "center",
+      padding: 6,
+      fontSize: 12,
+    },
+    list: { padding: 12, gap: 6 },
+    empty: {
+      textAlign: "center",
+      color: c.sub,
+      transform: [{ scaleY: -1 }],
+      marginTop: 40,
+    },
+    bubbleRow: { flexDirection: "row" },
+    bubbleRowMine: { justifyContent: "flex-end" },
+    bubble: {
+      maxWidth: "80%",
+      borderRadius: 14,
+      paddingVertical: 8,
+      paddingHorizontal: 12,
+    },
+    bubbleMine: { backgroundColor: c.primary, borderBottomRightRadius: 4 },
+    bubbleOther: {
+      backgroundColor: c.card,
+      borderBottomLeftRadius: 4,
+      shadowColor: c.shadow,
+      shadowOpacity: 0.05,
+      shadowRadius: 3,
+      shadowOffset: { width: 0, height: 1 },
+      elevation: 1,
+    },
+    senderName: {
+      fontSize: 11,
+      fontWeight: "700",
+      color: c.primary,
+      marginBottom: 2,
+    },
+    msgText: { color: c.text, fontSize: 15, lineHeight: 20 },
+    msgTextMine: { color: ON_PRIMARY },
+    time: {
+      fontSize: 10,
+      color: c.faint,
+      alignSelf: "flex-end",
+      marginTop: 2,
+    },
+    timeMine: { color: ON_PRIMARY_SOFT },
+    typing: {
+      color: c.faint,
+      fontSize: 12,
+      paddingHorizontal: 14,
+      paddingBottom: 2,
+    },
+    inputRow: {
+      flexDirection: "row",
+      alignItems: "flex-end",
+      gap: 8,
+      padding: 10,
+      backgroundColor: c.card,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: c.border,
+    },
+    input: {
+      flex: 1,
+      borderWidth: 1,
+      borderColor: c.inputBorder,
+      borderRadius: 18,
+      paddingHorizontal: 14,
+      paddingVertical: 8,
+      fontSize: 15,
+      maxHeight: 100,
+      backgroundColor: c.inputBg,
+      color: c.text,
+    },
+    sendBtn: {
+      backgroundColor: c.primary,
+      borderRadius: 18,
+      width: 38,
+      height: 38,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    sendText: { color: ON_PRIMARY, fontSize: 16 },
+  });

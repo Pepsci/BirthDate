@@ -13,6 +13,11 @@ import {
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { StripeProvider, useStripe } from "@stripe/stripe-react-native";
 import { contributeToPool } from "../../../lib/events";
+import {
+  useTheme,
+  useThemedStyles,
+  ThemeColors,
+} from "../../../lib/theme-context";
 
 const STRIPE_PUBLISHABLE_KEY =
   process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? "";
@@ -20,6 +25,8 @@ const STRIPE_PUBLISHABLE_KEY =
 const QUICK_AMOUNTS = [5, 10, 20, 50];
 
 export default function PoolContributeScreen() {
+  const styles = useThemedStyles(makeStyles);
+  const { colors } = useTheme();
   const { shortId } = useLocalSearchParams<{ shortId: string }>();
   // stripeAccountId n'est connu qu'après création du PaymentIntent
   // (charge directe sur le compte de l'organisateur)
@@ -54,6 +61,8 @@ function ContributeForm({
   clientSecret: string | null;
   onIntentCreated: (clientSecret: string, accountId: string) => void;
 }) {
+  const styles = useThemedStyles(makeStyles);
+  const { colors } = useTheme();
   const router = useRouter();
   const { initPaymentSheet, presentPaymentSheet } = useStripe();
   const [amount, setAmount] = useState("");
@@ -141,7 +150,7 @@ function ContributeForm({
         ))}
       </View>
       <TextInput
-        placeholderTextColor="#9ca3af"
+        placeholderTextColor={colors.placeholder}
         style={styles.input}
         placeholder="Montant libre (min 1 €)"
         keyboardType="decimal-pad"
@@ -151,7 +160,7 @@ function ContributeForm({
 
       <Text style={styles.label}>Message (optionnel)</Text>
       <TextInput
-        placeholderTextColor="#9ca3af"
+        placeholderTextColor={colors.placeholder}
         style={[styles.input, { minHeight: 60 }]}
         placeholder="Un petit mot avec ta contribution…"
         multiline
@@ -162,7 +171,7 @@ function ContributeForm({
 
       <Text style={styles.label}>Nom affiché (optionnel)</Text>
       <TextInput
-        placeholderTextColor="#9ca3af"
+        placeholderTextColor={colors.placeholder}
         style={styles.input}
         placeholder="Ton prénom ou un pseudonyme"
         maxLength={60}
@@ -179,7 +188,7 @@ function ContributeForm({
         <Switch
           value={anonymous}
           onValueChange={setAnonymous}
-          trackColor={{ true: "#3b82f6" }}
+          trackColor={{ true: colors.primary }}
         />
       </View>
 
@@ -201,7 +210,7 @@ function ContributeForm({
         onPress={pay}
       >
         {paying ? (
-          <ActivityIndicator color="#fff" />
+          <ActivityIndicator color={colors.white} />
         ) : (
           <Text style={styles.payText}>
             💳 Payer{valid ? ` ${(amountCents / 100).toFixed(2).replace(".", ",")} €` : ""}
@@ -217,31 +226,32 @@ function ContributeForm({
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f9fafb" },
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+  container: { flex: 1, backgroundColor: c.bg },
   content: { padding: 16, gap: 8 },
-  label: { fontSize: 13, fontWeight: "700", color: "#6b7280", marginTop: 8 },
+  label: { fontSize: 13, fontWeight: "700", color: c.sub, marginTop: 8 },
   quickRow: { flexDirection: "row", gap: 8 },
   quickBtn: {
     flex: 1,
     borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: c.border,
     borderRadius: 10,
     paddingVertical: 11,
     alignItems: "center",
-    backgroundColor: "#fff",
+    backgroundColor: c.card,
   },
-  quickBtnActive: { backgroundColor: "#3b82f6", borderColor: "#3b82f6" },
-  quickText: { fontWeight: "700", color: "#374151" },
-  quickTextActive: { color: "#fff" },
+  quickBtnActive: { backgroundColor: c.primary, borderColor: c.primary },
+  quickText: { fontWeight: "700", color: c.text },
+  quickTextActive: { color: c.white },
   input: {
     borderWidth: 1,
-    borderColor: "#e5e7eb",
+    borderColor: c.inputBorder,
     borderRadius: 10,
     padding: 12,
     fontSize: 16,
-    backgroundColor: "#fff",
-    color: "#111827",
+    backgroundColor: c.inputBg,
+    color: c.text,
   },
   switchRow: {
     flexDirection: "row",
@@ -249,23 +259,23 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginTop: 8,
   },
-  switchLabel: { fontSize: 14, fontWeight: "600", color: "#111827" },
-  help: { color: "#9ca3af", fontSize: 12, lineHeight: 16, marginTop: 2 },
+  switchLabel: { fontSize: 14, fontWeight: "600", color: c.text },
+  help: { color: c.faint, fontSize: 12, lineHeight: 16, marginTop: 2 },
   noticeBox: {
-    backgroundColor: "#fef3c7",
+    backgroundColor: c.warningSoft,
     borderRadius: 10,
     padding: 12,
     marginTop: 4,
   },
-  noticeText: { color: "#92400e", fontSize: 12, lineHeight: 17 },
-  error: { color: "#b91c1c", textAlign: "center", marginTop: 8 },
+  noticeText: { color: c.warningStrong, fontSize: 12, lineHeight: 17 },
+  error: { color: c.danger, textAlign: "center", marginTop: 8 },
   payBtn: {
-    backgroundColor: "#10b981",
+    backgroundColor: c.success,
     borderRadius: 10,
     padding: 15,
     alignItems: "center",
     marginTop: 12,
   },
-  payText: { color: "#fff", fontWeight: "700", fontSize: 16 },
-  secure: { textAlign: "center", color: "#9ca3af", fontSize: 12, marginTop: 8 },
+  payText: { color: c.white, fontWeight: "700", fontSize: 16 },
+  secure: { textAlign: "center", color: c.faint, fontSize: 12, marginTop: 8 },
 });

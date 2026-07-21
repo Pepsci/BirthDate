@@ -33,12 +33,27 @@ import {
   encryptMessage,
   decryptMessage,
 } from "../../lib/crypto";
+import {
+  useTheme,
+  useThemedStyles,
+  ThemeColors,
+} from "../../lib/theme-context";
+
+/**
+ * La bulle « moi » reste bleue dans les deux thèmes : ce qui se pose dessus
+ * doit donc rester clair en permanence et ne passe pas par les tokens.
+ */
+const ON_PRIMARY = "#ffffff";
+const ON_PRIMARY_SOFT = "#dbeafe";
+const ON_PRIMARY_QUOTE_BG = "rgba(255, 255, 255, 0.15)";
 
 export default function DMChatScreen() {
   const { friendId, name } = useLocalSearchParams<{
     friendId: string;
     name?: string;
   }>();
+  const styles = useThemedStyles(makeStyles);
+  const { colors } = useTheme();
   const { user } = useAuth();
   const router = useRouter();
   const headerHeight = useHeaderHeight();
@@ -386,7 +401,7 @@ export default function DMChatScreen() {
     return (
       <View style={styles.center}>
         <Stack.Screen options={{ title: name ?? "Chat" }} />
-        <ActivityIndicator size="large" color="#3b82f6" />
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -425,7 +440,7 @@ export default function DMChatScreen() {
                 ])
               }
             >
-              <Text style={{ fontSize: 22, color: "#6b7280" }}>⋯</Text>
+              <Text style={{ fontSize: 22, color: colors.sub }}>⋯</Text>
             </Pressable>
           ),
         }}
@@ -498,7 +513,7 @@ export default function DMChatScreen() {
       )}
 
       <View style={styles.inputRow}>
-        <TextInput placeholderTextColor="#9ca3af"
+        <TextInput placeholderTextColor={colors.placeholder}
           style={styles.input}
           placeholder="Ton message…"
           value={input}
@@ -533,6 +548,7 @@ function Bubble({
   quote?: { author: string; text: string } | null;
   onLongPress?: () => void;
 }) {
+  const styles = useThemedStyles(makeStyles);
   const time = new Date(message.createdAt).toLocaleTimeString("fr-FR", {
     hour: "2-digit",
     minute: "2-digit",
@@ -589,108 +605,114 @@ function displayContent(
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f9fafb" },
-  center: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#f9fafb",
-  },
-  error: { color: "#b91c1c", textAlign: "center", padding: 6 },
-  list: { padding: 12, gap: 6 },
-  empty: {
-    textAlign: "center",
-    color: "#6b7280",
-    transform: [{ scaleY: -1 }],
-    marginTop: 40,
-  },
-  bubbleRow: { flexDirection: "row" },
-  bubbleRowMine: { justifyContent: "flex-end" },
-  bubble: {
-    maxWidth: "80%",
-    borderRadius: 14,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-  },
-  bubbleMine: { backgroundColor: "#3b82f6", borderBottomRightRadius: 4 },
-  bubbleOther: {
-    backgroundColor: "#fff",
-    borderBottomLeftRadius: 4,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-    shadowOffset: { width: 0, height: 1 },
-    elevation: 1,
-  },
-  msgText: { color: "#111827", fontSize: 15, lineHeight: 20 },
-  msgTextMine: { color: "#fff" },
-  time: { fontSize: 10, color: "#9ca3af", alignSelf: "flex-end", marginTop: 2 },
-  timeMine: { color: "#dbeafe" },
-  typing: {
-    color: "#9ca3af",
-    fontSize: 12,
-    paddingHorizontal: 14,
-    paddingBottom: 2,
-  },
-  quote: {
-    borderLeftWidth: 3,
-    borderLeftColor: "#3b82f6",
-    backgroundColor: "rgba(59, 130, 246, 0.08)",
-    borderRadius: 6,
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    marginBottom: 6,
-  },
-  quoteMine: {
-    borderLeftColor: "#dbeafe",
-    backgroundColor: "rgba(255, 255, 255, 0.15)",
-  },
-  quoteAuthor: { fontSize: 11, fontWeight: "700", color: "#3b82f6" },
-  quoteText: { fontSize: 12, color: "#6b7280" },
-  quoteTextMine: { color: "#dbeafe" },
-  composerBanner: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    backgroundColor: "#eff6ff",
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: "#e5e7eb",
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-  },
-  composerBannerBody: { flex: 1 },
-  bannerTitle: { fontSize: 12, fontWeight: "700", color: "#3b82f6" },
-  bannerText: { fontSize: 13, color: "#6b7280", marginTop: 1 },
-  bannerClose: { fontSize: 16, color: "#9ca3af", padding: 4 },
-  inputRow: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    gap: 8,
-    padding: 10,
-    backgroundColor: "#fff",
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: "#e5e7eb",
-  },
-  input: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-    borderRadius: 18,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    fontSize: 15,
-    maxHeight: 100,
-    backgroundColor: "#f9fafb",
-    color: "#111827",
-  },
-  sendBtn: {
-    backgroundColor: "#3b82f6",
-    borderRadius: 18,
-    width: 38,
-    height: 38,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  sendText: { color: "#fff", fontSize: 16 },
-});
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: c.bg },
+    center: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: c.bg,
+    },
+    error: { color: c.danger, textAlign: "center", padding: 6 },
+    list: { padding: 12, gap: 6 },
+    empty: {
+      textAlign: "center",
+      color: c.sub,
+      transform: [{ scaleY: -1 }],
+      marginTop: 40,
+    },
+    bubbleRow: { flexDirection: "row" },
+    bubbleRowMine: { justifyContent: "flex-end" },
+    bubble: {
+      maxWidth: "80%",
+      borderRadius: 14,
+      paddingVertical: 8,
+      paddingHorizontal: 12,
+    },
+    bubbleMine: { backgroundColor: c.primary, borderBottomRightRadius: 4 },
+    bubbleOther: {
+      backgroundColor: c.card,
+      borderBottomLeftRadius: 4,
+      shadowColor: c.shadow,
+      shadowOpacity: 0.05,
+      shadowRadius: 3,
+      shadowOffset: { width: 0, height: 1 },
+      elevation: 1,
+    },
+    msgText: { color: c.text, fontSize: 15, lineHeight: 20 },
+    msgTextMine: { color: ON_PRIMARY },
+    time: {
+      fontSize: 10,
+      color: c.faint,
+      alignSelf: "flex-end",
+      marginTop: 2,
+    },
+    timeMine: { color: ON_PRIMARY_SOFT },
+    typing: {
+      color: c.faint,
+      fontSize: 12,
+      paddingHorizontal: 14,
+      paddingBottom: 2,
+    },
+    quote: {
+      borderLeftWidth: 3,
+      borderLeftColor: c.primary,
+      backgroundColor: c.primarySoft,
+      borderRadius: 6,
+      paddingVertical: 4,
+      paddingHorizontal: 8,
+      marginBottom: 6,
+    },
+    quoteMine: {
+      borderLeftColor: ON_PRIMARY_SOFT,
+      backgroundColor: ON_PRIMARY_QUOTE_BG,
+    },
+    quoteAuthor: { fontSize: 11, fontWeight: "700", color: c.primary },
+    quoteText: { fontSize: 12, color: c.sub },
+    quoteTextMine: { color: ON_PRIMARY_SOFT },
+    composerBanner: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+      backgroundColor: c.primarySoft,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: c.border,
+      paddingVertical: 8,
+      paddingHorizontal: 14,
+    },
+    composerBannerBody: { flex: 1 },
+    bannerTitle: { fontSize: 12, fontWeight: "700", color: c.primary },
+    bannerText: { fontSize: 13, color: c.sub, marginTop: 1 },
+    bannerClose: { fontSize: 16, color: c.faint, padding: 4 },
+    inputRow: {
+      flexDirection: "row",
+      alignItems: "flex-end",
+      gap: 8,
+      padding: 10,
+      backgroundColor: c.card,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: c.border,
+    },
+    input: {
+      flex: 1,
+      borderWidth: 1,
+      borderColor: c.inputBorder,
+      borderRadius: 18,
+      paddingHorizontal: 14,
+      paddingVertical: 8,
+      fontSize: 15,
+      maxHeight: 100,
+      backgroundColor: c.inputBg,
+      color: c.text,
+    },
+    sendBtn: {
+      backgroundColor: c.primary,
+      borderRadius: 18,
+      width: 38,
+      height: 38,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    sendText: { color: ON_PRIMARY, fontSize: 16 },
+  });

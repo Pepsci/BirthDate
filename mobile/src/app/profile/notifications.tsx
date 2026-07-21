@@ -9,6 +9,11 @@ import {
 } from "react-native";
 import { Stack } from "expo-router";
 import { UserProfile, fetchMe, updateMe } from "../../lib/users";
+import {
+  useTheme,
+  useThemedStyles,
+  ThemeColors,
+} from "../../lib/theme-context";
 
 const PREFS: { key: keyof UserProfile & string; label: string; hint: string }[] = [
   {
@@ -44,6 +49,8 @@ const PREFS: { key: keyof UserProfile & string; label: string; hint: string }[] 
 ];
 
 export default function NotificationsScreen() {
+  const styles = useThemedStyles(makeStyles);
+  const { colors } = useTheme();
   const [me, setMe] = useState<UserProfile | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -101,7 +108,7 @@ export default function NotificationsScreen() {
         {error ? (
           <Text style={styles.error}>{error}</Text>
         ) : (
-          <ActivityIndicator size="large" color="#3b82f6" />
+          <ActivityIndicator size="large" color={colors.primary} />
         )}
       </View>
     );
@@ -124,7 +131,7 @@ export default function NotificationsScreen() {
               value={!!me[pref.key]}
               disabled={busy === pref.key}
               onValueChange={(v) => toggle(pref.key, v)}
-              trackColor={{ true: "#3b82f6" }}
+              trackColor={{ true: colors.primary }}
             />
           </View>
         ))}
@@ -143,7 +150,7 @@ export default function NotificationsScreen() {
             value={!!me.pushEnabled}
             disabled={busy === "pushEnabled"}
             onValueChange={(v) => toggle("pushEnabled", v)}
-            trackColor={{ true: "#3b82f6" }}
+            trackColor={{ true: colors.primary }}
           />
         </View>
         {me.pushEnabled &&
@@ -165,7 +172,7 @@ export default function NotificationsScreen() {
                 value={me.pushEvents?.[k] !== false}
                 disabled={busy === k}
                 onValueChange={(v) => togglePushCat(k, v)}
-                trackColor={{ true: "#3b82f6" }}
+                trackColor={{ true: colors.primary }}
               />
             </View>
           ))}
@@ -174,31 +181,32 @@ export default function NotificationsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f9fafb" },
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+  container: { flex: 1, backgroundColor: c.bg },
   content: { padding: 12, gap: 10 },
   center: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#f9fafb",
+    backgroundColor: c.bg,
   },
-  error: { color: "#b91c1c", textAlign: "center", padding: 8 },
-  card: { backgroundColor: "#fff", borderRadius: 14, overflow: "hidden" },
+  error: { color: c.danger, textAlign: "center", padding: 8 },
+  card: { backgroundColor: c.card, borderRadius: 14, overflow: "hidden" },
   row: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
     padding: 14,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#e5e7eb",
+    borderBottomColor: c.border,
   },
-  label: { fontSize: 15, fontWeight: "600", color: "#111827" },
-  hint: { fontSize: 12, color: "#6b7280", marginTop: 1 },
+  label: { fontSize: 15, fontWeight: "600", color: c.text },
+  hint: { fontSize: 12, color: c.sub, marginTop: 1 },
   sectionHeader: {
     fontSize: 13,
     fontWeight: "700",
-    color: "#6b7280",
+    color: c.sub,
     textTransform: "uppercase",
     marginTop: 10,
     marginLeft: 4,

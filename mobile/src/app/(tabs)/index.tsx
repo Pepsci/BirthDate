@@ -217,6 +217,7 @@ function birthISOOf(entry: DateEntry): string | null {
 function BirthdayCard({ entry }: { entry: DateEntry }) {
   const router = useRouter();
   const styles = useThemedStyles(makeStyles);
+  const { colors } = useTheme();
   const birthISO = birthISOOf(entry);
   const days = birthISO ? daysUntil(birthISO) : null;
   const age = birthISO ? currentAge(birthISO) : null;
@@ -271,8 +272,8 @@ function BirthdayCard({ entry }: { entry: DateEntry }) {
       </Text>
 
       <View style={styles.nameRow}>
-        {entry.linkedUser && <Badge label="AMI" color="#3b82f6" />}
-        {entry.family && <Badge label="FAMILLE" color="#f59e0b" />}
+        {entry.linkedUser && <Badge label="AMI" color={colors.primary} />}
+        {entry.family && <Badge label="FAMILLE" color={colors.warning} />}
       </View>
 
       {birthISO && (
@@ -357,7 +358,7 @@ const makeStyles = (c: ThemeColors) =>
     },
     filterChipActive: { backgroundColor: c.primary, borderColor: c.primary },
     filterText: { fontSize: 13, fontWeight: "600", color: c.sub },
-    filterTextActive: { color: "#fff" },
+    filterTextActive: { color: c.white },
     empty: {
       textAlign: "center",
       color: c.sub,
@@ -414,7 +415,7 @@ const makeStyles = (c: ThemeColors) =>
       paddingHorizontal: 6,
       paddingVertical: 2,
     },
-    badgeText: { color: "#fff", fontSize: 10, fontWeight: "700" },
+    badgeText: { color: c.white, fontSize: 10, fontWeight: "700" },
     soonBadge: {
       position: "absolute",
       top: 8,
@@ -425,8 +426,8 @@ const makeStyles = (c: ThemeColors) =>
       paddingVertical: 3,
     },
     soonBadgeNormal: { backgroundColor: c.primary },
-    soonBadgeUrgent: { backgroundColor: "#f59e0b" },
-    soonBadgeText: { color: "#fff", fontSize: 11, fontWeight: "800" },
+    soonBadgeUrgent: { backgroundColor: c.warning },
+    soonBadgeText: { color: c.white, fontSize: 11, fontWeight: "800" },
     countdownToday: {
       alignSelf: "stretch",
       alignItems: "center",

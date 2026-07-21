@@ -16,12 +16,14 @@ import {
   unblockUser,
 } from "../../lib/moderation";
 import {
+  useTheme,
   useThemedStyles,
   ThemeColors,
 } from "../../lib/theme-context";
 
 export default function BlockedUsersScreen() {
   const styles = useThemedStyles(makeStyles);
+  const { colors } = useTheme();
   const [blocked, setBlocked] = useState<BlockedUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -62,7 +64,7 @@ export default function BlockedUsersScreen() {
     return (
       <View style={styles.center}>
         <Stack.Screen options={{ title: "Utilisateurs bloqués" }} />
-        <ActivityIndicator size="large" color="#3b82f6" />
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }

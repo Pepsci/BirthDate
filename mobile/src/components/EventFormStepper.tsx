@@ -19,6 +19,11 @@ import {
   EVENT_TYPE_LABELS,
 } from "../lib/events";
 import AddressAutocomplete, { LocationValue } from "./AddressAutocomplete";
+import {
+  useTheme,
+  useThemedStyles,
+  ThemeColors,
+} from "../lib/theme-context";
 
 function initialLocation(ev?: EventDetail): LocationValue | null {
   if (!ev?.fixedLocation) return null;
@@ -44,6 +49,8 @@ export default function EventFormStepper({
   submitLabel: string;
   onSubmit: (payload: CreateEventPayload) => Promise<void>;
 }) {
+  const styles = useThemedStyles(makeStyles);
+  const { colors, resolved } = useTheme();
   const [step, setStep] = useState(0);
   // Étape la plus loin atteinte → permet de revenir sur n'importe quelle
   // étape déjà visitée (en édition, toutes sont accessibles d'emblée).
@@ -203,7 +210,7 @@ export default function EventFormStepper({
               <Text
                 style={[
                   styles.progressNum,
-                  (i === step || i < step) && { color: "#fff" },
+                  (i === step || i < step) && { color: colors.white },
                 ]}
               >
                 {i < step ? "✓" : i + 1}
@@ -237,7 +244,7 @@ export default function EventFormStepper({
           </View>
 
           <Text style={styles.label}>Titre *</Text>
-          <TextInput placeholderTextColor="#9ca3af"
+          <TextInput placeholderTextColor={colors.placeholder}
             style={styles.input}
             placeholder="ex : Anniversaire surprise de Léa"
             value={title}
@@ -245,7 +252,7 @@ export default function EventFormStepper({
           />
 
           <Text style={styles.label}>Description</Text>
-          <TextInput placeholderTextColor="#9ca3af"
+          <TextInput placeholderTextColor={colors.placeholder}
             style={[styles.input, { minHeight: 70 }]}
             placeholder="Détails, consignes, dress code… (optionnel)"
             multiline
@@ -293,6 +300,7 @@ export default function EventFormStepper({
                     minimumDate={new Date()}
                     display={Platform.OS === "ios" ? "spinner" : "default"}
                     locale="fr-FR"
+                    themeVariant={resolved}
                     onChange={(e, d) => {
                       if (Platform.OS === "android") setShowDate(false);
                       if (d)
@@ -313,6 +321,7 @@ export default function EventFormStepper({
                     mode="time"
                     display={Platform.OS === "ios" ? "spinner" : "default"}
                     locale="fr-FR"
+                    themeVariant={resolved}
                     onChange={(e, d) => {
                       if (Platform.OS === "android") setShowTime(false);
                       if (d)
@@ -365,6 +374,7 @@ export default function EventFormStepper({
                     minimumDate={new Date()}
                     display={Platform.OS === "ios" ? "spinner" : "default"}
                     locale="fr-FR"
+                    themeVariant={resolved}
                     onChange={(e, d) => {
                       // Android : la boîte se ferme et valide sur "OK"/"Annuler".
                       // iOS : la roue émet onChange en continu → on met juste à
@@ -519,13 +529,13 @@ export default function EventFormStepper({
                 </View>
               ))}
               <View style={styles.rowInline}>
-                <TextInput placeholderTextColor="#9ca3af"
+                <TextInput placeholderTextColor={colors.placeholder}
                   style={[styles.input, { flex: 2 }]}
                   placeholder="Cadeau"
                   value={giftName}
                   onChangeText={setGiftName}
                 />
-                <TextInput placeholderTextColor="#9ca3af"
+                <TextInput placeholderTextColor={colors.placeholder}
                   style={[styles.input, { flex: 1 }]}
                   placeholder="Prix €"
                   keyboardType="decimal-pad"
@@ -570,7 +580,7 @@ export default function EventFormStepper({
             <Switch
               value={poolEnabled}
               onValueChange={setPoolEnabled}
-              trackColor={{ true: "#3b82f6" }}
+              trackColor={{ true: colors.primary }}
             />
           </View>
 
@@ -619,7 +629,7 @@ export default function EventFormStepper({
       {step === 5 && (
         <View style={styles.card}>
           <Text style={styles.label}>Nombre max d'invités</Text>
-          <TextInput placeholderTextColor="#9ca3af"
+          <TextInput placeholderTextColor={colors.placeholder}
             style={styles.input}
             placeholder="Illimité si vide"
             keyboardType="number-pad"
@@ -637,7 +647,7 @@ export default function EventFormStepper({
             <Switch
               value={allowExternalGuests}
               onValueChange={setAllowExternalGuests}
-              trackColor={{ true: "#3b82f6" }}
+              trackColor={{ true: colors.primary }}
             />
           </View>
 
@@ -653,7 +663,7 @@ export default function EventFormStepper({
             <Switch
               value={allowGuestInvites}
               onValueChange={setAllowGuestInvites}
-              trackColor={{ true: "#3b82f6" }}
+              trackColor={{ true: colors.primary }}
             />
           </View>
         </View>
@@ -681,7 +691,7 @@ export default function EventFormStepper({
             onPress={submit}
           >
             {saving ? (
-              <ActivityIndicator color="#fff" />
+              <ActivityIndicator color={colors.white} />
             ) : (
               <Text style={styles.nextText}>{submitLabel}</Text>
             )}
@@ -703,6 +713,7 @@ function ModeSwitch({
   value: boolean;
   onChange: (v: boolean) => void;
 }) {
+  const styles = useThemedStyles(makeStyles);
   return (
     <View style={styles.modeSwitch}>
       <Pressable
@@ -725,170 +736,179 @@ function ModeSwitch({
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f9fafb" },
-  content: { padding: 12, paddingBottom: 48, gap: 10 },
-  error: { color: "#b91c1c", textAlign: "center", padding: 6 },
-  progress: { flexDirection: "row", justifyContent: "space-between" },
-  progressItem: { alignItems: "center", flex: 1, gap: 3 },
-  progressDot: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: "#e5e7eb",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  progressDotActive: { backgroundColor: "#3b82f6" },
-  progressDotDone: { backgroundColor: "#10b981" },
-  progressNum: { fontSize: 12, fontWeight: "700", color: "#6b7280" },
-  progressLabel: { fontSize: 10, color: "#6b7280" },
-  card: {
-    backgroundColor: "#fff",
-    borderRadius: 14,
-    padding: 14,
-    gap: 8,
-    shadowColor: "#000",
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    elevation: 2,
-  },
-  label: { fontSize: 13, fontWeight: "700", color: "#6b7280", marginTop: 6 },
-  input: {
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-    borderRadius: 10,
-    padding: 11,
-    fontSize: 15,
-    backgroundColor: "#fff",
-    color: "#111827",
-  },
-  inputText: { fontSize: 15, color: "#111827" },
-  hint: { color: "#9ca3af", fontSize: 12 },
-  chips: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
-  chip: {
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-    borderRadius: 16,
-    paddingVertical: 7,
-    paddingHorizontal: 11,
-    backgroundColor: "#f9fafb",
-  },
-  chipActive: { backgroundColor: "#3b82f6", borderColor: "#3b82f6" },
-  chipText: { fontSize: 13, fontWeight: "600", color: "#374151" },
-  chipTextActive: { color: "#fff" },
-  modeSwitch: {
-    flexDirection: "row",
-    backgroundColor: "#f3f4f6",
-    borderRadius: 10,
-    padding: 3,
-  },
-  modeBtn: {
-    flex: 1,
-    paddingVertical: 9,
-    borderRadius: 8,
-    alignItems: "center",
-  },
-  modeBtnActive: { backgroundColor: "#fff", elevation: 1 },
-  modeText: { fontSize: 13, fontWeight: "600", color: "#6b7280" },
-  modeTextActive: { color: "#111827" },
-  optionRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: "#f9fafb",
-    borderRadius: 10,
-    padding: 10,
-  },
-  optionText: { color: "#111827", fontWeight: "500", flexShrink: 1 },
-  deleteX: { color: "#ef4444", fontWeight: "700", fontSize: 15 },
-  addOptionBtn: {
-    borderWidth: 1,
-    borderColor: "#3b82f6",
-    borderStyle: "dashed",
-    borderRadius: 10,
-    padding: 11,
-    alignItems: "center",
-  },
-  addOptionText: { color: "#3b82f6", fontWeight: "600" },
-  rowInline: { flexDirection: "row", gap: 8, alignItems: "center" },
-  smallAdd: {
-    backgroundColor: "#3b82f6",
-    borderRadius: 10,
-    width: 40,
-    height: 42,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  smallAddText: { color: "#fff", fontSize: 18, fontWeight: "600" },
-  pickerWrap: { alignItems: "center", width: "100%" },
-  pickerActions: { flexDirection: "row", gap: 10, marginTop: 8, width: "100%" },
-  pickerCancel: {
-    borderWidth: 1,
-    borderColor: "#d1d5db",
-    borderRadius: 10,
-    paddingVertical: 11,
-    paddingHorizontal: 16,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  pickerCancelText: { color: "#6b7280", fontWeight: "600" },
-  pickerConfirm: {
-    flex: 1,
-    backgroundColor: "#3b82f6",
-    borderRadius: 10,
-    paddingVertical: 11,
-    alignItems: "center",
-  },
-  pickerConfirmText: { color: "#fff", fontWeight: "700", fontSize: 15 },
-  methodBtn: {
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-    borderRadius: 10,
-    padding: 12,
-    backgroundColor: "#f9fafb",
-  },
-  methodBtnActive: { borderColor: "#3b82f6", backgroundColor: "#eff6ff" },
-  methodText: { color: "#374151", fontWeight: "600", fontSize: 14 },
-  methodTextActive: { color: "#2563eb" },
-  noticeBox: {
-    backgroundColor: "#fef3c7",
-    borderRadius: 10,
-    padding: 12,
-    marginTop: 4,
-  },
-  noticeText: { color: "#92400e", fontSize: 12, lineHeight: 17 },
-  switchRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    marginTop: 8,
-  },
-  switchLabel: { fontSize: 14, fontWeight: "600", color: "#111827" },
-  nav: { flexDirection: "row", gap: 10, marginTop: 4 },
-  backBtn: {
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-    borderRadius: 10,
-    paddingVertical: 13,
-    paddingHorizontal: 18,
-    backgroundColor: "#fff",
-  },
-  backText: { color: "#374151", fontWeight: "600" },
-  nextBtn: {
-    flex: 1,
-    backgroundColor: "#3b82f6",
-    borderRadius: 10,
-    paddingVertical: 13,
-    alignItems: "center",
-  },
-  createBtn: {
-    flex: 1,
-    backgroundColor: "#10b981",
-    borderRadius: 10,
-    paddingVertical: 13,
-    alignItems: "center",
-  },
-  nextText: { color: "#fff", fontWeight: "700", fontSize: 15 },
-});
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: c.bg },
+    content: { padding: 12, paddingBottom: 48, gap: 10 },
+    error: { color: c.danger, textAlign: "center", padding: 6 },
+    progress: { flexDirection: "row", justifyContent: "space-between" },
+    progressItem: { alignItems: "center", flex: 1, gap: 3 },
+    progressDot: {
+      width: 28,
+      height: 28,
+      borderRadius: 14,
+      backgroundColor: c.border,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    progressDotActive: { backgroundColor: c.primary },
+    progressDotDone: { backgroundColor: c.success },
+    progressNum: { fontSize: 12, fontWeight: "700", color: c.sub },
+    progressLabel: { fontSize: 10, color: c.sub },
+    card: {
+      backgroundColor: c.card,
+      borderRadius: 14,
+      padding: 14,
+      gap: 8,
+      shadowColor: c.shadow,
+      shadowOpacity: 0.06,
+      shadowRadius: 6,
+      shadowOffset: { width: 0, height: 2 },
+      elevation: 2,
+    },
+    label: { fontSize: 13, fontWeight: "700", color: c.sub, marginTop: 6 },
+    input: {
+      borderWidth: 1,
+      borderColor: c.inputBorder,
+      borderRadius: 10,
+      padding: 11,
+      fontSize: 15,
+      backgroundColor: c.inputBg,
+      color: c.text,
+    },
+    inputText: { fontSize: 15, color: c.text },
+    hint: { color: c.faint, fontSize: 12 },
+    chips: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
+    chip: {
+      borderWidth: 1,
+      borderColor: c.border,
+      borderRadius: 16,
+      paddingVertical: 7,
+      paddingHorizontal: 11,
+      backgroundColor: c.cardSoft,
+    },
+    chipActive: { backgroundColor: c.primary, borderColor: c.primary },
+    chipText: { fontSize: 13, fontWeight: "600", color: c.text },
+    chipTextActive: { color: c.white },
+    modeSwitch: {
+      flexDirection: "row",
+      backgroundColor: c.bgSecondary,
+      borderRadius: 10,
+      padding: 3,
+    },
+    modeBtn: {
+      flex: 1,
+      paddingVertical: 9,
+      borderRadius: 8,
+      alignItems: "center",
+    },
+    modeBtnActive: { backgroundColor: c.card, elevation: 1 },
+    modeText: { fontSize: 13, fontWeight: "600", color: c.sub },
+    modeTextActive: { color: c.text },
+    optionRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      backgroundColor: c.cardSoft,
+      borderRadius: 10,
+      padding: 10,
+    },
+    optionText: { color: c.text, fontWeight: "500", flexShrink: 1 },
+    deleteX: { color: c.danger, fontWeight: "700", fontSize: 15 },
+    addOptionBtn: {
+      borderWidth: 1,
+      borderColor: c.primary,
+      borderStyle: "dashed",
+      borderRadius: 10,
+      padding: 11,
+      alignItems: "center",
+    },
+    addOptionText: { color: c.primary, fontWeight: "600" },
+    rowInline: { flexDirection: "row", gap: 8, alignItems: "center" },
+    smallAdd: {
+      backgroundColor: c.primary,
+      borderRadius: 10,
+      width: 40,
+      height: 42,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    smallAddText: { color: c.white, fontSize: 18, fontWeight: "600" },
+    pickerWrap: { alignItems: "center", width: "100%" },
+    pickerActions: {
+      flexDirection: "row",
+      gap: 10,
+      marginTop: 8,
+      width: "100%",
+    },
+    pickerCancel: {
+      borderWidth: 1,
+      borderColor: c.borderStrong,
+      borderRadius: 10,
+      paddingVertical: 11,
+      paddingHorizontal: 16,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    pickerCancelText: { color: c.sub, fontWeight: "600" },
+    pickerConfirm: {
+      flex: 1,
+      backgroundColor: c.primary,
+      borderRadius: 10,
+      paddingVertical: 11,
+      alignItems: "center",
+    },
+    pickerConfirmText: { color: c.white, fontWeight: "700", fontSize: 15 },
+    methodBtn: {
+      borderWidth: 1,
+      borderColor: c.border,
+      borderRadius: 10,
+      padding: 12,
+      backgroundColor: c.cardSoft,
+    },
+    methodBtnActive: {
+      borderColor: c.primary,
+      backgroundColor: c.primarySoft,
+    },
+    methodText: { color: c.text, fontWeight: "600", fontSize: 14 },
+    methodTextActive: { color: c.primaryStrong },
+    noticeBox: {
+      backgroundColor: c.warningSoft,
+      borderRadius: 10,
+      padding: 12,
+      marginTop: 4,
+    },
+    noticeText: { color: c.warningStrong, fontSize: 12, lineHeight: 17 },
+    switchRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+      marginTop: 8,
+    },
+    switchLabel: { fontSize: 14, fontWeight: "600", color: c.text },
+    nav: { flexDirection: "row", gap: 10, marginTop: 4 },
+    backBtn: {
+      borderWidth: 1,
+      borderColor: c.border,
+      borderRadius: 10,
+      paddingVertical: 13,
+      paddingHorizontal: 18,
+      backgroundColor: c.card,
+    },
+    backText: { color: c.text, fontWeight: "600" },
+    nextBtn: {
+      flex: 1,
+      backgroundColor: c.primary,
+      borderRadius: 10,
+      paddingVertical: 13,
+      alignItems: "center",
+    },
+    createBtn: {
+      flex: 1,
+      backgroundColor: c.success,
+      borderRadius: 10,
+      paddingVertical: 13,
+      alignItems: "center",
+    },
+    nextText: { color: c.white, fontWeight: "700", fontSize: 15 },
+  });

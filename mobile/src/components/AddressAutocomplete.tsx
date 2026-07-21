@@ -7,6 +7,11 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from "react-native";
+import {
+  useTheme,
+  useThemedStyles,
+  ThemeColors,
+} from "../lib/theme-context";
 
 export interface LocationValue {
   name: string;
@@ -36,6 +41,8 @@ export default function AddressAutocomplete({
   onChange: (loc: LocationValue | null) => void;
   initialText?: string;
 }) {
+  const styles = useThemedStyles(makeStyles);
+  const { colors } = useTheme();
   const [text, setText] = useState(initialText);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [loading, setLoading] = useState(false);
@@ -106,14 +113,18 @@ export default function AddressAutocomplete({
     <View style={styles.wrap}>
       <View>
         <TextInput
-          placeholderTextColor="#9ca3af"
+          placeholderTextColor={colors.placeholder}
           style={styles.input}
           placeholder={placeholder}
           value={text}
           onChangeText={onTextChange}
         />
         {loading && (
-          <ActivityIndicator style={styles.spinner} size="small" color="#9ca3af" />
+          <ActivityIndicator
+            style={styles.spinner}
+            size="small"
+            color={colors.faint}
+          />
         )}
       </View>
       {suggestions.length > 0 && !selectedRef.current && (
@@ -123,7 +134,7 @@ export default function AddressAutocomplete({
               key={`${s.label}${i}`}
               style={({ pressed }) => [
                 styles.suggestion,
-                pressed && { backgroundColor: "#eff6ff" },
+                pressed && { backgroundColor: colors.primarySoft },
               ]}
               onPress={() => select(s)}
             >
@@ -138,33 +149,34 @@ export default function AddressAutocomplete({
   );
 }
 
-const styles = StyleSheet.create({
-  wrap: { gap: 0 },
-  input: {
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-    borderRadius: 10,
-    padding: 11,
-    fontSize: 15,
-    backgroundColor: "#fff",
-    color: "#111827",
-  },
-  spinner: { position: "absolute", right: 10, top: 12 },
-  dropdown: {
-    backgroundColor: "#fff",
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-    borderTopWidth: 0,
-    borderBottomLeftRadius: 10,
-    borderBottomRightRadius: 10,
-    marginTop: -4,
-    paddingTop: 4,
-  },
-  suggestion: {
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#f3f4f6",
-  },
-  suggestionText: { color: "#374151", fontSize: 13 },
-});
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    wrap: { gap: 0 },
+    input: {
+      borderWidth: 1,
+      borderColor: c.inputBorder,
+      borderRadius: 10,
+      padding: 11,
+      fontSize: 15,
+      backgroundColor: c.inputBg,
+      color: c.text,
+    },
+    spinner: { position: "absolute", right: 10, top: 12 },
+    dropdown: {
+      backgroundColor: c.card,
+      borderWidth: 1,
+      borderColor: c.border,
+      borderTopWidth: 0,
+      borderBottomLeftRadius: 10,
+      borderBottomRightRadius: 10,
+      marginTop: -4,
+      paddingTop: 4,
+    },
+    suggestion: {
+      paddingVertical: 10,
+      paddingHorizontal: 12,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: c.border,
+    },
+    suggestionText: { color: c.text, fontSize: 13 },
+  });

@@ -96,5 +96,5 @@ const makeStyles = (c: ThemeColors) =>
       paddingVertical: 6,
       paddingHorizontal: 10,
     },
-    buttonText: { color: "#fff", fontSize: 12, fontWeight: "700" },
+    buttonText: { color: c.white, fontSize: 12, fontWeight: "700" },
   });
