@@ -5,7 +5,38 @@ const Friend = require("../models/friend.model");
 const DateModel = require("../models/date.model");
 const { isAuthenticated } = require("../middleware/jwt.middleware");
 const { logAction } = require("../middleware/logger.middleware");
-const uploader = require("../config/cloudinary");
+const rateLimit = require("express-rate-limit");
+const { ipKeyGenerator } = require("express-rate-limit");
+const {
+  avatarUploader,
+  saveAvatar,
+  removeAvatarFiles,
+} = require("../config/avatarStorage");
+
+// ─── Rate-limit sur l'upload d'avatar ────────────────────────────────────────
+// Motif : le re-encodage sharp est l'opération la plus coûteuse en CPU de
+// toute l'API. Sans garde-fou, un compte authentifié peut saturer le serveur
+// en bouclant sur PATCH /users/me avec une image de 5 Mo.
+//
+// Ce limiteur ne protège PAS contre les uploads concurrents : cette garantie
+// vient du nom de fichier déterministe dans avatarStorage.js, qui rend
+// l'existence de deux avatars impossible quel que soit le nombre de process.
+//
+// `skip` : seules les requêtes portant réellement un fichier sont comptées —
+// le formulaire de profil envoie toujours un FormData, même sans photo.
+// Le limiteur doit donc être monté APRÈS multer pour que req.file existe.
+const avatarUploadLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  skip: (req) => !req.file,
+  keyGenerator: (req) =>
+    req.payload?._id ? String(req.payload._id) : ipKeyGenerator(req),
+  message: {
+    message: "Trop de changements de photo de profil. Réessayez dans une heure.",
+  },
+});
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const { findNameDay } = require("../utils/namedayHelper");
@@ -163,15 +194,23 @@ router.get("/me", isAuthenticated, async (req, res, next) => {
 /* PATCH /users/me - Modifier l'utilisateur connecté */
 router.patch(
   "/me",
-  uploader.single("avatar"),
   isAuthenticated,
+  avatarUploader.single("avatar"),
+  avatarUploadLimiter,
   logAction("account_update"),
   async (req, res, next) => {
     const { currentPassword, newPassword } = req.body;
-    const avatar = req.file?.path || undefined;
 
     try {
       console.log("PATCH /users/me - User ID:", req.payload._id);
+
+      // Avatar : re-encodé en WebP 256×256 puis écrit sur le disque.
+      // saveAvatar() supprime l'avatar précédent → un seul fichier par user.
+      let avatar;
+      if (req.file) {
+        const saved = await saveAvatar(req.payload._id, req.file.buffer);
+        avatar = saved.url;
+      }
 
       const user = await userModel.findById(req.payload._id);
       if (!user) {
@@ -211,7 +250,16 @@ router.patch(
         user.nameday = req.body.nameday || null;
       }
 
-      if (avatar) user.avatar = avatar;
+      if (avatar) {
+        user.avatar = avatar;
+      } else if (req.body.removeAvatar === "true") {
+        // Suppression de la photo → retour à l'avatar DiceBear généré,
+        // identique à celui attribué à l'inscription.
+        await removeAvatarFiles(req.payload._id);
+        user.avatar = `https://api.dicebear.com/8.x/bottts/svg?seed=${encodeURIComponent(
+          user.surname || user.name || "user",
+        )}`;
+      }
 
       // Toutes les préférences
       applyPreferences(user, req.body);
@@ -416,12 +464,12 @@ router.get("/:id", isAuthenticated, async (req, res, next) => {
 /* PATCH user by ID */
 router.patch(
   "/:id",
-  uploader.single("avatar"),
   isAuthenticated,
+  avatarUploader.single("avatar"),
+  avatarUploadLimiter,
   logAction("account_update"),
   async (req, res, next) => {
     const { currentPassword, newPassword } = req.body;
-    const avatar = req.file?.path || undefined;
 
     try {
       const user = await userModel.findById(req.params.id);
@@ -433,6 +481,14 @@ router.patch(
         return res.status(403).json({
           message: "Vous ne pouvez modifier que votre propre compte",
         });
+      }
+
+      // Avatar : traité APRÈS le contrôle de propriété, pour ne rien écrire
+      // sur le disque si l'appelant n'est pas le propriétaire du compte.
+      let avatar;
+      if (req.file) {
+        const saved = await saveAvatar(req.params.id, req.file.buffer);
+        avatar = saved.url;
       }
 
       const oldName = user.name;
@@ -467,7 +523,15 @@ router.patch(
         user.nameday = req.body.nameday || null;
       }
 
-      if (avatar) user.avatar = avatar;
+      if (avatar) {
+        user.avatar = avatar;
+      } else if (req.body.removeAvatar === "true") {
+        // Suppression de la photo → retour à l'avatar DiceBear généré.
+        await removeAvatarFiles(req.params.id);
+        user.avatar = `https://api.dicebear.com/8.x/bottts/svg?seed=${encodeURIComponent(
+          user.surname || user.name || "user",
+        )}`;
+      }
 
       // Toutes les préférences
       applyPreferences(user, req.body);
@@ -512,6 +576,12 @@ router.delete(
           .status(400)
           .json({ message: "Ce compte a déjà été supprimé" });
       }
+
+      // Suppression immédiate du fichier avatar (RGPD : la photo est une
+      // donnée personnelle, elle n'a pas à survivre 30 jours à la demande
+      // de suppression, contrairement aux données nécessaires à un éventuel
+      // rétablissement du compte).
+      await removeAvatarFiles(user._id);
 
       const anonymizedEmail = `deleted_${user._id}@birthreminder.deleted`;
 

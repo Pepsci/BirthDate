@@ -25,6 +25,9 @@ build/
 .expo/
 **/.expo/
 
+# Avatars uploadés en dev (en prod : /var/www/birthreminder/uploads, hors dépôt)
+server/uploads/
+
 # Divers
 *.txt
 .claude/

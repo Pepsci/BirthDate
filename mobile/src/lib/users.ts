@@ -62,6 +62,14 @@ export async function updateAvatar(imageUri: string): Promise<UserProfile> {
   return data.payload;
 }
 
+/**
+ * Supprime la photo de profil → le back remet l'avatar DiceBear par défaut.
+ * Passe par updateMe (PATCH JSON) : le back lit `removeAvatar === "true"`.
+ */
+export async function removeAvatar(): Promise<UserProfile> {
+  return updateMe({ removeAvatar: "true" });
+}
+
 export async function deleteAccount(userId: string): Promise<void> {
   await api(`/users/${userId}`, { method: "DELETE" });
 }

@@ -1,4 +1,73 @@
 /* ========================================
+   PROFILE — AVATAR (édition)
+   ======================================== */
+
+.avatar-edit {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+}
+
+.avatar-edit__preview {
+    width: 88px;
+    height: 88px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--border-color);
+    background-color: var(--bg-tertiary);
+    flex-shrink: 0;
+}
+
+.avatar-edit__controls {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.avatar-edit__buttons {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.avatar-edit__btn {
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.avatar-edit__btn:hover {
+    background-color: var(--bg-tertiary);
+    border-color: var(--border-color-hover);
+}
+
+.avatar-edit__btn--danger {
+    color: var(--danger);
+}
+
+.avatar-edit__btn--danger:hover {
+    background-color: var(--danger);
+    border-color: var(--danger);
+    color: #fff;
+}
+
+/* Input fichier natif masqué : déclenché par le bouton */
+.avatar-edit__input {
+    display: none;
+}
+
+.avatar-edit__error {
+    color: var(--danger);
+    font-size: 0.8rem;
+}
+
+/* ========================================
    PROFILE — BASE
    ======================================== */
 

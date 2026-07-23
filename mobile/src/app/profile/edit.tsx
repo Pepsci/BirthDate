@@ -9,12 +9,19 @@ import {
   Image,
   Platform,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import * as ImagePicker from "expo-image-picker";
 import { useAuth } from "../../lib/auth-context";
-import { UserProfile, fetchMe, updateMe, updateAvatar } from "../../lib/users";
+import {
+  UserProfile,
+  fetchMe,
+  updateMe,
+  updateAvatar,
+  removeAvatar,
+} from "../../lib/users";
 import { formatBirthday } from "../../lib/dates";
 import {
   useTheme,
@@ -72,6 +79,39 @@ export default function ProfileEditScreen() {
     } finally {
       setUploadingAvatar(false);
     }
+  };
+
+  // Photo "réelle" = ni l'avatar DiceBear par défaut, ni l'ancien placeholder.
+  const hasCustomPhoto =
+    !!me?.avatar &&
+    !me.avatar.includes("dicebear.com") &&
+    !me.avatar.includes("No_image_available");
+
+  const confirmRemoveAvatar = () => {
+    Alert.alert(
+      "Supprimer la photo",
+      "Votre photo sera remplacée par un avatar par défaut.",
+      [
+        { text: "Annuler", style: "cancel" },
+        {
+          text: "Supprimer",
+          style: "destructive",
+          onPress: async () => {
+            setUploadingAvatar(true);
+            setError(null);
+            try {
+              const updated = await removeAvatar();
+              setMe(updated);
+              await refresh();
+            } catch (e: any) {
+              setError(e?.message ?? "Erreur lors de la suppression.");
+            } finally {
+              setUploadingAvatar(false);
+            }
+          },
+        },
+      ],
+    );
   };
 
   const save = async () => {
@@ -150,6 +190,16 @@ export default function ProfileEditScreen() {
           {uploadingAvatar ? "Envoi en cours…" : "Changer la photo"}
         </Text>
       </Pressable>
+
+      {hasCustomPhoto && !uploadingAvatar && (
+        <Pressable
+          onPress={confirmRemoveAvatar}
+          style={styles.removeAvatarBtn}
+          hitSlop={8}
+        >
+          <Text style={styles.removeAvatarText}>Supprimer la photo</Text>
+        </Pressable>
+      )}
 
       <Text style={styles.label}>Prénom *</Text>
       <TextInput placeholderTextColor={colors.placeholder} style={styles.input} value={name} onChangeText={setName} />
@@ -238,6 +288,8 @@ const makeStyles = (c: ThemeColors) =>
     },
     initials: { fontSize: 30, fontWeight: "700", color: c.primaryStrong },
     avatarHint: { color: c.primary, fontSize: 13, fontWeight: "600" },
+    removeAvatarBtn: { alignSelf: "center", paddingVertical: 4, marginBottom: 8 },
+    removeAvatarText: { color: c.danger, fontSize: 13, fontWeight: "600" },
     label: { fontSize: 13, fontWeight: "700", color: c.sub, marginTop: 10 },
     input: {
       borderWidth: 1,

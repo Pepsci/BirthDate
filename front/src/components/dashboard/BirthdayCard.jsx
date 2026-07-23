@@ -1,9 +1,16 @@
-import React from "react";
+import React, { useState } from "react";
 import Countdown from "./Countdown";
 import "./css/birthcard.css";
 
 const BirthdayCard = ({ date, onViewProfile }) => {
   const isFriend = !!date.linkedUser;
+
+  // Avatar : photo de l'ami inscrit si disponible, sinon initiales.
+  // Les dates manuelles (pas de linkedUser) n'ont jamais de photo.
+  const avatarUrl = date.linkedUser?.avatar;
+  const [avatarError, setAvatarError] = useState(false);
+  const initials = `${(date.name || "").charAt(0)}${(date.surname || "").charAt(0)}`.toUpperCase();
+  const showAvatarImg = avatarUrl && !avatarError;
 
   // ✅ Parse la date sans conversion timezone
   const parseLocalDate = (dateStr) => {
@@ -46,6 +53,19 @@ const BirthdayCard = ({ date, onViewProfile }) => {
       onClick={() => onViewProfile(date, "info")}
       style={{ cursor: "pointer" }}
     >
+      <div className="birthCard-avatar">
+        {showAvatarImg ? (
+          <img
+            src={avatarUrl}
+            alt={`${date.name} ${date.surname}`}
+            className="birthCard-avatar-img"
+            onError={() => setAvatarError(true)}
+          />
+        ) : (
+          <span className="birthCard-avatar-initials">{initials}</span>
+        )}
+      </div>
+
       <div className="birthCardName">
         <span className="birthCard-name">
           <b>{date.name} </b>

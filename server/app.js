@@ -9,6 +9,7 @@ const cors = require("cors");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
 const mongoSanitize = require("./middleware/sanitize");
+const { AVATAR_DIR, AVATAR_PUBLIC_PATH } = require("./config/avatarStorage");
 
 const dateStatsRouter = require("./routes/date.stats");
 const authRouter = require("./routes/auth");
@@ -109,6 +110,24 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
+
+// ── Avatars uploadés ────────────────────────────────────────────────────────
+// En production nginx intercepte /uploads/ avant Node (voir deploy/nginx-avatars.conf).
+// Ce montage sert donc surtout le dev, et fait filet de sécurité en prod.
+//
+// Cross-Origin-Resource-Policy : helmet() pose `same-origin` par défaut, ce qui
+// bloquerait le chargement des images depuis le front en dev (5173 → 4000).
+app.use(
+  AVATAR_PUBLIC_PATH,
+  express.static(AVATAR_DIR, {
+    maxAge: "1y",
+    immutable: true,
+    fallthrough: false,
+    setHeaders: (res) => {
+      res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+    },
+  }),
+);
 
 // Sanitisation anti-injection NoSQL sur toutes les entrées
 app.use(mongoSanitize);

@@ -3,6 +3,7 @@ const userModel = require("../models/user.model");
 const Log = require("../models/log.model");
 const DateModel = require("../models/date.model");
 const Friend = require("../models/friend.model");
+const { removeAvatarFiles } = require("../config/avatarStorage");
 
 // Tourne tous les jours à 3h du matin
 const purgeDeletedAccounts = cron.schedule(
@@ -21,6 +22,11 @@ const purgeDeletedAccounts = cron.schedule(
       console.log(`📊 ${accountsToDelete.length} compte(s) à purger`);
 
       for (const user of accountsToDelete) {
+        // Filet de sécurité : le fichier avatar est normalement déjà supprimé
+        // par DELETE /users/:id, mais on repasse ici pour les comptes soft-
+        // deleted avant la migration disque, ou si l'unlink avait échoué.
+        await removeAvatarFiles(user._id);
+
         // Supprimer les logs de cet utilisateur
         await Log.deleteMany({ userId: user._id });
 

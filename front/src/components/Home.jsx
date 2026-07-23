@@ -199,9 +199,15 @@ const Home = () => {
                 <div className="btn-currentName">
                   {currentUser && currentUser.name}
                   <img
-                    src={`https://api.dicebear.com/8.x/bottts/svg?seed=${currentUser.surname}`}
+                    src={
+                      currentUser?.avatar ||
+                      `https://api.dicebear.com/8.x/bottts/svg?seed=${currentUser.surname}`
+                    }
                     alt="avatar"
                     className="avatar"
+                    onError={(e) => {
+                      e.currentTarget.src = `https://api.dicebear.com/8.x/bottts/svg?seed=${currentUser.surname}`;
+                    }}
                   />
                   {friendRequestCount > 0 && (
                     <span className="notification-badge-profile">

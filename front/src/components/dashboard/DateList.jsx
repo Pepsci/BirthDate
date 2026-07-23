@@ -421,6 +421,21 @@ const DateList = ({
     return () => window.removeEventListener("dates:refresh", handler);
   }, []);
 
+  // Re-fetch quand l'onglet/la fenêtre redevient actif.
+  // Permet de voir sans recharger les changements faits ailleurs
+  // (ex. un ami a changé sa photo de profil → nouvelle URL avatar récupérée).
+  useEffect(() => {
+    const refetchIfVisible = () => {
+      if (document.visibilityState === "visible") loadDates();
+    };
+    document.addEventListener("visibilitychange", refetchIfVisible);
+    window.addEventListener("focus", refetchIfVisible);
+    return () => {
+      document.removeEventListener("visibilitychange", refetchIfVisible);
+      window.removeEventListener("focus", refetchIfVisible);
+    };
+  }, [currentUser]);
+
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = dates.slice(indexOfFirstItem, indexOfLastItem);

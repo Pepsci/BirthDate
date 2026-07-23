@@ -105,6 +105,113 @@ const ProfilDetails = ({
 
   const avatarRef = useRef();
 
+  // ── Avatar : aperçu + fichier redimensionné côté client ─────────────────────
+  const [avatarPreview, setAvatarPreview] = useState(null); // object URL local
+  const [avatarFile, setAvatarFile] = useState(null); // Blob prêt à envoyer
+  const [avatarError, setAvatarError] = useState("");
+  const [removeAvatar, setRemoveAvatar] = useState(false); // demande de suppression
+
+  // Avatar DiceBear généré (même logique qu'à l'inscription) : sert d'aperçu
+  // quand l'utilisateur supprime sa photo.
+  const dicebearUrl = `https://api.dicebear.com/8.x/bottts/svg?seed=${encodeURIComponent(
+    userToUpdate.surname || userToUpdate.name || "user",
+  )}`;
+
+  // Photo "réelle" = ni l'avatar DiceBear par défaut, ni l'ancien placeholder.
+  // Sert à n'afficher le bouton Supprimer que lorsqu'il y a une vraie photo.
+  const effectiveAvatar = userToUpdate.avatar || currentUser?.avatar || "";
+  const hasCustomPhoto =
+    !!avatarFile ||
+    (!!effectiveAvatar &&
+      !effectiveAvatar.includes("dicebear.com") &&
+      !effectiveAvatar.includes("No_image_available"));
+
+  const AVATAR_MAX_UPLOAD = 5 * 1024 * 1024; // aligné sur la limite serveur
+  const AVATAR_ALLOWED = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+
+  // Réduit l'image à 512px max avant l'upload : une photo de 4 Mo tombe à
+  // ~40 Ko, ce qui allège le réseau. Le serveur re-encode ensuite en 256px WebP.
+  // En cas d'échec (format exotique, canvas indispo), on renvoie le fichier brut :
+  // le serveur reste la source de vérité et sait le traiter.
+  const resizeImage = (file) =>
+    new Promise((resolve) => {
+      try {
+        const img = new Image();
+        const url = URL.createObjectURL(file);
+        img.onload = () => {
+          URL.revokeObjectURL(url);
+          const MAX = 512;
+          let { width, height } = img;
+          if (width > MAX || height > MAX) {
+            const ratio = Math.min(MAX / width, MAX / height);
+            width = Math.round(width * ratio);
+            height = Math.round(height * ratio);
+          }
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, width, height);
+          canvas.toBlob(
+            (blob) => resolve(blob || file),
+            "image/jpeg",
+            0.85,
+          );
+        };
+        img.onerror = () => {
+          URL.revokeObjectURL(url);
+          resolve(file);
+        };
+        img.src = url;
+      } catch {
+        resolve(file);
+      }
+    });
+
+  const handleAvatarChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setAvatarError("");
+
+    if (!AVATAR_ALLOWED.includes(file.type)) {
+      setAvatarError("Format non supporté (JPG, PNG, WEBP ou GIF).");
+      e.target.value = "";
+      return;
+    }
+    if (file.size > AVATAR_MAX_UPLOAD) {
+      setAvatarError("Image trop lourde (5 Mo maximum).");
+      e.target.value = "";
+      return;
+    }
+
+    const processed = await resizeImage(file);
+    setRemoveAvatar(false); // choisir une photo annule une suppression en attente
+    setAvatarFile(processed);
+    setAvatarPreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return URL.createObjectURL(processed);
+    });
+  };
+
+  // Supprimer la photo → repasse sur l'avatar DiceBear (appliqué à l'enregistrement)
+  const handleRemoveAvatar = () => {
+    setAvatarError("");
+    setAvatarFile(null);
+    setRemoveAvatar(true);
+    setAvatarPreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return null;
+    });
+    if (avatarRef.current) avatarRef.current.value = "";
+  };
+
+  // Libère l'object URL de prévisualisation au démontage
+  useEffect(() => {
+    return () => {
+      if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+    };
+  }, [avatarPreview]);
+
   useEffect(() => {
     let isMounted = true;
     if (currentUser) {
@@ -162,6 +269,15 @@ const ProfilDetails = ({
     setIsEditing(false);
     setPasswords({ currentPassword: "", newPassword: "", confirmPassword: "" });
     setShowPasswordFields(false);
+    // Réinitialise la sélection d'avatar non enregistrée
+    setAvatarPreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return null;
+    });
+    setAvatarFile(null);
+    setAvatarError("");
+    setRemoveAvatar(false);
+    if (avatarRef.current) avatarRef.current.value = "";
   };
 
   const handleDeleteAccount = (e) => {
@@ -218,8 +334,13 @@ const ProfilDetails = ({
     if (userToUpdate.nameday) {
       fd.append("nameday", userToUpdate.nameday);
     }
-    if (avatarRef.current && avatarRef.current.files[0]) {
+    // Avatar : nouvelle photo prioritaire, sinon demande de suppression éventuelle
+    if (avatarFile) {
+      fd.append("avatar", avatarFile, "avatar.jpg");
+    } else if (avatarRef.current && avatarRef.current.files[0]) {
       fd.append("avatar", avatarRef.current.files[0]);
+    } else if (removeAvatar) {
+      fd.append("removeAvatar", "true");
     }
     if (
       showPasswordFields &&
@@ -253,6 +374,15 @@ const ProfilDetails = ({
 
       // ── Mettre à jour le state local ──
       setUserToUpdate(updatedPayload);
+
+      // ── Réinitialiser la sélection d'avatar (l'URL serveur fait foi) ──
+      setAvatarPreview((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return null;
+      });
+      setAvatarFile(null);
+      setRemoveAvatar(false);
+      if (avatarRef.current) avatarRef.current.value = "";
 
       setIsEditing(false);
       setPasswords({
@@ -441,6 +571,58 @@ const ProfilDetails = ({
               </div>
 
               <form onSubmit={sendForm} className="auth-form">
+                {/* ── PHOTO DE PROFIL ── */}
+                <div className="avatar-edit">
+                  <img
+                    className="avatar-edit__preview"
+                    src={
+                      avatarPreview ||
+                      (removeAvatar
+                        ? dicebearUrl
+                        : userToUpdate.avatar || currentUser?.avatar)
+                    }
+                    alt="Photo de profil"
+                  />
+                  <div className="avatar-edit__controls">
+                    <div className="avatar-edit__buttons">
+                      <button
+                        type="button"
+                        className="avatar-edit__btn"
+                        onClick={() => avatarRef.current?.click()}
+                      >
+                        Changer la photo
+                      </button>
+                      {!removeAvatar && hasCustomPhoto && (
+                        <button
+                          type="button"
+                          className="avatar-edit__btn avatar-edit__btn--danger"
+                          onClick={handleRemoveAvatar}
+                        >
+                          Supprimer
+                        </button>
+                      )}
+                    </div>
+                    <input
+                      ref={avatarRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/gif"
+                      onChange={handleAvatarChange}
+                      className="avatar-edit__input"
+                    />
+                    <span className="auth-input-hint">
+                      JPG, PNG, WEBP ou GIF — 5 Mo max
+                    </span>
+                    {removeAvatar && (
+                      <span className="auth-input-hint">
+                        Votre photo sera remplacée par un avatar par défaut.
+                      </span>
+                    )}
+                    {avatarError && (
+                      <span className="avatar-edit__error">{avatarError}</span>
+                    )}
+                  </div>
+                </div>
+
                 <div className="auth-row">
                   {/* ── PRÉNOM = name ── */}
                   <div className="auth-field">
