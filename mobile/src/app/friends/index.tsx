@@ -11,6 +11,7 @@ import {
   RefreshControl,
   Alert,
 } from "react-native";
+import { Image as ExpoImage } from "expo-image";
 import { Stack, useRouter, useFocusEffect } from "expo-router";
 import { useUnread } from "../../lib/unread-context";
 import {
@@ -357,10 +358,10 @@ function Avatar({ user }: { user: { name: string; surname?: string; avatar?: str
     <View style={styles.avatarFallback}>
       <Text style={styles.initials}>{initials}</Text>
       {hasAvatar && (
-        <Image
+        <ExpoImage
           source={{ uri: user.avatar! }}
-          style={StyleSheet.absoluteFill as any}
-          borderRadius={20}
+          style={[StyleSheet.absoluteFill as any, { borderRadius: 20 }]}
+          contentFit="cover"
         />
       )}
     </View>

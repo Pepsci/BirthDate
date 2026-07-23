@@ -17,6 +17,7 @@ import {
   fetchConversations,
 } from "../../lib/conversations";
 import { timeAgo } from "../../lib/notifications";
+import Avatar from "../../components/Avatar";
 import {
   useTheme,
   useThemedStyles,
@@ -103,16 +104,16 @@ export default function ChatsScreen() {
               style={({ pressed }) => [styles.row, pressed && { opacity: 0.8 }]}
               onPress={() =>
                 router.push(
-                  `/chat/${other._id}?name=${encodeURIComponent(other.name)}`,
+                  `/chat/${other._id}?name=${encodeURIComponent(other.name)}&avatar=${encodeURIComponent(other.avatar ?? "")}`,
                 )
               }
             >
-              <View style={styles.avatar}>
-                <Text style={styles.initials}>
-                  {other.name?.[0]?.toUpperCase()}
-                  {other.surname?.[0]?.toUpperCase() ?? ""}
-                </Text>
-              </View>
+              <Avatar
+                uri={other.avatar}
+                name={other.name}
+                surname={other.surname}
+                size={46}
+              />
               <View style={{ flex: 1 }}>
                 <View style={styles.topLine}>
                   <Text style={styles.name} numberOfLines={1}>

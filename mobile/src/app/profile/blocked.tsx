@@ -9,6 +9,7 @@ import {
   Alert,
   ActivityIndicator,
 } from "react-native";
+import { Image as ExpoImage } from "expo-image";
 import { Stack } from "expo-router";
 import {
   BlockedUser,
@@ -80,7 +81,11 @@ export default function BlockedUsersScreen() {
         renderItem={({ item }) => (
           <View style={styles.row}>
             {item.avatar ? (
-              <Image source={{ uri: item.avatar }} style={styles.avatar} />
+              <ExpoImage
+                source={{ uri: item.avatar }}
+                style={styles.avatar}
+                contentFit="cover"
+              />
             ) : (
               <View style={[styles.avatar, styles.avatarFallback]}>
                 <Text style={styles.initials}>

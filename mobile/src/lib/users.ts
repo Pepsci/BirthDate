@@ -1,4 +1,5 @@
 import { api, API_URL, getToken, setToken, AuthUser } from "./api";
+import { uploadAsync, FileSystemUploadType } from "expo-file-system/legacy";
 
 export interface UserProfile extends AuthUser {
   birthDate?: string | null;
@@ -39,25 +40,29 @@ export async function updateMe(
   return payload;
 }
 
-/** PATCH /users/me en multipart pour l'avatar (champ "avatar") */
+/**
+ * PATCH /users/me en multipart pour l'avatar (champ "avatar").
+ *
+ * On passe par `uploadAsync` d'expo-file-system plutôt que par FormData + fetch :
+ * sur iOS, l'encodage multipart de fetch en RN n'était pas reçu par multer
+ * (`req.file` restait vide côté serveur). uploadAsync lit le fichier nativement
+ * et construit un multipart standard que multer parse correctement.
+ */
 export async function updateAvatar(imageUri: string): Promise<UserProfile> {
   const token = await getToken();
-  const form = new FormData();
-  const name = imageUri.split("/").pop() ?? "avatar.jpg";
-  const ext = name.split(".").pop()?.toLowerCase() ?? "jpg";
-  form.append("avatar", {
-    uri: imageUri,
-    name,
-    type: `image/${ext === "jpg" ? "jpeg" : ext}`,
-  } as unknown as Blob);
 
-  const res = await fetch(`${API_URL}/api/users/me`, {
-    method: "PATCH",
-    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-    body: form,
+  const res = await uploadAsync(`${API_URL}/api/users/me`, imageUri, {
+    httpMethod: "PATCH",
+    uploadType: FileSystemUploadType.MULTIPART,
+    fieldName: "avatar",
+    mimeType: "image/jpeg",
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
   });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data?.message ?? `Erreur ${res.status}`);
+
+  const data = res.body ? JSON.parse(res.body) : {};
+  if (res.status < 200 || res.status >= 300) {
+    throw new Error(data?.message ?? `Erreur ${res.status}`);
+  }
   if (data.authToken) await setToken(data.authToken);
   return data.payload;
 }

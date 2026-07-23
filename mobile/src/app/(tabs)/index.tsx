@@ -11,6 +11,7 @@ import {
   Image,
   TextInput,
 } from "react-native";
+import { Image as ExpoImage } from "expo-image";
 import BirthdayCountdown from "../../components/BirthdayCountdown";
 import { useGuidedTour, TOURS } from "../../lib/guided-tour";
 import {
@@ -259,10 +260,10 @@ function BirthdayCard({ entry }: { entry: DateEntry }) {
       <View style={styles.avatarFallback}>
         <Text style={styles.avatarInitials}>{initials}</Text>
         {!!avatar && avatar.trim().length > 0 && (
-          <Image
+          <ExpoImage
             source={{ uri: avatar }}
-            style={StyleSheet.absoluteFill as any}
-            borderRadius={28}
+            style={[StyleSheet.absoluteFill as any, { borderRadius: 28 }]}
+            contentFit="cover"
           />
         )}
       </View>

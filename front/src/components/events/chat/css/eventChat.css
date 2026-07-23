@@ -91,6 +91,13 @@
 
 .event-chat-message-row.other {
   justify-content: flex-start;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+/* Petit avatar façon WhatsApp devant les messages des autres */
+.event-chat-avatar {
+  margin-bottom: 2px;
 }
 
 .event-chat-bubble {

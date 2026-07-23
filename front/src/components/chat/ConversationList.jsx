@@ -5,6 +5,7 @@ import { useOnlineStatus } from "../../context/OnlineStatusContext";
 import { AuthContext } from "../../context/auth.context";
 import apiHandler from "../../api/apiHandler";
 import { getPrivateKey, getOldPrivateKey, decryptMessage } from "../../utils/encryption";
+import Avatar from "../UI/Avatar";
 import "./css/ConversationList.css";
 
 function ConversationList({
@@ -246,11 +247,13 @@ function ConversationList({
                     className="friend-item"
                     onClick={() => startNewConversation(friendUser._id)}
                   >
-                    <div className="friend-avatar">
-                      {friendUser.name?.charAt(0).toUpperCase()}
-                      {/* ⭐ NOUVEAU - Badge en ligne dans la liste d'amis */}
-                      {friendIsOnline && <span className="online-dot"></span>}
-                    </div>
+                    <Avatar
+                      src={friendUser.avatar}
+                      name={friendUser.name}
+                      surname={friendUser.surname}
+                      size="sm"
+                      online={friendIsOnline}
+                    />
                     <div className="friend-info">
                       <span className="friend-name">
                         {friendUser.name} {friendUser.surname}
@@ -295,14 +298,13 @@ function ConversationList({
                     !showConfirm && onSelectConversation(conversation)
                   }
                 >
-                  <div className="conversation-avatar">
-                    {otherUser?.name?.charAt(0).toUpperCase() || "?"}
-                    {userIsOnline ? (
-                      <span className="online-indicator"></span>
-                    ) : (
-                      <span className="offline-indicator"></span>
-                    )}
-                  </div>
+                  <Avatar
+                    src={otherUser?.avatar}
+                    name={otherUser?.name}
+                    surname={otherUser?.surname}
+                    size="md"
+                    online={userIsOnline}
+                  />
 
                   <div className="conversation-info">
                     <div className="conversation-header">

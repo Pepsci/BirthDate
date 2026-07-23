@@ -53,6 +53,7 @@ import {
   STATUS_LABELS,
   RSVP_LABELS,
 } from "../../lib/events";
+import Avatar from "../../components/Avatar";
 import GiftGridCard, { giftGridStyles } from "../../components/GiftGridCard";
 import BottomSheet from "../../components/BottomSheet";
 import ImportGiftSheet, { ImportedGift } from "../../components/ImportGiftSheet";
@@ -1169,18 +1170,12 @@ export default function EventDetailScreen() {
               )}
               {invitations.map((inv) => (
                 <View key={inv._id} style={styles.participantRow}>
-                  {inv.user?.avatar ? (
-                    <Image
-                      source={{ uri: inv.user.avatar }}
-                      style={styles.pAvatar}
-                    />
-                  ) : (
-                    <View style={styles.pAvatarFallback}>
-                      <Text style={styles.pInitial}>
-                        {invitationName(inv)[0]?.toUpperCase()}
-                      </Text>
-                    </View>
-                  )}
+                  <Avatar
+                    uri={inv.user?.avatar}
+                    name={inv.user?.name || invitationName(inv)}
+                    surname={inv.user?.surname}
+                    size={36}
+                  />
                   <Text style={styles.pName} numberOfLines={1}>
                     {invitationName(inv)}
                   </Text>

@@ -9,6 +9,7 @@ import {
   ScrollView,
   Linking,
 } from "react-native";
+import { Image as ExpoImage } from "expo-image";
 import { useRouter } from "expo-router";
 import { useAuth } from "../../lib/auth-context";
 import { deleteAccount } from "../../lib/users";
@@ -76,7 +77,11 @@ export default function ProfileScreen() {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {avatar ? (
-        <Image source={{ uri: avatar }} style={styles.avatar} />
+        <ExpoImage
+          source={{ uri: avatar }}
+          style={styles.avatar}
+          contentFit="cover"
+        />
       ) : (
         <View style={styles.avatarFallback}>
           <Text style={styles.initials}>

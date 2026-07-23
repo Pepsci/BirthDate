@@ -24,7 +24,7 @@ router.get("/", isAuthenticated, async (req, res) => {
         ? { participants: { $all: [userId], $nin: blocked } }
         : {}),
     })
-      .populate("participants", "name surname email publicKey oldPublicKey")
+      .populate("participants", "name surname email avatar publicKey oldPublicKey")
       .populate({
         path: "lastMessage",
         populate: {
@@ -92,7 +92,7 @@ router.post("/start", isAuthenticated, async (req, res) => {
     let conversation = await Conversation.findOne({
       participants: { $all: [userId, friendId], $size: 2 },
     })
-      .populate("participants", "name surname email")
+      .populate("participants", "name surname email avatar")
       .populate({
         path: "lastMessage",
         populate: {
@@ -170,7 +170,7 @@ router.get("/:conversationId", isAuthenticated, async (req, res) => {
       _id: conversationId,
       participants: userId,
     })
-      .populate("participants", "name surname email")
+      .populate("participants", "name surname email avatar")
       .populate({
         path: "lastMessage",
         populate: {

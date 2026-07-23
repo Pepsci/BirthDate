@@ -2,7 +2,12 @@ import { api } from "./api";
 
 export interface Conversation {
   _id: string;
-  participants: { _id: string; name: string; surname?: string }[];
+  participants: {
+    _id: string;
+    name: string;
+    surname?: string;
+    avatar?: string;
+  }[];
 }
 
 export interface ConversationSummary extends Conversation {

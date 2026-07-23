@@ -1,0 +1,69 @@
+/* Avatar réutilisable — photo ou initiales */
+.br-avatar {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  overflow: visible;
+  background-color: var(--bg-tertiary);
+  color: var(--primary);
+  font-weight: 700;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.br-avatar-img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+}
+
+.br-avatar-initials {
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+/* Tailles */
+.br-avatar--xs {
+  width: 28px;
+  height: 28px;
+  font-size: 0.7rem;
+}
+.br-avatar--sm {
+  width: 36px;
+  height: 36px;
+  font-size: 0.85rem;
+}
+.br-avatar--md {
+  width: 44px;
+  height: 44px;
+  font-size: 1rem;
+}
+.br-avatar--lg {
+  width: 64px;
+  height: 64px;
+  font-size: 1.5rem;
+}
+
+/* Pastille de présence */
+.br-avatar-dot {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 30%;
+  height: 30%;
+  min-width: 8px;
+  min-height: 8px;
+  border-radius: 50%;
+  border: 2px solid var(--bg-primary);
+  box-sizing: border-box;
+}
+.br-avatar-dot--on {
+  background-color: var(--success);
+}
+.br-avatar-dot--off {
+  background-color: var(--text-tertiary);
+}

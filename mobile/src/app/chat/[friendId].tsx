@@ -18,6 +18,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useKeyboardPadding } from "../../lib/use-keyboard-padding";
 import type { Socket } from "socket.io-client";
 import GiftShareCard from "../../components/GiftShareCard";
+import Avatar from "../../components/Avatar";
 import { useAuth } from "../../lib/auth-context";
 import { useUnread } from "../../lib/unread-context";
 import { getSocket } from "../../lib/socket";
@@ -48,9 +49,10 @@ const ON_PRIMARY_SOFT = "#dbeafe";
 const ON_PRIMARY_QUOTE_BG = "rgba(255, 255, 255, 0.15)";
 
 export default function DMChatScreen() {
-  const { friendId, name } = useLocalSearchParams<{
+  const { friendId, name, avatar } = useLocalSearchParams<{
     friendId: string;
     name?: string;
+    avatar?: string;
   }>();
   const styles = useThemedStyles(makeStyles);
   const { colors } = useTheme();
@@ -414,7 +416,14 @@ export default function DMChatScreen() {
     >
       <Stack.Screen
         options={{
-          title: name ?? "Chat",
+          headerTitle: () => (
+            <View style={styles.headerTitle}>
+              <Avatar uri={avatar} name={name} size={30} />
+              <Text style={styles.headerTitleText} numberOfLines={1}>
+                {name ?? "Chat"}
+              </Text>
+            </View>
+          ),
           headerRight: () => (
             <Pressable
               hitSlop={10}
@@ -607,6 +616,13 @@ function displayContent(
 
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
+    headerTitle: { flexDirection: "row", alignItems: "center", gap: 8 },
+    headerTitleText: {
+      fontSize: 17,
+      fontWeight: "600",
+      color: c.text,
+      maxWidth: 200,
+    },
     container: { flex: 1, backgroundColor: c.bg },
     center: {
       flex: 1,

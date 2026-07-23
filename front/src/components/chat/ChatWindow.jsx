@@ -12,6 +12,7 @@ import {
 } from "../../utils/encryption";
 import MessageInput from "./MessageInput";
 import GiftShareCard from "./GiftShareCard";
+import Avatar from "../UI/Avatar";
 import "./css/chatWindow.css";
 
 function ChatWindow({ conversation, onBack, onRead }) {
@@ -659,9 +660,13 @@ function ChatWindow({ conversation, onBack, onRead }) {
           </button>
         )}
         <div className="chat-header-user">
-          <div className="chat-avatar">
-            {otherUser?.name?.charAt(0).toUpperCase() || "?"}
-          </div>
+          <Avatar
+            src={otherUser?.avatar}
+            name={otherUser?.name}
+            surname={otherUser?.surname}
+            size="sm"
+            online={isOnline}
+          />
           <div className="chat-user-info">
             <span className="chat-name">
               {otherUser?.name || otherUser?.email || "Utilisateur"}

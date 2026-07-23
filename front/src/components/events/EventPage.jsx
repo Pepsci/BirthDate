@@ -8,6 +8,7 @@ import apiHandler from "../../api/apiHandler";
 import useAuth from "../../context/useAuth";
 import socketService from "../services/socket.service";
 import EventChat from "./chat/EventChat";
+import Avatar from "../UI/Avatar";
 import EventForm from "./EventForm";
 import RSVPButton from "./RSVPButton";
 import DateVotePanel from "./DateVotePanel";
@@ -103,7 +104,12 @@ const ParticipantRow = ({ inv, isOrganizer, onRemove }) => {
 
   return (
     <div className="ep-participant-row">
-      <div className="ep-participant-avatar">{initials || "?"}</div>
+      <Avatar
+        src={inv.user?.avatar}
+        name={inv.user?.name || name}
+        surname={inv.user?.surname || ""}
+        size="sm"
+      />
       <span className="ep-participant-name">{name}</span>
       <span className="ep-participant-badge" style={{ background: s.color }}>
         {s.label}

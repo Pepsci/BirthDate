@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import EventCountdown from "./EventCountdown";
+import Avatar from "../UI/Avatar";
 import "./css/eventCard.css";
 
 const EventCard = ({
@@ -120,8 +121,13 @@ const EventCard = ({
             : event.selectedLocation?.name || "Lieu à définir"}
         </span>
         {!event.isOrganizer && event.organizer && (
-          <span>
-            <i className="fa-solid fa-user"></i>
+          <span className="event-card-organizer">
+            <Avatar
+              src={event.organizer.avatar}
+              name={event.organizer.name}
+              surname={event.organizer.surname}
+              size="xs"
+            />
             Organisé par {event.organizer.name}
           </span>
         )}

@@ -21,6 +21,7 @@ import {
 } from "expo-router";
 import { useAuth } from "../../lib/auth-context";
 import { Switch } from "react-native";
+import { Image as ExpoImage } from "expo-image";
 import {
   DateEntry,
   Gift,
@@ -604,10 +605,10 @@ export default function DateDetailScreen() {
           </Text>
           {!!entry.linkedUser?.avatar &&
             entry.linkedUser.avatar.trim().length > 0 && (
-              <Image
+              <ExpoImage
                 source={{ uri: entry.linkedUser.avatar }}
-                style={StyleSheet.absoluteFill as any}
-                borderRadius={36}
+                style={[StyleSheet.absoluteFill as any, { borderRadius: 36 }]}
+                contentFit="cover"
               />
             )}
         </View>

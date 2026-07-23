@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useContext } from "react";
 import apiHandler from "../../../api/apiHandler";
 import socketService from "../../services/socket.service";
 import { AuthContext } from "../../../context/auth.context";
+import Avatar from "../../UI/Avatar";
 import {
   getPrivateKey,
   getOldPrivateKey,
@@ -297,6 +298,15 @@ const EventChat = ({ shortId, participants = {} }) => {
                 key={msg._id}
                 className={`event-chat-message-row ${isMe ? "me" : "other"}`}
               >
+                {!isMe && (
+                  <Avatar
+                    src={msg.sender?.avatar}
+                    name={msg.sender?.name}
+                    surname={msg.sender?.surname}
+                    size="xs"
+                    className="event-chat-avatar"
+                  />
+                )}
                 <div className={bubbleClasses}>
                   {!isMe && msg.sender?.name && (
                     <div className="event-chat-sender">{msg.sender.name}</div>

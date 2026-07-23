@@ -1,5 +1,11 @@
 /* eventCard.css */
 
+.event-card-organizer {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;

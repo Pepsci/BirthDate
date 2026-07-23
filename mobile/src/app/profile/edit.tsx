@@ -14,6 +14,8 @@ import {
 import { Stack, useRouter } from "expo-router";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import * as ImagePicker from "expo-image-picker";
+import * as ImageManipulator from "expo-image-manipulator";
+import { Image as ExpoImage } from "expo-image";
 import { useAuth } from "../../lib/auth-context";
 import {
   UserProfile,
@@ -71,7 +73,15 @@ export default function ProfileEditScreen() {
     setUploadingAvatar(true);
     setError(null);
     try {
-      const updated = await updateAvatar(result.assets[0].uri);
+      // Les photos iPhone sont en HEIC, que le serveur (sharp sans codec HEVC)
+      // ne sait pas décoder. On convertit en JPEG et on réduit à 512px avant
+      // l'envoi — même logique que le web avec canvas.
+      const jpeg = await ImageManipulator.manipulateAsync(
+        result.assets[0].uri,
+        [{ resize: { width: 512 } }],
+        { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG },
+      );
+      const updated = await updateAvatar(jpeg.uri);
       setMe(updated);
       await refresh();
     } catch (e: any) {
@@ -175,31 +185,44 @@ export default function ProfileEditScreen() {
     >
       <Stack.Screen options={{ title: "Mes informations" }} />
 
-      <Pressable style={styles.avatarWrap} onPress={pickAvatar}>
-        {me.avatar ? (
-          <Image source={{ uri: me.avatar }} style={styles.avatar} />
-        ) : (
-          <View style={styles.avatarFallback}>
-            <Text style={styles.initials}>
-              {name[0]?.toUpperCase()}
-              {surname[0]?.toUpperCase() ?? ""}
-            </Text>
-          </View>
-        )}
-        <Text style={styles.avatarHint}>
-          {uploadingAvatar ? "Envoi en cours…" : "Changer la photo"}
-        </Text>
-      </Pressable>
-
-      {hasCustomPhoto && !uploadingAvatar && (
-        <Pressable
-          onPress={confirmRemoveAvatar}
-          style={styles.removeAvatarBtn}
-          hitSlop={8}
-        >
-          <Text style={styles.removeAvatarText}>Supprimer la photo</Text>
+      <View style={styles.avatarWrap}>
+        <Pressable onPress={pickAvatar} disabled={uploadingAvatar}>
+          {me.avatar ? (
+            <ExpoImage
+              source={{ uri: me.avatar }}
+              style={styles.avatar}
+              contentFit="cover"
+            />
+          ) : (
+            <View style={styles.avatarFallback}>
+              <Text style={styles.initials}>
+                {name[0]?.toUpperCase()}
+                {surname[0]?.toUpperCase() ?? ""}
+              </Text>
+            </View>
+          )}
         </Pressable>
-      )}
+
+        <Pressable
+          onPress={pickAvatar}
+          style={styles.changePhotoBtn}
+          disabled={uploadingAvatar}
+        >
+          <Text style={styles.changePhotoText}>
+            {uploadingAvatar ? "Envoi en cours…" : "Changer la photo"}
+          </Text>
+        </Pressable>
+
+        {hasCustomPhoto && !uploadingAvatar && (
+          <Pressable
+            onPress={confirmRemoveAvatar}
+            style={styles.removeAvatarBtn}
+            hitSlop={8}
+          >
+            <Text style={styles.removeAvatarText}>Supprimer la photo</Text>
+          </Pressable>
+        )}
+      </View>
 
       <Text style={styles.label}>Prénom *</Text>
       <TextInput placeholderTextColor={colors.placeholder} style={styles.input} value={name} onChangeText={setName} />
@@ -276,8 +299,17 @@ const makeStyles = (c: ThemeColors) =>
       alignItems: "center",
       backgroundColor: c.bg,
     },
-    avatarWrap: { alignItems: "center", gap: 4, marginBottom: 8 },
+    avatarWrap: { alignItems: "center", gap: 8, marginBottom: 12 },
     avatar: { width: 88, height: 88, borderRadius: 44 },
+    changePhotoBtn: {
+      paddingVertical: 8,
+      paddingHorizontal: 16,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: c.inputBorder,
+      backgroundColor: c.inputBg,
+    },
+    changePhotoText: { color: c.primary, fontSize: 14, fontWeight: "600" },
     avatarFallback: {
       width: 88,
       height: 88,
@@ -287,7 +319,6 @@ const makeStyles = (c: ThemeColors) =>
       alignItems: "center",
     },
     initials: { fontSize: 30, fontWeight: "700", color: c.primaryStrong },
-    avatarHint: { color: c.primary, fontSize: 13, fontWeight: "600" },
     removeAvatarBtn: { alignSelf: "center", paddingVertical: 4, marginBottom: 8 },
     removeAvatarText: { color: c.danger, fontSize: 13, fontWeight: "600" },
     label: { fontSize: 13, fontWeight: "700", color: c.sub, marginTop: 10 },

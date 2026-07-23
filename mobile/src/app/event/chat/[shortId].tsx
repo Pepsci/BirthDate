@@ -28,6 +28,7 @@ import {
   decryptMessage,
 } from "../../../lib/crypto";
 import { promptReport } from "../../../lib/moderation";
+import Avatar from "../../../components/Avatar";
 import {
   useTheme,
   useThemedStyles,
@@ -342,6 +343,14 @@ function MessageBubble({
 
   return (
     <View style={[styles.bubbleRow, isMine && styles.bubbleRowMine]}>
+      {!isMine && (
+        <Avatar
+          uri={message.sender?.avatar}
+          name={message.sender?.name}
+          surname={message.sender?.surname}
+          size={28}
+        />
+      )}
       <Pressable
         onLongPress={onReport}
         delayLongPress={400}
@@ -402,7 +411,7 @@ const makeStyles = (c: ThemeColors) =>
       transform: [{ scaleY: -1 }],
       marginTop: 40,
     },
-    bubbleRow: { flexDirection: "row" },
+    bubbleRow: { flexDirection: "row", alignItems: "flex-end", gap: 6 },
     bubbleRowMine: { justifyContent: "flex-end" },
     bubble: {
       maxWidth: "80%",
