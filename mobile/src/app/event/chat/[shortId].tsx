@@ -13,7 +13,10 @@ import {
 import { Stack, useLocalSearchParams } from "expo-router";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useKeyboardPadding } from "../../../lib/use-keyboard-padding";
+import {
+  useKeyboardPadding,
+  useKeyboardVisible,
+} from "../../../lib/use-keyboard-padding";
 import type { Socket } from "socket.io-client";
 import { useAuth } from "../../../lib/auth-context";
 import { getSocket } from "../../../lib/socket";
@@ -46,12 +49,13 @@ export default function EventChatScreen() {
   const { user } = useAuth();
   const headerHeight = useHeaderHeight();
   const keyboardPadding = useKeyboardPadding();
+  const keyboardVisible = useKeyboardVisible();
   const insets = useSafeAreaInsets();
-  // Clavier ouvert → hauteur clavier ; fermé → safe-area + petite marge de confort
-  const bottomPad =
-    keyboardPadding > 0
-      ? keyboardPadding
-      : insets.bottom + (Platform.OS === "ios" ? 10 : 6);
+  // Conteneur : ne gère que le décalage clavier (Android ; iOS via KAV).
+  const bottomPad = keyboardPadding;
+  // Barre d'input : marge de sécurité au-dessus du home indicator quand le
+  // clavier est fermé (réduite quand il est ouvert, car il couvre déjà la zone).
+  const inputBottom = keyboardVisible ? 10 : insets.bottom + 12;
   const [messages, setMessages] = useState<EventChatMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -248,6 +252,9 @@ export default function EventChatScreen() {
     );
   }
 
+  // Ordre d'affichage : plus récent en premier (liste inversée)
+  const ordered = [...messages].reverse();
+
   return (
     <KeyboardAvoidingView
       style={[styles.container, { paddingBottom: bottomPad }]}
@@ -265,14 +272,23 @@ export default function EventChatScreen() {
       )}
 
       <FlatList
-        data={[...messages].reverse()}
+        data={ordered}
         inverted
         keyExtractor={(item) => item._id}
         contentContainerStyle={styles.list}
-        renderItem={({ item }) => (
+        renderItem={({ item, index }) => {
+          const newer = ordered[index - 1]; // affiché en dessous (plus récent)
+          const older = ordered[index + 1]; // affiché au-dessus (plus ancien)
+          const isLastOfRun =
+            !newer || newer.sender?._id !== item.sender?._id;
+          const isFirstOfRun =
+            !older || older.sender?._id !== item.sender?._id;
+          return (
           <MessageBubble
             message={item}
             isMine={item.sender?._id === user?._id}
+            showAvatar={isLastOfRun}
+            showName={isFirstOfRun}
             myUserId={user?._id ?? null}
             privateKey={privateKey}
             onReport={
@@ -291,7 +307,8 @@ export default function EventChatScreen() {
                 : undefined
             }
           />
-        )}
+          );
+        }}
         ListEmptyComponent={
           <Text style={styles.empty}>Aucun message. Lance la discussion !</Text>
         }
@@ -301,7 +318,7 @@ export default function EventChatScreen() {
         <Text style={styles.typing}>{typingName} est en train d'écrire…</Text>
       )}
 
-      <View style={styles.inputRow}>
+      <View style={[styles.inputRow, { paddingBottom: inputBottom }]}>
         <TextInput placeholderTextColor={colors.placeholder}
           style={styles.input}
           placeholder="Ton message…"
@@ -325,12 +342,16 @@ export default function EventChatScreen() {
 function MessageBubble({
   message,
   isMine,
+  showAvatar = true,
+  showName = true,
   myUserId,
   privateKey,
   onReport,
 }: {
   message: EventChatMessage;
   isMine: boolean;
+  showAvatar?: boolean;
+  showName?: boolean;
   myUserId: string | null;
   privateKey: Uint8Array | null;
   onReport?: () => void;
@@ -343,20 +364,23 @@ function MessageBubble({
 
   return (
     <View style={[styles.bubbleRow, isMine && styles.bubbleRowMine]}>
-      {!isMine && (
-        <Avatar
-          uri={message.sender?.avatar}
-          name={message.sender?.name}
-          surname={message.sender?.surname}
-          size={28}
-        />
-      )}
+      {!isMine &&
+        (showAvatar ? (
+          <Avatar
+            uri={message.sender?.avatar}
+            name={message.sender?.name}
+            surname={message.sender?.surname}
+            size={28}
+          />
+        ) : (
+          <View style={styles.avatarSpacer} />
+        ))}
       <Pressable
         onLongPress={onReport}
         delayLongPress={400}
         style={[styles.bubble, isMine ? styles.bubbleMine : styles.bubbleOther]}
       >
-        {!isMine && (
+        {!isMine && showName && (
           <Text style={styles.senderName}>
             {message.sender?.name ?? "Invité"}
           </Text>
@@ -413,6 +437,7 @@ const makeStyles = (c: ThemeColors) =>
     },
     bubbleRow: { flexDirection: "row", alignItems: "flex-end", gap: 6 },
     bubbleRowMine: { justifyContent: "flex-end" },
+    avatarSpacer: { width: 28 },
     bubble: {
       maxWidth: "80%",
       borderRadius: 14,

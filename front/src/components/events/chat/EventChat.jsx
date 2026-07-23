@@ -265,9 +265,21 @@ const EventChat = ({ shortId, participants = {} }) => {
             Aucun message pour le moment. Soyez le premier !
           </p>
         ) : (
-          messages.map((msg) => {
+          messages.map((msg, i) => {
             const isMe =
               msg.sender?._id?.toString() === currentUserId?.toString();
+
+            // Groupement façon WhatsApp : avatar sur le DERNIER message d'une
+            // série consécutive du même expéditeur, nom sur le premier.
+            const senderId = msg.sender?._id?.toString() ?? msg.sender?.toString();
+            const prevMsg = messages[i - 1];
+            const nextMsg = messages[i + 1];
+            const prevSenderId =
+              prevMsg?.sender?._id?.toString() ?? prevMsg?.sender?.toString();
+            const nextSenderId =
+              nextMsg?.sender?._id?.toString() ?? nextMsg?.sender?.toString();
+            const isFirstOfRun = !prevMsg || prevSenderId !== senderId;
+            const isLastOfRun = !nextMsg || nextSenderId !== senderId;
             const isPending = !!msg.tempId && !msg.failed;
             const { text, locked, lateJoiner, error } =
               resolveDisplayContent(msg);
@@ -298,17 +310,20 @@ const EventChat = ({ shortId, participants = {} }) => {
                 key={msg._id}
                 className={`event-chat-message-row ${isMe ? "me" : "other"}`}
               >
-                {!isMe && (
-                  <Avatar
-                    src={msg.sender?.avatar}
-                    name={msg.sender?.name}
-                    surname={msg.sender?.surname}
-                    size="xs"
-                    className="event-chat-avatar"
-                  />
-                )}
+                {!isMe &&
+                  (isLastOfRun ? (
+                    <Avatar
+                      src={msg.sender?.avatar}
+                      name={msg.sender?.name}
+                      surname={msg.sender?.surname}
+                      size="xs"
+                      className="event-chat-avatar"
+                    />
+                  ) : (
+                    <span className="event-chat-avatar-spacer" />
+                  ))}
                 <div className={bubbleClasses}>
-                  {!isMe && msg.sender?.name && (
+                  {!isMe && isFirstOfRun && msg.sender?.name && (
                     <div className="event-chat-sender">{msg.sender.name}</div>
                   )}
                   <div>{displayText}</div>

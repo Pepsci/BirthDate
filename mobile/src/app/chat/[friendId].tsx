@@ -15,7 +15,10 @@ import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { promptReport, promptBlock } from "../../lib/moderation";
 import { useHeaderHeight } from "@react-navigation/elements";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useKeyboardPadding } from "../../lib/use-keyboard-padding";
+import {
+  useKeyboardPadding,
+  useKeyboardVisible,
+} from "../../lib/use-keyboard-padding";
 import type { Socket } from "socket.io-client";
 import GiftShareCard from "../../components/GiftShareCard";
 import Avatar from "../../components/Avatar";
@@ -60,12 +63,10 @@ export default function DMChatScreen() {
   const router = useRouter();
   const headerHeight = useHeaderHeight();
   const keyboardPadding = useKeyboardPadding();
+  const keyboardVisible = useKeyboardVisible();
   const insets = useSafeAreaInsets();
-  // Clavier ouvert → hauteur clavier ; fermé → safe-area + petite marge de confort
-  const bottomPad =
-    keyboardPadding > 0
-      ? keyboardPadding
-      : insets.bottom + (Platform.OS === "ios" ? 10 : 6);
+  const bottomPad = keyboardPadding;
+  const inputBottom = keyboardVisible ? 10 : insets.bottom + 12;
   const { refresh: refreshUnread } = useUnread();
   const [messages, setMessages] = useState<DMMessage[]>([]);
   const [loading, setLoading] = useState(true);
@@ -521,7 +522,7 @@ export default function DMChatScreen() {
         </View>
       )}
 
-      <View style={styles.inputRow}>
+      <View style={[styles.inputRow, { paddingBottom: inputBottom }]}>
         <TextInput placeholderTextColor={colors.placeholder}
           style={styles.input}
           placeholder="Ton message…"

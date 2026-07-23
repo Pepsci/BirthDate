@@ -22,3 +22,25 @@ export function useKeyboardPadding(): number {
 
   return height;
 }
+
+/**
+ * Vrai quand le clavier est visible (les deux plateformes).
+ * Sert à réduire la marge de sécurité bas quand le clavier couvre déjà
+ * la zone du home indicator.
+ */
+export function useKeyboardVisible(): boolean {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const showEvt = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvt = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+    const show = Keyboard.addListener(showEvt, () => setVisible(true));
+    const hide = Keyboard.addListener(hideEvt, () => setVisible(false));
+    return () => {
+      show.remove();
+      hide.remove();
+    };
+  }, []);
+
+  return visible;
+}

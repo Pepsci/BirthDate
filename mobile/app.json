@@ -10,7 +10,7 @@
     "ios": {
       "icon": "./assets/images/icon.png",
       "bundleIdentifier": "com.birthreminder.app",
-      "buildNumber": "22",
+      "buildNumber": "24",
       "supportsTablet": false,
       "infoPlist": {
         "CFBundleDevelopmentRegion": "fr_FR",
