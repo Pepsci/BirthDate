@@ -203,6 +203,15 @@ router.patch(
 
     try {
       console.log("PATCH /users/me - User ID:", req.payload._id);
+      // 🔍 DIAGNOSTIC AVATAR (à retirer ensuite)
+      console.log("  content-type :", req.headers["content-type"]);
+      console.log(
+        "  req.file     :",
+        req.file
+          ? `${req.file.mimetype} — ${req.file.size} octets`
+          : "ABSENT",
+      );
+      console.log("  body keys    :", Object.keys(req.body || {}));
 
       // Avatar : re-encodé en WebP 256×256 puis écrit sur le disque.
       // saveAvatar() supprime l'avatar précédent → un seul fichier par user.
