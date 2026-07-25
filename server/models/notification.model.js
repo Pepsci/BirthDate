@@ -15,6 +15,7 @@ const notificationSchema = new mongoose.Schema(
         "friend_accepted",
         "new_message",
         "birthday_soon",
+        "nameday_soon",
         "gift_reserved",
         "event_reminder",
         "event_rsvp",

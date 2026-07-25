@@ -18,6 +18,7 @@ import { StatusBar } from "expo-status-bar";
 import { useAuth } from "../lib/auth-context";
 import { useTheme } from "../lib/theme-context";
 import { fetchPublicStats, PublicStats } from "../lib/stats";
+import { fetchDates, daysUntil } from "../lib/dates";
 import { hasSeenWelcome, markWelcomeSeen } from "../lib/welcome-gate";
 
 const LOGO_MARK = require("../../assets/images/logo-mark.png"); // B bougie — lisible sur les deux thèmes
@@ -27,7 +28,9 @@ const LOGO_WAX = require("../../assets/images/logo-wax.png");
 const LOGO_FLAME = require("../../assets/images/logo-flame.png");
 const LOGO_GLOW = require("../../assets/images/logo-glow.png");
 
-const GRADIENT = ["#3b82f6", "#8b5cf6", "#ec4899"] as const;
+// Dégradé bleu → violet → rosé. Le dernier ton a été adouci (#ec4899 rose vif
+// → #b06ad9 violet-rosé) pour réduire la dominante rose demandée.
+const GRADIENT = ["#3b82f6", "#8b5cf6", "#b06ad9"] as const;
 
 // ─── Thèmes ─────────────────────────────────────────────────────────────────
 // Palettes visuelles propres au welcome (plus riches que le thème global).
@@ -233,6 +236,9 @@ export default function WelcomeScreen() {
   const [splashDone, setSplashDone] = useState(() => hasSeenWelcome());
   const [stats, setStats] = useState<PublicStats | null>(null);
   const [statsError, setStatsError] = useState(false);
+  // Anniversaires / fêtes du jour parmi les proches de l'utilisateur connecté.
+  const [todayBirthdays, setTodayBirthdays] = useState(0);
+  const [todayFetes, setTodayFetes] = useState<string[]>([]);
 
   const mode: ThemeName = resolved;
   const t = THEMES[mode];
@@ -242,6 +248,39 @@ export default function WelcomeScreen() {
   useEffect(() => {
     fetchPublicStats().then(setStats).catch(() => setStatsError(true));
   }, []);
+
+  // Calcule les anniversaires et fêtes du jour parmi les proches (si connecté).
+  useEffect(() => {
+    if (!user) {
+      setTodayBirthdays(0);
+      setTodayFetes([]);
+      return;
+    }
+    const now = new Date();
+    const todayKey = `${String(now.getMonth() + 1).padStart(2, "0")}-${String(
+      now.getDate(),
+    ).padStart(2, "0")}`;
+    fetchDates()
+      .then((list) => {
+        let bdays = 0;
+        const fetes: string[] = [];
+        for (const d of list) {
+          const birthISO = d.date || d.linkedUser?.birthDate || null;
+          if (birthISO && daysUntil(birthISO) === 0) bdays += 1;
+          const nd = d.nameday ?? d.linkedUser?.nameday;
+          if (nd === todayKey) {
+            const name = d.name || d.linkedUser?.name;
+            if (name) fetes.push(name);
+          }
+        }
+        setTodayBirthdays(bdays);
+        setTodayFetes(fetes);
+      })
+      .catch(() => {
+        setTodayBirthdays(0);
+        setTodayFetes([]);
+      });
+  }, [user]);
 
   const go = (path: string) => {
     markWelcomeSeen();
@@ -298,6 +337,25 @@ export default function WelcomeScreen() {
           <Text style={s.subTagline}>
             Rappels, agenda, événements et cadeaux — tout au même endroit, entre amis.
           </Text>
+
+          {/* ── Anniv & fête du jour (proches) — seulement si les deux existent ── */}
+          {todayBirthdays > 0 && todayFetes.length > 0 && (
+            <View style={s.todayRow}>
+              <View style={s.todayCard}>
+                <Text style={s.todayEmoji}>🎂</Text>
+                <Text style={s.todayValue}>{todayBirthdays}</Text>
+                <Text style={s.todayLabel}>
+                  anniversaire{todayBirthdays > 1 ? "s" : ""} aujourd'hui
+                </Text>
+              </View>
+              <View style={s.todayCard}>
+                <Text style={s.todayEmoji}>🎉</Text>
+                <Text style={s.todayFeteText} numberOfLines={2}>
+                  C'est la fête de {todayFetes.join(", ")}
+                </Text>
+              </View>
+            </View>
+          )}
 
           {/* ── Stats : layout bento ── */}
           <Text style={s.sectionLabel}>🌍 SUR TOUTE LA COMMUNAUTÉ</Text>
@@ -458,6 +516,25 @@ const makeStyles = (t: Theme) =>
     brandAccent: { color: "#8b5cf6" },
     tagline: { fontSize: 21, fontWeight: "800", color: t.text, textAlign: "center", marginTop: 14 },
     subTagline: { fontSize: 14, color: t.sub, textAlign: "center", marginTop: 8, marginBottom: 30, lineHeight: 20 },
+
+    // Anniv & fête du jour
+    todayRow: { flexDirection: "row", gap: 12, marginBottom: 22 },
+    todayCard: {
+      flex: 1,
+      backgroundColor: t.card,
+      borderRadius: 18,
+      borderWidth: 1,
+      borderColor: t.border,
+      alignItems: "center",
+      justifyContent: "center",
+      paddingVertical: 16,
+      paddingHorizontal: 12,
+      gap: 4,
+    },
+    todayEmoji: { fontSize: 24 },
+    todayValue: { fontSize: 30, fontWeight: "900", color: t.statValue },
+    todayLabel: { fontSize: 11.5, color: t.sub, textAlign: "center", fontWeight: "600" },
+    todayFeteText: { fontSize: 14, color: t.text, textAlign: "center", fontWeight: "700" },
 
     // Stats bento
     sectionLabel: { fontSize: 12, fontWeight: "700", letterSpacing: 1.2, color: t.sub, textAlign: "center", marginBottom: 12 },

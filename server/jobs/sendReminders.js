@@ -243,6 +243,8 @@ async function checkAndSendNamedayReminders() {
   try {
     console.log("🎉 [CRON] Vérification des rappels de fêtes...");
 
+    const { notify } = require("../utils/notify");
+
     const datesWithNameday = await dateModel
       .find({
         nameday: { $exists: true, $ne: null },
@@ -270,6 +272,16 @@ async function checkAndSendNamedayReminders() {
         console.log(`🎉 Fête de ${date.name} aujourd'hui !`);
         await sendNamedayReminderEmail(date, 0);
 
+        // ── Notif applicative J ──
+        if (_app) {
+          await notify(_app, {
+            userId: owner._id,
+            type: "nameday_soon",
+            data: { name: date.name, daysLeft: 0 },
+            link: `/?tab=date&dateId=${date._id}`,
+          });
+        }
+
         if (pushOk && pushTimings.includes(0)) {
           await sendPushToUser(owner._id, buildNamedayPushPayload(date, 0));
         }
@@ -279,6 +291,16 @@ async function checkAndSendNamedayReminders() {
         if (isNamedayInXDays(date.nameday, days)) {
           console.log(`📅 Rappel fête de ${date.name} dans ${days} jour(s)`);
           await sendNamedayReminderEmail(date, days);
+
+          // ── Notif applicative J-X ──
+          if (_app) {
+            await notify(_app, {
+              userId: owner._id,
+              type: "nameday_soon",
+              data: { name: date.name, daysLeft: days },
+              link: `/?tab=date&dateId=${date._id}`,
+            });
+          }
 
           if (pushOk && pushTimings.includes(days)) {
             await sendPushToUser(

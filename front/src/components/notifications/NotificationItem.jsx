@@ -4,6 +4,7 @@ import "./css/NotificationItem.css";
 
 const TYPE_CONFIG = {
   birthday_soon: { icon: "🎂" },
+  nameday_soon: { icon: "🌸" },
   friend_request: { icon: "👋" },
   friend_accepted: { icon: "✅" },
   new_message: { icon: "💬" },
@@ -42,6 +43,17 @@ const buildText = (type, data) => {
         <>
           <strong>{data.name}</strong> fête son anniversaire dans{" "}
           {data.daysLeft} jour{data.daysLeft > 1 ? "s" : ""}
+        </>
+      );
+    case "nameday_soon":
+      return data.daysLeft === 0 ? (
+        <>
+          C'est la fête de <strong>{data.name}</strong> aujourd'hui 🌸
+        </>
+      ) : (
+        <>
+          C'est bientôt la fête de <strong>{data.name}</strong> (dans{" "}
+          {data.daysLeft} jour{data.daysLeft > 1 ? "s" : ""})
         </>
       );
     case "friend_request":

@@ -173,6 +173,7 @@ const GiftProposalPanel = ({
           name: editingGift.name,
           url: editingGift.url,
           price: editingGift.price,
+          image: editingGift.image ?? "",
         },
         guestHeaders,
       );
@@ -373,6 +374,25 @@ const GiftProposalPanel = ({
             }
             style={inputStyle}
           />
+          <input
+            type="url"
+            placeholder="URL de l'image (optionnel)"
+            value={editingGift.image || ""}
+            onChange={(e) =>
+              setEditingGift((p) => ({ ...p, image: e.target.value }))
+            }
+            style={inputStyle}
+          />
+          {editingGift.image && (
+            <div className="gift-image-preview">
+              <img
+                src={editingGift.image}
+                alt="Aperçu"
+                style={{ maxWidth: "100%", borderRadius: "6px" }}
+                onError={(e) => (e.currentTarget.style.display = "none")}
+              />
+            </div>
+          )}
           <div style={{ display: "flex", gap: "8px" }}>
             <button
               type="submit"
@@ -478,6 +498,15 @@ const GiftProposalPanel = ({
                 step="0.01"
                 min="0"
               />
+              <input
+                type="url"
+                className="form-input"
+                placeholder="URL de l'image (optionnel)"
+                value={newGift.image}
+                onChange={(e) =>
+                  setNewGift((p) => ({ ...p, image: e.target.value }))
+                }
+              />
             </div>
             {submitError && (
               <p
@@ -536,6 +565,7 @@ const GiftProposalPanel = ({
               name: gift.name,
               url: gift.url || "",
               price: gift.price || "",
+              image: gift.image || "",
             })
           }
           onDelete={handleDeleteGift}

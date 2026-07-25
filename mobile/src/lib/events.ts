@@ -107,7 +107,7 @@ export interface EventDetail extends EventEntry {
     avatar?: string;
     publicKey?: string | null;
   };
-  giftMode?: "imposed" | "proposals";
+  giftMode?: "imposed" | "proposals" | "none";
   allowGuestInvites?: boolean;
   allowExternalGuests?: boolean;
   maxGuests?: number | null;
@@ -286,6 +286,19 @@ export async function proposeGift(
   });
 }
 
+/** Modifie une proposition — autorisé au proposeur (son propre cadeau)
+ * ou à l'organisateur. Le backend valide les droits. */
+export async function updateGiftProposal(
+  shortId: string,
+  giftId: string,
+  gift: { name?: string; url?: string; price?: number; image?: string },
+): Promise<void> {
+  await api(`/events/${shortId}/gifts/${giftId}`, {
+    method: "PUT",
+    body: JSON.stringify(gift),
+  });
+}
+
 /** Vote toggle : un appel ajoute ou retire le vote */
 export async function toggleGiftVote(
   shortId: string,
@@ -377,7 +390,7 @@ export interface CreateEventPayload {
     address?: string;
     coordinates?: { lat: number; lng: number };
   }[];
-  giftMode: "imposed" | "proposals";
+  giftMode: "imposed" | "proposals" | "none";
   imposedGifts?: { name: string; url?: string; price?: number }[];
   maxGiftProposalsPerUser?: number | null;
   giftPoolEnabled?: boolean;

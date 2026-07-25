@@ -3,7 +3,10 @@
  * `status` est stocké en base ; `purchased` reste synchro pour compat.
  * `badge` = classe CSS existante réutilisée (pending / purchased / reserved).
  */
-export const GIFT_STATUSES = ["to_buy", "bought", "to_give", "offered"];
+// États sélectionnables par l'utilisateur.
+// "to_give" est retiré de la liste mais conservé dans GIFT_STATUS_META
+// pour rester rétro-compatible avec les cadeaux déjà enregistrés en base.
+export const GIFT_STATUSES = ["to_buy", "bought", "offered"];
 
 export const GIFT_STATUS_META = {
   to_buy: {

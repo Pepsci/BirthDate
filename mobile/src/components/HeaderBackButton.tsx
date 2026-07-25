@@ -1,4 +1,4 @@
-import { Pressable, Text, StyleSheet } from "react-native";
+import { Pressable, View, StyleSheet } from "react-native";
 import { useNavigation } from "expo-router";
 import { useTheme } from "../lib/theme-context";
 
@@ -28,7 +28,7 @@ export default function HeaderBackButton() {
         pressed && { opacity: 0.6 },
       ]}
     >
-      <Text style={[styles.chevron, { color: colors.primary }]}>‹</Text>
+      <View style={[styles.chevron, { borderColor: colors.primary }]} />
     </Pressable>
   );
 }
@@ -43,12 +43,17 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     marginLeft: 4,
   },
+  // Chevron dessiné avec deux bordures plutôt qu'un glyphe "‹" :
+  // le caractère a un chasse (bearing) qui l'empêche d'être parfaitement
+  // centré dans le rond. Un carré borduré + rotation 45° est net et centré.
   chevron: {
-    fontSize: 26,
-    fontWeight: "700",
-    lineHeight: 30,
-    marginTop: -2,
-    marginLeft: -1,
-    includeFontPadding: false,
+    width: 10,
+    height: 10,
+    borderLeftWidth: 2,
+    borderBottomWidth: 2,
+    transform: [{ rotate: "45deg" }],
+    // léger décalage optique : la pointe du chevron vise la gauche,
+    // on recentre la masse visuelle dans le rond.
+    marginLeft: 3,
   },
 });

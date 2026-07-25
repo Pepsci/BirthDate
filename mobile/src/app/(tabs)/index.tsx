@@ -27,6 +27,7 @@ import {
   formatBirthday,
   formatNameday,
 } from "../../lib/dates";
+import { fetchMe } from "../../lib/users";
 
 export default function BirthdaysScreen() {
   const { colors } = useTheme();
@@ -38,14 +39,20 @@ export default function BirthdaysScreen() {
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "friends" | "family">("all");
+  // Réglage : cacher les fêtes sur les cartes d'anniversaire.
+  const [hideNamedays, setHideNamedays] = useState(false);
   const PAGE_SIZE = 20;
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
   const load = useCallback(async () => {
     try {
       setError(null);
-      const list = await fetchDates();
+      const [list, me] = await Promise.all([
+        fetchDates(),
+        fetchMe().catch(() => null),
+      ]);
       setDates(list);
+      if (me) setHideNamedays(!!me.hideNamedaysOnCards);
     } catch (e: any) {
       setError(e?.message ?? "Erreur de chargement.");
     }
@@ -204,7 +211,9 @@ export default function BirthdaysScreen() {
               : "Aucune date pour l'instant. Ajoute ton premier anniversaire avec le bouton ＋ !"}
           </Text>
         }
-        renderItem={({ item }) => <BirthdayCard entry={item} />}
+        renderItem={({ item }) => (
+          <BirthdayCard entry={item} hideNamedays={hideNamedays} />
+        )}
       />
     </View>
   );
@@ -215,7 +224,13 @@ function birthISOOf(entry: DateEntry): string | null {
   return entry.date || entry.linkedUser?.birthDate || null;
 }
 
-function BirthdayCard({ entry }: { entry: DateEntry }) {
+function BirthdayCard({
+  entry,
+  hideNamedays = false,
+}: {
+  entry: DateEntry;
+  hideNamedays?: boolean;
+}) {
   const router = useRouter();
   const styles = useThemedStyles(makeStyles);
   const { colors } = useTheme();
@@ -283,12 +298,12 @@ function BirthdayCard({ entry }: { entry: DateEntry }) {
           {age !== null ? ` · ${age} ans` : ""}
         </Text>
       )}
-      {entry.nameday || entry.linkedUser?.nameday ? (
+      {!hideNamedays && (entry.nameday || entry.linkedUser?.nameday) ? (
         <Text style={styles.detail}>
           🎉 {formatNameday(entry.nameday ?? entry.linkedUser!.nameday!)}
         </Text>
       ) : (
-        // Espace réservé pour aligner les cartes sans fête
+        // Espace réservé pour aligner les cartes sans fête (ou fêtes masquées)
         <Text style={styles.detail}>{" "}</Text>
       )}
 

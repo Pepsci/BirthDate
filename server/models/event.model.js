@@ -80,7 +80,8 @@ const eventSchema = new Schema(
     // Cadeaux
     giftMode: {
       type: String,
-      enum: ["imposed", "proposals"],
+      // "none" = événement sans cadeaux (ni liste imposée ni propositions).
+      enum: ["imposed", "proposals", "none"],
       required: true,
     },
     imposedGifts: [

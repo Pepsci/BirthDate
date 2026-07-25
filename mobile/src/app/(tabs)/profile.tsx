@@ -139,6 +139,11 @@ export default function ProfileScreen() {
           label="Utilisateurs bloqués"
           onPress={() => router.push("/profile/blocked")}
         />
+        <MenuRow
+          emoji="⚙️"
+          label="Réglages"
+          onPress={() => router.push("/profile/settings")}
+        />
       </View>
 
       {/* ── Apparence ── */}

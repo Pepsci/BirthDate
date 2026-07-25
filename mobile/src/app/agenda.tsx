@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { Stack, useRouter, useFocusEffect } from "expo-router";
+import BottomNav from "../components/BottomNav";
 import { DateEntry, fetchDates } from "../lib/dates";
 import { EventEntry, fetchMyEvents, eventDate } from "../lib/events";
 import {
@@ -176,7 +177,8 @@ export default function AgendaScreen() {
   const selected = selectedDay != null ? itemsByDay.get(selectedDay) : null;
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <View style={styles.screen}>
+      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Stack.Screen options={{ title: "Agenda" }} />
       {error && <Text style={styles.error}>{error}</Text>}
 
@@ -234,6 +236,25 @@ export default function AgendaScreen() {
             items.birthdays.length + items.namedays.length + items.events.length;
           const isToday =
             day.toDateString() === new Date().toDateString();
+          // Liste unifiée : on affiche 3 entrées max puis "+ N autres",
+          // avec un compte exact des éléments réellement masqués.
+          const WEEK_MAX = 3;
+          const entries = [
+            ...items.birthdays.map((d) => ({
+              key: `b${d._id}`,
+              text: `🎂 ${d.name} ${d.surname ?? ""}`.trim(),
+            })),
+            ...items.namedays.map((d) => ({
+              key: `n${d._id}`,
+              text: `🎉 Fête de ${d.name}`,
+            })),
+            ...items.events.map((ev) => ({
+              key: `e${ev._id}`,
+              text: `📅 ${ev.title}`,
+            })),
+          ];
+          const shownEntries = entries.slice(0, WEEK_MAX);
+          const hiddenCount = entries.length - shownEntries.length;
           return (
             <Pressable
               key={i}
@@ -254,23 +275,15 @@ export default function AgendaScreen() {
               </View>
               <View style={{ flex: 1, gap: 3 }}>
                 {count === 0 && <Text style={styles.weekEmpty}>—</Text>}
-                {items.birthdays.slice(0, 2).map((d) => (
-                  <Text key={`b${d._id}`} style={styles.weekItem} numberOfLines={1}>
-                    🎂 {d.name} {d.surname ?? ""}
+                {shownEntries.map((it) => (
+                  <Text key={it.key} style={styles.weekItem} numberOfLines={1}>
+                    {it.text}
                   </Text>
                 ))}
-                {items.namedays.slice(0, 1).map((d) => (
-                  <Text key={`n${d._id}`} style={styles.weekItem} numberOfLines={1}>
-                    🎉 Fête de {d.name}
+                {hiddenCount > 0 && (
+                  <Text style={styles.weekMore}>
+                    + {hiddenCount} autre{hiddenCount > 1 ? "s" : ""}…
                   </Text>
-                ))}
-                {items.events.slice(0, 2).map((ev) => (
-                  <Text key={`e${ev._id}`} style={styles.weekItem} numberOfLines={1}>
-                    📅 {ev.title}
-                  </Text>
-                ))}
-                {count > 3 && (
-                  <Text style={styles.weekMore}>+ {count - 3} autres…</Text>
                 )}
               </View>
             </Pressable>
@@ -393,7 +406,9 @@ export default function AgendaScreen() {
           </Pressable>
         </Pressable>
       </Modal>
-    </ScrollView>
+      </ScrollView>
+      <BottomNav />
+    </View>
   );
 }
 
@@ -414,6 +429,7 @@ function LegendItem({ color, label }: { color: string; label: string }) {
 
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
+    screen: { flex: 1, backgroundColor: c.bg },
     container: { flex: 1, backgroundColor: c.bg },
     content: { padding: 12, paddingBottom: 40 },
     center: {

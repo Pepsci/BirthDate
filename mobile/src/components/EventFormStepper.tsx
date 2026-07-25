@@ -113,7 +113,7 @@ export default function EventFormStepper({
   const [locKey, setLocKey] = useState(0); // reset de l'autocomplete après ajout
 
   // Étape 4 — cadeaux
-  const [giftMode, setGiftMode] = useState<"imposed" | "proposals">(
+  const [giftMode, setGiftMode] = useState<"imposed" | "proposals" | "none">(
     initial?.giftMode ?? "proposals",
   );
   const [imposedGifts, setImposedGifts] = useState<
@@ -149,7 +149,12 @@ export default function EventFormStepper({
     if (step === 1) return dateMode === "fixed" || dateOptions.length >= 2;
     if (step === 2)
       return locationMode === "fixed" || locationOptions.length >= 2;
-    if (step === 3) return giftMode === "proposals" || imposedGifts.length > 0;
+    if (step === 3)
+      return (
+        giftMode === "proposals" ||
+        giftMode === "none" ||
+        imposedGifts.length > 0
+      );
     return true;
   };
 
@@ -173,7 +178,8 @@ export default function EventFormStepper({
         locationOptions: locationMode === "vote" ? locationOptions : undefined,
         giftMode,
         imposedGifts: giftMode === "imposed" ? imposedGifts : undefined,
-        giftPoolEnabled: poolEnabled,
+        // Pas de cadeaux → pas de cagnotte.
+        giftPoolEnabled: giftMode === "none" ? false : poolEnabled,
         maxGuests: maxGuests ? parseInt(maxGuests, 10) : null,
         allowExternalGuests,
         allowGuestInvites,
@@ -496,14 +502,30 @@ export default function EventFormStepper({
       {/* ÉTAPE 4 — Cadeaux */}
       {step === 3 && (
         <View style={styles.card}>
-          <ModeSwitch
-            left="💡 Propositions libres"
-            right="🎁 Liste imposée"
-            value={giftMode === "imposed"}
-            onChange={(v) => setGiftMode(v ? "imposed" : "proposals")}
-          />
+          <View style={styles.switchRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.switchLabel}>🚫 Pas de cadeaux</Text>
+              <Text style={styles.hint}>
+                Crée l'événement sans aucune liste de cadeaux.
+              </Text>
+            </View>
+            <Switch
+              value={giftMode === "none"}
+              onValueChange={(v) => setGiftMode(v ? "none" : "proposals")}
+              trackColor={{ true: colors.primary }}
+            />
+          </View>
 
-          {giftMode === "proposals" ? (
+          {giftMode !== "none" && (
+            <>
+              <ModeSwitch
+                left="💡 Propositions libres"
+                right="🎁 Liste imposée"
+                value={giftMode === "imposed"}
+                onChange={(v) => setGiftMode(v ? "imposed" : "proposals")}
+              />
+
+              {giftMode === "proposals" ? (
             <Text style={styles.hint}>
               Les invités proposent des idées et votent pour leurs préférées.
             </Text>
@@ -562,6 +584,8 @@ export default function EventFormStepper({
                   <Text style={styles.smallAddText}>＋</Text>
                 </Pressable>
               </View>
+                </>
+              )}
             </>
           )}
         </View>

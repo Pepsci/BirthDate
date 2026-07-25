@@ -9,6 +9,7 @@ export interface UserProfile extends AuthUser {
   receiveOwnBirthdayEmail?: boolean;
   receiveFriendRequestEmails?: boolean;
   monthlyRecap?: boolean;
+  hideNamedaysOnCards?: boolean;
   receiveEventEmails?: boolean;
   receiveChatEmails?: boolean;
   pushEnabled?: boolean;

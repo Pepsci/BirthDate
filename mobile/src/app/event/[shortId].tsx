@@ -34,6 +34,7 @@ import {
   GiftProposal,
   fetchGifts,
   proposeGift,
+  updateGiftProposal,
   toggleGiftVote,
   toggleGiftSelection,
   deleteGiftProposal,
@@ -110,6 +111,8 @@ export default function EventDetailScreen() {
   const [giftUrl, setGiftUrl] = useState("");
   const [giftPrice, setGiftPrice] = useState("");
   const [giftImage, setGiftImage] = useState<string | null>(null);
+  // Id de la proposition en cours d'édition (null = ajout).
+  const [editingGiftId, setEditingGiftId] = useState<string | null>(null);
   const [giftFetching, setGiftFetching] = useState(false);
   const [giftFetchMsg, setGiftFetchMsg] = useState<string | null>(null);
   const [giftSending, setGiftSending] = useState(false);
@@ -237,17 +240,28 @@ export default function EventDetailScreen() {
     if (!shortId || !giftName.trim() || giftSending) return;
     setGiftSending(true);
     try {
-      await proposeGift(shortId, {
-        name: giftName.trim(),
-        url: giftUrl.trim() || undefined,
-        price: giftPrice ? Number(giftPrice.replace(",", ".")) : undefined,
-        image: giftImage ?? undefined,
-      });
+      if (editingGiftId) {
+        await updateGiftProposal(shortId, editingGiftId, {
+          name: giftName.trim(),
+          // Chaînes vides → le backend efface le champ.
+          url: giftUrl.trim(),
+          price: giftPrice ? Number(giftPrice.replace(",", ".")) : undefined,
+          image: giftImage ?? "",
+        });
+      } else {
+        await proposeGift(shortId, {
+          name: giftName.trim(),
+          url: giftUrl.trim() || undefined,
+          price: giftPrice ? Number(giftPrice.replace(",", ".")) : undefined,
+          image: giftImage ?? undefined,
+        });
+      }
       setGiftName("");
       setGiftUrl("");
       setGiftPrice("");
       setGiftImage(null);
       setGiftFetchMsg(null);
+      setEditingGiftId(null);
       setShowGiftForm(false);
       await load();
     } catch (e: any) {
@@ -255,6 +269,18 @@ export default function EventDetailScreen() {
     } finally {
       setGiftSending(false);
     }
+  };
+
+  // Pré-remplit le formulaire pour modifier sa propre proposition.
+  const startEditGift = (g: GiftProposal) => {
+    setEditingGiftId(g._id);
+    setGiftName(g.name);
+    setGiftUrl(g.url ?? "");
+    setGiftPrice(g.price != null ? String(g.price) : "");
+    setGiftImage(g.image ?? null);
+    setGiftFetchMsg(null);
+    setSelectedProposal(null);
+    setShowGiftForm(true);
   };
 
   const importGifts = async (imported: ImportedGift[]) => {
@@ -542,9 +568,23 @@ export default function EventDetailScreen() {
                   router.push(`/event/chat/${event.shortId}`);
                 }}
                 hitSlop={10}
-                style={{ flexDirection: "row" }}
+                style={{
+                  flexDirection: "row",
+                  minWidth: 36,
+                  height: 36,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
               >
-                <Text style={{ fontSize: 20 }}>💬</Text>
+                <Text
+                  style={{
+                    fontSize: 20,
+                    includeFontPadding: false,
+                    textAlignVertical: "center",
+                  }}
+                >
+                  💬
+                </Text>
                 {chatUnread > 0 && (
                   <View style={styles.chatBadge}>
                     <Text style={styles.chatBadgeText}>{chatUnread}</Text>
@@ -778,10 +818,25 @@ export default function EventDetailScreen() {
           <View style={styles.giftBtnRow}>
             <Pressable
               style={[styles.proposeTopBtn, { flex: 1 }]}
-              onPress={() => setShowGiftForm((v) => !v)}
+              onPress={() => {
+                if (showGiftForm) {
+                  setShowGiftForm(false);
+                  setEditingGiftId(null);
+                } else {
+                  setEditingGiftId(null);
+                  setGiftName("");
+                  setGiftUrl("");
+                  setGiftPrice("");
+                  setGiftImage(null);
+                  setGiftFetchMsg(null);
+                  setShowGiftForm(true);
+                }
+              }}
             >
               <Text style={styles.proposeTopText}>
-                {showGiftForm ? "✕ Fermer" : "＋ Proposer un cadeau"}
+                {showGiftForm
+                  ? "✕ Fermer"
+                  : "＋ Proposer un cadeau"}
               </Text>
             </Pressable>
             <Pressable
@@ -842,6 +897,14 @@ export default function EventDetailScreen() {
                 value={giftPrice}
                 onChangeText={setGiftPrice}
               />
+              <TextInput placeholderTextColor={colors.placeholder}
+                style={styles.input}
+                placeholder="URL de l'image (optionnel)"
+                autoCapitalize="none"
+                keyboardType="url"
+                value={giftImage ?? ""}
+                onChangeText={(v) => setGiftImage(v.trim() ? v : null)}
+              />
               <Pressable
                 onPress={onProposeGift}
                 disabled={giftSending || !giftName.trim()}
@@ -851,7 +914,11 @@ export default function EventDetailScreen() {
                 ]}
               >
                 <Text style={styles.giftSubmitText}>
-                  {giftSending ? "Envoi…" : "Proposer"}
+                  {giftSending
+                    ? "Envoi…"
+                    : editingGiftId
+                      ? "Enregistrer"
+                      : "Proposer"}
                 </Text>
               </Pressable>
             </>
@@ -981,6 +1048,17 @@ export default function EventDetailScreen() {
                           {g.selected
                             ? "⭐ Retiré de la sélection"
                             : "⭐ Retenir ce cadeau"}
+                        </Text>
+                      </Pressable>
+                    )}
+                    {g.proposedBy?._id === user?._id && (
+                      <Pressable
+                        disabled={giftSending}
+                        style={styles.sheetSelectBtn}
+                        onPress={() => startEditGift(g)}
+                      >
+                        <Text style={styles.sheetSelectText}>
+                          ✏️ Modifier mon cadeau
                         </Text>
                       </Pressable>
                     )}
@@ -1187,7 +1265,7 @@ export default function EventDetailScreen() {
         </View>
       )}
 
-      {event.hasFullAccess && (
+      {event.hasFullAccess && event.giftMode !== "none" && (
         <Pressable
           style={styles.giftsBtn}
           onPress={() => setEventView("gifts")}

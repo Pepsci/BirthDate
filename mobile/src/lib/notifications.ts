@@ -5,6 +5,7 @@ export type NotifType =
   | "friend_accepted"
   | "new_message"
   | "birthday_soon"
+  | "nameday_soon"
   | "gift_reserved"
   | "event_reminder"
   | "event_rsvp"
@@ -69,6 +70,15 @@ export function notifDisplay(n: AppNotification): {
         text: d.name
           ? `L'anniversaire de ${d.name} approche !`
           : "Un anniversaire approche !",
+      };
+    case "nameday_soon":
+      return {
+        emoji: "🌸",
+        text: d.name
+          ? d.daysLeft === 0
+            ? `C'est la fête de ${d.name} aujourd'hui !`
+            : `C'est bientôt la fête de ${d.name} !`
+          : "Une fête approche !",
       };
     case "gift_reserved":
       return {

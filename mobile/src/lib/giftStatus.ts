@@ -4,12 +4,11 @@
  */
 export type GiftStatus = "to_buy" | "bought" | "to_give" | "offered";
 
-export const GIFT_STATUSES: GiftStatus[] = [
-  "to_buy",
-  "bought",
-  "to_give",
-  "offered",
-];
+// États sélectionnables par l'utilisateur.
+// "to_give" a été retiré du cycle mais reste dans le type et GIFT_STATUS_META
+// pour rester rétro-compatible avec les cadeaux déjà en base (affichés/repliés
+// sur "Acheté" via giftStatusOf).
+export const GIFT_STATUSES: GiftStatus[] = ["to_buy", "bought", "offered"];
 
 export interface GiftStatusMeta {
   label: string;

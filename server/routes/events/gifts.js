@@ -208,10 +208,11 @@ router.put("/:shortId/gifts/:giftId", checkGuestOrAuth, async (req, res) => {
     if (!isOwner && req.userRole !== "organizer")
       return res.status(403).json({ message: "Non autorisé" });
 
-    const { name, url, price } = req.body;
+    const { name, url, price, image } = req.body;
     if (name) proposal.name = name;
     if (url !== undefined) proposal.url = url;
     if (price !== undefined) proposal.price = price ? Number(price) : undefined;
+    if (image !== undefined) proposal.image = image || undefined;
     await proposal.save();
     res.status(200).json(proposal);
   } catch (error) {

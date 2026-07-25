@@ -58,6 +58,8 @@ function formatUser(user) {
     receiveFriendRequestEmails: user.receiveFriendRequestEmails,
     receiveOwnBirthdayEmail: user.receiveOwnBirthdayEmail,
     monthlyRecap: user.monthlyRecap,
+    // Réglages d'affichage
+    hideNamedaysOnCards: user.hideNamedaysOnCards,
     // Emails chat
     receiveChatEmails: user.receiveChatEmails,
     chatEmailFrequency: user.chatEmailFrequency,
@@ -95,6 +97,10 @@ function applyPreferences(user, body) {
   if (body.receiveOwnBirthdayEmail !== undefined)
     user.receiveOwnBirthdayEmail = body.receiveOwnBirthdayEmail;
   if (body.monthlyRecap !== undefined) user.monthlyRecap = body.monthlyRecap;
+
+  // Réglages d'affichage
+  if (body.hideNamedaysOnCards !== undefined)
+    user.hideNamedaysOnCards = body.hideNamedaysOnCards;
 
   // Emails chat
   if (body.receiveChatEmails !== undefined)

@@ -52,6 +52,10 @@ const userSchema = new Schema({
   // ── Récap mensuel ────────────────────────────────────────────────────────
   monthlyRecap: { type: Boolean, default: false },
 
+  // ── Réglages d'affichage ──────────────────────────────────────────────────
+  // Cacher les fêtes (namedays) sur les cartes d'anniversaire.
+  hideNamedaysOnCards: { type: Boolean, default: false },
+
   // ── Compte ────────────────────────────────────────────────────────────────
   deletedAt: Date,
 
