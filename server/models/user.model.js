@@ -35,9 +35,16 @@ const userSchema = new Schema({
   },
   wishlistPublicSlug: {
     type: String,
-    default: null,
-    unique: true,
-    sparse: true,
+    // Pas de `default: null` : le champ reste absent tant que l'utilisateur
+    // n'a pas activé le partage de sa wishlist (le slug est généré à ce
+    // moment-là dans routes/wishlist.js). Un `default: null` casserait
+    // l'index unique (tous les null sont considérés comme des doublons).
+    index: {
+      unique: true,
+      // Unique uniquement quand le slug est une vraie chaîne. Les documents
+      // sans slug (inscription) ne sont pas indexés → pas de collision.
+      partialFilterExpression: { wishlistPublicSlug: { $type: "string" } },
+    },
   },
   wishlistFriendCode: {
     type: String,
