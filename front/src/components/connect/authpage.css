@@ -76,6 +76,12 @@
   padding: 28px 28px 24px;
 }
 
+/* Panel autonome (hors track à 3 volets) — ex: page ResetPassword.
+   Sélecteur à 2 classes pour battre la règle .auth-panel du media query. */
+.auth-shell .auth-panel--full {
+  width: 100%;
+}
+
 .auth-panel-header {
   margin-bottom: 24px;
 }

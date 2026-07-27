@@ -249,7 +249,7 @@ export default function ProfileEditScreen() {
       </Pressable>
       {showPicker && (
         <DateTimePicker
-          value={birthDate ?? new Date(2000, 0, 1)}
+          value={birthDate ?? new Date()}
           mode="date"
           display={Platform.OS === "ios" ? "spinner" : "default"}
           locale="fr-FR"

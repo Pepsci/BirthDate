@@ -32,6 +32,16 @@ const LOGO_GLOW = require("../../assets/images/logo-glow.png");
 // → #b06ad9 violet-rosé) pour réduire la dominante rose demandée.
 const GRADIENT = ["#3b82f6", "#8b5cf6", "#b06ad9"] as const;
 
+// "Alma" · "Alma et Léa" · "Alma, Léa et Tom" · "Alma, Léa et 3 autres"
+function joinNames(names: string[], max = 3): string {
+  if (names.length <= 1) return names[0] ?? "";
+  if (names.length <= max) {
+    return `${names.slice(0, -1).join(", ")} et ${names[names.length - 1]}`;
+  }
+  const extra = names.length - max;
+  return `${names.slice(0, max).join(", ")} et ${extra} autre${extra > 1 ? "s" : ""}`;
+}
+
 // ─── Thèmes ─────────────────────────────────────────────────────────────────
 // Palettes visuelles propres au welcome (plus riches que le thème global).
 // La sélection dark/light est pilotée par le ThemeContext global.
@@ -237,7 +247,7 @@ export default function WelcomeScreen() {
   const [stats, setStats] = useState<PublicStats | null>(null);
   const [statsError, setStatsError] = useState(false);
   // Anniversaires / fêtes du jour parmi les proches de l'utilisateur connecté.
-  const [todayBirthdays, setTodayBirthdays] = useState(0);
+  const [todayBirthdayNames, setTodayBirthdayNames] = useState<string[]>([]);
   const [todayFetes, setTodayFetes] = useState<string[]>([]);
 
   const mode: ThemeName = resolved;
@@ -252,7 +262,7 @@ export default function WelcomeScreen() {
   // Calcule les anniversaires et fêtes du jour parmi les proches (si connecté).
   useEffect(() => {
     if (!user) {
-      setTodayBirthdays(0);
+      setTodayBirthdayNames([]);
       setTodayFetes([]);
       return;
     }
@@ -262,22 +272,22 @@ export default function WelcomeScreen() {
     ).padStart(2, "0")}`;
     fetchDates()
       .then((list) => {
-        let bdays = 0;
+        const bdays: string[] = [];
         const fetes: string[] = [];
         for (const d of list) {
+          const name = d.name || d.linkedUser?.name;
           const birthISO = d.date || d.linkedUser?.birthDate || null;
-          if (birthISO && daysUntil(birthISO) === 0) bdays += 1;
-          const nd = d.nameday ?? d.linkedUser?.nameday;
-          if (nd === todayKey) {
-            const name = d.name || d.linkedUser?.name;
-            if (name) fetes.push(name);
+          if (birthISO && daysUntil(birthISO) === 0) {
+            bdays.push(name || "Quelqu'un");
           }
+          const nd = d.nameday ?? d.linkedUser?.nameday;
+          if (nd === todayKey && name) fetes.push(name);
         }
-        setTodayBirthdays(bdays);
+        setTodayBirthdayNames(bdays);
         setTodayFetes(fetes);
       })
       .catch(() => {
-        setTodayBirthdays(0);
+        setTodayBirthdayNames([]);
         setTodayFetes([]);
       });
   }, [user]);
@@ -303,7 +313,7 @@ export default function WelcomeScreen() {
           <Text style={s.primaryText}>Se connecter</Text>
         </LinearGradient>
       </Pressable>
-      <Pressable style={({ pressed }) => [s.secondaryBtn, pressed && { opacity: 0.7 }]} onPress={() => go("/signup")}>
+      <Pressable style={({ pressed }) => [s.secondaryBtn, pressed && { opacity: 0.7 }]} onPress={() => go("/login?panel=signup")}>
         <Text style={s.secondaryText}>Créer un compte gratuitement</Text>
       </Pressable>
     </>
@@ -338,22 +348,42 @@ export default function WelcomeScreen() {
             Rappels, agenda, événements et cadeaux — tout au même endroit, entre amis.
           </Text>
 
-          {/* ── Anniv & fête du jour (proches) — seulement si les deux existent ── */}
-          {todayBirthdays > 0 && todayFetes.length > 0 && (
+          {/* ── Anniv & fête du jour (proches) — chaque case selon sa propre
+                condition, rien si aucune (pas de carré vide) ── */}
+          {(todayBirthdayNames.length > 0 || todayFetes.length > 0) && (
             <View style={s.todayRow}>
-              <View style={s.todayCard}>
-                <Text style={s.todayEmoji}>🎂</Text>
-                <Text style={s.todayValue}>{todayBirthdays}</Text>
-                <Text style={s.todayLabel}>
-                  anniversaire{todayBirthdays > 1 ? "s" : ""} aujourd'hui
-                </Text>
-              </View>
-              <View style={s.todayCard}>
-                <Text style={s.todayEmoji}>🎉</Text>
-                <Text style={s.todayFeteText} numberOfLines={2}>
-                  C'est la fête de {todayFetes.join(", ")}
-                </Text>
-              </View>
+              {todayBirthdayNames.length > 0 && (
+                <View style={s.todayCard}>
+                  {todayBirthdayNames.length === 1 ? (
+                    <>
+                      <Text style={s.todayEmoji}>🎂</Text>
+                      <Text style={s.todayFeteText} numberOfLines={2}>
+                        C'est l'anniversaire de {todayBirthdayNames[0]} !
+                      </Text>
+                    </>
+                  ) : (
+                    <>
+                      <Text style={s.todayValue}>
+                        {todayBirthdayNames.length}
+                      </Text>
+                      <Text style={s.todayLabel}>
+                        anniversaires aujourd'hui 🎂
+                      </Text>
+                      <Text style={s.todaySub} numberOfLines={2}>
+                        {joinNames(todayBirthdayNames)}
+                      </Text>
+                    </>
+                  )}
+                </View>
+              )}
+              {todayFetes.length > 0 && (
+                <View style={s.todayCard}>
+                  <Text style={s.todayEmoji}>🎉</Text>
+                  <Text style={s.todayFeteText} numberOfLines={2}>
+                    C'est la fête de {joinNames(todayFetes)} !
+                  </Text>
+                </View>
+              )}
             </View>
           )}
 
@@ -534,6 +564,7 @@ const makeStyles = (t: Theme) =>
     todayEmoji: { fontSize: 24 },
     todayValue: { fontSize: 30, fontWeight: "900", color: t.statValue },
     todayLabel: { fontSize: 11.5, color: t.sub, textAlign: "center", fontWeight: "600" },
+    todaySub: { fontSize: 12.5, color: t.text, textAlign: "center", fontWeight: "700", marginTop: 2 },
     todayFeteText: { fontSize: 14, color: t.text, textAlign: "center", fontWeight: "700" },
 
     // Stats bento

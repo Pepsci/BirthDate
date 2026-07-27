@@ -30,7 +30,7 @@ export default function DateForm({ initial, submitLabel, onSubmit }: Props) {
   const [name, setName] = useState(initial?.name ?? "");
   const [surname, setSurname] = useState(initial?.surname ?? "");
   const [date, setDate] = useState<Date>(
-    initial ? new Date(initial.date) : new Date(2000, 0, 1),
+    initial ? new Date(initial.date) : new Date(),
   );
   const [family, setFamily] = useState(initial?.family ?? false);
   const [showPicker, setShowPicker] = useState(Platform.OS === "ios");

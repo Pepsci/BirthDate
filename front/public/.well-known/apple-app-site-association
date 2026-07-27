@@ -1,0 +1,15 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["8UHXMY6BW5.com.birthreminder.app"],
+        "components": [
+          { "/": "/event/*", "comment": "Pages evenement" },
+          { "/": "/home*", "comment": "Deep links /home?tab=..." },
+          { "/": "/auth/reset/*", "comment": "Reinitialisation mot de passe" },
+          { "/": "/shared-invites*", "comment": "Invitations wishlist partagee" }
+        ]
+      }
+    ]
+  }
+}

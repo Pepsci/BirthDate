@@ -96,12 +96,29 @@ export async function unregisterPush(): Promise<void> {
 /**
  * Convertit les liens du backend (pensés pour le web) en routes mobiles.
  * Ex : "/event/aB3xZ" → identique ; "/home?tab=events" → "/events".
+ *
+ * Accepte aussi bien un chemin ("/home?tab=…") qu'une URL complète
+ * ("https://birthreminder.com/home?tab=…") : c'est le cas des Universal
+ * Links / App Links ouverts depuis un email. On retire d'abord l'origine.
  */
 export function webLinkToMobileRoute(url: string | null | undefined): string {
   if (!url) return "/";
+
+  // Universal/App Link : on ne garde que le chemin + la query.
+  if (/^https?:\/\//i.test(url)) {
+    try {
+      const u = new URL(url);
+      url = u.pathname + u.search;
+    } catch {
+      // URL malformée → on continue avec la chaîne brute
+    }
+  }
+
   if (url.startsWith("/event/")) return url;
+  if (url.startsWith("/auth/reset/")) return url; // reset mdp par token
   if (url.includes("/shared-invites")) return "/shared-invites";
   if (url.includes("tab=events")) return "/events";
+  if (url.includes("tab=agenda")) return "/agenda";
   if (url.includes("tab=date") && url.includes("dateId=")) {
     const m = url.match(/dateId=([a-f0-9]+)/i);
     if (m) return `/date/${m[1]}`;

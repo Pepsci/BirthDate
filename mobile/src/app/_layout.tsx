@@ -106,10 +106,12 @@ function RootNavigator() {
     return <Redirect href="/welcome" />;
 
   // Garde d'auth : non connecté → /login (sauf welcome / inscription / mdp oublié)
+  // /auth/reset/:token est public (lien de reset reçu par email).
   const publicRoutes = ["/welcome", "/login", "/signup", "/forgot-password"];
   const authRoutes = ["/login", "/signup", "/forgot-password"];
-  if (!user && !publicRoutes.includes(pathname))
-    return <Redirect href="/login" />;
+  const isPublic =
+    publicRoutes.includes(pathname) || pathname.startsWith("/auth/reset");
+  if (!user && !isPublic) return <Redirect href="/login" />;
   if (user && authRoutes.includes(pathname)) return <Redirect href="/" />;
 
   return (
@@ -129,9 +131,12 @@ function RootNavigator() {
     >
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="welcome" options={{ headerShown: false }} />
+      {/* Écran d'auth unifié : connexion / inscription / mot de passe oublié
+          sont trois panneaux d'un même pager. Les deux routes ci-dessous ne
+          sont plus que des redirections vers /login?panel=… → pas de header. */}
       <Stack.Screen name="login" options={{ headerShown: false }} />
-      <Stack.Screen name="signup" />
-      <Stack.Screen name="forgot-password" />
+      <Stack.Screen name="signup" options={{ headerShown: false }} />
+      <Stack.Screen name="forgot-password" options={{ headerShown: false }} />
     </Stack>
   );
 }

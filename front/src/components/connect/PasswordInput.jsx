@@ -1,30 +1,35 @@
 import React, { useState } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons";
+import { Eye, EyeOff } from "lucide-react";
 
-const PasswordInput = ({ value, onChange, placeholder }) => {
+/**
+ * Champ mot de passe avec bouton pour afficher / masquer la saisie.
+ *
+ * Props transmises telles quelles à l'<input> (value, onChange, placeholder,
+ * name, id, required, autoComplete...). La prop `className` est appliquée à
+ * l'input pour rester cohérent avec les autres champs (ex: "auth-input").
+ */
+const PasswordInput = ({ className = "", ...inputProps }) => {
   const [showPassword, setShowPassword] = useState(false);
-
-  const togglePasswordVisibility = () => {
-    setShowPassword((prevShowPassword) => !prevShowPassword);
-  };
 
   return (
     <div className="password-input-container">
       <input
-        className="form-input"
+        {...inputProps}
+        className={className}
         type={showPassword ? "text" : "password"}
-        value={value}
-        placeholder={placeholder}
-        onChange={onChange}
-        required
       />
       <button
         type="button"
-        onClick={togglePasswordVisibility}
+        onClick={() => setShowPassword((v) => !v)}
         className="toggle-password-visibility"
+        aria-label={
+          showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"
+        }
+        title={
+          showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"
+        }
       >
-        <FontAwesomeIcon icon={showPassword ? faEye : faEyeSlash} />
+        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
       </button>
     </div>
   );

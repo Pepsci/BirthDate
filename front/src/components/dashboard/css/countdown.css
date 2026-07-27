@@ -1,7 +1,9 @@
 /* css/countdown.css */
 
-/* Variables de couleurs */
-:root {
+/* Variables de couleurs — SCOPÉES au composant countdown.
+   NE PAS remettre sur :root : cela écraserait le --primary global de l'app
+   (variables.css) et désynchroniserait les couleurs partout ailleurs. */
+.birthCardCountdown {
     --primary: #4361ee;
     --primary-light: #4cc9f0;
     --secondary: #f72585;
@@ -96,7 +98,7 @@
     background: linear-gradient(135deg, var(--secondary) 0%, var(--danger) 100%);
 }
 
-Style pour le compteur mobile
+/* Style pour le compteur mobile */
 .birthCardCountdown.mobile {
     gap: 0.25rem;
 }

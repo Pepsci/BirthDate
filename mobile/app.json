@@ -10,8 +10,11 @@
     "ios": {
       "icon": "./assets/images/icon.png",
       "bundleIdentifier": "com.birthreminder.app",
-      "buildNumber": "24",
+      "buildNumber": "26",
       "supportsTablet": false,
+      "associatedDomains": [
+        "applinks:birthreminder.com"
+      ],
       "infoPlist": {
         "CFBundleDevelopmentRegion": "fr_FR",
         "CFBundleAllowMixedLocalizations": true,
@@ -39,7 +42,39 @@
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.birthreminder.app",
-      "googleServicesFile": "./google-services.json"
+      "googleServicesFile": "./google-services.json",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "birthreminder.com",
+              "pathPrefix": "/event"
+            },
+            {
+              "scheme": "https",
+              "host": "birthreminder.com",
+              "pathPrefix": "/home"
+            },
+            {
+              "scheme": "https",
+              "host": "birthreminder.com",
+              "pathPrefix": "/auth/reset"
+            },
+            {
+              "scheme": "https",
+              "host": "birthreminder.com",
+              "pathPrefix": "/shared-invites"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
+      ]
     },
     "web": {
       "output": "static",

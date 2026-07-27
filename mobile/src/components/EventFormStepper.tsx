@@ -79,7 +79,6 @@ export default function EventFormStepper({
   const [fixedDate, setFixedDate] = useState<Date>(() => {
     if (initial?.fixedDate) return new Date(initial.fixedDate);
     const d = new Date();
-    d.setDate(d.getDate() + 7);
     d.setHours(19, 0, 0, 0);
     return d;
   });
@@ -91,7 +90,6 @@ export default function EventFormStepper({
   const [showOptionPicker, setShowOptionPicker] = useState(false);
   const [optionDraft, setOptionDraft] = useState<Date>(() => {
     const d = new Date();
-    d.setDate(d.getDate() + 1);
     d.setHours(19, 0, 0, 0);
     return d;
   });
@@ -364,7 +362,6 @@ export default function EventFormStepper({
                 style={styles.addOptionBtn}
                 onPress={() => {
                   const d = new Date();
-                  d.setDate(d.getDate() + 1);
                   d.setHours(19, 0, 0, 0);
                   setOptionDraft(d);
                   setShowOptionPicker(true);
