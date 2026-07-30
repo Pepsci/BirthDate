@@ -70,14 +70,17 @@ export default function EventsScreen() {
     setRefreshing(false);
   }, [load]);
 
-  const sections = useMemo(
-    () =>
-      [
-        { title: "J'organise", data: organized },
-        { title: "Je suis invité·e", data: invited },
-      ].filter((s) => s.data.length > 0),
-    [organized, invited],
-  );
+  // Les brouillons (formulaire quitté avant la fin) sortent de « J'organise » :
+  // ce sont des créations à terminer, pas des événements en cours.
+  const sections = useMemo(() => {
+    const drafts = organized.filter((e) => e.status === "draft");
+    const published = organized.filter((e) => e.status !== "draft");
+    return [
+      { title: "📝 Brouillons à terminer", data: drafts },
+      { title: "J'organise", data: published },
+      { title: "Je suis invité·e", data: invited },
+    ].filter((s) => s.data.length > 0);
+  }, [organized, invited]);
 
   if (loading) {
     return (
@@ -128,10 +131,22 @@ function EventCard({ event }: { event: EventEntry }) {
       ? event.fixedLocation
       : event.fixedLocation?.name ?? event.fixedLocation?.address;
 
+  // Un brouillon n'a pas de page événement utile (pas d'invités, pas de chat) :
+  // on renvoie directement dans le formulaire pour le terminer.
+  const isDraft = event.status === "draft";
+
   return (
     <Pressable
-      style={({ pressed }) => [styles.card, pressed && { opacity: 0.85 }]}
-      onPress={() => router.push(`/event/${event.shortId}`)}
+      style={({ pressed }) => [
+        styles.card,
+        isDraft && styles.cardDraft,
+        pressed && { opacity: 0.85 },
+      ]}
+      onPress={() =>
+        router.push(
+          isDraft ? `/event/edit/${event.shortId}` : `/event/${event.shortId}`,
+        )
+      }
     >
       <View style={styles.cardHeader}>
         <Text style={styles.title} numberOfLines={1}>
@@ -153,8 +168,12 @@ function EventCard({ event }: { event: EventEntry }) {
         <Text style={[styles.status, statusStyle(event.status, colors)]}>
           {STATUS_LABELS[event.status]}
         </Text>
-        {event.myRsvpStatus && (
-          <Text style={styles.rsvp}>{RSVP_LABELS[event.myRsvpStatus]}</Text>
+        {isDraft ? (
+          <Text style={styles.draftHint}>Appuyer pour reprendre →</Text>
+        ) : (
+          event.myRsvpStatus && (
+            <Text style={styles.rsvp}>{RSVP_LABELS[event.myRsvpStatus]}</Text>
+          )
         )}
       </View>
     </Pressable>
@@ -214,6 +233,14 @@ const makeStyles = (c: ThemeColors) =>
       shadowOffset: { width: 0, height: 2 },
       elevation: 2,
     },
+    // Brouillon : liseré ambré + fond légèrement teinté, pour qu'on voie d'un
+    // coup d'œil que la carte est une création inachevée.
+    cardDraft: {
+      borderColor: c.warning,
+      borderStyle: "dashed",
+      backgroundColor: c.warningSoft,
+    },
+    draftHint: { fontSize: 12, color: c.warningStrong, fontWeight: "700" },
     cardHeader: {
       flexDirection: "row",
       justifyContent: "space-between",

@@ -40,6 +40,7 @@ router.post("/", isAuthenticated, async (req, res) => {
       allowGuestInvites,
       reminders,
       maxGiftProposalsPerUser,
+      status,
     } = req.body;
 
     const newEvent = new Event({
@@ -66,7 +67,10 @@ router.post("/", isAuthenticated, async (req, res) => {
       allowExternalGuests: allowExternalGuests !== false,
       allowGuestInvites: allowGuestInvites === true,
       reminders: reminders || [],
-      status: "published",
+      // Le client peut demander explicitement un brouillon (formulaire quitté
+      // avant la fin) ; tout autre valeur reste une publication normale, pour
+      // ne pas laisser un appel malformé créer un événement invisible.
+      status: status === "draft" ? "draft" : "published",
     });
 
     await newEvent.save();

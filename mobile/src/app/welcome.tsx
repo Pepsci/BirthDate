@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -31,6 +31,11 @@ const LOGO_GLOW = require("../../assets/images/logo-glow.png");
 // Dégradé bleu → violet → rosé. Le dernier ton a été adouci (#ec4899 rose vif
 // → #b06ad9 violet-rosé) pour réduire la dominante rose demandée.
 const GRADIENT = ["#3b82f6", "#8b5cf6", "#b06ad9"] as const;
+
+// Dégradé chaud réservé à l'encart « aujourd'hui chez vos proches ». Il doit
+// trancher avec le bleu-violet des stats communauté affichées juste dessous :
+// c'est l'info personnelle, elle passe devant les chiffres globaux.
+const TODAY_GRADIENT = ["#f59e0b", "#f97316", "#ec4899"] as const;
 
 // "Alma" · "Alma et Léa" · "Alma, Léa et Tom" · "Alma, Léa et 3 autres"
 function joinNames(names: string[], max = 3): string {
@@ -235,6 +240,73 @@ function AnimatedSplash({ bg, onDone }: { bg: string; onDone: () => void }) {
   );
 }
 
+/**
+ * Respiration lente de l'encart « aujourd'hui » : léger va-et-vient d'échelle
+ * doublé d'un halo qui pulse derrière. Assez discret pour ne pas fatiguer,
+ * assez présent pour que l'œil s'y arrête avant les stats communauté.
+ */
+function TodayHighlight({ children }: { children: ReactNode }) {
+  const pulse = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, {
+          toValue: 1,
+          duration: 1500,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulse, {
+          toValue: 0,
+          duration: 1500,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [pulse]);
+
+  const scale = pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.03] });
+  const haloOpacity = pulse.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0.18, 0.42],
+  });
+  const haloScale = pulse.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 1.07],
+  });
+
+  return (
+    <View style={styles_todayWrap}>
+      {/* Halo : simple bloc orangé flouté par l'opacité, sans coût de rendu */}
+      <Animated.View
+        pointerEvents="none"
+        style={[
+          styles_todayHalo,
+          { opacity: haloOpacity, transform: [{ scale: haloScale }] },
+        ]}
+      />
+      <Animated.View style={{ transform: [{ scale }] }}>{children}</Animated.View>
+    </View>
+  );
+}
+
+// Styles du halo : indépendants du thème (dégradé chaud fixe), donc sortis
+// de makeStyles pour rester accessibles au composant.
+const styles_todayWrap = { marginBottom: 22 } as const;
+const styles_todayHalo = {
+  position: "absolute" as const,
+  left: -10,
+  right: -10,
+  top: -8,
+  bottom: -8,
+  borderRadius: 26,
+  backgroundColor: "#f97316",
+};
+
 // ─── Écran ──────────────────────────────────────────────────────────────────
 export default function WelcomeScreen() {
   const router = useRouter();
@@ -351,40 +423,57 @@ export default function WelcomeScreen() {
           {/* ── Anniv & fête du jour (proches) — chaque case selon sa propre
                 condition, rien si aucune (pas de carré vide) ── */}
           {(todayBirthdayNames.length > 0 || todayFetes.length > 0) && (
-            <View style={s.todayRow}>
-              {todayBirthdayNames.length > 0 && (
-                <View style={s.todayCard}>
-                  {todayBirthdayNames.length === 1 ? (
-                    <>
-                      <Text style={s.todayEmoji}>🎂</Text>
+            <>
+              <Text style={s.todaySectionLabel}>
+                🎈 AUJOURD'HUI CHEZ VOS PROCHES
+              </Text>
+              <TodayHighlight>
+                <View style={s.todayRow}>
+                  {todayBirthdayNames.length > 0 && (
+                    <LinearGradient
+                      colors={TODAY_GRADIENT}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={s.todayCard}
+                    >
+                      {todayBirthdayNames.length === 1 ? (
+                        <>
+                          <Text style={s.todayEmoji}>🎂</Text>
+                          <Text style={s.todayFeteText} numberOfLines={2}>
+                            C'est l'anniversaire de {todayBirthdayNames[0]} !
+                          </Text>
+                        </>
+                      ) : (
+                        <>
+                          <Text style={s.todayValue}>
+                            {todayBirthdayNames.length}
+                          </Text>
+                          <Text style={s.todayLabel}>
+                            anniversaires aujourd'hui 🎂
+                          </Text>
+                          <Text style={s.todaySub} numberOfLines={2}>
+                            {joinNames(todayBirthdayNames)}
+                          </Text>
+                        </>
+                      )}
+                    </LinearGradient>
+                  )}
+                  {todayFetes.length > 0 && (
+                    <LinearGradient
+                      colors={TODAY_GRADIENT}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={s.todayCard}
+                    >
+                      <Text style={s.todayEmoji}>🎉</Text>
                       <Text style={s.todayFeteText} numberOfLines={2}>
-                        C'est l'anniversaire de {todayBirthdayNames[0]} !
+                        C'est la fête de {joinNames(todayFetes)} !
                       </Text>
-                    </>
-                  ) : (
-                    <>
-                      <Text style={s.todayValue}>
-                        {todayBirthdayNames.length}
-                      </Text>
-                      <Text style={s.todayLabel}>
-                        anniversaires aujourd'hui 🎂
-                      </Text>
-                      <Text style={s.todaySub} numberOfLines={2}>
-                        {joinNames(todayBirthdayNames)}
-                      </Text>
-                    </>
+                    </LinearGradient>
                   )}
                 </View>
-              )}
-              {todayFetes.length > 0 && (
-                <View style={s.todayCard}>
-                  <Text style={s.todayEmoji}>🎉</Text>
-                  <Text style={s.todayFeteText} numberOfLines={2}>
-                    C'est la fête de {joinNames(todayFetes)} !
-                  </Text>
-                </View>
-              )}
-            </View>
+              </TodayHighlight>
+            </>
           )}
 
           {/* ── Stats : layout bento ── */}
@@ -547,25 +636,47 @@ const makeStyles = (t: Theme) =>
     tagline: { fontSize: 21, fontWeight: "800", color: t.text, textAlign: "center", marginTop: 14 },
     subTagline: { fontSize: 14, color: t.sub, textAlign: "center", marginTop: 8, marginBottom: 30, lineHeight: 20 },
 
-    // Anniv & fête du jour
-    todayRow: { flexDirection: "row", gap: 12, marginBottom: 22 },
+    // Anniv & fête du jour — carte en dégradé chaud, texte blanc, pour se
+    // détacher des stats communauté (bleu-violet) qui suivent immédiatement.
+    todaySectionLabel: {
+      fontSize: 12,
+      fontWeight: "800",
+      letterSpacing: 1.2,
+      color: "#f97316",
+      textAlign: "center",
+      marginBottom: 10,
+    },
+    todayRow: { flexDirection: "row", gap: 12 },
     todayCard: {
       flex: 1,
-      backgroundColor: t.card,
       borderRadius: 18,
-      borderWidth: 1,
-      borderColor: t.border,
       alignItems: "center",
       justifyContent: "center",
-      paddingVertical: 16,
+      paddingVertical: 18,
       paddingHorizontal: 12,
       gap: 4,
     },
-    todayEmoji: { fontSize: 24 },
-    todayValue: { fontSize: 30, fontWeight: "900", color: t.statValue },
-    todayLabel: { fontSize: 11.5, color: t.sub, textAlign: "center", fontWeight: "600" },
-    todaySub: { fontSize: 12.5, color: t.text, textAlign: "center", fontWeight: "700", marginTop: 2 },
-    todayFeteText: { fontSize: 14, color: t.text, textAlign: "center", fontWeight: "700" },
+    todayEmoji: { fontSize: 26 },
+    todayValue: { fontSize: 32, fontWeight: "900", color: "#ffffff" },
+    todayLabel: {
+      fontSize: 11.5,
+      color: "rgba(255,255,255,0.9)",
+      textAlign: "center",
+      fontWeight: "600",
+    },
+    todaySub: {
+      fontSize: 12.5,
+      color: "#ffffff",
+      textAlign: "center",
+      fontWeight: "700",
+      marginTop: 2,
+    },
+    todayFeteText: {
+      fontSize: 14.5,
+      color: "#ffffff",
+      textAlign: "center",
+      fontWeight: "800",
+    },
 
     // Stats bento
     sectionLabel: { fontSize: 12, fontWeight: "700", letterSpacing: 1.2, color: t.sub, textAlign: "center", marginBottom: 12 },

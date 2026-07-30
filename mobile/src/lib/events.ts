@@ -397,6 +397,12 @@ export interface CreateEventPayload {
   maxGuests?: number | null;
   allowExternalGuests?: boolean;
   allowGuestInvites?: boolean;
+  /**
+   * "draft" quand le formulaire est quitté avant la fin : l'événement est
+   * conservé mais n'est ni invitable ni visible des invités. Absent (ou toute
+   * autre valeur) → le serveur publie.
+   */
+  status?: Extract<EventStatus, "draft">;
 }
 
 export async function createEvent(
@@ -431,7 +437,11 @@ export async function checkExistingEvent(
 
 export async function updateEvent(
   shortId: string,
-  fields: Partial<CreateEventPayload> & { status?: EventStatus },
+  // status est volontairement réélargi : à la création seul "draft" a un sens,
+  // mais une mise à jour peut publier, annuler ou clore un événement.
+  fields: Omit<Partial<CreateEventPayload>, "status"> & {
+    status?: EventStatus;
+  },
 ): Promise<EventEntry> {
   return api<EventEntry>(`/events/${shortId}`, {
     method: "PUT",

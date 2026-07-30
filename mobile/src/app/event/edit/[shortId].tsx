@@ -37,15 +37,27 @@ export default function EditEventScreen() {
     );
   }
 
+  // Reprise d'un brouillon : la validation le publie et enchaîne sur les
+  // invitations, comme à la fin d'une création normale.
+  const isDraft = event.status === "draft";
+
   return (
     <>
-      <Stack.Screen options={{ title: `Modifier — ${event.title}` }} />
+      <Stack.Screen
+        options={{
+          title: isDraft ? `Brouillon — ${event.title}` : `Modifier — ${event.title}`,
+        }}
+      />
       <EventFormStepper
         initial={event}
-        submitLabel="💾 Enregistrer"
+        submitLabel={isDraft ? "🎉 Publier l'événement" : "💾 Enregistrer"}
         onSubmit={async (payload) => {
-          await updateEvent(shortId!, payload);
-          router.back();
+          await updateEvent(shortId!, {
+            ...payload,
+            ...(isDraft ? { status: "published" as const } : {}),
+          });
+          if (isDraft) router.replace(`/event/invite/${shortId}`);
+          else router.back();
         }}
       />
     </>

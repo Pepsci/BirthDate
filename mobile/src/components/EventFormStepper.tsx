@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { MutableRefObject, useEffect, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -36,18 +36,35 @@ function initialLocation(ev?: EventDetail): LocationValue | null {
 
 const STEPS = ["Essentiel", "Date", "Lieu", "Cadeaux", "Cagnotte", "Invitation"];
 
+/**
+ * Photographie de l'état du formulaire, tenue à jour à chaque render.
+ *
+ * L'écran parent la lit dans son cleanup de démontage : si l'utilisateur
+ * quitte le stepper sans valider alors qu'il avait déjà saisi un titre, le
+ * travail est enregistré en brouillon plutôt que perdu.
+ */
+export interface EventFormSnapshot {
+  payload: CreateEventPayload;
+  /** Titre renseigné → il y a de quoi faire un brouillon exploitable */
+  hasContent: boolean;
+  /** Formulaire déjà validé : le parent n'a rien à sauvegarder */
+  submitted: boolean;
+}
+
 export default function EventFormStepper({
   initial,
   prefillName,
   isBirthday,
   submitLabel,
   onSubmit,
+  snapshotRef,
 }: {
   initial?: EventDetail;
   prefillName?: string;
   isBirthday?: boolean;
   submitLabel: string;
   onSubmit: (payload: CreateEventPayload) => Promise<void>;
+  snapshotRef?: MutableRefObject<EventFormSnapshot | null>;
 }) {
   const styles = useThemedStyles(makeStyles);
   const { colors, resolved } = useTheme();
@@ -156,33 +173,56 @@ export default function EventFormStepper({
     return true;
   };
 
+  /** État courant du formulaire au format attendu par l'API. */
+  const buildPayload = (): CreateEventPayload => ({
+    title: title.trim(),
+    description: description.trim() || undefined,
+    type,
+    dateMode,
+    fixedDate: dateMode === "fixed" ? fixedDate.toISOString() : undefined,
+    dateOptions:
+      dateMode === "vote" ? dateOptions.map((d) => d.toISOString()) : undefined,
+    locationMode,
+    fixedLocation:
+      locationMode === "fixed" ? fixedLocation ?? undefined : undefined,
+    locationOptions: locationMode === "vote" ? locationOptions : undefined,
+    giftMode,
+    imposedGifts: giftMode === "imposed" ? imposedGifts : undefined,
+    // Pas de cadeaux → pas de cagnotte.
+    giftPoolEnabled: giftMode === "none" ? false : poolEnabled,
+    maxGuests: maxGuests ? parseInt(maxGuests, 10) : null,
+    allowExternalGuests,
+    allowGuestInvites,
+  });
+
+  // Le formulaire a-t-il été validé ? En ref et non en state : c'est lu depuis
+  // le cleanup de démontage du parent, après le dernier render.
+  const submittedRef = useRef(false);
+
+  // Snapshot rafraîchi après chaque render (pas de tableau de dépendances :
+  // n'importe quel champ modifié doit être reflété).
+  useEffect(() => {
+    if (!snapshotRef) return;
+    snapshotRef.current = {
+      payload: buildPayload(),
+      hasContent: !!title.trim(),
+      submitted: submittedRef.current,
+    };
+  });
+
   const submit = async () => {
     setError(null);
     setSaving(true);
+    // Marqué AVANT l'attente : onSubmit navigue lui-même, l'écran peut donc
+    // se démonter avant la reprise du await. Sans ça, le parent croirait à un
+    // abandon et créerait un brouillon en doublon de l'événement publié.
+    submittedRef.current = true;
+    if (snapshotRef?.current) snapshotRef.current.submitted = true;
     try {
-      await onSubmit({
-        title: title.trim(),
-        description: description.trim() || undefined,
-        type,
-        dateMode,
-        fixedDate: dateMode === "fixed" ? fixedDate.toISOString() : undefined,
-        dateOptions:
-          dateMode === "vote"
-            ? dateOptions.map((d) => d.toISOString())
-            : undefined,
-        locationMode,
-        fixedLocation:
-          locationMode === "fixed" ? fixedLocation ?? undefined : undefined,
-        locationOptions: locationMode === "vote" ? locationOptions : undefined,
-        giftMode,
-        imposedGifts: giftMode === "imposed" ? imposedGifts : undefined,
-        // Pas de cadeaux → pas de cagnotte.
-        giftPoolEnabled: giftMode === "none" ? false : poolEnabled,
-        maxGuests: maxGuests ? parseInt(maxGuests, 10) : null,
-        allowExternalGuests,
-        allowGuestInvites,
-      });
+      await onSubmit(buildPayload());
     } catch (e: any) {
+      submittedRef.current = false;
+      if (snapshotRef?.current) snapshotRef.current.submitted = false;
       setError(e?.message ?? "Erreur lors de la création.");
       setSaving(false);
     }

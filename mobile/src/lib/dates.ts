@@ -122,6 +122,14 @@ export function formatNameday(mmdd: string): string {
   return `${dd} ${MONTHS_FR[mm - 1]}`;
 }
 
+/**
+ * "0 an" · "1 an" · "34 ans" — le pluriel français ne s'applique qu'à
+ * partir de 2. Utilisé partout où un âge est affiché sur une carte.
+ */
+export function formatAge(age: number): string {
+  return `${age} an${age >= 2 ? "s" : ""}`;
+}
+
 /** Libellé du countdown */
 export function countdownLabel(days: number): string {
   if (days === 0) return "Aujourd'hui 🎂";

@@ -196,6 +196,48 @@ function note(html) {
 }
 
 /**
+ * Bouton CTA principal + lien secondaire « Ouvrir dans l'application ».
+ *
+ * Variante de ctaButton() pour les destinataires qui ont l'app mobile : le
+ * bouton reste en https (il ouvre l'app via Universal/App Links, et retombe
+ * sur le site sinon), et le lien secondaire force l'app via le schéma
+ * `birthreminder://` quand la vérification système n'a pas eu lieu.
+ *
+ * appUrl null/undefined → rendu identique à ctaButton().
+ *
+ * @param {string} url lien web (https)
+ * @param {string} label libellé du bouton
+ * @param {string|null} appUrl lien birthreminder:// équivalent
+ */
+function ctaButtonWithApp(url, label, appUrl) {
+  if (!appUrl) return ctaButton(url, label);
+  return `
+                <tr>
+                  <td align="center" style="padding:16px 40px 8px;">
+                    <a href="${url}" style="
+                      display:inline-block;
+                      background-color:#ffffff;
+                      color:#667eea;
+                      text-decoration:none;
+                      font-size:15px;
+                      font-weight:700;
+                      padding:14px 40px;
+                      border-radius:10px;
+                      box-shadow:0 4px 15px rgba(0,0,0,0.2);
+                    ">${label} →</a>
+                  </td>
+                </tr>
+                <tr>
+                  <td align="center" style="padding:0 40px 28px;">
+                    <a href="${appUrl}" style="font-size:13px;font-weight:600;color:rgba(255,255,255,0.85);text-decoration:underline;">
+                      📱 Ouvrir dans l'application
+                    </a>
+                  </td>
+                </tr>
+  `;
+}
+
+/**
  * Séparateur + lien texte (pour reset password)
  */
 function linkFallback(url) {
@@ -381,6 +423,7 @@ module.exports = {
   title,
   paragraph,
   ctaButton,
+  ctaButtonWithApp,
   note,
   linkFallback,
   warning,

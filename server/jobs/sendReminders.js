@@ -68,10 +68,22 @@ function isNamedayInXDays(nameday, daysFromNow) {
 }
 
 // ========================================
+// HELPER: Prénom affichable d'une carte
+// ========================================
+/**
+ * Une carte liée à un ami inscrit peut ne pas porter de prénom propre : on
+ * retombe alors sur celui du compte lié, plutôt que d'afficher "Quelqu'un"
+ * (ou "undefined" là où l'interpolation n'était pas protégée).
+ */
+function displayName(date) {
+  return date.name || date.linkedUser?.name || "Quelqu'un";
+}
+
+// ========================================
 // HELPER: Construire le message push anniversaire
 // ========================================
 function buildBirthdayPushPayload(date, daysFromNow) {
-  const firstName = date.name || "Quelqu'un";
+  const firstName = displayName(date);
 
   if (daysFromNow === 0) {
     return {
@@ -108,7 +120,7 @@ function buildBirthdayPushPayload(date, daysFromNow) {
 // HELPER: Construire le message push fête
 // ========================================
 function buildNamedayPushPayload(date, daysFromNow) {
-  const firstName = date.name || "Quelqu'un";
+  const firstName = displayName(date);
 
   if (daysFromNow === 0) {
     return {
@@ -198,7 +210,7 @@ async function checkAndSendCardBirthdayReminders() {
           await notify(_app, {
             userId: owner._id,
             type: "birthday_soon",
-            data: { name: date.name, daysLeft: 0 },
+            data: { name: displayName(date), daysLeft: 0 },
             link: `/?tab=date&dateId=${date._id}`,
           });
         }
@@ -217,7 +229,7 @@ async function checkAndSendCardBirthdayReminders() {
             await notify(_app, {
               userId: owner._id,
               type: "birthday_soon",
-              data: { name: date.name, daysLeft: days },
+              data: { name: displayName(date), daysLeft: days },
               link: `/?tab=date&dateId=${date._id}`,
             });
           }
@@ -269,7 +281,7 @@ async function checkAndSendNamedayReminders() {
       const pushTimings = owner.pushBirthdayTimings || [1, 0];
 
       if (notifyOnNameday && isNamedayInXDays(date.nameday, 0)) {
-        console.log(`🎉 Fête de ${date.name} aujourd'hui !`);
+        console.log(`🎉 Fête de ${displayName(date)} aujourd'hui !`);
         await sendNamedayReminderEmail(date, 0);
 
         // ── Notif applicative J ──
@@ -277,7 +289,7 @@ async function checkAndSendNamedayReminders() {
           await notify(_app, {
             userId: owner._id,
             type: "nameday_soon",
-            data: { name: date.name, daysLeft: 0 },
+            data: { name: displayName(date), daysLeft: 0 },
             link: `/?tab=date&dateId=${date._id}`,
           });
         }
@@ -289,7 +301,7 @@ async function checkAndSendNamedayReminders() {
 
       for (const days of timings) {
         if (isNamedayInXDays(date.nameday, days)) {
-          console.log(`📅 Rappel fête de ${date.name} dans ${days} jour(s)`);
+          console.log(`📅 Rappel fête de ${displayName(date)} dans ${days} jour(s)`);
           await sendNamedayReminderEmail(date, days);
 
           // ── Notif applicative J-X ──
@@ -297,7 +309,7 @@ async function checkAndSendNamedayReminders() {
             await notify(_app, {
               userId: owner._id,
               type: "nameday_soon",
-              data: { name: date.name, daysLeft: days },
+              data: { name: displayName(date), daysLeft: days },
               link: `/?tab=date&dateId=${date._id}`,
             });
           }

@@ -35,6 +35,7 @@ import {
   setNamedayPrefs,
   daysUntil,
   currentAge,
+  formatAge,
   formatFullDate,
   formatNameday,
 } from "../../lib/dates";
@@ -618,7 +619,7 @@ export default function DateDetailScreen() {
         </View>
         {birthISO && (
           <Text style={styles.detail}>
-            🎂 {formatFullDate(birthISO)} · {currentAge(birthISO)} ans
+            🎂 {formatFullDate(birthISO)} · {formatAge(currentAge(birthISO))}
           </Text>
         )}
         {nameday && (
@@ -739,7 +740,7 @@ export default function DateDetailScreen() {
                     }
                   />
                   {[
-                    { v: 1, l: "Veille" },
+                    { v: 1, l: "J-1" },
                     { v: 7, l: "J-7" },
                   ].map(({ v, l }) => {
                     const timings = entry.namedayPreferences?.timings ?? [1];

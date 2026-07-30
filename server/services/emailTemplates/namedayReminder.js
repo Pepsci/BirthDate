@@ -5,8 +5,16 @@ const {
   badge,
   title,
   paragraph,
-  ctaButton,
+  ctaButtonWithApp,
 } = require("./emailHelpers");
+const { appLinkFor } = require("../../utils/mobileLinks");
+
+/**
+ * "Léa Martin" · "Léa" si le nom de famille n'a pas été saisi (il est
+ * optionnel sur une carte, contrairement au prénom).
+ */
+const fullNameOf = (name, surname) =>
+  [name, surname].filter((part) => !!String(part ?? "").trim()).join(" ");
 
 const sesClient = new SESClient({
   region: process.env.AWS_REGION,
@@ -21,24 +29,26 @@ function getNamedayReminderTemplate({
   surname,
   daysBeforeNameday,
   namedayLink,
+  appLink,
   unsubscribeAllLink,
   unsubscribeSpecificLink,
   formattedDate,
 }) {
+  const who = fullNameOf(name, surname);
   let badgeText, titleText, mainText;
 
   if (daysBeforeNameday === 0) {
     badgeText = "Aujourd'hui 🎉";
     titleText = "C'est sa fête !";
-    mainText = `C'est aujourd'hui la fête de <strong>${name} ${surname}</strong> ! N'oubliez pas de lui souhaiter ! ✨`;
+    mainText = `C'est aujourd'hui la fête de <strong>${who}</strong> ! N'oubliez pas de lui souhaiter ! ✨`;
   } else if (daysBeforeNameday === 1) {
     badgeText = "Demain 🌸";
     titleText = "Fête demain";
-    mainText = `La fête de <strong>${name} ${surname}</strong> est <strong>demain</strong> (${formattedDate}) !`;
+    mainText = `La fête de <strong>${who}</strong> est <strong>demain</strong> (${formattedDate}) !`;
   } else {
     badgeText = `Dans ${daysBeforeNameday} jours 📅`;
     titleText = `Fête dans ${daysBeforeNameday} jours`;
-    mainText = `La fête de <strong>${name} ${surname}</strong> est dans <strong>${daysBeforeNameday} jours</strong> (${formattedDate}) !`;
+    mainText = `La fête de <strong>${who}</strong> est dans <strong>${daysBeforeNameday} jours</strong> (${formattedDate}) !`;
   }
 
   return (
@@ -46,7 +56,7 @@ function getNamedayReminderTemplate({
     badge(badgeText) +
     title(titleText) +
     paragraph(mainText) +
-    ctaButton(namedayLink, "Voir le profil") +
+    ctaButtonWithApp(namedayLink, "Voir le profil", appLink) +
     emailFooter(`
       <p style="margin:0 0 4px;font-size:12px;color:#6b7280;">
         <a href="${unsubscribeSpecificLink}" style="color:#818cf8;text-decoration:none;">
@@ -67,19 +77,22 @@ function getNamedayReminderTextVersion({
   surname,
   daysBeforeNameday,
   namedayLink,
+  appLink,
   unsubscribeAllLink,
   unsubscribeSpecificLink,
   formattedDate,
 }) {
+  const who = fullNameOf(name, surname);
   let mainText;
   if (daysBeforeNameday === 0) {
-    mainText = `C'est aujourd'hui la fête de ${name} ${surname} !`;
+    mainText = `C'est aujourd'hui la fête de ${who} !`;
   } else if (daysBeforeNameday === 1) {
-    mainText = `La fête de ${name} ${surname} est demain (${formattedDate}) !`;
+    mainText = `La fête de ${who} est demain (${formattedDate}) !`;
   } else {
-    mainText = `La fête de ${name} ${surname} est dans ${daysBeforeNameday} jours (${formattedDate}) !`;
+    mainText = `La fête de ${who} est dans ${daysBeforeNameday} jours (${formattedDate}) !`;
   }
-  return `${mainText}\n\nVoir le profil : ${namedayLink}\n\n---\nNe plus recevoir de rappels pour ${name} : ${unsubscribeSpecificLink}\nNe plus recevoir de rappels d'anniversaires : ${unsubscribeAllLink}`;
+  const appLine = appLink ? `\nOuvrir dans l'application : ${appLink}` : "";
+  return `${mainText}\n\nVoir le profil : ${namedayLink}${appLine}\n\n---\nNe plus recevoir de rappels pour ${name} : ${unsubscribeSpecificLink}\nNe plus recevoir de rappels d'anniversaires : ${unsubscribeAllLink}`;
 }
 
 async function sendNamedayReminderEmail(date, daysBeforeNameday) {
@@ -88,8 +101,11 @@ async function sendNamedayReminderEmail(date, daysBeforeNameday) {
     if (!owner || !owner.email) return;
 
     const frontendUrl = process.env.FRONTEND_URL || "https://birthreminder.com";
-    const name = date.name;
-    const surname = date.surname || "";
+    // Carte sans nom propre → on retombe sur l'ami lié. Le nom de famille est
+    // optionnel : fullNameOf() évite les "undefined" dans le sujet et le corps.
+    const name = date.name || date.linkedUser?.name || "";
+    const surname = date.surname || date.linkedUser?.surname || "";
+    const who = fullNameOf(name, surname);
 
     const [month, day] = date.nameday.split("-");
     const monthNames = [
@@ -110,21 +126,24 @@ async function sendNamedayReminderEmail(date, daysBeforeNameday) {
 
     // CORRIGÉ : deep link vers /home?tab=date&dateId= au lieu de /birthday/:id
     const namedayLink = `${frontendUrl}/home?tab=date&dateId=${date._id}`;
+    // Lien app pour les comptes ayant un appareil mobile enregistré (null sinon)
+    const appLink = appLinkFor(owner, namedayLink);
     const unsubscribeAllLink = `${frontendUrl}/unsubscribe?userId=${owner._id}&type=all`;
     const unsubscribeSpecificLink = `${frontendUrl}/unsubscribe?userId=${owner._id}&dateId=${date._id}&type=specific`;
 
     const subject =
       daysBeforeNameday === 0
-        ? `✨ C'est la fête de ${name} ${surname} aujourd'hui !`
+        ? `✨ C'est la fête de ${who} aujourd'hui !`
         : daysBeforeNameday === 1
-          ? `✨ Fête de ${name} ${surname} demain !`
-          : `✨ Fête de ${name} ${surname} dans ${daysBeforeNameday} jours`;
+          ? `✨ Fête de ${who} demain !`
+          : `✨ Fête de ${who} dans ${daysBeforeNameday} jours`;
 
     const html = getNamedayReminderTemplate({
       name,
       surname,
       daysBeforeNameday,
       namedayLink,
+      appLink,
       unsubscribeAllLink,
       unsubscribeSpecificLink,
       formattedDate,
@@ -135,6 +154,7 @@ async function sendNamedayReminderEmail(date, daysBeforeNameday) {
       surname,
       daysBeforeNameday,
       namedayLink,
+      appLink,
       unsubscribeAllLink,
       unsubscribeSpecificLink,
       formattedDate,
@@ -154,7 +174,7 @@ async function sendNamedayReminderEmail(date, daysBeforeNameday) {
 
     await sesClient.send(new SendEmailCommand(params));
     console.log(
-      `✅ Email fête J-${daysBeforeNameday} envoyé à ${owner.email} pour ${name} ${surname}`,
+      `✅ Email fête J-${daysBeforeNameday} envoyé à ${owner.email} pour ${who}`,
     );
   } catch (error) {
     console.error(`❌ Erreur envoi email fête à ${date.owner?.email}:`, error);

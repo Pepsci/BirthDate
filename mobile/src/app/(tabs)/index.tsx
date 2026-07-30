@@ -24,6 +24,7 @@ import {
   fetchDates,
   daysUntil,
   currentAge,
+  formatAge,
   formatBirthday,
   formatNameday,
 } from "../../lib/dates";
@@ -147,7 +148,16 @@ export default function BirthdaysScreen() {
           autoCorrect={false}
         />
         {search.length > 0 && (
-          <Pressable hitSlop={8} onPress={() => setSearch("")}>
+          <Pressable
+            hitSlop={12}
+            accessibilityRole="button"
+            accessibilityLabel="Effacer la recherche"
+            onPress={() => setSearch("")}
+            style={({ pressed }) => [
+              styles.searchClearBtn,
+              pressed && styles.searchClearBtnPressed,
+            ]}
+          >
             <Text style={styles.searchClear}>✕</Text>
           </Pressable>
         )}
@@ -295,7 +305,7 @@ function BirthdayCard({
       {birthISO && (
         <Text style={styles.detail}>
           🎂 {formatBirthday(birthISO)}
-          {age !== null ? ` · ${age} ans` : ""}
+          {age !== null ? ` · ${formatAge(age)}` : ""}
         </Text>
       )}
       {!hideNamedays && (entry.nameday || entry.linkedUser?.nameday) ? (
@@ -356,7 +366,23 @@ const makeStyles = (c: ThemeColors) =>
       fontSize: 15,
       color: c.text,
     },
-    searchClear: { color: c.faint, fontWeight: "700", fontSize: 14 },
+    // Bouton d'effacement : pastille pleine plutôt qu'un ✕ gris pâle, qui
+    // passait inaperçu sur le fond de la barre de recherche.
+    searchClearBtn: {
+      width: 26,
+      height: 26,
+      borderRadius: 13,
+      backgroundColor: c.primary,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    searchClearBtnPressed: { backgroundColor: c.primaryStrong },
+    searchClear: {
+      color: c.white,
+      fontWeight: "900",
+      fontSize: 14,
+      lineHeight: 16,
+    },
     filterRow: {
       flexDirection: "row",
       gap: 8,
