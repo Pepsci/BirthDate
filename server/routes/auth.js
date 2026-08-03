@@ -31,6 +31,34 @@ const authLimiter = rateLimit({
   message: { message: "Trop de tentatives, réessayez dans 15 minutes." },
 });
 
+// Limiteur propre au mot de passe oublié. Il était auparavant confondu avec
+// authLimiter : le compteur de /login mangeait celui de /forgot-password, et
+// une seule IP pouvait déclencher 10 envois SES vers des adresses arbitraires.
+// Fenêtre plus longue, quota plus bas — un utilisateur légitime demande un
+// reset une à deux fois, pas cinq.
+const passwordResetLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    message: "Trop de demandes de réinitialisation, réessayez dans une heure.",
+  },
+});
+
+// Anti-renvoi par compte : complète le limiteur par IP, qui ne protège pas
+// contre le mail-bombing d'une même adresse depuis plusieurs IP.
+// L'instant d'émission se déduit de resetTokenExpires (validité 1 h), donc
+// aucun champ supplémentaire n'est nécessaire sur le schéma User.
+const RESET_TOKEN_TTL_MS = 3600000;
+const RESET_RESEND_DELAY_MS = 2 * 60 * 1000;
+
+function resetRequestedTooRecently(user) {
+  if (!user?.resetToken || !user?.resetTokenExpires) return false;
+  const issuedAt = new Date(user.resetTokenExpires).getTime() - RESET_TOKEN_TTL_MS;
+  return Date.now() - issuedAt < RESET_RESEND_DELAY_MS;
+}
+
 const validatePassword = (password) => {
   return (
     typeof password === "string" &&
@@ -349,21 +377,47 @@ router.post("/logout", (req, res) => {
 // ========================================
 // POST /auth/forgot-password
 // ========================================
-router.post("/forgot-password", authLimiter, async (req, res) => {
+router.post("/forgot-password", passwordResetLimiter, async (req, res) => {
   const { email } = req.body;
 
   try {
     const user = await userModel.findOne({ email });
     if (user) {
-      const resetToken = crypto.randomBytes(32).toString("hex");
-      // On ne stocke que le HASH du token en base ; le token en clair part par email.
-      user.resetToken = crypto
-        .createHash("sha256")
-        .update(resetToken)
-        .digest("hex");
-      user.resetTokenExpires = Date.now() + 3600000;
-      await user.save();
-      await sendPasswordResetEmail(email, resetToken);
+      // Un token émis il y a moins de 2 min reste valable : on ne renvoie pas
+      // d'email, mais la réponse est identique — l'attaquant n'apprend rien.
+      const throttled = resetRequestedTooRecently(user);
+
+      if (!throttled) {
+        const resetToken = crypto.randomBytes(32).toString("hex");
+        // On ne stocke que le HASH du token en base ; le token en clair part par email.
+        user.resetToken = crypto
+          .createHash("sha256")
+          .update(resetToken)
+          .digest("hex");
+        user.resetTokenExpires = Date.now() + 3600000;
+        await user.save();
+        await sendPasswordResetEmail(email, resetToken);
+      }
+
+      // Trace de la DEMANDE (distincte du reset abouti, journalisé plus bas
+      // dans /reset/:token). `throttled` distingue un email réellement envoyé
+      // d'un renvoi bloqué par l'anti-spam : plusieurs lignes throttled
+      // d'affilée = tentative de mail-bombing sur ce compte.
+      try {
+        const ipAddress =
+          req.headers["x-forwarded-for"]?.split(",")[0].trim() ||
+          req.headers["x-real-ip"] ||
+          req.connection.remoteAddress;
+        await Log.create({
+          userId: user._id,
+          action: "password_reset_request",
+          ipAddress,
+          userAgent: req.headers["user-agent"],
+          metadata: { throttled, emailSent: !throttled },
+        });
+      } catch (logError) {
+        console.error("❌ Erreur logging:", logError);
+      }
     }
     // Toujours retourner 200 pour ne pas révéler si l'email existe
     return res.status(200).json({

@@ -12,10 +12,13 @@ const messageSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
-    // "text" (défaut) | "gift_share"
+    // "text" (défaut) | "gift_share" | "date_share"
+    // date_share : partage d'une carte anniversaire (nom, date, fête) que le
+    // destinataire peut ajouter à ses propres dates. Les idées cadeaux ne sont
+    // JAMAIS incluses — c'est ce qui le distingue de gift_share.
     type: {
       type: String,
-      enum: ["text", "gift_share"],
+      enum: ["text", "gift_share", "date_share"],
       default: "text",
     },
     content: {

@@ -15,6 +15,10 @@ const logSchema = new Schema(
         "login",
         "logout",
         "signup",
+        // Demande de réinitialisation (formulaire « mot de passe oublié »),
+        // à distinguer de password_reset qui n'est écrit qu'une fois le
+        // nouveau mot de passe réellement enregistré.
+        "password_reset_request",
         "password_reset",
         "account_update",
         "account_delete",

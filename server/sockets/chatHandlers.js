@@ -113,7 +113,10 @@ module.exports = (io, socket, connectedUsers, app) => {
         (p) => p.toString() !== socket.userId,
       );
 
-      const messageType = type === "gift_share" ? "gift_share" : "text";
+      // Types structurés : métadonnées de coordination, jamais chiffrées.
+      const STRUCTURED_TYPES = ["gift_share", "date_share"];
+      const messageType = STRUCTURED_TYPES.includes(type) ? type : "text";
+      const isStructured = STRUCTURED_TYPES.includes(messageType);
 
       const messageData = {
         conversation: conversationId,
@@ -121,10 +124,10 @@ module.exports = (io, socket, connectedUsers, app) => {
         content: content.trim(),
         type: messageType,
         readBy: [{ user: socket.userId }],
-        isEncrypted: messageType === "gift_share" ? false : !!isEncrypted,
+        isEncrypted: isStructured ? false : !!isEncrypted,
       };
 
-      if (messageType === "gift_share" && metadata) {
+      if (isStructured && metadata) {
         messageData.metadata = metadata;
       }
 
@@ -196,11 +199,14 @@ module.exports = (io, socket, connectedUsers, app) => {
             body: "🔒 Nouveau message chiffré",
           }).catch((err) => console.error("❌ Push chat error:", err));
         } else {
-          // Cas non chiffrés (gift_share, chat en clair) : comportement inchangé.
+          // Cas non chiffrés (gift_share, date_share, chat en clair).
           let pushBody;
           if (messageType === "gift_share") {
             const personName = metadata?.personName || "quelqu'un";
             pushBody = `🎁 Idées cadeaux pour ${personName}`;
+          } else if (messageType === "date_share") {
+            const personName = metadata?.personName || "quelqu'un";
+            pushBody = `🎂 Anniversaire de ${personName}`;
           } else {
             pushBody = content.trim().slice(0, 100);
           }
@@ -238,6 +244,8 @@ module.exports = (io, socket, connectedUsers, app) => {
           let preview;
           if (messageType === "gift_share") {
             preview = `🎁 Idées cadeaux pour ${metadata?.personName || "quelqu'un"}`;
+          } else if (messageType === "date_share") {
+            preview = `🎂 Anniversaire de ${metadata?.personName || "quelqu'un"}`;
           } else if (isEncrypted) {
             preview = "🔒 Message chiffré";
           } else {
@@ -391,9 +399,9 @@ module.exports = (io, socket, connectedUsers, app) => {
           message: "Les messages chiffrés ne peuvent pas être modifiés",
         });
       }
-      if (message.type === "gift_share") {
+      if (message.type === "gift_share" || message.type === "date_share") {
         return socket.emit("error", {
-          message: "Les cartes cadeaux ne peuvent pas être modifiées",
+          message: "Les cartes partagées ne peuvent pas être modifiées",
         });
       }
       const EDIT_TIME_LIMIT = 5 * 60 * 1000;
