@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import apiHandler from "../../api/apiHandler";
 import DatePickerMobile from "./DatePickerMobile";
+import NamedayInput from "./NamedayInput";
 import "../connect/authpage.css";
+import "./css/namedayInput.css";
 import "./css/updateDate.css";
 
 const UpdateDate = ({
@@ -124,18 +126,14 @@ const UpdateDate = ({
         {!isFriend && (
           <div className="auth-field">
             <label className="auth-label">Date de fête (optionnel)</label>
-            <input
-              type="text"
-              className="auth-input"
-              name="nameday"
-              placeholder="MM-JJ (ex: 03-13)"
+            {/* Sélecteur mois + jour : le format MM-JJ n'a plus à être connu,
+                et c'est le même composant qu'à la création (CreateDate). */}
+            <NamedayInput
               value={dateToUpdate.nameday || ""}
-              onChange={handleInputChange}
-              maxLength={5}
+              onChange={(mmdd) =>
+                setDateToUpdate({ ...dateToUpdate, nameday: mmdd || null })
+              }
             />
-            <span className="auth-input-hint">
-              Format MM-JJ — exemple : 03-13 pour le 13 mars
-            </span>
           </div>
         )}
 

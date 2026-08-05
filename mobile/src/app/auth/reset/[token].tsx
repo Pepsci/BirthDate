@@ -117,9 +117,19 @@ export default function ResetPasswordScreen() {
               )}
             </Pressable>
 
+            {/* Le sort des anciens messages dépend du mode E2E : en standard
+                la clé privée est chiffrée avec le mot de passe et devient
+                irrécupérable, alors qu'en mode maximum elle se redérive de la
+                phrase de 12 mots. L'ancien texte alarmait à tort les
+                utilisateurs les mieux protégés. */}
             <Text style={styles.warn}>
               ⚠️ Réinitialiser ton mot de passe régénère ta clé de chiffrement :
               les anciens messages chiffrés deviendront illisibles.
+            </Text>
+            <Text style={styles.warnSoft}>
+              Sauf si tu as activé le chiffrement maximum : ressaisis ta phrase
+              de récupération de 12 mots depuis Profil → Chiffrement, et tes
+              anciens messages redeviendront lisibles.
             </Text>
           </>
         )}
@@ -149,4 +159,11 @@ const makeStyles = (c: ThemeColors) =>
     },
     buttonText: { color: c.white, fontSize: 16, fontWeight: "600" },
     warn: { color: c.warning, fontSize: 12, textAlign: "center", marginTop: 10 },
+    warnSoft: {
+      color: c.sub,
+      fontSize: 12,
+      textAlign: "center",
+      marginTop: 6,
+      lineHeight: 17,
+    },
   });

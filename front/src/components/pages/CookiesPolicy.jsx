@@ -109,6 +109,25 @@ export default function CookiesPolicy() {
               d'email) et le contenu des champs de formulaire n'est jamais
               enregistré.
             </p>
+            <p className="note">
+              <strong>Ce que cela couvre précisément :</strong> les pages
+              consultées, les interactions avec l'interface (clics, formulaires
+              soumis) et{" "}
+              <strong>
+                l'enregistrement de votre navigation, qui peut être rejouée
+              </strong>{" "}
+              par notre équipe pour comprendre un parcours ou un bug. Le contenu
+              que vous saisissez est masqué à l'enregistrement, et le contenu de
+              vos messages n'est jamais concerné : il est chiffré et ne transite
+              pas par cet outil. Si vous êtes connecté, ces mesures sont
+              rattachées à l'identifiant technique de votre compte, jamais à
+              votre nom ni à votre email.
+            </p>
+            <p className="note">
+              Refuser les cookies analytiques désactive l'ensemble, y compris
+              l'enregistrement de navigation. Vous pouvez changer d'avis à tout
+              moment depuis le bandeau de gestion des cookies.
+            </p>
           </div>
 
           <div className="cookie-category">
@@ -167,6 +186,17 @@ export default function CookiesPolicy() {
           >
             🍪 Gérer mes préférences de cookies
           </button>
+
+          <h3>Dans l'application mobile</h3>
+          <p>
+            L'application iOS n'utilise pas de cookies. Elle stocke en revanche
+            certaines informations sur votre téléphone, dans l'espace sécurisé
+            du système : votre jeton de connexion, votre clé de chiffrement
+            privée, votre thème et vos préférences d'affichage. Ces éléments ne
+            servent qu'au fonctionnement de l'application, ne sont transmis à
+            aucun tiers, et sont effacés lorsque vous vous déconnectez ou
+            désinstallez l'application.
+          </p>
 
           <h3>Depuis votre navigateur</h3>
           <p>

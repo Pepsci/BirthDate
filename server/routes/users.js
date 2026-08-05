@@ -3,6 +3,7 @@ const router = express.Router();
 const userModel = require("../models/user.model");
 const Friend = require("../models/friend.model");
 const DateModel = require("../models/date.model");
+const Conversation = require("../models/conversation.model");
 const { isAuthenticated } = require("../middleware/jwt.middleware");
 const { logAction } = require("../middleware/logger.middleware");
 const rateLimit = require("express-rate-limit");
@@ -607,6 +608,22 @@ router.delete(
       await Friend.deleteMany({
         $or: [{ user: req.params.id }, { friend: req.params.id }],
       });
+
+      // Conversations : on efface pour LA SEULE personne qui part, avec le
+      // même mécanisme que « retirer de ma liste ». Détruire les fils
+      // reviendrait à effacer la correspondance de gens qui n'ont rien
+      // demandé, et permettrait à quelqu'un de supprimer son compte pour faire
+      // disparaître les preuves d'un harcèlement signalé.
+      // Les messages restants seront purgés 12 mois après que l'autre aura
+      // lui aussi retiré la conversation (jobs/purgeClearedConversations.js).
+      await Conversation.updateMany(
+        { participants: req.params.id, "clears.user": { $ne: req.params.id } },
+        { $push: { clears: { user: req.params.id, at: new Date() } } },
+      );
+      await Conversation.updateMany(
+        { participants: req.params.id, "clears.user": req.params.id },
+        { $set: { "clears.$.at": new Date() } },
+      );
 
       res.status(200).json({
         message:

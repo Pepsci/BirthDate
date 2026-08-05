@@ -1,5 +1,6 @@
 import { useState } from "react";
 import {
+  View,
   Text,
   TextInput,
   Pressable,
@@ -27,6 +28,9 @@ export default function PasswordScreen() {
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  // Un seul oeil pour les trois champs : on saisit trois fois de suite, les
+  // masquer separement obligerait a trois allers-retours.
+  const [visible, setVisible] = useState(false);
 
   const submit = async () => {
     if (!current || !next || !confirm) {
@@ -76,10 +80,20 @@ export default function PasswordScreen() {
     >
       <Stack.Screen options={{ title: "Mot de passe" }} />
 
-      <Text style={styles.label}>Mot de passe actuel</Text>
+      <View style={styles.labelRow}>
+        <Text style={styles.label}>Mot de passe actuel</Text>
+        <Pressable onPress={() => setVisible((v) => !v)} hitSlop={10}>
+          <Text style={styles.toggle}>
+            {visible ? "Masquer" : "Afficher"}
+          </Text>
+        </Pressable>
+      </View>
       <TextInput placeholderTextColor={colors.placeholder}
         style={styles.input}
-        secureTextEntry
+        secureTextEntry={!visible}
+        autoCapitalize="none"
+        autoCorrect={false}
+        textContentType="password"
         value={current}
         onChangeText={setCurrent}
       />
@@ -87,7 +101,10 @@ export default function PasswordScreen() {
       <Text style={styles.label}>Nouveau mot de passe</Text>
       <TextInput placeholderTextColor={colors.placeholder}
         style={styles.input}
-        secureTextEntry
+        secureTextEntry={!visible}
+        autoCapitalize="none"
+        autoCorrect={false}
+        textContentType="newPassword"
         value={next}
         onChangeText={setNext}
       />
@@ -95,7 +112,10 @@ export default function PasswordScreen() {
       <Text style={styles.label}>Confirmer le nouveau mot de passe</Text>
       <TextInput placeholderTextColor={colors.placeholder}
         style={styles.input}
-        secureTextEntry
+        secureTextEntry={!visible}
+        autoCapitalize="none"
+        autoCorrect={false}
+        textContentType="newPassword"
         value={confirm}
         onChangeText={setConfirm}
       />
@@ -127,6 +147,12 @@ const makeStyles = (c: ThemeColors) =>
   container: { flex: 1, backgroundColor: c.bg },
   content: { padding: 16, gap: 6 },
   label: { fontSize: 13, fontWeight: "700", color: c.sub, marginTop: 10 },
+  labelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  toggle: { fontSize: 13, fontWeight: "700", color: c.primary, marginTop: 10 },
   input: {
     borderWidth: 1,
     borderColor: c.inputBorder,

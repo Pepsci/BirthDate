@@ -7,6 +7,7 @@ import {
   StyleSheet,
   RefreshControl,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
 import { useAuth } from "../../lib/auth-context";
@@ -15,6 +16,7 @@ import { useUnread } from "../../lib/unread-context";
 import {
   ConversationSummary,
   fetchConversations,
+  deleteConversation,
 } from "../../lib/conversations";
 import { timeAgo } from "../../lib/notifications";
 import Avatar from "../../components/Avatar";
@@ -33,6 +35,7 @@ export default function ChatsScreen() {
   const [convs, setConvs] = useState<ConversationSummary[] | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -47,6 +50,40 @@ export default function ChatsScreen() {
     useCallback(() => {
       load();
     }, [load]),
+  );
+
+  // Appui long sur une conversation → suppression. La confirmation insiste sur
+  // le fait que c'est définitif et que ça vaut pour les deux participants :
+  // le serveur supprime la conversation et tous ses messages.
+  const confirmDelete = useCallback(
+    (conversationId: string, otherName: string) => {
+      Alert.alert(
+        "Retirer de ma liste",
+        `Les messages échangés avec ${otherName} disparaîtront de votre côté. ${otherName} garde sa copie, et la conversation réapparaîtra si un nouveau message arrive.`,
+        [
+          { text: "Annuler", style: "cancel" },
+          {
+            text: "Retirer",
+            style: "destructive",
+            onPress: async () => {
+              setDeletingId(conversationId);
+              setError(null);
+              try {
+                await deleteConversation(conversationId);
+                setConvs((prev) =>
+                  (prev ?? []).filter((c) => c._id !== conversationId),
+                );
+              } catch (e: any) {
+                setError(e?.message ?? "Suppression impossible.");
+              } finally {
+                setDeletingId(null);
+              }
+            },
+          },
+        ],
+      );
+    },
+    [],
   );
 
   const onRefresh = useCallback(async () => {
@@ -72,7 +109,7 @@ export default function ChatsScreen() {
       <OnboardingTip
         id="chats"
         emoji="🔒"
-        text="Tes messages sont chiffrés de bout en bout : personne d'autre que toi et ton ami ne peut les lire. Ajoute des amis depuis Profil → Mes amis."
+        text="Tes messages sont chiffrés de bout en bout : personne d'autre que toi et ton ami ne peut les lire. Appui long sur une conversation pour la retirer de ta liste. Ajoute des amis depuis Profil → Mes amis."
       />
       {error && <Text style={styles.error}>{error}</Text>}
       <FlatList
@@ -101,12 +138,23 @@ export default function ChatsScreen() {
             item.lastMessageAt ?? item.lastMessage?.createdAt ?? null;
           return (
             <Pressable
-              style={({ pressed }) => [styles.row, pressed && { opacity: 0.8 }]}
+              style={({ pressed }) => [
+                styles.row,
+                pressed && { opacity: 0.8 },
+                deletingId === item._id && { opacity: 0.5 },
+              ]}
               onPress={() =>
                 router.push(
                   `/chat/${other._id}?name=${encodeURIComponent(other.name)}&avatar=${encodeURIComponent(other.avatar ?? "")}`,
                 )
               }
+              onLongPress={() =>
+                confirmDelete(
+                  item._id,
+                  `${other.name}${other.surname ? ` ${other.surname}` : ""}`,
+                )
+              }
+              delayLongPress={400}
             >
               <Avatar
                 uri={other.avatar}

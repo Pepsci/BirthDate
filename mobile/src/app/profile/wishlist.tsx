@@ -395,6 +395,18 @@ export default function MyWishlistScreen() {
                     </Pressable>
                   </View>
                 )}
+                {/* Saisie manuelle : « Remplir » ne trouve pas d'image sur tous
+                    les sites, et le web propose déjà ce champ. */}
+                <TextInput
+                  placeholderTextColor={colors.placeholder}
+                  style={styles.input}
+                  placeholder="URL de l'image (optionnel)"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  keyboardType="url"
+                  value={image ?? ""}
+                  onChangeText={(t) => setImage(t.trim() ? t : null)}
+                />
                 <View style={styles.formRow}>
                   <TextInput
                     placeholderTextColor={colors.placeholder}

@@ -6,6 +6,7 @@ const Conversation = require("../models/conversation.model");
 const Message = require("../models/message.model");
 const User = require("../models/user.model");
 const Friend = require("../models/friend.model");
+const { isBlockedBetween } = require("../utils/blocking");
 
 // Récupérer toutes les conversations de l'utilisateur
 router.get("/", isAuthenticated, async (req, res) => {
@@ -39,21 +40,27 @@ router.get("/", isAuthenticated, async (req, res) => {
     // Pour chaque conversation, compter les messages non lus
     const conversationsWithUnread = await Promise.all(
       conversations.map(async (conv) => {
+        const clearedAt = conv.clearedAtFor(userId);
+
+        // Effacée de mon côté et rien de neuf depuis : elle reste masquée.
+        // Un message plus récent la fait réapparaître d'elle-même.
+        if (clearedAt && !(conv.lastMessageAt > clearedAt)) return null;
+
         const unreadCount = await Message.countDocuments({
           conversation: conv._id,
           sender: { $ne: userId },
           "readBy.user": { $ne: userId },
+          ...(clearedAt ? { createdAt: { $gt: clearedAt } } : {}),
         });
 
-        return {
-          ...conv.toObject(),
-          unreadCount,
-        };
+        const obj = conv.toObject();
+        delete obj.clears; // détail interne, inutile côté client
+        return { ...obj, unreadCount };
       }),
     );
 
     console.log("✅ Envoi des conversations au frontend");
-    res.json(conversationsWithUnread);
+    res.json(conversationsWithUnread.filter(Boolean));
   } catch (error) {
     console.error("❌ Error fetching conversations:", error);
     res
@@ -83,6 +90,14 @@ router.post("/start", isAuthenticated, async (req, res) => {
     console.log("friendship trouvée:", friendship);
 
     if (!friendship) {
+      return res
+        .status(403)
+        .json({ message: "You are not friends with this user" });
+    }
+
+    // Modération : pas d'ouverture de fil si l'un des deux a bloqué l'autre.
+    // Même message que « pas amis » pour ne pas révéler le blocage.
+    if (await isBlockedBetween(userId, friendId)) {
       return res
         .status(403)
         .json({ message: "You are not friends with this user" });
@@ -139,9 +154,13 @@ router.get("/:conversationId/messages", isAuthenticated, async (req, res) => {
 
     // Construction de la requête
     const query = { conversation: conversationId };
-    if (before) {
-      query.createdAt = { $lt: new Date(before) };
-    }
+    const createdAt = {};
+    if (before) createdAt.$lt = new Date(before);
+    // Messages antérieurs à mon « supprimer pour moi » : invisibles pour moi,
+    // toujours présents en base et visibles pour l'autre participant.
+    const clearedAt = conversation.clearedAtFor(userId);
+    if (clearedAt) createdAt.$gt = clearedAt;
+    if (Object.keys(createdAt).length) query.createdAt = createdAt;
 
     const safeLimit = Math.min(Math.max(parseInt(limit) || 50, 1), 100);
 
@@ -183,17 +202,18 @@ router.get("/:conversationId", isAuthenticated, async (req, res) => {
       return res.status(404).json({ message: "Conversation not found" });
     }
 
-    // Compter les messages non lus
+    // Compter les messages non lus (hors messages effacés de mon côté)
+    const clearedAt = conversation.clearedAtFor(userId);
     const unreadCount = await Message.countDocuments({
       conversation: conversationId,
       sender: { $ne: userId },
       "readBy.user": { $ne: userId },
+      ...(clearedAt ? { createdAt: { $gt: clearedAt } } : {}),
     });
 
-    res.json({
-      ...conversation.toObject(),
-      unreadCount,
-    });
+    const obj = conversation.toObject();
+    delete obj.clears;
+    res.json({ ...obj, unreadCount });
   } catch (error) {
     console.error("Error fetching conversation:", error);
     res.status(500).json({ message: "Error fetching conversation" });
@@ -381,7 +401,12 @@ router.delete("/messages/:messageId", isAuthenticated, async (req, res) => {
   }
 });
 
-// Supprimer une conversation
+// Supprimer une conversation — « pour moi » uniquement
+//
+// Auparavant : deleteMany sur les messages + suppression du document, donc un
+// participant effaçait l'historique de l'autre. Désormais on horodate son
+// effacement : plus rien d'antérieur ne lui est renvoyé, l'autre garde tout.
+// Cf. le commentaire du champ `clears` dans conversation.model.js.
 router.delete("/:conversationId", isAuthenticated, async (req, res) => {
   try {
     const userId = req.payload._id;
@@ -397,19 +422,25 @@ router.delete("/:conversationId", isAuthenticated, async (req, res) => {
       return res.status(404).json({ message: "Conversation not found" });
     }
 
-    // Supprimer tous les messages de la conversation
-    await Message.deleteMany({ conversation: conversationId });
-
-    // Supprimer la conversation
-    await Conversation.findByIdAndDelete(conversationId);
+    const now = new Date();
+    const existing = (conversation.clears || []).find(
+      (c) => String(c.user) === String(userId),
+    );
+    if (existing) {
+      existing.at = now;
+    } else {
+      conversation.clears.push({ user: userId, at: now });
+    }
+    await conversation.save();
 
     res.json({
       success: true,
-      message: "Conversation deleted",
+      message: "Conversation cleared",
       conversationId,
+      clearedAt: now,
     });
   } catch (error) {
-    console.error("Error deleting conversation:", error);
+    console.error("Error clearing conversation:", error);
     res.status(500).json({ message: "Error deleting conversation" });
   }
 });

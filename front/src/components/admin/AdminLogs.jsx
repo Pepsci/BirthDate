@@ -6,6 +6,7 @@ const ACTIONS = [
   "login",
   "logout",
   "signup",
+  "password_reset_request",
   "password_reset",
   "account_update",
   "account_delete",
@@ -77,6 +78,12 @@ const AdminLogs = () => {
                 </td>
                 <td>
                   <span className="admin-tag">{log.action}</span>
+                  {/* Demande de reset bloquée par l'anti-renvoi : sans ce
+                      marqueur, une rafale de demandes ressemblerait à des
+                      envois d'emails réellement effectués. */}
+                  {log.metadata?.throttled && (
+                    <span className="admin-muted"> · bloquée (anti-spam)</span>
+                  )}
                 </td>
                 <td className="admin-muted">{log.ipAddress}</td>
               </tr>

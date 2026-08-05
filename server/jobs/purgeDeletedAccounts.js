@@ -3,6 +3,7 @@ const userModel = require("../models/user.model");
 const Log = require("../models/log.model");
 const DateModel = require("../models/date.model");
 const Friend = require("../models/friend.model");
+const Message = require("../models/message.model");
 const { removeAvatarFiles } = require("../config/avatarStorage");
 
 // Tourne tous les jours à 3h du matin
@@ -37,6 +38,23 @@ const purgeDeletedAccounts = cron.schedule(
         await Friend.deleteMany({
           $or: [{ user: user._id }, { friend: user._id }],
         });
+
+        // Avant de faire disparaître le compte : recopier sa clé publique sur
+        // les messages qu'il a envoyés. Ses correspondants conservent leur
+        // copie de la conversation, et le déchiffrement exige la clé publique
+        // de l'émetteur — sans cette empreinte, ils garderaient des messages
+        // définitivement illisibles. Voir `senderSnapshot` dans message.model.
+        await Message.updateMany(
+          { sender: user._id, senderSnapshot: null },
+          {
+            $set: {
+              senderSnapshot: {
+                name: "Utilisateur supprimé",
+                publicKey: user.publicKey || null,
+              },
+            },
+          },
+        );
 
         // Supprimer définitivement le compte
         await userModel.findByIdAndDelete(user._id);

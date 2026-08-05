@@ -65,30 +65,39 @@ function windowStart(frequency) {
 
 async function getUnreadMessages(userId, since, disabledFriends = []) {
   const conversations = await Conversation.find({ participants: userId })
-    .select("_id participants")
+    .select("_id participants clears")
     .lean();
 
   if (conversations.length === 0) return [];
 
   const disabledSet = new Set(disabledFriends.map(String));
 
-  const validConvIds = conversations
-    .filter((conv) => {
-      const otherId = conv.participants.find(
-        (p) => p.toString() !== userId.toString(),
-      );
-      return otherId && !disabledSet.has(otherId.toString());
-    })
-    .map((c) => c._id);
+  // Une conversation « supprimee pour moi » ne doit plus generer de relance
+  // sur les messages anterieurs : on releve la borne au plus recent des deux
+  // (debut de fenetre, date d'effacement) conversation par conversation.
+  const valid = conversations.filter((conv) => {
+    const otherId = conv.participants.find(
+      (p) => p.toString() !== userId.toString(),
+    );
+    return otherId && !disabledSet.has(otherId.toString());
+  });
 
-  if (validConvIds.length === 0) return [];
+  if (valid.length === 0) return [];
+
+  const convClauses = valid.map((conv) => {
+    const entry = (conv.clears || []).find(
+      (c) => String(c.user) === String(userId),
+    );
+    const from =
+      entry && entry.at > since ? entry.at : since;
+    return { conversation: conv._id, createdAt: { $gte: from } };
+  });
 
   return Message.aggregate([
     {
       $match: {
-        conversation: { $in: validConvIds },
+        $or: convClauses,
         sender: { $ne: userId },
-        createdAt: { $gte: since },
         "readBy.user": { $ne: userId },
       },
     },

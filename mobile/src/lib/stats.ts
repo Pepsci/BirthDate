@@ -15,3 +15,12 @@ export interface PublicStats {
 export function fetchPublicStats(): Promise<PublicStats> {
   return api<PublicStats>("/date/stats");
 }
+
+/**
+ * Mêmes chiffres, mais restreints aux dates de l'utilisateur connecté.
+ * Route : GET /api/date/stats/me — 🔒 authentifiée.
+ * `total` = nombre de proches enregistrés (et non le total communauté).
+ */
+export function fetchMyStats(): Promise<PublicStats> {
+  return api<PublicStats>("/date/stats/me");
+}

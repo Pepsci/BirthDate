@@ -98,6 +98,90 @@ const SECTIONS: Section[] = [
     ],
   },
   {
+    emoji: "💶",
+    title: "Cagnotte : ce qu'il faut savoir",
+    items: [
+      {
+        q: "Où va l'argent des contributions ?",
+        a: "Directement sur le compte de l'organisateur, via notre prestataire Stripe. BirthReminder ne détient jamais les fonds et ne prélève aucune commission.",
+      },
+      {
+        q: "Pourquoi dois-je vérifier mon identité pour ouvrir une cagnotte ?",
+        a: "C'est une obligation légale pour encaisser de l'argent. Stripe vérifie ton identité et tes coordonnées bancaires, ce qui protège aussi tes invités.",
+      },
+      {
+        q: "Et si l'événement est annulé ?",
+        a: "L'organisateur est responsable de rembourser les participants. Comme nous ne détenons pas les fonds, nous ne pouvons pas le faire à sa place. Ne contribue qu'à des cagnottes ouvertes par des personnes que tu connais.",
+      },
+      {
+        q: "Puis-je collecter par virement plutôt que par carte ?",
+        a: "Oui, en partageant ton RIB. Attention : ces virements se font de banque à banque, hors de l'application. Aucune trace n'en est conservée et rien ne pourra être prouvé en cas de désaccord.",
+      },
+      {
+        q: "Puis-je participer sans que mon nom apparaisse ?",
+        a: "Oui, ta contribution peut être anonyme ou faite sous un pseudonyme, y compris vis-à-vis de l'organisateur.",
+      },
+    ],
+  },
+  {
+    emoji: "🔒",
+    title: "Chiffrement des messages",
+    items: [
+      {
+        q: "Qui peut lire mes messages ?",
+        a: "Seulement toi et ton correspondant. Les messages sont chiffrés de bout en bout : nos serveurs ne stockent que du texte chiffré, illisible pour nous.",
+      },
+      {
+        q: "À quoi sert la phrase de 12 mots ?",
+        a: "Dans Profil → Chiffrement, le mode maximum génère une phrase de récupération de 12 mots. Note-la et garde-la en lieu sûr, hors de ton téléphone : elle permet de retrouver tes messages sur un nouvel appareil.",
+      },
+      {
+        q: "Que se passe-t-il si j'oublie mon mot de passe ?",
+        a: "En mode standard, ta clé est protégée par ton mot de passe : le réinitialiser rend définitivement illisibles les messages échangés jusque-là. En mode maximum, tu ressaisis ta phrase de 12 mots et tu retrouves tout.",
+      },
+      {
+        q: "Et si je perds ma phrase de récupération ?",
+        a: "Personne ne peut la retrouver, pas même nous — c'est précisément ce qui rend tes messages illisibles par des tiers. Sans elle ni ton mot de passe, les anciens messages sont perdus.",
+      },
+    ],
+  },
+  {
+    emoji: "📤",
+    title: "Partage & liste commune",
+    items: [
+      {
+        q: "Comment partager une carte anniversaire ?",
+        a: "Depuis la fiche d'une personne → Partager cette carte. Ton ami reçoit dans le chat le prénom, la date de naissance et la fête. Tes idées cadeaux ne sont jamais transmises.",
+      },
+      {
+        q: "Que peut faire celui qui la reçoit ?",
+        a: "L'ajouter à ses propres anniversaires. Si la personne concernée a un compte, il peut aussi lui envoyer une demande d'ami, qu'elle devra accepter.",
+      },
+      {
+        q: "À quoi sert une liste de cadeaux commune ?",
+        a: "À préparer les cadeaux d'un proche à deux : vous voyez et modifiez la même liste, ce qui évite les doublons. Lance-la depuis la fiche de la personne → Liste commune.",
+      },
+    ],
+  },
+  {
+    emoji: "🛡️",
+    title: "Sécurité & modération",
+    items: [
+      {
+        q: "Comment signaler un message ou une personne ?",
+        a: "Appui long sur un message, ou depuis le profil de la personne → Signaler, en précisant le motif. Chaque signalement est examiné, en principe sous 72 heures.",
+      },
+      {
+        q: "Que fait le blocage ?",
+        a: "La personne bloquée ne peut plus t'envoyer de messages, de demandes d'ami ni d'invitations. Elle n'en est pas informée. Tu gères tes blocages dans Profil → Utilisateurs bloqués.",
+      },
+      {
+        q: "Que se passe-t-il si je retire une conversation ?",
+        a: "Appui long sur une conversation pour la retirer de ta liste. Elle disparaît de ton côté, mais ton correspondant garde sa copie : personne ne peut effacer des messages chez quelqu'un d'autre, surtout s'ils servent de preuve après un signalement.",
+      },
+    ],
+  },
+  {
     emoji: "🔔",
     title: "Notifications",
     items: [
@@ -128,8 +212,16 @@ const SECTIONS: Section[] = [
         a: "Profil → Changer mon mot de passe. Ton mot de passe actuel te sera demandé.",
       },
       {
+        q: "Comment récupérer une copie de mes données ?",
+        a: "Profil → Télécharger mes données. Tu obtiens un fichier avec ton profil, tes dates, tes amis, tes cadeaux, tes événements et tes conversations. Tes messages sont déchiffrés par ton téléphone au moment de l'export.",
+      },
+      {
         q: "Comment supprimer mon compte ?",
         a: "Profil → tout en bas → Supprimer mon compte. Conforme au RGPD : tes données sont supprimées/anonymisées.",
+      },
+      {
+        q: "Qu'advient-il de mes conversations si je supprime mon compte ?",
+        a: "Elles sont retirées de ton côté, mais tes correspondants gardent leur copie des échanges. Tes messages y apparaîtront sous la mention « Utilisateur supprimé ».",
       },
     ],
   },

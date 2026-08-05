@@ -121,6 +121,34 @@
   color: var(--warning);
 }
 
+/* ── ZONE EXPORT RGPD ── */
+/* Placée juste avant la zone de suppression : les deux relèvent des droits sur
+   ses propres données, on les garde côte à côte. */
+.data-export-zone {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-color);
+}
+
+.data-export-text {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin: 0 0 10px;
+}
+
+.data-export-done {
+  font-size: 0.82rem;
+  color: var(--success);
+  margin: 8px 0 0;
+}
+
+.data-export-error {
+  font-size: 0.82rem;
+  color: var(--danger);
+  margin: 8px 0 0;
+}
+
 /* ── ZONE SUPPRESSION ── */
 .update-delete-zone {
   margin-top: 20px;

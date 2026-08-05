@@ -7,6 +7,7 @@ const DateModel = require("../models/date.model");
 const User = require("../models/user.model");
 const { isAuthenticated } = require("../middleware/jwt.middleware");
 const { notify } = require("../utils/notify");
+const { isBlockedBetween } = require("../utils/blocking");
 
 const personLabel = (dateDoc) =>
   `${dateDoc?.name || ""} ${dateDoc?.surname || ""}`.trim() || "quelqu'un";
@@ -19,6 +20,12 @@ router.post("/invite", isAuthenticated, async (req, res) => {
       return res.status(400).json({ message: "Paramètres invalides" });
     if (friendId === req.payload._id)
       return res.status(400).json({ message: "Choisis un autre membre" });
+
+    // Modération : refus silencieux si l'un des deux a bloqué l'autre. On
+    // renvoie une invitation factice `already` pour que l'UI affiche « déjà
+    // envoyée » sans révéler le blocage.
+    if (await isBlockedBetween(req.payload._id, friendId))
+      return res.status(200).json({ invitation: null, already: true });
 
     const date = await DateModel.findOne({
       _id: dateId,

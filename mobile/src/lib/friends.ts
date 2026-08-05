@@ -47,6 +47,19 @@ export async function addFriend(email: string): Promise<{ message?: string }> {
   });
 }
 
+/**
+ * Demande d'ami à partir de l'_id du compte (carte partagée dans le chat).
+ * L'email de la personne n'est jamais transmis au demandeur.
+ */
+export async function addFriendById(
+  userId: string,
+): Promise<{ message?: string }> {
+  return api<{ message?: string }>("/friends/request-by-id", {
+    method: "POST",
+    body: JSON.stringify({ userId }),
+  });
+}
+
 export async function acceptRequest(friendshipId: string): Promise<void> {
   await api(`/friends/${friendshipId}/accept`, { method: "PATCH" });
 }

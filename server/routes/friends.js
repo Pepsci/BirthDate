@@ -15,6 +15,7 @@ const {
 } = require("../services/emailTemplates/invitationEmail");
 const { generateVerificationToken } = require("../services/verififcation");
 const { createFriendDates } = require("../utils/friendDates");
+const { isBlockedBetween } = require("../utils/blocking");
 
 // ========================================
 // GET - Obtenir tous les amis
@@ -104,6 +105,15 @@ router.post("/", isAuthenticated, async (req, res, next) => {
           .json({ message: "Vous ne pouvez pas vous ajouter vous-même" });
       }
 
+      // Blocage dans un sens ou dans l'autre : refus SILENCIEUX. On répond
+      // comme si la demande était partie, mais rien n'est créé et aucune
+      // notification n'est envoyée. Une erreur explicite serait pire : elle
+      // apprendrait au demandeur qu'il a été bloqué, et l'inciterait à passer
+      // par une autre porte. Voir utils/blocking.js.
+      if (await isBlockedBetween(currentUserId, targetUser._id)) {
+        return res.status(201).json({ type: "request_sent" });
+      }
+
       const existing = await Friend.findOne({
         $or: [
           { user: currentUserId, friend: targetUser._id },
@@ -174,6 +184,89 @@ router.post("/", isAuthenticated, async (req, res, next) => {
         .status(201)
         .json({ type: "invitation_sent", message: "Invitation envoyée !" });
     }
+  } catch (error) {
+    next(error);
+  }
+});
+
+// ========================================
+// POST /request-by-id - Demande d'amitié à un utilisateur connu par son _id
+//
+// Utilisé par les cartes anniversaire partagées dans le chat (date_share) :
+// le message ne transporte que l'ObjectId de la personne, jamais son email.
+// Exposer l'email d'un tiers dans un message stocké en base serait une fuite ;
+// un ObjectId est opaque et inexploitable hors de l'app.
+//
+// À l'acceptation, createFriendDates() crée les cartes liées des deux côtés —
+// inutile donc de créer une carte manuelle en parallèle.
+// ========================================
+router.post("/request-by-id", isAuthenticated, async (req, res, next) => {
+  try {
+    const { userId } = req.body;
+    const currentUserId = req.payload._id;
+
+    if (!mongoose.isValidObjectId(userId)) {
+      return res.status(400).json({ message: "Utilisateur invalide" });
+    }
+    if (userId === currentUserId) {
+      return res
+        .status(400)
+        .json({ message: "Vous ne pouvez pas vous ajouter vous-même" });
+    }
+
+    const [currentUser, targetUser] = await Promise.all([
+      User.findById(currentUserId).select("name surname avatar"),
+      User.findById(userId).select("name email deletedAt"),
+    ]);
+
+    if (!targetUser || targetUser.deletedAt) {
+      return res.status(404).json({ message: "Utilisateur introuvable" });
+    }
+
+    // Refus silencieux en cas de blocage — même logique que POST /.
+    if (await isBlockedBetween(currentUserId, targetUser._id)) {
+      return res.status(201).json({ type: "request_sent" });
+    }
+
+    const existing = await Friend.findOne({
+      $or: [
+        { user: currentUserId, friend: userId },
+        { user: userId, friend: currentUserId },
+      ],
+    });
+    if (existing) {
+      return res.status(400).json({
+        message:
+          existing.status === "accepted"
+            ? "Vous êtes déjà amis"
+            : "Une demande est déjà en cours",
+      });
+    }
+
+    const friendship = await Friend.create({
+      user: currentUserId,
+      friend: targetUser._id,
+      status: "pending",
+      requestedBy: currentUserId,
+    });
+
+    await sendFriendRequestNotification(
+      targetUser.email,
+      currentUser.name,
+      targetUser._id,
+    );
+
+    await notify(req.app, {
+      userId: targetUser._id,
+      type: "friend_request",
+      data: {
+        name: `${currentUser.name} ${currentUser.surname || ""}`.trim(),
+        avatar: currentUser.avatar,
+      },
+      link: "/home?tab=friends",
+    });
+
+    return res.status(201).json({ friendship, type: "request_sent" });
   } catch (error) {
     next(error);
   }

@@ -14,6 +14,7 @@ import {
   useThemedStyles,
   ThemeColors,
 } from "../../lib/theme-context";
+import { useStatsScope, setStatsScope } from "../../lib/stats-scope";
 
 /**
  * Réglages d'affichage. Écran destiné à accueillir au fil du temps les
@@ -25,6 +26,7 @@ export default function SettingsScreen() {
   const [me, setMe] = useState<UserProfile | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const statsScope = useStatsScope();
 
   useEffect(() => {
     fetchMe()
@@ -78,6 +80,24 @@ export default function SettingsScreen() {
             value={!!me.hideNamedaysOnCards}
             disabled={busy === "hideNamedaysOnCards"}
             onValueChange={(v) => toggle("hideNamedaysOnCards", v)}
+            trackColor={{ true: colors.primary }}
+          />
+        </View>
+      </View>
+
+      <Text style={styles.sectionHeader}>📊 Statistiques d'accueil</Text>
+      <View style={styles.card}>
+        <View style={styles.row}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.label}>Afficher mes statistiques</Text>
+            <Text style={styles.hint}>
+              L'encart de l'accueil montre vos propres chiffres au lieu de ceux
+              de toute la communauté. Réglage propre à cet appareil.
+            </Text>
+          </View>
+          <Switch
+            value={statsScope === "personal"}
+            onValueChange={(v) => setStatsScope(v ? "personal" : "community")}
             trackColor={{ true: colors.primary }}
           />
         </View>

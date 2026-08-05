@@ -37,6 +37,25 @@ const messageSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    /**
+     * Empreinte de l'expéditeur, écrite au moment où son compte est purgé.
+     *
+     * Le destinataire garde sa copie des messages (voir `clears` sur
+     * Conversation), mais le déchiffrement NaCl exige la clé publique de
+     * l'émetteur. Sans cette recopie, la suppression d'un compte rendrait
+     * illisibles des messages qu'on s'était engagé à conserver — y compris
+     * ceux qui servent de preuve après un signalement.
+     *
+     * Ne contient rien de personnel : un libellé générique et une clé publique.
+     */
+    senderSnapshot: {
+      type: {
+        _id: false,
+        name: String,
+        publicKey: String,
+      },
+      default: null,
+    },
     encryptedFor: {
       type: Map,
       of: String,

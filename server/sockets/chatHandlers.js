@@ -3,6 +3,7 @@ const Message = require("../models/message.model");
 const User = require("../models/user.model");
 const { sendPushToUser } = require("../services/pushService");
 const { notify } = require("../utils/notify");
+const { isBlockedBetween } = require("../utils/blocking");
 
 module.exports = (io, socket, connectedUsers, app) => {
   console.log(`📱 User connected: ${socket.userId}`);
@@ -112,6 +113,18 @@ module.exports = (io, socket, connectedUsers, app) => {
       const recipientId = conversation.participants.find(
         (p) => p.toString() !== socket.userId,
       );
+
+      // Modération : aucun message ne passe si l'un des deux a bloqué l'autre.
+      // Jusqu'ici le blocage ne faisait que masquer le fil côté bloqueur — la
+      // personne bloquée pouvait continuer à écrire sans le savoir.
+      // Le message n'est ni stocké ni notifié ; l'émetteur reçoit une erreur
+      // générique, qui ne distingue pas « bloqué » de « conversation fermée ».
+      if (recipientId && (await isBlockedBetween(socket.userId, recipientId))) {
+        return socket.emit("message:error", {
+          tempId,
+          error: "Cette conversation n'est plus disponible",
+        });
+      }
 
       // Types structurés : métadonnées de coordination, jamais chiffrées.
       const STRUCTURED_TYPES = ["gift_share", "date_share"];

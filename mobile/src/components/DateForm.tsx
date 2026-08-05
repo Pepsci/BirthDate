@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { DateEntry, DatePayload, formatBirthday } from "../lib/dates";
+import NamedayPicker from "./NamedayPicker";
 import {
   useTheme,
   useThemedStyles,
@@ -33,6 +34,10 @@ export default function DateForm({ initial, submitLabel, onSubmit }: Props) {
     initial ? new Date(initial.date) : new Date(),
   );
   const [family, setFamily] = useState(initial?.family ?? false);
+  // null = laisser le serveur détecter la fête depuis le prénom (création),
+  // ou retirer la fête existante (édition).
+  const [nameday, setNameday] = useState<string | null>(initial?.nameday ?? null);
+  const [namedayTouched, setNamedayTouched] = useState(false);
   const [showPicker, setShowPicker] = useState(Platform.OS === "ios");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -54,6 +59,10 @@ export default function DateForm({ initial, submitLabel, onSubmit }: Props) {
           Date.UTC(date.getFullYear(), date.getMonth(), date.getDate(), 12),
         ).toISOString(),
         family,
+        // Champ omis tant que l'utilisateur n'y a pas touché : le serveur
+        // garde alors sa détection auto depuis le prénom (création) ou la
+        // valeur existante (édition). Explicitement null = « pas de fête ».
+        ...(nameday !== null || namedayTouched ? { nameday } : {}),
       });
     } catch (e: any) {
       setError(e?.message ?? "Erreur lors de l'enregistrement.");
@@ -119,8 +128,16 @@ export default function DateForm({ initial, submitLabel, onSubmit }: Props) {
         />
       </View>
 
+      <Text style={styles.label}>Fête</Text>
+      <NamedayPicker
+        value={nameday}
+        onChange={(next) => {
+          setNameday(next);
+          setNamedayTouched(true);
+        }}
+      />
       <Text style={styles.hint}>
-        🎉 La fête (nameday) est détectée automatiquement depuis le prénom.
+        🎉 Détectée automatiquement depuis le prénom si vous n'y touchez pas.
       </Text>
 
       {error && <Text style={styles.error}>{error}</Text>}

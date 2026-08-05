@@ -62,6 +62,37 @@ export default function PrivacyPolicy() {
             </li>
           </ul>
 
+          <h3>2.1 bis Données concernant des personnes non inscrites</h3>
+          <p>
+            Lorsque vous enregistrez l'anniversaire d'un proche qui n'a pas de
+            compte, vous nous confiez des données le concernant : son prénom,
+            son nom et sa date de naissance. Cette personne n'a rien accepté et
+            ignore le plus souvent que ces informations sont enregistrées.
+          </p>
+          <p>
+            Ces données sont traitées sur la base de l'intérêt légitime : tenir
+            un carnet d'anniversaires relève de la sphère personnelle, et nous
+            n'en faisons aucun autre usage. Elles ne sont ni revendues, ni
+            utilisées à des fins publicitaires, ni exploitées pour créer un
+            profil. Elles ne sont visibles que de vous, sauf si vous choisissez
+            de partager la carte correspondante avec un ami.
+          </p>
+          <p>
+            En les enregistrant, vous vous engagez à ne renseigner que des
+            personnes de votre entourage et à ne pas détourner ce service pour
+            constituer un fichier.
+          </p>
+          <p>
+            Une personne qui découvrirait que ses données figurent sur
+            BirthReminder sans être inscrite peut en demander l'effacement en
+            écrivant à{" "}
+            <a href="mailto:privacy@birthreminder.com">
+              privacy@birthreminder.com
+            </a>
+            . Nous procéderons à la suppression après avoir vérifié son
+            identité, sans lui demander de créer un compte.
+          </p>
+
           <h3>2.2 Données collectées automatiquement</h3>
           <ul>
             <li>
@@ -127,7 +158,11 @@ export default function PrivacyPolicy() {
             </li>
             <li>
               <strong>Après suppression du compte :</strong> Suppression
-              définitive sous 30 jours
+              définitive sous 30 jours. Vos conversations sont retirées de votre
+              côté dès la demande, dans les mêmes conditions qu'un retrait
+              manuel (point 4.1) : vos correspondants conservent leur copie des
+              échanges. Une fois votre compte effacé, vos messages ne portent
+              plus que la mention « Utilisateur supprimé »
             </li>
             <li>
               <strong>Données de connexion :</strong> Conservées 1 an
@@ -137,7 +172,41 @@ export default function PrivacyPolicy() {
               <strong>Messages de chat :</strong> Conservés tant que votre
               compte existe, supprimés 30 jours après suppression du compte
             </li>
+            <li>
+              <strong>Conversations retirées de votre liste :</strong> Voir le
+              point 4.1 ci-dessous
+            </li>
           </ul>
+
+          <h3>4.1 Suppression d'une conversation</h3>
+          <p>
+            Lorsque vous supprimez une conversation, elle est retirée de votre
+            liste et les messages antérieurs ne vous sont plus affichés.{" "}
+            <strong>
+              Ils ne sont pas détruits pour autant : votre correspondant
+              conserve sa copie de vos échanges.
+            </strong>
+          </p>
+          <p>
+            Ce choix est délibéré. Les messages que vous avez envoyés sont aussi
+            la correspondance de la personne qui les a reçus, et nul ne doit
+            pouvoir effacer des données chez autrui. Il garantit également qu'une
+            personne signalée pour harcèlement ne puisse pas détruire les
+            preuves de ses agissements.
+          </p>
+          <p>
+            Ces messages sont définitivement supprimés{" "}
+            <strong>12 mois</strong> après que les deux participants ont retiré
+            la conversation de leur liste, sauf s'ils font l'objet d'un
+            signalement en cours de traitement. Si un nouveau message arrive
+            entre-temps, la conversation réapparaît dans votre liste, avec les
+            seuls nouveaux messages.
+          </p>
+          <p>
+            Les conversations retirées de votre liste figurent dans l'export de
+            vos données (point 6), assorties de la date à laquelle vous les avez
+            retirées.
+          </p>
         </section>
 
         <section>
@@ -230,8 +299,15 @@ export default function PrivacyPolicy() {
           <p>Vous pouvez exercer vos droits :</p>
           <ul>
             <li>
-              Directement depuis votre profil (suppression de compte, export de
-              données)
+              Directement depuis votre profil, via « Télécharger mes données »
+              et « Supprimer mon compte ». L'export contient votre profil, vos
+              dates, vos amis, vos listes de cadeaux, vos événements, vos
+              conversations et votre journal d'activité, au format JSON.
+              <br />
+              Vos messages étant chiffrés de bout en bout, nos serveurs ne
+              peuvent pas les lire : ils sont déchiffrés par votre appareil au
+              moment de l'export. Un export lancé depuis un appareil où votre
+              clé n'est pas présente contiendra des messages non déchiffrables.
             </li>
             <li>
               Par email à :{" "}

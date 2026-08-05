@@ -12,6 +12,7 @@ import {
 } from "../../utils/encryption";
 import MessageInput from "./MessageInput";
 import GiftShareCard from "./GiftShareCard";
+import DateShareCard from "./DateShareCard";
 import Avatar from "../UI/Avatar";
 import "./css/chatWindow.css";
 
@@ -178,10 +179,12 @@ function ChatWindow({ conversation, onBack, onRead }) {
       );
       const data = response.data;
 
+      // sender peut etre null : compte purge, l'empreinte senderSnapshot prend
+      // le relais pour l'affichage et le dechiffrement.
       const messagesWithStatus = data.map((msg) => {
-        if (msg.sender._id !== currentUserId) return msg;
+        if (msg.sender?._id !== currentUserId) return msg;
         const readByOther = msg.readBy?.some(
-          (r) => r.user !== currentUserId && r.user !== msg.sender._id,
+          (r) => r.user !== currentUserId && r.user !== msg.sender?._id,
         );
         return { ...msg, status: readByOther ? "read" : "sent" };
       });
@@ -190,7 +193,7 @@ function ChatWindow({ conversation, onBack, onRead }) {
 
       const firstUnread = data.find(
         (msg) =>
-          msg.sender._id !== currentUserId &&
+          msg.sender?._id !== currentUserId &&
           !msg.readBy?.some((r) => r.user === currentUserId),
       );
 
@@ -237,8 +240,8 @@ function ChatWindow({ conversation, onBack, onRead }) {
   };
 
   const resolveDisplayContent = (msg) => {
-    // Les messages gift_share n'ont pas de contenu à déchiffrer
-    if (msg.type === "gift_share")
+    // Les messages structurés (gift_share, date_share) ne sont pas chiffrés
+    if (msg.type === "gift_share" || msg.type === "date_share")
       return { text: msg.content, encrypted: false };
     if (!msg.isEncrypted) return { text: msg.content, encrypted: false };
 
@@ -250,10 +253,16 @@ function ChatWindow({ conversation, onBack, onRead }) {
       return { text: null, encrypted: true, locked: true };
     }
 
-    const isOwnMessage = msg.sender._id === currentUserId;
+    const isOwnMessage = msg.sender?._id === currentUserId;
+    // senderSnapshot : repli quand le compte de l'expediteur a ete purge.
+    // Sans sa cle publique, les messages recus resteraient indechiffrables.
     const senderPubKeys = isOwnMessage
       ? [currentUser?.publicKey, currentUser?.oldPublicKey].filter(Boolean)
-      : [msg.sender?.publicKey, msg.sender?.oldPublicKey].filter(Boolean);
+      : [
+          msg.sender?.publicKey,
+          msg.sender?.oldPublicKey,
+          msg.senderSnapshot?.publicKey,
+        ].filter(Boolean);
 
     if (senderPubKeys.length === 0)
       return { text: null, encrypted: true, error: true };
@@ -491,14 +500,14 @@ function ChatWindow({ conversation, onBack, onRead }) {
 
   const handleContextMenu = (e, message) => {
     e.preventDefault();
-    // Pas de menu contextuel sur les cartes cadeaux
-    if (message.type === "gift_share") return;
+    // Pas de menu contextuel sur les cartes partagées
+    if (message.type === "gift_share" || message.type === "date_share") return;
     // Ses messages : modifier/supprimer — ceux des autres : signaler
     setContextMenu({ x: e.clientX, y: e.clientY, message });
   };
 
   const handleTouchStart = (e, message) => {
-    if (message.type === "gift_share") return;
+    if (message.type === "gift_share" || message.type === "date_share") return;
     longPressTimer.current = setTimeout(() => {
       setLongPressMessageId(message._id);
       if (navigator.vibrate) navigator.vibrate(50);
@@ -566,7 +575,8 @@ function ChatWindow({ conversation, onBack, onRead }) {
   };
 
   const canEditMessage = (message) => {
-    if (message.type === "gift_share") return false;
+    if (message.type === "gift_share" || message.type === "date_share")
+      return false;
     if (message.isEncrypted) return false;
     const EDIT_TIME_LIMIT = 5 * 60 * 1000;
     const messageAge = Date.now() - new Date(message.createdAt).getTime();
@@ -697,17 +707,19 @@ function ChatWindow({ conversation, onBack, onRead }) {
 
       <div className="messages-container" ref={messagesContainerRef}>
         {messages.map((message, index) => {
-          const isOwn = message.sender._id === currentUserId;
+          const isOwn = message.sender?._id === currentUserId;
           const isFirstUnread = message._id === firstUnreadId;
           const isFirstEncrypted = index === firstEncryptedIndex;
           const isGiftShare = message.type === "gift_share" && message.metadata;
+          const isDateShare = message.type === "date_share" && message.metadata;
+          // Messages structurés : jamais chiffrés, rien à déchiffrer.
+          const isStructured = isGiftShare || isDateShare;
 
-          // Pas de résolution de contenu nécessaire pour gift_share
           const {
             text: displayText,
             locked,
             error,
-          } = isGiftShare
+          } = isStructured
             ? { text: null, locked: false, error: false }
             : resolveDisplayContent(message);
 
@@ -721,7 +733,7 @@ function ChatWindow({ conversation, onBack, onRead }) {
                 </div>
               )}
 
-              {isFirstEncrypted && !isGiftShare && (
+              {isFirstEncrypted && !isStructured && (
                 <div className="e2e-separator">
                   <span>🔒 Messages chiffrés ci-dessous</span>
                 </div>
@@ -738,13 +750,18 @@ function ChatWindow({ conversation, onBack, onRead }) {
               >
                 {!isOwn && (
                   <div className="message-avatar">
-                    {message.sender.name?.charAt(0).toUpperCase() || "?"}
+                    {(message.sender?.name ?? message.senderSnapshot?.name)
+                      ?.charAt(0)
+                      .toUpperCase() || "?"}
                   </div>
                 )}
                 <div className="message-content">
-                  {/* ── Rendu conditionnel : carte cadeau ou bulle texte ── */}
+                  {/* ── Rendu conditionnel : carte cadeau, carte anniversaire
+                        ou bulle texte ── */}
                   {isGiftShare ? (
                     <GiftShareCard message={message} isOwn={isOwn} />
+                  ) : isDateShare ? (
+                    <DateShareCard message={message} isOwn={isOwn} />
                   ) : (
                     <div
                       className={`message-bubble ${message.status === "sending" ? "sending" : ""} ${message.status === "failed" ? "failed" : ""}`}

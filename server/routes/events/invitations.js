@@ -9,6 +9,7 @@ const { checkGuestOrAuth } = require("../../middleware/checkGuestOrAuth");
 const { notify } = require("../../utils/notify");
 const { sendPushToUser } = require("../../services/pushService");
 const { sendEventInvitationEmail } = require("../../services/emailTemplates/eventEmails");
+const { filterBlockedIds } = require("../../utils/blocking");
 
 /*
  * POST /api/events/:shortId/invite -> inviter des utilisateurs inscrits
@@ -37,7 +38,14 @@ router.post("/:shortId/invite", isAuthenticated, async (req, res) => {
     const organizerName = `${event.organizer.name} ${event.organizer.surname || ""}`.trim();
 
     if (userIds?.length > 0) {
+      // Modération : on écarte silencieusement les personnes en situation de
+      // blocage avec l'invitant (dans un sens ou dans l'autre). Un envoi
+      // groupé ne doit pas devenir un moyen de contourner un blocage.
+      // Silencieusement : la réponse ne dit pas qui a été écarté.
+      const blocked = await filterBlockedIds(req.payload._id, userIds);
+
       for (const uid of userIds) {
+        if (blocked.has(String(uid))) continue;
         const existing = await EventInvitation.findOne({ event: event._id, user: uid });
         if (!existing) {
           await EventInvitation.create({ event: event._id, user: uid });

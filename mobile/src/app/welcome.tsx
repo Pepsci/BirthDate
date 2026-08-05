@@ -17,7 +17,8 @@ import { LinearGradient } from "expo-linear-gradient";
 import { StatusBar } from "expo-status-bar";
 import { useAuth } from "../lib/auth-context";
 import { useTheme } from "../lib/theme-context";
-import { fetchPublicStats, PublicStats } from "../lib/stats";
+import { fetchPublicStats, fetchMyStats, PublicStats } from "../lib/stats";
+import { useStatsScope } from "../lib/stats-scope";
 import { fetchDates, daysUntil } from "../lib/dates";
 import { hasSeenWelcome, markWelcomeSeen } from "../lib/welcome-gate";
 
@@ -318,9 +319,15 @@ export default function WelcomeScreen() {
   const [splashDone, setSplashDone] = useState(() => hasSeenWelcome());
   const [stats, setStats] = useState<PublicStats | null>(null);
   const [statsError, setStatsError] = useState(false);
+  // Portée des stats (réglages) — "personal" n'a de sens que connecté.
+  const statsPref = useStatsScope();
+  const statsScope = user && statsPref === "personal" ? "personal" : "community";
+  const isPersonalStats = statsScope === "personal";
   // Anniversaires / fêtes du jour parmi les proches de l'utilisateur connecté.
   const [todayBirthdayNames, setTodayBirthdayNames] = useState<string[]>([]);
   const [todayFetes, setTodayFetes] = useState<string[]>([]);
+  // En mode perso, le bento porte déjà le chiffre + les prénoms du jour.
+  const showTodayBirthdayCard = !isPersonalStats && todayBirthdayNames.length > 0;
 
   const mode: ThemeName = resolved;
   const t = THEMES[mode];
@@ -328,8 +335,21 @@ export default function WelcomeScreen() {
   const featureCardWidth = Math.min(250, width * 0.62);
 
   useEffect(() => {
-    fetchPublicStats().then(setStats).catch(() => setStatsError(true));
-  }, []);
+    let cancelled = false;
+    setStats(null);
+    setStatsError(false);
+    const load = isPersonalStats ? fetchMyStats : fetchPublicStats;
+    load()
+      .then((s) => {
+        if (!cancelled) setStats(s);
+      })
+      .catch(() => {
+        if (!cancelled) setStatsError(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isPersonalStats]);
 
   // Calcule les anniversaires et fêtes du jour parmi les proches (si connecté).
   useEffect(() => {
@@ -421,15 +441,19 @@ export default function WelcomeScreen() {
           </Text>
 
           {/* ── Anniv & fête du jour (proches) — chaque case selon sa propre
-                condition, rien si aucune (pas de carré vide) ── */}
-          {(todayBirthdayNames.length > 0 || todayFetes.length > 0) && (
+                condition, rien si aucune (pas de carré vide).
+                En mode stats perso, la carte "anniversaire" ferait doublon avec
+                la grosse tuile du bento : on la masque et les prénoms sont
+                repris sous le chiffre. La carte "fête" reste, elle n'apparaît
+                nulle part ailleurs. ── */}
+          {(showTodayBirthdayCard || todayFetes.length > 0) && (
             <>
               <Text style={s.todaySectionLabel}>
                 🎈 AUJOURD'HUI CHEZ VOS PROCHES
               </Text>
               <TodayHighlight>
                 <View style={s.todayRow}>
-                  {todayBirthdayNames.length > 0 && (
+                  {showTodayBirthdayCard && (
                     <LinearGradient
                       colors={TODAY_GRADIENT}
                       start={{ x: 0, y: 0 }}
@@ -476,8 +500,14 @@ export default function WelcomeScreen() {
             </>
           )}
 
-          {/* ── Stats : layout bento ── */}
-          <Text style={s.sectionLabel}>🌍 SUR TOUTE LA COMMUNAUTÉ</Text>
+          {/* ── Stats : layout bento ──
+                Portée pilotée par Profil → Réglages → « Afficher mes stats ».
+                Le libellé de la grosse tuile est explicite ("souhaités" /
+                "à souhaiter") : sans ça, les chiffres communauté étaient lus
+                comme des chiffres personnels. ── */}
+          <Text style={s.sectionLabel}>
+            {isPersonalStats ? "🎂 MES ANNIV À MOI" : "🌍 SUR TOUTE LA COMMUNAUTÉ"}
+          </Text>
           {statsError ? (
             <Text style={s.statsError}>Impossible de charger les stats pour le moment.</Text>
           ) : (
@@ -496,8 +526,15 @@ export default function WelcomeScreen() {
                     <Text style={s.bentoBigValue}>{stats.today}</Text>
                   )}
                   <Text style={s.bentoBigLabel}>
-                    anniversaire{stats && stats.today > 1 ? "s" : ""} aujourd'hui
+                    {isPersonalStats
+                      ? `anniversaire${stats && stats.today > 1 ? "s" : ""} à souhaiter aujourd'hui`
+                      : `anniversaire${stats && stats.today > 1 ? "s" : ""} souhaité${stats && stats.today > 1 ? "s" : ""} aujourd'hui`}
                   </Text>
+                  {isPersonalStats && todayBirthdayNames.length > 0 && (
+                    <Text style={s.bentoBigNames} numberOfLines={2}>
+                      {joinNames(todayBirthdayNames)}
+                    </Text>
+                  )}
                 </LinearGradient>
 
                 <View style={s.bentoCol}>
@@ -523,9 +560,11 @@ export default function WelcomeScreen() {
               </View>
 
               <View style={s.bentoWide}>
-                <Text style={s.bentoSmallEmoji}>👥</Text>
+                <Text style={s.bentoSmallEmoji}>{isPersonalStats ? "🎈" : "👥"}</Text>
                 <Text style={s.bentoWideText}>
-                  {stats === null ? "…" : stats.totalUsers} membres inscrits — et la fête ne fait que commencer
+                  {isPersonalStats
+                    ? `${stats === null ? "…" : stats.total} date${stats && stats.total > 1 ? "s" : ""} enregistrée${stats && stats.total > 1 ? "s" : ""} — vous n'en oublierez aucune`
+                    : `${stats === null ? "…" : stats.totalUsers} membres inscrits — et la fête ne fait que commencer`}
                 </Text>
               </View>
             </>
@@ -686,6 +725,9 @@ const makeStyles = (t: Theme) =>
     bentoBigEmoji: { fontSize: 30 },
     bentoBigValue: { fontSize: 46, fontWeight: "900", color: "#fff" },
     bentoBigLabel: { fontSize: 12, fontWeight: "600", color: "rgba(255,255,255,0.9)", textAlign: "center" },
+    // Prénoms du jour, mode stats perso : reprend l'info de la carte chaude
+    // masquée juste au-dessus, donc plus appuyé que le label.
+    bentoBigNames: { fontSize: 12.5, fontWeight: "800", color: "#fff", textAlign: "center", marginTop: 2 },
     bentoCol: { flex: 1, gap: 12 },
     bentoSmall: {
       flex: 1,

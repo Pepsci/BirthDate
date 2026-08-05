@@ -362,10 +362,35 @@ Dark mode : classe `.dark` sur le body redéfinit toutes ces variables.
 
 ---
 
-## 💳 Cagnotte — PLACEHOLDER
+## 💳 Cagnotte — IMPLÉMENTÉE
 
-> Ne pas implémenter. Champ `giftPoolEnabled: false` déjà présent dans le schéma Event.
-> Prévoir visuellement une section grisée "Cagnotte — Bientôt disponible" dans EventPage/EventForm.
+> ⚠️ Cette section décrivait un placeholder « ne pas implémenter ». C'est faux
+> depuis plusieurs versions : la cagnotte est en production.
+
+| Élément | Fichier |
+|---------|---------|
+| Contribution | `routes/events/pool.js` — `POST /:shortId/pool/contribute` |
+| Enrôlement organisateur | `routes/stripe.connect.js` (Stripe Connect) |
+| Webhook | `routes/stripe.webhook.js` |
+| Alertes fraude | `jobs/poolFraudAlerts.js` |
+| RIB chiffré | `routes/events/bankInfo.js`, `models/organizerBankInfo.model.js` |
+| Contributions | `models/giftPoolContribution.model.js` |
+| Écrans mobile | `app/event/pool/[shortId].tsx`, `app/event/pool-config/[shortId].tsx` |
+
+**Architecture financière — à ne pas modifier sans mesurer les conséquences
+juridiques :** le PaymentIntent est créé en **charge directe**
+(`{ stripeAccount: account.stripeAccountId }`) et `application_fee_amount` est
+volontairement commenté. Les fonds vont donc directement sur le compte de
+l'organisateur, ne transitent jamais par BirthReminder, et aucune commission
+n'est prélevée. C'est ce qui permet aux CGU (section 5) d'affirmer que la
+plateforme n'est pas un établissement de paiement. Activer une commission ou
+passer en charge destination changerait ce statut.
+
+Le champ `giftPool.ibanEnabled` active un second mode : partage du RIB de
+l'organisateur, virements de banque à banque, **aucune trace côté serveur**.
+
+> Source de vérité : `giftPool.active`. `giftPoolEnabled` n'est conservé que
+> pour compatibilité avec l'ancienne UI.
 
 ---
 

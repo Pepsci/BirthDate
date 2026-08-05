@@ -335,7 +335,7 @@ function ConversationList({
                     <button
                       className="delete-conversation-btn"
                       onClick={(e) => handleRequestDelete(e, conversation._id)}
-                      title="Supprimer la conversation"
+                      title="Retirer de ma liste"
                     >
                       🗑️
                     </button>
@@ -345,7 +345,8 @@ function ConversationList({
                 {showConfirm && (
                   <div className="delete-confirmation">
                     <span className="delete-confirmation-text">
-                      Supprimer cette conversation et tous les messages ?
+                      Retirer cette conversation de votre liste ? Votre
+                      correspondant garde sa copie.
                     </span>
                     <div className="delete-confirmation-actions">
                       <button
@@ -354,7 +355,7 @@ function ConversationList({
                           handleConfirmDelete(e, conversation._id)
                         }
                       >
-                        Supprimer
+                        Retirer
                       </button>
                       <button
                         className="cancel-delete-btn"

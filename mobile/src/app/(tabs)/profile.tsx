@@ -144,6 +144,11 @@ export default function ProfileScreen() {
           label="Réglages"
           onPress={() => router.push("/profile/settings")}
         />
+        <MenuRow
+          emoji="📄"
+          label="Télécharger mes données"
+          onPress={() => router.push("/profile/data-export")}
+        />
       </View>
 
       {/* ── Apparence ── */}

@@ -21,6 +21,7 @@ import {
 } from "../../lib/use-keyboard-padding";
 import type { Socket } from "socket.io-client";
 import GiftShareCard from "../../components/GiftShareCard";
+import DateShareCard from "../../components/DateShareCard";
 import Avatar from "../../components/Avatar";
 import { useAuth } from "../../lib/auth-context";
 import { useUnread } from "../../lib/unread-context";
@@ -469,6 +470,11 @@ export default function DMChatScreen() {
               message={item}
               isMine={item.sender?._id === user?._id}
             />
+          ) : item.type === "date_share" ? (
+            <DateShareCard
+              message={item}
+              isMine={item.sender?._id === user?._id}
+            />
           ) : (
             <Bubble
               message={item}
@@ -604,7 +610,10 @@ function displayContent(
   privateKey: Uint8Array | null,
 ): string {
   if (!message.isEncrypted) return message.content;
-  const senderKey = message.sender?.publicKey;
+  // senderSnapshot : repli quand le compte de l'expéditeur a été purgé. Sans sa
+  // clé publique, les messages reçus resteraient définitivement illisibles.
+  const senderKey =
+    message.sender?.publicKey ?? message.senderSnapshot?.publicKey;
   const myCopy = myUserId ? message.encryptedFor?.[myUserId] : null;
   if (!privateKey) return "🔒 Chiffré — clé privée absente (reconnecte-toi)";
   if (!senderKey) return "🔒 Chiffré — expéditeur sans clé publique";

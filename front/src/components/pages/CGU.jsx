@@ -144,6 +144,39 @@ export default function CGU() {
             ⚠️ Tout manquement à ces règles peut entraîner la suspension ou la
             suppression définitive de votre compte sans préavis.
           </p>
+
+          <h3>3.3 Signaler un contenu ou un utilisateur</h3>
+          <p>
+            Chaque message, proposition de cadeau ou liste de souhaits peut être
+            signalé depuis l'application, en indiquant un motif (spam,
+            harcèlement, contenu inapproprié, arnaque). Le signalement est
+            transmis à notre équipe de modération.
+          </p>
+          <p>
+            Nous nous engageons à examiner chaque signalement dans un délai
+            raisonnable, en principe sous 72 heures. Selon la gravité, nous
+            pouvons supprimer le contenu, avertir l'auteur, suspendre son compte
+            ou le supprimer définitivement. Les éléments signalés sont conservés
+            le temps nécessaire au traitement, même si l'un des utilisateurs a
+            retiré la conversation de sa liste.
+          </p>
+          <p>
+            Si votre compte est suspendu ou supprimé et que vous estimez la
+            décision injustifiée, vous pouvez la contester en écrivant à{" "}
+            <a href="mailto:contact@birthreminder.com">
+              contact@birthreminder.com
+            </a>
+            . Nous réexaminerons votre situation.
+          </p>
+
+          <h3>3.4 Bloquer un utilisateur</h3>
+          <p>
+            Vous pouvez bloquer un utilisateur à tout moment. Le blocage
+            empêche cette personne de vous envoyer des messages, des demandes
+            d'ami, des invitations à un événement ou à une liste de cadeaux
+            commune. Elle n'est pas informée du blocage. Vous pouvez consulter
+            et lever vos blocages depuis votre profil.
+          </p>
         </section>
 
         <section>
@@ -164,43 +197,153 @@ export default function CGU() {
             utilisateurs et se réserve le droit de supprimer tout contenu
             inapproprié.
           </p>
+
+          <h3>4.3 Liens produits et liens affiliés</h3>
+          <p>
+            Lorsque vous ajoutez un lien produit à une liste de souhaits, nous
+            tentons d'en extraire automatiquement le titre, le prix et l'image.
+          </p>
+          <p className="warning">
+            ⚠️ Certains liens marchands, notamment ceux pointant vers Amazon,
+            sont transformés en liens affiliés. Si un achat est effectué depuis
+            l'un de ces liens, nous pouvons percevoir une commission de la part
+            du marchand.{" "}
+            <strong>
+              Cela n'entraîne aucun surcoût pour vous et ne modifie ni le prix
+              ni le produit.
+            </strong>{" "}
+            Cette rémunération n'influence pas les produits qui vous sont
+            présentés : ce sont ceux que vous ou vos amis avez choisis.
+          </p>
+
+          <h3>4.4 Partager une carte anniversaire</h3>
+          <p>
+            Vous pouvez transmettre à un ami une carte anniversaire (prénom,
+            nom, date de naissance, fête). Vos idées cadeaux ne sont jamais
+            incluses. Le destinataire peut enregistrer cette carte chez lui ; la
+            copie qu'il obtient est indépendante de la vôtre et n'est pas mise à
+            jour si vous modifiez la vôtre.
+          </p>
+          <p>
+            Si la personne concernée possède un compte, le destinataire peut lui
+            adresser une demande d'ami :{" "}
+            <strong>elle devra l'accepter pour que le lien s'établisse</strong>.
+            Ne partagez une carte qu'avec des personnes légitimes à connaître
+            ces informations.
+          </p>
+
+          <h3>4.5 Retirer une conversation</h3>
+          <p>
+            Retirer une conversation la fait disparaître de votre liste et
+            masque les messages antérieurs, pour vous seul.{" "}
+            <strong>
+              Votre correspondant conserve sa copie des échanges.
+            </strong>{" "}
+            Nul ne peut effacer des messages chez autrui, notamment lorsqu'ils
+            servent de preuve après un signalement. Les modalités et les durées
+            de conservation sont détaillées dans notre politique de
+            confidentialité.
+          </p>
+
+          <h3>4.6 Récupérer vos données</h3>
+          <p>
+            Vous pouvez à tout moment télécharger une copie de vos données
+            depuis votre profil. Vos messages étant chiffrés de bout en bout,
+            ils sont déchiffrés par votre appareil au moment de l'export : si
+            votre clé n'y est pas présente, les messages concernés resteront
+            illisibles.
+          </p>
         </section>
 
         <section>
-          <h2>5. Abonnement Premium (à venir)</h2>
+          <h2>5. Cagnottes d'événement</h2>
 
-          <h3>5.1 Offre gratuite</h3>
-          <p>L'offre gratuite de BirthReminder comprend :</p>
-          <ul>
-            <li>Jusqu'à 50 dates d'anniversaire</li>
-            <li>Jusqu'à 3 amis</li>
-            <li>Notifications email basiques</li>
-          </ul>
-
-          <h3>5.2 Offre Premium</h3>
-          <p>L'offre Premium (2,99€/mois) comprend :</p>
-          <ul>
-            <li>Dates d'anniversaire illimitées</li>
-            <li>Amis illimités</li>
-            <li>Chat chiffré de bout en bout</li>
-            <li>Organisateur d'événements</li>
-            <li>Export de données</li>
-            <li>Thèmes personnalisés</li>
-            <li>Sans publicité</li>
-          </ul>
-
-          <h3>5.3 Paiement et résiliation</h3>
           <p>
-            Les abonnements sont renouvelés automatiquement chaque mois. Vous
-            pouvez résilier à tout moment depuis votre profil. La résiliation
-            prend effet à la fin de la période en cours.
+            L'organisateur d'un événement peut ouvrir une cagnotte pour financer
+            un cadeau commun. Lisez attentivement cette section : elle définit
+            qui est responsable de l'argent collecté.
           </p>
 
-          <h3>5.4 Droit de rétractation</h3>
+          <h3>5.1 Le rôle de BirthReminder</h3>
+          <p className="warning">
+            ⚠️ BirthReminder n'est pas un établissement de paiement, ne détient
+            jamais les fonds et ne perçoit aucune commission sur les cagnottes.
+            Nous fournissons uniquement l'outil qui permet à un organisateur de
+            collecter de l'argent auprès de ses invités.
+          </p>
           <p>
-            Conformément à la législation européenne, vous disposez d'un délai
-            de 14 jours pour vous rétracter après la souscription d'un
-            abonnement Premium et obtenir un remboursement intégral.
+            Les paiements par carte sont encaissés{" "}
+            <strong>directement sur le compte de l'organisateur</strong> auprès
+            de notre prestataire Stripe. À aucun moment les sommes ne transitent
+            par un compte BirthReminder.
+          </p>
+
+          <h3>5.2 Responsabilité de l'organisateur</h3>
+          <p>
+            L'organisateur qui ouvre une cagnotte est seul responsable :
+          </p>
+          <ul>
+            <li>de l'usage des sommes collectées, conformément à ce qu'il a
+              annoncé aux participants ;</li>
+            <li>de leur restitution en cas d'annulation de l'événement ou si le
+              cadeau n'est finalement pas acheté ;</li>
+            <li>de l'exactitude des informations qu'il communique (montant
+              visé, destination du cadeau, échéance) ;</li>
+            <li>de ses éventuelles obligations déclaratives ou fiscales.</li>
+          </ul>
+          <p>
+            En ouvrant une cagnotte, il doit créer un compte auprès de Stripe et
+            se soumettre à ses vérifications d'identité. Il accepte les
+            conditions de Stripe en plus des présentes.
+          </p>
+
+          <h3>5.3 Responsabilité du participant</h3>
+          <p>
+            Contribuer à une cagnotte est un acte volontaire entre
+            particuliers. Vous ne contribuez qu'auprès de personnes que vous
+            connaissez et à qui vous faites confiance. Une contribution n'est
+            pas l'achat d'un bien ou d'un service : le droit de rétractation
+            applicable aux achats en ligne ne s'y applique pas.
+          </p>
+
+          <h3>5.4 Litiges</h3>
+          <p>
+            Tout différend relatif à une cagnotte se règle{" "}
+            <strong>entre le participant et l'organisateur</strong>.
+            BirthReminder n'arbitre pas ces litiges et ne peut ni rembourser ni
+            reverser des sommes qu'il ne détient pas. Le remboursement d'un
+            paiement par carte relève du compte Stripe de l'organisateur ; à
+            défaut, votre banque reste votre interlocuteur.
+          </p>
+          <p>
+            Pour les paiements par carte, nous conservons trace de chaque
+            contribution : identité du contributeur, montant, date et référence
+            du paiement. Ces éléments peuvent être communiqués aux personnes
+            concernées ou aux autorités compétentes sur demande légitime.
+          </p>
+
+          <h3>5.5 Cagnotte par virement bancaire</h3>
+          <p className="warning">
+            ⚠️ L'organisateur peut choisir de communiquer ses coordonnées
+            bancaires plutôt que de passer par le paiement par carte. Dans ce
+            cas, les virements se font de banque à banque, en dehors de nos
+            services :{" "}
+            <strong>
+              nous n'en conservons aucune trace et ne pouvons produire aucune
+              preuve de versement en cas de litige.
+            </strong>{" "}
+            Ce mode repose entièrement sur la confiance que vous accordez à
+            l'organisateur.
+          </p>
+
+          <h3>5.6 Gratuité du service</h3>
+          <p>
+            L'ensemble des fonctionnalités de BirthReminder est aujourd'hui
+            gratuit et sans publicité : dates illimitées, amis illimités, chat
+            chiffré, événements, listes de souhaits, export de vos données. Une
+            offre payante pourra être proposée à l'avenir ; elle ferait alors
+            l'objet d'une mise à jour des présentes conditions et ne
+            restreindrait pas rétroactivement ce dont vous disposez.
           </p>
         </section>
 

@@ -137,6 +137,9 @@ app.use("/api", generalLimiter);
 
 app.use("/api/date", dateStatsRouter);
 app.use("/api/auth", authRouter);
+// Export RGPD monté AVANT usersRouter : /me/export ne doit pas être capté
+// par une route paramétrée du routeur principal.
+app.use("/api/users", require("./routes/users.export"));
 app.use("/api/users", usersRouter);
 app.use("/api/date", dateRouter);
 app.use("/api/verify-email", verifyRouter);
@@ -158,6 +161,7 @@ app.use("/api/admin", require("./routes/admin/index"));
 
 // Cron jobs
 purgeDeletedAccounts.start();
+require("./jobs/purgeClearedConversations").start();
 sendReminders.start();
 eventReminders.start();
 require("./jobs/poolFraudAlerts").start();

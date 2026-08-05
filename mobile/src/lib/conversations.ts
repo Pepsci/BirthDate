@@ -26,6 +26,17 @@ export async function fetchConversations(): Promise<ConversationSummary[]> {
   return api<ConversationSummary[]>("/conversations");
 }
 
+/**
+ * « Supprimer pour moi » : le serveur horodate mon effacement, il ne détruit
+ * rien. L'autre participant garde son historique — un utilisateur ne doit pas
+ * pouvoir effacer les preuves chez quelqu'un d'autre.
+ */
+export async function deleteConversation(
+  conversationId: string,
+): Promise<void> {
+  await api(`/conversations/${conversationId}`, { method: "DELETE" });
+}
+
 export interface DMMessage {
   _id: string;
   content: string;
@@ -38,6 +49,8 @@ export interface DMMessage {
   createdAt: string;
   isEncrypted?: boolean;
   encryptedFor?: Record<string, string>;
+  /** Empreinte laissée quand le compte de l'expéditeur a été purgé. */
+  senderSnapshot?: { name?: string; publicKey?: string } | null;
   replyTo?: string | null;
   edited?: boolean;
   editedAt?: string;
@@ -51,6 +64,12 @@ export interface DMMessage {
       year?: number;
       purchased?: boolean;
     }[];
+    // type "date_share" : la carte anniversaire elle-même, sans aucun cadeau.
+    name?: string;
+    surname?: string;
+    birthDate?: string; // ISO
+    nameday?: string | null; // "MM-DD"
+    linkedUserId?: string | null; // compte de la personne, si elle est inscrite
   } | null;
 }
 

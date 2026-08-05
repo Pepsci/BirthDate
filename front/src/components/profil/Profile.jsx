@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useContext } from "react";
+import DataExportButton from "./DataExportButton";
 import useNotifications from "../../context/useNotifications";
 import { AuthContext } from "../../context/auth.context";
 import apiHandler from "../../api/apiHandler";
@@ -764,6 +765,8 @@ const ProfilDetails = ({
                     Annuler
                   </button>
                 </div>
+
+                <DataExportButton />
 
                 <div className="update-delete-zone">
                   <button

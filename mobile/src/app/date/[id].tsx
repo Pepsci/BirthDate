@@ -144,6 +144,9 @@ export default function DateDetailScreen() {
   const [shareStep, setShareStep] = useState<1 | 2>(1);
   const [shareSel, setShareSel] = useState<Set<string>>(new Set());
   const [shareFriends, setShareFriends] = useState<FriendEntry[]>([]);
+  const [cardShareOpen, setCardShareOpen] = useState(false);
+  const [cardShareSending, setCardShareSending] = useState(false);
+  const [cardShareSent, setCardShareSent] = useState(false);
   const [shareSending, setShareSending] = useState(false);
   const [shareSent, setShareSent] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
@@ -400,6 +403,58 @@ export default function DateDetailScreen() {
       setShareFriends([]);
     }
   };
+  // ── Partage de la carte anniversaire (type date_share) ──────────────────
+  // Volontairement séparé du partage d'idées : aucun cadeau n'est transmis,
+  // le destinataire reçoit juste de quoi recréer la carte chez lui.
+  const openCardShare = async () => {
+    setCardShareSent(false);
+    setCardShareOpen(true);
+    try {
+      const list = await fetchFriends();
+      const excl = entry?.linkedUser?._id;
+      setShareFriends(
+        list.filter((f) => f?.friendUser?._id && f.friendUser._id !== excl),
+      );
+    } catch {
+      setShareFriends([]);
+    }
+  };
+
+  const sendCardShare = async (friendId: string) => {
+    if (cardShareSending || !entry) return;
+    setCardShareSending(true);
+    try {
+      const conv = await startConversation(friendId);
+      const personName =
+        `${entry.name}${entry.surname ? " " + entry.surname : ""}`.trim();
+      const s = await getSocket();
+      s.emit("message:send", {
+        conversationId: conv._id,
+        content: `🎂 Anniversaire de ${personName}`,
+        type: "date_share",
+        metadata: {
+          personName,
+          personId: entry._id,
+          name: entry.name,
+          surname: entry.surname ?? "",
+          birthDate: entry.date,
+          nameday: entry.nameday ?? entry.linkedUser?.nameday ?? null,
+          // Présent seulement si la carte est liée à un inscrit : permet au
+          // destinataire de lui envoyer une demande d'ami. On transmet l'_id,
+          // jamais l'email — un ObjectId est opaque hors de l'app.
+          linkedUserId: entry.linkedUser?._id ?? null,
+        },
+        tempId: `temp-${Date.now()}`,
+      });
+      setCardShareSent(true);
+      setTimeout(() => setCardShareOpen(false), 900);
+    } catch (e: any) {
+      setError(e?.message ?? "Erreur d'envoi.");
+    } finally {
+      setCardShareSending(false);
+    }
+  };
+
   const sendShare = async (friendId: string) => {
     if (shareSending || !entry) return;
     setShareSending(true);
@@ -813,6 +868,11 @@ export default function DateDetailScreen() {
         }}
       >
         <Text style={styles.sharedBtnText}>👥 Liste commune</Text>
+      </Pressable>
+
+      {/* Partage de la carte elle-même (sans les cadeaux) */}
+      <Pressable style={styles.shareCardBtn} onPress={openCardShare}>
+        <Text style={styles.shareCardText}>📤 Partager cette carte</Text>
       </Pressable>
         </>
       )}
@@ -1594,6 +1654,38 @@ export default function DateDetailScreen() {
         )}
       </BottomSheet>
 
+      <BottomSheet
+        visible={cardShareOpen}
+        onClose={() => setCardShareOpen(false)}
+      >
+        <Text style={styles.sheetTitle}>Partager cette carte</Text>
+        {cardShareSent ? (
+          <Text style={styles.savedShare}>✅ Envoyé !</Text>
+        ) : (
+          <>
+            <Text style={styles.muted}>
+              Votre ami pourra l'ajouter à ses anniversaires. Vos idées cadeaux
+              ne sont pas partagées.
+            </Text>
+            {shareFriends.map((f) => (
+              <Pressable
+                key={f.friendship._id}
+                style={styles.friendRow}
+                disabled={cardShareSending}
+                onPress={() => sendCardShare(f.friendUser._id)}
+              >
+                <Text style={styles.friendName}>
+                  {f.friendUser.name} {f.friendUser.surname ?? ""}
+                </Text>
+              </Pressable>
+            ))}
+            {shareFriends.length === 0 && (
+              <Text style={styles.muted}>Aucun ami disponible.</Text>
+            )}
+          </>
+        )}
+      </BottomSheet>
+
       <ImportGiftSheet
         visible={importOpen}
         onClose={() => setImportOpen(false)}
@@ -1867,6 +1959,18 @@ const makeStyles = (c: ThemeColors) =>
     alignItems: "center",
   },
   sharedBtnText: { color: c.accentStrong, fontWeight: "700", fontSize: 15 },
+
+  // Partage de la carte : action secondaire, moins appuyée que les 3 boutons
+  // d'action au-dessus (événement, cadeaux, liste commune).
+  shareCardBtn: {
+    backgroundColor: c.card,
+    borderWidth: 1,
+    borderColor: c.border,
+    borderRadius: 14,
+    padding: 13,
+    alignItems: "center",
+  },
+  shareCardText: { color: c.sub, fontWeight: "700", fontSize: 14 },
 
   // Retour + bascule (vue cadeaux)
   backBtn: { paddingVertical: 6, paddingHorizontal: 2 },

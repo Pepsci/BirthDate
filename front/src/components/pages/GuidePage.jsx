@@ -67,6 +67,113 @@ const SECTIONS = [
     ],
   },
   {
+    id: "events",
+    emoji: "🎉",
+    title: "Événements",
+    items: [
+      {
+        q: "Comment organiser un événement ?",
+        a: "Depuis la carte d'une personne, clique sur « Organiser un événement », ou passe par l'onglet Événements. Tu choisis un titre, une date (fixe ou soumise au vote), un lieu, et tu invites tes amis.",
+      },
+      {
+        q: "Comment inviter quelqu'un qui n'a pas de compte ?",
+        a: "Chaque événement possède un lien public et un code d'accès à 6 caractères. Partage-les : la personne pourra rejoindre l'événement, répondre à l'invitation et voter, sans créer de compte.",
+      },
+      {
+        q: "À quoi servent les votes ?",
+        a: "Si tu hésites sur la date ou le lieu, propose plusieurs options : les invités votent, et tu confirmes ensuite le choix retenu.",
+      },
+    ],
+  },
+  {
+    id: "cagnotte",
+    emoji: "💶",
+    title: "Cagnotte",
+    items: [
+      {
+        q: "Comment fonctionne la cagnotte d'un événement ?",
+        a: "En tant qu'organisateur, tu peux ouvrir une cagnotte pour financer un cadeau commun. Les invités contribuent par carte, et l'argent arrive directement sur ton compte : BirthReminder ne le détient jamais et ne prélève aucune commission.",
+      },
+      {
+        q: "Que dois-je faire pour recevoir l'argent ?",
+        a: "Tu crées un compte auprès de Stripe, notre prestataire de paiement, qui vérifie ton identité et tes coordonnées bancaires. C'est une obligation légale pour encaisser de l'argent, et cela protège aussi tes invités.",
+      },
+      {
+        q: "Que se passe-t-il si l'événement est annulé ?",
+        a: "L'organisateur est responsable de rembourser les participants. BirthReminder ne détenant pas les fonds, il ne peut pas procéder au remboursement à sa place. Ne contribue qu'à des cagnottes ouvertes par des personnes que tu connais.",
+      },
+      {
+        q: "Puis-je collecter par virement plutôt que par carte ?",
+        a: "Oui, en partageant ton RIB avec les invités. Attention : ces virements se font de banque à banque, en dehors de l'application. Aucune trace n'est conservée et rien ne pourra être prouvé en cas de désaccord.",
+      },
+      {
+        q: "Puis-je contribuer sans que mon nom apparaisse ?",
+        a: "Oui, une contribution peut être anonyme ou faite sous un pseudonyme, y compris vis-à-vis de l'organisateur.",
+      },
+    ],
+  },
+  {
+    id: "chiffrement",
+    emoji: "🔒",
+    title: "Chiffrement des messages",
+    items: [
+      {
+        q: "Mes messages sont-ils lisibles par BirthReminder ?",
+        a: "Non. Tes messages sont chiffrés de bout en bout : seuls toi et ton correspondant possédez les clés permettant de les lire. Nos serveurs ne stockent que du texte chiffré.",
+      },
+      {
+        q: "Qu'est-ce que le chiffrement maximum et la phrase de récupération ?",
+        a: "Dans Profil → Chiffrement, tu peux activer le mode maximum. Il génère une phrase de 12 mots à noter et conserver en lieu sûr, hors de ton téléphone. Cette phrase permet de retrouver tes messages sur un nouvel appareil.",
+      },
+      {
+        q: "Que se passe-t-il si j'oublie mon mot de passe ?",
+        a: "En mode standard, ta clé est protégée par ton mot de passe : le réinitialiser rend définitivement illisibles tous les messages échangés jusque-là. En mode maximum, tu ressaisis ta phrase de 12 mots et tu retrouves l'ensemble de tes messages.",
+      },
+      {
+        q: "Que se passe-t-il si je perds ma phrase de récupération ?",
+        a: "Personne ne peut la retrouver à ta place, pas même nous : c'est ce qui garantit que tes messages sont illisibles par des tiers. Sans elle et sans ton mot de passe, les anciens messages sont perdus. Note-la dès son affichage.",
+      },
+    ],
+  },
+  {
+    id: "partage",
+    emoji: "📤",
+    title: "Partage & liste commune",
+    items: [
+      {
+        q: "Comment partager une carte anniversaire ?",
+        a: "Depuis la fiche d'une personne, clique sur « Partager ». Ton ami reçoit dans le chat une carte contenant le prénom, la date de naissance et la fête. Tes idées cadeaux ne sont jamais transmises.",
+      },
+      {
+        q: "Que peut faire la personne qui la reçoit ?",
+        a: "Elle peut l'enregistrer dans ses propres anniversaires. Si la personne concernée a un compte, elle peut aussi lui envoyer une demande d'ami — qui devra être acceptée, comme n'importe quelle demande.",
+      },
+      {
+        q: "À quoi sert une liste de cadeaux commune ?",
+        a: "Elle permet à deux personnes de préparer ensemble les cadeaux d'un proche : vous voyez et modifiez la même liste, ce qui évite les doublons. Lance-la depuis la fiche de la personne, onglet Liste commune.",
+      },
+    ],
+  },
+  {
+    id: "securite",
+    emoji: "🛡️",
+    title: "Sécurité & modération",
+    items: [
+      {
+        q: "Comment signaler un message ou un utilisateur ?",
+        a: "Appuie longuement sur un message, ou ouvre le profil de la personne, puis choisis Signaler et indique le motif. Notre équipe examine chaque signalement, en principe sous 72 heures.",
+      },
+      {
+        q: "Que fait le blocage d'un utilisateur ?",
+        a: "La personne bloquée ne peut plus t'envoyer de messages, de demandes d'ami ni d'invitations. Elle n'est pas informée du blocage. Tu peux revenir sur ta décision depuis Profil → Utilisateurs bloqués.",
+      },
+      {
+        q: "Que se passe-t-il quand je supprime une conversation ?",
+        a: "Elle disparaît de ta liste et les anciens messages ne s'affichent plus chez toi. Ton correspondant conserve sa copie : personne ne peut effacer des messages chez quelqu'un d'autre, en particulier s'ils servent de preuve après un signalement.",
+      },
+    ],
+  },
+  {
     id: "notifications",
     emoji: "🔔",
     title: "Notifications",
@@ -103,8 +210,16 @@ const SECTIONS = [
         a: "Dans ton profil → onglet Informations, tu trouveras une section pour modifier ton mot de passe. Tu devras saisir ton mot de passe actuel pour confirmer.",
       },
       {
+        q: "Comment récupérer une copie de mes données ?",
+        a: "Dans ton profil → onglet Informations, clique sur « Télécharger mes données ». Tu obtiens un fichier contenant ton profil, tes dates, tes amis, tes cadeaux, tes événements et tes conversations. Tes messages étant chiffrés, ils sont déchiffrés par ton appareil au moment de l'export.",
+      },
+      {
         q: "Comment supprimer mon compte ?",
         a: "Dans ton profil → onglet Informations, tout en bas. La suppression est conforme au RGPD : tes données sont anonymisées sous 30 jours.",
+      },
+      {
+        q: "Qu'advient-il de mes conversations si je supprime mon compte ?",
+        a: "Elles sont retirées de ton côté, mais tes correspondants gardent leur copie des échanges : on ne peut pas effacer des messages chez autrui. Tes messages y apparaîtront sous la mention « Utilisateur supprimé ».",
       },
     ],
   },

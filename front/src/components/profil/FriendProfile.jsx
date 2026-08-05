@@ -6,6 +6,7 @@ import FriendGiftList from "./FriendGiftList";
 import SharedGiftSection from "./SharedGiftSection";
 import DirectChat from "../chat/DirectChat";
 import ChatModal from "../chat/ChatModal";
+import DateShareModal from "../chat/DateShareModal";
 import GiftOfferedModal from "../friends/GiftOfferedModal";
 import apiHandler from "../../api/apiHandler";
 import useAuth from "../../context/useAuth";
@@ -53,6 +54,7 @@ const FriendProfile = ({ date, onCancel, initialSection = "info" }) => {
   const [currentDate, setCurrentDate] = useState(date);
   const [isLoading, setIsLoading] = useState(false);
   const [existingEventId, setExistingEventId] = useState(null);
+  const [showDateShareModal, setShowDateShareModal] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
   // Notifications
@@ -618,6 +620,13 @@ const FriendProfile = ({ date, onCancel, initialSection = "info" }) => {
               >
                 🎉
               </button>
+              <button
+                onClick={() => setShowDateShareModal(true)}
+                className="mobile-carousel__quick-btn"
+                aria-label="Partager cette carte"
+              >
+                📤
+              </button>
             </div>
           </div>
         </div>
@@ -655,11 +664,26 @@ const FriendProfile = ({ date, onCancel, initialSection = "info" }) => {
             <span className="sidebar-icon">🎉</span>
             <span className="sidebar-text">Événement</span>
           </button>
+          <button
+            onClick={() => setShowDateShareModal(true)}
+            className="sidebar-btn"
+          >
+            <span className="sidebar-icon">📤</span>
+            <span className="sidebar-text">Partager</span>
+          </button>
         </div>
         <div className="desktop-content containerInfo">
           {renderSection(activeSection)}
         </div>
       </div>
+
+      {/* MODAL PARTAGE DE LA CARTE (sans les idées cadeaux) */}
+      {showDateShareModal && (
+        <DateShareModal
+          currentDate={currentDate}
+          onClose={() => setShowDateShareModal(false)}
+        />
+      )}
 
       {/* MODAL CHAT - Mobile */}
       {friendId && (
