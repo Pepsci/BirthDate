@@ -23,6 +23,7 @@ import type { Socket } from "socket.io-client";
 import GiftShareCard from "../../components/GiftShareCard";
 import DateShareCard from "../../components/DateShareCard";
 import Avatar from "../../components/Avatar";
+import PersonPreviewCard from "../../components/PersonPreviewCard";
 import { useAuth } from "../../lib/auth-context";
 import { useUnread } from "../../lib/unread-context";
 import { getSocket } from "../../lib/socket";
@@ -68,7 +69,18 @@ export default function DMChatScreen() {
   const insets = useSafeAreaInsets();
   const bottomPad = keyboardPadding;
   const inputBottom = keyboardVisible ? 10 : insets.bottom + 12;
-  const { refresh: refreshUnread } = useUnread();
+  const { refresh: refreshUnread, refreshNotifs } = useUnread();
+  // Marquer la conversation lue met aussi à jour, côté serveur, la
+  // notification "nouveau message" liée (centre de notifs) — il faut donc
+  // rafraîchir les deux compteurs pour que le badge de l'icône de l'app
+  // (total messages + notifCount) redescende immédiatement.
+  const markReadAndRefresh = useCallback(
+    (convId: string) =>
+      markConversationRead(convId)
+        .then(() => Promise.all([refreshUnread(), refreshNotifs()]))
+        .catch(() => {}),
+    [refreshUnread, refreshNotifs],
+  );
   const [messages, setMessages] = useState<DMMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -76,6 +88,7 @@ export default function DMChatScreen() {
   const [typing, setTyping] = useState(false);
   const [replyTarget, setReplyTarget] = useState<DMMessage | null>(null);
   const [editTarget, setEditTarget] = useState<DMMessage | null>(null);
+  const [showPersonPreview, setShowPersonPreview] = useState(false);
 
   const socketRef = useRef<Socket | null>(null);
   const conversationIdRef = useRef<string | null>(null);
@@ -129,7 +142,7 @@ export default function DMChatScreen() {
         }
 
         if (mounted) setMessages(history);
-        markConversationRead(conv._id).then(refreshUnread).catch(() => {});
+        markReadAndRefresh(conv._id);
       } catch (e: any) {
         if (mounted) setError(e?.message ?? "Erreur de chargement.");
         return;
@@ -153,7 +166,7 @@ export default function DMChatScreen() {
         setMessages((prev) =>
           prev.some((m) => m._id === message._id) ? prev : [...prev, message],
         );
-        markConversationRead(convId).then(refreshUnread).catch(() => {});
+        markReadAndRefresh(convId);
       };
 
       const onDeleted = ({
@@ -419,12 +432,16 @@ export default function DMChatScreen() {
       <Stack.Screen
         options={{
           headerTitle: () => (
-            <View style={styles.headerTitle}>
+            <Pressable
+              style={styles.headerTitle}
+              onPress={() => setShowPersonPreview(true)}
+              hitSlop={8}
+            >
               <Avatar uri={avatar} name={name} size={30} />
               <Text style={styles.headerTitleText} numberOfLines={1}>
                 {name ?? "Chat"}
               </Text>
-            </View>
+            </Pressable>
           ),
           headerRight: () => (
             <Pressable
@@ -455,6 +472,12 @@ export default function DMChatScreen() {
             </Pressable>
           ),
         }}
+      />
+
+      <PersonPreviewCard
+        friendId={friendId}
+        visible={showPersonPreview}
+        onClose={() => setShowPersonPreview(false)}
       />
 
       {error && <Text style={styles.error}>{error}</Text>}

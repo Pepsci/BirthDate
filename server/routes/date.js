@@ -7,6 +7,11 @@ const userModel = require("../models/user.model");
 const { findNameDay } = require("../utils/namedayHelper");
 
 const { isAuthenticated } = require("../middleware/jwt.middleware");
+const {
+  cardPhotoUploader,
+  saveCardPhoto,
+  removeCardPhotoFiles,
+} = require("../config/cardPhotoStorage");
 
 // ========================================
 // GET / - Liste des dates avec conversationId
@@ -214,6 +219,60 @@ router.patch("/:id/family", isAuthenticated, async (req, res) => {
 });
 
 // ========================================
+// PATCH /:id/photo - Ajouter/remplacer/supprimer la photo d'une carte
+// 🔒 SÉCURISÉ : owner only. Interdit sur une date liée à un ami (photo
+// gérée via son avatar de profil dans ce cas).
+// ========================================
+router.patch(
+  "/:id/photo",
+  isAuthenticated,
+  cardPhotoUploader.single("photo"),
+  async (req, res) => {
+    try {
+      if (!mongoose.isValidObjectId(req.params.id)) {
+        return res.status(400).json({ message: "Invalid Date ID" });
+      }
+
+      const existingDate = await dateModel.findOne({
+        _id: req.params.id,
+        owner: req.payload._id,
+      });
+
+      if (!existingDate) {
+        return res.status(404).json({ message: "Date not found" });
+      }
+
+      if (existingDate.linkedUser) {
+        return res.status(403).json({
+          message:
+            "Impossible d'ajouter une photo à une date liée à un ami.",
+        });
+      }
+
+      // saveCardPhoto() re-encode en WebP 256×256 et supprime l'ancien
+      // fichier → un seul fichier par carte, quel que soit le format envoyé.
+      if (req.file) {
+        const saved = await saveCardPhoto(existingDate._id, req.file.buffer);
+        existingDate.photo = saved.url;
+      } else if (
+        req.body.removePhoto === "true" ||
+        req.body.removePhoto === true
+      ) {
+        await removeCardPhotoFiles(existingDate._id);
+        existingDate.photo = null;
+      }
+
+      await existingDate.save();
+
+      res.status(200).json(existingDate);
+    } catch (error) {
+      console.error("Error updating date photo:", error);
+      res.status(500).json({ message: "Internal Server Error" });
+    }
+  },
+);
+
+// ========================================
 // PATCH /:id/gifts - Ajouter un cadeau
 // 🔒 SÉCURISÉ
 // ========================================
@@ -381,6 +440,11 @@ router.delete("/:id", isAuthenticated, async (req, res, next) => {
     }
 
     const deleteDate = await dateModel.findByIdAndDelete(req.params.id);
+    if (deleteDate?.photo) {
+      removeCardPhotoFiles(deleteDate._id).catch((err) =>
+        console.error("Erreur suppression photo carte:", err.message),
+      );
+    }
     res.status(200).json(deleteDate);
   } catch (error) {
     next(error);

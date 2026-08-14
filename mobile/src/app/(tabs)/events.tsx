@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
 import { useGuidedTour, TOURS } from "../../lib/guided-tour";
+import OnboardingTip from "../../lib/tips";
 import {
   EventEntry,
   fetchMyEvents,
@@ -97,6 +98,12 @@ export default function EventsScreen() {
           <Text style={styles.errorText}>{error} — appuyer pour réessayer</Text>
         </Pressable>
       )}
+
+      <OnboardingTip
+        id="cagnottes"
+        emoji="💰"
+        text="Tu peux créer une cagnotte pour financer un cadeau à plusieurs, directement depuis un événement, sans commission supplémentaire de la part de BirthReminder pour le moment."
+      />
 
       <SectionList
         sections={sections}

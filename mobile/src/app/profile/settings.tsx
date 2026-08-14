@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import {
   View,
   Text,
@@ -7,7 +7,8 @@ import {
   ScrollView,
   ActivityIndicator,
 } from "react-native";
-import { Stack } from "expo-router";
+import { Stack, useFocusEffect } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { UserProfile, fetchMe, updateMe } from "../../lib/users";
 import {
   useTheme,
@@ -23,16 +24,23 @@ import { useStatsScope, setStatsScope } from "../../lib/stats-scope";
 export default function SettingsScreen() {
   const styles = useThemedStyles(makeStyles);
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const [me, setMe] = useState<UserProfile | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const statsScope = useStatsScope();
 
-  useEffect(() => {
-    fetchMe()
-      .then(setMe)
-      .catch((e) => setError(e?.message ?? "Erreur de chargement."));
-  }, []);
+  // useFocusEffect : cet écran reste monté dans la pile entre deux visites
+  // (ex. aller cocher "Rappels de fêtes" dans Notifications puis revenir
+  // ici) — sans ça, "me" reste figé sur sa valeur du tout premier montage et
+  // les deux écrans peuvent sembler « désynchronisés ».
+  useFocusEffect(
+    useCallback(() => {
+      fetchMe()
+        .then(setMe)
+        .catch((e) => setError(e?.message ?? "Erreur de chargement."));
+    }, []),
+  );
 
   const toggle = async (key: keyof UserProfile & string, value: boolean) => {
     if (!me || busy) return;
@@ -63,7 +71,13 @@ export default function SettingsScreen() {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={[
+        styles.content,
+        { paddingBottom: 40 + insets.bottom },
+      ]}
+    >
       <Stack.Screen options={{ title: "Réglages" }} />
       {error && <Text style={styles.error}>{error}</Text>}
 
@@ -85,7 +99,7 @@ export default function SettingsScreen() {
         </View>
       </View>
 
-      <Text style={styles.sectionHeader}>📊 Statistiques d'accueil</Text>
+      <Text style={styles.sectionHeader}>🏠 Affichage accueil</Text>
       <View style={styles.card}>
         <View style={styles.row}>
           <View style={{ flex: 1 }}>
@@ -98,6 +112,21 @@ export default function SettingsScreen() {
           <Switch
             value={statsScope === "personal"}
             onValueChange={(v) => setStatsScope(v ? "personal" : "community")}
+            trackColor={{ true: colors.primary }}
+          />
+        </View>
+        <View style={[styles.row, styles.rowSeparator]}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.label}>Afficher la fête du jour</Text>
+            <Text style={styles.hint}>
+              Affiche « C'est la fête de … ! » sur l'écran d'accueil quand
+              l'un de vos proches fête son nom aujourd'hui.
+            </Text>
+          </View>
+          <Switch
+            value={me.showTodayNamedayOnHome !== false}
+            disabled={busy === "showTodayNamedayOnHome"}
+            onValueChange={(v) => toggle("showTodayNamedayOnHome", v)}
             trackColor={{ true: colors.primary }}
           />
         </View>
@@ -123,6 +152,10 @@ const makeStyles = (c: ThemeColors) =>
       alignItems: "center",
       gap: 12,
       padding: 14,
+    },
+    rowSeparator: {
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: c.border,
     },
     label: { fontSize: 15, fontWeight: "600", color: c.text },
     hint: { fontSize: 12, color: c.sub, marginTop: 1 },

@@ -68,6 +68,8 @@
     flex: 1;
     overflow-y: auto;
     background: var(--bg-primary);
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
 }
 
 .conversations::-webkit-scrollbar {

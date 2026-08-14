@@ -6,10 +6,12 @@ export interface UserProfile extends AuthUser {
   nameday?: string | null; // "MM-DD"
   avatar?: string | null;
   receiveBirthdayEmails?: boolean;
+  receiveNamedayEmails?: boolean;
   receiveOwnBirthdayEmail?: boolean;
   receiveFriendRequestEmails?: boolean;
   monthlyRecap?: boolean;
   hideNamedaysOnCards?: boolean;
+  showTodayNamedayOnHome?: boolean;
   receiveEventEmails?: boolean;
   receiveChatEmails?: boolean;
   pushEnabled?: boolean;

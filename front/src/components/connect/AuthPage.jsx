@@ -121,6 +121,7 @@ const AuthPage = () => {
         email: loginData.email,
         password: loginData.password,
         rememberMe: loginData.rememberMe,
+        platform: "web",
       });
       storeToken(response.authToken);
 

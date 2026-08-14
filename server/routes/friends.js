@@ -16,6 +16,8 @@ const {
 const { generateVerificationToken } = require("../services/verififcation");
 const { createFriendDates } = require("../utils/friendDates");
 const { isBlockedBetween } = require("../utils/blocking");
+const WishlistModel = require("../models/wishlist.model");
+const SharedGiftList = require("../models/sharedGiftList.model");
 
 // ========================================
 // GET - Obtenir tous les amis
@@ -466,6 +468,76 @@ router.delete("/:friendshipId", isAuthenticated, async (req, res) => {
       .json({ message: "Ami et dates associées supprimés", friendship });
   } catch (error) {
     console.error("❌ Erreur lors de la suppression:", error);
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+});
+
+// ========================================
+// GET /:friendId/card-summary - Résumé pour la carte glissante (chat)
+// 🔒 SÉCURISÉ : nécessite d'être ami
+// Renvoie : identité + âge + prochain anniversaire + nombre d'idées dans sa
+// wishlist partagée + liste de cadeaux commune si elle existe (sinon rien).
+// ========================================
+router.get("/:friendId/card-summary", isAuthenticated, async (req, res) => {
+  try {
+    const { friendId } = req.params;
+    const userId = req.payload._id;
+
+    if (!mongoose.isValidObjectId(friendId)) {
+      return res.status(400).json({ message: "Invalid friend ID" });
+    }
+    if (friendId === userId.toString()) {
+      return res.status(400).json({ message: "Invalid friend ID" });
+    }
+    if (!(await Friend.areFriends(userId, friendId))) {
+      return res.status(403).json({ message: "Accès non autorisé" });
+    }
+
+    const friend = await User.findById(friendId).select(
+      "name surname avatar birthDate nameday",
+    );
+    if (!friend) {
+      return res.status(404).json({ message: "Utilisateur introuvable" });
+    }
+
+    const [wishlistCount, myLinkedDate] = await Promise.all([
+      WishlistModel.countDocuments({ userId: friendId, isShared: true }),
+      DateModel.findOne({ owner: userId, linkedUser: friendId }).select(
+        "sharedGiftList",
+      ),
+    ]);
+    // dateId : la carte anniversaire (Date) que JE possède pour cet ami —
+    // c'est ce que le front utilise pour naviguer vers son profil
+    // (/home?tab=date&dateId=... côté web, /date/:id côté mobile).
+    const dateId = myLinkedDate?._id ?? null;
+
+    let sharedGiftList = null;
+    if (myLinkedDate?.sharedGiftList) {
+      const list = await SharedGiftList.findById(
+        myLinkedDate.sharedGiftList,
+      ).select("gifts label");
+      if (list) {
+        sharedGiftList = {
+          _id: list._id,
+          label: list.label,
+          giftCount: list.gifts?.length || 0,
+        };
+      }
+    }
+
+    res.status(200).json({
+      _id: friend._id,
+      dateId,
+      name: friend.name,
+      surname: friend.surname,
+      avatar: friend.avatar,
+      birthDate: friend.birthDate,
+      nameday: friend.nameday,
+      wishlistCount,
+      sharedGiftList,
+    });
+  } catch (error) {
+    console.error("❌ Erreur card-summary:", error);
     res.status(500).json({ message: "Erreur serveur" });
   }
 });

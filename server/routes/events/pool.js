@@ -12,6 +12,80 @@ const MIN_AMOUNT = 100; // 1 €
 const MAX_AMOUNT = 1000000; // 10 000 €
 
 /*
+ * GET /api/events/mine/pools
+ * Cagnottes actives des événements de l'utilisateur (organisés OU où il est
+ * invité), avec le total collecté par cagnotte — pour l'affichage sur
+ * l'accueil ("Mes cagnottes"). DOIT ÊTRE AVANT /:shortId/pool.
+ */
+router.get("/mine/pools", isAuthenticated, async (req, res) => {
+  try {
+    const userId = req.payload._id;
+    const EventInvitation = require("../../models/eventInvitation.model");
+
+    const [organizedEvents, invitations] = await Promise.all([
+      Event.find({ organizer: userId, "giftPool.active": true }).populate(
+        "forPerson",
+        "name surname",
+      ),
+      EventInvitation.find({ user: userId }).populate({
+        path: "event",
+        match: { "giftPool.active": true },
+        populate: { path: "forPerson", select: "name surname" },
+      }),
+    ]);
+
+    const invitedEvents = invitations
+      .map((inv) => inv.event)
+      .filter(Boolean);
+
+    // Dédoublonne au cas où l'utilisateur serait à la fois organisateur et
+    // invité (ne devrait pas arriver, mais on reste défensif).
+    const byId = new Map();
+    [...organizedEvents, ...invitedEvents].forEach((e) => {
+      byId.set(String(e._id), e);
+    });
+    const events = [...byId.values()];
+
+    const eventIds = events.map((e) => e._id);
+    const totals = await GiftPoolContribution.aggregate([
+      { $match: { event: { $in: eventIds }, status: "succeeded" } },
+      {
+        $group: {
+          _id: "$event",
+          total: { $sum: "$amount" },
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+    const totalsByEvent = {};
+    totals.forEach((t) => {
+      totalsByEvent[String(t._id)] = { total: t.total, count: t.count };
+    });
+
+    const pools = events.map((e) => {
+      const totalInfo = totalsByEvent[String(e._id)] || { total: 0, count: 0 };
+      return {
+        eventShortId: e.shortId,
+        eventTitle: e.title,
+        forPerson: e.forPerson || null,
+        isOrganizer: String(e.organizer) === String(userId),
+        mode: e.giftPool.mode,
+        goal: e.giftPool.goal,
+        currency: e.giftPool.currency || "eur",
+        deadline: e.giftPool.deadline,
+        totalCollected: totalInfo.total,
+        contributionsCount: totalInfo.count,
+      };
+    });
+
+    res.status(200).json({ pools });
+  } catch (error) {
+    console.error("❌ Error fetching my pools:", error);
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+});
+
+/*
  * GET /api/events/:shortId/pool
  * État de la cagnotte + total collecté + contributions (publiques).
  * Accessible sans auth (page publique de l'événement).

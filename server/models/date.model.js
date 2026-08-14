@@ -18,6 +18,9 @@ const dateSchema = Schema({
   owner: { type: Schema.Types.ObjectId, ref: "User" },
   family: { type: Boolean, default: false },
 
+  // Photo de la carte (dates créées manuellement uniquement — Cloudinary)
+  photo: { type: String, default: null },
+
   receiveNotifications: {
     type: Boolean,
     default: true,

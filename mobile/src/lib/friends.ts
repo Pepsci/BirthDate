@@ -71,3 +71,22 @@ export async function rejectRequest(friendshipId: string): Promise<void> {
 export async function removeFriend(friendshipId: string): Promise<void> {
   await api(`/friends/${friendshipId}`, { method: "DELETE" });
 }
+
+export interface FriendCardSummary {
+  _id: string;
+  dateId: string | null;
+  name: string;
+  surname?: string;
+  avatar?: string | null;
+  birthDate?: string | null;
+  nameday?: string | null;
+  wishlistCount: number;
+  sharedGiftList: { _id: string; label?: string; giftCount: number } | null;
+}
+
+/** Résumé pour la carte glissante (chat) : âge, anniversaire, idées cadeaux. */
+export async function fetchFriendCardSummary(
+  friendId: string,
+): Promise<FriendCardSummary> {
+  return api<FriendCardSummary>(`/friends/${friendId}/card-summary`);
+}

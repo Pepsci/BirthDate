@@ -1,4 +1,6 @@
 import * as SecureStore from "expo-secure-store";
+import Constants from "expo-constants";
+import { Platform } from "react-native";
 
 // URL de l'API — définie dans .env (EXPO_PUBLIC_API_URL)
 // En dev : l'IP locale de ton PC sur le réseau (pas "localhost", qui pointerait vers le téléphone)
@@ -68,6 +70,9 @@ export interface AuthUser {
   [key: string]: unknown;
 }
 
+/** Version affichée à l'admin (support & débogage) — celle d'app.json. */
+export const APP_VERSION = Constants.expoConfig?.version ?? null;
+
 export async function login(
   email: string,
   password: string,
@@ -75,7 +80,13 @@ export async function login(
 ): Promise<string> {
   const { authToken } = await api<{ authToken: string }>("/auth/login", {
     method: "POST",
-    body: JSON.stringify({ email, password, rememberMe }),
+    body: JSON.stringify({
+      email,
+      password,
+      rememberMe,
+      platform: Platform.OS,
+      appVersion: APP_VERSION,
+    }),
   });
   await setToken(authToken);
   return authToken;

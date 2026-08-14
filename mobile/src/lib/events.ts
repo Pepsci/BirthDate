@@ -481,6 +481,25 @@ export async function fetchPool(shortId: string): Promise<PoolInfo> {
   return api<PoolInfo>(`/events/${shortId}/pool`);
 }
 
+export interface MyPoolSummary {
+  eventShortId: string;
+  eventTitle: string;
+  forPerson?: { name?: string; surname?: string } | null;
+  isOrganizer: boolean;
+  mode: "free" | "goal";
+  goal: number | null;
+  currency: string;
+  deadline: string | null;
+  totalCollected: number;
+  contributionsCount: number;
+}
+
+/** Cagnottes actives des événements que je gère ou auxquels je suis invité·e. */
+export async function fetchMyPools(): Promise<MyPoolSummary[]> {
+  const res = await api<{ pools: MyPoolSummary[] }>("/events/mine/pools");
+  return res.pools;
+}
+
 export async function updatePool(
   shortId: string,
   config: {

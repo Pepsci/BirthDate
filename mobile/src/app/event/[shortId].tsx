@@ -60,6 +60,7 @@ import BottomSheet from "../../components/BottomSheet";
 import ImportGiftSheet, { ImportedGift } from "../../components/ImportGiftSheet";
 import DirectTransferViewer from "../../components/DirectTransferViewer";
 import EventLocationMap from "../../components/EventLocationMap";
+import { usePersistedCollapse } from "../../lib/collapse-prefs";
 import {
   useTheme,
   useThemedStyles,
@@ -101,11 +102,25 @@ export default function EventDetailScreen() {
   const deleteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const deleteProgress = useRef(new Animated.Value(0)).current;
   const DELETE_DELAY = 5000;
-  const [showPool, setShowPool] = useState(true);
-  const [showInvite, setShowInvite] = useState(true);
-  const [showParticipants, setShowParticipants] = useState(true);
-  const [showDateVoteSection, setShowDateVoteSection] = useState(true);
-  const [showLocationVoteSection, setShowLocationVoteSection] = useState(true);
+  // Repli/déploiement des encarts, mémorisé par événement (SecureStore) pour
+  // rester dans l'état choisi par l'utilisateur après un aller-retour sur
+  // l'écran — même mécanisme que `stats-scope.ts`.
+  const collapseScope = `event_${shortId}`;
+  const [showPool, setShowPool] = usePersistedCollapse(collapseScope, "pool");
+  const [showInvite, setShowInvite] = usePersistedCollapse(
+    collapseScope,
+    "invite",
+  );
+  const [showParticipants, setShowParticipants] = usePersistedCollapse(
+    collapseScope,
+    "participants",
+  );
+  const [showDateVoteSection, setShowDateVoteSection] = usePersistedCollapse(
+    collapseScope,
+    "dateVote",
+  );
+  const [showLocationVoteSection, setShowLocationVoteSection] =
+    usePersistedCollapse(collapseScope, "locationVote");
   const insets = useSafeAreaInsets();
   const [giftName, setGiftName] = useState("");
   const [giftUrl, setGiftUrl] = useState("");
@@ -704,7 +719,7 @@ export default function EventDetailScreen() {
           <SectionHeader
             title={`📅 Vote pour la date${isOrganizer ? " (résultats)" : ""}`}
             open={showDateVoteSection}
-            onToggle={() => setShowDateVoteSection((v) => !v)}
+            onToggle={() => setShowDateVoteSection(!showDateVoteSection)}
           />
           {showDateVoteSection &&
             event.dateOptions!.map((opt) => {
@@ -744,7 +759,7 @@ export default function EventDetailScreen() {
           <SectionHeader
             title={`📍 Vote pour le lieu${isOrganizer ? " (résultats)" : ""}`}
             open={showLocationVoteSection}
-            onToggle={() => setShowLocationVoteSection((v) => !v)}
+            onToggle={() => setShowLocationVoteSection(!showLocationVoteSection)}
           />
           {showLocationVoteSection &&
             event.locationOptions!.map((opt) => {
@@ -1107,7 +1122,7 @@ export default function EventDetailScreen() {
                   }`
             }
             open={showPool}
-            onToggle={() => setShowPool((v) => !v)}
+            onToggle={() => setShowPool(!showPool)}
           />
           {showPool && (
             <>
@@ -1205,7 +1220,7 @@ export default function EventDetailScreen() {
           <SectionHeader
             title="🔗 Inviter du monde"
             open={showInvite}
-            onToggle={() => setShowInvite((v) => !v)}
+            onToggle={() => setShowInvite(!showInvite)}
           />
           {showInvite && (
             <>
@@ -1237,7 +1252,7 @@ export default function EventDetailScreen() {
           <SectionHeader
             title={`Participants (${acceptedCount} / ${invitations.length})`}
             open={showParticipants}
-            onToggle={() => setShowParticipants((v) => !v)}
+            onToggle={() => setShowParticipants(!showParticipants)}
           />
           {showParticipants && (
             <>

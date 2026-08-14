@@ -10,6 +10,10 @@ const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
 const mongoSanitize = require("./middleware/sanitize");
 const { AVATAR_DIR, AVATAR_PUBLIC_PATH } = require("./config/avatarStorage");
+const {
+  CARD_PHOTO_DIR,
+  CARD_PHOTO_PUBLIC_PATH,
+} = require("./config/cardPhotoStorage");
 
 const dateStatsRouter = require("./routes/date.stats");
 const authRouter = require("./routes/auth");
@@ -120,6 +124,21 @@ app.use(express.static(path.join(__dirname, "public")));
 app.use(
   AVATAR_PUBLIC_PATH,
   express.static(AVATAR_DIR, {
+    maxAge: "1y",
+    immutable: true,
+    fallthrough: false,
+    setHeaders: (res) => {
+      res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+    },
+  }),
+);
+
+// ── Photos de carte (dates manuelles) ──────────────────────────────────────
+// Même principe que les avatars ci-dessus. En prod, voir
+// deploy/nginx-card-photos.conf pour le montage nginx.
+app.use(
+  CARD_PHOTO_PUBLIC_PATH,
+  express.static(CARD_PHOTO_DIR, {
     maxAge: "1y",
     immutable: true,
     fallthrough: false,

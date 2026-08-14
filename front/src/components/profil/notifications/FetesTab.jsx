@@ -24,7 +24,7 @@ const FetesTab = ({ dates, loading }) => {
   const loadPreferences = async () => {
     try {
       const response = await apiHandler.get("/users/me");
-      setUserEmailPreference(response.data.receiveBirthdayEmails !== false);
+      setUserEmailPreference(response.data.receiveNamedayEmails !== false);
       const firstDateWithNameday = dates.find((d) => d.nameday);
       if (firstDateWithNameday && firstDateWithNameday.namedayPreferences) {
         setNamedayTimings(
@@ -172,7 +172,7 @@ const FetesTab = ({ dates, loading }) => {
           loading={loadingUserPref}
           onChange={(v) =>
             patchUser(
-              "receiveBirthdayEmails",
+              "receiveNamedayEmails",
               v,
               setLoadingUserPref,
               setUserEmailPreference,

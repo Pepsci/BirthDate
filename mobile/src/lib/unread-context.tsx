@@ -6,6 +6,8 @@ import React, {
   useRef,
   useState,
 } from "react";
+import { AppState } from "react-native";
+import * as Notifications from "expo-notifications";
 import { useAuth } from "./auth-context";
 import { fetchConversations } from "./conversations";
 import { fetchNotifications } from "./notifications";
@@ -100,6 +102,36 @@ export function UnreadProvider({ children }: { children: React.ReactNode }) {
   }, [user?._id, refresh, refreshNotifs]);
 
   const total = Object.values(byFriend).reduce((a, b) => a + b, 0);
+
+  // Synchronise le badge de l'icône de l'app (écran d'accueil du téléphone)
+  // avec le nombre réel de messages + notifications non lus. Le serveur pose
+  // aussi le badge sur chaque push (voir pushService.js) pour que ça marche
+  // app fermée ; ceci garde le badge exact pendant que l'app tourne.
+  const badgeTotalRef = useRef(0);
+  badgeTotalRef.current = total + notifCount;
+
+  useEffect(() => {
+    Notifications.setBadgeCountAsync(badgeTotalRef.current).catch(() => {
+      // silencieux — le badge n'est pas critique
+    });
+  }, [total, notifCount]);
+
+  // Filet de sécurité : au premier lancement, la demande de permission
+  // (registerForPush, non-awaited dans auth-context) peut encore être en
+  // attente de réponse de l'utilisateur au moment où ce total est calculé —
+  // le premier appel ci-dessus échoue alors silencieusement faute de
+  // permission accordée, et comme total/notifCount ne rechangent pas tout
+  // seuls, le badge ne se réapplique jamais. On le réapplique donc aussi à
+  // chaque retour au premier plan, ce qui couvre ce cas (et un éventuel
+  // reset du badge par iOS en arrière-plan).
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", (state) => {
+      if (state === "active") {
+        Notifications.setBadgeCountAsync(badgeTotalRef.current).catch(() => {});
+      }
+    });
+    return () => sub.remove();
+  }, []);
 
   return (
     <UnreadContext.Provider

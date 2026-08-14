@@ -103,6 +103,7 @@ const AdminUsers = () => {
               <th>Vérifié</th>
               <th>Rôle</th>
               <th>Statut</th>
+              <th>Plateforme</th>
             </tr>
           </thead>
           <tbody>
@@ -125,6 +126,20 @@ const AdminUsers = () => {
                     <span className="admin-tag admin-tag-danger">suppression</span>
                   ) : (
                     <span className="admin-tag admin-tag-success">actif</span>
+                  )}
+                </td>
+                <td>
+                  {u.lastPlatform ? (
+                    <span className="admin-muted">
+                      {u.lastPlatform === "ios"
+                        ? "📱 iOS"
+                        : u.lastPlatform === "android"
+                          ? "📱 Android"
+                          : "🌐 Web"}
+                      {u.lastAppVersion ? ` · v${u.lastAppVersion}` : ""}
+                    </span>
+                  ) : (
+                    "—"
                   )}
                 </td>
               </tr>
@@ -175,6 +190,22 @@ const AdminUsers = () => {
               Dernière connexion :{" "}
               {detail.lastLoginAt
                 ? new Date(detail.lastLoginAt).toLocaleString("fr-FR")
+                : "inconnue"}
+            </p>
+            <p>
+              Plateforme :{" "}
+              {detail.user.lastPlatform
+                ? `${
+                    detail.user.lastPlatform === "ios"
+                      ? "📱 iOS"
+                      : detail.user.lastPlatform === "android"
+                        ? "📱 Android"
+                        : "🌐 Web"
+                  }${detail.user.lastAppVersion ? ` — version ${detail.user.lastAppVersion}` : ""}${
+                    detail.user.lastSeenAt
+                      ? ` (vu le ${new Date(detail.user.lastSeenAt).toLocaleString("fr-FR")})`
+                      : ""
+                  }`
                 : "inconnue"}
             </p>
             <p>

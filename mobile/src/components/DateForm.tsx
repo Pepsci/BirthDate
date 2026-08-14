@@ -9,9 +9,19 @@ import {
   Switch,
   ActivityIndicator,
   ScrollView,
+  Alert,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { DateEntry, DatePayload, formatBirthday } from "../lib/dates";
+import * as ImagePicker from "expo-image-picker";
+import * as ImageManipulator from "expo-image-manipulator";
+import { Image as ExpoImage } from "expo-image";
+import {
+  DateEntry,
+  DatePayload,
+  formatBirthday,
+  updateDatePhoto,
+  removeDatePhoto,
+} from "../lib/dates";
 import NamedayPicker from "./NamedayPicker";
 import {
   useTheme,
@@ -41,6 +51,64 @@ export default function DateForm({ initial, submitLabel, onSubmit }: Props) {
   const [showPicker, setShowPicker] = useState(Platform.OS === "ios");
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+
+  // Photo de carte — uniquement en édition (il faut un dateId existant pour
+  // PATCH /date/:id/photo), et jamais pour une date liée à un ami (cet écran
+  // n'est de toute façon pas accessible dans ce cas — voir date/[id].tsx).
+  const [photo, setPhoto] = useState<string | null | undefined>(initial?.photo);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+
+  const pickPhoto = async () => {
+    if (!initial) return;
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) return;
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    });
+    if (result.canceled || !result.assets[0]) return;
+    setUploadingPhoto(true);
+    setError(null);
+    try {
+      // HEIC (photos iPhone) → JPEG, comme pour l'avatar profil.
+      const jpeg = await ImageManipulator.manipulateAsync(
+        result.assets[0].uri,
+        [{ resize: { width: 512 } }],
+        { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG },
+      );
+      const updated = await updateDatePhoto(initial._id, jpeg.uri);
+      setPhoto(updated.photo);
+    } catch (e: any) {
+      setError(e?.message ?? "Erreur lors de l'upload de la photo.");
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
+  const confirmRemovePhoto = () => {
+    if (!initial) return;
+    Alert.alert("Supprimer la photo ?", undefined, [
+      { text: "Annuler", style: "cancel" },
+      {
+        text: "Supprimer",
+        style: "destructive",
+        onPress: async () => {
+          setUploadingPhoto(true);
+          setError(null);
+          try {
+            const updated = await removeDatePhoto(initial._id);
+            setPhoto(updated.photo);
+          } catch (e: any) {
+            setError(e?.message ?? "Erreur lors de la suppression.");
+          } finally {
+            setUploadingPhoto(false);
+          }
+        },
+      },
+    ]);
+  };
 
   const submit = async () => {
     if (!name.trim()) {
@@ -78,6 +146,45 @@ export default function DateForm({ initial, submitLabel, onSubmit }: Props) {
       keyboardDismissMode="on-drag"
       automaticallyAdjustKeyboardInsets
     >
+      {initial && (
+        <>
+          <Text style={styles.label}>Photo</Text>
+          <View style={styles.photoRow}>
+            <Pressable onPress={pickPhoto} disabled={uploadingPhoto}>
+              {photo ? (
+                <ExpoImage source={{ uri: photo }} style={styles.photo} />
+              ) : (
+                <View style={styles.photoFallback}>
+                  <Text style={styles.photoFallbackText}>
+                    {(name || "?").charAt(0).toUpperCase()}
+                  </Text>
+                </View>
+              )}
+            </Pressable>
+            <View style={styles.photoButtons}>
+              <Pressable
+                onPress={pickPhoto}
+                disabled={uploadingPhoto}
+                style={styles.photoBtn}
+              >
+                {uploadingPhoto ? (
+                  <ActivityIndicator color={colors.primary} />
+                ) : (
+                  <Text style={styles.photoBtnText}>
+                    {photo ? "Changer la photo" : "Ajouter une photo"}
+                  </Text>
+                )}
+              </Pressable>
+              {photo && !uploadingPhoto && (
+                <Pressable onPress={confirmRemovePhoto} style={styles.photoBtn}>
+                  <Text style={styles.photoBtnTextDanger}>Retirer</Text>
+                </Pressable>
+              )}
+            </View>
+          </View>
+        </>
+      )}
+
       <Text style={styles.label}>Prénom *</Text>
       <TextInput placeholderTextColor={colors.placeholder}
         style={styles.input}
@@ -162,6 +269,34 @@ const makeStyles = (c: ThemeColors) =>
     container: { flex: 1, backgroundColor: c.bg },
     content: { padding: 16, gap: 6, paddingBottom: 40 },
     label: { fontSize: 13, fontWeight: "700", color: c.sub, marginTop: 10 },
+    photoRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 14,
+      marginTop: 4,
+      marginBottom: 4,
+    },
+    photo: { width: 64, height: 64, borderRadius: 32 },
+    photoFallback: {
+      width: 64,
+      height: 64,
+      borderRadius: 32,
+      backgroundColor: c.primarySoft,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    photoFallbackText: { color: c.primary, fontWeight: "700", fontSize: 22 },
+    photoButtons: { gap: 8 },
+    photoBtn: {
+      paddingVertical: 8,
+      paddingHorizontal: 12,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: c.inputBorder,
+      alignItems: "center",
+    },
+    photoBtnText: { color: c.text, fontSize: 13, fontWeight: "600" },
+    photoBtnTextDanger: { color: c.danger, fontSize: 13, fontWeight: "600" },
     input: {
       borderWidth: 1,
       borderColor: c.inputBorder,

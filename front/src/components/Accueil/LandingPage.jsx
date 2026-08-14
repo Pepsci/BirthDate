@@ -393,13 +393,16 @@ const LandingPage = () => {
               "Propositions de cadeaux groupés avec vote",
             ]}
           />
-          {/* Cagnotte — pleine largeur, grisée */}
           <FeatureCard
             icon="💰"
             colorClass="fc-yellow"
             title="Cagnotte groupée pour les cadeaux"
-            desc="Bientôt : créez une cagnotte entre amis pour financer ensemble un cadeau commun directement depuis BirthReminder."
-            soon
+            desc="Créez une cagnotte entre amis pour financer ensemble un cadeau commun, directement depuis BirthReminder et sans commission."
+            points={[
+              "Paiement par carte via Stripe, sécurisé",
+              "Suivi du montant collecté en temps réel",
+              "Reversée directement à l'organisateur, sans intermédiaire",
+            ]}
           />
         </div>
       </section>

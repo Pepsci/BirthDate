@@ -56,12 +56,17 @@ const userSchema = new Schema({
   receiveFriendRequestEmails: { type: Boolean, default: true },
   receiveOwnBirthdayEmail: { type: Boolean, default: true },
 
+  // ── Emails fêtes (namedays) — indépendant des emails d'anniversaire ────────
+  receiveNamedayEmails: { type: Boolean, default: true },
+
   // ── Récap mensuel ────────────────────────────────────────────────────────
   monthlyRecap: { type: Boolean, default: false },
 
   // ── Réglages d'affichage ──────────────────────────────────────────────────
   // Cacher les fêtes (namedays) sur les cartes d'anniversaire.
   hideNamedaysOnCards: { type: Boolean, default: false },
+  // Afficher le bandeau "C'est la fête de X !" sur l'écran d'accueil.
+  showTodayNamedayOnHome: { type: Boolean, default: true },
 
   // ── Compte ────────────────────────────────────────────────────────────────
   deletedAt: Date,
@@ -110,6 +115,17 @@ const userSchema = new Schema({
   // Sous-ensemble des tokens ci-dessus appartenant à des appareils iOS.
   // iOS throttle les pushes silencieuses → on leur envoie des notifs alerte.
   expoPushTokensIos: { type: [String], default: [] },
+
+  // ── Suivi plateforme / version (admin — support & débogage) ────────────────
+  // Mis à jour à chaque connexion (voir routes/auth.js) et, côté mobile, à
+  // chaque enregistrement du token push (voir routes/push.js).
+  lastPlatform: {
+    type: String,
+    enum: ["web", "ios", "android", null],
+    default: null,
+  },
+  lastAppVersion: { type: String, default: null },
+  lastSeenAt: { type: Date, default: null },
   pushEvents: {
     birthdays: { type: Boolean, default: true },
     chat: { type: Boolean, default: true },

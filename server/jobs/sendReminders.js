@@ -211,7 +211,7 @@ async function checkAndSendCardBirthdayReminders() {
             userId: owner._id,
             type: "birthday_soon",
             data: { name: displayName(date), daysLeft: 0 },
-            link: `/?tab=date&dateId=${date._id}`,
+            link: `/home?tab=date&dateId=${date._id}`,
           });
         }
 
@@ -230,7 +230,7 @@ async function checkAndSendCardBirthdayReminders() {
               userId: owner._id,
               type: "birthday_soon",
               data: { name: displayName(date), daysLeft: days },
-              link: `/?tab=date&dateId=${date._id}`,
+              link: `/home?tab=date&dateId=${date._id}`,
             });
           }
 
@@ -265,7 +265,7 @@ async function checkAndSendNamedayReminders() {
       .populate("owner linkedUser");
 
     for (const date of datesWithNameday) {
-      if (!date.owner || !date.owner.receiveBirthdayEmails) continue;
+      if (!date.owner || date.owner.receiveNamedayEmails === false) continue;
 
       const prefs = date.namedayPreferences || {
         timings: [1],
@@ -290,7 +290,7 @@ async function checkAndSendNamedayReminders() {
             userId: owner._id,
             type: "nameday_soon",
             data: { name: displayName(date), daysLeft: 0 },
-            link: `/?tab=date&dateId=${date._id}`,
+            link: `/home?tab=date&dateId=${date._id}`,
           });
         }
 
@@ -310,7 +310,7 @@ async function checkAndSendNamedayReminders() {
               userId: owner._id,
               type: "nameday_soon",
               data: { name: displayName(date), daysLeft: days },
-              link: `/?tab=date&dateId=${date._id}`,
+              link: `/home?tab=date&dateId=${date._id}`,
             });
           }
 

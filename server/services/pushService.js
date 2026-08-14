@@ -1,6 +1,42 @@
 const webpush = require("web-push");
 const PushSubscription = require("../models/PushSubscription.model");
 
+/**
+ * Nombre total d'éléments non lus pour un utilisateur (messages chat +
+ * notifications in-app). Utilisé pour poser le badge sur l'icône de l'app
+ * mobile (champ `badge` du payload Expo Push — pris en compte par iOS/Android
+ * même quand l'app est fermée, contrairement à `shouldSetBadge` côté client
+ * qui ne s'applique qu'à l'app au premier plan).
+ */
+async function getBadgeCountForUser(userId) {
+  try {
+    const Conversation = require("../models/conversation.model");
+    const Message = require("../models/message.model");
+    const Notification = require("../models/notification.model");
+
+    const conversations = await Conversation.find({
+      participants: userId,
+    }).select("_id");
+    const conversationIds = conversations.map((c) => c._id);
+
+    const [unreadMessages, unreadNotifs] = await Promise.all([
+      conversationIds.length
+        ? Message.countDocuments({
+            conversation: { $in: conversationIds },
+            sender: { $ne: userId },
+            "readBy.user": { $ne: userId },
+          })
+        : 0,
+      Notification.countDocuments({ userId, read: false }),
+    ]);
+
+    return unreadMessages + unreadNotifs;
+  } catch (err) {
+    console.error("[Push] Erreur calcul badge count:", err.message);
+    return 0;
+  }
+}
+
 // 👇 Lazy init — évite le crash au require si VAPID pas encore chargé
 let vapidInitialized = false;
 
@@ -87,12 +123,14 @@ async function sendExpoPushToUser(userId, payload) {
   const tokens = user?.expoPushTokens || [];
   if (!tokens.length) return;
   const iosTokens = new Set(user?.expoPushTokensIos || []);
+  const badgeCount = await getBadgeCountForUser(userId);
 
   const messages = tokens.map((to) => {
     const msg = {
       to,
       sound: "default",
       priority: "high",
+      badge: badgeCount,
       data: {
         url: payload.url || "/home",
         type: payload.type || "default",

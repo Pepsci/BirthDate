@@ -1,4 +1,5 @@
-import { api } from "./api";
+import { api, API_URL, getToken, setToken } from "./api";
+import { uploadAsync, FileSystemUploadType } from "expo-file-system/legacy";
 import { GiftStatus } from "./giftStatus";
 
 export interface LinkedUser {
@@ -19,6 +20,7 @@ export interface DateEntry {
   nameday?: string | null; // "MM-DD"
   family: boolean;
   linkedUser: LinkedUser | null;
+  photo?: string | null; // dates manuelles uniquement
   sharedGiftList?: string | null;
   conversationId?: string;
   gifts?: Gift[];
@@ -181,6 +183,50 @@ export async function setDateFamily(
 
 export async function fetchDate(id: string): Promise<DateEntry> {
   return api<DateEntry>(`/date/${id}`);
+}
+
+/**
+ * PATCH /date/:id/photo en multipart (champ "photo") — même technique que
+ * updateAvatar() dans lib/users.ts (uploadAsync plutôt que fetch+FormData,
+ * seul moyen fiable d'envoyer du multipart sur iOS).
+ */
+export async function updateDatePhoto(
+  id: string,
+  imageUri: string,
+): Promise<DateEntry> {
+  const token = await getToken();
+  const res = await uploadAsync(`${API_URL}/api/date/${id}/photo`, imageUri, {
+    httpMethod: "PATCH",
+    uploadType: FileSystemUploadType.MULTIPART,
+    fieldName: "photo",
+    mimeType: "image/jpeg",
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  const data = res.body ? JSON.parse(res.body) : {};
+  if (res.status < 200 || res.status >= 300) {
+    throw new Error(data?.message ?? `Erreur ${res.status}`);
+  }
+  if (data.authToken) await setToken(data.authToken);
+  return data;
+}
+
+export async function removeDatePhoto(id: string): Promise<DateEntry> {
+  const token = await getToken();
+  const res = await fetch(`${API_URL}/api/date/${id}/photo`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "multipart/form-data",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: (() => {
+      const fd = new FormData();
+      fd.append("removePhoto", "true");
+      return fd;
+    })(),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data?.message ?? `Erreur ${res.status}`);
+  return data;
 }
 
 // ---- Idées cadeaux par date ----

@@ -52,17 +52,22 @@ router.get("/vapid-public-key", (req, res) => {
 // POST /push/expo-token — enregistre le token de l'appareil
 router.post("/expo-token", isAuthenticated, async (req, res) => {
   try {
-    const { token, platform } = req.body;
+    const { token, platform, appVersion } = req.body;
     if (!token || !/^ExponentPushToken\[.+\]$/.test(token)) {
       return res.status(400).json({ error: "Token Expo invalide" });
     }
+    // Le token est ré-enregistré à chaque lancement de l'app (registerForPush) —
+    // c'est le meilleur signal qu'on ait de "dernière plateforme/version vue"
+    // pour un compte mobile, bien plus fréquent que le login (session persistée).
+    const $set = { pushEnabled: true, lastSeenAt: new Date() };
+    if (["ios", "android"].includes(platform)) $set.lastPlatform = platform;
+    if (appVersion) $set.lastAppVersion = String(appVersion).slice(0, 40);
     await User.findByIdAndUpdate(req.payload._id, {
       $addToSet:
         platform === "ios"
           ? { expoPushTokens: token, expoPushTokensIos: token }
           : { expoPushTokens: token },
-      // Activer le push automatiquement à l'enregistrement mobile
-      $set: { pushEnabled: true },
+      $set,
     });
     res.json({ success: true });
   } catch (err) {

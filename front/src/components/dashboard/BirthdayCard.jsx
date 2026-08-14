@@ -5,9 +5,9 @@ import "./css/birthcard.css";
 const BirthdayCard = ({ date, onViewProfile }) => {
   const isFriend = !!date.linkedUser;
 
-  // Avatar : photo de l'ami inscrit si disponible, sinon initiales.
-  // Les dates manuelles (pas de linkedUser) n'ont jamais de photo.
-  const avatarUrl = date.linkedUser?.avatar;
+  // Avatar : photo de l'ami inscrit si disponible, sinon la photo ajoutée
+  // manuellement sur la carte (date.photo), sinon initiales.
+  const avatarUrl = date.linkedUser?.avatar || date.photo;
   const [avatarError, setAvatarError] = useState(false);
   const initials = `${(date.name || "").charAt(0)}${(date.surname || "").charAt(0)}`.toUpperCase();
   const showAvatarImg = avatarUrl && !avatarError;

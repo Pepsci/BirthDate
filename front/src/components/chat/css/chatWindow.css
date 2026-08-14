@@ -3,6 +3,7 @@
 ================================ */
 
 .chat-window {
+    position: relative;
     display: flex;
     flex-direction: column;
     height: 100%;
@@ -10,6 +11,14 @@
     min-height: 0;
     width: 100%;
     transition: background-color 0.3s ease;
+}
+
+.chat-name-clickable {
+    cursor: pointer;
+}
+
+.chat-name-clickable:hover {
+    text-decoration: underline;
 }
 
 .direct-chat-container{

@@ -6,6 +6,7 @@ const Conversation = require("../models/conversation.model");
 const Message = require("../models/message.model");
 const User = require("../models/user.model");
 const Friend = require("../models/friend.model");
+const Notification = require("../models/notification.model");
 const { isBlockedBetween } = require("../utils/blocking");
 
 // Récupérer toutes les conversations de l'utilisateur
@@ -253,6 +254,21 @@ router.put("/:conversationId/read", isAuthenticated, async (req, res) => {
     });
 
     await Promise.all(updatePromises);
+
+    // Lire les messages ne marquait pas comme lue la notification "nouveau
+    // message" correspondante (centre de notifs / badge de l'icône app) :
+    // celle-ci ne se dédoublonne que par conversationId (voir utils/notify.js),
+    // donc on la clôture ici plutôt que d'attendre un passage sur l'écran
+    // Notifications.
+    await Notification.updateMany(
+      {
+        userId,
+        type: "new_message",
+        read: false,
+        "data.conversationId": conversationId,
+      },
+      { $set: { read: true } },
+    );
 
     res.json({
       success: true,

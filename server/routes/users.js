@@ -58,9 +58,11 @@ function formatUser(user) {
     receiveBirthdayEmails: user.receiveBirthdayEmails,
     receiveFriendRequestEmails: user.receiveFriendRequestEmails,
     receiveOwnBirthdayEmail: user.receiveOwnBirthdayEmail,
+    receiveNamedayEmails: user.receiveNamedayEmails,
     monthlyRecap: user.monthlyRecap,
     // Réglages d'affichage
     hideNamedaysOnCards: user.hideNamedaysOnCards,
+    showTodayNamedayOnHome: user.showTodayNamedayOnHome,
     // Emails chat
     receiveChatEmails: user.receiveChatEmails,
     chatEmailFrequency: user.chatEmailFrequency,
@@ -97,11 +99,15 @@ function applyPreferences(user, body) {
     user.receiveFriendRequestEmails = body.receiveFriendRequestEmails;
   if (body.receiveOwnBirthdayEmail !== undefined)
     user.receiveOwnBirthdayEmail = body.receiveOwnBirthdayEmail;
+  if (body.receiveNamedayEmails !== undefined)
+    user.receiveNamedayEmails = body.receiveNamedayEmails;
   if (body.monthlyRecap !== undefined) user.monthlyRecap = body.monthlyRecap;
 
   // Réglages d'affichage
   if (body.hideNamedaysOnCards !== undefined)
     user.hideNamedaysOnCards = body.hideNamedaysOnCards;
+  if (body.showTodayNamedayOnHome !== undefined)
+    user.showTodayNamedayOnHome = body.showTodayNamedayOnHome;
 
   // Emails chat
   if (body.receiveChatEmails !== undefined)
@@ -210,6 +216,7 @@ router.patch(
 
     try {
       console.log("PATCH /users/me - User ID:", req.payload._id);
+      console.log("🔍 [DEBUG] req.body complet:", req.body);
 
       // Avatar : re-encodé en WebP 256×256 puis écrit sur le disque.
       // saveAvatar() supprime l'avatar précédent → un seul fichier par user.
@@ -271,10 +278,24 @@ router.patch(
       // Toutes les préférences
       applyPreferences(user, req.body);
 
+      console.log("🔍 [DEBUG] user AVANT save():", {
+        showTodayNamedayOnHome: user.showTodayNamedayOnHome,
+        receiveNamedayEmails: user.receiveNamedayEmails,
+        modifiedPaths: user.modifiedPaths(),
+      });
       const updatedUser = await user.save();
 
       await syncFriendDates(updatedUser, oldName, oldSurname, oldBirthDate);
 
+      console.log("🔍 [DEBUG] updatedUser APRES save():", {
+        showTodayNamedayOnHome: updatedUser.showTodayNamedayOnHome,
+        receiveNamedayEmails: updatedUser.receiveNamedayEmails,
+      });
+      const rereadDebugUser = await userModel.findById(updatedUser._id);
+      console.log("🔍 [DEBUG] relu depuis Mongo juste apres:", {
+        showTodayNamedayOnHome: rereadDebugUser.showTodayNamedayOnHome,
+        receiveNamedayEmails: rereadDebugUser.receiveNamedayEmails,
+      });
       const payload = formatUser(updatedUser);
       const authToken = jwt.sign(payload, process.env.TOKEN_SECRET, {
         algorithm: "HS256",

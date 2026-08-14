@@ -2,7 +2,7 @@ import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
 import Constants from "expo-constants";
 import { Platform } from "react-native";
-import { api } from "./api";
+import { api, APP_VERSION } from "./api";
 
 /**
  * Push natif via Expo Push (roadmap priorité n°1).
@@ -27,11 +27,18 @@ export function isExpoGo(): boolean {
   return Constants.appOwnership === "expo";
 }
 
-/** Demande la permission, récupère le token et l'enregistre sur le backend */
+/**
+ * Demande la permission, récupère le token et l'enregistre sur le backend.
+ *
+ * Sur simulateur / Expo Go, le token push distant ne peut pas fonctionner
+ * (Apple ne délivre pas de vraies pushes remote à un simulateur) — mais la
+ * permission de notification (qui couvre aussi le badge sur l'icône) reste
+ * demandée quand même, sinon `Notifications.setBadgeCountAsync()` est
+ * silencieusement ignoré par iOS faute de permission accordée, y compris
+ * pour le badge posé localement pendant que l'app tourne (unread-context.tsx).
+ */
 export async function registerForPush(): Promise<string | null> {
   try {
-    if (!Device.isDevice || isExpoGo()) return null; // simulateur ou Expo Go
-
     // Canal Android obligatoire (importance des notifs)
     if (Platform.OS === "android") {
       await Notifications.setNotificationChannelAsync("default", {
@@ -49,6 +56,9 @@ export async function registerForPush(): Promise<string | null> {
       status = req.status;
     }
     if (status !== "granted") return null;
+
+    // À partir d'ici : token push distant, impossible sur simulateur / Expo Go.
+    if (!Device.isDevice || isExpoGo()) return null;
 
     const projectId =
       Constants.expoConfig?.extra?.eas?.projectId ??
@@ -68,7 +78,12 @@ export async function registerForPush(): Promise<string | null> {
       method: "POST",
       // platform : le backend envoie des notifs alerte aux appareils iOS
       // (les pushes silencieuses y sont throttlées) et data-only à Android.
-      body: JSON.stringify({ token, platform: Platform.OS }),
+      // appVersion : remonté à l'admin (support & débogage), voir routes/push.js.
+      body: JSON.stringify({
+        token,
+        platform: Platform.OS,
+        appVersion: APP_VERSION,
+      }),
     });
     console.log("🔔 Push: token enregistré", token);
     return token;

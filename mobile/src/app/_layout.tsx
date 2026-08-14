@@ -13,6 +13,7 @@ import {
   subscribeForegroundDecrypt,
 } from "../lib/notif-decrypt";
 import { ActivityIndicator, View } from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { StatusBar } from "expo-status-bar";
 import HeaderBackButton from "../components/HeaderBackButton";
 import { AuthProvider, useAuth } from "../lib/auth-context";
@@ -148,13 +149,19 @@ function ThemedStatusBar() {
 
 export default function RootLayout() {
   return (
-    <ThemeProvider>
-      <AuthProvider>
-        <UnreadProvider>
-          <ThemedStatusBar />
-          <RootNavigator />
-        </UnreadProvider>
-      </AuthProvider>
-    </ThemeProvider>
+    // ⚠️ Requis par react-native-gesture-handler (swipe-back natif du Stack,
+    // BottomSheet, PanResponder…) : sans ce wrapper racine, les gestes entrent
+    // en conflit avec les ScrollView/FlatList une fois arrivés en bas du
+    // contenu — le scroll reste alors bloqué et impossible à remonter.
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <ThemeProvider>
+        <AuthProvider>
+          <UnreadProvider>
+            <ThemedStatusBar />
+            <RootNavigator />
+          </UnreadProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </GestureHandlerRootView>
   );
 }

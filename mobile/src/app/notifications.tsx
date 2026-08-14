@@ -36,6 +36,18 @@ export default function NotificationsScreen() {
   const [items, setItems] = useState<AppNotification[] | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Cartes dont le texte complet est affiché (par défaut : tronqué sur 2
+  // lignes). Un bouton par carte permet de dérouler/replier, comme sur le web.
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+
+  const toggleExpanded = (id: string) => {
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   const load = useCallback(async () => {
     try {
@@ -171,6 +183,10 @@ export default function NotificationsScreen() {
         }
         renderItem={({ item }) => {
           const { emoji, text } = notifDisplay(item);
+          const expanded = expandedIds.has(item._id);
+          // Repère grossier pour savoir si le texte risque d'être tronqué
+          // sur 2 lignes et si un bouton déplier/replier est utile.
+          const maybeTruncated = text.length > 60;
           return (
             <Pressable
               style={[styles.row, !item.read && styles.rowUnread]}
@@ -181,18 +197,40 @@ export default function NotificationsScreen() {
               <View style={{ flex: 1 }}>
                 <Text
                   style={[styles.text, !item.read && styles.textUnread]}
-                  numberOfLines={2}
+                  numberOfLines={expanded ? undefined : 2}
                 >
                   {text}
                 </Text>
-                <Text style={styles.time}>{timeAgo(item.createdAt)}</Text>
+                <View style={styles.rowFooter}>
+                  <Text style={styles.time}>{timeAgo(item.createdAt)}</Text>
+                  {maybeTruncated && (
+                    <Pressable
+                      hitSlop={8}
+                      onPress={() => toggleExpanded(item._id)}
+                    >
+                      <Text style={styles.expandBtn}>
+                        {expanded ? "▾ Réduire" : "▸ Déplier"}
+                      </Text>
+                    </Pressable>
+                  )}
+                </View>
               </View>
-              {!item.read && <View style={styles.dot} />}
+              <View style={styles.rowActions}>
+                {!item.read && <View style={styles.dot} />}
+                <Pressable
+                  hitSlop={10}
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    remove(item);
+                  }}
+                >
+                  <Text style={styles.deleteBtn}>✕</Text>
+                </Pressable>
+              </View>
             </Pressable>
           );
         }}
       />
-      <Text style={styles.hint}>Appui long pour supprimer une notification.</Text>
     </View>
   );
 }
@@ -224,12 +262,29 @@ const makeStyles = (c: ThemeColors) =>
     emoji: { fontSize: 22 },
     text: { color: c.text, fontSize: 14, lineHeight: 19 },
     textUnread: { color: c.text, fontWeight: "600" },
-    time: { color: c.faint, fontSize: 11, marginTop: 2 },
+    rowFooter: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+      marginTop: 2,
+    },
+    time: { color: c.faint, fontSize: 11 },
+    expandBtn: { color: c.primary, fontSize: 11, fontWeight: "700" },
+    rowActions: {
+      alignItems: "center",
+      gap: 8,
+    },
     dot: {
       width: 9,
       height: 9,
       borderRadius: 5,
       backgroundColor: c.primary,
+    },
+    deleteBtn: {
+      color: c.faint,
+      fontSize: 16,
+      fontWeight: "700",
+      padding: 2,
     },
     hint: {
       textAlign: "center",

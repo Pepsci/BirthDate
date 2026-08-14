@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { Image as ExpoImage } from "expo-image";
 import BirthdayCountdown from "../../components/BirthdayCountdown";
+import MyCagnottesStrip from "../../components/MyCagnottesStrip";
 import { useGuidedTour, TOURS } from "../../lib/guided-tour";
 import {
   useTheme,
@@ -138,6 +139,8 @@ export default function BirthdaysScreen() {
         </Pressable>
       )}
 
+      <MyCagnottesStrip />
+
       <View style={styles.searchBar}>
         <TextInput
           placeholderTextColor={colors.placeholder}
@@ -248,7 +251,9 @@ function BirthdayCard({
   const days = birthISO ? daysUntil(birthISO) : null;
   const age = birthISO ? currentAge(birthISO) : null;
   const isToday = days === 0;
-  const avatar = entry.linkedUser?.avatar;
+  // Photo de l'ami inscrit si dispo, sinon la photo ajoutée manuellement sur
+  // la carte (entry.photo), sinon les initiales.
+  const avatar = entry.linkedUser?.avatar || entry.photo;
 
   // Nom/prénom : sur l'entrée, sinon sur l'ami lié.
   const name = entry.name || entry.linkedUser?.name || "";

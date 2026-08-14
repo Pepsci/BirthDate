@@ -18,6 +18,10 @@ const UpdateDate = ({
   const [showConfirm, setShowConfirm] = useState(false);
   const [saveStatus, setSaveStatus] = useState(null);
   const confirmRef = useRef(null);
+  const photoRef = useRef(null);
+  const [photoPreview, setPhotoPreview] = useState(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [photoError, setPhotoError] = useState("");
 
   const isFriend = !!date.linkedUser;
 
@@ -49,6 +53,51 @@ const UpdateDate = ({
     } catch (error) {
       console.error(error);
       setSaveStatus("error");
+    }
+  };
+
+  const handlePhotoSelect = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPhotoError("");
+    const localPreview = URL.createObjectURL(file);
+    setPhotoPreview(localPreview);
+    setUploadingPhoto(true);
+    try {
+      const fd = new FormData();
+      fd.append("photo", file);
+      const response = await apiHandler.patch(`/date/${date._id}/photo`, fd, {
+        headers: { "content-type": "multipart/form-data" },
+      });
+      setDateToUpdate((prev) => ({ ...prev, photo: response.data.photo }));
+      if (onSaved) onSaved(response.data);
+    } catch (error) {
+      console.error(error);
+      setPhotoError("Impossible d'envoyer la photo. Réessaie.");
+    } finally {
+      setUploadingPhoto(false);
+      URL.revokeObjectURL(localPreview);
+      setPhotoPreview(null);
+      if (photoRef.current) photoRef.current.value = "";
+    }
+  };
+
+  const handlePhotoRemove = async () => {
+    setPhotoError("");
+    setUploadingPhoto(true);
+    try {
+      const fd = new FormData();
+      fd.append("removePhoto", "true");
+      const response = await apiHandler.patch(`/date/${date._id}/photo`, fd, {
+        headers: { "content-type": "multipart/form-data" },
+      });
+      setDateToUpdate((prev) => ({ ...prev, photo: response.data.photo }));
+      if (onSaved) onSaved(response.data);
+    } catch (error) {
+      console.error(error);
+      setPhotoError("Impossible de supprimer la photo. Réessaie.");
+    } finally {
+      setUploadingPhoto(false);
     }
   };
 
@@ -122,6 +171,55 @@ const UpdateDate = ({
             />
           </div>
         </div>
+
+        {!isFriend && (
+          <div className="auth-field photo-edit-field">
+            <label className="auth-label">Photo (optionnel)</label>
+            <div className="photo-edit">
+              <img
+                className="photo-edit__preview"
+                src={
+                  photoPreview ||
+                  dateToUpdate.photo ||
+                  "https://api.dicebear.com/8.x/bottts/svg?seed=" +
+                    encodeURIComponent(dateToUpdate.name || "date")
+                }
+                alt=""
+              />
+              <div className="photo-edit__controls">
+                <button
+                  type="button"
+                  className="photo-edit__btn"
+                  onClick={() => photoRef.current?.click()}
+                  disabled={uploadingPhoto}
+                >
+                  {uploadingPhoto ? "Envoi..." : "Changer la photo"}
+                </button>
+                {dateToUpdate.photo && (
+                  <button
+                    type="button"
+                    className="photo-edit__btn photo-edit__btn--danger"
+                    onClick={handlePhotoRemove}
+                    disabled={uploadingPhoto}
+                  >
+                    Retirer
+                  </button>
+                )}
+                <input
+                  ref={photoRef}
+                  type="file"
+                  accept="image/png, image/jpeg, image/webp, image/gif"
+                  onChange={handlePhotoSelect}
+                  className="photo-edit__input"
+                  hidden
+                />
+              </div>
+              {photoError && (
+                <span className="photo-edit__error">{photoError}</span>
+              )}
+            </div>
+          </div>
+        )}
 
         {!isFriend && (
           <div className="auth-field">

@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -11,7 +11,7 @@ import {
   ActivityIndicator,
   useWindowDimensions,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { StatusBar } from "expo-status-bar";
@@ -20,6 +20,7 @@ import { useTheme } from "../lib/theme-context";
 import { fetchPublicStats, fetchMyStats, PublicStats } from "../lib/stats";
 import { useStatsScope } from "../lib/stats-scope";
 import { fetchDates, daysUntil } from "../lib/dates";
+import { fetchMe } from "../lib/users";
 import { hasSeenWelcome, markWelcomeSeen } from "../lib/welcome-gate";
 
 const LOGO_MARK = require("../../assets/images/logo-mark.png"); // B bougie — lisible sur les deux thèmes
@@ -87,11 +88,12 @@ const FEATURES = [
   { emoji: "🎉", title: "Événements", text: "Votes pour la date et le lieu, invitations, chat de groupe en temps réel." },
   { emoji: "🎁", title: "Wishlist & cadeaux", text: "Partagez vos envies et trouvez le cadeau parfait, ensemble." },
   { emoji: "💬", title: "Messagerie", text: "Discutez avec vos amis directement dans l'app, en privé." },
+  { emoji: "💰", title: "Cagnotte", text: "Financez un cadeau à plusieurs pour un anniversaire ou un événement, sans commission." },
 ];
 
 const STEPS = [
   { num: "1", title: "Ajoutez vos proches", text: "Anniversaires, fêtes, ou connectez-vous avec vos amis inscrits." },
-  { num: "2", title: "Recevez vos rappels", text: "Notification la veille et le jour J — plus jamais d'oubli." },
+  { num: "2", title: "Recevez vos rappels", text: "Notification la veille et le jour J, plus jamais d'oubli." },
   { num: "3", title: "Célébrez ensemble", text: "Organisez un événement, discutez et choisissez le cadeau à plusieurs." },
 ];
 
@@ -325,7 +327,10 @@ export default function WelcomeScreen() {
   const isPersonalStats = statsScope === "personal";
   // Anniversaires / fêtes du jour parmi les proches de l'utilisateur connecté.
   const [todayBirthdayNames, setTodayBirthdayNames] = useState<string[]>([]);
-  const [todayFetes, setTodayFetes] = useState<string[]>([]);
+  const [todayFetesRaw, setTodayFetesRaw] = useState<string[]>([]);
+  // Réglage (profil) : afficher ou non le bandeau "fête du jour" sur l'accueil.
+  const [showTodayNameday, setShowTodayNameday] = useState(true);
+  const todayFetes = showTodayNameday ? todayFetesRaw : [];
   // En mode perso, le bento porte déjà le chiffre + les prénoms du jour.
   const showTodayBirthdayCard = !isPersonalStats && todayBirthdayNames.length > 0;
 
@@ -352,37 +357,56 @@ export default function WelcomeScreen() {
   }, [isPersonalStats]);
 
   // Calcule les anniversaires et fêtes du jour parmi les proches (si connecté).
-  useEffect(() => {
-    if (!user) {
-      setTodayBirthdayNames([]);
-      setTodayFetes([]);
-      return;
-    }
-    const now = new Date();
-    const todayKey = `${String(now.getMonth() + 1).padStart(2, "0")}-${String(
-      now.getDate(),
-    ).padStart(2, "0")}`;
-    fetchDates()
-      .then((list) => {
-        const bdays: string[] = [];
-        const fetes: string[] = [];
-        for (const d of list) {
-          const name = d.name || d.linkedUser?.name;
-          const birthISO = d.date || d.linkedUser?.birthDate || null;
-          if (birthISO && daysUntil(birthISO) === 0) {
-            bdays.push(name || "Quelqu'un");
-          }
-          const nd = d.nameday ?? d.linkedUser?.nameday;
-          if (nd === todayKey && name) fetes.push(name);
-        }
-        setTodayBirthdayNames(bdays);
-        setTodayFetes(fetes);
-      })
-      .catch(() => {
+  // useFocusEffect (pas un simple useEffect[user]) : cet écran reste monté
+  // dans la pile de navigation entre deux visites (tap sur le logo), donc un
+  // useEffect[user] ne se redéclencherait qu'une fois. Avec useFocusEffect,
+  // le réglage "Afficher la fête du jour" (Profil → Réglages) est relu à
+  // chaque retour sur l'accueil, pas seulement au premier montage.
+  useFocusEffect(
+    useCallback(() => {
+      if (!user) {
         setTodayBirthdayNames([]);
-        setTodayFetes([]);
-      });
-  }, [user]);
+        setTodayFetesRaw([]);
+        return;
+      }
+      let cancelled = false;
+      fetchMe()
+        .then((me) => {
+          if (!cancelled)
+            setShowTodayNameday(me.showTodayNamedayOnHome !== false);
+        })
+        .catch(() => {
+          if (!cancelled) setShowTodayNameday(true);
+        });
+      const now = new Date();
+      const todayKey = `${String(now.getMonth() + 1).padStart(2, "0")}-${String(
+        now.getDate(),
+      ).padStart(2, "0")}`;
+      fetchDates()
+        .then((list) => {
+          const bdays: string[] = [];
+          const fetes: string[] = [];
+          for (const d of list) {
+            const name = d.name || d.linkedUser?.name;
+            const birthISO = d.date || d.linkedUser?.birthDate || null;
+            if (birthISO && daysUntil(birthISO) === 0) {
+              bdays.push(name || "Quelqu'un");
+            }
+            const nd = d.nameday ?? d.linkedUser?.nameday;
+            if (nd === todayKey && name) fetes.push(name);
+          }
+          setTodayBirthdayNames(bdays);
+          setTodayFetesRaw(fetes);
+        })
+        .catch(() => {
+          setTodayBirthdayNames([]);
+          setTodayFetesRaw([]);
+        });
+      return () => {
+        cancelled = true;
+      };
+    }, [user]),
+  );
 
   const go = (path: string) => {
     markWelcomeSeen();
@@ -437,7 +461,7 @@ export default function WelcomeScreen() {
           </View>
           <Text style={s.tagline}>N'oubliez plus jamais un anniversaire</Text>
           <Text style={s.subTagline}>
-            Rappels, agenda, événements et cadeaux — tout au même endroit, entre amis.
+            Rappels, agenda, événements et cadeaux, tout au même endroit, entre amis.
           </Text>
 
           {/* ── Anniv & fête du jour (proches) — chaque case selon sa propre
@@ -563,8 +587,8 @@ export default function WelcomeScreen() {
                 <Text style={s.bentoSmallEmoji}>{isPersonalStats ? "🎈" : "👥"}</Text>
                 <Text style={s.bentoWideText}>
                   {isPersonalStats
-                    ? `${stats === null ? "…" : stats.total} date${stats && stats.total > 1 ? "s" : ""} enregistrée${stats && stats.total > 1 ? "s" : ""} — vous n'en oublierez aucune`
-                    : `${stats === null ? "…" : stats.totalUsers} membres inscrits — et la fête ne fait que commencer`}
+                    ? `${stats === null ? "…" : stats.total} date${stats && stats.total > 1 ? "s" : ""} enregistrée${stats && stats.total > 1 ? "s" : ""}, vous n'en oublierez aucune`
+                    : `${stats === null ? "…" : stats.totalUsers} membres inscrits, et la fête ne fait que commencer`}
                 </Text>
               </View>
             </>

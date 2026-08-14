@@ -11,6 +11,7 @@ import Chat from "../chat/Chat";
 import ChatModal from "../chat/ChatModal";
 import DirectChat from "../chat/DirectChat";
 import EventsPanel from "../events/EventsPanel";
+import MyCagnottesStrip from "./MyCagnottesStrip";
 import FabMenu from "./FabMenu";
 import useNotifications from "../../context/useNotifications";
 import Footer from "../layout/Footer";
@@ -569,6 +570,8 @@ const DateList = ({
             <EventsPanel allDates={allDates} />
           </motion.div>
         )}
+
+        {activePanel === "dates" && <MyCagnottesStrip />}
 
         {activePanel === "dates" && dates.length === 0 && (
           <motion.div

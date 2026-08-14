@@ -1,25 +1,36 @@
-import { useEffect, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   View,
   Text,
   Switch,
+  Pressable,
   StyleSheet,
   ScrollView,
   ActivityIndicator,
 } from "react-native";
-import { Stack } from "expo-router";
+import { Stack, useFocusEffect } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { UserProfile, fetchMe, updateMe } from "../../lib/users";
+import { DateEntry, fetchDates, setDateNotifications } from "../../lib/dates";
 import {
   useTheme,
   useThemedStyles,
   ThemeColors,
 } from "../../lib/theme-context";
+import { usePersistedCollapse } from "../../lib/collapse-prefs";
+
+const COLLAPSE_SCOPE = "profile_notifications";
 
 const PREFS: { key: keyof UserProfile & string; label: string; hint: string }[] = [
   {
     key: "receiveBirthdayEmails",
     label: "Rappels d'anniversaires",
     hint: "Email avant les anniversaires de tes proches",
+  },
+  {
+    key: "receiveNamedayEmails",
+    label: "Rappels de fêtes",
+    hint: "Email avant les fêtes (nameday) de tes proches",
   },
   {
     key: "receiveOwnBirthdayEmail",
@@ -51,15 +62,96 @@ const PREFS: { key: keyof UserProfile & string; label: string; hint: string }[] 
 export default function NotificationsScreen() {
   const styles = useThemedStyles(makeStyles);
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const [me, setMe] = useState<UserProfile | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchMe()
-      .then(setMe)
-      .catch((e) => setError(e?.message ?? "Erreur de chargement."));
-  }, []);
+  // Gestion "par carte" des rappels d'anniversaire, comme sur le web
+  // (GestionNotifications > EmailTab) : liste repliée par défaut, un
+  // interrupteur par personne pour couper/activer son rappel individuellement.
+  const [dates, setDates] = useState<DateEntry[] | null>(null);
+  const [updatingDateIds, setUpdatingDateIds] = useState<Set<string>>(
+    new Set(),
+  );
+
+  // Sections repliables (email / push / rappels par personne), état persisté
+  // sur l'appareil pour survivre à une sortie/retour de l'écran.
+  const [isEmailSectionExpanded, setIsEmailSectionExpanded] =
+    usePersistedCollapse(COLLAPSE_SCOPE, "email", true);
+  const [isPushSectionExpanded, setIsPushSectionExpanded] =
+    usePersistedCollapse(COLLAPSE_SCOPE, "push", true);
+  const [isPersonSectionExpanded, setIsPersonSectionExpanded] =
+    usePersistedCollapse(COLLAPSE_SCOPE, "person", true);
+  const [isListExpanded, setIsListExpanded] = usePersistedCollapse(
+    COLLAPSE_SCOPE,
+    "personList",
+    false,
+  );
+
+  // Ordre alphabétique (nom, prénom) pour retrouver quelqu'un facilement.
+  const sortedDates = useMemo(
+    () =>
+      dates
+        ? [...dates].sort((a, b) =>
+            `${a.name ?? ""} ${a.surname ?? ""}`.localeCompare(
+              `${b.name ?? ""} ${b.surname ?? ""}`,
+              "fr",
+              { sensitivity: "base" },
+            ),
+          )
+        : null,
+    [dates],
+  );
+
+  // useFocusEffect (pas juste au montage) : cet écran peut rester monté dans
+  // la pile quand on va modifier une préférence ailleurs (ex. Réglages), donc
+  // il faut relire /users/me à chaque retour pour ne pas afficher une valeur
+  // périmée.
+  useFocusEffect(
+    useCallback(() => {
+      fetchMe()
+        .then(setMe)
+        .catch((e) => setError(e?.message ?? "Erreur de chargement."));
+    }, []),
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchDates()
+        .then(setDates)
+        .catch(() => {});
+    }, []),
+  );
+
+  const toggleDateNotif = async (date: DateEntry) => {
+    const enabled = date.receiveNotifications !== false;
+    setUpdatingDateIds((prev) => new Set(prev).add(date._id));
+    setDates(
+      (prev) =>
+        prev?.map((d) =>
+          d._id === date._id ? { ...d, receiveNotifications: !enabled } : d,
+        ) ?? prev,
+    );
+    try {
+      await setDateNotifications(date._id, !enabled);
+    } catch (e: any) {
+      // rollback
+      setDates(
+        (prev) =>
+          prev?.map((d) =>
+            d._id === date._id ? { ...d, receiveNotifications: enabled } : d,
+          ) ?? prev,
+      );
+      setError(e?.message ?? "Erreur d'enregistrement.");
+    } finally {
+      setUpdatingDateIds((prev) => {
+        const next = new Set(prev);
+        next.delete(date._id);
+        return next;
+      });
+    }
+  };
 
   const togglePushCat = async (key: string, value: boolean) => {
     if (!me || busy) return;
@@ -115,68 +207,154 @@ export default function NotificationsScreen() {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={[
+        styles.content,
+        { paddingBottom: 40 + insets.bottom },
+      ]}
+    >
       <Stack.Screen options={{ title: "Notifications" }} />
       {error && <Text style={styles.error}>{error}</Text>}
 
-      <Text style={styles.sectionHeader}>✉️ Notifications email</Text>
-      <View style={styles.card}>
-        {PREFS.map((pref) => (
-          <View key={pref.key} style={styles.row}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.label}>{pref.label}</Text>
-              <Text style={styles.hint}>{pref.hint}</Text>
-            </View>
-            <Switch
-              value={!!me[pref.key]}
-              disabled={busy === pref.key}
-              onValueChange={(v) => toggle(pref.key, v)}
-              trackColor={{ true: colors.primary }}
-            />
-          </View>
-        ))}
-      </View>
-
-      <Text style={styles.sectionHeader}>📱 Notifications push (mobile)</Text>
-      <View style={styles.card}>
-        <View style={styles.row}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.label}>Push activé</Text>
-            <Text style={styles.hint}>
-              Notifications natives sur ce téléphone
-            </Text>
-          </View>
-          <Switch
-            value={!!me.pushEnabled}
-            disabled={busy === "pushEnabled"}
-            onValueChange={(v) => toggle("pushEnabled", v)}
-            trackColor={{ true: colors.primary }}
-          />
-        </View>
-        {me.pushEnabled &&
-          (
-            [
-              { k: "birthdays", l: "Anniversaires & fêtes", h: "Rappels J-x selon tes réglages par personne" },
-              { k: "events", l: "Événements", h: "Invitations, RSVP, votes, rappels" },
-              { k: "chat", l: "Messages", h: "Chats privés et d'événements" },
-              { k: "friends", l: "Amis", h: "Demandes et acceptations" },
-              { k: "gifts", l: "Cadeaux", h: "Réservations et propositions" },
-            ] as const
-          ).map(({ k, l, h }) => (
-            <View key={k} style={styles.row}>
+      <Pressable
+        style={styles.sectionHeaderRow}
+        onPress={() => setIsEmailSectionExpanded(!isEmailSectionExpanded)}
+      >
+        <Text style={styles.sectionHeader}>✉️ Notifications email</Text>
+        <Text style={styles.sectionChevron}>
+          {isEmailSectionExpanded ? "▾" : "▸"}
+        </Text>
+      </Pressable>
+      {isEmailSectionExpanded && (
+        <View style={styles.card}>
+          {PREFS.map((pref) => (
+            <View key={pref.key} style={styles.row}>
               <View style={{ flex: 1 }}>
-                <Text style={styles.label}>{l}</Text>
-                <Text style={styles.hint}>{h}</Text>
+                <Text style={styles.label}>{pref.label}</Text>
+                <Text style={styles.hint}>{pref.hint}</Text>
               </View>
               <Switch
-                value={me.pushEvents?.[k] !== false}
-                disabled={busy === k}
-                onValueChange={(v) => togglePushCat(k, v)}
+                value={!!me[pref.key]}
+                disabled={busy === pref.key}
+                onValueChange={(v) => toggle(pref.key, v)}
                 trackColor={{ true: colors.primary }}
               />
             </View>
           ))}
-      </View>
+        </View>
+      )}
+
+      <Pressable
+        style={styles.sectionHeaderRow}
+        onPress={() => setIsPushSectionExpanded(!isPushSectionExpanded)}
+      >
+        <Text style={styles.sectionHeader}>📱 Notifications push (mobile)</Text>
+        <Text style={styles.sectionChevron}>
+          {isPushSectionExpanded ? "▾" : "▸"}
+        </Text>
+      </Pressable>
+      {isPushSectionExpanded && (
+        <View style={styles.card}>
+          <View style={styles.row}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.label}>Push activé</Text>
+              <Text style={styles.hint}>
+                Notifications natives sur ce téléphone
+              </Text>
+            </View>
+            <Switch
+              value={!!me.pushEnabled}
+              disabled={busy === "pushEnabled"}
+              onValueChange={(v) => toggle("pushEnabled", v)}
+              trackColor={{ true: colors.primary }}
+            />
+          </View>
+          {me.pushEnabled &&
+            (
+              [
+                { k: "birthdays", l: "Anniversaires & fêtes", h: "Rappels J-x selon tes réglages par personne" },
+                { k: "events", l: "Événements", h: "Invitations, RSVP, votes, rappels" },
+                { k: "chat", l: "Messages", h: "Chats privés et d'événements" },
+                { k: "friends", l: "Amis", h: "Demandes et acceptations" },
+                { k: "gifts", l: "Cadeaux", h: "Réservations et propositions" },
+              ] as const
+            ).map(({ k, l, h }) => (
+              <View key={k} style={styles.row}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.label}>{l}</Text>
+                  <Text style={styles.hint}>{h}</Text>
+                </View>
+                <Switch
+                  value={me.pushEvents?.[k] !== false}
+                  disabled={busy === k}
+                  onValueChange={(v) => togglePushCat(k, v)}
+                  trackColor={{ true: colors.primary }}
+                />
+              </View>
+            ))}
+        </View>
+      )}
+
+      <Pressable
+        style={styles.sectionHeaderRow}
+        onPress={() => setIsPersonSectionExpanded(!isPersonSectionExpanded)}
+      >
+        <Text style={styles.sectionHeader}>🎂 Rappels par personne</Text>
+        <Text style={styles.sectionChevron}>
+          {isPersonSectionExpanded ? "▾" : "▸"}
+        </Text>
+      </Pressable>
+      {isPersonSectionExpanded && (
+        <View style={styles.card}>
+          <Pressable
+            style={styles.toggleListBtn}
+            onPress={() => setIsListExpanded(!isListExpanded)}
+          >
+            <Text style={styles.toggleListIcon}>{isListExpanded ? "▾" : "▸"}</Text>
+            <Text style={styles.toggleListText}>
+              {isListExpanded ? "Masquer la liste" : "Afficher la liste"}
+            </Text>
+            <Text style={styles.toggleListCount}>({dates?.length ?? 0})</Text>
+          </Pressable>
+
+          {isListExpanded && (
+            <View style={styles.dateList}>
+              {!sortedDates ? (
+                <ActivityIndicator color={colors.primary} style={{ marginVertical: 10 }} />
+              ) : sortedDates.length === 0 ? (
+                <Text style={styles.hint}>Aucun anniversaire enregistré.</Text>
+              ) : (
+                sortedDates.map((date) => {
+                  const enabled = date.receiveNotifications !== false;
+                  const updating = updatingDateIds.has(date._id);
+                  return (
+                    <View key={date._id} style={styles.row}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.label}>
+                          {date.name} {date.surname ?? ""}
+                        </Text>
+                        <Text style={styles.hint}>
+                          {enabled ? "Rappels activés" : "Rappels désactivés"}
+                        </Text>
+                      </View>
+                      {updating ? (
+                        <ActivityIndicator color={colors.primary} />
+                      ) : (
+                        <Switch
+                          value={enabled}
+                          onValueChange={() => toggleDateNotif(date)}
+                          trackColor={{ true: colors.primary }}
+                        />
+                      )}
+                    </View>
+                  );
+                })
+              )}
+            </View>
+          )}
+        </View>
+      )}
     </ScrollView>
   );
 }
@@ -203,12 +381,36 @@ const makeStyles = (c: ThemeColors) =>
   },
   label: { fontSize: 15, fontWeight: "600", color: c.text },
   hint: { fontSize: 12, color: c.sub, marginTop: 1 },
+  sectionHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 10,
+    paddingVertical: 4,
+    paddingHorizontal: 4,
+  },
   sectionHeader: {
     fontSize: 13,
     fontWeight: "700",
     color: c.sub,
     textTransform: "uppercase",
-    marginTop: 10,
-    marginLeft: 4,
+  },
+  sectionChevron: {
+    fontSize: 13,
+    color: c.faint,
+    fontWeight: "700",
+  },
+  toggleListBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    padding: 14,
+  },
+  toggleListIcon: { fontSize: 13, color: c.faint, fontWeight: "700" },
+  toggleListText: { flex: 1, fontSize: 14, fontWeight: "600", color: c.text },
+  toggleListCount: { fontSize: 12, color: c.sub },
+  dateList: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: c.border,
   },
 });

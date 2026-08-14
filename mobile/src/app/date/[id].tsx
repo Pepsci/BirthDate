@@ -659,10 +659,10 @@ export default function DateDetailScreen() {
               (entry.surname || entry.linkedUser?.surname)?.[0] ?? ""
             }`.toUpperCase() || "?"}
           </Text>
-          {!!entry.linkedUser?.avatar &&
-            entry.linkedUser.avatar.trim().length > 0 && (
+          {!!(entry.linkedUser?.avatar || entry.photo) &&
+            (entry.linkedUser?.avatar || entry.photo)!.trim().length > 0 && (
               <ExpoImage
-                source={{ uri: entry.linkedUser.avatar }}
+                source={{ uri: entry.linkedUser?.avatar || entry.photo! }}
                 style={[StyleSheet.absoluteFill as any, { borderRadius: 36 }]}
                 contentFit="cover"
               />

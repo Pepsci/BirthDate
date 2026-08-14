@@ -214,7 +214,7 @@ router.post("/signup", async (req, res) => {
 // POST /auth/login
 // ========================================
 router.post("/login", authLimiter, async (req, res) => {
-  const { email, password, rememberMe } = req.body;
+  const { email, password, rememberMe, platform, appVersion } = req.body;
 
   if (
     !email ||
@@ -282,6 +282,18 @@ router.post("/login", authLimiter, async (req, res) => {
       });
     } catch (logError) {
       console.error("❌ Erreur logging:", logError);
+    }
+
+    // ── Suivi plateforme/version (admin) ────────────────────────────────────
+    try {
+      foundUser.lastPlatform = ["web", "ios", "android"].includes(platform)
+        ? platform
+        : "web";
+      if (appVersion) foundUser.lastAppVersion = String(appVersion).slice(0, 40);
+      foundUser.lastSeenAt = new Date();
+      await foundUser.save();
+    } catch (trackError) {
+      console.error("❌ Erreur suivi plateforme:", trackError);
     }
 
     const { _id, email: userEmail, name, surname } = foundUser;

@@ -179,6 +179,11 @@ export default function ProfileScreen() {
           label="Guide d'utilisation"
           onPress={() => router.push("/guide")}
         />
+        <MenuRow
+          emoji="📝"
+          label="Notes de mise à jour"
+          onPress={() => router.push("/profile/changelog")}
+        />
         {LEGAL_LINKS.map((l) => (
           <MenuRow
             key={l.url}

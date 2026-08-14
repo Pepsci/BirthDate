@@ -14,6 +14,7 @@ import MessageInput from "./MessageInput";
 import GiftShareCard from "./GiftShareCard";
 import DateShareCard from "./DateShareCard";
 import Avatar from "../UI/Avatar";
+import PersonPreviewCard from "./PersonPreviewCard";
 import "./css/chatWindow.css";
 
 function ChatWindow({ conversation, onBack, onRead }) {
@@ -26,6 +27,7 @@ function ChatWindow({ conversation, onBack, onRead }) {
   const [contextMenu, setContextMenu] = useState(null);
   const [longPressMessageId, setLongPressMessageId] = useState(null);
   const [reportTarget, setReportTarget] = useState(null);
+  const [showPersonPreview, setShowPersonPreview] = useState(false);
 
   const [firstUnreadId, setFirstUnreadId] = useState(null);
   const [showUnreadSeparator, setShowUnreadSeparator] = useState(false);
@@ -663,6 +665,11 @@ function ChatWindow({ conversation, onBack, onRead }) {
 
   return (
     <div className="chat-window">
+      <PersonPreviewCard
+        userId={otherUser?._id}
+        open={showPersonPreview}
+        onClose={() => setShowPersonPreview(false)}
+      />
       <div className="chat-header">
         {onBack && (
           <button className="back-button" onClick={onBack}>
@@ -678,7 +685,10 @@ function ChatWindow({ conversation, onBack, onRead }) {
             online={isOnline}
           />
           <div className="chat-user-info">
-            <span className="chat-name">
+            <span
+              className="chat-name chat-name-clickable"
+              onClick={() => otherUser?._id && setShowPersonPreview(true)}
+            >
               {otherUser?.name || otherUser?.email || "Utilisateur"}
             </span>
             {isOnline ? (
