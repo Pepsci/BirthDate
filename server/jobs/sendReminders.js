@@ -188,7 +188,7 @@ async function checkAndSendCardBirthdayReminders() {
       .populate("owner linkedUser");
 
     for (const date of dates) {
-      if (!date.owner || !date.owner.receiveBirthdayEmails) continue;
+      if (!date.owner) continue;
 
       const prefs = date.notificationPreferences || {
         timings: [1],
@@ -198,12 +198,19 @@ async function checkAndSendCardBirthdayReminders() {
       const { timings = [1], notifyOnBirthday = true } = prefs;
       const owner = date.owner;
 
+      // ⚠️ Les 3 canaux sont indépendants. `receiveBirthdayEmails` est présenté
+      // à l'utilisateur comme un réglage EMAIL : il ne doit couper que l'email.
+      // Avant, un `continue` en tête de boucle coupait aussi la notif in-app et
+      // la push — d'où des utilisateurs qui ne recevaient plus rien du tout.
+      // Le seul interrupteur global "cette personne", c'est
+      // `date.receiveNotifications`, déjà filtré dans la requête ci-dessus.
+      const emailOk = owner.receiveBirthdayEmails !== false;
       const pushOk =
         owner.pushEnabled === true && owner.pushEvents?.birthdays !== false;
       const pushTimings = owner.pushBirthdayTimings || [1, 0];
 
       if (notifyOnBirthday && isBirthdayInXDays(date.date, 0)) {
-        await sendBirthdayReminderEmail(owner, date, 0);
+        if (emailOk) await sendBirthdayReminderEmail(owner, date, 0);
 
         // ── Notif applicative J ──
         if (_app) {
@@ -222,7 +229,7 @@ async function checkAndSendCardBirthdayReminders() {
 
       for (const days of timings) {
         if (isBirthdayInXDays(date.date, days)) {
-          await sendBirthdayReminderEmail(owner, date, days);
+          if (emailOk) await sendBirthdayReminderEmail(owner, date, days);
 
           // ── Notif applicative J-X ──
           if (_app) {
@@ -265,7 +272,7 @@ async function checkAndSendNamedayReminders() {
       .populate("owner linkedUser");
 
     for (const date of datesWithNameday) {
-      if (!date.owner || date.owner.receiveNamedayEmails === false) continue;
+      if (!date.owner) continue;
 
       const prefs = date.namedayPreferences || {
         timings: [1],
@@ -275,6 +282,10 @@ async function checkAndSendNamedayReminders() {
       const { timings = [1], notifyOnNameday = true } = prefs;
       const owner = date.owner;
 
+      // Même règle que les anniversaires : `receiveNamedayEmails` ne coupe que
+      // l'email, jamais la notif in-app ni la push. Voir le commentaire dans
+      // checkAndSendCardBirthdayReminders().
+      const emailOk = owner.receiveNamedayEmails !== false;
       // Push activé ? On réutilise pushEnabled (même logique que birthday)
       const pushOk =
         owner.pushEnabled === true && owner.pushEvents?.birthdays !== false;
@@ -282,7 +293,7 @@ async function checkAndSendNamedayReminders() {
 
       if (notifyOnNameday && isNamedayInXDays(date.nameday, 0)) {
         console.log(`🎉 Fête de ${displayName(date)} aujourd'hui !`);
-        await sendNamedayReminderEmail(date, 0);
+        if (emailOk) await sendNamedayReminderEmail(date, 0);
 
         // ── Notif applicative J ──
         if (_app) {
@@ -302,7 +313,7 @@ async function checkAndSendNamedayReminders() {
       for (const days of timings) {
         if (isNamedayInXDays(date.nameday, days)) {
           console.log(`📅 Rappel fête de ${displayName(date)} dans ${days} jour(s)`);
-          await sendNamedayReminderEmail(date, days);
+          if (emailOk) await sendNamedayReminderEmail(date, days);
 
           // ── Notif applicative J-X ──
           if (_app) {

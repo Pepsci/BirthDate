@@ -12,6 +12,8 @@ const TYPE_CONFIG = {
   new_message: { icon: "💬" },
   gift_reserved: { icon: "🎁" },
   event_reminder: { icon: "📅" },
+  event_updated: { icon: "✏️" },
+  event_date_changed: { icon: "📅" },
 };
 
 const buildToastText = (type, data) => {
@@ -28,6 +30,12 @@ const buildToastText = (type, data) => {
       return `Cadeau réservé : ${data.giftName}`;
     case "event_reminder":
       return `${data.eventName} dans ${data.daysLeft}j`;
+    case "event_updated":
+      return `${data.eventTitle} a été modifié`;
+    case "event_date_changed":
+      return data.newDateLabel
+        ? `${data.eventTitle} : nouvelle date, ${data.newDateLabel}`
+        : `${data.eventTitle} : la date a changé`;
     default:
       return "Nouvelle notification";
   }

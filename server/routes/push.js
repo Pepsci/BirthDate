@@ -59,9 +59,19 @@ router.post("/expo-token", isAuthenticated, async (req, res) => {
     // Le token est ré-enregistré à chaque lancement de l'app (registerForPush) —
     // c'est le meilleur signal qu'on ait de "dernière plateforme/version vue"
     // pour un compte mobile, bien plus fréquent que le login (session persistée).
-    const $set = { pushEnabled: true, lastSeenAt: new Date() };
+    const $set = { lastSeenAt: new Date() };
     if (["ios", "android"].includes(platform)) $set.lastPlatform = platform;
     if (appVersion) $set.lastAppVersion = String(appVersion).slice(0, 40);
+
+    // ⚠️ On n'active le push QUE lors de l'enregistrement du tout premier
+    // appareil. Auparavant `pushEnabled: true` était écrit à chaque lancement,
+    // ce qui réactivait silencieusement le push d'un utilisateur qui venait de
+    // le couper dans Réglages — son choix ne survivait pas au redémarrage.
+    const existing = await User.findById(req.payload._id).select(
+      "expoPushTokens",
+    );
+    if (!(existing?.expoPushTokens || []).length) $set.pushEnabled = true;
+
     await User.findByIdAndUpdate(req.payload._id, {
       $addToSet:
         platform === "ios"

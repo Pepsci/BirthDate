@@ -10,6 +10,8 @@ const TYPE_CONFIG = {
   new_message: { icon: "💬" },
   gift_reserved: { icon: "🎁" },
   event_reminder: { icon: "📅" },
+  event_updated: { icon: "✏️" },
+  event_date_changed: { icon: "📅" },
   event_rsvp: { icon: "🎉" },
   event_date_vote: { icon: "📅" },
   event_location_vote: { icon: "📍" },
@@ -89,6 +91,24 @@ const buildText = (type, data) => {
       ) : (
         <>
           Tu es invité(e) à <strong>{data.eventTitle}</strong>
+        </>
+      );
+    case "event_updated":
+      return (
+        <>
+          <strong>{data.eventTitle}</strong> a été modifié par l'organisateur
+        </>
+      );
+    case "event_date_changed":
+      return data.newDateLabel ? (
+        <>
+          Nouvelle date pour <strong>{data.eventTitle}</strong> :{" "}
+          {data.newDateLabel} — confirme ta présence
+        </>
+      ) : (
+        <>
+          La date de <strong>{data.eventTitle}</strong> a changé — confirme ta
+          présence
         </>
       );
     case "event_rsvp": {

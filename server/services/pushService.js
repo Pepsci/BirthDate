@@ -109,19 +109,50 @@ async function sendPushToUser(userId, payload) {
 }
 
 /**
+ * `payload.type` (vocabulaire des appelants) → catégorie `user.pushEvents`
+ * (vocabulaire de l'écran Réglages > Notifications de l'app mobile).
+ * Un type absent de cette table n'est rattaché à aucune catégorie : il passe
+ * dès lors que `pushEnabled` est vrai (cas de "default").
+ */
+const PUSH_CATEGORY_BY_TYPE = {
+  birthday: "birthdays",
+  birthdays: "birthdays",
+  nameday: "birthdays", // les fêtes suivent le réglage "Anniversaires & fêtes"
+  namedays: "birthdays",
+  chat: "chat",
+  friend: "friends",
+  friends: "friends",
+  gift: "gifts",
+  gifts: "gifts",
+  event: "events",
+  events: "events",
+};
+
+/**
  * Envoie une notification native (iOS/Android) via l'API Expo Push.
  * Les credentials FCM/APNs sont gérés côté Expo (eas credentials),
  * le backend n'a besoin d'aucune clé.
+ *
+ * ⚠️ C'est ICI qu'on applique `pushEnabled` / `pushEvents` — et nulle part
+ * ailleurs. Les appelants étaient jusqu'ici libres de les vérifier ou non
+ * (certains le faisaient, la plupart non), si bien que les interrupteurs de
+ * l'écran Réglages n'avaient pratiquement aucun effet. La vérification est
+ * volontairement limitée au push mobile : le web push a son propre canal
+ * (PushSubscription) et n'est pas concerné par ces réglages.
  */
 async function sendExpoPushToUser(userId, payload) {
   const User = require("../models/user.model");
   const axios = require("axios");
 
   const user = await User.findById(userId).select(
-    "expoPushTokens expoPushTokensIos",
+    "expoPushTokens expoPushTokensIos pushEnabled pushEvents",
   );
   const tokens = user?.expoPushTokens || [];
   if (!tokens.length) return;
+
+  if (user.pushEnabled !== true) return;
+  const category = PUSH_CATEGORY_BY_TYPE[payload.type];
+  if (category && user.pushEvents?.[category] === false) return;
   const iosTokens = new Set(user?.expoPushTokensIos || []);
   const badgeCount = await getBadgeCountForUser(userId);
 

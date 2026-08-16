@@ -9,10 +9,26 @@ const { nanoid } = require("nanoid");
 const { isAuthenticated } = require("../../middleware/jwt.middleware");
 const { notify } = require("../../utils/notify");
 const { sendPushToUser } = require("../../services/pushService");
+const {
+  sendEventDateChangedEmail,
+} = require("../../services/emailTemplates/eventEmails");
 
 // Code d'accès cryptographiquement sûr (8 caractères hex majuscules)
 const generateAccessCode = () =>
   crypto.randomBytes(4).toString("hex").toUpperCase();
+
+/**
+ * Date à laquelle l'événement a réellement lieu.
+ * `selectedDate` (issue d'un vote tranché) prime sur `fixedDate` : c'est celle
+ * qui s'affiche aux invités une fois le vote clos.
+ * @returns {number|null} timestamp, ou null si aucune date n'est encore fixée
+ */
+function eventEffectiveDate(event) {
+  const d = event.selectedDate || event.fixedDate;
+  if (!d) return null;
+  const t = new Date(d).getTime();
+  return Number.isNaN(t) ? null : t;
+}
 
 /*
  * POST /api/events -> créer un événement
@@ -74,6 +90,26 @@ router.post("/", isAuthenticated, async (req, res) => {
     });
 
     await newEvent.save();
+
+    // L'organisateur est un participant : il vient à son propre événement.
+    // Sans cette invitation, il n'apparaissait pas dans la liste des
+    // participants et le décompte "X / Y" excluait l'hôte — un dîner à 4 dont
+    // l'organisateur s'affichait "3 / 3". Statut "accepted" d'emblée : on ne
+    // demande pas à quelqu'un de RSVP à sa propre soirée.
+    // `findOneAndUpdate` + upsert plutôt que create : idempotent si la route
+    // est rejouée, et l'index { event, user } reste cohérent.
+    await EventInvitation.findOneAndUpdate(
+      { event: newEvent._id, user: req.payload._id },
+      {
+        $setOnInsert: {
+          event: newEvent._id,
+          user: req.payload._id,
+          status: "accepted",
+        },
+      },
+      { upsert: true, new: true },
+    );
+
     res.status(201).json(newEvent);
   } catch (error) {
     console.error("❌ Error creating event:", error);
@@ -97,10 +133,19 @@ router.get("/mine", isAuthenticated, async (req, res) => {
       path: "event",
       populate: { path: "organizer forPerson", select: "name surname avatar" },
     });
-    const invitedEvents = invitations.map((inv) => ({
-      ...inv.event.toObject(),
-      myRsvpStatus: inv.status,
-    }));
+    const organizedIds = new Set(
+      organizedEvents.map((e) => e._id.toString()),
+    );
+    const invitedEvents = invitations
+      // L'organisateur a désormais sa propre EventInvitation (il compte parmi
+      // les participants). Il ne doit pas pour autant retrouver ses événements
+      // dans "invited" : ils seraient affichés en double dans l'app.
+      // Le `!inv.event` filtre au passage les invitations orphelines.
+      .filter((inv) => inv.event && !organizedIds.has(inv.event._id.toString()))
+      .map((inv) => ({
+        ...inv.event.toObject(),
+        myRsvpStatus: inv.status,
+      }));
     res
       .status(200)
       .json({ organized: organizedEvents, invited: invitedEvents });
@@ -246,6 +291,11 @@ router.put("/:shortId", isAuthenticated, async (req, res) => {
     if (event.organizer.toString() !== req.payload._id)
       return res.status(403).json({ message: "Non autorisé" });
 
+    // Date effective AVANT modification : c'est elle qui sert de référence pour
+    // détecter un vrai changement de date (et donc réinitialiser les RSVP).
+    // On la lit ici, avant que les champs soient écrasés plus bas.
+    const dateBefore = eventEffectiveDate(event);
+
     const fields = [
       "title",
       "description",
@@ -299,16 +349,105 @@ router.put("/:shortId", isAuthenticated, async (req, res) => {
 
     await event.save();
 
-    // Notifier les invités si l'event a été modifié (hors confirmation de date)
-    if (!req.body.selectedDate) {
-      const invitations = await EventInvitation.find({
-        event: event._id,
-        user: { $ne: null },
+    const dateAfter = eventEffectiveDate(event);
+    // Vrai changement de date : la date effective existe et diffère de l'ancienne.
+    // Passer de "aucune date" à une date (confirmation d'un vote) compte aussi :
+    // les invités avaient répondu sans savoir quand, leur réponse est caduque.
+    const dateChanged = dateAfter !== null && dateAfter !== dateBefore;
+
+    // Invités inscrits, hors organisateur : il ne se notifie pas lui-même de
+    // ses propres modifications, et sa présence n'est jamais remise en cause.
+    const invitations = await EventInvitation.find({
+      event: event._id,
+      user: { $ne: null, $nin: [event.organizer] },
+    });
+
+    if (dateChanged) {
+      // ── La date a bougé : les présences confirmées ne valent plus ──────────
+      // Quelqu'un qui avait dit oui pour un samedi n'a pas dit oui pour le
+      // mardi suivant. On repasse tout le monde en "pending" pour forcer une
+      // reconfirmation explicite, plutôt que de laisser l'organisateur
+      // travailler sur un décompte de participants faux.
+      await EventInvitation.updateMany(
+        {
+          event: event._id,
+          user: { $nin: [event.organizer] },
+          status: { $ne: "pending" },
+        },
+        { $set: { status: "pending" } },
+      );
+
+      // Année incluse : un événement peut être déplacé au-delà du 31 décembre,
+      // et "samedi 10 janvier" tout seul serait ambigu.
+      const dateLabel = new Date(dateAfter).toLocaleDateString("fr-FR", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        year: "numeric",
       });
+
+      // ── Invités externes : email, seul canal dont ils disposent ───────────
+      // Pas de compte → ni notif in-app ni push. Sans cet email leur RSVP est
+      // remis à zéro en silence. On ne peut joindre que ceux dont on a l'email
+      // (un invité arrivé par code sans en laisser un reste injoignable).
+      const externalInvitations = await EventInvitation.find({
+        event: event._id,
+        user: null,
+        externalEmail: { $ne: null, $exists: true },
+      });
+      const eventUrl = `${process.env.FRONTEND_URL || "https://birthreminder.com"}/event/${event.shortId}`;
+      const seenEmails = new Set();
+      for (const inv of externalInvitations) {
+        const to = (inv.externalEmail || "").trim().toLowerCase();
+        // Un même email peut avoir plusieurs invitations (rejoint via code
+        // puis invité nommément) : un seul message part.
+        if (!to || seenEmails.has(to)) continue;
+        seenEmails.add(to);
+        try {
+          await sendEventDateChangedEmail(
+            inv.externalEmail,
+            event,
+            dateLabel,
+            eventUrl,
+            event.accessCode,
+          );
+        } catch (mailErr) {
+          // Un email en échec ne doit pas faire échouer la modification de
+          // l'événement, déjà enregistrée en base à ce stade.
+          console.error(
+            `❌ Email "date modifiée" non envoyé à ${inv.externalEmail}:`,
+            mailErr.message,
+          );
+        }
+      }
+
       for (const inv of invitations) {
         await notify(req.app, {
           userId: inv.user,
-          type: "event_reminder",
+          type: "event_date_changed",
+          data: {
+            eventTitle: event.title,
+            eventShortId: event.shortId,
+            newDate: new Date(dateAfter).toISOString(),
+            newDateLabel: dateLabel,
+            message: `Nouvelle date : ${dateLabel}. Confirme ta présence.`,
+          },
+          link: `/event/${event.shortId}`,
+        });
+        await sendPushToUser(inv.user, {
+          title: `📅 Nouvelle date — ${event.title}`,
+          body: `${dateLabel} — confirme ta présence`,
+          url: `/event/${event.shortId}`,
+          tag: `event-date-changed-${event.shortId}`,
+          type: "events",
+        });
+      }
+    } else {
+      // ── Modification ordinaire (titre, lieu, description…) ────────────────
+      for (const inv of invitations) {
+        await notify(req.app, {
+          userId: inv.user,
+          type: "event_updated",
           data: {
             eventTitle: event.title,
             eventShortId: event.shortId,
@@ -321,34 +460,7 @@ router.put("/:shortId", isAuthenticated, async (req, res) => {
           body: "L'organisateur a mis à jour les informations",
           url: `/event/${event.shortId}`,
           tag: `event-updated-${event.shortId}`,
-          type: "default",
-        });
-      }
-    }
-
-    // Notifier les invités si la date vient d'être confirmée
-    if (req.body.selectedDate) {
-      const invitations = await EventInvitation.find({
-        event: event._id,
-        user: { $ne: null },
-      });
-      for (const inv of invitations) {
-        await notify(req.app, {
-          userId: inv.user,
-          type: "event_reminder",
-          data: {
-            eventTitle: event.title,
-            eventShortId: event.shortId,
-            message: "La date de l'événement a été confirmée !",
-          },
-          link: `/event/${event.shortId}`,
-        });
-        await sendPushToUser(inv.user, {
-          title: `📅 Date confirmée — ${event.title}`,
-          body: "La date de l'événement a été fixée !",
-          url: `/event/${event.shortId}`,
-          tag: `event-date-confirmed-${event.shortId}`,
-          type: "default",
+          type: "events",
         });
       }
     }

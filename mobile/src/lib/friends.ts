@@ -24,7 +24,7 @@ export interface FriendRequest {
 
 export interface SentItems {
   requests: { _id: string; friend: FriendUser }[];
-  invitations: { email: string; createdAt: string }[];
+  invitations: { _id: string; email: string; createdAt: string }[];
 }
 
 export async function fetchFriends(): Promise<FriendEntry[]> {
@@ -70,6 +70,20 @@ export async function rejectRequest(friendshipId: string): Promise<void> {
 
 export async function removeFriend(friendshipId: string): Promise<void> {
   await api(`/friends/${friendshipId}`, { method: "DELETE" });
+}
+
+/**
+ * Annule une demande d'ami qu'on a soi-même envoyée et qui est encore en
+ * attente. Même route que `removeFriend` : le backend autorise les deux
+ * participants de la relation à la supprimer, quel que soit son statut.
+ */
+export async function cancelSentRequest(friendshipId: string): Promise<void> {
+  await api(`/friends/${friendshipId}`, { method: "DELETE" });
+}
+
+/** Annule une invitation email envoyée à une personne non inscrite. */
+export async function cancelInvitation(invitationId: string): Promise<void> {
+  await api(`/friends/invitations/${invitationId}`, { method: "DELETE" });
 }
 
 export interface FriendCardSummary {

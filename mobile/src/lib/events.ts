@@ -42,6 +42,22 @@ export function eventDate(e: EventEntry): Date | null {
   return iso ? new Date(iso) : null;
 }
 
+/**
+ * Lieu affichable d'un event, ou null si aucun n'est encore fixé.
+ * `fixedLocation` est tantôt une chaîne (anciens events), tantôt un objet
+ * { name, address } — d'où la normalisation ici plutôt qu'à chaque appel.
+ */
+export function eventLocationLabel(
+  e: EventEntry & {
+    selectedLocation?: { name?: string; address?: string } | null;
+  },
+): string | null {
+  const loc = e.selectedLocation ?? e.fixedLocation;
+  if (!loc) return null;
+  if (typeof loc === "string") return loc || null;
+  return loc.address || loc.name || null;
+}
+
 export const EVENT_TYPE_LABELS: Record<EventType, string> = {
   birthday: "🎂 Anniversaire",
   party: "🎉 Fête",

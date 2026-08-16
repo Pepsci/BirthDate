@@ -378,6 +378,51 @@ router.patch("/:friendshipId/reject", isAuthenticated, async (req, res) => {
 });
 
 // ========================================
+// DELETE /invitations/:invitationId - Annuler une invitation email envoyée
+// ⚠️ Doit rester AVANT `DELETE /:friendshipId` : sinon "invitations" serait
+//    capturé comme un friendshipId (Express matche dans l'ordre de déclaration).
+// Seul l'expéditeur peut annuler, et seulement tant qu'elle est "pending" :
+// une invitation déjà acceptée a créé une relation, on ne la défait pas ici.
+// ========================================
+router.delete(
+  "/invitations/:invitationId",
+  isAuthenticated,
+  async (req, res) => {
+    try {
+      const { invitationId } = req.params;
+      const userId = req.payload._id;
+
+      if (!mongoose.isValidObjectId(invitationId)) {
+        return res.status(400).json({ message: "Invitation ID invalide" });
+      }
+
+      const invitation = await Invitation.findById(invitationId);
+
+      if (!invitation) {
+        return res.status(404).json({ message: "Invitation non trouvée" });
+      }
+
+      if (invitation.invitedBy.toString() !== userId) {
+        return res.status(403).json({ message: "Non autorisé" });
+      }
+
+      if (invitation.status !== "pending") {
+        return res
+          .status(400)
+          .json({ message: "Cette invitation a déjà été acceptée" });
+      }
+
+      await Invitation.findByIdAndDelete(invitationId);
+
+      res.status(200).json({ message: "Invitation annulée" });
+    } catch (error) {
+      console.error("❌ Erreur annulation invitation:", error);
+      res.status(500).json({ message: "Erreur serveur" });
+    }
+  },
+);
+
+// ========================================
 // PATCH - Lier un ami à une date existante
 // ========================================
 router.patch("/:friendshipId/link-date", isAuthenticated, async (req, res) => {

@@ -18,6 +18,11 @@ const notificationSchema = new mongoose.Schema(
         "nameday_soon",
         "gift_reserved",
         "event_reminder",
+        // "event_reminder" servait aussi aux modifications d'événement : le
+        // centre de notifications affichait « Rappel : … » là où la push disait
+        // « Événement modifié ». Ces deux types lèvent l'ambiguïté.
+        "event_updated",
+        "event_date_changed",
         "event_rsvp",
         "event_date_vote",
         "event_location_vote",

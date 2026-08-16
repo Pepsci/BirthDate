@@ -101,9 +101,14 @@ async function checkAndSendEventReminders() {
             );
 
             // Populate étendu pour avoir les prefs email et push des participants
+            // `$nin: [event.organizer]` : l'organisateur a maintenant sa propre
+            // EventInvitation (il figure dans les participants). Il est déjà
+            // traité séparément plus bas — sans cette exclusion il recevrait
+            // email et push en double.
             const invitations = await EventInvitation.find({
               event: event._id,
               status: { $in: ["accepted", "maybe"] },
+              user: { $nin: [event.organizer] },
             }).populate(
               "user",
               "email _id receiveEventEmails pushEnabled pushEvents pushEventTimings",

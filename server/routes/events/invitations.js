@@ -103,7 +103,10 @@ router.post("/:shortId/join", async (req, res) => {
     }
 
     if (event.maxGuests !== null) {
-      const count = await EventInvitation.countDocuments({ event: event._id, status: { $in: ["accepted", "maybe"] } });
+      // `$nin: [event.organizer]` : l'organisateur compte désormais parmi les
+      // participants, mais `maxGuests` désigne un nombre d'INVITÉS. Sans cette
+      // exclusion, chaque événement existant perdrait une place d'un coup.
+      const count = await EventInvitation.countDocuments({ event: event._id, status: { $in: ["accepted", "maybe"] }, user: { $nin: [event.organizer] } });
       if (count >= event.maxGuests) return res.status(400).json({ message: "L'événement est complet" });
     }
 
@@ -181,6 +184,10 @@ router.delete("/:shortId/invitations/:invitationId", isAuthenticated, async (req
     const invitation = await EventInvitation.findById(req.params.invitationId);
     if (!invitation) return res.status(404).json({ message: "Invitation introuvable" });
     if (invitation.event.toString() !== event._id.toString()) return res.status(403).json({ message: "Cette invitation n'appartient pas à cet événement" });
+    // Pendant de `DELETE /:shortId/leave` : l'organisateur ne peut pas quitter
+    // son événement, il ne peut donc pas non plus se retirer des participants.
+    if (invitation.user && invitation.user.toString() === event.organizer.toString())
+      return res.status(403).json({ message: "L'organisateur ne peut pas être retiré de son propre événement" });
 
     await invitation.deleteOne();
     res.status(200).json({ message: "Invité retiré" });

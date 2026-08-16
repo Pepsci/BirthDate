@@ -25,6 +25,8 @@ import {
   acceptRequest,
   rejectRequest,
   removeFriend,
+  cancelSentRequest,
+  cancelInvitation,
 } from "../../lib/friends";
 import { fetchDates } from "../../lib/dates";
 import {
@@ -129,6 +131,43 @@ export default function FriendsScreen() {
     );
   };
 
+  // Annulation d'une demande d'ami encore en attente côté destinataire.
+  const confirmCancelRequest = (r: SentItems["requests"][number]) => {
+    const who = `${r.friend?.name ?? ""} ${r.friend?.surname ?? ""}`.trim();
+    Alert.alert(
+      "Annuler cette demande ?",
+      `Ta demande d'ami${who ? ` à ${who}` : ""} sera retirée. Tu pourras en renvoyer une plus tard.`,
+      [
+        { text: "Garder", style: "cancel" },
+        {
+          text: "Annuler la demande",
+          style: "destructive",
+          onPress: () =>
+            run(() => cancelSentRequest(r._id), "Demande annulée."),
+        },
+      ],
+    );
+  };
+
+  // Annulation d'une invitation email (personne pas encore inscrite).
+  const confirmCancelInvitation = (
+    inv: SentItems["invitations"][number],
+  ) => {
+    Alert.alert(
+      "Annuler cette invitation ?",
+      `L'invitation envoyée à ${inv.email} sera retirée. Le lien déjà reçu par email ne fonctionnera plus.`,
+      [
+        { text: "Garder", style: "cancel" },
+        {
+          text: "Annuler l'invitation",
+          style: "destructive",
+          onPress: () =>
+            run(() => cancelInvitation(inv._id), "Invitation annulée."),
+        },
+      ],
+    );
+  };
+
   if (friends === null) {
     return (
       <View style={styles.center}>
@@ -143,6 +182,8 @@ export default function FriendsScreen() {
   }
 
   const pendingCount = requests.length;
+  // Demandes envoyées = demandes à des inscrits + invitations email externes.
+  const sentCount = sent.requests.length + sent.invitations.length;
 
   return (
     <View style={styles.container}>
@@ -184,7 +225,7 @@ export default function FriendsScreen() {
           highlight={pendingCount > 0}
         />
         <TabBtn
-          label="Envoyées"
+          label={`Envoyées${sentCount ? ` (${sentCount})` : ""}`}
           active={tab === "sent"}
           onPress={() => setTab("sent")}
         />
@@ -296,10 +337,17 @@ export default function FriendsScreen() {
                   </Text>
                   <Text style={styles.muted}>En attente de réponse…</Text>
                 </View>
+                <Pressable
+                  style={styles.cancelBtn}
+                  disabled={busy}
+                  onPress={() => confirmCancelRequest(r)}
+                >
+                  <Text style={styles.cancelText}>Annuler</Text>
+                </Pressable>
               </View>
             ))}
             {sent.invitations.map((inv) => (
-              <View key={inv.email} style={styles.row}>
+              <View key={inv._id ?? inv.email} style={styles.row}>
                 <View style={styles.avatarFallback}>
                   <Text style={styles.initials}>✉️</Text>
                 </View>
@@ -309,6 +357,13 @@ export default function FriendsScreen() {
                     Invitation externe — pas encore inscrit·e
                   </Text>
                 </View>
+                <Pressable
+                  style={styles.cancelBtn}
+                  disabled={busy}
+                  onPress={() => confirmCancelInvitation(inv)}
+                >
+                  <Text style={styles.cancelText}>Annuler</Text>
+                </Pressable>
               </View>
             ))}
           </>
@@ -463,6 +518,16 @@ const makeStyles = (c: ThemeColors) =>
       alignItems: "center",
     },
     rejectText: { color: c.danger, fontWeight: "700" },
+    // Annulation d'une demande envoyée : bouton texte discret (action peu
+    // fréquente et réversible en renvoyant une demande), pas un rond rouge.
+    cancelBtn: {
+      borderWidth: 1,
+      borderColor: c.border,
+      borderRadius: 8,
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+    },
+    cancelText: { color: c.sub, fontWeight: "600", fontSize: 12 },
     unreadBadge: {
       backgroundColor: c.danger,
       borderRadius: 9,

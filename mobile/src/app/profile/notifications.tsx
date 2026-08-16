@@ -228,6 +228,15 @@ export default function NotificationsScreen() {
       </Pressable>
       {isEmailSectionExpanded && (
         <View style={styles.card}>
+          {/* Levée d'ambiguïté : ces interrupteurs coupaient aussi le push et
+              la notif in-app côté serveur (cf. jobs/sendReminders.js). Les
+              canaux sont maintenant indépendants — on le dit explicitement,
+              sinon « Rappels d'anniversaires : OFF » se lit comme un « ne plus
+              rien recevoir ». */}
+          <Text style={styles.sectionNote}>
+            Ces réglages ne concernent que les emails. En couper un n'affecte ni
+            les notifications push, ni le centre de notifications de l'app.
+          </Text>
           {PREFS.map((pref) => (
             <View key={pref.key} style={styles.row}>
               <View style={{ flex: 1 }}>
@@ -381,6 +390,14 @@ const makeStyles = (c: ThemeColors) =>
   },
   label: { fontSize: 15, fontWeight: "600", color: c.text },
   hint: { fontSize: 12, color: c.sub, marginTop: 1 },
+  sectionNote: {
+    fontSize: 12,
+    color: c.sub,
+    paddingHorizontal: 14,
+    paddingTop: 12,
+    paddingBottom: 2,
+    lineHeight: 17,
+  },
   sectionHeaderRow: {
     flexDirection: "row",
     alignItems: "center",

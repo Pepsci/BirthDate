@@ -48,15 +48,18 @@ import {
   countDateVotes,
   countLocationVotes,
   eventDate,
+  eventLocationLabel,
   formatEventDate,
   invitationName,
   EVENT_TYPE_LABELS,
   STATUS_LABELS,
   RSVP_LABELS,
 } from "../../lib/events";
+import { addToDeviceCalendar } from "../../lib/calendar";
 import Avatar from "../../components/Avatar";
 import GiftGridCard, { giftGridStyles } from "../../components/GiftGridCard";
 import BottomSheet from "../../components/BottomSheet";
+import HeaderIconButton from "../../components/HeaderIconButton";
 import ImportGiftSheet, { ImportedGift } from "../../components/ImportGiftSheet";
 import DirectTransferViewer from "../../components/DirectTransferViewer";
 import EventLocationMap from "../../components/EventLocationMap";
@@ -90,6 +93,7 @@ export default function EventDetailScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [rsvpSending, setRsvpSending] = useState(false);
+  const [addingToCalendar, setAddingToCalendar] = useState(false);
   const [voteSending, setVoteSending] = useState(false);
   const [gifts, setGifts] = useState<GiftProposal[]>([]);
   const [selectedProposal, setSelectedProposal] = useState<GiftProposal | null>(
@@ -217,6 +221,28 @@ export default function EventDetailScreen() {
       setError(e?.message ?? "Erreur lors de la réponse.");
     } finally {
       setRsvpSending(false);
+    }
+  };
+
+  // Export vers le calendrier natif. Aucune synchronisation ensuite : si
+  // l'organisateur change la date, l'entrée déjà créée reste telle quelle —
+  // l'utilisateur reçoit la notif "nouvelle date" et peut réappuyer.
+  const onAddToCalendar = async () => {
+    if (!event || addingToCalendar) return;
+    const start = eventDate(event);
+    if (!start) return;
+    setAddingToCalendar(true);
+    try {
+      await addToDeviceCalendar({
+        title: event.title,
+        startDate: start,
+        location: eventLocationLabel(event),
+        notes: event.description
+          ? `${event.description}\n\nbirthreminder.com/event/${event.shortId}`
+          : `Événement BirthReminder — birthreminder.com/event/${event.shortId}`,
+      });
+    } finally {
+      setAddingToCalendar(false);
     }
   };
 
@@ -542,7 +568,29 @@ export default function EventDetailScreen() {
 
   const d = eventDate(event);
   const isOrganizer = event.organizer?._id === user?._id;
-  const invitations = event.invitations ?? [];
+  // Depuis le correctif serveur, l'organisateur a sa propre EventInvitation
+  // (statut "accepted") et apparaît donc naturellement dans la liste. Les
+  // événements créés AVANT ce correctif n'en ont pas : on synthétise sa ligne
+  // pour qu'ils s'affichent comme les nouveaux, sans migration de la base.
+  const rawInvitations = event.invitations ?? [];
+  const organizerListed =
+    !event.organizer?._id ||
+    rawInvitations.some((i) => i.user?._id === event.organizer!._id);
+  const invitations: typeof rawInvitations = organizerListed
+    ? rawInvitations
+    : [
+        {
+          _id: `organizer-${event.organizer!._id}`,
+          user: {
+            _id: event.organizer!._id,
+            name: event.organizer!.name,
+            surname: event.organizer!.surname ?? "",
+            avatar: event.organizer!.avatar,
+          },
+          status: "accepted",
+        },
+        ...rawInvitations,
+      ];
   const acceptedCount = invitations.filter((i) => i.status === "accepted").length;
   const mine = invitations.find((i) => i.user?._id === user?._id) ?? null;
   const showDateVote =
@@ -572,40 +620,24 @@ export default function EventDetailScreen() {
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
     >
+      {/* Taille fixe + badge en absolu (cf. HeaderIconButton) : le bouton
+          apparaissait sinon étiré sur toute la largeur de la barre tant que sa
+          mesure n'était pas arrivée. */}
       <Stack.Screen
         options={{
           title: event.title,
           headerRight: () =>
             event.hasFullAccess ? (
-              <Pressable
+              <HeaderIconButton
+                emoji="💬"
+                fontSize={20}
+                accessibilityLabel="Ouvrir le chat de l'événement"
+                badge={chatUnread}
                 onPress={() => {
                   setChatUnread(0);
                   router.push(`/event/chat/${event.shortId}`);
                 }}
-                hitSlop={10}
-                style={{
-                  flexDirection: "row",
-                  minWidth: 36,
-                  height: 36,
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Text
-                  style={{
-                    fontSize: 20,
-                    includeFontPadding: false,
-                    textAlignVertical: "center",
-                  }}
-                >
-                  💬
-                </Text>
-                {chatUnread > 0 && (
-                  <View style={styles.chatBadge}>
-                    <Text style={styles.chatBadgeText}>{chatUnread}</Text>
-                  </View>
-                )}
-              </Pressable>
+              />
             ) : null,
         }}
       />
@@ -628,6 +660,23 @@ export default function EventDetailScreen() {
           👤 Organisé par {event.organizer.name} {event.organizer.surname}
           {isOrganizer ? " (toi)" : ""}
         </Text>
+        {/* Export vers le calendrier natif — masqué tant que la date est au
+            vote : il n'y a alors rien de ferme à inscrire. */}
+        {d && (
+          <Pressable
+            style={styles.calendarBtn}
+            disabled={addingToCalendar}
+            onPress={onAddToCalendar}
+          >
+            {addingToCalendar ? (
+              <ActivityIndicator size="small" color={colors.primary} />
+            ) : (
+              <Text style={styles.calendarBtnText}>
+                🗓️ Ajouter à mon calendrier
+              </Text>
+            )}
+          </Pressable>
+        )}
       </View>
 
       {eventView === "info" && (
@@ -1409,6 +1458,17 @@ const makeStyles = (c: ThemeColors) =>
   type: { fontSize: 13, color: c.sub },
   description: { color: c.text, lineHeight: 20, marginTop: 2 },
   detail: { color: c.sub, fontSize: 14 },
+  // Action secondaire : bordurée plutôt que pleine, pour ne pas concurrencer
+  // le RSVP qui reste l'action principale de cette carte.
+  calendarBtn: {
+    borderWidth: 1,
+    borderColor: c.primary,
+    borderRadius: 10,
+    paddingVertical: 9,
+    alignItems: "center",
+    marginTop: 10,
+  },
+  calendarBtnText: { color: c.primary, fontWeight: "700", fontSize: 14 },
   sectionTitle: { fontSize: 15, fontWeight: "700", color: c.text },
   rsvpRow: { flexDirection: "row", gap: 8, marginTop: 4 },
   rsvpBtn: {
@@ -1713,18 +1773,6 @@ const makeStyles = (c: ThemeColors) =>
   contribName: { fontSize: 14, fontWeight: "600", color: c.text },
   contribMsg: { fontSize: 12, color: c.sub, marginTop: 1 },
   contribAmount: { fontSize: 15, fontWeight: "800", color: c.success },
-  chatBadge: {
-    backgroundColor: c.danger,
-    borderRadius: 9,
-    minWidth: 18,
-    height: 18,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 4,
-    marginLeft: -6,
-    marginTop: -8,
-  },
-  chatBadgeText: { color: c.white, fontSize: 10, fontWeight: "700" },
   mapLink: { color: c.primary },
   mapHint: { fontSize: 12, color: c.faint },
   giftFetchBtn: {

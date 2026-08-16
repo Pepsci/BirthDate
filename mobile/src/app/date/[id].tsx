@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   View,
   Text,
@@ -49,6 +49,7 @@ import GiftIdeaForm from "../../components/GiftIdeaForm";
 import GiftDetailModal from "../../components/GiftDetailModal";
 import GiftGridCard, { giftGridStyles } from "../../components/GiftGridCard";
 import BottomSheet from "../../components/BottomSheet";
+import HeaderIconButton from "../../components/HeaderIconButton";
 import BirthdayCountdown from "../../components/BirthdayCountdown";
 import ImportGiftSheet, { ImportedGift } from "../../components/ImportGiftSheet";
 import { FriendEntry, fetchFriends } from "../../lib/friends";
@@ -149,6 +150,16 @@ export default function DateDetailScreen() {
   const [cardShareSent, setCardShareSent] = useState(false);
   const [shareSending, setShareSending] = useState(false);
   const [shareSent, setShareSent] = useState(false);
+  // Destinataire choisi dans les feuilles de partage. Un tap sur un nom ne fait
+  // que sélectionner : l'envoi n'a lieu qu'au bouton « Envoyer à … ». Avant,
+  // le tap envoyait directement, et une erreur de doigt partageait la carte de
+  // quelqu'un à la mauvaise personne — sans annulation possible.
+  const [cardShareTarget, setCardShareTarget] = useState<FriendEntry | null>(
+    null,
+  );
+  const [giftShareTarget, setGiftShareTarget] = useState<FriendEntry | null>(
+    null,
+  );
   const [importOpen, setImportOpen] = useState(false);
   const [importSharedOpen, setImportSharedOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<Gift | null>(null);
@@ -383,6 +394,7 @@ export default function DateDetailScreen() {
     setShareStep(1);
     setShareSel(new Set());
     setShareSent(false);
+    setGiftShareTarget(null);
     setShareOpen(true);
   };
   const toggleShareGift = (id: string) =>
@@ -408,6 +420,7 @@ export default function DateDetailScreen() {
   // le destinataire reçoit juste de quoi recréer la carte chez lui.
   const openCardShare = async () => {
     setCardShareSent(false);
+    setCardShareTarget(null);
     setCardShareOpen(true);
     try {
       const list = await fetchFriends();
@@ -546,6 +559,46 @@ export default function DateDetailScreen() {
     );
   };
 
+  // Options d'en-tête mémoïsées.
+  //
+  // Elles étaient déclarées en objet littéral avec un `headerRight` en fonction
+  // fléchée : à chaque rendu de cet écran — et il en a beaucoup, une trentaine
+  // d'états y vivent — react-navigation recevait de nouvelles options et
+  // reconstruisait le bouton natif de la barre. C'est pendant ces
+  // reconstructions à répétition que le bouton apparaissait étiré, faute d'être
+  // mesuré à temps. Avec un objet stable, il n'est reconstruit que si son
+  // contenu change réellement.
+  //
+  // ⚠️ useMemo doit rester AVANT le `if (!entry)` ci-dessous : un hook ne peut
+  // pas être placé après un retour anticipé.
+  const linkedUserId = entry?.linkedUser?._id;
+  const chatUnreadCount = linkedUserId ? (byFriend[linkedUserId] ?? 0) : 0;
+  const headerOptions = useMemo(
+    () => ({
+      title: `${entry?.name ?? ""} ${entry?.surname ?? ""}`.trim(),
+      headerRight: () =>
+        linkedUserId ? (
+          <HeaderIconButton
+            emoji="💬"
+            accessibilityLabel="Ouvrir la discussion"
+            badge={chatUnreadCount}
+            onPress={() =>
+              router.push(
+                `/chat/${linkedUserId}?name=${encodeURIComponent(entry?.name ?? "")}`,
+              )
+            }
+          />
+        ) : (
+          <HeaderIconButton
+            emoji="✏️"
+            accessibilityLabel="Modifier la carte"
+            onPress={() => router.push(`/date/edit/${entry?._id}`)}
+          />
+        ),
+    }),
+    [entry?._id, entry?.name, entry?.surname, linkedUserId, chatUnreadCount, router],
+  );
+
   if (!entry) {
     return (
       <View style={styles.center}>
@@ -585,67 +638,7 @@ export default function DateDetailScreen() {
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
     >
-      <Stack.Screen
-        options={{
-          title: `${entry.name} ${entry.surname ?? ""}`.trim(),
-          headerRight: () =>
-            entry.linkedUser ? (
-              <Pressable
-                onPress={() =>
-                  router.push(
-                    `/chat/${entry.linkedUser!._id}?name=${encodeURIComponent(entry.name)}`,
-                  )
-                }
-                hitSlop={10}
-                style={{
-                  flexDirection: "row",
-                  minWidth: 36,
-                  height: 36,
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Text
-                  style={{
-                    fontSize: 18,
-                    includeFontPadding: false,
-                    textAlignVertical: "center",
-                  }}
-                >
-                  💬
-                </Text>
-                {(byFriend[entry.linkedUser!._id] ?? 0) > 0 && (
-                  <View style={styles.headerBadge}>
-                    <Text style={styles.headerBadgeText}>
-                      {byFriend[entry.linkedUser!._id]}
-                    </Text>
-                  </View>
-                )}
-              </Pressable>
-            ) : (
-              <Pressable
-                onPress={() => router.push(`/date/edit/${entry._id}`)}
-                hitSlop={10}
-                style={{
-                  width: 36,
-                  height: 36,
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <Text
-                  style={{
-                    fontSize: 18,
-                    includeFontPadding: false,
-                    textAlignVertical: "center",
-                  }}
-                >
-                  ✏️
-                </Text>
-              </Pressable>
-            ),
-        }}
-      />
+      <Stack.Screen options={headerOptions} />
 
       {error && <Text style={styles.error}>{error}</Text>}
 
@@ -1633,20 +1626,53 @@ export default function DateDetailScreen() {
               <Text style={styles.savedShare}>✅ Envoyé !</Text>
             ) : (
               <>
-                {shareFriends.map((f) => (
-                  <Pressable
-                    key={f.friendship._id}
-                    style={styles.friendRow}
-                    disabled={shareSending}
-                    onPress={() => sendShare(f.friendUser._id)}
-                  >
-                    <Text style={styles.friendName}>
-                      {f.friendUser.name} {f.friendUser.surname ?? ""}
-                    </Text>
-                  </Pressable>
-                ))}
+                {shareFriends.map((f) => {
+                  const picked =
+                    giftShareTarget?.friendship._id === f.friendship._id;
+                  return (
+                    <Pressable
+                      key={f.friendship._id}
+                      style={[
+                        styles.friendRow,
+                        picked && styles.friendRowPicked,
+                      ]}
+                      disabled={shareSending}
+                      onPress={() => setGiftShareTarget(picked ? null : f)}
+                    >
+                      <Text style={styles.friendCheck}>
+                        {picked ? "◉" : "○"}
+                      </Text>
+                      <Text style={styles.friendName}>
+                        {f.friendUser.name} {f.friendUser.surname ?? ""}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
                 {shareFriends.length === 0 && (
                   <Text style={styles.muted}>Aucun ami disponible.</Text>
+                )}
+                {shareFriends.length > 0 && (
+                  <Pressable
+                    style={[
+                      styles.sheetPrimaryBtn,
+                      (!giftShareTarget || shareSending) && { opacity: 0.5 },
+                    ]}
+                    disabled={!giftShareTarget || shareSending}
+                    onPress={() =>
+                      giftShareTarget &&
+                      sendShare(giftShareTarget.friendUser._id)
+                    }
+                  >
+                    {shareSending ? (
+                      <ActivityIndicator color="#fff" size="small" />
+                    ) : (
+                      <Text style={styles.sheetPrimaryText}>
+                        {giftShareTarget
+                          ? `Envoyer à ${giftShareTarget.friendUser.name}`
+                          : "Choisis un destinataire"}
+                      </Text>
+                    )}
+                  </Pressable>
                 )}
               </>
             )}
@@ -1667,20 +1693,48 @@ export default function DateDetailScreen() {
               Votre ami pourra l'ajouter à ses anniversaires. Vos idées cadeaux
               ne sont pas partagées.
             </Text>
-            {shareFriends.map((f) => (
-              <Pressable
-                key={f.friendship._id}
-                style={styles.friendRow}
-                disabled={cardShareSending}
-                onPress={() => sendCardShare(f.friendUser._id)}
-              >
-                <Text style={styles.friendName}>
-                  {f.friendUser.name} {f.friendUser.surname ?? ""}
-                </Text>
-              </Pressable>
-            ))}
+            {shareFriends.map((f) => {
+              const picked =
+                cardShareTarget?.friendship._id === f.friendship._id;
+              return (
+                <Pressable
+                  key={f.friendship._id}
+                  style={[styles.friendRow, picked && styles.friendRowPicked]}
+                  disabled={cardShareSending}
+                  onPress={() => setCardShareTarget(picked ? null : f)}
+                >
+                  <Text style={styles.friendCheck}>{picked ? "◉" : "○"}</Text>
+                  <Text style={styles.friendName}>
+                    {f.friendUser.name} {f.friendUser.surname ?? ""}
+                  </Text>
+                </Pressable>
+              );
+            })}
             {shareFriends.length === 0 && (
               <Text style={styles.muted}>Aucun ami disponible.</Text>
+            )}
+            {shareFriends.length > 0 && (
+              <Pressable
+                style={[
+                  styles.sheetPrimaryBtn,
+                  (!cardShareTarget || cardShareSending) && { opacity: 0.5 },
+                ]}
+                disabled={!cardShareTarget || cardShareSending}
+                onPress={() =>
+                  cardShareTarget &&
+                  sendCardShare(cardShareTarget.friendUser._id)
+                }
+              >
+                {cardShareSending ? (
+                  <ActivityIndicator color="#fff" size="small" />
+                ) : (
+                  <Text style={styles.sheetPrimaryText}>
+                    {cardShareTarget
+                      ? `Envoyer à ${cardShareTarget.friendUser.name}`
+                      : "Choisis un destinataire"}
+                  </Text>
+                )}
+              </Pressable>
             )}
           </>
         )}
@@ -1917,18 +1971,6 @@ const makeStyles = (c: ThemeColors) =>
   },
   notifLabel: { fontSize: 13, fontWeight: "700", color: c.sub, marginTop: 4 },
   notifChips: { flexDirection: "row", flexWrap: "wrap", gap: 6 },
-  headerBadge: {
-    backgroundColor: c.danger,
-    borderRadius: 9,
-    minWidth: 18,
-    height: 18,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 4,
-    marginLeft: -6,
-    marginTop: -8,
-  },
-  headerBadgeText: { color: c.white, fontSize: 10, fontWeight: "700" },
   reserveBtn: {
     borderWidth: 1,
     borderColor: c.primary,
@@ -2209,10 +2251,18 @@ const makeStyles = (c: ThemeColors) =>
     marginTop: 8,
   },
   friendRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
     paddingVertical: 12,
+    paddingHorizontal: 8,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: c.border,
   },
+  // Destinataire sélectionné : fond teinté, pour qu'on voie sans ambiguïté à
+  // qui on est sur le point d'envoyer avant d'appuyer sur « Envoyer à … ».
+  friendRowPicked: { backgroundColor: c.primarySoft, borderRadius: 10 },
+  friendCheck: { fontSize: 16, color: c.primary, width: 18 },
   friendName: { fontSize: 15, fontWeight: "600", color: c.text },
   shareChatBtn: {
     borderWidth: 1,

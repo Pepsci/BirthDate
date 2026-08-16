@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { View, Text, Pressable, StyleSheet, Alert, ActivityIndicator } from "react-native";
+import { View, Text, StyleSheet, Alert, ActivityIndicator } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import DateForm from "../../../components/DateForm";
+import HeaderIconButton from "../../../components/HeaderIconButton";
 import { DateEntry, fetchDate, updateDate, deleteDate } from "../../../lib/dates";
 import {
   useTheme,
@@ -70,9 +71,11 @@ export default function EditDateScreen() {
         options={{
           title: `Modifier ${entry.name}`,
           headerRight: () => (
-            <Pressable onPress={confirmDelete} hitSlop={10} style={styles.deleteBtn}>
-              <Text style={styles.delete}>🗑️</Text>
-            </Pressable>
+            <HeaderIconButton
+              emoji="🗑️"
+              accessibilityLabel="Supprimer cette date"
+              onPress={confirmDelete}
+            />
           ),
         }}
       />
@@ -98,15 +101,4 @@ const makeStyles = (c: ThemeColors) =>
     backgroundColor: c.bg,
   },
   error: { color: c.danger, textAlign: "center", padding: 8 },
-  deleteBtn: {
-    width: 36,
-    height: 36,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  delete: {
-    fontSize: 18,
-    includeFontPadding: false,
-    textAlignVertical: "center",
-  },
 });

@@ -17,9 +17,29 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.4.0",
+    date: "2026-08-16",
+    build: "34",
+    title:
+      "Notifications réparées, ajout au calendrier & présences des événements",
+    note: "Merci de signaler tout ce qui bloque. Les points marqués ⚠️ nécessitent la nouvelle version du serveur.",
+    items: [
+      "🔔 ⚠️ Notifications : couper un réglage de la section email coupait aussi les notifications push et le centre de notifications. Les trois canaux sont maintenant indépendants — un réglage \"email\" ne concerne plus que les emails. Si tu ne recevais plus rien depuis que tu avais désactivé un rappel, c'était ça.",
+      "📱 ⚠️ Les interrupteurs de la section Notifications push n'avaient en réalité aucun effet : ils sont désormais respectés. Et couper le push ne se réactive plus tout seul au redémarrage de l'application.",
+      "🗓️ Nouveau bouton \"Ajouter à mon calendrier\" sur la page d'un événement et dans l'agenda : l'événement est créé dans le calendrier du téléphone. Rien n'est synchronisé ensuite — si la date change, il faut réappuyer.",
+      "👤 ⚠️ L'organisateur d'un événement figure maintenant parmi les participants : le décompte comptait tout le monde sauf l'hôte.",
+      "📅 ⚠️ Quand l'organisateur change la date d'un événement, les réponses de présence repassent en attente et chacun est invité à reconfirmer. Les invités sans compte sont prévenus par email.",
+      "✏️ ⚠️ Dans le centre de notifications, la modification d'un événement s'affichait comme un \"Rappel\". Elle apparaît désormais comme \"Événement modifié\", et un changement de date est annoncé comme tel.",
+      "📤 Partage d'une carte ou d'idées cadeaux : appuyer sur un nom l'envoyait aussitôt, sans retour possible. Il faut maintenant sélectionner le destinataire, puis confirmer avec le bouton \"Envoyer à …\".",
+      "👥 ⚠️ Amis → Envoyées : le nombre de demandes en attente est affiché sur l'onglet, et chaque demande d'ami ou invitation par email peut être annulée.",
+      "🐛 Le chevron du bouton retour n'était pas centré dans son rond.",
+      "🐛 Le bouton d'action en haut à droite (crayon, chat, corbeille) prenait parfois une forme allongée, jusqu'à ce qu'on change de page.",
+    ],
+  },
+  {
     version: "1.3.0",
-    date: "2026-08-12",
-    build: "32",
+    date: "2026-08-14",
+    build: "33",
     title: "Fête du jour, photo sur les cartes & aperçu rapide dans le chat",
     note: "Merci de signaler tout ce qui bloque. Les points marqués ⚠️ nécessitent la nouvelle version du serveur.",
     items: [

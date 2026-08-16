@@ -73,6 +73,18 @@ rsync -avz --delete -e "ssh -i ~/Downloads/paris-joss-mdp.pem" \
 
 ## 📱 Build MOBILE → TestFlight
 
+> ⚠️ **`.env.local` passe TOUJOURS avant `.env.production`**, même pour un build
+> TestFlight/prod : Expo charge les fichiers `.env` par priorité fixe
+> (`.env.local` > `.env.production` > `.env`), indépendamment de ce qu'on est
+> en train de builder. Comme on utilise `expo prebuild` + Xcode en local (pas
+> `eas build`, dont `eas.json` gère ça automatiquement par profil), si
+> `.env.local` contient une IP locale de dev (cas courant en cours de session),
+> **elle finit embarquée dans l'archive TestFlight à la place de
+> `https://birthreminder.com`** → l'app plante en "network connection error"
+> une fois installée, alors que le serveur est parfaitement joignable.
+> Vécu le 14/08/2026 : build envoyé avec `EXPO_PUBLIC_API_URL` pointant sur
+> `192.168.1.40:4000` au lieu de la prod.
+
 ```bash
 cd ~/Dev/birthreminder/mobile
 
@@ -81,11 +93,21 @@ npx expo install expo-image expo-image-manipulator expo-file-system
 
 # 2. Incrémenter "buildNumber" dans app.json → expo.ios.buildNumber
 
-# 3. Régénérer le natif
+# 3. Neutraliser .env.local le temps du build (sinon il écrase .env.production)
+mv .env.local .env.local.bak
+
+# 4. Régénérer le natif
 npx expo prebuild -p ios --clean
 cd ios && pod install
 xed .
 ```
+
+> Une fois l'archive/upload terminé (étapes Xcode ci-dessous), remettre le
+> fichier pour reprendre le dev en local :
+> ```bash
+> cd ~/Dev/birthreminder/mobile
+> mv .env.local.bak .env.local
+> ```
 
 **Dans Xcode :**
 1. Signature sur les **DEUX** cibles (`BirthReminder` **et** `BirthReminderNSE`) → Signing & Capabilities → Team **Josse Filippi** *(le `--clean` l'efface à chaque fois)*

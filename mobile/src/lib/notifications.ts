@@ -8,6 +8,8 @@ export type NotifType =
   | "nameday_soon"
   | "gift_reserved"
   | "event_reminder"
+  | "event_updated"
+  | "event_date_changed"
   | "event_rsvp"
   | "event_date_vote"
   | "event_location_vote"
@@ -90,9 +92,26 @@ export function notifDisplay(n: AppNotification): {
     case "event_reminder":
       return {
         emoji: "🎉",
-        text: d.eventTitle
-          ? `${d.organizerName ? `${d.organizerName} t'invite à` : "Rappel :"} « ${d.eventTitle} »`
-          : "Rappel d'événement",
+        // `data.message` est posé par le serveur quand la notif n'est pas un
+        // simple rappel — sans ça on affichait « Rappel : … » sur des
+        // notifications de modification. On le respecte comme le fait le web.
+        text: d.message
+          ? `${d.message}${d.eventTitle ? ` — « ${d.eventTitle} »` : ""}`
+          : d.eventTitle
+            ? `${d.organizerName ? `${d.organizerName} t'invite à` : "Rappel :"} « ${d.eventTitle} »`
+            : "Rappel d'événement",
+      };
+    case "event_updated":
+      return {
+        emoji: "✏️",
+        text: `Événement modifié — « ${d.eventTitle ?? "événement"} »`,
+      };
+    case "event_date_changed":
+      return {
+        emoji: "📅",
+        text: d.newDateLabel
+          ? `Nouvelle date pour « ${d.eventTitle ?? "événement"} » : ${d.newDateLabel} — confirme ta présence`
+          : `La date de « ${d.eventTitle ?? "événement"} » a changé — confirme ta présence`,
       };
     case "event_rsvp":
       return {

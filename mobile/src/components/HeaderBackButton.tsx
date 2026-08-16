@@ -52,8 +52,15 @@ const styles = StyleSheet.create({
     borderLeftWidth: 2,
     borderBottomWidth: 2,
     transform: [{ rotate: "45deg" }],
-    // léger décalage optique : la pointe du chevron vise la gauche,
-    // on recentre la masse visuelle dans le rond.
-    marginLeft: 3,
+    // Recentrage optique. Seules deux bordures sur quatre sont peintes : après
+    // la rotation, l'encre occupe x ∈ [-7,07 ; 0] autour du centre de la boîte
+    // (pointe à gauche, extrémités des branches à droite). Son emprise est donc
+    // centrée sur -3,54 px, d'où le décalage inverse appliqué ici.
+    //
+    // `left` et non `marginLeft` : une marge élargit la boîte que le parent
+    // centre, si bien qu'un `marginLeft: 3` ne déplaçait réellement le chevron
+    // que de 1,5 px — la moitié — et le laissait décalé vers la gauche.
+    // `left` décale le rendu sans entrer dans ce calcul de centrage.
+    left: 3.5,
   },
 });

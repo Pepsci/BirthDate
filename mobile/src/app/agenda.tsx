@@ -11,7 +11,13 @@ import {
 import { Stack, useRouter, useFocusEffect } from "expo-router";
 import BottomNav from "../components/BottomNav";
 import { DateEntry, fetchDates } from "../lib/dates";
-import { EventEntry, fetchMyEvents, eventDate } from "../lib/events";
+import {
+  EventEntry,
+  fetchMyEvents,
+  eventDate,
+  eventLocationLabel,
+} from "../lib/events";
+import { addToDeviceCalendar } from "../lib/calendar";
 import {
   useTheme,
   useThemedStyles,
@@ -142,6 +148,26 @@ export default function AgendaScreen() {
     setYear(day.getFullYear());
     setMonth(day.getMonth());
     setSelectedDay(day.getDate());
+  };
+
+  // Export d'un événement vers le calendrier natif du téléphone.
+  // `eventDate` renvoie la date effective (selectedDate sinon fixedDate) : sans
+  // elle, il n'y a rien à écrire dans un calendrier — le bouton est masqué.
+  const [addingToCalendar, setAddingToCalendar] = useState<string | null>(null);
+  const addEventToCalendar = async (ev: EventEntry) => {
+    const dt = eventDate(ev);
+    if (!dt || addingToCalendar) return;
+    setAddingToCalendar(ev._id);
+    try {
+      await addToDeviceCalendar({
+        title: ev.title,
+        startDate: dt,
+        location: eventLocationLabel(ev),
+        notes: `Événement BirthReminder — birthreminder.com/event/${ev.shortId}`,
+      });
+    } finally {
+      setAddingToCalendar(null);
+    }
   };
 
   if (!dates) {
@@ -384,17 +410,37 @@ export default function AgendaScreen() {
               </Pressable>
             ))}
             {selected?.events.map((ev) => (
-              <Pressable
-                key={`e${ev._id}`}
-                style={styles.sheetRow}
-                onPress={() => {
-                  setSelectedDay(null);
-                  router.push(`/event/${ev.shortId}`);
-                }}
-              >
-                <Text style={styles.sheetEmoji}>📅</Text>
-                <Text style={styles.sheetText}>{ev.title}</Text>
-              </Pressable>
+              <View key={`e${ev._id}`} style={styles.sheetRow}>
+                <Pressable
+                  style={styles.sheetRowMain}
+                  onPress={() => {
+                    setSelectedDay(null);
+                    router.push(`/event/${ev.shortId}`);
+                  }}
+                >
+                  <Text style={styles.sheetEmoji}>📅</Text>
+                  <Text style={styles.sheetText} numberOfLines={1}>
+                    {ev.title}
+                  </Text>
+                </Pressable>
+                {/* Export calendrier : seulement si l'événement a une date
+                    ferme. Tant qu'un vote est en cours, il n'y a rien à
+                    inscrire dans un calendrier. */}
+                {eventDate(ev) && (
+                  <Pressable
+                    hitSlop={8}
+                    style={styles.calBtn}
+                    disabled={addingToCalendar === ev._id}
+                    onPress={() => addEventToCalendar(ev)}
+                  >
+                    {addingToCalendar === ev._id ? (
+                      <ActivityIndicator size="small" color={colors.primary} />
+                    ) : (
+                      <Text style={styles.calBtnText}>🗓️ Agenda</Text>
+                    )}
+                  </Pressable>
+                )}
+              </View>
             ))}
 
             <Pressable
@@ -532,6 +578,22 @@ const makeStyles = (c: ThemeColors) =>
     },
     sheetEmoji: { fontSize: 18 },
     sheetText: { fontSize: 15, color: c.text, fontWeight: "500" },
+    // La ligne événement porte deux actions : ouvrir l'event (zone principale)
+    // et l'exporter vers le calendrier natif (bouton à droite).
+    sheetRowMain: {
+      flex: 1,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+    },
+    calBtn: {
+      borderWidth: 1,
+      borderColor: c.border,
+      borderRadius: 8,
+      paddingHorizontal: 8,
+      paddingVertical: 5,
+    },
+    calBtnText: { fontSize: 12, fontWeight: "600", color: c.primary },
     closeBtn: { alignItems: "center", marginTop: 14 },
     closeText: { color: c.primary, fontWeight: "600" },
   });
