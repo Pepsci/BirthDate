@@ -41,7 +41,13 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     alignItems: "center",
     justifyContent: "center",
-    marginLeft: 4,
+    // ⚠️ Aucune marge ici. iOS enveloppe le bouton dans un UIBarButtonItem et
+    // dessine derrière lui son propre fond (le disque gris translucide visible
+    // depuis iOS 26). Ce fond épouse la vue qu'on lui donne, MARGES COMPRISES :
+    // un `marginLeft: 4` élargissait donc la vue à 38 px et y plaçait notre
+    // rond de 34 px collé à droite — d'où un rond visiblement décentré dans son
+    // fond gris. Sans marge, les deux sont concentriques.
+    // L'espacement avec le bord de l'écran est déjà géré par la barre native.
   },
   // Chevron dessiné avec deux bordures plutôt qu'un glyphe "‹" :
   // le caractère a un chasse (bearing) qui l'empêche d'être parfaitement
@@ -53,14 +59,19 @@ const styles = StyleSheet.create({
     borderBottomWidth: 2,
     transform: [{ rotate: "45deg" }],
     // Recentrage optique. Seules deux bordures sur quatre sont peintes : après
-    // la rotation, l'encre occupe x ∈ [-7,07 ; 0] autour du centre de la boîte
-    // (pointe à gauche, extrémités des branches à droite). Son emprise est donc
-    // centrée sur -3,54 px, d'où le décalage inverse appliqué ici.
+    // la rotation, l'encre occupe x ∈ [-7,07 ; 0] autour du centre de la boîte,
+    // pointe à gauche et extrémités des branches à droite.
+    //
+    // On centre sur le CENTRE DE MASSE de l'encre (-2,51 px), pas sur son
+    // emprise (-3,54 px). Un chevron est une forme ouverte : ses deux branches
+    // s'écartent vers la droite en laissant du vide entre elles, si bien que
+    // centrer l'emprise pousse visiblement le trait trop à droite. L'œil suit
+    // la matière, pas la boîte englobante.
     //
     // `left` et non `marginLeft` : une marge élargit la boîte que le parent
     // centre, si bien qu'un `marginLeft: 3` ne déplaçait réellement le chevron
     // que de 1,5 px — la moitié — et le laissait décalé vers la gauche.
     // `left` décale le rendu sans entrer dans ce calcul de centrage.
-    left: 3.5,
+    left: 2.5,
   },
 });

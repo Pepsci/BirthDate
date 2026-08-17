@@ -3,6 +3,9 @@ import { Gift } from "./dates";
 
 export interface SharedGift extends Gift {
   addedBy?: { _id: string; name: string; surname?: string } | null;
+  /** Membre qui s'est réservé ce cadeau, ou null s'il est libre. */
+  reservedBy?: { _id: string; name: string; surname?: string } | null;
+  reservedAt?: string | null;
 }
 
 export interface SharedMember {
@@ -123,4 +126,28 @@ export async function deleteSharedGift(
 
 export async function leaveSharedList(listId: string): Promise<void> {
   await api(`/shared-gifts/${listId}/leave`, { method: "POST" });
+}
+
+/**
+ * « Je m'en occupe ». Le cadeau reste dans la liste, marqué au nom du
+ * réserveur : les membres sont les offrants, la personne concernée n'a pas
+ * accès à la liste, il n'y a donc pas de surprise à protéger entre eux.
+ */
+export async function reserveSharedGift(
+  listId: string,
+  giftId: string,
+): Promise<SharedGiftList> {
+  return api(`/shared-gifts/${listId}/gifts/${giftId}/reserve`, {
+    method: "POST",
+  });
+}
+
+/** Libère sa propre réservation (cadeau finalement pas offert). */
+export async function unreserveSharedGift(
+  listId: string,
+  giftId: string,
+): Promise<SharedGiftList> {
+  return api(`/shared-gifts/${listId}/gifts/${giftId}/unreserve`, {
+    method: "POST",
+  });
 }

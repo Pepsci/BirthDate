@@ -1,21 +1,127 @@
-import * as Calendar from "expo-calendar";
+import type * as CalendarTypes from "expo-calendar";
+import * as SecureStore from "expo-secure-store";
 import { Alert, Linking, Platform } from "react-native";
 
 /**
  * Ajout d'un événement BirthReminder au calendrier natif du téléphone.
  *
- * Volontairement en écriture seule : on ne lit jamais le calendrier de
- * l'utilisateur, on n'y écrit que sur appui explicite d'un bouton. Rien n'est
- * synchronisé ensuite — une modification côté BirthReminder ne met pas à jour
- * l'entrée déjà créée (ce serait un vrai mécanisme de sync, hors périmètre).
+ * On n'écrit que sur appui explicite d'un bouton, et on ne parcourt jamais
+ * l'agenda de l'utilisateur. Rien n'est synchronisé ensuite : une modification
+ * côté BirthReminder ne met pas à jour l'entrée déjà créée.
+ *
+ * ⚠️ Anti-doublon. Appuyer trois fois sur le bouton créait trois entrées
+ * identiques dans l'agenda, sans aucun moyen de le savoir depuis l'app. On
+ * mémorise donc localement l'identifiant de l'entrée créée pour chaque
+ * événement, ce qui permet au bouton de basculer en « déjà ajouté » et de
+ * proposer de la retirer.
+ *
+ * Ce lien est délibérément vérifié à chaque affichage (`getLinkedEventId`) :
+ * si l'utilisateur a supprimé l'entrée à la main dans son agenda, on l'oublie
+ * et le bouton redevient « Ajouter ». Sans cette vérification, l'app
+ * prétendrait indéfiniment que l'événement est dans un calendrier où il n'est
+ * plus.
  */
 
 const CALENDAR_TITLE = "BirthReminder";
+const LINK_PREFIX = "cal_event_";
+
+/**
+ * `expo-calendar` embarque du code natif : il n'existe que dans un binaire
+ * reconstruit après son ajout. Un `import` statique s'évalue au chargement du
+ * module et lève « Cannot find native module 'ExpoCalendar' » dans un client
+ * de développement plus ancien — ce qui faisait échouer l'évaluation de tout
+ * l'écran Agenda et de la page événement (« Route is missing the required
+ * default export »), alors qu'ils n'ont rien à voir avec le calendrier.
+ *
+ * On le charge donc paresseusement et sans jamais lever : si le module natif
+ * est absent, `isCalendarAvailable()` renvoie false et l'interface masque
+ * simplement le bouton. Le reste de l'app fonctionne normalement.
+ */
+let cachedModule: typeof CalendarTypes | null | undefined;
+
+function getCalendar(): typeof CalendarTypes | null {
+  if (cachedModule !== undefined) return cachedModule;
+  try {
+    // require() et non import : l'évaluation doit rester dans le try.
+    cachedModule = require("expo-calendar") as typeof CalendarTypes;
+  } catch {
+    cachedModule = null;
+  }
+  return cachedModule;
+}
+
+/** Le module natif est-il présent dans ce binaire ? */
+export function isCalendarAvailable(): boolean {
+  return getCalendar() !== null;
+}
+
+/** Clé SecureStore : les caractères non alphanumériques y sont interdits. */
+const linkKey = (eventKey: string) =>
+  `${LINK_PREFIX}${eventKey.replace(/[^A-Za-z0-9._-]/g, "_")}`;
+
+/**
+ * Identifiant de l'entrée d'agenda créée pour cet événement, ou null.
+ * Renvoie null — et oublie le lien — si l'entrée n'existe plus côté système.
+ */
+export async function getLinkedEventId(
+  eventKey: string,
+): Promise<string | null> {
+  const Calendar = getCalendar();
+  if (!Calendar) return null;
+  try {
+    const id = await SecureStore.getItemAsync(linkKey(eventKey));
+    if (!id) return null;
+
+    // Sans permission on ne peut pas vérifier : on préfère annoncer « pas
+    // ajouté » plutôt que de bloquer l'utilisateur sur un état faux.
+    const { status } = await Calendar.getCalendarPermissionsAsync();
+    if (status !== "granted") return null;
+
+    try {
+      const ev = await Calendar.getEventAsync(id);
+      if (ev?.id) return id;
+    } catch {
+      // Entrée supprimée à la main dans l'agenda → on oublie le lien.
+    }
+    await SecureStore.deleteItemAsync(linkKey(eventKey));
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/** Retire l'entrée du calendrier et oublie le lien. */
+export async function removeFromDeviceCalendar(
+  eventKey: string,
+): Promise<boolean> {
+  const Calendar = getCalendar();
+  if (!Calendar) return false;
+  try {
+    const id = await SecureStore.getItemAsync(linkKey(eventKey));
+    if (id) {
+      try {
+        await Calendar.deleteEventAsync(id);
+      } catch {
+        // Déjà supprimée côté agenda : on continue, l'objectif est atteint.
+      }
+      await SecureStore.deleteItemAsync(linkKey(eventKey));
+    }
+    return true;
+  } catch (e: any) {
+    Alert.alert(
+      "Impossible de retirer du calendrier",
+      e?.message ?? "Une erreur est survenue.",
+    );
+    return false;
+  }
+}
 
 /** Durée par défaut d'un événement sans heure de fin connue. */
 const DEFAULT_DURATION_MS = 2 * 60 * 60 * 1000;
 
 async function ensurePermission(): Promise<boolean> {
+  const Calendar = getCalendar();
+  if (!Calendar) return false;
   const { status: existing } = await Calendar.getCalendarPermissionsAsync();
   let status = existing;
   if (existing !== "granted") {
@@ -43,6 +149,8 @@ async function ensurePermission(): Promise<boolean> {
  * Android : le premier calendrier accessible en écriture du compte principal.
  */
 async function resolveTargetCalendarId(): Promise<string | null> {
+  const Calendar = getCalendar();
+  if (!Calendar) return null;
   if (Platform.OS === "ios") {
     try {
       const def = await Calendar.getDefaultCalendarAsync();
@@ -66,6 +174,9 @@ async function resolveTargetCalendarId(): Promise<string | null> {
 }
 
 export interface CalendarEventInput {
+  /** Identifiant stable de l'événement BirthReminder (shortId). Sert d'ancre
+   *  au lien anti-doublon décrit en tête de fichier. */
+  eventKey: string;
   title: string;
   /** Début de l'événement. */
   startDate: Date;
@@ -78,15 +189,35 @@ export interface CalendarEventInput {
 }
 
 /**
- * Crée l'événement dans le calendrier natif.
+ * Crée l'événement dans le calendrier natif et mémorise le lien.
  * Gère seule permissions et messages d'erreur ; renvoie `true` si l'entrée a
  * bien été créée, `false` sinon (refus, aucun calendrier inscriptible, erreur).
  */
 export async function addToDeviceCalendar(
   input: CalendarEventInput,
 ): Promise<boolean> {
+  const Calendar = getCalendar();
+  if (!Calendar) {
+    Alert.alert(
+      "Fonction indisponible",
+      "L'ajout au calendrier nécessite une version plus récente de l'application.",
+    );
+    return false;
+  }
   try {
     if (!(await ensurePermission())) return false;
+
+    // Garde-fou : si l'entrée existe déjà, on ne la duplique pas. L'appelant
+    // masque normalement le bouton dans ce cas, mais deux appuis rapprochés
+    // peuvent passer avant que son état soit rafraîchi.
+    const existing = await getLinkedEventId(input.eventKey);
+    if (existing) {
+      Alert.alert(
+        "Déjà dans ton calendrier",
+        `« ${input.title} » y figure déjà.`,
+      );
+      return false;
+    }
 
     const calendarId = await resolveTargetCalendarId();
     if (!calendarId) {
@@ -101,7 +232,7 @@ export async function addToDeviceCalendar(
     const endDate =
       input.endDate ?? new Date(startDate.getTime() + DEFAULT_DURATION_MS);
 
-    await Calendar.createEventAsync(calendarId, {
+    const createdId = await Calendar.createEventAsync(calendarId, {
       title: input.title,
       startDate,
       endDate,
@@ -109,6 +240,10 @@ export async function addToDeviceCalendar(
       location: input.location ?? undefined,
       notes: input.notes ?? `Ajouté depuis ${CALENDAR_TITLE}`,
     });
+
+    if (createdId) {
+      await SecureStore.setItemAsync(linkKey(input.eventKey), createdId);
+    }
 
     Alert.alert(
       "Ajouté au calendrier",

@@ -117,13 +117,14 @@ async function sendPushToUser(userId, payload) {
 const PUSH_CATEGORY_BY_TYPE = {
   birthday: "birthdays",
   birthdays: "birthdays",
-  nameday: "birthdays", // les fêtes suivent le réglage "Anniversaires & fêtes"
-  namedays: "birthdays",
+  nameday: "namedays",
+  namedays: "namedays",
   chat: "chat",
   friend: "friends",
   friends: "friends",
   gift: "gifts",
   gifts: "gifts",
+  shared_list: "sharedLists",
   event: "events",
   events: "events",
 };

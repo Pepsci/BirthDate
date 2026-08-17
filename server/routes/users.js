@@ -42,6 +42,26 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const { findNameDay } = require("../utils/namedayHelper");
 
+/**
+ * Durée à donner au token réémis après une mise à jour de profil.
+ *
+ * ⚠️ Cette fonction corrige une cause de déconnexions intempestives. Ces routes
+ * réémettaient un token en dur à `expiresIn: "6h"` : la moindre modification de
+ * profil — y compris un simple interrupteur de notification — remplaçait le
+ * token de 30 jours obtenu à la connexion par un token de 6 heures. Et le mal
+ * était irréversible, `/auth/verify` déduisant la durée à reconduire de la
+ * durée d'origine (`> 8h` = rememberMe) : une fois tombé à 6h, il ne renouvelle
+ * plus qu'en 8h. Fermer l'app une nuit suffisait alors à être déconnecté.
+ *
+ * On reconduit donc la durée du token courant, avec la même règle que
+ * `routes/auth.js` pour rester cohérent.
+ */
+function tokenDurationFrom(payload) {
+  const { exp, iat } = payload || {};
+  if (!exp || !iat) return "8h";
+  return exp - iat > 8 * 3600 ? "30d" : "8h";
+}
+
 // ─── Helper : champs utilisateur à envoyer au front ──────────────────────────
 function formatUser(user) {
   return {
@@ -299,7 +319,9 @@ router.patch(
       const payload = formatUser(updatedUser);
       const authToken = jwt.sign(payload, process.env.TOKEN_SECRET, {
         algorithm: "HS256",
-        expiresIn: "6h",
+        // Reconduit la durée du token courant (cf. tokenDurationFrom) au lieu
+        // de rétrograder silencieusement la session à 6 heures.
+        expiresIn: tokenDurationFrom(req.payload),
       });
 
       res.status(200).json({ payload, authToken });
@@ -571,7 +593,9 @@ router.patch(
       const payload = formatUser(updatedUser);
       const authToken = jwt.sign(payload, process.env.TOKEN_SECRET, {
         algorithm: "HS256",
-        expiresIn: "6h",
+        // Reconduit la durée du token courant (cf. tokenDurationFrom) au lieu
+        // de rétrograder silencieusement la session à 6 heures.
+        expiresIn: tokenDurationFrom(req.payload),
       });
 
       res.status(200).json({ payload, authToken });

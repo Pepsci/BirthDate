@@ -10,7 +10,7 @@
     "ios": {
       "icon": "./assets/images/icon.png",
       "bundleIdentifier": "com.birthreminder.app",
-      "buildNumber": "33",
+      "buildNumber": "35",
       "supportsTablet": false,
       "associatedDomains": [
         "applinks:birthreminder.com"

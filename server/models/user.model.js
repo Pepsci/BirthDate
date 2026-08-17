@@ -128,6 +128,15 @@ const userSchema = new Schema({
   lastSeenAt: { type: Date, default: null },
   pushEvents: {
     birthdays: { type: Boolean, default: true },
+    // Les fêtes (namedays) suivaient l'interrupteur `birthdays` : impossible de
+    // garder les anniversaires sans les fêtes. Catégorie propre, activée par
+    // défaut pour ne rien couper chez les comptes existants.
+    namedays: { type: Boolean, default: true },
+    // Activité des listes de cadeaux communes (ajout, modification, retrait
+    // d'une idée, départ d'un membre). Catégorie propre : elle suivait
+    // « Cadeaux », qui couvre les réservations sur les wishlists — deux usages
+    // assez différents pour mériter chacun son interrupteur.
+    sharedLists: { type: Boolean, default: true },
     chat: { type: Boolean, default: true },
     friends: { type: Boolean, default: true },
     gifts: { type: Boolean, default: true },

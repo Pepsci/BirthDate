@@ -17,7 +17,7 @@ import {
   eventDate,
   eventLocationLabel,
 } from "../lib/events";
-import { addToDeviceCalendar } from "../lib/calendar";
+import { addToDeviceCalendar, isCalendarAvailable } from "../lib/calendar";
 import {
   useTheme,
   useThemedStyles,
@@ -159,7 +159,11 @@ export default function AgendaScreen() {
     if (!dt || addingToCalendar) return;
     setAddingToCalendar(ev._id);
     try {
+      // `addToDeviceCalendar` refuse elle-même un second ajout et le signale :
+      // depuis l'agenda on ne connaît pas encore l'état de chaque événement,
+      // c'est donc elle qui garantit l'absence de doublon.
       await addToDeviceCalendar({
+        eventKey: ev.shortId,
         title: ev.title,
         startDate: dt,
         location: eventLocationLabel(ev),
@@ -424,9 +428,10 @@ export default function AgendaScreen() {
                   </Text>
                 </Pressable>
                 {/* Export calendrier : seulement si l'événement a une date
-                    ferme. Tant qu'un vote est en cours, il n'y a rien à
-                    inscrire dans un calendrier. */}
-                {eventDate(ev) && (
+                    ferme (tant qu'un vote est en cours il n'y a rien à
+                    inscrire) et si le module natif est présent dans ce
+                    binaire — sinon le bouton mènerait à une impasse. */}
+                {eventDate(ev) && isCalendarAvailable() && (
                   <Pressable
                     hitSlop={8}
                     style={styles.calBtn}

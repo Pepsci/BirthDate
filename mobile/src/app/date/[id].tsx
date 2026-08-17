@@ -50,6 +50,7 @@ import GiftDetailModal from "../../components/GiftDetailModal";
 import GiftGridCard, { giftGridStyles } from "../../components/GiftGridCard";
 import BottomSheet from "../../components/BottomSheet";
 import HeaderIconButton from "../../components/HeaderIconButton";
+import { useScrollBoundsGuard } from "../../lib/use-scroll-bounds-guard";
 import BirthdayCountdown from "../../components/BirthdayCountdown";
 import ImportGiftSheet, { ImportedGift } from "../../components/ImportGiftSheet";
 import { FriendEntry, fetchFriends } from "../../lib/friends";
@@ -64,6 +65,8 @@ import {
   addSharedGift,
   updateSharedGift,
   deleteSharedGift,
+  reserveSharedGift,
+  unreserveSharedGift,
   leaveSharedList,
   fetchSentSharedInvitations,
   cancelSharedInvitation,
@@ -98,6 +101,10 @@ export default function DateDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const styles = useThemedStyles(makeStyles);
+  // Voir use-scroll-bounds-guard : changer d'onglet (Idées / Wishlist / Liste
+  // commune) fait rétrécir le contenu, ce qui laissait la vue calée au-delà
+  // de sa propre hauteur.
+  const scrollGuard = useScrollBoundsGuard();
   const { colors } = useTheme();
   const { user } = useAuth();
   const { byFriend } = useUnread();
@@ -162,7 +169,13 @@ export default function DateDetailScreen() {
   );
   const [importOpen, setImportOpen] = useState(false);
   const [importSharedOpen, setImportSharedOpen] = useState(false);
-  const [pendingDelete, setPendingDelete] = useState<Gift | null>(null);
+  // La suppression annulable sert aux deux listes : les idées personnelles et
+  // celles de la liste commune. On retient donc laquelle, sinon le bandeau
+  // « Annuler » supprimerait dans la mauvaise au moment de confirmer.
+  const [pendingDelete, setPendingDelete] = useState<{
+    gift: Gift;
+    scope: "own" | "shared";
+  } | null>(null);
   const deleteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const deleteProgress = useRef(new Animated.Value(0)).current;
   const DELETE_DELAY = 5000;
@@ -248,26 +261,37 @@ export default function DateDetailScreen() {
     setGiftStatus(g, nextGiftStatus(giftStatusOf(g)));
 
   // Suppression avec délai + annulation (bandeau bas d'écran)
-  const finalizeDelete = (g: Gift) => {
-    deleteTimer.current = null;
-    setPendingDelete(null);
-    run(() => deleteGift(entry!._id, g._id));
+  const commitDelete = (g: Gift, scope: "own" | "shared") => {
+    if (scope === "shared") {
+      runShared(() => deleteSharedGift(entry!.sharedGiftList!, g._id));
+    } else {
+      run(() => deleteGift(entry!._id, g._id));
+    }
   };
 
-  const requestDelete = (g: Gift) => {
+  const finalizeDelete = (g: Gift, scope: "own" | "shared") => {
+    deleteTimer.current = null;
+    setPendingDelete(null);
+    commitDelete(g, scope);
+  };
+
+  const requestDelete = (g: Gift, scope: "own" | "shared" = "own") => {
     // Une suppression déjà en attente ? on la confirme d'abord.
     if (deleteTimer.current) clearTimeout(deleteTimer.current);
-    if (pendingDelete && pendingDelete._id !== g._id) {
-      run(() => deleteGift(entry!._id, pendingDelete._id));
+    if (pendingDelete && pendingDelete.gift._id !== g._id) {
+      commitDelete(pendingDelete.gift, pendingDelete.scope);
     }
-    setPendingDelete(g);
+    setPendingDelete({ gift: g, scope });
     deleteProgress.setValue(0);
     Animated.timing(deleteProgress, {
       toValue: 1,
       duration: DELETE_DELAY,
       useNativeDriver: false,
     }).start();
-    deleteTimer.current = setTimeout(() => finalizeDelete(g), DELETE_DELAY);
+    deleteTimer.current = setTimeout(
+      () => finalizeDelete(g, scope),
+      DELETE_DELAY,
+    );
   };
 
   const undoDelete = () => {
@@ -287,6 +311,59 @@ export default function DateDetailScreen() {
   }, []);
 
   // ── Liste commune ──────────────────────────────────────────────────────────
+  // Réservation : « je m'en occupe ». Le cadeau reste affiché, grisé et au nom
+  // du réserveur ; seul lui peut se libérer (le serveur le vérifie aussi).
+  const toggleSharedReservation = (g: SharedGift) => {
+    if (!entry?.sharedGiftList || busy) return;
+    const mine = g.reservedBy?._id === user?._id;
+    if (g.reservedBy && !mine) return; // réservé par quelqu'un d'autre
+    runShared(() =>
+      mine
+        ? unreserveSharedGift(entry.sharedGiftList!, g._id)
+        : reserveSharedGift(entry.sharedGiftList!, g._id),
+    );
+  };
+
+  // « Tout verser » : pousse d'un coup toutes tes idées de cette personne dans
+  // la liste commune, en sautant celles qui y sont déjà (même nom) pour ne pas
+  // créer de doublons quand on appuie deux fois.
+  const pourAllIntoShared = () => {
+    if (!entry?.sharedGiftList) return;
+    const already = new Set(
+      (sharedList?.gifts ?? []).map((g) => g.giftName.trim().toLowerCase()),
+    );
+    const toAdd = allGifts.filter(
+      (g) => !already.has(g.giftName.trim().toLowerCase()),
+    );
+    if (toAdd.length === 0) {
+      setError("Toutes tes idées sont déjà dans la liste commune.");
+      return;
+    }
+    Alert.alert(
+      "Tout verser ?",
+      `${toAdd.length} idée${toAdd.length > 1 ? "s" : ""} ${toAdd.length > 1 ? "seront ajoutées" : "sera ajoutée"} à la liste commune. Les autres membres les verront.`,
+      [
+        { text: "Annuler", style: "cancel" },
+        {
+          text: "Tout verser",
+          onPress: () =>
+            runShared(async () => {
+              for (const g of toAdd) {
+                await addSharedGift(entry.sharedGiftList!, {
+                  giftName: g.giftName,
+                  occasion: g.occasion,
+                  year: g.year,
+                  url: g.url ?? undefined,
+                  price: g.price ?? undefined,
+                  image: g.image ?? undefined,
+                });
+              }
+            }),
+        },
+      ],
+    );
+  };
+
   const reloadShared = async () => {
     if (entry?.sharedGiftList) {
       try {
@@ -617,9 +694,10 @@ export default function DateDetailScreen() {
   const days = birthISO ? daysUntil(birthISO) : null;
   const allGifts = (entry as DateEntry & { gifts?: Gift[] }).gifts ?? [];
   // Masque le cadeau en cours de suppression (annulable)
-  const gifts = pendingDelete
-    ? allGifts.filter((g) => g._id !== pendingDelete._id)
-    : allGifts;
+  const gifts =
+    pendingDelete && pendingDelete.scope === "own"
+      ? allGifts.filter((g) => g._id !== pendingDelete.gift._id)
+      : allGifts;
   const filteredGifts =
     giftFilter === "all"
       ? gifts
@@ -629,6 +707,7 @@ export default function DateDetailScreen() {
   return (
     <View style={{ flex: 1 }}>
     <ScrollView
+      {...scrollGuard}
       style={styles.container}
       contentContainerStyle={styles.content}
       keyboardShouldPersistTaps="handled"
@@ -1246,14 +1325,25 @@ export default function DateDetailScreen() {
                   .join(", ")}
               </Text>
 
-              <Pressable
-                style={styles.importBtn}
-                onPress={() => setImportSharedOpen(true)}
-              >
-                <Text style={styles.importText}>
-                  📋 Importer des idées depuis une liste
-                </Text>
-              </Pressable>
+              {/* Verser ses propres idées dans la liste commune. « Tout
+                  verser » évite d'avoir à cocher une par une, cas le plus
+                  fréquent quand on rejoint une liste. */}
+              <View style={styles.pourRow}>
+                <Pressable
+                  style={[styles.pourBtn, busy && { opacity: 0.5 }]}
+                  disabled={busy}
+                  onPress={pourAllIntoShared}
+                >
+                  <Text style={styles.pourText}>⤵ Tout verser</Text>
+                </Pressable>
+                <Pressable
+                  style={[styles.pourBtn, busy && { opacity: 0.5 }]}
+                  disabled={busy}
+                  onPress={() => setImportSharedOpen(true)}
+                >
+                  <Text style={styles.pourText}>☑ Choisir les idées</Text>
+                </Pressable>
+              </View>
 
               {showSharedForm && (
                 <GiftIdeaForm
@@ -1305,15 +1395,29 @@ export default function DateDetailScreen() {
               )}
 
               <View style={styles.giftGrid}>
-                {sharedList.gifts.map((g) => {
+                {sharedList.gifts
+                  .filter(
+                    (g) =>
+                      !(
+                        pendingDelete?.scope === "shared" &&
+                        pendingDelete.gift._id === g._id
+                      ),
+                  )
+                  .map((g) => {
                   const st = giftStatusOf(g);
                   const meta = GIFT_STATUS_META[st];
+                  const reservedByMe = g.reservedBy?._id === user?._id;
+                  const reservedByOther = !!g.reservedBy && !reservedByMe;
                   return (
                     <Pressable
                       key={g._id}
                       style={[
                         styles.giftGridCard,
                         st !== "to_buy" && styles.giftCardDone,
+                        // Réservé par un autre : grisé, mais jamais retiré de
+                        // la liste — le voir disparaître ferait croire à une
+                        // suppression.
+                        reservedByOther && styles.giftCardReserved,
                       ]}
                       onPress={() => setSelectedSharedGift(g)}
                     >
@@ -1336,6 +1440,33 @@ export default function DateDetailScreen() {
                         {occasionEmoji(g.occasion)} {g.occasion}
                         {g.addedBy?.name ? ` · ${g.addedBy.name}` : ""}
                       </Text>
+                      {/* Réservation. Le nom est affiché : les membres sont
+                          les offrants, la personne concernée n'a pas accès à
+                          la liste, il n'y a donc pas de surprise à protéger —
+                          et savoir qui s'en occupe est justement ce qui évite
+                          le double achat. */}
+                      <Pressable
+                        disabled={busy || reservedByOther}
+                        onPress={() => toggleSharedReservation(g)}
+                        style={[
+                          styles.reservePill,
+                          g.reservedBy && styles.reservePillTaken,
+                        ]}
+                      >
+                        <Text
+                          style={[
+                            styles.sharedReserveText,
+                            g.reservedBy && styles.sharedReserveTextTaken,
+                          ]}
+                          numberOfLines={1}
+                        >
+                          {reservedByMe
+                            ? "✓ Tu t'en occupes · annuler"
+                            : reservedByOther
+                              ? `🔒 Réservé par ${g.reservedBy!.name}`
+                              : "＋ Je m'en occupe"}
+                        </Text>
+                      </Pressable>
                       <View style={styles.giftGridRow}>
                         {g.price != null && (
                           <View style={styles.pricePill}>
@@ -1470,7 +1601,7 @@ export default function DateDetailScreen() {
         }}
         onDelete={(g) => {
           setSelectedSharedGift(null);
-          runShared(() => deleteSharedGift(entry.sharedGiftList!, g._id));
+          requestDelete(g, "shared");
         }}
       />
 
@@ -1762,7 +1893,7 @@ export default function DateDetailScreen() {
         <View style={styles.undoBar}>
           <View style={styles.undoRow}>
             <Text style={styles.undoText} numberOfLines={1}>
-              « {pendingDelete.giftName} » supprimé
+              « {pendingDelete.gift.giftName} » supprimé
             </Text>
             <Pressable onPress={undoDelete} hitSlop={8}>
               <Text style={styles.undoAction}>Annuler la suppression</Text>
@@ -2284,6 +2415,34 @@ const makeStyles = (c: ThemeColors) =>
     marginTop: 4,
     marginBottom: 4,
   },
+  // Verser ses idées dans la liste commune : deux actions de même poids.
+  pourRow: { flexDirection: "row", gap: 8 },
+  pourBtn: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: c.primary,
+    borderStyle: "dashed",
+    borderRadius: 10,
+    paddingVertical: 9,
+    alignItems: "center",
+  },
+  pourText: { color: c.primary, fontWeight: "700", fontSize: 13 },
+  // Cadeau réservé par quelqu'un d'autre : atténué, mais toujours lisible.
+  giftCardReserved: { opacity: 0.55 },
+  reservePill: {
+    borderWidth: 1,
+    borderColor: c.border,
+    borderRadius: 8,
+    paddingVertical: 5,
+    paddingHorizontal: 8,
+    marginTop: 4,
+    alignItems: "center",
+  },
+  reservePillTaken: { backgroundColor: c.primarySoft, borderColor: c.primary },
+  // Préfixe « shared » : `reserveText` est déjà pris par la réservation des
+  // cadeaux de la wishlist personnelle, plus haut dans cette même feuille.
+  sharedReserveText: { fontSize: 11, fontWeight: "700", color: c.sub },
+  sharedReserveTextTaken: { color: c.primaryStrong },
   importText: { color: c.primary, fontWeight: "600", fontSize: 13 },
   shareGiftRow: {
     flexDirection: "row",

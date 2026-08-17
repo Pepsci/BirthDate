@@ -20,6 +20,13 @@ const sharedGiftSchema = new Schema(
     price: { type: Number, default: null },
     image: { type: String, default: null },
     addedBy: { type: Schema.Types.ObjectId, ref: "User", default: null },
+    // Réservation : « je m'en occupe », avant tout achat. Distinct de `status`,
+    // qui décrit l'avancement du cadeau ; ici on retient QUI s'en charge.
+    // Les membres d'une liste commune sont les offrants — la personne
+    // concernée n'y a pas accès — donc afficher le nom ne gâche aucune
+    // surprise, et c'est ce qui évite le double achat.
+    reservedBy: { type: Schema.Types.ObjectId, ref: "User", default: null },
+    reservedAt: { type: Date, default: null },
   },
   { timestamps: true },
 );

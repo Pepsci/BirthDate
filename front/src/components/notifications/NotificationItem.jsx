@@ -22,6 +22,10 @@ const TYPE_CONFIG = {
   event_pool_contribution: { icon: "💰" },
   shared_gift_invite: { icon: "👥" },
   shared_gift_accepted: { icon: "🎁" },
+  shared_gift_added: { icon: "🎁" },
+  shared_gift_updated: { icon: "✏️" },
+  shared_gift_removed: { icon: "🗑️" },
+  shared_gift_member_left: { icon: "👋" },
 };
 
 const timeAgo = (dateStr) => {
@@ -96,7 +100,38 @@ const buildText = (type, data) => {
     case "event_updated":
       return (
         <>
-          <strong>{data.eventTitle}</strong> a été modifié par l'organisateur
+          L'organisateur a modifié <strong>{data.eventTitle}</strong>
+        </>
+      );
+    case "shared_gift_added":
+      return (
+        <>
+          {data.fromName} a ajouté <strong>{data.giftName}</strong> à votre
+          liste commune
+        </>
+      );
+    case "shared_gift_updated":
+      return data.statusLabel ? (
+        <>
+          {data.fromName} {data.statusLabel} : <strong>{data.giftName}</strong>
+        </>
+      ) : (
+        <>
+          {data.fromName} a modifié <strong>{data.giftName}</strong>
+        </>
+      );
+    case "shared_gift_removed":
+      return (
+        <>
+          {data.fromName} a retiré <strong>{data.giftName}</strong> de votre
+          liste commune
+        </>
+      );
+    case "shared_gift_member_left":
+      return (
+        <>
+          <strong>{data.fromName}</strong> a quitté votre liste de cadeaux
+          commune
         </>
       );
     case "event_date_changed":

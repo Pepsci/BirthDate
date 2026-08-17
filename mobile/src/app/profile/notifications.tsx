@@ -18,6 +18,7 @@ import {
   ThemeColors,
 } from "../../lib/theme-context";
 import { usePersistedCollapse } from "../../lib/collapse-prefs";
+import { useScrollBoundsGuard } from "../../lib/use-scroll-bounds-guard";
 
 const COLLAPSE_SCOPE = "profile_notifications";
 
@@ -63,6 +64,9 @@ export default function NotificationsScreen() {
   const styles = useThemedStyles(makeStyles);
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  // Voir use-scroll-bounds-guard : les sections repliables font rétrécir le
+  // contenu, ce qui laissait la vue calée au-delà de sa propre hauteur.
+  const scrollGuard = useScrollBoundsGuard();
   const [me, setMe] = useState<UserProfile | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -159,6 +163,8 @@ export default function NotificationsScreen() {
     setError(null);
     const next = {
       birthdays: me.pushEvents?.birthdays ?? true,
+      namedays: me.pushEvents?.namedays ?? true,
+      sharedLists: me.pushEvents?.sharedLists ?? true,
       chat: me.pushEvents?.chat ?? true,
       friends: me.pushEvents?.friends ?? true,
       gifts: me.pushEvents?.gifts ?? true,
@@ -208,6 +214,7 @@ export default function NotificationsScreen() {
 
   return (
     <ScrollView
+      {...scrollGuard}
       style={styles.container}
       contentContainerStyle={[
         styles.content,
@@ -282,11 +289,15 @@ export default function NotificationsScreen() {
           {me.pushEnabled &&
             (
               [
-                { k: "birthdays", l: "Anniversaires & fêtes", h: "Rappels J-x selon tes réglages par personne" },
+                { k: "birthdays", l: "Anniversaires", h: "Rappels J-x selon tes réglages par personne" },
+                // Séparé des anniversaires : les deux partageaient le même
+                // interrupteur, on ne pouvait pas garder l'un sans l'autre.
+                { k: "namedays", l: "Fêtes", h: "Rappels de fêtes (prénoms)" },
                 { k: "events", l: "Événements", h: "Invitations, RSVP, votes, rappels" },
                 { k: "chat", l: "Messages", h: "Chats privés et d'événements" },
                 { k: "friends", l: "Amis", h: "Demandes et acceptations" },
-                { k: "gifts", l: "Cadeaux", h: "Réservations et propositions" },
+                { k: "gifts", l: "Cadeaux", h: "Réservations sur les wishlists et propositions" },
+                { k: "sharedLists", l: "Listes communes", h: "Idées ajoutées, modifiées ou retirées par un membre" },
               ] as const
             ).map(({ k, l, h }) => (
               <View key={k} style={styles.row}>

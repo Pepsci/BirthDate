@@ -17,6 +17,10 @@ export interface UserProfile extends AuthUser {
   pushEnabled?: boolean;
   pushEvents?: {
     birthdays?: boolean;
+    /** Fêtes (namedays) — catégorie distincte des anniversaires. */
+    namedays?: boolean;
+    /** Activité des listes de cadeaux communes. */
+    sharedLists?: boolean;
     chat?: boolean;
     friends?: boolean;
     gifts?: boolean;

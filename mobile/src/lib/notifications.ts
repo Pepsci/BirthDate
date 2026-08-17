@@ -18,7 +18,11 @@ export type NotifType =
   | "event_chat_message"
   | "event_pool_contribution"
   | "shared_gift_invite"
-  | "shared_gift_accepted";
+  | "shared_gift_accepted"
+  | "shared_gift_added"
+  | "shared_gift_updated"
+  | "shared_gift_removed"
+  | "shared_gift_member_left";
 
 export interface AppNotification {
   _id: string;
@@ -95,8 +99,10 @@ export function notifDisplay(n: AppNotification): {
         // `data.message` est posé par le serveur quand la notif n'est pas un
         // simple rappel — sans ça on affichait « Rappel : … » sur des
         // notifications de modification. On le respecte comme le fait le web.
+        // Ces notifs-là datent d'avant les types dédiés ci-dessous : on garde
+        // le rendu pour celles déjà en base.
         text: d.message
-          ? `${d.message}${d.eventTitle ? ` — « ${d.eventTitle} »` : ""}`
+          ? `${d.message}${d.eventTitle ? ` « ${d.eventTitle} »` : ""}`
           : d.eventTitle
             ? `${d.organizerName ? `${d.organizerName} t'invite à` : "Rappel :"} « ${d.eventTitle} »`
             : "Rappel d'événement",
@@ -104,7 +110,7 @@ export function notifDisplay(n: AppNotification): {
     case "event_updated":
       return {
         emoji: "✏️",
-        text: `Événement modifié — « ${d.eventTitle ?? "événement"} »`,
+        text: `L'organisateur a modifié « ${d.eventTitle ?? "un événement"} »`,
       };
     case "event_date_changed":
       return {
@@ -121,12 +127,12 @@ export function notifDisplay(n: AppNotification): {
     case "event_date_vote":
       return {
         emoji: "📅",
-        text: `${who} a voté pour une date — « ${d.eventTitle ?? "événement"} »`,
+        text: `${who} a voté pour une date dans « ${d.eventTitle ?? "un événement"} »`,
       };
     case "event_location_vote":
       return {
         emoji: "📍",
-        text: `${who} a voté pour un lieu — « ${d.eventTitle ?? "événement"} »`,
+        text: `${who} a voté pour un lieu dans « ${d.eventTitle ?? "un événement"} »`,
       };
     case "event_gift_proposed":
       return {
@@ -136,17 +142,17 @@ export function notifDisplay(n: AppNotification): {
     case "event_gift_vote":
       return {
         emoji: "❤️",
-        text: `${who} a voté pour un cadeau — « ${d.eventTitle ?? "événement"} »`,
+        text: `${who} a voté pour un cadeau dans « ${d.eventTitle ?? "un événement"} »`,
       };
     case "event_chat_message":
       return {
         emoji: "💬",
-        text: `Nouveaux messages — « ${d.eventTitle ?? "événement"} »`,
+        text: `Nouveaux messages dans « ${d.eventTitle ?? "un événement"} »`,
       };
     case "event_pool_contribution":
       return {
         emoji: "💝",
-        text: `${who} a contribué à la cagnotte${d.eventTitle ? ` — « ${d.eventTitle} »` : ""}`,
+        text: `${who} a contribué à la cagnotte${d.eventTitle ? ` de « ${d.eventTitle} »` : ""}`,
       };
     case "shared_gift_invite":
       return {
@@ -157,6 +163,30 @@ export function notifDisplay(n: AppNotification): {
       return {
         emoji: "🎁",
         text: `${d.fromName ?? who} a rejoint votre liste de cadeaux commune${d.personName ? ` — ${d.personName}` : ""}`,
+      };
+    // ── Activité dans une liste commune ──────────────────────────────────
+    // `listLabel` est optionnel : la liste n'est pas toujours nommée.
+    case "shared_gift_added":
+      return {
+        emoji: "🎁",
+        text: `${d.fromName ?? who} a ajouté « ${d.giftName ?? "une idée"} »${d.listLabel ? ` à ${d.listLabel}` : " à votre liste commune"}`,
+      };
+    case "shared_gift_updated":
+      return {
+        emoji: "✏️",
+        text: d.statusLabel
+          ? `${d.fromName ?? who} ${d.statusLabel} : « ${d.giftName ?? "une idée"} »`
+          : `${d.fromName ?? who} a modifié « ${d.giftName ?? "une idée"} »${d.listLabel ? ` dans ${d.listLabel}` : ""}`,
+      };
+    case "shared_gift_removed":
+      return {
+        emoji: "🗑️",
+        text: `${d.fromName ?? who} a retiré « ${d.giftName ?? "une idée"} »${d.listLabel ? ` de ${d.listLabel}` : " de votre liste commune"}`,
+      };
+    case "shared_gift_member_left":
+      return {
+        emoji: "👋",
+        text: `${d.fromName ?? who} a quitté votre liste de cadeaux commune${d.listLabel ? ` — ${d.listLabel}` : ""}`,
       };
     default:
       return { emoji: "🔔", text: "Nouvelle notification" };

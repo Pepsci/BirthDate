@@ -286,9 +286,10 @@ async function checkAndSendNamedayReminders() {
       // l'email, jamais la notif in-app ni la push. Voir le commentaire dans
       // checkAndSendCardBirthdayReminders().
       const emailOk = owner.receiveNamedayEmails !== false;
-      // Push activé ? On réutilise pushEnabled (même logique que birthday)
+      // Catégorie push propre aux fêtes : elles suivaient l'interrupteur
+      // « Anniversaires », on ne pouvait pas garder l'un sans l'autre.
       const pushOk =
-        owner.pushEnabled === true && owner.pushEvents?.birthdays !== false;
+        owner.pushEnabled === true && owner.pushEvents?.namedays !== false;
       const pushTimings = owner.pushBirthdayTimings || [1, 0];
 
       if (notifyOnNameday && isNamedayInXDays(date.nameday, 0)) {

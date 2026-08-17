@@ -32,6 +32,12 @@ const notificationSchema = new mongoose.Schema(
         "event_pool_contribution",
         "shared_gift_invite",
         "shared_gift_accepted",
+        // Activité dans une liste commune : sans ces types, un membre pouvait
+        // acheter un cadeau qu'un autre avait déjà marqué comme acheté.
+        "shared_gift_added",
+        "shared_gift_updated",
+        "shared_gift_removed",
+        "shared_gift_member_left",
       ],
       required: true,
     },

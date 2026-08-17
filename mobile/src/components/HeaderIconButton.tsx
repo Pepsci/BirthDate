@@ -45,7 +45,9 @@ export default function HeaderIconButton({
         pressed && { opacity: 0.6 },
       ]}
     >
-      <Text style={[styles.emoji, { fontSize }]}>{emoji}</Text>
+      <Text style={[styles.emoji, { fontSize, top: fontSize * 0.1 }]}>
+        {emoji}
+      </Text>
       {badge > 0 && (
         <View style={[styles.badge, { backgroundColor: colors.danger }]}>
           <Text style={styles.badgeText}>{badge > 99 ? "99+" : badge}</Text>
@@ -63,13 +65,21 @@ const styles = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth,
     alignItems: "center",
     justifyContent: "center",
-    marginRight: 4,
+    // Aucune marge : voir HeaderBackButton. Le fond natif dessiné par iOS
+    // épouse la vue marges comprises, une marge décentre donc le rond dans son
+    // propre fond.
   },
   emoji: {
     // includeFontPadding/textAlignVertical : sans eux, l'emoji est décalé
     // vers le bas dans le rond sur Android.
     includeFontPadding: false,
     textAlignVertical: "center",
+    // Le `top` est calculé à l'appel, en proportion de la taille de police.
+    // Motif : le conteneur centre la BOÎTE DE TEXTE, or un glyphe repose sur la
+    // ligne de base et la boîte réserve sous elle la place du jambage
+    // descendant (« p », « g »), que l'emoji n'utilise pas. L'encre se
+    // retrouve donc trop haute d'environ la moitié de ce jambage, soit ~10 %
+    // de la taille de police. On la redescend d'autant.
   },
   badge: {
     position: "absolute",

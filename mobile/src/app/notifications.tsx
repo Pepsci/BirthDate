@@ -13,7 +13,6 @@ import { Stack, useRouter, useFocusEffect } from "expo-router";
 import {
   AppNotification,
   fetchNotifications,
-  markNotificationRead,
   markAllNotificationsRead,
   deleteNotification,
   deleteAllNotifications,
@@ -36,18 +35,13 @@ export default function NotificationsScreen() {
   const [items, setItems] = useState<AppNotification[] | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // Cartes dont le texte complet est affiché (par défaut : tronqué sur 2
-  // lignes). Un bouton par carte permet de dérouler/replier, comme sur le web.
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
-
-  const toggleExpanded = (id: string) => {
-    setExpandedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  };
+  // Le bouton « Déplier / Réduire » a été retiré. Il se déclenchait sur
+  // `text.length > 60`, une approximation en nombre de caractères : la plupart
+  // des notifications d'événement dépassent 60 caractères tout en tenant sur
+  // deux lignes, si bien que le bouton s'affichait pour ne rien déplier. Ces
+  // textes viennent tous de `notifDisplay`, ce sont des phrases d'une ou deux
+  // lignes : les afficher en entier coûte quelques pixels et supprime d'un
+  // coup le bouton, son état et son heuristique fausse.
 
   const load = useCallback(async () => {
     try {
@@ -71,17 +65,19 @@ export default function NotificationsScreen() {
     setRefreshing(false);
   }, [load]);
 
+  // Ouvrir une notification la consomme : elle disparaît de la liste.
+  // Elle était seulement marquée comme lue, donc elle restait affichée après
+  // t'avoir emmené au bon endroit — et il fallait la supprimer à la main.
+  // Le retrait de la liste est optimiste (avant la réponse serveur) pour que
+  // l'écran soit déjà à jour au retour de la navigation.
   const open = async (n: AppNotification) => {
-    if (!n.read) {
-      markNotificationRead(n._id)
-        .then(refreshNotifs)
-        .catch(() => {});
-      setItems(
-        (prev) =>
-          prev?.map((x) => (x._id === n._id ? { ...x, read: true } : x)) ??
-          prev,
-      );
-    }
+    setItems((prev) => prev?.filter((x) => x._id !== n._id) ?? prev);
+    deleteNotification(n._id)
+      .then(refreshNotifs)
+      .catch(() => {
+        // Échec réseau : la notification réapparaîtra au prochain
+        // rafraîchissement, on ne bloque pas la navigation pour autant.
+      });
     const route = webLinkToMobileRoute(n.link);
     router.push(route as never);
   };
@@ -183,10 +179,6 @@ export default function NotificationsScreen() {
         }
         renderItem={({ item }) => {
           const { emoji, text } = notifDisplay(item);
-          const expanded = expandedIds.has(item._id);
-          // Repère grossier pour savoir si le texte risque d'être tronqué
-          // sur 2 lignes et si un bouton déplier/replier est utile.
-          const maybeTruncated = text.length > 60;
           return (
             <Pressable
               style={[styles.row, !item.read && styles.rowUnread]}
@@ -195,24 +187,11 @@ export default function NotificationsScreen() {
             >
               <Text style={styles.emoji}>{emoji}</Text>
               <View style={{ flex: 1 }}>
-                <Text
-                  style={[styles.text, !item.read && styles.textUnread]}
-                  numberOfLines={expanded ? undefined : 2}
-                >
+                <Text style={[styles.text, !item.read && styles.textUnread]}>
                   {text}
                 </Text>
                 <View style={styles.rowFooter}>
                   <Text style={styles.time}>{timeAgo(item.createdAt)}</Text>
-                  {maybeTruncated && (
-                    <Pressable
-                      hitSlop={8}
-                      onPress={() => toggleExpanded(item._id)}
-                    >
-                      <Text style={styles.expandBtn}>
-                        {expanded ? "▾ Réduire" : "▸ Déplier"}
-                      </Text>
-                    </Pressable>
-                  )}
                 </View>
               </View>
               <View style={styles.rowActions}>
@@ -269,7 +248,6 @@ const makeStyles = (c: ThemeColors) =>
       marginTop: 2,
     },
     time: { color: c.faint, fontSize: 11 },
-    expandBtn: { color: c.primary, fontSize: 11, fontWeight: "700" },
     rowActions: {
       alignItems: "center",
       gap: 8,

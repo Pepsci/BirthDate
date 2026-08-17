@@ -7,10 +7,69 @@ const DateModel = require("../models/date.model");
 const User = require("../models/user.model");
 const { isAuthenticated } = require("../middleware/jwt.middleware");
 const { notify } = require("../utils/notify");
+const { sendPushToUser } = require("../services/pushService");
 const { isBlockedBetween } = require("../utils/blocking");
 
 const personLabel = (dateDoc) =>
   `${dateDoc?.name || ""} ${dateDoc?.surname || ""}`.trim() || "quelqu'un";
+
+/**
+ * Prévient les membres d'une liste commune d'une activité, SAUF son auteur :
+ * personne n'a besoin d'être notifié de sa propre action.
+ *
+ * Jusqu'ici seules l'invitation et l'acceptation notifiaient. Ajouter, modifier
+ * ou retirer une idée se faisait en silence : les autres membres ne
+ * découvraient le changement qu'en rouvrant la liste, au risque d'acheter deux
+ * fois le même cadeau — ce que la liste commune est censée éviter.
+ *
+ * Le push part sur la catégorie "gifts" : ces notifications suivent donc
+ * l'interrupteur « Cadeaux » de Notifications push, sans nouveau réglage à
+ * faire découvrir à l'utilisateur.
+ *
+ * Jamais bloquant : une notification qui échoue ne doit pas faire échouer
+ * l'action, déjà enregistrée en base quand on arrive ici.
+ */
+async function notifyOtherMembers(
+  app,
+  list,
+  actorId,
+  { type, data, pushTitle, pushBody },
+) {
+  try {
+    const others = (list.members || []).filter(
+      (m) => m && m.toString() !== actorId.toString(),
+    );
+    if (!others.length) return;
+
+    for (const memberId of others) {
+      await notify(app, {
+        userId: memberId,
+        type,
+        data,
+        link: "/home?tab=friends",
+      });
+      await sendPushToUser(memberId, {
+        title: pushTitle,
+        body: pushBody,
+        url: "/home?tab=friends",
+        tag: `shared-list-${list._id}`,
+        type: "shared_list",
+      });
+    }
+  } catch (err) {
+    console.error("❌ Notification liste commune échouée:", err.message);
+  }
+}
+
+/** Nom de l'auteur de l'action, pour le texte des notifications. */
+async function actorName(userId) {
+  try {
+    const u = await User.findById(userId).select("name surname");
+    return `${u?.name || ""} ${u?.surname || ""}`.trim() || "Quelqu'un";
+  } catch {
+    return "Quelqu'un";
+  }
+}
 
 // ── Inviter un ami à créer une liste commune ────────────────────────────────
 router.post("/invite", isAuthenticated, async (req, res) => {
@@ -256,7 +315,8 @@ router.get("/:id", isAuthenticated, loadListAsMember, async (req, res) => {
   try {
     const list = await SharedGiftList.findById(req.params.id)
       .populate("members", "name surname avatar")
-      .populate("gifts.addedBy", "name surname");
+      .populate("gifts.addedBy", "name surname")
+      .populate("gifts.reservedBy", "name surname");
     res.json(list);
   } catch (err) {
     console.error("❌ shared get:", err);
@@ -283,6 +343,17 @@ router.post("/:id/gifts", isAuthenticated, loadListAsMember, async (req, res) =>
     });
     await req.sharedList.save();
     res.status(201).json(req.sharedList);
+
+    // Après la réponse : l'ajout est acquis, la notification ne doit ni le
+    // retarder ni le faire échouer.
+    const who = await actorName(req.payload._id);
+    const label = req.sharedList.label || null;
+    await notifyOtherMembers(req.app, req.sharedList, req.payload._id, {
+      type: "shared_gift_added",
+      data: { fromName: who, giftName: giftName.trim(), listLabel: label },
+      pushTitle: "🎁 Nouvelle idée dans votre liste commune",
+      pushBody: `${who} a ajouté « ${giftName.trim()} »`,
+    });
   } catch (err) {
     console.error("❌ shared add gift:", err);
     res.status(500).json({ message: "Erreur serveur" });
@@ -311,6 +382,29 @@ router.patch(
       }
       await req.sharedList.save();
       res.json(req.sharedList);
+
+      const who = await actorName(req.payload._id);
+      // Le passage en acheté/offert est l'information la plus utile de toutes
+      // — c'est elle qui évite le doublon — donc on la sort dans le texte.
+      const statusLabel = {
+        bought: "l'a marquée comme achetée",
+        to_give: "l'a marquée comme à offrir",
+        offered: "l'a marquée comme offerte",
+        to_buy: "l'a remise dans les idées à acheter",
+      }[status];
+      await notifyOtherMembers(req.app, req.sharedList, req.payload._id, {
+        type: "shared_gift_updated",
+        data: {
+          fromName: who,
+          giftName: gift.giftName,
+          statusLabel: statusLabel || null,
+          listLabel: req.sharedList.label || null,
+        },
+        pushTitle: "🎁 Liste commune mise à jour",
+        pushBody: statusLabel
+          ? `${who} ${statusLabel} : « ${gift.giftName} »`
+          : `${who} a modifié « ${gift.giftName} »`,
+      });
     } catch (err) {
       console.error("❌ shared update gift:", err);
       res.status(500).json({ message: "Erreur serveur" });
@@ -329,11 +423,106 @@ router.delete(
       if (!gift) return res.status(404).json({ message: "Cadeau introuvable" });
       // Mongoose 6 : les sous-documents n'ont pas .deleteOne() (ajouté en v7).
       // .pull() retire l'élément du tableau, toutes versions confondues.
+      // Nom retenu AVANT le pull : après, le sous-document n'existe plus.
+      const removedName = gift.giftName;
       req.sharedList.gifts.pull(req.params.giftId);
       await req.sharedList.save();
       res.json(req.sharedList);
+
+      const who = await actorName(req.payload._id);
+      await notifyOtherMembers(req.app, req.sharedList, req.payload._id, {
+        type: "shared_gift_removed",
+        data: {
+          fromName: who,
+          giftName: removedName,
+          listLabel: req.sharedList.label || null,
+        },
+        pushTitle: "🎁 Idée retirée de votre liste commune",
+        pushBody: `${who} a retiré « ${removedName} »`,
+      });
     } catch (err) {
       console.error("❌ shared delete gift:", err);
+      res.status(500).json({ message: "Erreur serveur" });
+    }
+  },
+);
+
+// ── Réserver / libérer un cadeau commun ─────────────────────────────────────
+// « Je m'en occupe » : empêche deux membres d'acheter la même chose.
+// Seul le réserveur peut libérer sa réservation — sinon n'importe qui pourrait
+// s'approprier le cadeau d'un autre, ce qui viderait le mécanisme de son sens.
+// Le cadeau n'est jamais retiré de la liste, seulement marqué.
+router.post(
+  "/:id/gifts/:giftId/reserve",
+  isAuthenticated,
+  loadListAsMember,
+  async (req, res) => {
+    try {
+      const gift = req.sharedList.gifts.id(req.params.giftId);
+      if (!gift) return res.status(404).json({ message: "Cadeau introuvable" });
+      if (gift.reservedBy)
+        return res
+          .status(409)
+          .json({ message: "Ce cadeau est déjà réservé par un membre" });
+
+      gift.reservedBy = req.payload._id;
+      gift.reservedAt = new Date();
+      await req.sharedList.save();
+      res.json(req.sharedList);
+
+      const who = await actorName(req.payload._id);
+      await notifyOtherMembers(req.app, req.sharedList, req.payload._id, {
+        type: "shared_gift_updated",
+        data: {
+          fromName: who,
+          giftName: gift.giftName,
+          statusLabel: "s'occupe de",
+          listLabel: req.sharedList.label || null,
+        },
+        pushTitle: "🎁 Cadeau réservé",
+        pushBody: `${who} s'occupe de « ${gift.giftName} »`,
+      });
+    } catch (err) {
+      console.error("❌ shared reserve:", err);
+      res.status(500).json({ message: "Erreur serveur" });
+    }
+  },
+);
+
+router.post(
+  "/:id/gifts/:giftId/unreserve",
+  isAuthenticated,
+  loadListAsMember,
+  async (req, res) => {
+    try {
+      const gift = req.sharedList.gifts.id(req.params.giftId);
+      if (!gift) return res.status(404).json({ message: "Cadeau introuvable" });
+      if (!gift.reservedBy)
+        return res.status(400).json({ message: "Ce cadeau n'est pas réservé" });
+      if (gift.reservedBy.toString() !== req.payload._id)
+        return res
+          .status(403)
+          .json({ message: "Seul le membre qui a réservé peut annuler" });
+
+      gift.reservedBy = null;
+      gift.reservedAt = null;
+      await req.sharedList.save();
+      res.json(req.sharedList);
+
+      const who = await actorName(req.payload._id);
+      await notifyOtherMembers(req.app, req.sharedList, req.payload._id, {
+        type: "shared_gift_updated",
+        data: {
+          fromName: who,
+          giftName: gift.giftName,
+          statusLabel: "ne s'occupe plus de",
+          listLabel: req.sharedList.label || null,
+        },
+        pushTitle: "🎁 Réservation annulée",
+        pushBody: `${who} ne s'occupe plus de « ${gift.giftName} »`,
+      });
+    } catch (err) {
+      console.error("❌ shared unreserve:", err);
       res.status(500).json({ message: "Erreur serveur" });
     }
   },
@@ -351,6 +540,9 @@ router.post("/:id/leave", isAuthenticated, loadListAsMember, async (req, res) =>
       { owner: req.payload._id, sharedGiftList: list._id },
       { sharedGiftList: null },
     );
+    const listLabel = list.label || null;
+    const remaining = [...list.members];
+
     if (list.members.length === 0) {
       await DateModel.updateMany(
         { sharedGiftList: list._id },
@@ -361,6 +553,24 @@ router.post("/:id/leave", isAuthenticated, loadListAsMember, async (req, res) =>
       await list.save();
     }
     res.json({ success: true });
+
+    // `remaining` ne contient déjà plus le partant (filtré ci-dessus), donc
+    // seuls ceux qui restent sont prévenus. Si la liste est vide, la boucle ne
+    // tourne pas — et la liste vient d'être supprimée de toute façon.
+    if (remaining.length) {
+      const who = await actorName(req.payload._id);
+      await notifyOtherMembers(
+        req.app,
+        { _id: list._id, members: remaining },
+        req.payload._id,
+        {
+          type: "shared_gift_member_left",
+          data: { fromName: who, listLabel },
+          pushTitle: "👥 Départ d'une liste commune",
+          pushBody: `${who} a quitté votre liste d'idées cadeaux`,
+        },
+      );
+    }
   } catch (err) {
     console.error("❌ shared leave:", err);
     res.status(500).json({ message: "Erreur serveur" });

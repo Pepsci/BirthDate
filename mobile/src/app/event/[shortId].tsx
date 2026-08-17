@@ -55,11 +55,17 @@ import {
   STATUS_LABELS,
   RSVP_LABELS,
 } from "../../lib/events";
-import { addToDeviceCalendar } from "../../lib/calendar";
+import {
+  addToDeviceCalendar,
+  getLinkedEventId,
+  isCalendarAvailable,
+  removeFromDeviceCalendar,
+} from "../../lib/calendar";
 import Avatar from "../../components/Avatar";
 import GiftGridCard, { giftGridStyles } from "../../components/GiftGridCard";
 import BottomSheet from "../../components/BottomSheet";
 import HeaderIconButton from "../../components/HeaderIconButton";
+import { useScrollBoundsGuard } from "../../lib/use-scroll-bounds-guard";
 import ImportGiftSheet, { ImportedGift } from "../../components/ImportGiftSheet";
 import DirectTransferViewer from "../../components/DirectTransferViewer";
 import EventLocationMap from "../../components/EventLocationMap";
@@ -94,6 +100,8 @@ export default function EventDetailScreen() {
   const [error, setError] = useState<string | null>(null);
   const [rsvpSending, setRsvpSending] = useState(false);
   const [addingToCalendar, setAddingToCalendar] = useState(false);
+  // null = pas encore vérifié, false = absent de l'agenda, true = présent.
+  const [inCalendar, setInCalendar] = useState<boolean | null>(null);
   const [voteSending, setVoteSending] = useState(false);
   const [gifts, setGifts] = useState<GiftProposal[]>([]);
   const [selectedProposal, setSelectedProposal] = useState<GiftProposal | null>(
@@ -126,6 +134,9 @@ export default function EventDetailScreen() {
   const [showLocationVoteSection, setShowLocationVoteSection] =
     usePersistedCollapse(collapseScope, "locationVote");
   const insets = useSafeAreaInsets();
+  // Voir use-scroll-bounds-guard : les encarts repliables font rétrécir le
+  // contenu, ce qui laissait la vue calée au-delà de sa propre hauteur.
+  const scrollGuard = useScrollBoundsGuard();
   const [giftName, setGiftName] = useState("");
   const [giftUrl, setGiftUrl] = useState("");
   const [giftPrice, setGiftPrice] = useState("");
@@ -224,16 +235,33 @@ export default function EventDetailScreen() {
     }
   };
 
+  // Présence dans l'agenda, revérifiée à chaque affichage de l'écran : si
+  // l'entrée a été supprimée à la main dans le calendrier, le bouton doit
+  // repasser à « Ajouter » plutôt que de mentir.
+  useFocusEffect(
+    useCallback(() => {
+      let alive = true;
+      if (!shortId) return;
+      getLinkedEventId(shortId).then((id) => {
+        if (alive) setInCalendar(!!id);
+      });
+      return () => {
+        alive = false;
+      };
+    }, [shortId]),
+  );
+
   // Export vers le calendrier natif. Aucune synchronisation ensuite : si
   // l'organisateur change la date, l'entrée déjà créée reste telle quelle —
-  // l'utilisateur reçoit la notif "nouvelle date" et peut réappuyer.
+  // l'utilisateur reçoit la notif "nouvelle date" et peut la retirer/rajouter.
   const onAddToCalendar = async () => {
     if (!event || addingToCalendar) return;
     const start = eventDate(event);
     if (!start) return;
     setAddingToCalendar(true);
     try {
-      await addToDeviceCalendar({
+      const ok = await addToDeviceCalendar({
+        eventKey: event.shortId,
         title: event.title,
         startDate: start,
         location: eventLocationLabel(event),
@@ -241,9 +269,34 @@ export default function EventDetailScreen() {
           ? `${event.description}\n\nbirthreminder.com/event/${event.shortId}`
           : `Événement BirthReminder — birthreminder.com/event/${event.shortId}`,
       });
+      if (ok) setInCalendar(true);
     } finally {
       setAddingToCalendar(false);
     }
+  };
+
+  const onRemoveFromCalendar = () => {
+    if (!event || addingToCalendar) return;
+    Alert.alert(
+      "Retirer du calendrier ?",
+      `« ${event.title} » sera supprimé de ton calendrier. L'événement reste dans BirthReminder.`,
+      [
+        { text: "Annuler", style: "cancel" },
+        {
+          text: "Retirer",
+          style: "destructive",
+          onPress: async () => {
+            setAddingToCalendar(true);
+            try {
+              const ok = await removeFromDeviceCalendar(event.shortId);
+              if (ok) setInCalendar(false);
+            } finally {
+              setAddingToCalendar(false);
+            }
+          },
+        },
+      ],
+    );
   };
 
   const onVoteDate = async (optionIso: string) => {
@@ -608,6 +661,7 @@ export default function EventDetailScreen() {
   return (
     <View style={{ flex: 1 }}>
     <ScrollView
+      {...scrollGuard}
       style={styles.container}
       contentContainerStyle={[
         styles.content,
@@ -661,18 +715,27 @@ export default function EventDetailScreen() {
           {isOrganizer ? " (toi)" : ""}
         </Text>
         {/* Export vers le calendrier natif — masqué tant que la date est au
-            vote : il n'y a alors rien de ferme à inscrire. */}
-        {d && (
+            vote (rien de ferme à inscrire) et si le module natif manque dans
+            ce binaire. Le bouton bascule en « déjà ajouté » pour ne plus
+            créer de doublon à chaque appui. */}
+        {d && isCalendarAvailable() && (
           <Pressable
-            style={styles.calendarBtn}
-            disabled={addingToCalendar}
-            onPress={onAddToCalendar}
+            style={[styles.calendarBtn, inCalendar && styles.calendarBtnDone]}
+            disabled={addingToCalendar || inCalendar === null}
+            onPress={inCalendar ? onRemoveFromCalendar : onAddToCalendar}
           >
             {addingToCalendar ? (
               <ActivityIndicator size="small" color={colors.primary} />
             ) : (
-              <Text style={styles.calendarBtnText}>
-                🗓️ Ajouter à mon calendrier
+              <Text
+                style={[
+                  styles.calendarBtnText,
+                  inCalendar && styles.calendarBtnTextDone,
+                ]}
+              >
+                {inCalendar
+                  ? "✓ Dans ton calendrier — appuie pour retirer"
+                  : "🗓️ Ajouter à mon calendrier"}
               </Text>
             )}
           </Pressable>
@@ -1469,6 +1532,10 @@ const makeStyles = (c: ThemeColors) =>
     marginTop: 10,
   },
   calendarBtnText: { color: c.primary, fontWeight: "700", fontSize: 14 },
+  // État « déjà ajouté » : vert et discret, c'est une confirmation, pas un
+  // appel à l'action.
+  calendarBtnDone: { borderColor: c.success },
+  calendarBtnTextDone: { color: c.successStrong, fontSize: 13 },
   sectionTitle: { fontSize: 15, fontWeight: "700", color: c.text },
   rsvpRow: { flexDirection: "row", gap: 8, marginTop: 4 },
   rsvpBtn: {
