@@ -9,6 +9,7 @@ const { isAuthenticated } = require("../middleware/jwt.middleware");
 const { notify } = require("../utils/notify");
 const { sendPushToUser } = require("../services/pushService");
 const { isBlockedBetween } = require("../utils/blocking");
+const { nanoid } = require("nanoid");
 
 const personLabel = (dateDoc) =>
   `${dateDoc?.name || ""} ${dateDoc?.surname || ""}`.trim() || "quelqu'un";
@@ -523,6 +524,61 @@ router.post(
       });
     } catch (err) {
       console.error("❌ shared unreserve:", err);
+      res.status(500).json({ message: "Erreur serveur" });
+    }
+  },
+);
+
+// ── Partage public de la liste ──────────────────────────────────────────────
+// Calqué sur la wishlist publique d'un utilisateur : un lien opaque, sans
+// compte requis pour le consulter. Réservé aux membres de la liste.
+const publicUrlFor = (slug) =>
+  `${process.env.FRONTEND_URL || "https://birthreminder.com"}/liste/${slug}`;
+
+router.get("/:id/share", isAuthenticated, loadListAsMember, async (req, res) => {
+  try {
+    const list = req.sharedList;
+    res.json({
+      isPublic: !!list.isPublic,
+      publicSlug: list.publicSlug || null,
+      publicUrl: list.publicSlug ? publicUrlFor(list.publicSlug) : null,
+    });
+  } catch (err) {
+    console.error("❌ shared share get:", err);
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+});
+
+router.patch(
+  "/:id/share/toggle",
+  isAuthenticated,
+  loadListAsMember,
+  async (req, res) => {
+    try {
+      const list = req.sharedList;
+
+      // Slug généré à la première activation puis conservé : un lien déjà
+      // distribué redevient valide si on réactive le partage plus tard.
+      if (!list.publicSlug) {
+        let slug;
+        let exists = true;
+        while (exists) {
+          slug = nanoid(10);
+          exists = await SharedGiftList.findOne({ publicSlug: slug });
+        }
+        list.publicSlug = slug;
+      }
+
+      list.isPublic = !list.isPublic;
+      await list.save();
+
+      res.json({
+        isPublic: list.isPublic,
+        publicSlug: list.publicSlug,
+        publicUrl: publicUrlFor(list.publicSlug),
+      });
+    } catch (err) {
+      console.error("❌ shared share toggle:", err);
       res.status(500).json({ message: "Erreur serveur" });
     }
   },

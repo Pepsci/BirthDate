@@ -12,6 +12,7 @@ import {
   Linking,
   Animated,
   Alert,
+  Share,
 } from "react-native";
 import {
   Stack,
@@ -67,6 +68,9 @@ import {
   deleteSharedGift,
   reserveSharedGift,
   unreserveSharedGift,
+  fetchSharedListShare,
+  toggleSharedListShare,
+  SharedListShareSettings,
   leaveSharedList,
   fetchSentSharedInvitations,
   cancelSharedInvitation,
@@ -313,6 +317,37 @@ export default function DateDetailScreen() {
   // ── Liste commune ──────────────────────────────────────────────────────────
   // Réservation : « je m'en occupe ». Le cadeau reste affiché, grisé et au nom
   // du réserveur ; seul lui peut se libérer (le serveur le vérifie aussi).
+  // ── Partage public de la liste commune ─────────────────────────────────
+  // Même mécanique que la wishlist publique : un lien opaque, consultable
+  // sans compte. Le lien ne révèle ni les membres, ni qui a réservé quoi —
+  // il peut donc être transmis à n'importe qui, y compris à la personne
+  // concernée, sans gâcher la surprise.
+  const [shareSettings, setShareSettings] =
+    useState<SharedListShareSettings | null>(null);
+  const [shareBusy, setShareBusy] = useState(false);
+
+  useEffect(() => {
+    if (!entry?.sharedGiftList) {
+      setShareSettings(null);
+      return;
+    }
+    fetchSharedListShare(entry.sharedGiftList)
+      .then(setShareSettings)
+      .catch(() => setShareSettings(null));
+  }, [entry?.sharedGiftList]);
+
+  const onToggleSharedListShare = async () => {
+    if (!entry?.sharedGiftList || shareBusy) return;
+    setShareBusy(true);
+    try {
+      setShareSettings(await toggleSharedListShare(entry.sharedGiftList));
+    } catch (e: any) {
+      setError(e?.message ?? "Erreur de partage.");
+    } finally {
+      setShareBusy(false);
+    }
+  };
+
   const toggleSharedReservation = (g: SharedGift) => {
     if (!entry?.sharedGiftList || busy) return;
     const mine = g.reservedBy?._id === user?._id;
@@ -324,45 +359,6 @@ export default function DateDetailScreen() {
     );
   };
 
-  // « Tout verser » : pousse d'un coup toutes tes idées de cette personne dans
-  // la liste commune, en sautant celles qui y sont déjà (même nom) pour ne pas
-  // créer de doublons quand on appuie deux fois.
-  const pourAllIntoShared = () => {
-    if (!entry?.sharedGiftList) return;
-    const already = new Set(
-      (sharedList?.gifts ?? []).map((g) => g.giftName.trim().toLowerCase()),
-    );
-    const toAdd = allGifts.filter(
-      (g) => !already.has(g.giftName.trim().toLowerCase()),
-    );
-    if (toAdd.length === 0) {
-      setError("Toutes tes idées sont déjà dans la liste commune.");
-      return;
-    }
-    Alert.alert(
-      "Tout verser ?",
-      `${toAdd.length} idée${toAdd.length > 1 ? "s" : ""} ${toAdd.length > 1 ? "seront ajoutées" : "sera ajoutée"} à la liste commune. Les autres membres les verront.`,
-      [
-        { text: "Annuler", style: "cancel" },
-        {
-          text: "Tout verser",
-          onPress: () =>
-            runShared(async () => {
-              for (const g of toAdd) {
-                await addSharedGift(entry.sharedGiftList!, {
-                  giftName: g.giftName,
-                  occasion: g.occasion,
-                  year: g.year,
-                  url: g.url ?? undefined,
-                  price: g.price ?? undefined,
-                  image: g.image ?? undefined,
-                });
-              }
-            }),
-        },
-      ],
-    );
-  };
 
   const reloadShared = async () => {
     if (entry?.sharedGiftList) {
@@ -1306,17 +1302,27 @@ export default function DateDetailScreen() {
             <>
               <View style={styles.giftsHeader}>
                 <Text style={styles.sectionTitle}>👥 Idées communes</Text>
-                <Pressable
-                  style={styles.newIdeaBtnTop}
-                  onPress={() => {
-                    setEditingSharedGift(null);
-                    setShowSharedForm((v) => !v);
-                  }}
-                >
-                  <Text style={styles.newIdeaTopText}>
-                    {showSharedForm ? "✕ Fermer" : "＋ Ajouter"}
-                  </Text>
-                </Pressable>
+                <View style={styles.sharedHeaderActions}>
+                  <Pressable
+                    style={styles.importFromListBtn}
+                    onPress={() => setImportSharedOpen(true)}
+                  >
+                    <Text style={styles.importFromListText}>
+                      ☑ Ajouter depuis une liste
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    style={styles.newIdeaBtnTop}
+                    onPress={() => {
+                      setEditingSharedGift(null);
+                      setShowSharedForm((v) => !v);
+                    }}
+                  >
+                    <Text style={styles.newIdeaTopText}>
+                      {showSharedForm ? "✕ Fermer" : "＋ Ajouter"}
+                    </Text>
+                  </Pressable>
+                </View>
               </View>
               <Text style={styles.muted}>
                 Membres :{" "}
@@ -1325,25 +1331,7 @@ export default function DateDetailScreen() {
                   .join(", ")}
               </Text>
 
-              {/* Verser ses propres idées dans la liste commune. « Tout
-                  verser » évite d'avoir à cocher une par une, cas le plus
-                  fréquent quand on rejoint une liste. */}
-              <View style={styles.pourRow}>
-                <Pressable
-                  style={[styles.pourBtn, busy && { opacity: 0.5 }]}
-                  disabled={busy}
-                  onPress={pourAllIntoShared}
-                >
-                  <Text style={styles.pourText}>⤵ Tout verser</Text>
-                </Pressable>
-                <Pressable
-                  style={[styles.pourBtn, busy && { opacity: 0.5 }]}
-                  disabled={busy}
-                  onPress={() => setImportSharedOpen(true)}
-                >
-                  <Text style={styles.pourText}>☑ Choisir les idées</Text>
-                </Pressable>
-              </View>
+
 
               {showSharedForm && (
                 <GiftIdeaForm
@@ -1490,6 +1478,49 @@ export default function DateDetailScreen() {
                     </Pressable>
                   );
                 })}
+              </View>
+
+              {/* Partage public : le lien est consultable sans compte et ne
+                  révèle ni les membres ni les réservations. */}
+              <View style={styles.publicShareBox}>
+                <View style={styles.publicShareRow}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.publicShareTitle}>
+                      🔗 Partager cette liste
+                    </Text>
+                    <Text style={styles.publicShareSub}>
+                      {shareSettings?.isPublic
+                        ? "Toute personne ayant le lien peut la consulter"
+                        : "Génère un lien à envoyer à qui tu veux"}
+                    </Text>
+                  </View>
+                  {shareBusy ? (
+                    <ActivityIndicator color={colors.primary} />
+                  ) : (
+                    <Switch
+                      value={!!shareSettings?.isPublic}
+                      onValueChange={onToggleSharedListShare}
+                      trackColor={{ true: colors.primary }}
+                    />
+                  )}
+                </View>
+                {shareSettings?.isPublic && shareSettings.publicUrl && (
+                  <>
+                    <Text style={styles.publicShareUrl} numberOfLines={1}>
+                      {shareSettings.publicUrl}
+                    </Text>
+                    <Pressable
+                      style={styles.publicShareBtn}
+                      onPress={() =>
+                        Share.share({ message: shareSettings.publicUrl! })
+                      }
+                    >
+                      <Text style={styles.publicShareBtnText}>
+                        📤 Envoyer le lien
+                      </Text>
+                    </Pressable>
+                  </>
+                )}
               </View>
 
               <Pressable onPress={onLeaveShared} style={{ marginTop: 6 }}>
@@ -2415,18 +2446,37 @@ const makeStyles = (c: ThemeColors) =>
     marginTop: 4,
     marginBottom: 4,
   },
-  // Verser ses idées dans la liste commune : deux actions de même poids.
-  pourRow: { flexDirection: "row", gap: 8 },
-  pourBtn: {
-    flex: 1,
+  // En-tête de la liste commune : « Ajouter depuis une liste » est une action
+  // secondaire, posée à côté du « + Ajouter » plein qui reste l'action
+  // principale — d'où la bordure au lieu du fond.
+  sharedHeaderActions: { flexDirection: "row", alignItems: "center", gap: 6 },
+  publicShareBox: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: c.border,
+    marginTop: 12,
+    paddingTop: 12,
+    gap: 8,
+  },
+  publicShareRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+  publicShareTitle: { fontSize: 14, fontWeight: "700", color: c.text },
+  publicShareSub: { fontSize: 12, color: c.sub, marginTop: 1 },
+  publicShareUrl: { fontSize: 12, color: c.primary },
+  publicShareBtn: {
     borderWidth: 1,
     borderColor: c.primary,
-    borderStyle: "dashed",
     borderRadius: 10,
     paddingVertical: 9,
     alignItems: "center",
   },
-  pourText: { color: c.primary, fontWeight: "700", fontSize: 13 },
+  publicShareBtnText: { color: c.primary, fontWeight: "700", fontSize: 13 },
+  importFromListBtn: {
+    borderWidth: 1,
+    borderColor: c.border,
+    borderRadius: 999,
+    paddingVertical: 7,
+    paddingHorizontal: 10,
+  },
+  importFromListText: { color: c.sub, fontWeight: "700", fontSize: 12 },
   // Cadeau réservé par quelqu'un d'autre : atténué, mais toujours lisible.
   giftCardReserved: { opacity: 0.55 },
   reservePill: {

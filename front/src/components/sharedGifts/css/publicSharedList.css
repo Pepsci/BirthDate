@@ -1,0 +1,182 @@
+/* Vue publique d'une liste d'idées commune (/liste/:slug).
+   Uniquement des variables CSS globales : le mode sombre est géré par la
+   classe .dark sur le body, aucune couleur en dur ici. */
+
+.psl-page {
+  min-height: 100vh;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.psl-loading,
+.psl-error-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--text-secondary);
+  background: var(--bg-secondary);
+  padding: 24px;
+  text-align: center;
+}
+
+.psl-error-icon {
+  font-size: 40px;
+}
+
+.psl-header {
+  background: var(--bg-primary);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.psl-header-inner {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 20px 16px;
+  text-align: center;
+}
+
+.psl-logo {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-decoration: none;
+}
+
+.psl-tagline {
+  margin: 6px 0 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.psl-main {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+}
+
+.psl-count {
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin: 0 0 16px;
+}
+
+.psl-empty {
+  text-align: center;
+  color: var(--text-secondary);
+  padding: 48px 0;
+}
+
+.psl-empty span {
+  font-size: 40px;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.psl-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.psl-card {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: var(--card-shadow);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Réservé : atténué mais toujours lisible. Le cadeau n'est jamais retiré —
+   le voir disparaître laisserait croire à une suppression. */
+.psl-card--reserved {
+  opacity: 0.62;
+}
+
+.psl-card-img-wrap {
+  aspect-ratio: 1 / 1;
+  background: var(--bg-tertiary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.psl-card-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.psl-card-img-placeholder {
+  font-size: 40px;
+}
+
+.psl-card-body {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+
+.psl-card-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.psl-card-meta {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+.psl-card-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: auto;
+}
+
+.psl-card-price {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.psl-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 999px;
+}
+
+.psl-badge--reserved {
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+
+.psl-card-link {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.psl-card-link:hover {
+  text-decoration: underline;
+}
+
+.psl-notice {
+  margin-top: 32px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-tertiary);
+  line-height: 1.6;
+}

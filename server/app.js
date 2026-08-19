@@ -175,6 +175,9 @@ app.use("/api/stats", statsRouter);
 app.use("/api/stripe/connect", stripeConnectRouter);
 app.use("/api/support", require("./routes/support"));
 app.use("/api/moderation", require("./routes/moderation"));
+// ⚠️ Le routeur public AVANT l'authentifié : sinon "/public/:slug" serait
+// capturé par le "/:id" de sharedGifts.js et exigerait un compte.
+app.use("/api/shared-gifts/public", require("./routes/sharedGifts.public"));
 app.use("/api/shared-gifts", require("./routes/sharedGifts"));
 app.use("/api/admin", require("./routes/admin/index"));
 

@@ -38,6 +38,23 @@ const sharedGiftListSchema = new Schema(
     // Libellé indicatif (ex : "Idées pour Tom")
     label: { type: String, default: null },
     gifts: [sharedGiftSchema],
+
+    // ── Partage public ────────────────────────────────────────────────────
+    // Même principe que la wishlist publique d'un utilisateur : un lien opaque
+    // qu'on donne à qui on veut, sans compte requis pour le consulter.
+    // Le slug est conservé quand on repasse la liste en privé, pour qu'un
+    // lien déjà distribué redevienne valide si on réactive le partage.
+    isPublic: { type: Boolean, default: false },
+    publicSlug: {
+      type: String,
+      default: null,
+      index: {
+        unique: true,
+        // partialFilterExpression : sans ça, toutes les listes non partagées
+        // partageraient la valeur null et violeraient l'unicité.
+        partialFilterExpression: { publicSlug: { $type: "string" } },
+      },
+    },
   },
   { timestamps: true },
 );

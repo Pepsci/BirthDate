@@ -151,3 +151,27 @@ export async function unreserveSharedGift(
     method: "POST",
   });
 }
+
+export interface SharedListShareSettings {
+  isPublic: boolean;
+  publicSlug: string | null;
+  publicUrl: string | null;
+}
+
+/** État du partage public de la liste (lien consultable sans compte). */
+export async function fetchSharedListShare(
+  listId: string,
+): Promise<SharedListShareSettings> {
+  return api(`/shared-gifts/${listId}/share`);
+}
+
+/**
+ * Active ou coupe le partage public. Le lien est généré à la première
+ * activation puis conservé : le couper puis le réactiver redonne la même URL,
+ * donc un lien déjà transmis refonctionne.
+ */
+export async function toggleSharedListShare(
+  listId: string,
+): Promise<SharedListShareSettings> {
+  return api(`/shared-gifts/${listId}/share/toggle`, { method: "PATCH" });
+}

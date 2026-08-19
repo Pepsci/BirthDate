@@ -30,6 +30,7 @@ import EventPage from "./components/events/EventPage";
 import EventForm from "./components/events/EventForm";
 import NotificationToast from "./components/notifications/NotificationToast";
 import PublicWishlist from "./components/wishlist/PublicWishlist";
+import PublicSharedList from "./components/sharedGifts/PublicSharedList";
 import PoolPage from "./components/events/PoolPage";
 import AdminRoute from "./protectedRoutes/AdminRoute";
 import AdminLayout from "./components/admin/AdminLayout";
@@ -95,6 +96,8 @@ function App() {
           {/* ── Routes publiques ── */}
           <Route path="/event/:shortId" element={<EventPage />} />
           <Route path="/wishlist/:publicSlug" element={<PublicWishlist />} />
+          {/* Liste d'idées commune partagée par lien — publique, lecture seule */}
+          <Route path="/liste/:publicSlug" element={<PublicSharedList />} />
           <Route path="/pool/:shortId" element={<PoolPage />} />
 
           <Route element={<PrivateRoute />}>
