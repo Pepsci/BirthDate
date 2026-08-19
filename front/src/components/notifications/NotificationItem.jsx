@@ -26,6 +26,7 @@ const TYPE_CONFIG = {
   shared_gift_updated: { icon: "✏️" },
   shared_gift_removed: { icon: "🗑️" },
   shared_gift_member_left: { icon: "👋" },
+  shared_gift_shared: { icon: "🎁" },
 };
 
 const timeAgo = (dateStr) => {
@@ -125,6 +126,13 @@ const buildText = (type, data) => {
         <>
           {data.fromName} a retiré <strong>{data.giftName}</strong> de votre
           liste commune
+        </>
+      );
+    case "shared_gift_shared":
+      return (
+        <>
+          <strong>{data.fromName}</strong> t'a partagé sa liste de cadeaux
+          {data.listLabel ? ` — ${data.listLabel}` : ""}
         </>
       );
     case "shared_gift_member_left":

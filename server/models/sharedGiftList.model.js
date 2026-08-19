@@ -26,6 +26,9 @@ const sharedGiftSchema = new Schema(
     // concernée n'y a pas accès — donc afficher le nom ne gâche aucune
     // surprise, et c'est ce qui évite le double achat.
     reservedBy: { type: Schema.Types.ObjectId, ref: "User", default: null },
+    // Visiteur du lien public : pas de compte, on ne garde que le prénom qu'il
+    // a saisi. C'est ce qui lui permet ensuite de libérer SA réservation.
+    reservedByGuest: { type: String, default: null },
     reservedAt: { type: Date, default: null },
   },
   { timestamps: true },
@@ -33,8 +36,27 @@ const sharedGiftSchema = new Schema(
 
 const sharedGiftListSchema = new Schema(
   {
+    // `members` : le créateur et les contributeurs. Droits complets — ajouter,
+    // modifier, supprimer une idée, inviter et révoquer des invités.
     members: [{ type: Schema.Types.ObjectId, ref: "User" }],
     createdBy: { type: Schema.Types.ObjectId, ref: "User" },
+
+    // `viewers` : contacts à qui la liste a été partagée depuis l'app. Ils
+    // peuvent CONSULTER et RÉSERVER, rien d'autre — ils ne touchent jamais au
+    // contenu de la liste et ne voient pas les prénoms des réserveurs.
+    // On garde qui a invité et quand, pour l'écran de gestion des accès.
+    viewers: [
+      {
+        user: { type: Schema.Types.ObjectId, ref: "User", required: true },
+        addedBy: { type: Schema.Types.ObjectId, ref: "User", default: null },
+        addedAt: { type: Date, default: Date.now },
+      },
+    ],
+
+    // Code demandé aux visiteurs du lien public AU MOMENT DE RÉSERVER — jamais
+    // pour consulter. Même principe que le code ami des wishlists : le lien
+    // circule librement, mais bloquer un cadeau demande de connaître le code.
+    accessCode: { type: String, default: null },
     // Libellé indicatif (ex : "Idées pour Tom")
     label: { type: String, default: null },
     gifts: [sharedGiftSchema],

@@ -78,7 +78,13 @@ export default function NotificationsScreen() {
         // Échec réseau : la notification réapparaîtra au prochain
         // rafraîchissement, on ne bloque pas la navigation pour autant.
       });
-    const route = webLinkToMobileRoute(n.link);
+    // Une liste partagée n'a pas d'équivalent web : elle doit d'abord être
+    // rattachée à une carte pour s'afficher. On court-circuite donc la
+    // conversion de lien pour envoyer directement sur l'écran de rattachement.
+    const route =
+      n.type === "shared_gift_shared" && n.data?.listId
+        ? `/shared-list/${n.data.listId}/attach`
+        : webLinkToMobileRoute(n.link);
     router.push(route as never);
   };
 

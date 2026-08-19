@@ -308,17 +308,123 @@ async function loadListAsMember(req, res, next) {
   if (!list.members.some((m) => m.toString() === req.payload._id))
     return res.status(403).json({ message: "Non autorisé" });
   req.sharedList = list;
+  req.listRole = "member";
   next();
 }
 
+/**
+ * Membre OU invité. À utiliser pour tout ce qui relève de la consultation et
+ * de la réservation ; `loadListAsMember` reste requis pour modifier le contenu
+ * de la liste ou gérer les accès.
+ *
+ * Pose `req.listRole` : les routes s'en servent pour masquer aux invités les
+ * prénoms des réserveurs. Un invité voit qu'un cadeau est pris, jamais par qui.
+ */
+async function loadListAsParticipant(req, res, next) {
+  if (!mongoose.isValidObjectId(req.params.id))
+    return res.status(400).json({ message: "ID invalide" });
+  const list = await SharedGiftList.findById(req.params.id);
+  if (!list) return res.status(404).json({ message: "Liste introuvable" });
+
+  const uid = req.payload._id;
+  const isMember = list.members.some((m) => m.toString() === uid);
+  const isViewer = (list.viewers || []).some(
+    (v) => v.user && v.user.toString() === uid,
+  );
+  if (!isMember && !isViewer)
+    return res.status(403).json({ message: "Non autorisé" });
+
+  req.sharedList = list;
+  req.listRole = isMember ? "member" : "viewer";
+  next();
+}
+
+/**
+ * Vue d'une liste adaptée au rôle. Un invité reçoit `reservedBy` réduit à un
+ * booléen : c'est ici, au seul endroit qui sérialise la liste, qu'on garantit
+ * qu'aucun prénom de réserveur ne fuite vers un non-membre.
+ */
+function serializeListForRole(list, role, userId) {
+  const obj = list.toObject ? list.toObject() : list;
+  if (role === "member") return obj;
+
+  return {
+    ...obj,
+    // Les invités n'ont pas à connaître la composition de la liste.
+    viewers: undefined,
+    accessCode: undefined,
+    members: undefined,
+    gifts: (obj.gifts || []).map((g) => {
+      // reservedBy peut être peuplé (objet) ou brut (ObjectId) selon l'appel.
+      const rid = g.reservedBy?._id ?? g.reservedBy;
+      return {
+        ...g,
+        addedBy: undefined,
+        reservedBy: undefined,
+        reservedByGuest: undefined,
+        isReserved: !!g.reservedBy || !!g.reservedByGuest,
+        // Le seul lien conservé : est-ce MOI qui ai réservé ? Sans lui,
+        // l'invité ne pourrait pas annuler sa propre réservation.
+        reservedByMe: !!rid && String(rid) === String(userId),
+      };
+    }),
+  };
+}
+
+// ── Listes partagées avec moi, pas encore rattachées ────────────────────────
+// Une liste ne s'affiche dans l'app que rattachée à une carte. Sans cette
+// route, un invité qui supprime sa notification n'aurait plus aucun moyen
+// d'atteindre la liste : elle existerait pour lui sans être joignable.
+//
+// ⚠️ Déclarée AVANT `/:id` — sinon "shared-with-me" serait pris pour un id.
+router.get("/shared-with-me", isAuthenticated, async (req, res) => {
+  try {
+    const uid = req.payload._id;
+
+    const lists = await SharedGiftList.find({ "viewers.user": uid })
+      .select("label gifts createdBy")
+      .populate("createdBy", "name surname");
+
+    // Celles déjà posées sur une de mes cartes n'ont plus à être proposées.
+    const attached = await DateModel.find({
+      owner: uid,
+      sharedGiftList: { $ne: null },
+    }).select("sharedGiftList");
+    const attachedIds = new Set(
+      attached.map((d) => d.sharedGiftList.toString()),
+    );
+
+    res.json(
+      lists
+        .filter((l) => !attachedIds.has(l._id.toString()))
+        .map((l) => ({
+          _id: l._id,
+          label: l.label || null,
+          giftCount: (l.gifts || []).length,
+          from: l.createdBy
+            ? { name: l.createdBy.name, surname: l.createdBy.surname }
+            : null,
+        })),
+    );
+  } catch (err) {
+    console.error("❌ shared-with-me:", err);
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+});
+
 // ── Détail liste (gifts + membres) ──────────────────────────────────────────
-router.get("/:id", isAuthenticated, loadListAsMember, async (req, res) => {
+router.get("/:id", isAuthenticated, loadListAsParticipant, async (req, res) => {
   try {
     const list = await SharedGiftList.findById(req.params.id)
       .populate("members", "name surname avatar")
       .populate("gifts.addedBy", "name surname")
       .populate("gifts.reservedBy", "name surname");
-    res.json(list);
+    // `myRole` permet à l'app de masquer d'emblée ce qu'un invité ne peut pas
+    // faire, plutôt que de lui laisser découvrir ses limites par des 403.
+    res.json({
+      ...serializeListForRole(list, req.listRole, req.payload._id),
+      myRole: req.listRole,
+    });
   } catch (err) {
     console.error("❌ shared get:", err);
     res.status(500).json({ message: "Erreur serveur" });
@@ -456,7 +562,9 @@ router.delete(
 router.post(
   "/:id/gifts/:giftId/reserve",
   isAuthenticated,
-  loadListAsMember,
+  // Participant et non membre : réserver est justement ce qu'un invité vient
+  // faire. Seul le contenu de la liste lui reste interdit.
+  loadListAsParticipant,
   async (req, res) => {
     try {
       const gift = req.sharedList.gifts.id(req.params.giftId);
@@ -469,7 +577,9 @@ router.post(
       gift.reservedBy = req.payload._id;
       gift.reservedAt = new Date();
       await req.sharedList.save();
-      res.json(req.sharedList);
+      res.json(
+        serializeListForRole(req.sharedList, req.listRole, req.payload._id),
+      );
 
       const who = await actorName(req.payload._id);
       await notifyOtherMembers(req.app, req.sharedList, req.payload._id, {
@@ -493,7 +603,9 @@ router.post(
 router.post(
   "/:id/gifts/:giftId/unreserve",
   isAuthenticated,
-  loadListAsMember,
+  // Participant et non membre : réserver est justement ce qu'un invité vient
+  // faire. Seul le contenu de la liste lui reste interdit.
+  loadListAsParticipant,
   async (req, res) => {
     try {
       const gift = req.sharedList.gifts.id(req.params.giftId);
@@ -508,7 +620,9 @@ router.post(
       gift.reservedBy = null;
       gift.reservedAt = null;
       await req.sharedList.save();
-      res.json(req.sharedList);
+      res.json(
+        serializeListForRole(req.sharedList, req.listRole, req.payload._id),
+      );
 
       const who = await actorName(req.payload._id);
       await notifyOtherMembers(req.app, req.sharedList, req.payload._id, {
@@ -524,6 +638,203 @@ router.post(
       });
     } catch (err) {
       console.error("❌ shared unreserve:", err);
+      res.status(500).json({ message: "Erreur serveur" });
+    }
+  },
+);
+
+// ── Accès à la liste : qui la voit, code de réservation ─────────────────────
+// Réservé aux membres — créateur et contributeurs. Un invité ne gère pas les
+// accès et ne connaît même pas la composition de la liste.
+
+/** Code court, lisible à l'oral, sans caractères ambigus (0/O, 1/I). */
+const generateAccessCode = () => {
+  const alphabet = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+  let out = "";
+  for (let i = 0; i < 6; i++)
+    out += alphabet[Math.floor(Math.random() * alphabet.length)];
+  return out;
+};
+
+router.get("/:id/access", isAuthenticated, loadListAsMember, async (req, res) => {
+  try {
+    const list = await SharedGiftList.findById(req.params.id)
+      .populate("members", "name surname avatar")
+      .populate("viewers.user", "name surname avatar")
+      .populate("viewers.addedBy", "name surname");
+
+    res.json({
+      members: list.members,
+      viewers: (list.viewers || []).filter((v) => v.user),
+      accessCode: list.accessCode || null,
+      createdBy: list.createdBy,
+    });
+  } catch (err) {
+    console.error("❌ shared access:", err);
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+});
+
+/** (Re)génère le code demandé aux visiteurs web au moment de réserver. */
+router.post(
+  "/:id/access/code",
+  isAuthenticated,
+  loadListAsMember,
+  async (req, res) => {
+    try {
+      req.sharedList.accessCode = generateAccessCode();
+      await req.sharedList.save();
+      res.json({ accessCode: req.sharedList.accessCode });
+    } catch (err) {
+      console.error("❌ shared access code:", err);
+      res.status(500).json({ message: "Erreur serveur" });
+    }
+  },
+);
+
+// ── Partage interne : donner accès à un contact ─────────────────────────────
+// L'invité peut consulter et réserver, jamais modifier la liste.
+router.post("/:id/viewers", isAuthenticated, loadListAsMember, async (req, res) => {
+  try {
+    const { friendId } = req.body;
+    if (!mongoose.isValidObjectId(friendId))
+      return res.status(400).json({ message: "Contact invalide" });
+
+    const list = req.sharedList;
+
+    if (list.members.some((m) => m.toString() === friendId))
+      return res
+        .status(400)
+        .json({ message: "Cette personne est déjà membre de la liste" });
+
+    if ((list.viewers || []).some((v) => v.user?.toString() === friendId))
+      return res
+        .status(400)
+        .json({ message: "Cette personne a déjà accès à la liste" });
+
+    // Blocage : refus silencieux, cohérent avec le reste de l'app.
+    if (await isBlockedBetween(req.payload._id, friendId))
+      return res.status(201).json({ ok: true });
+
+    list.viewers.push({
+      user: friendId,
+      addedBy: req.payload._id,
+      addedAt: new Date(),
+    });
+    await list.save();
+
+    const who = await actorName(req.payload._id);
+    await notify(req.app, {
+      userId: friendId,
+      type: "shared_gift_shared",
+      data: {
+        fromName: who,
+        listId: list._id.toString(),
+        listLabel: list.label || null,
+      },
+      link: "/home?tab=friends",
+    });
+    await sendPushToUser(friendId, {
+      title: "🎁 Une liste de cadeaux t'a été partagée",
+      body: `${who} t'a donné accès à sa liste d'idées`,
+      url: "/home?tab=friends",
+      tag: `shared-list-shared-${list._id}`,
+      type: "shared_list",
+    });
+
+    res.status(201).json({ ok: true });
+  } catch (err) {
+    console.error("❌ shared add viewer:", err);
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+});
+
+/** Retirer l'accès à un invité. Membres uniquement. */
+router.delete(
+  "/:id/viewers/:userId",
+  isAuthenticated,
+  loadListAsMember,
+  async (req, res) => {
+    try {
+      const { userId } = req.params;
+      const list = req.sharedList;
+      const before = (list.viewers || []).length;
+      list.viewers = (list.viewers || []).filter(
+        (v) => v.user?.toString() !== userId,
+      );
+      if (list.viewers.length === before)
+        return res.status(404).json({ message: "Cet invité n'a pas d'accès" });
+
+      await list.save();
+
+      // Détache la liste de la carte de l'invité : sans ça il garderait un
+      // encart « Liste commune » qui renverrait désormais un 403.
+      await DateModel.updateMany(
+        { owner: userId, sharedGiftList: list._id },
+        { sharedGiftList: null },
+      );
+
+      res.json({ ok: true });
+    } catch (err) {
+      console.error("❌ shared remove viewer:", err);
+      res.status(500).json({ message: "Erreur serveur" });
+    }
+  },
+);
+
+// ── Rattacher la liste à une de MES cartes ──────────────────────────────────
+// Une liste ne s'affiche dans l'app que rattachée à une carte (Date). Cette
+// route sert au destinataire d'un partage : il choisit la carte existante de
+// la personne concernée, ou en crée une au passage.
+//
+// ⚠️ Règle « une seule liste par carte » : une carte ne peut porter qu'une
+// liste commune. Si elle en a déjà une autre, on refuse en le disant, et le
+// client peut renvoyer `replace: true` pour remplacer volontairement.
+router.post(
+  "/:id/attach",
+  isAuthenticated,
+  loadListAsParticipant,
+  async (req, res) => {
+    try {
+      const { dateId, newDate, replace } = req.body;
+      const uid = req.payload._id;
+      const list = req.sharedList;
+      let target = null;
+
+      if (dateId) {
+        if (!mongoose.isValidObjectId(dateId))
+          return res.status(400).json({ message: "Carte invalide" });
+        target = await DateModel.findOne({ _id: dateId, owner: uid });
+        if (!target)
+          return res.status(404).json({ message: "Carte introuvable" });
+      } else if (newDate?.name && newDate?.date) {
+        target = await DateModel.create({
+          owner: uid,
+          name: newDate.name,
+          surname: newDate.surname || "",
+          date: newDate.date,
+        });
+      } else {
+        return res
+          .status(400)
+          .json({ message: "Précise une carte existante ou une nouvelle" });
+      }
+
+      const current = target.sharedGiftList?.toString();
+      if (current && current !== list._id.toString() && !replace) {
+        return res.status(409).json({
+          code: "ALREADY_HAS_LIST",
+          message:
+            "Cette personne a déjà une liste commune. Tu ne peux en avoir qu'une par carte.",
+        });
+      }
+
+      target.sharedGiftList = list._id;
+      await target.save();
+
+      res.json({ ok: true, dateId: target._id });
+    } catch (err) {
+      console.error("❌ shared attach:", err);
       res.status(500).json({ message: "Erreur serveur" });
     }
   },

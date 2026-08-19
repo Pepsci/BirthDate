@@ -8,10 +8,12 @@ import {
   ActivityIndicator,
   RefreshControl,
 } from "react-native";
-import { Stack, useFocusEffect } from "expo-router";
+import { Stack, useFocusEffect, useRouter } from "expo-router";
 import {
   SharedInvitation,
+  SharedListPending,
   fetchSharedInvitations,
+  fetchListsSharedWithMe,
   acceptSharedInvitation,
   declineSharedInvitation,
 } from "../lib/sharedGifts";
@@ -25,6 +27,7 @@ import {
 
 export default function SharedInvitesScreen() {
   const styles = useThemedStyles(makeStyles);
+  const router = useRouter();
   const { colors } = useTheme();
   const [invites, setInvites] = useState<SharedInvitation[] | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -33,11 +36,20 @@ export default function SharedInvitesScreen() {
   // Sélection de carte pour accepter
   const [accepting, setAccepting] = useState<SharedInvitation | null>(null);
   const [dates, setDates] = useState<DateEntry[]>([]);
+  // Listes qu'on m'a partagées en lecture et que je n'ai pas encore posées sur
+  // une carte. Sans cette liste, supprimer la notification les rendrait
+  // définitivement introuvables.
+  const [pending, setPending] = useState<SharedListPending[]>([]);
 
   const load = useCallback(async () => {
     try {
       setError(null);
-      setInvites(await fetchSharedInvitations());
+      const [inv, shared] = await Promise.all([
+        fetchSharedInvitations(),
+        fetchListsSharedWithMe().catch(() => []),
+      ]);
+      setInvites(inv);
+      setPending(shared);
     } catch (e: any) {
       setError(e?.message ?? "Erreur de chargement.");
     }
@@ -116,8 +128,38 @@ export default function SharedInvitesScreen() {
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
+        ListHeaderComponent={
+          pending.length > 0 ? (
+            <View style={{ marginBottom: 8 }}>
+              <Text style={styles.sectionTitle}>Listes partagées avec toi</Text>
+              {pending.map((l) => (
+                <Pressable
+                  key={l._id}
+                  style={styles.card}
+                  onPress={() => router.push(`/shared-list/${l._id}/attach`)}
+                >
+                  <Text style={styles.cardText}>
+                    <Text style={styles.bold}>
+                      {l.from
+                        ? `${l.from.name} ${l.from.surname ?? ""}`.trim()
+                        : "Quelqu'un"}
+                    </Text>{" "}
+                    t'a partagé une liste
+                    {l.label ? ` pour ${l.label}` : ""} — {l.giftCount} idée
+                    {l.giftCount > 1 ? "s" : ""}.
+                  </Text>
+                  <Text style={styles.pendingHint}>
+                    Appuie pour l'ajouter à une carte et pouvoir réserver.
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          ) : null
+        }
         ListEmptyComponent={
-          <Text style={styles.empty}>Aucune invitation en attente.</Text>
+          pending.length > 0 ? null : (
+            <Text style={styles.empty}>Aucune invitation en attente.</Text>
+          )
         }
         renderItem={({ item }) => (
           <View style={styles.card}>
@@ -188,6 +230,14 @@ const makeStyles = (c: ThemeColors) =>
   },
   error: { color: c.danger, textAlign: "center", padding: 8 },
   list: { padding: 12, gap: 10 },
+  sectionTitle: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: c.sub,
+    textTransform: "uppercase",
+    marginBottom: 6,
+  },
+  pendingHint: { fontSize: 12, color: c.primary, marginTop: 6 },
   empty: { textAlign: "center", color: c.sub, marginTop: 32 },
   card: {
     backgroundColor: c.card,

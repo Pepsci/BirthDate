@@ -22,7 +22,8 @@ export type NotifType =
   | "shared_gift_added"
   | "shared_gift_updated"
   | "shared_gift_removed"
-  | "shared_gift_member_left";
+  | "shared_gift_member_left"
+  | "shared_gift_shared";
 
 export interface AppNotification {
   _id: string;
@@ -182,6 +183,11 @@ export function notifDisplay(n: AppNotification): {
       return {
         emoji: "🗑️",
         text: `${d.fromName ?? who} a retiré « ${d.giftName ?? "une idée"} »${d.listLabel ? ` de ${d.listLabel}` : " de votre liste commune"}`,
+      };
+    case "shared_gift_shared":
+      return {
+        emoji: "🎁",
+        text: `${d.fromName ?? who} t'a partagé sa liste de cadeaux${d.listLabel ? ` — ${d.listLabel}` : ""}`,
       };
     case "shared_gift_member_left":
       return {

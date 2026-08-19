@@ -325,6 +325,9 @@ export default function DateDetailScreen() {
   const [shareSettings, setShareSettings] =
     useState<SharedListShareSettings | null>(null);
   const [shareBusy, setShareBusy] = useState(false);
+  // Le partage vit dans une feuille : trois réglages (lien public, envoi,
+  // gestion des accès) alourdiraient l'en-tête s'ils y étaient dépliés.
+  const [shareSheetOpen, setShareSheetOpen] = useState(false);
 
   useEffect(() => {
     if (!entry?.sharedGiftList) {
@@ -348,10 +351,22 @@ export default function DateDetailScreen() {
     }
   };
 
+  // Rôle sur la liste commune. Absent = membre : les listes créées avant les
+  // invités n'ont pas ce champ, et leurs participants sont tous membres.
+  const isSharedMember = (sharedList?.myRole ?? "member") === "member";
+
+  /** Réservé par moi, quel que soit le rôle : un membre reçoit `reservedBy`
+   *  peuplé, un invité seulement le booléen `reservedByMe`. */
+  const isReservedByMe = (g: SharedGift) =>
+    g.reservedByMe ?? g.reservedBy?._id === user?._id;
+
+  /** Réservé, tout court — un invité ne reçoit pas `reservedBy`. */
+  const isReserved = (g: SharedGift) => g.isReserved ?? !!g.reservedBy;
+
   const toggleSharedReservation = (g: SharedGift) => {
     if (!entry?.sharedGiftList || busy) return;
-    const mine = g.reservedBy?._id === user?._id;
-    if (g.reservedBy && !mine) return; // réservé par quelqu'un d'autre
+    const mine = isReservedByMe(g);
+    if (isReserved(g) && !mine) return; // réservé par quelqu'un d'autre
     runShared(() =>
       mine
         ? unreserveSharedGift(entry.sharedGiftList!, g._id)
@@ -1302,15 +1317,11 @@ export default function DateDetailScreen() {
             <>
               <View style={styles.giftsHeader}>
                 <Text style={styles.sectionTitle}>👥 Idées communes</Text>
-                <View style={styles.sharedHeaderActions}>
-                  <Pressable
-                    style={styles.importFromListBtn}
-                    onPress={() => setImportSharedOpen(true)}
-                  >
-                    <Text style={styles.importFromListText}>
-                      ☑ Ajouter depuis une liste
-                    </Text>
-                  </Pressable>
+                {/* Un invité consulte et réserve : rien qui modifie la
+                    liste ne lui est proposé. Le serveur refuse de toute
+                    façon, mais lui montrer des boutons inertes serait pire
+                    que de ne pas les afficher. */}
+                {isSharedMember && (
                   <Pressable
                     style={styles.newIdeaBtnTop}
                     onPress={() => {
@@ -1322,14 +1333,45 @@ export default function DateDetailScreen() {
                       {showSharedForm ? "✕ Fermer" : "＋ Ajouter"}
                     </Text>
                   </Pressable>
-                </View>
+                )}
               </View>
-              <Text style={styles.muted}>
-                Membres :{" "}
-                {sharedList.members
-                  .map((m) => `${m.name}${m.surname ? " " + m.surname : ""}`)
-                  .join(", ")}
-              </Text>
+
+              {/* Actions secondaires sur leur propre ligne. Les trois boutons
+                  alignés avec le titre débordaient et tronquaient « Ajouter ».
+                  Partage et gestion sont ici, en haut : sur une liste longue,
+                  aller les chercher tout en bas était pénible. */}
+              {isSharedMember && (
+                <View style={styles.sharedHeaderActions}>
+                  <Pressable
+                    style={styles.importFromListBtn}
+                    onPress={() => setImportSharedOpen(true)}
+                  >
+                    <Text style={styles.importFromListText}>
+                      ☑ Ajouter depuis une liste
+                    </Text>
+                  </Pressable>
+                  <Pressable
+                    style={styles.importFromListBtn}
+                    onPress={() => setShareSheetOpen(true)}
+                  >
+                    <Text style={styles.importFromListText}>
+                      🔗 Partager
+                    </Text>
+                  </Pressable>
+                </View>
+              )}
+              {isSharedMember ? (
+                <Text style={styles.muted}>
+                  Membres :{" "}
+                  {(sharedList.members ?? [])
+                    .map((m) => `${m.name}${m.surname ? " " + m.surname : ""}`)
+                    .join(", ")}
+                </Text>
+              ) : (
+                <Text style={styles.muted}>
+                  Liste partagée avec toi — tu peux consulter et réserver.
+                </Text>
+              )}
 
 
 
@@ -1394,8 +1436,8 @@ export default function DateDetailScreen() {
                   .map((g) => {
                   const st = giftStatusOf(g);
                   const meta = GIFT_STATUS_META[st];
-                  const reservedByMe = g.reservedBy?._id === user?._id;
-                  const reservedByOther = !!g.reservedBy && !reservedByMe;
+                  const reservedByMe = isReservedByMe(g);
+                  const reservedByOther = isReserved(g) && !reservedByMe;
                   return (
                     <Pressable
                       key={g._id}
@@ -1438,20 +1480,23 @@ export default function DateDetailScreen() {
                         onPress={() => toggleSharedReservation(g)}
                         style={[
                           styles.reservePill,
-                          g.reservedBy && styles.reservePillTaken,
+                          isReserved(g) && styles.reservePillTaken,
                         ]}
                       >
                         <Text
                           style={[
                             styles.sharedReserveText,
-                            g.reservedBy && styles.sharedReserveTextTaken,
+                            isReserved(g) && styles.sharedReserveTextTaken,
                           ]}
                           numberOfLines={1}
                         >
                           {reservedByMe
                             ? "✓ Tu t'en occupes · annuler"
                             : reservedByOther
-                              ? `🔒 Réservé par ${g.reservedBy!.name}`
+                              ? // Le prénom n'est connu que des membres.
+                                g.reservedBy?.name
+                                ? `🔒 Réservé par ${g.reservedBy.name}`
+                                : "🔒 Réservé"
                               : "＋ Je m'en occupe"}
                         </Text>
                       </Pressable>
@@ -1461,8 +1506,11 @@ export default function DateDetailScreen() {
                             <Text style={styles.pricePillText}>{g.price} €</Text>
                           </View>
                         )}
+                        {/* Changer le statut modifie la liste : lecture
+                            seule pour un invité, qui voit l'état sans
+                            pouvoir le faire basculer. */}
                         <Pressable
-                          disabled={busy}
+                          disabled={busy || !isSharedMember}
                           onPress={() =>
                             setSharedGiftStatus(g, nextGiftStatus(st))
                           }
@@ -1478,49 +1526,6 @@ export default function DateDetailScreen() {
                     </Pressable>
                   );
                 })}
-              </View>
-
-              {/* Partage public : le lien est consultable sans compte et ne
-                  révèle ni les membres ni les réservations. */}
-              <View style={styles.publicShareBox}>
-                <View style={styles.publicShareRow}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.publicShareTitle}>
-                      🔗 Partager cette liste
-                    </Text>
-                    <Text style={styles.publicShareSub}>
-                      {shareSettings?.isPublic
-                        ? "Toute personne ayant le lien peut la consulter"
-                        : "Génère un lien à envoyer à qui tu veux"}
-                    </Text>
-                  </View>
-                  {shareBusy ? (
-                    <ActivityIndicator color={colors.primary} />
-                  ) : (
-                    <Switch
-                      value={!!shareSettings?.isPublic}
-                      onValueChange={onToggleSharedListShare}
-                      trackColor={{ true: colors.primary }}
-                    />
-                  )}
-                </View>
-                {shareSettings?.isPublic && shareSettings.publicUrl && (
-                  <>
-                    <Text style={styles.publicShareUrl} numberOfLines={1}>
-                      {shareSettings.publicUrl}
-                    </Text>
-                    <Pressable
-                      style={styles.publicShareBtn}
-                      onPress={() =>
-                        Share.share({ message: shareSettings.publicUrl! })
-                      }
-                    >
-                      <Text style={styles.publicShareBtnText}>
-                        📤 Envoyer le lien
-                      </Text>
-                    </Pressable>
-                  </>
-                )}
               </View>
 
               <Pressable onPress={onLeaveShared} style={{ marginTop: 6 }}>
@@ -1748,6 +1753,65 @@ export default function DateDetailScreen() {
       </BottomSheet>
 
       {/* Partage d'idées cadeaux dans le chat */}
+      {/* Partage de la liste commune : lien public, envoi, gestion des accès */}
+      <BottomSheet
+        visible={shareSheetOpen}
+        onClose={() => setShareSheetOpen(false)}
+      >
+        <Text style={styles.sheetTitle}>Partager la liste commune</Text>
+
+        <View style={styles.publicShareRow}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.publicShareTitle}>Lien public</Text>
+            <Text style={styles.publicShareSub}>
+              {shareSettings?.isPublic
+                ? "Toute personne ayant le lien peut la consulter"
+                : "Génère un lien à envoyer à qui tu veux"}
+            </Text>
+          </View>
+          {shareBusy ? (
+            <ActivityIndicator color={colors.primary} />
+          ) : (
+            <Switch
+              value={!!shareSettings?.isPublic}
+              onValueChange={onToggleSharedListShare}
+              trackColor={{ true: colors.primary }}
+            />
+          )}
+        </View>
+
+        {shareSettings?.isPublic && shareSettings.publicUrl && (
+          <>
+            <Text style={styles.publicShareUrl} numberOfLines={1}>
+              {shareSettings.publicUrl}
+            </Text>
+            <Pressable
+              style={styles.publicShareBtn}
+              onPress={() => Share.share({ message: shareSettings.publicUrl! })}
+            >
+              <Text style={styles.publicShareBtnText}>📤 Envoyer le lien</Text>
+            </Pressable>
+          </>
+        )}
+
+        <Pressable
+          style={styles.publicShareBtn}
+          onPress={() => {
+            setShareSheetOpen(false);
+            router.push(`/shared-list/${entry.sharedGiftList}/access`);
+          }}
+        >
+          <Text style={styles.publicShareBtnText}>
+            👥 Gérer les accès et le code
+          </Text>
+        </Pressable>
+
+        <Text style={styles.publicShareSub}>
+          Les invités consultent et réservent, sans modifier la liste. Le code
+          n'est demandé qu'au moment de réserver depuis le lien public.
+        </Text>
+      </BottomSheet>
+
       <BottomSheet visible={shareOpen} onClose={() => setShareOpen(false)}>
         {shareStep === 1 ? (
           <>
@@ -2270,6 +2334,9 @@ const makeStyles = (c: ThemeColors) =>
     borderRadius: 10,
     paddingVertical: 7,
     paddingHorizontal: 12,
+    // flexShrink: 0 — sans lui, c'est le bouton qui se comprime quand le titre
+    // est long, et son libellé se retrouve tronqué au lieu du titre.
+    flexShrink: 0,
   },
   newIdeaTopText: { color: c.white, fontWeight: "700", fontSize: 13 },
 
@@ -2449,24 +2516,31 @@ const makeStyles = (c: ThemeColors) =>
   // En-tête de la liste commune : « Ajouter depuis une liste » est une action
   // secondaire, posée à côté du « + Ajouter » plein qui reste l'action
   // principale — d'où la bordure au lieu du fond.
-  sharedHeaderActions: { flexDirection: "row", alignItems: "center", gap: 6 },
-  publicShareBox: {
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: c.border,
-    marginTop: 12,
-    paddingTop: 12,
-    gap: 8,
+  // flexWrap : sur un écran étroit les deux boutons passent à la ligne plutôt
+  // que de se tronquer l'un l'autre.
+  sharedHeaderActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    flexWrap: "wrap",
+    marginTop: 8,
   },
-  publicShareRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+  publicShareRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginTop: 12,
+  },
   publicShareTitle: { fontSize: 14, fontWeight: "700", color: c.text },
   publicShareSub: { fontSize: 12, color: c.sub, marginTop: 1 },
-  publicShareUrl: { fontSize: 12, color: c.primary },
+  publicShareUrl: { fontSize: 12, color: c.primary, marginTop: 10 },
   publicShareBtn: {
     borderWidth: 1,
     borderColor: c.primary,
     borderRadius: 10,
     paddingVertical: 9,
     alignItems: "center",
+    marginTop: 10,
   },
   publicShareBtnText: { color: c.primary, fontWeight: "700", fontSize: 13 },
   importFromListBtn: {

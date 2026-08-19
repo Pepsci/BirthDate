@@ -38,6 +38,8 @@ const notificationSchema = new mongoose.Schema(
         "shared_gift_updated",
         "shared_gift_removed",
         "shared_gift_member_left",
+        // Liste partagée à un contact en lecture + réservation.
+        "shared_gift_shared",
       ],
       required: true,
     },

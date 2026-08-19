@@ -180,3 +180,123 @@
   color: var(--text-tertiary);
   line-height: 1.6;
 }
+
+/* ── Réservation par un visiteur ─────────────────────────────────────────── */
+
+.psl-btn {
+  margin-top: 8px;
+  width: 100%;
+  border: 1px solid var(--primary);
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  background: transparent;
+  color: var(--primary);
+}
+
+.psl-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* Libérer sa propre réservation : action de retrait, donc en teinte danger. */
+.psl-btn--free {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.psl-inline-error {
+  background: var(--bg-tertiary);
+  color: var(--danger);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 13px;
+  margin: 0 0 16px;
+}
+
+.psl-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 50;
+}
+
+.psl-modal {
+  background: var(--bg-primary);
+  border-radius: 16px;
+  padding: 20px;
+  width: 100%;
+  max-width: 360px;
+  box-shadow: var(--card-shadow-hover);
+}
+
+.psl-modal h3 {
+  margin: 0 0 12px;
+  font-size: 17px;
+  color: var(--text-primary);
+}
+
+.psl-modal-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin: 10px 0 4px;
+}
+
+.psl-modal-input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 10px;
+  font-size: 15px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.psl-modal-input--code {
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.psl-modal-error {
+  color: var(--danger);
+  font-size: 13px;
+  margin: 10px 0 0;
+}
+
+.psl-modal-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.psl-modal-cancel,
+.psl-modal-confirm {
+  flex: 1;
+  border-radius: 10px;
+  padding: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.psl-modal-cancel {
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  border: none;
+}
+
+.psl-modal-confirm {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+}
