@@ -17,6 +17,30 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.5.0",
+    date: "2026-08-19",
+    build: "35",
+    title: "Listes communes partageables, r\u00e9servations & correctif de d\u00e9connexion",
+    note: "Merci de signaler tout ce qui bloque. Les points marqu\u00e9s \u26a0\ufe0f n\u00e9cessitent la nouvelle version du serveur.",
+    items: [
+      "\ud83d\udd11 \u26a0\ufe0f Tu \u00e9tais d\u00e9connect\u00e9 sans raison ? La moindre modification de profil \u2014 m\u00eame un simple interrupteur de notification \u2014 ramenait ta session de 30 jours \u00e0 6 heures. Fermer l'application une nuit suffisait alors \u00e0 devoir se reconnecter. Une derni\u00e8re reconnexion sera n\u00e9cessaire, puis la session tiendra bien 30 jours.",
+      "\ud83c\udf81 \u26a0\ufe0f Listes communes \u2014 r\u00e9servation : \u00ab Je m'en occupe \u00bb sur une id\u00e9e. Les autres membres la voient gris\u00e9e avec ton pr\u00e9nom, et toi seul peux annuler ta r\u00e9servation si le cadeau n'est finalement pas offert.",
+      "\ud83d\udd17 \u26a0\ufe0f Listes communes \u2014 partage par lien : g\u00e9n\u00e8re un lien consultable sans compte. Un code, que tu g\u00e9n\u00e8res depuis \u00ab G\u00e9rer les acc\u00e8s \u00bb, est demand\u00e9 pour r\u00e9server ; consulter ne l'exige pas. Les visiteurs ne voient jamais qui a r\u00e9serv\u00e9 quoi.",
+      "\ud83d\udc65 \u26a0\ufe0f Listes communes \u2014 partage \u00e0 un contact : il pourra consulter et r\u00e9server, jamais modifier la liste. Il la rattache \u00e0 une carte existante ou en cr\u00e9e une, et elle appara\u00eet alors dans son application.",
+      "\ud83d\udd10 \u26a0\ufe0f Listes communes \u2014 gestion des acc\u00e8s : un \u00e9cran montre les membres, les invit\u00e9s et par qui ils ont \u00e9t\u00e9 invit\u00e9s, avec la possibilit\u00e9 de retirer un acc\u00e8s \u00e0 tout moment.",
+      "\ud83d\uddc2\ufe0f \u26a0\ufe0f Une carte ne peut porter qu'une seule liste commune. Si tu en re\u00e7ois une seconde pour la m\u00eame personne, l'application te le dit et te propose de remplacer l'actuelle.",
+      "\u21a9\ufe0f Supprimer une id\u00e9e d'une liste commune laisse maintenant quelques secondes pour annuler, comme sur tes id\u00e9es personnelles.",
+      "\u2611\ufe0f \u00ab Ajouter depuis une liste \u00bb est remont\u00e9 \u00e0 c\u00f4t\u00e9 de \u00ab + Ajouter \u00bb, et le partage se fait depuis le haut de l'encart \u2014 plus besoin de d\u00e9filer jusqu'en bas sur une longue liste.",
+      "\ud83d\udd14 \u26a0\ufe0f Notifications de liste commune : ajout, modification, suppression d'une id\u00e9e et d\u00e9part d'un membre. Le passage en achet\u00e9 ou offert est indiqu\u00e9 dans le texte, pour \u00e9viter d'acheter deux fois le m\u00eame cadeau. Elles ont leur propre interrupteur dans Notifications push.",
+      "\ud83c\udf82 \u26a0\ufe0f Anniversaires et f\u00eates ont d\u00e9sormais chacun leur interrupteur push : ils partageaient le m\u00eame, impossible de garder l'un sans l'autre.",
+      "\ud83d\udcec Dans le centre de notifications, appuyer sur une notification la fait dispara\u00eetre une fois qu'elle t'a emmen\u00e9 au bon endroit. Le bouton \u00ab D\u00e9plier / R\u00e9duire \u00bb a \u00e9t\u00e9 retir\u00e9 : il s'affichait sur des textes qui tenaient d\u00e9j\u00e0 en entier \u00e0 l'\u00e9cran.",
+      "\ud83d\uddd3\ufe0f Ajout au calendrier : appuyer plusieurs fois cr\u00e9ait autant de doublons. Le bouton passe maintenant en \u00ab Dans ton calendrier \u00bb et permet de retirer l'\u00e9v\u00e9nement. Si tu supprimes l'entr\u00e9e \u00e0 la main dans ton agenda, il redevient \u00ab Ajouter \u00bb.",
+      "\ud83d\udc1b Correction d'un blocage du d\u00e9filement : sur certains \u00e9crans, apr\u00e8s avoir repli\u00e9 une section ou chang\u00e9 d'onglet, le contenu restait bloqu\u00e9 en haut jusqu'\u00e0 ce qu'on change de page.",
+      "\ud83d\udc1b Les boutons ronds de l'en-t\u00eate (retour, chat, crayon) \u00e9taient d\u00e9centr\u00e9s dans leur fond.",
+      "\u270f\ufe0f Formulations des notifications revues, sans le tiret qui coupait les phrases : \u00ab L'organisateur a modifi\u00e9 D\u00eener \u00bb, \u00ab Nouveaux messages dans D\u00eener \u00bb.",
+    ],
+  },
+  {
     version: "1.4.0",
     date: "2026-08-16",
     build: "34",
