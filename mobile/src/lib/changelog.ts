@@ -19,7 +19,7 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     version: "1.5.0",
     date: "2026-08-19",
-    build: "35",
+    build: "36",
     title: "Listes communes partageables, r\u00e9servations & correctif de d\u00e9connexion",
     note: "Merci de signaler tout ce qui bloque. Les points marqu\u00e9s \u26a0\ufe0f n\u00e9cessitent la nouvelle version du serveur.",
     items: [
