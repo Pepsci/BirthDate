@@ -1,12 +1,43 @@
 # BirthReminder — CLAUDE.md
-*Mis à jour : juillet 2026*
+*Mis à jour : 19 août 2026*
 
-> **Changements récents (juillet 2026)** — en attente de redéploiement backend EC2 :
-> - **Contrôle d'âge 15 ans** : `routes/auth.js` rejette les inscriptions < 15 ans (RGPD France)
-> - **Deep links notifs push** : `jobs/sendReminders.js` → `/home?tab=date&dateId=…` (carte de la personne) ; `sockets/chatHandlers.js` (messages non chiffrés) → `/home?tab=chat&conversationId=…`
-> - **Modération UGC** (15/07/2026) : routes `/api/moderation`, `Report` model, `User.blockedUsers` — voir `AUDIT_STORES_2026.md`
+> **⚠️ Ce fichier couvre désormais le serveur, le front web ET le mobile.**
+> Le mobile (`mobile/`, Expo + expo-router) n'est plus hors périmètre : il
+> consomme les mêmes routes et partage les mêmes règles métier.
+
+> **Changements récents (août 2026)** — déployés en production :
+> - **Listes de cadeaux communes** : refonte complète, trois niveaux d'accès,
+>   réservations, partage par lien public et à un contact. Voir la section
+>   dédiée plus bas — c'est le morceau le plus dense du projet actuellement.
+> - **Découplage des canaux de notification** : email, push et centre in-app
+>   sont indépendants. Couper un réglage email ne coupe plus que l'email.
+> - **Durée de session** : `PATCH /users/me` réémettait un token de 6 h, ce qui
+>   rétrogradait silencieusement une session de 30 jours. Corrigé via
+>   `tokenDurationFrom()` dans `routes/users.js`.
+> - **Événements** : l'organisateur compte parmi les participants ; un
+>   changement de date remet les présences en attente et prévient les invités
+>   externes par email.
+> - **Mobile** : ajout au calendrier natif (`expo-calendar`), boutons
+>   d'en-tête unifiés, garde-fou de défilement.
 >
-> Côté mobile (`mobile/`, hors périmètre de ce fichier) : app iOS en TestFlight (build 13), NSE de déchiffrement des notifs, onboarding guidé — voir `ROADMAP_2026.md`.
+> Antérieur (juillet 2026) : contrôle d'âge 15 ans (`routes/auth.js`), deep
+> links des notifs push, modération UGC (`/api/moderation`, `Report`,
+> `User.blockedUsers` — voir `AUDIT_STORES_2026.md`).
+
+## 🔴 En cours / à vérifier
+
+- **Garde-fou de défilement** (`mobile/src/lib/use-scroll-bounds-guard.ts`) :
+  correctif posé sur un raisonnement, jamais reproduit en conditions réelles.
+  Appliqué à Profil→Notifications, page événement et carte d'une personne.
+  L'onglet Messages est une `FlatList` et n'est **pas** traité — il lui faut
+  une variante avec `scrollToOffset` au lieu de `scrollTo`.
+- **`server/node_modules` pèse ~467 Mo** : `googleapis` (116 Mo) embarque des
+  centaines de clients API pour un seul usage, et les deux SDK AWS coexistent
+  (`aws-sdk` v2 = reliquat, seul `@aws-sdk` v3 est utilisé). Des paquets de
+  front (`react-dom`, `@remix-run`, `core-js`) traînent aussi côté serveur.
+- **Volume EBS de 6,8 Go trop juste** sur l'EC2 de prod (saturé le 19/08/26).
+- **Logs de debug** : `routes/users.js` contient des `console.log("🔍 [DEBUG]…")`
+  exécutés à chaque modification de profil. À retirer.
 
 ---
 
@@ -44,6 +75,16 @@ BirthDate/
 │   ├── jobs/                   # Cron jobs
 │   ├── config/                 # MongoDB, Cloudinary
 │   └── utils/                  # Helpers (nameday, friendDates)
+├── mobile/                     # App Expo (iOS TestFlight) — expo-router
+│   └── src/
+│       ├── app/                # Routes = arborescence de fichiers
+│       │   ├── (tabs)/         # Accueil, Événements, Messages, Profil
+│       │   ├── date/[id].tsx   # Carte d'une personne (idées, wishlist, liste commune)
+│       │   ├── event/[shortId].tsx
+│       │   ├── shared-list/[id]/{access,attach}.tsx
+│       │   └── profile/, chat/, friends/, agenda.tsx, notifications.tsx
+│       ├── components/         # HeaderBackButton, HeaderIconButton, BottomSheet…
+│       └── lib/                # api, auth-context, sharedGifts, calendar, push…
 └── front/
     └── src/
         ├── App.jsx             # Router principal
@@ -95,6 +136,103 @@ BirthDate/
 
 > **Champ `imposedGifts`** : c'est un **array** (pas un objet unique). Toujours traiter comme `imposedGifts: []`.
 
+### Modèle Liste commune
+
+| Modèle | Fichier | Champs clés |
+|--------|---------|-------------|
+| `SharedGiftList` | `sharedGiftList.model.js` | `members[]` (droits complets), `viewers[]` (`{user, addedBy, addedAt}` — lecture + réservation), `createdBy`, `label`, `gifts[]`, `isPublic`, `publicSlug` (nanoid 10), `accessCode` (6 chars) |
+| `SharedGiftListInvitation` | `sharedGiftListInvitation.model.js` | Invitation à **devenir membre** (distincte du partage à un invité) |
+
+Sous-document `gifts[]` : `giftName`, `occasion`, `year`, `status`
+(to_buy/bought/to_give/offered), `purchased`, `url`, `price`, `image`,
+`addedBy`, **`reservedBy`** (membre ou invité connecté), **`reservedByGuest`**
+(prénom d'un visiteur web sans compte), `reservedAt`.
+
+---
+
+## 🎁 Listes de cadeaux communes — architecture
+
+La brique la plus dense du projet. Une liste est partagée entre plusieurs
+**offrants** ; la personne concernée n'en est jamais membre.
+
+### Trois niveaux d'accès
+
+| | Voir | Réserver | Modifier la liste | Gérer les accès |
+|---|---|---|---|---|
+| **Membre** (`members[]`) | ✅ | ✅ | ✅ | ✅ |
+| **Invité** (`viewers[]`) | ✅ | ✅ | ❌ | ❌ |
+| **Visiteur web** (lien public) | ✅ | ✅ avec le code | ❌ | ❌ |
+
+**Règle de confidentialité centrale** : seuls les membres voient QUI a réservé.
+Invités et visiteurs ne reçoivent qu'un booléen. Le filtrage est fait dans
+**`serializeListForRole(list, role, userId)`** (`routes/sharedGifts.js`) —
+c'est la seule fonction qui sérialise une liste, donc le seul endroit à
+auditer. Ne jamais renvoyer `req.sharedList` brut à un non-membre.
+
+### Middlewares
+
+- `loadListAsMember` — modifier le contenu, gérer les accès
+- `loadListAsParticipant` — consulter, réserver (membre **ou** invité) ; pose
+  `req.listRole`
+
+### Routes (`/api/shared-gifts`)
+
+```
+GET    /shared-with-me            Listes partagées, pas encore rattachées ⚠️ AVANT /:id
+GET    /:id                       Détail, sérialisé selon le rôle (+ myRole)
+POST   /:id/gifts                 Ajouter (membre)
+PATCH  /:id/gifts/:giftId         Modifier (membre)
+DELETE /:id/gifts/:giftId         Supprimer (membre)
+POST   /:id/gifts/:giftId/reserve      Réserver (participant)
+POST   /:id/gifts/:giftId/unreserve    Libérer SA réservation (participant)
+GET    /:id/access                Membres + invités + code (membre)
+POST   /:id/access/code           (Re)générer le code (membre)
+POST   /:id/viewers               Inviter un contact (membre)
+DELETE /:id/viewers/:userId       Révoquer + détacher sa carte (membre)
+GET    /:id/share                 État du lien public (membre)
+PATCH  /:id/share/toggle          Activer/couper le lien (membre)
+POST   /:id/attach                Rattacher à une de MES cartes
+POST   /:id/leave                 Quitter (membre)
+```
+
+Public, **monté avant** le routeur authentifié dans `app.js` :
+
+```
+GET  /api/shared-gifts/public/:slug                        Consultation libre
+POST /api/shared-gifts/public/:slug/verify                 Vérifier le code
+POST /api/shared-gifts/public/:slug/gifts/:giftId/reserve    code + guestName
+POST /api/shared-gifts/public/:slug/gifts/:giftId/unreserve  code + guestName
+```
+
+### ⚠️ Deux pièges d'ordre de routes
+
+1. `GET /shared-with-me` **doit** précéder `GET /:id`, sinon Express prend
+   « shared-with-me » pour un identifiant.
+2. `app.use("/api/shared-gifts/public", …)` **doit** précéder
+   `app.use("/api/shared-gifts", …)`, sinon `/public/:slug` exige un compte.
+
+### Règle « une seule liste par carte »
+
+Une `Date` ne porte qu'une `sharedGiftList`. `POST /:id/attach` renvoie un
+**409 `ALREADY_HAS_LIST`** si la carte en a déjà une autre ; le client
+rappelle avec `replace: true` après confirmation de l'utilisateur.
+
+### Écrans mobile
+
+- `app/date/[id].tsx` — onglet « Liste commune ». `isSharedMember` pilote tout
+  l'affichage ; un invité ne voit ni ajout, ni import, ni partage.
+- `app/shared-list/[id]/access.tsx` — membres, invités, révocation, code
+- `app/shared-list/[id]/attach.tsx` — rattacher une liste reçue à une carte
+- `app/shared-invites.tsx` — invitations à devenir membre **et** listes
+  partagées pas encore rattachées
+
+### Page web publique
+
+`front/src/components/sharedGifts/PublicSharedList.jsx`, route `/liste/:publicSlug`.
+Le prénom du visiteur et le code sont conservés en `localStorage`. Le code
+n'est demandé qu'**au moment de réserver**, jamais pour consulter — même règle
+que le code ami des wishlists personnelles.
+
 ---
 
 ## 🛣️ Routes Express
@@ -141,6 +279,8 @@ Injecte `req.event`, `req.userRole` ("organizer" | "guest"), `req.invitation` su
 | `/verify-email` | VerifyEmail | Public |
 | `/auth/reset/:token` | ResetPassword | Public |
 | `/event/:shortId` | **EventPage** | Public (lecture seule sans compte) |
+| `/wishlist/:publicSlug` | PublicWishlist | Public |
+| `/liste/:publicSlug` | **PublicSharedList** | Public (liste commune, réservation avec code) |
 | `/unsubscribe` | Unsubscribe | Public |
 | `/home` | Home | Privé |
 | `/profile` | Profile | Privé |
@@ -158,6 +298,13 @@ Le composant `Home` gère les deep links via query params :
 /home?tab=events             → ouvre EventsPanel
 /home?tab=friends            → ouvre le profil utilisateur section amis
 ```
+
+### Deep links côté mobile
+
+Les liens du serveur sont pensés pour le web ; `mobile/src/lib/push.ts`
+(`webLinkToMobileRoute`) les traduit en routes expo-router. Une notification
+sans équivalent web — la liste commune partagée — est routée **explicitement**
+dans `app/notifications.tsx`, pas via cette table de correspondance.
 
 ---
 
@@ -304,6 +451,54 @@ Service singleton : `front/src/components/services/socket.service.js`
 
 ---
 
+## 🔔 Notifications — les trois canaux
+
+**Règle fondatrice : email, push et centre in-app sont INDÉPENDANTS.**
+Un réglage `receiveXEmails` ne coupe que l'email. Historiquement un `continue`
+en tête de boucle dans `jobs/sendReminders.js` coupait les trois d'un coup —
+des utilisateurs ne recevaient plus rien après avoir désactivé un simple
+rappel. Ne jamais réintroduire ce raccourci.
+
+### Push : le gate est centralisé
+
+`pushEnabled` et `pushEvents.*` sont vérifiés **uniquement** dans
+`sendExpoPushToUser()` (`services/pushService.js`), via la table
+`PUSH_CATEGORY_BY_TYPE` qui traduit `payload.type` en catégorie. Les appelants
+n'ont pas à les vérifier. Le web push (`PushSubscription`) n'est pas concerné.
+
+Catégories `user.pushEvents` : `birthdays`, `namedays`, `chat`, `friends`,
+`gifts`, `events`, `sharedLists`. Toutes à `true` par défaut.
+
+> `POST /push/expo-token` n'active `pushEnabled` qu'au **premier** appareil
+> enregistré. L'écrire à chaque lancement réactivait le push d'un utilisateur
+> qui venait de le couper.
+
+### Types de notification
+
+`friend_request`, `friend_accepted`, `new_message`, `birthday_soon`,
+`nameday_soon`, `gift_reserved`, `event_reminder`, `event_updated`,
+`event_date_changed`, `event_rsvp`, `event_date_vote`, `event_location_vote`,
+`event_gift_proposed`, `event_gift_vote`, `event_chat_message`,
+`event_pool_contribution`, `shared_gift_invite`, `shared_gift_accepted`,
+`shared_gift_added`, `shared_gift_updated`, `shared_gift_removed`,
+`shared_gift_member_left`, `shared_gift_shared`.
+
+Ajouter un type = **quatre** endroits : l'enum de `notification.model.js`,
+`mobile/src/lib/notifications.ts` (`NotifType` + `notifDisplay`),
+`front/.../NotificationItem.jsx` (icône + libellé), et le toast web si utile.
+
+---
+
+## 🔐 Durée de session
+
+`routes/auth.js` émet 30 j avec `rememberMe`, 8 h sinon, et `/auth/verify`
+reconduit la durée d'origine (`> 8h` = rememberMe). **Toute route qui réémet
+un token doit reconduire cette durée** via `tokenDurationFrom(req.payload)`
+(`routes/users.js`) — un `expiresIn` en dur rétrograde la session sans retour
+possible, puisque `/auth/verify` se base ensuite sur la durée courante.
+
+---
+
 ## ⏰ Cron Jobs
 
 | Fichier | Schedule | Rôle |
@@ -416,6 +611,33 @@ l'organisateur, virements de banque à banque, **aucune trace côté serveur**.
 - `imposedGifts` est un **array**, jamais un objet unique
 - `allowGuestInvites` contrôle la visibilité du bouton "Inviter" et du lien de partage pour les invités
 - `forDate` vs `forPerson` : `forDate` référence un objet `Date` (anniversaire manuel), `forPerson` référence un `User` (ami inscrit)
+- **L'organisateur a sa propre `EventInvitation`** (statut `accepted`, créée à la
+  création de l'event). Quatre endroits l'excluent pour éviter les doublons :
+  `GET /mine` (sinon l'event apparaît en organisé *et* invité), les rappels de
+  `jobs/eventReminders.js`, le quota `maxGuests` (qui compte des invités, pas
+  l'hôte), et le retrait d'invité. Les events créés **avant** ce changement
+  n'en ont pas : le mobile synthétise la ligne côté affichage.
+- **Changement de date** = `selectedDate || fixedDate` qui change. Remet toutes
+  les présences en `pending` (sauf l'organisateur) et notifie ; les invités
+  externes sont prévenus par email.
+
+### Mobile — pièges d'interface rencontrés
+- **Boutons d'en-tête** : iOS dessine son propre fond derrière un
+  `UIBarButtonItem`, et ce fond épouse la vue **marges comprises**. Une marge
+  sur le bouton le décentre donc dans son propre fond. `HeaderBackButton` et
+  `HeaderIconButton` n'ont volontairement aucune marge.
+- **Taille fixe obligatoire** sur les boutons d'en-tête : une largeur
+  indéterminée (`minWidth`, badge dans le flux) donne un bouton étiré tant que
+  React Native n'a pas mesuré la vue.
+- **Options d'en-tête mémoïsées** (`useMemo`) sur les écrans à nombreux états :
+  un objet recréé à chaque rendu reconstruit le bouton natif en boucle.
+- **`expo-calendar` est chargé paresseusement** (`lib/calendar.ts`) : un
+  `import` statique lève dans un client de dev antérieur à son ajout et casse
+  l'évaluation de tout l'écran qui l'importe. `isCalendarAvailable()` pilote
+  l'affichage du bouton.
+- **Env mobile** : Expo ne charge en dev que `.env` et `.env.local`, jamais
+  `.env.production`. Sans `.env.local`, `api.ts` retombe sur une IP codée en
+  dur et plus rien ne répond. Après changement : `npx expo start -c`.
 
 ### Navigation profil
 - Les profils n'ont PAS de route dédiée `/dates/:id` — tout passe par `/home?tab=date&dateId=...`
