@@ -27,6 +27,7 @@ import PersonPreviewCard from "../../components/PersonPreviewCard";
 import { useAuth } from "../../lib/auth-context";
 import { useUnread } from "../../lib/unread-context";
 import { getSocket } from "../../lib/socket";
+import HeaderIconButton from "../../components/HeaderIconButton";
 import {
   DMMessage,
   startConversation,
@@ -444,8 +445,16 @@ export default function DMChatScreen() {
             </Pressable>
           ),
           headerRight: () => (
-            <Pressable
-              hitSlop={10}
+            // ⚠️ C'était un simple <Text>⋯</Text> sans conteneur : pas de rond,
+            // pas de taille fixe. Sa boîte suivait donc les métriques du glyphe
+            // (chasse à gauche/droite, jambage descendant réservé sous la ligne
+            // de base), et iOS dessinait SON fond autour de cette boîte
+            // biscornue — d'où un bouton visiblement plus gros et plus décalé
+            // que les autres. Il utilise maintenant le même composant que les
+            // autres actions d'en-tête.
+            <HeaderIconButton
+              name="more"
+              accessibilityLabel="Options de la conversation"
               onPress={() =>
                 Alert.alert(name ?? "Options", undefined, [
                   {
@@ -467,9 +476,7 @@ export default function DMChatScreen() {
                   { text: "Annuler", style: "cancel" },
                 ])
               }
-            >
-              <Text style={{ fontSize: 22, color: colors.sub }}>⋯</Text>
-            </Pressable>
+            />
           ),
         }}
       />

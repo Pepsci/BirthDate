@@ -109,6 +109,62 @@ router.post("/", async (req, res) => {
         break;
       }
 
+      /*
+       * Remboursement confirmé par Stripe.
+       *
+       * ⚠️ C'est ICI, et nulle part ailleurs, qu'une contribution passe en
+       * "refunded" — la route /pool/refund-all se contente de demander le
+       * remboursement. Même principe que l'encaissement : le front et nos
+       * routes demandent, Stripe confirme, et seule la confirmation fait foi.
+       *
+       * Idempotent : findOneAndUpdate sur un identifiant unique, donc un rejeu
+       * du webhook par Stripe ne produit aucun effet supplémentaire.
+       */
+      case "charge.refunded": {
+        const charge = event.data.object;
+        const piId =
+          typeof charge.payment_intent === "string"
+            ? charge.payment_intent
+            : charge.payment_intent?.id;
+        if (!piId) break;
+
+        const contribution = await GiftPoolContribution.findOneAndUpdate(
+          { stripePaymentIntentId: piId },
+          { status: "refunded", refundedAt: new Date() },
+          { new: true },
+        );
+        if (!contribution) break;
+
+        const eventDoc = await Event.findById(contribution.event).select(
+          "title shortId",
+        );
+
+        // Le contributeur est prévenu — c'est son argent. Un invité externe
+        // (contributor null) n'a pas de compte : Stripe lui envoie son propre
+        // avis de remboursement à l'adresse du reçu, on ne double pas.
+        if (contribution.contributor && eventDoc) {
+          await notify(req.app, {
+            userId: contribution.contributor,
+            type: "event_pool_refunded",
+            data: {
+              eventTitle: eventDoc.title,
+              eventShortId: eventDoc.shortId,
+              amount: contribution.amount,
+              message: `Ta contribution à « ${eventDoc.title} » t'a été remboursée intégralement.`,
+            },
+            link: `/event/${eventDoc.shortId}`,
+          });
+        }
+
+        if (eventDoc) {
+          req.app
+            .get("io")
+            ?.to(`event:${eventDoc.shortId}`)
+            .emit("event:pool_update", { shortId: eventDoc.shortId });
+        }
+        break;
+      }
+
       case "payment_intent.payment_failed": {
         const pi = event.data.object;
         await GiftPoolContribution.findOneAndUpdate(

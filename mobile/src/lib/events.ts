@@ -11,6 +11,8 @@ export interface EventEntry {
   type: EventType;
   dateMode: "fixed" | "vote";
   fixedDate?: string | null;
+  /** Dates proposées au vote (dateMode "vote"). Vides tant que rien n'est proposé. */
+  dateOptions?: string[] | null;
   selectedDate?: string | null;
   locationMode: "fixed" | "vote";
   fixedLocation?:
@@ -22,6 +24,8 @@ export interface EventEntry {
       }
     | null;
   status: EventStatus;
+  cancelledAt?: string | null;
+  cancellationReason?: string | null;
   organizer?: { _id: string; name: string; surname: string } | string;
   forPerson?: { _id: string; name: string; surname: string } | null;
   myRsvpStatus?: RsvpStatus; // présent uniquement sur les events "invited"
@@ -139,6 +143,12 @@ export interface EventDetail extends EventEntry {
   hasFullAccess: boolean;
   giftPoolEnabled?: boolean;
   directTransfer?: DirectTransfer;
+  /** Proposition de transfert d'organisation en attente de réponse. */
+  pendingTransfer?: {
+    toUser?: { _id: string; name: string; surname: string } | null;
+    requestedBy?: { _id: string; name: string; surname: string } | null;
+    requestedAt?: string | null;
+  } | null;
 }
 
 // ---- Virement direct (IBAN / PayPal) ----
@@ -467,6 +477,128 @@ export async function updateEvent(
 
 export async function deleteEvent(shortId: string): Promise<void> {
   await api(`/events/${shortId}`, { method: "DELETE" });
+}
+
+export interface CancelResult {
+  status: EventStatus;
+  cancelledAt: string;
+  cancellationReason: string | null;
+  /** Vrai si la cagnotte était active et vient d'être coupée. */
+  poolFrozen: boolean;
+}
+
+/**
+ * Annuler un événement (organisateur uniquement).
+ *
+ * L'événement n'est pas supprimé : il reste consultable, barré, avec son motif.
+ * Tous les invités sont prévenus (notif, push, email). Une cagnotte active est
+ * coupée au passage, mais rien n'est remboursé — c'est une décision distincte.
+ */
+export async function cancelEvent(
+  shortId: string,
+  reason?: string,
+): Promise<CancelResult> {
+  return api<CancelResult>(`/events/${shortId}/cancel`, {
+    method: "POST",
+    body: JSON.stringify({ reason: reason ?? "" }),
+  });
+}
+
+// ---- Transfert d'organisation ----
+
+/**
+ * Proposer l'organisation à un participant ayant confirmé sa présence.
+ *
+ * En deux temps : la personne doit accepter. Tant qu'elle n'a pas répondu,
+ * l'organisateur actuel garde toutes ses prérogatives — on n'impose à personne
+ * la charge d'organiser un événement.
+ */
+export async function offerLeadTransfer(
+  shortId: string,
+  userId: string,
+): Promise<{ pending: boolean; pool: { count: number; total: number } }> {
+  return api(`/events/${shortId}/transfer-lead`, {
+    method: "POST",
+    body: JSON.stringify({ userId }),
+  });
+}
+
+/** Retirer la proposition (organisateur) ou la refuser (destinataire). */
+export async function cancelLeadTransfer(shortId: string): Promise<void> {
+  await api(`/events/${shortId}/transfer-lead`, { method: "DELETE" });
+}
+
+export interface TransferAcceptResult {
+  organizer: string;
+  /** Vrai si une cagnotte active a été coupée par le transfert. */
+  poolFrozen: boolean;
+  pool: { count: number; total: number };
+}
+
+/**
+ * Accepter l'organisation.
+ *
+ * ⚠️ La cagnotte ne suit pas : les fonds sont sur le compte Stripe de l'ancien
+ * organisateur et ne peuvent pas en être déplacés. Elle est fermée, le RIB de
+ * virement direct supprimé, et le nouvel organisateur peut ouvrir la sienne.
+ */
+export async function acceptLeadTransfer(
+  shortId: string,
+): Promise<TransferAcceptResult> {
+  return api<TransferAcceptResult>(`/events/${shortId}/transfer-lead/accept`, {
+    method: "POST",
+  });
+}
+
+// ---- Remboursement de cagnotte ----
+
+export interface RefundPreview {
+  count: number;
+  /** Ce que les contributeurs récupèrent : l'intégralité. */
+  totalRefunded: number;
+  /** Ce que l'opération coûte en plus à l'organisateur (frais non restitués). */
+  feeLoss: number;
+  currency: string;
+}
+
+export interface RefundReport {
+  refunded: number;
+  failed: number;
+  amount: number;
+  feeLoss: number;
+  errors: { contributionId: string; amount: number; message: string }[];
+}
+
+/** Chiffrage avant action : à montrer AVANT de déclencher les remboursements. */
+export async function refundPreview(shortId: string): Promise<RefundPreview> {
+  return api<RefundPreview>(`/events/${shortId}/pool/refund-preview`);
+}
+
+/**
+ * Rembourser toutes les contributions.
+ *
+ * Stripe n'a pas d'endpoint de lot : le serveur boucle et renvoie un rapport.
+ * Relançable — seules les contributions non encore remboursées sont reprises.
+ */
+export async function refundAll(shortId: string): Promise<RefundReport> {
+  return api<RefundReport>(`/events/${shortId}/pool/refund-all`, {
+    method: "POST",
+  });
+}
+
+/** Rétablir un événement annulé. Ne réactive pas la cagnotte. */
+export async function uncancelEvent(shortId: string): Promise<void> {
+  await api(`/events/${shortId}/uncancel`, { method: "POST" });
+}
+
+/**
+ * Quitter un événement auquel on est invité.
+ *
+ * Le serveur refuse la demande de l'organisateur (403) : il ne peut pas quitter
+ * son propre événement, il doit l'annuler ou en transférer l'organisation.
+ */
+export async function leaveEvent(shortId: string): Promise<void> {
+  await api(`/events/${shortId}/leave`, { method: "DELETE" });
 }
 
 // ---- Cagnotte ----

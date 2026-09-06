@@ -12,6 +12,53 @@ const GiftPoolManager = ({ shortId, pool, onUpdated }) => {
   const [savedOk, setSavedOk] = useState(false);
   const [error, setError] = useState("");
 
+  // ── Remboursement ─────────────────────────────────────────────────────────
+  // Chargé séparément de la cagnotte : le bloc reste pertinent quand celle-ci
+  // est DÉJÀ fermée par une annulation ou un transfert d'organisation — c'est
+  // même précisément là qu'on en a besoin.
+  const [refund, setRefund] = useState(null);
+  const [refunding, setRefunding] = useState(false);
+  const [refundConfirm, setRefundConfirm] = useState(false);
+
+  const fetchRefundPreview = async () => {
+    try {
+      const res = await apiHandler.get(`/events/${shortId}/pool/refund-preview`);
+      setRefund(res.data);
+    } catch {
+      // 403 si on n'est pas l'organisateur : le bloc reste simplement masqué.
+      setRefund(null);
+    }
+  };
+
+  const handleRefundAll = async () => {
+    if (!refundConfirm) {
+      setRefundConfirm(true);
+      return;
+    }
+    setRefunding(true);
+    setError("");
+    try {
+      const res = await apiHandler.post(`/events/${shortId}/pool/refund-all`);
+      const report = res.data;
+      await fetchRefundPreview();
+      onUpdated?.();
+      window.alert(
+        report.failed === 0
+          ? `${report.refunded} remboursement${report.refunded > 1 ? "s" : ""} envoyé${report.refunded > 1 ? "s" : ""}. Les contributeurs seront prévenus dès que Stripe les confirme.`
+          : `${report.refunded} réussi${report.refunded > 1 ? "s" : ""}, ${report.failed} en échec. Vous pouvez relancer : seules les contributions non remboursées seront reprises.`,
+      );
+    } catch (err) {
+      setError(
+        err?.response?.data?.message ||
+          err?.message ||
+          "Erreur lors du remboursement.",
+      );
+    } finally {
+      setRefunding(false);
+      setRefundConfirm(false);
+    }
+  };
+
   // Form state
   const [active, setActive] = useState(pool?.active || false);
   const [mode, setMode] = useState(pool?.mode || "free");
@@ -33,7 +80,9 @@ const GiftPoolManager = ({ shortId, pool, onUpdated }) => {
 
   useEffect(() => {
     fetchStatus();
-  }, []);
+    fetchRefundPreview();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shortId]);
 
   const handleConnect = async () => {
     setOnboarding(true);
@@ -236,6 +285,40 @@ const GiftPoolManager = ({ shortId, pool, onUpdated }) => {
               : "Enregistrer"}
         </motion.button>
       </div>
+
+      {refund?.count > 0 && (
+        <div className="gp-section">
+          <p className="gp-section-title">💸 Rembourser les contributeurs</p>
+          <p className="gp-muted">
+            {refund.count} contribution{refund.count > 1 ? "s" : ""} —{" "}
+            <strong>{euro(refund.totalRefunded)}</strong> seront intégralement
+            rendus à leurs auteurs.
+          </p>
+          {/* ⚠️ Le chiffre qui compte pour l'organisateur. Stripe ne restitue
+              pas les frais de la transaction d'origine : le contributeur
+              récupère tout, et l'écart reste à sa charge. Le découvrir après
+              coup serait une mauvaise surprise. */}
+          <p className="gp-refund-warn">
+            ⚠️ Cette opération vous coûtera <strong>{euro(refund.feeLoss)}</strong> :
+            Stripe ne rend pas les frais des paiements d'origine. La cagnotte
+            sera fermée, et l'opération est irréversible.
+          </p>
+          {error && <p className="gp-error">{error}</p>}
+          <motion.button
+            className="gp-btn gp-btn-full gp-btn-danger"
+            onClick={handleRefundAll}
+            disabled={refunding}
+            whileHover={{ scale: 1.01 }}
+            whileTap={{ scale: 0.99 }}
+          >
+            {refunding
+              ? "Remboursement en cours…"
+              : refundConfirm
+                ? "Confirmer le remboursement de tout le monde ?"
+                : "Rembourser tout le monde"}
+          </motion.button>
+        </div>
+      )}
     </div>
   );
 };

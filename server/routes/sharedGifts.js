@@ -15,6 +15,32 @@ const personLabel = (dateDoc) =>
   `${dateDoc?.name || ""} ${dateDoc?.surname || ""}`.trim() || "quelqu'un";
 
 /**
+ * Lien de notification vers une liste commune, résolu POUR UN MEMBRE DONNÉ.
+ *
+ * Une liste commune n'a pas d'écran à elle : elle s'affiche dans l'onglet
+ * « Liste commune » d'une carte. Or chaque membre la pose sur SA carte
+ * (Date.sharedGiftList), donc le bon lien dépend du destinataire.
+ *
+ * Repli sur l'écran de rattachement quand aucune carte ne porte la liste : le
+ * cas normal est couvert à l'acceptation de l'invitation (qui relie la carte
+ * choisie), mais un membre peut avoir supprimé cette carte depuis, et un
+ * "viewer" (accès en consultation) n'en a jamais eu.
+ */
+async function sharedListLinkFor(userId, listId) {
+  try {
+    const myCard = await DateModel.findOne({
+      owner: userId,
+      sharedGiftList: listId,
+    }).select("_id");
+    if (myCard) return `/home?tab=date&dateId=${myCard._id}`;
+  } catch {
+    // Résolution impossible : on retombe sur le rattachement, jamais sur une
+    // notification sans lien.
+  }
+  return `/shared-list/${listId}/attach`;
+}
+
+/**
  * Prévient les membres d'une liste commune d'une activité, SAUF son auteur :
  * personne n'a besoin d'être notifié de sa propre action.
  *
@@ -43,16 +69,17 @@ async function notifyOtherMembers(
     if (!others.length) return;
 
     for (const memberId of others) {
-      await notify(app, {
-        userId: memberId,
-        type,
-        data,
-        link: "/home?tab=friends",
-      });
+      // Lien PAR DESTINATAIRE. Une liste commune est posée sur une carte
+      // différente chez chaque membre (Date.sharedGiftList), donc il n'existe
+      // pas de lien unique valable pour tous : c'est pour ça que le lien était
+      // jusqu'ici "/home?tab=friends", qui renvoyait tout le monde sur la
+      // liste d'amis au lieu de la liste de cadeaux concernée.
+      const link = await sharedListLinkFor(memberId, list._id);
+      await notify(app, { userId: memberId, type, data, link });
       await sendPushToUser(memberId, {
         title: pushTitle,
         body: pushBody,
-        url: "/home?tab=friends",
+        url: link,
         tag: `shared-list-${list._id}`,
         type: "shared_list",
       });
@@ -732,12 +759,14 @@ router.post("/:id/viewers", isAuthenticated, loadListAsMember, async (req, res) 
         listId: list._id.toString(),
         listLabel: list.label || null,
       },
-      link: "/home?tab=friends",
+      // Un "viewer" n'a pas encore de carte portant la liste : on l'envoie
+      // sur l'écran de rattachement, pas sur sa liste d'amis.
+      link: `/shared-list/${list._id}/attach`,
     });
     await sendPushToUser(friendId, {
       title: "🎁 Une liste de cadeaux t'a été partagée",
       body: `${who} t'a donné accès à sa liste d'idées`,
-      url: "/home?tab=friends",
+      url: `/shared-list/${list._id}/attach`,
       tag: `shared-list-shared-${list._id}`,
       type: "shared_list",
     });

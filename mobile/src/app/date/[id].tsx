@@ -667,7 +667,7 @@ export default function DateDetailScreen() {
       headerRight: () =>
         linkedUserId ? (
           <HeaderIconButton
-            emoji="💬"
+            name="chat"
             accessibilityLabel="Ouvrir la discussion"
             badge={chatUnreadCount}
             onPress={() =>
@@ -678,7 +678,7 @@ export default function DateDetailScreen() {
           />
         ) : (
           <HeaderIconButton
-            emoji="✏️"
+            name="pencil"
             accessibilityLabel="Modifier la carte"
             onPress={() => router.push(`/date/edit/${entry?._id}`)}
           />

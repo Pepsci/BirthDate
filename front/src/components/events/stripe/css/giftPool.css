@@ -532,3 +532,30 @@
     flex-wrap: wrap;
   }
 }
+
+/* ── Remboursement ─────────────────────────────────────────────────────────
+   Deux chiffres délibérément séparés : ce que les contributeurs récupèrent
+   (l'intégralité) et ce que l'opération coûte à l'organisateur. Stripe ne
+   restitue pas les frais du paiement d'origine, et cet écart doit être vu
+   AVANT l'action, pas découvert sur le relevé. */
+
+.gp-refund-warn {
+  margin: 8px 0 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--warning, #f39c12);
+  color: var(--text-primary);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.gp-btn-danger {
+  background: var(--danger, #e74c3c);
+  color: #fff;
+  border: none;
+}
+
+.gp-btn-danger:hover:not(:disabled) {
+  filter: brightness(1.08);
+}

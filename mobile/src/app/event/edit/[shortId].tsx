@@ -45,7 +45,7 @@ export default function EditEventScreen() {
     <>
       <Stack.Screen
         options={{
-          title: isDraft ? `Brouillon — ${event.title}` : `Modifier — ${event.title}`,
+          title: isDraft ? `Brouillon ${event.title}` : `Modifier ${event.title}`,
         }}
       />
       <EventFormStepper

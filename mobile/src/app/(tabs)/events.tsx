@@ -25,6 +25,7 @@ import {
   useThemedStyles,
   ThemeColors,
 } from "../../lib/theme-context";
+import { usePersistedCollapse } from "../../lib/collapse-prefs";
 
 export default function EventsScreen() {
   const { colors } = useTheme();
@@ -71,17 +72,45 @@ export default function EventsScreen() {
     setRefreshing(false);
   }, [load]);
 
+  // Les événements passés s'accumulent sans fin et n'appellent aucune action :
+  // ils sont regroupés en une seule section, repliée par défaut et placée en
+  // bas. L'état replié/déplié est mémorisé (SecureStore), comme les encarts de
+  // la page événement.
+  const [pastOpen, setPastOpen] = usePersistedCollapse(
+    "events_tab",
+    "past",
+    false,
+  );
+
   // Les brouillons (formulaire quitté avant la fin) sortent de « J'organise » :
   // ce sont des créations à terminer, pas des événements en cours.
   const sections = useMemo(() => {
     const drafts = organized.filter((e) => e.status === "draft");
     const published = organized.filter((e) => e.status !== "draft");
+
+    const upcoming = (list: EventEntry[]) =>
+      list.filter((e) => !isPastEvent(e)).sort(byDateAsc);
+    // Le plus récent d'abord : dans une pile d'archives, c'est celui de la
+    // semaine dernière qu'on veut retrouver, pas celui d'il y a deux ans.
+    const past = [...published, ...invited]
+      .filter(isPastEvent)
+      .sort(byDateDesc);
+
     return [
-      { title: "📝 Brouillons à terminer", data: drafts },
-      { title: "J'organise", data: published },
-      { title: "Je suis invité·e", data: invited },
-    ].filter((s) => s.data.length > 0);
-  }, [organized, invited]);
+      { title: "📝 Brouillons à terminer", data: drafts, key: "drafts" },
+      { title: "J'organise", data: upcoming(published), key: "organized" },
+      { title: "Je suis invité·e", data: upcoming(invited), key: "invited" },
+      {
+        title: `🗄️ Événements passés (${past.length})`,
+        data: pastOpen ? past : [],
+        key: "past",
+        // Conservé même vide de données pour que l'en-tête (et donc le bouton
+        // de dépliage) reste affiché quand la section est repliée.
+        count: past.length,
+        collapsible: true,
+      },
+    ].filter((s) => s.data.length > 0 || (s as any).count > 0);
+  }, [organized, invited, pastOpen]);
 
   if (loading) {
     return (
@@ -113,19 +142,110 @@ export default function EventsScreen() {
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
-        renderSectionHeader={({ section }) => (
-          <Text style={styles.sectionTitle}>{section.title}</Text>
-        )}
+        renderSectionHeader={({ section }) =>
+          (section as any).collapsible ? (
+            <Pressable
+              style={styles.sectionToggle}
+              onPress={() => setPastOpen(!pastOpen)}
+              accessibilityRole="button"
+              accessibilityState={{ expanded: pastOpen }}
+            >
+              <Text style={styles.sectionTitle}>{section.title}</Text>
+              <Text style={styles.sectionChevron}>{pastOpen ? "▾" : "▸"}</Text>
+            </Pressable>
+          ) : (
+            <Text style={styles.sectionTitle}>{section.title}</Text>
+          )
+        }
         ListEmptyComponent={
-          <Text style={styles.empty}>
-            Aucun événement pour l'instant. Crée-en un depuis le site web — il
-            apparaîtra ici.
-          </Text>
+          // Uniquement quand il n'existe VRAIMENT aucun événement : une liste
+          // sans élément visible parce que la section « passés » est repliée
+          // n'est pas une liste vide, et afficher « crée ton premier
+          // événement » à quelqu'un qui en a dix serait faux.
+          organized.length + invited.length === 0 ? (
+            <Text style={styles.empty}>
+              Aucun événement pour l'instant. Crée-en un depuis le site web — il
+              apparaîtra ici.
+            </Text>
+          ) : null
         }
         renderItem={({ item }) => <EventCard event={item} />}
       />
     </View>
   );
+}
+
+/**
+ * Un événement est « passé » quand plus aucune de ses dates n'est à venir.
+ *
+ * ⚠️ Propriété importante : ce statut est TOUJOURS recalculé à partir des dates
+ * de l'événement, jamais stocké. Un événement archivé redevient donc « à venir »
+ * de lui-même dès qu'une date future réapparaît — l'organisateur repousse un
+ * dîner qui n'a pas eu lieu, ou ajoute une nouvelle option à un vote périmé.
+ * Le jour où on stockerait un booléen « archivé » en base, ce retour en arrière
+ * cesserait de fonctionner tout seul.
+ *
+ * On compare au DÉBUT de la journée, pas à l'instant présent : un dîner prévu
+ * ce soir à 19 h doit rester dans « à venir » toute la journée, et non basculer
+ * dans les archives à 19 h 01 alors qu'il est encore en cours.
+ *
+ * Trois cas :
+ *  - une date arrêtée (selectedDate ou fixedDate) → elle décide seule ;
+ *  - pas de date arrêtée mais des options au vote → passé seulement si TOUTES
+ *    sont écoulées. Une seule option future suffit à le ramener à venir ;
+ *  - aucune date d'aucune sorte → jamais passé, il n'a pas encore commencé
+ *    d'exister dans le temps.
+ */
+function isPastEvent(e: EventEntry): boolean {
+  // Un événement annulé n'aura pas lieu : sa date n'a plus de sens, il rejoint
+  // les archives immédiatement, quelle qu'elle soit. Le badge « Annulé » sur la
+  // carte dit pourquoi il s'y trouve. S'il est rétabli (status repasse à
+  // "published"), il remonte tout seul — comme le reste, c'est calculé, jamais
+  // stocké.
+  if (e.status === "cancelled") return true;
+
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+
+  const d = eventDate(e);
+  if (d) return d < startOfToday;
+
+  const options = (e.dateOptions ?? [])
+    .map((iso) => new Date(iso))
+    .filter((x) => !isNaN(x.getTime()));
+  if (options.length === 0) return false;
+  return options.every((x) => x < startOfToday);
+}
+
+/**
+ * Date servant au tri quand l'événement n'a pas de date arrêtée : la plus
+ * tardive des options proposées. C'est celle qui décide de son archivage, donc
+ * celle qui doit le positionner dans la liste.
+ */
+function sortDate(e: EventEntry): Date | null {
+  const d = eventDate(e);
+  if (d) return d;
+  const options = (e.dateOptions ?? [])
+    .map((iso) => new Date(iso))
+    .filter((x) => !isNaN(x.getTime()));
+  if (options.length === 0) return null;
+  return new Date(Math.max(...options.map((x) => x.getTime())));
+}
+
+/** Aucune date d'aucune sorte → en tête : ce sont eux qui appellent une action. */
+function byDateAsc(a: EventEntry, b: EventEntry): number {
+  const da = sortDate(a);
+  const db = sortDate(b);
+  if (!da && !db) return 0;
+  if (!da) return -1;
+  if (!db) return 1;
+  return da.getTime() - db.getTime();
+}
+
+function byDateDesc(a: EventEntry, b: EventEntry): number {
+  const da = sortDate(a);
+  const db = sortDate(b);
+  return (db?.getTime() ?? 0) - (da?.getTime() ?? 0);
 }
 
 function EventCard({ event }: { event: EventEntry }) {
@@ -141,6 +261,7 @@ function EventCard({ event }: { event: EventEntry }) {
   // Un brouillon n'a pas de page événement utile (pas d'invités, pas de chat) :
   // on renvoie directement dans le formulaire pour le terminer.
   const isDraft = event.status === "draft";
+  const isCancelled = event.status === "cancelled";
 
   return (
     <Pressable
@@ -156,11 +277,23 @@ function EventCard({ event }: { event: EventEntry }) {
       }
     >
       <View style={styles.cardHeader}>
-        <Text style={styles.title} numberOfLines={1}>
+        <Text
+          style={[styles.title, isCancelled && styles.titleCancelled]}
+          numberOfLines={1}
+        >
           {event.title}
         </Text>
         <Text style={styles.type}>{EVENT_TYPE_LABELS[event.type]}</Text>
       </View>
+
+      {isCancelled && (
+        <View style={styles.cancelBanner}>
+          <Text style={styles.cancelBannerText} numberOfLines={2}>
+            ❌ Annulé
+            {event.cancellationReason ? ` — ${event.cancellationReason}` : ""}
+          </Text>
+        </View>
+      )}
 
       <Text style={styles.detail}>
         📅 {d ? formatEventDate(d) : "Date au vote"}
@@ -210,6 +343,21 @@ const makeStyles = (c: ThemeColors) =>
       backgroundColor: c.bg,
     },
     list: { padding: 12, gap: 10 },
+    titleCancelled: { textDecorationLine: "line-through", color: c.sub },
+    cancelBanner: {
+      backgroundColor: c.dangerSoft ?? "rgba(239,68,68,0.12)",
+      borderRadius: 8,
+      paddingHorizontal: 8,
+      paddingVertical: 5,
+      marginTop: 2,
+    },
+    cancelBannerText: { color: c.danger, fontSize: 12, fontWeight: "600" },
+    sectionToggle: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+    },
+    sectionChevron: { color: c.sub, fontSize: 14, paddingRight: 4 },
     sectionTitle: {
       fontSize: 14,
       fontWeight: "700",

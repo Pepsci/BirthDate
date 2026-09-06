@@ -1,6 +1,7 @@
 import type * as CalendarTypes from "expo-calendar";
 import * as SecureStore from "expo-secure-store";
 import { Alert, Linking, Platform } from "react-native";
+import { loadCalendarPrefs } from "./calendar-prefs";
 
 /**
  * Ajout d'un événement BirthReminder au calendrier natif du téléphone.
@@ -232,13 +233,28 @@ export async function addToDeviceCalendar(
     const endDate =
       input.endDate ?? new Date(startDate.getTime() + DEFAULT_DURATION_MS);
 
+    // ⚠️ `alarms` est indispensable. Sans ce champ, ni iOS ni Android ne posent
+    // le moindre rappel : l'entrée n'existe qu'à son heure, et l'utilisateur a
+    // l'impression que « l'ajout au calendrier ne prévient de rien ». Les
+    // agendas n'appliquent PAS leurs rappels par défaut à un événement créé par
+    // une application tierce qui n'en demande aucun.
+    //
+    // Les décalages viennent des réglages (Profil → Réglages → Calendrier), et
+    // diffèrent selon le type d'entrée : un événement a une heure, un
+    // anniversaire est une journée entière qui commence à minuit — d'où deux
+    // listes distinctes plutôt qu'une seule mal adaptée aux deux.
+    const allDay = input.allDay ?? false;
+    const prefs = await loadCalendarPrefs();
+    const offsets = allDay ? prefs.allDay : prefs.timed;
+
     const createdId = await Calendar.createEventAsync(calendarId, {
       title: input.title,
       startDate,
       endDate,
-      allDay: input.allDay ?? false,
+      allDay,
       location: input.location ?? undefined,
       notes: input.notes ?? `Ajouté depuis ${CALENDAR_TITLE}`,
+      alarms: offsets.map((relativeOffset) => ({ relativeOffset })),
     });
 
     if (createdId) {
@@ -247,7 +263,9 @@ export async function addToDeviceCalendar(
 
     Alert.alert(
       "Ajouté au calendrier",
-      `« ${input.title} » a été ajouté à ton calendrier.`,
+      offsets.length
+        ? `« ${input.title} » a été ajouté à ton calendrier, avec ${offsets.length > 1 ? "tes rappels" : "ton rappel"}.`
+        : `« ${input.title} » a été ajouté à ton calendrier. Aucun rappel n'est posé — tu peux en choisir dans Profil → Réglages.`,
     );
     return true;
   } catch (e: any) {

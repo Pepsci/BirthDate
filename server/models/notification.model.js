@@ -30,6 +30,19 @@ const notificationSchema = new mongoose.Schema(
         "event_gift_vote",
         "event_chat_message",
         "event_pool_contribution",
+        // Annulation et rétablissement : ce sont les seules notifications
+        // d'événement qui annoncent que quelque chose n'aura PAS lieu, d'où un
+        // type dédié (et un rendu distinct côté client).
+        "event_cancelled",
+        "event_uncancelled",
+        // Transfert d'organisation : proposition, réponse, et information des
+        // autres participants une fois le transfert effectif.
+        "event_transfer_offer",
+        "event_transfer_accepted",
+        "event_transfer_declined",
+        "event_transfer_done",
+        // Remboursement de cagnotte, adressé au contributeur.
+        "event_pool_refunded",
         "shared_gift_invite",
         "shared_gift_accepted",
         // Activité dans une liste commune : sans ces types, un membre pouvait

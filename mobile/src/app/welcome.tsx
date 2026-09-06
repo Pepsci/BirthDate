@@ -49,6 +49,43 @@ function joinNames(names: string[], max = 3): string {
   return `${names.slice(0, max).join(", ")} et ${extra} autre${extra > 1 ? "s" : ""}`;
 }
 
+/**
+ * Prénoms distincts, en gardant l'ordre et la casse du premier vu.
+ * Comparaison insensible à la casse et aux accents, pour que « Loïc » et
+ * « loic » ne comptent pas deux fois.
+ */
+function uniqueNames(names: string[]): string[] {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const n of names) {
+    const key = n.trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    out.push(n.trim());
+  }
+  return out;
+}
+
+/**
+ * Phrase de la carte « fête du jour ».
+ *
+ * Une fête est attachée à un PRÉNOM, pas à une personne : tous les Louis d'un
+ * carnet fêtent la Saint-Louis le même jour. La carte affichait donc
+ * « C'est la fête de Louis et Louis ! » dès qu'on avait deux contacts du même
+ * prénom. On regroupe : un seul prénom concerné → « de Louis » s'il est unique,
+ * « des Louis » s'ils sont plusieurs ; plusieurs prénoms → on les liste.
+ */
+function feteSentence(names: string[]): string {
+  const unique = uniqueNames(names);
+  if (unique.length === 0) return "";
+  if (unique.length === 1) {
+    return names.length > 1
+      ? `C'est la fête des ${unique[0]} !`
+      : `C'est la fête de ${unique[0]} !`;
+  }
+  return `C'est la fête de ${joinNames(unique)} !`;
+}
+
 // ─── Thèmes ─────────────────────────────────────────────────────────────────
 // Palettes visuelles propres au welcome (plus riches que le thème global).
 // La sélection dark/light est pilotée par le ThemeContext global.
@@ -500,7 +537,7 @@ export default function WelcomeScreen() {
                             anniversaires aujourd'hui 🎂
                           </Text>
                           <Text style={s.todaySub} numberOfLines={2}>
-                            {joinNames(todayBirthdayNames)}
+                            {joinNames(uniqueNames(todayBirthdayNames))}
                           </Text>
                         </>
                       )}
@@ -515,7 +552,7 @@ export default function WelcomeScreen() {
                     >
                       <Text style={s.todayEmoji}>🎉</Text>
                       <Text style={s.todayFeteText} numberOfLines={2}>
-                        C'est la fête de {joinNames(todayFetes)} !
+                        {feteSentence(todayFetes)}
                       </Text>
                     </LinearGradient>
                   )}
@@ -544,19 +581,34 @@ export default function WelcomeScreen() {
                   style={s.bentoBig}
                 >
                   <Text style={s.bentoBigEmoji}>🎂</Text>
+                  {/* À zéro, on ne montre PAS le chiffre : « 0 » suivi d'un
+                      libellé se lit comme un score raté, alors que l'info est
+                      simplement qu'il n'y a rien aujourd'hui. On remplace donc
+                      chiffre + libellé par une phrase.
+                      Le libellé communauté disait « souhaités » : ce compteur
+                      compte les anniversaires du jour (date.stats.js), pas les
+                      souhaits envoyés — d'où « fêtés ». */}
                   {stats === null ? (
                     <ActivityIndicator color="#fff" />
+                  ) : stats.today > 0 ? (
+                    <>
+                      <Text style={s.bentoBigValue}>{stats.today}</Text>
+                      <Text style={s.bentoBigLabel}>
+                        {isPersonalStats
+                          ? `anniversaire${stats.today > 1 ? "s" : ""} à souhaiter aujourd'hui`
+                          : `anniversaire${stats.today > 1 ? "s" : ""} fêté${stats.today > 1 ? "s" : ""} aujourd'hui`}
+                      </Text>
+                    </>
                   ) : (
-                    <Text style={s.bentoBigValue}>{stats.today}</Text>
+                    <Text style={s.bentoBigEmpty}>
+                      {isPersonalStats
+                        ? "Pas d'anniversaire à souhaiter aujourd'hui"
+                        : "Aucun anniversaire aujourd'hui dans la communauté"}
+                    </Text>
                   )}
-                  <Text style={s.bentoBigLabel}>
-                    {isPersonalStats
-                      ? `anniversaire${stats && stats.today > 1 ? "s" : ""} à souhaiter aujourd'hui`
-                      : `anniversaire${stats && stats.today > 1 ? "s" : ""} souhaité${stats && stats.today > 1 ? "s" : ""} aujourd'hui`}
-                  </Text>
                   {isPersonalStats && todayBirthdayNames.length > 0 && (
                     <Text style={s.bentoBigNames} numberOfLines={2}>
-                      {joinNames(todayBirthdayNames)}
+                      {joinNames(uniqueNames(todayBirthdayNames))}
                     </Text>
                   )}
                 </LinearGradient>
@@ -749,6 +801,16 @@ const makeStyles = (t: Theme) =>
     bentoBigEmoji: { fontSize: 30 },
     bentoBigValue: { fontSize: 46, fontWeight: "900", color: "#fff" },
     bentoBigLabel: { fontSize: 12, fontWeight: "600", color: "rgba(255,255,255,0.9)", textAlign: "center" },
+    // État vide : pas de chiffre à surmonter, la phrase porte seule la tuile —
+    // donc un peu plus grande et plus contrastée que le libellé sous un nombre.
+    bentoBigEmpty: {
+      fontSize: 14,
+      fontWeight: "700",
+      color: "#fff",
+      textAlign: "center",
+      lineHeight: 19,
+      paddingHorizontal: 4,
+    },
     // Prénoms du jour, mode stats perso : reprend l'info de la carte chaude
     // masquée juste au-dessus, donc plus appuyé que le label.
     bentoBigNames: { fontSize: 12.5, fontWeight: "800", color: "#fff", textAlign: "center", marginTop: 2 },

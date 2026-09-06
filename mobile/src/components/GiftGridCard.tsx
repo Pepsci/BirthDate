@@ -83,6 +83,10 @@ const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
     card: {
       width: "48.5%",
+      // Les cartes d'une rangée sont étirées à la même hauteur (alignItems
+      // "stretch" par défaut sur le conteneur en flexWrap) ; on l'assume
+      // explicitement pour que `marginTop: "auto"` du pied ait de quoi jouer.
+      alignSelf: "stretch",
       backgroundColor: c.card,
       borderRadius: 12,
       borderWidth: 1,
@@ -98,14 +102,30 @@ const makeStyles = (c: ThemeColors) =>
       alignItems: "center",
     },
     imgEmoji: { fontSize: 30 },
-    title: { color: c.text, fontWeight: "700", fontSize: 13 },
-    line: { color: c.sub, fontSize: 12 },
+    // ⚠️ Hauteur réservée pour DEUX lignes (numberOfLines={2} à l'usage).
+    // Sans elle, une carte au titre court et sa voisine au titre long
+    // n'alignaient plus rien de ce qui suit : l'occasion, le prix et le badge
+    // se retrouvaient à des hauteurs différentes d'une carte à l'autre.
+    // lineHeight est fixé explicitement pour que 2 × lineHeight soit exact
+    // (sinon la valeur dépend de la police du système).
+    title: {
+      color: c.text,
+      fontWeight: "700",
+      fontSize: 13,
+      lineHeight: 17,
+      minHeight: 34,
+    },
+    line: { color: c.sub, fontSize: 12, lineHeight: 16 },
     footer: {
       flexDirection: "row",
       alignItems: "center",
       gap: 6,
       flexWrap: "wrap",
-      marginTop: 2,
+      // Colle le pied de carte en bas : les cartes d'une même rangée sont
+      // étirées à la hauteur de la plus haute, donc sans ça le badge flotte
+      // au milieu de la carte la plus courte.
+      marginTop: "auto",
+      paddingTop: 2,
     },
     pricePill: {
       backgroundColor: c.primarySoft,

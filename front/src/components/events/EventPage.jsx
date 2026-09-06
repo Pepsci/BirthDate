@@ -211,6 +211,14 @@ const EventPage = () => {
   const [showChatModal, setShowChatModal] = useState(false);
   // Coordonnées retrouvées par géocodage quand le lieu n'en a pas d'enregistrées
   const [geoCoords, setGeoCoords] = useState(null);
+  // Annulation
+  const [showCancelForm, setShowCancelForm] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
+  const [cancelBusy, setCancelBusy] = useState(false);
+  // Transfert d'organisation
+  const [showTransferPicker, setShowTransferPicker] = useState(false);
+  const [transferBusy, setTransferBusy] = useState(false);
+  const [codeCopied, setCodeCopied] = useState(false);
 
   const participants = useMemo(() => {
     const map = {};
@@ -353,6 +361,111 @@ const EventPage = () => {
       navigate("/home?tab=events");
     } catch {
       setDeleteConfirm(false);
+    }
+  };
+
+  const handleCancelEvent = async () => {
+    if (cancelBusy) return;
+    setCancelBusy(true);
+    try {
+      const res = await apiHandler.post(`/events/${shortId}/cancel`, {
+        reason: cancelReason.trim(),
+      });
+      setShowCancelForm(false);
+      setCancelReason("");
+      setRefreshKey((k) => k + 1);
+      if (res.data?.poolFrozen) {
+        window.alert(
+          "Événement annulé. La cagnotte est fermée : plus aucune contribution ne peut arriver. Les sommes déjà versées ne sont pas remboursées automatiquement — tu peux le faire depuis l'onglet Cagnotte.",
+        );
+      }
+    } catch (err) {
+      setError(
+        err?.response?.data?.message ||
+          err?.message ||
+          "Impossible d'annuler l'événement.",
+      );
+    } finally {
+      setCancelBusy(false);
+    }
+  };
+
+  const handleUncancelEvent = async () => {
+    if (cancelBusy) return;
+    setCancelBusy(true);
+    try {
+      await apiHandler.post(`/events/${shortId}/uncancel`);
+      setRefreshKey((k) => k + 1);
+    } catch (err) {
+      setError(
+        err?.response?.data?.message ||
+          err?.message ||
+          "Impossible de rétablir l'événement.",
+      );
+    } finally {
+      setCancelBusy(false);
+    }
+  };
+
+  const handleOfferTransfer = async (userId, name) => {
+    if (transferBusy) return;
+    setTransferBusy(true);
+    try {
+      const res = await apiHandler.post(`/events/${shortId}/transfer-lead`, {
+        userId,
+      });
+      setShowTransferPicker(false);
+      setRefreshKey((k) => k + 1);
+      const pool = res.data?.pool;
+      window.alert(
+        pool?.count > 0
+          ? `Proposition envoyée à ${name}. Attention : la cagnotte ne suivra pas — les ${(pool.total / 100).toFixed(2)} € déjà versés resteront sur ton compte Stripe, et c'est à toi de les rembourser ou de les reverser.`
+          : `Proposition envoyée à ${name}. Tant qu'elle n'a pas accepté, tu restes l'organisateur.`,
+      );
+    } catch (err) {
+      setError(
+        err?.response?.data?.message ||
+          err?.message ||
+          "Impossible de proposer le transfert.",
+      );
+    } finally {
+      setTransferBusy(false);
+    }
+  };
+
+  const handleWithdrawTransfer = async () => {
+    if (transferBusy) return;
+    setTransferBusy(true);
+    try {
+      await apiHandler.delete(`/events/${shortId}/transfer-lead`);
+      setRefreshKey((k) => k + 1);
+    } catch (err) {
+      setError(err?.response?.data?.message || err?.message || "Erreur.");
+    } finally {
+      setTransferBusy(false);
+    }
+  };
+
+  const handleAcceptTransfer = async () => {
+    if (transferBusy) return;
+    if (
+      !window.confirm(
+        "Reprendre l'organisation ?\n\nTu deviendras responsable des invitations, des votes et de l'organisation. La cagnotte de l'organisateur actuel sera fermée : les sommes déjà versées restent sur son compte, tu pourras ouvrir la tienne ensuite.",
+      )
+    )
+      return;
+    setTransferBusy(true);
+    try {
+      await apiHandler.post(`/events/${shortId}/transfer-lead/accept`);
+      setRefreshKey((k) => k + 1);
+    } catch (err) {
+      setError(
+        err?.response?.data?.message ||
+          err?.message ||
+          "Impossible d'accepter le transfert.",
+      );
+    } finally {
+      setTransferBusy(false);
     }
   };
 
@@ -533,6 +646,55 @@ const EventPage = () => {
               ✅ Événement créé ! Partagez le lien ci-dessous.
             </motion.div>
           )}
+
+          {/* Annulation : l'information qui conditionne la lecture de toute la
+              page, donc placée dans le hero et non dans un onglet. L'événement
+              n'est pas supprimé — les invités doivent pouvoir comprendre ce
+              qui s'est passé. */}
+          {event.status === "cancelled" && (
+            <motion.div className="ep-cancelled-banner" {...fadeUp(0.3)}>
+              <strong>❌ Événement annulé</strong>
+              <span>
+                {event.cancellationReason
+                  ? event.cancellationReason
+                  : "L'organisateur n'a pas indiqué de raison."}
+              </span>
+              <em>
+                La page reste consultable, mais l'événement n'aura pas lieu. Si
+                vous l'aviez ajouté à votre agenda, pensez à l'y supprimer.
+              </em>
+            </motion.div>
+          )}
+
+          {/* Proposition de transfert adressée à l'utilisateur courant. */}
+          {event.pendingTransfer?.toUser?._id === currentUser?._id && (
+            <motion.div className="ep-transfer-banner" {...fadeUp(0.3)}>
+              <strong>🤝 On vous propose d'organiser</strong>
+              <span>
+                {event.pendingTransfer?.requestedBy?.name ||
+                  "L'organisateur"}{" "}
+                vous propose de reprendre l'organisation de « {event.title} ».
+                Une éventuelle cagnotte ne suit pas : les sommes déjà versées
+                restent sur le compte de l'organisateur actuel.
+              </span>
+              <div className="ep-transfer-banner-actions">
+                <button
+                  className="ep-btn ep-btn-primary"
+                  disabled={transferBusy}
+                  onClick={handleAcceptTransfer}
+                >
+                  ✅ Accepter
+                </button>
+                <button
+                  className="ep-btn ep-btn-ghost"
+                  disabled={transferBusy}
+                  onClick={handleWithdrawTransfer}
+                >
+                  Refuser
+                </button>
+              </div>
+            </motion.div>
+          )}
         </div>
 
         {(isOrganizer || (event.hasFullAccess && event.allowGuestInvites)) && (
@@ -555,20 +717,73 @@ const EventPage = () => {
                 >
                   <i className="fa-solid fa-pen"></i> Modifier
                 </motion.button>
-                <motion.button
-                  className={`ep-btn ${deleteConfirm ? "ep-btn-danger-active" : "ep-btn-danger"}`}
-                  onClick={handleDeleteEvent}
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.97 }}
-                >
-                  {deleteConfirm ? (
-                    "Confirmer ?"
+                {/* Transfert d'organisation : proposition, jamais imposition.
+                    Tant que la personne n'a pas accepté, rien ne change. */}
+                {event.status !== "cancelled" &&
+                  (event.pendingTransfer?.toUser ? (
+                    <motion.button
+                      className="ep-btn ep-btn-outline"
+                      disabled={transferBusy}
+                      onClick={handleWithdrawTransfer}
+                      whileHover={{ scale: 1.03 }}
+                      whileTap={{ scale: 0.97 }}
+                    >
+                      ⏳ En attente de {event.pendingTransfer.toUser.name} —
+                      retirer
+                    </motion.button>
                   ) : (
-                    <>
-                      <i className="fa-solid fa-trash"></i> Supprimer
-                    </>
-                  )}
-                </motion.button>
+                    <motion.button
+                      className="ep-btn ep-btn-outline"
+                      onClick={() => setShowTransferPicker((v) => !v)}
+                      whileHover={{ scale: 1.03 }}
+                      whileTap={{ scale: 0.97 }}
+                    >
+                      🤝 Transférer
+                    </motion.button>
+                  ))}
+
+                {/* Annuler puis supprimer. Le serveur refuse désormais de
+                    supprimer un événement publié sans passer par l'annulation,
+                    pour que les invités soient prévenus au lieu de le voir
+                    disparaître : l'ordre des boutons suit ce chemin. */}
+                {event.status === "cancelled" ? (
+                  <motion.button
+                    className="ep-btn ep-btn-outline"
+                    disabled={cancelBusy}
+                    onClick={handleUncancelEvent}
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.97 }}
+                  >
+                    ↩️ Rétablir
+                  </motion.button>
+                ) : (
+                  <motion.button
+                    className="ep-btn ep-btn-danger"
+                    onClick={() => setShowCancelForm((v) => !v)}
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.97 }}
+                  >
+                    <i className="fa-solid fa-ban"></i> Annuler
+                  </motion.button>
+                )}
+
+                {(event.status === "cancelled" ||
+                  event.status === "draft") && (
+                  <motion.button
+                    className={`ep-btn ${deleteConfirm ? "ep-btn-danger-active" : "ep-btn-danger"}`}
+                    onClick={handleDeleteEvent}
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.97 }}
+                  >
+                    {deleteConfirm ? (
+                      "Confirmer ?"
+                    ) : (
+                      <>
+                        <i className="fa-solid fa-trash"></i> Supprimer
+                      </>
+                    )}
+                  </motion.button>
+                )}
                 {deleteConfirm && (
                   <motion.button
                     className="ep-btn ep-btn-ghost"
@@ -581,6 +796,96 @@ const EventPage = () => {
                 )}
               </>
             )}
+          </motion.div>
+        )}
+
+        {/* Formulaire d'annulation. Le motif est FACULTATIF : forcer une
+            justification pousse à écrire n'importe quoi, et un motif inventé
+            vaut moins qu'une absence assumée — le message dit alors simplement
+            que l'organisateur n'en a pas donné. */}
+        {isOrganizer && showCancelForm && event.status !== "cancelled" && (
+          <motion.div className="ep-cancel-form" {...fadeUp(0.35)}>
+            <p className="ep-cancel-form-hint">
+              Tous les invités seront prévenus par notification et par email.
+              L'événement restera consultable, barré, avec votre motif. Vous
+              pourrez le rétablir ou le supprimer ensuite.
+              {event.giftPoolEnabled
+                ? " La cagnotte sera fermée : plus aucune contribution ne pourra arriver. Les sommes déjà versées ne sont pas remboursées automatiquement."
+                : ""}
+            </p>
+            <textarea
+              className="ep-cancel-textarea"
+              placeholder="Motif (facultatif) — ex : salle indisponible"
+              maxLength={500}
+              rows={3}
+              value={cancelReason}
+              onChange={(e) => setCancelReason(e.target.value)}
+            />
+            <div className="ep-cancel-form-actions">
+              <button
+                className="ep-btn ep-btn-danger"
+                disabled={cancelBusy}
+                onClick={handleCancelEvent}
+              >
+                {cancelBusy ? "Annulation…" : "❌ Confirmer l'annulation"}
+              </button>
+              <button
+                className="ep-btn ep-btn-ghost"
+                onClick={() => setShowCancelForm(false)}
+              >
+                Revenir
+              </button>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Choix du repreneur : uniquement les participants AYANT CONFIRMÉ.
+            Le serveur refuse les autres, et proposer l'organisation à quelqu'un
+            qui a décliné — ou à un invité sans compte, qui n'a pas de session
+            pour accepter — n'a pas de sens. */}
+        {isOrganizer && showTransferPicker && !event.pendingTransfer?.toUser && (
+          <motion.div className="ep-cancel-form" {...fadeUp(0.35)}>
+            <p className="ep-cancel-form-hint">
+              La personne choisie devra accepter. Tant qu'elle n'a pas répondu,
+              vous restez l'organisateur. La cagnotte ne suivra pas : les sommes
+              déjà versées restent sur votre compte Stripe.
+            </p>
+            {(() => {
+              const eligible = invitations.filter(
+                (inv) =>
+                  inv.user &&
+                  inv.status === "accepted" &&
+                  inv.user._id !== currentUser?._id,
+              );
+              if (eligible.length === 0) {
+                return (
+                  <p className="ep-cancel-form-hint">
+                    Personne n'a encore confirmé sa présence : il n'y a personne
+                    à qui transférer pour l'instant.
+                  </p>
+                );
+              }
+              return (
+                <ul className="ep-transfer-list">
+                  {eligible.map((inv) => (
+                    <li key={inv._id}>
+                      <span>
+                        {inv.user.name} {inv.user.surname}
+                      </span>
+                      <button
+                        className="ep-btn ep-btn-outline"
+                        disabled={transferBusy}
+                        onClick={() =>
+                          handleOfferTransfer(inv.user._id, inv.user.name)
+                        }
+                      >
+                        Proposer →
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              );
+            })()}
           </motion.div>
         )}
 
@@ -710,8 +1015,23 @@ const EventPage = () => {
                             <i className="fa-solid fa-copy"></i>
                           </motion.button>
                         </div>
+                        {/* Copier le code seul : le bouton du dessus copie le
+                            lien complet, alors qu'on veut souvent juste coller
+                            le code dans une conversation déjà ouverte. */}
                         <p className="ep-access-code">
                           Code d'accès : <strong>{event.accessCode}</strong>
+                          <motion.button
+                            type="button"
+                            className="ep-btn ep-btn-outline ep-btn-sm ep-copy-code"
+                            onClick={() => {
+                              navigator.clipboard.writeText(event.accessCode);
+                              setCodeCopied(true);
+                              setTimeout(() => setCodeCopied(false), 2000);
+                            }}
+                            whileTap={{ scale: 0.95 }}
+                          >
+                            {codeCopied ? "✓ Copié" : "📋 Copier le code"}
+                          </motion.button>
                         </p>
                       </GlassCard>
                     )}

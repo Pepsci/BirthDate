@@ -137,7 +137,46 @@ const sendEventDateChangedEmail = (email, event, dateStr, url, accessCode) => {
   });
 };
 
+/**
+ * Annulation d'un événement.
+ *
+ * Ajouté plutôt que greffé sur un template existant : la règle du projet est de
+ * ne jamais modifier les emails déjà en production, uniquement d'en ajouter.
+ *
+ * Deux partis pris :
+ *  - le motif de l'organisateur est repris tel quel quand il en a donné un, et
+ *    remplacé par une phrase neutre sinon. On n'invente pas de raison ;
+ *  - l'email rappelle que l'entrée d'agenda, elle, ne disparaît pas. L'ajout au
+ *    calendrier natif est une écriture ponctuelle, jamais synchronisée : sans
+ *    cette phrase, l'invité garde un rappel pour un dîner qui n'aura pas lieu.
+ */
+const sendEventCancelledEmail = async (
+  recipientEmail,
+  { event, reason, organizerName, addedToCalendar = true },
+) => {
+  const url = `${process.env.FRONTEND_URL}/event/${event.shortId}`;
+  const why = reason
+    ? `Motif indiqué : <em>${reason}</em>`
+    : `${organizerName || "L'organisateur"} n'a pas indiqué de raison.`;
+
+  return sendEventEmail(
+    recipientEmail,
+    `❌ Annulé : ${event.title}`,
+    {
+      badge: "ÉVÉNEMENT ANNULÉ",
+      title: `« ${event.title} » est annulé`,
+      message: `${why}<br><br>La page de l'événement reste consultable, mais il n'aura pas lieu.`,
+      ctaLink: url,
+      ctaText: "Voir l'événement",
+      footnote: addedToCalendar
+        ? "Si tu avais ajouté cet événement à ton agenda, pense à l'y supprimer : BirthReminder ne peut pas modifier une entrée déjà créée dans ton calendrier."
+        : null,
+    },
+  );
+};
+
 module.exports = {
+  sendEventCancelledEmail,
   sendEventInvitationEmail,
   sendEventReminderEmail,
   sendEventVoteRequestEmail,

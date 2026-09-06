@@ -17,6 +17,13 @@ export type NotifType =
   | "event_gift_vote"
   | "event_chat_message"
   | "event_pool_contribution"
+  | "event_cancelled"
+  | "event_uncancelled"
+  | "event_transfer_offer"
+  | "event_transfer_accepted"
+  | "event_transfer_declined"
+  | "event_transfer_done"
+  | "event_pool_refunded"
   | "shared_gift_invite"
   | "shared_gift_accepted"
   | "shared_gift_added"
@@ -107,6 +114,52 @@ export function notifDisplay(n: AppNotification): {
           : d.eventTitle
             ? `${d.organizerName ? `${d.organizerName} t'invite à` : "Rappel :"} « ${d.eventTitle} »`
             : "Rappel d'événement",
+      };
+    case "event_cancelled":
+      return {
+        emoji: "❌",
+        // Le motif, quand il y en a un, EST l'information : « X est annulé »
+        // sans raison laisse la question ouverte et pousse à rouvrir la page.
+        text: d.reason
+          ? `« ${d.eventTitle ?? "Un événement"} » est annulé — ${d.reason}`
+          : `« ${d.eventTitle ?? "Un événement"} » est annulé`,
+      };
+    case "event_uncancelled":
+      return {
+        emoji: "✅",
+        text: `« ${d.eventTitle ?? "Un événement"} » est rétabli : il aura bien lieu`,
+      };
+    case "event_transfer_offer":
+      return {
+        emoji: "🤝",
+        text: `${d.fromName ?? "L'organisateur"} te propose de reprendre l'organisation de « ${d.eventTitle ?? "un événement"} »`,
+      };
+    case "event_transfer_accepted":
+      return {
+        emoji: "🤝",
+        text: `${d.fromName ?? "Un participant"} reprend l'organisation de « ${d.eventTitle ?? "un événement"} » — tu restes participant`,
+      };
+    case "event_transfer_declined":
+      return {
+        emoji: "↩️",
+        text: `${d.fromName ?? "Le participant"} préfère ne pas reprendre l'organisation de « ${d.eventTitle ?? "un événement"} »`,
+      };
+    case "event_transfer_done":
+      return {
+        emoji: "🤝",
+        // Le serveur compose le message : il est le seul à savoir s'il faut y
+        // ajouter la phrase sur l'argent déjà versé, qui ne suit pas le
+        // transfert.
+        text:
+          d.message ??
+          `L'organisation de « ${d.eventTitle ?? "un événement"} » a changé de mains`,
+      };
+    case "event_pool_refunded":
+      return {
+        emoji: "💸",
+        text: d.amount
+          ? `Ta contribution de ${(Number(d.amount) / 100).toFixed(2)} € à « ${d.eventTitle ?? "un événement"} » t'a été remboursée intégralement`
+          : `Ta contribution à « ${d.eventTitle ?? "un événement"} » t'a été remboursée`,
       };
     case "event_updated":
       return {

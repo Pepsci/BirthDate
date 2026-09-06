@@ -18,8 +18,14 @@ const TYPE_CONFIG = {
   event_gift_proposed: { icon: "🎁" },
   event_gift_vote: { icon: "❤️" },
   event_chat_message: { icon: "💬" },
-  event_chat_message: { icon: "💬" },
   event_pool_contribution: { icon: "💰" },
+  event_cancelled: { icon: "❌" },
+  event_uncancelled: { icon: "✅" },
+  event_transfer_offer: { icon: "🤝" },
+  event_transfer_accepted: { icon: "🤝" },
+  event_transfer_declined: { icon: "↩️" },
+  event_transfer_done: { icon: "🤝" },
+  event_pool_refunded: { icon: "💸" },
   shared_gift_invite: { icon: "👥" },
   shared_gift_accepted: { icon: "🎁" },
   shared_gift_added: { icon: "🎁" },
@@ -102,6 +108,70 @@ const buildText = (type, data) => {
       return (
         <>
           L'organisateur a modifié <strong>{data.eventTitle}</strong>
+        </>
+      );
+    case "event_cancelled":
+      // Le motif, quand il existe, EST l'information : « X est annulé » sans
+      // raison laisse la question ouverte et force à rouvrir la page.
+      return data.reason ? (
+        <>
+          <strong>{data.eventTitle}</strong> est annulé — {data.reason}
+        </>
+      ) : (
+        <>
+          <strong>{data.eventTitle}</strong> est annulé
+        </>
+      );
+    case "event_uncancelled":
+      return (
+        <>
+          <strong>{data.eventTitle}</strong> est rétabli : il aura bien lieu
+        </>
+      );
+    case "event_transfer_offer":
+      return (
+        <>
+          {data.fromName} te propose de reprendre l'organisation de{" "}
+          <strong>{data.eventTitle}</strong>
+        </>
+      );
+    case "event_transfer_accepted":
+      return (
+        <>
+          {data.fromName} reprend l'organisation de{" "}
+          <strong>{data.eventTitle}</strong> — tu restes participant
+        </>
+      );
+    case "event_transfer_declined":
+      return (
+        <>
+          {data.fromName} préfère ne pas reprendre l'organisation de{" "}
+          <strong>{data.eventTitle}</strong>
+        </>
+      );
+    case "event_transfer_done":
+      // Message composé par le serveur : lui seul sait s'il faut y ajouter la
+      // phrase sur l'argent déjà versé, qui ne suit pas le transfert.
+      return (
+        <>
+          {data.message ?? (
+            <>
+              L'organisation de <strong>{data.eventTitle}</strong> a changé de
+              mains
+            </>
+          )}
+        </>
+      );
+    case "event_pool_refunded":
+      return data.amount ? (
+        <>
+          Ta contribution de {(Number(data.amount) / 100).toFixed(2)} € à{" "}
+          <strong>{data.eventTitle}</strong> t'a été remboursée intégralement
+        </>
+      ) : (
+        <>
+          Ta contribution à <strong>{data.eventTitle}</strong> t'a été
+          remboursée
         </>
       );
     case "shared_gift_added":

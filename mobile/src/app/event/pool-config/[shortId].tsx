@@ -9,6 +9,7 @@ import {
   Switch,
   Platform,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import DateTimePicker from "@react-native-community/datetimepicker";
@@ -25,6 +26,9 @@ import {
   deleteBankInfo,
   toggleIbanOption,
   setPaypalOption,
+  refundPreview,
+  refundAll,
+  RefundPreview,
 } from "../../../lib/events";
 import {
   useTheme,
@@ -53,6 +57,53 @@ export default function PoolConfigScreen() {
   const [onboarding, setOnboarding] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  // Remboursement : le chiffrage est chargé séparément de la cagnotte, parce
+  // qu'il reste pertinent quand celle-ci est déjà fermée (annulation,
+  // transfert d'organisation).
+  const [preview, setPreview] = useState<RefundPreview | null>(null);
+  const [refunding, setRefunding] = useState(false);
+
+  const loadPreview = () => {
+    if (!shortId) return;
+    refundPreview(shortId)
+      .then(setPreview)
+      // 403 si on n'est pas l'organisateur : le bloc reste simplement masqué.
+      .catch(() => setPreview(null));
+  };
+
+  const onRefundAll = () => {
+    if (!preview) return;
+    Alert.alert(
+      "Rembourser tout le monde ?",
+      `${preview.count} contribution${preview.count > 1 ? "s" : ""} pour ${(preview.totalRefunded / 100).toFixed(2)} €.\n\nLes contributeurs récupèrent l'intégralité. Cette opération te coûtera ${(preview.feeLoss / 100).toFixed(2)} € : Stripe ne restitue pas les frais des paiements d'origine.\n\nLa cagnotte sera fermée. C'est irréversible.`,
+      [
+        { text: "Annuler", style: "cancel" },
+        {
+          text: "Rembourser",
+          style: "destructive",
+          onPress: async () => {
+            if (!shortId) return;
+            setRefunding(true);
+            try {
+              const report = await refundAll(shortId);
+              loadPreview();
+              Alert.alert(
+                "Remboursements envoyés",
+                report.failed === 0
+                  ? `${report.refunded} remboursement${report.refunded > 1 ? "s" : ""} envoyé${report.refunded > 1 ? "s" : ""}. Les contributeurs seront prévenus dès que Stripe les confirme.`
+                  : `${report.refunded} réussi${report.refunded > 1 ? "s" : ""}, ${report.failed} en échec. Tu peux relancer : seules les contributions non remboursées seront reprises.`,
+              );
+            } catch (e: any) {
+              setError(e?.message ?? "Erreur lors du remboursement.");
+            } finally {
+              setRefunding(false);
+            }
+          },
+        },
+      ],
+    );
+  };
+
   // Virement direct (indépendant de la cagnotte Stripe)
   const [ibanEnabled, setIbanEnabled] = useState(false);
   const [iban, setIban] = useState("");
@@ -64,6 +115,7 @@ export default function PoolConfigScreen() {
 
   useEffect(() => {
     if (!shortId) return;
+    loadPreview();
     Promise.all([
       fetchPool(shortId)
         .then((p: PoolInfo) => {
@@ -279,6 +331,41 @@ export default function PoolConfigScreen() {
         </>
       )}
 
+      {/* ── Remboursement ──────────────────────────────────────────────────
+          Visible dès qu'il y a quelque chose à rembourser, que la cagnotte soit
+          encore ouverte ou déjà fermée par une annulation ou un transfert :
+          c'est précisément dans ces deux cas qu'on en a besoin. */}
+      {(preview?.count ?? 0) > 0 && (
+        <>
+          <View style={styles.dtDivider} />
+          <Text style={styles.dtTitle}>💸 Rembourser les contributeurs</Text>
+          <Text style={styles.hint}>
+            {preview!.count} contribution{preview!.count > 1 ? "s" : ""} —{" "}
+            {(preview!.totalRefunded / 100).toFixed(2)} € seront intégralement
+            rendus à leurs auteurs.
+          </Text>
+          {/* ⚠️ Le chiffre qui compte pour LUI. Stripe ne restitue pas les frais
+              de la transaction d'origine : le contributeur récupère tout, et
+              l'écart reste à la charge de l'organisateur. Le découvrir après
+              coup serait une mauvaise surprise. */}
+          <Text style={styles.refundWarn}>
+            ⚠️ Cette opération te coûtera {(preview!.feeLoss / 100).toFixed(2)} €
+            : Stripe ne rend pas les frais des paiements d'origine.
+          </Text>
+          <Pressable
+            style={[styles.refundBtn, refunding && { opacity: 0.5 }]}
+            disabled={refunding}
+            onPress={onRefundAll}
+          >
+            <Text style={styles.refundBtnText}>
+              {refunding
+                ? "Remboursement en cours…"
+                : "Rembourser tout le monde"}
+            </Text>
+          </Pressable>
+        </>
+      )}
+
       {/* ── Virement direct — indépendant de la cagnotte Stripe ── */}
       <View style={styles.dtDivider} />
       <Text style={styles.dtTitle}>💳 Virement direct</Text>
@@ -418,6 +505,22 @@ const makeStyles = (c: ThemeColors) =>
     },
     label: { fontSize: 13, fontWeight: "700", color: c.sub, marginTop: 10 },
     hint: { color: c.faint, fontSize: 12 },
+    refundWarn: {
+      color: c.warning,
+      fontSize: 12.5,
+      lineHeight: 17,
+      marginTop: 6,
+      fontWeight: "600",
+    },
+    refundBtn: {
+      marginTop: 10,
+      paddingVertical: 12,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: c.danger,
+      alignItems: "center",
+    },
+    refundBtnText: { color: c.danger, fontWeight: "700", fontSize: 14 },
     dtDivider: {
       height: StyleSheet.hairlineWidth,
       backgroundColor: c.border,

@@ -40,7 +40,13 @@ import {
   deleteGiftProposal,
   fetchShare,
   joinEventByCode,
+  acceptLeadTransfer,
+  cancelEvent,
+  cancelLeadTransfer,
   deleteEvent,
+  leaveEvent,
+  offerLeadTransfer,
+  uncancelEvent,
   fetchPool,
   PoolInfo,
   fetchMessages,
@@ -70,6 +76,7 @@ import ImportGiftSheet, { ImportedGift } from "../../components/ImportGiftSheet"
 import DirectTransferViewer from "../../components/DirectTransferViewer";
 import EventLocationMap from "../../components/EventLocationMap";
 import { usePersistedCollapse } from "../../lib/collapse-prefs";
+import * as Clipboard from "expo-clipboard";
 import {
   useTheme,
   useThemedStyles,
@@ -575,6 +582,159 @@ export default function EventDetailScreen() {
     }
   };
 
+  // Retour visuel de la copie : sans lui, appuyer sur « Copier le code » ne
+  // produit rien de perceptible et on appuie trois fois.
+  const [codeCopied, setCodeCopied] = useState(false);
+
+  const onCopyCode = async () => {
+    if (!shortId) return;
+    try {
+      const sh = share ?? (await fetchShare(shortId));
+      setShare(sh);
+      await Clipboard.setStringAsync(sh.code);
+      setCodeCopied(true);
+      setTimeout(() => setCodeCopied(false), 2000);
+    } catch (e: any) {
+      if (e?.message) setError(e.message);
+    }
+  };
+
+  // Feuille de saisie du motif. On ne passe pas par Alert.prompt : il n'existe
+  // que sur iOS, et un motif d'annulation mérite mieux qu'un champ d'une ligne
+  // absent sur Android.
+  const [cancelSheet, setCancelSheet] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
+  const [cancelling, setCancelling] = useState(false);
+
+  const doCancel = async () => {
+    if (!shortId || cancelling) return;
+    setCancelling(true);
+    try {
+      const res = await cancelEvent(shortId, cancelReason.trim());
+      setCancelSheet(false);
+      setCancelReason("");
+      await load();
+      Alert.alert(
+        "Événement annulé",
+        res.poolFrozen
+          ? "Tes invités ont été prévenus. La cagnotte est fermée : plus aucune contribution ne peut arriver. Les sommes déjà versées ne sont pas remboursées automatiquement."
+          : "Tes invités ont été prévenus par notification et par email.",
+      );
+    } catch (e: any) {
+      setError(e?.message ?? "Impossible d'annuler l'événement.");
+    } finally {
+      setCancelling(false);
+    }
+  };
+
+  const confirmUncancel = () => {
+    Alert.alert(
+      "Rétablir cet événement ?",
+      "Tous les invités seront prévenus qu'il aura finalement lieu. La cagnotte, elle, reste fermée : tu peux la rouvrir depuis l'écran cagnotte.",
+      [
+        { text: "Annuler", style: "cancel" },
+        {
+          text: "Rétablir",
+          onPress: async () => {
+            try {
+              await uncancelEvent(shortId!);
+              await load();
+            } catch (e: any) {
+              setError(e?.message ?? "Impossible de rétablir l'événement.");
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  // ── Transfert d'organisation ──────────────────────────────────────────────
+  const [transferSheet, setTransferSheet] = useState(false);
+  const [transferBusy, setTransferBusy] = useState(false);
+  const pendingTransferTo = event?.pendingTransfer?.toUser ?? null;
+  const iAmTransferTarget =
+    !!pendingTransferTo && pendingTransferTo._id === user?._id;
+
+  const onOfferTransfer = async (targetId: string, targetName: string) => {
+    if (!shortId || transferBusy) return;
+    setTransferBusy(true);
+    try {
+      const res = await offerLeadTransfer(shortId, targetId);
+      setTransferSheet(false);
+      await load();
+      Alert.alert(
+        "Proposition envoyée",
+        res.pool.count > 0
+          ? `${targetName} doit accepter. Attention : la cagnotte ne suivra pas — les ${(res.pool.total / 100).toFixed(2)} € déjà versés resteront sur ton compte Stripe, et c'est à toi de les rembourser ou de les reverser.`
+          : `${targetName} doit accepter pour que le transfert prenne effet. D'ici là, tu restes l'organisateur.`,
+      );
+    } catch (e: any) {
+      setError(e?.message ?? "Impossible de proposer le transfert.");
+    } finally {
+      setTransferBusy(false);
+    }
+  };
+
+  const onWithdrawTransfer = async () => {
+    if (!shortId || transferBusy) return;
+    setTransferBusy(true);
+    try {
+      await cancelLeadTransfer(shortId);
+      await load();
+    } catch (e: any) {
+      setError(e?.message ?? "Erreur.");
+    } finally {
+      setTransferBusy(false);
+    }
+  };
+
+  const onAcceptTransfer = () => {
+    Alert.alert(
+      "Reprendre l'organisation ?",
+      "Tu deviendras responsable des invitations, des votes et de l'organisation. La cagnotte de l'organisateur actuel sera fermée : les sommes déjà versées restent sur son compte, tu peux ouvrir la tienne ensuite.",
+      [
+        { text: "Plus tard", style: "cancel" },
+        {
+          text: "Accepter",
+          onPress: async () => {
+            if (!shortId) return;
+            setTransferBusy(true);
+            try {
+              await acceptLeadTransfer(shortId);
+              await load();
+            } catch (e: any) {
+              setError(e?.message ?? "Impossible d'accepter le transfert.");
+            } finally {
+              setTransferBusy(false);
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  const confirmLeave = () => {
+    Alert.alert(
+      "Quitter cet événement ?",
+      "Tu ne verras plus ses informations ni son chat. L'organisateur pourra t'inviter à nouveau.",
+      [
+        { text: "Annuler", style: "cancel" },
+        {
+          text: "Quitter",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await leaveEvent(shortId!);
+              router.replace("/events");
+            } catch (e: any) {
+              setError(e?.message ?? "Impossible de quitter l'événement.");
+            }
+          },
+        },
+      ],
+    );
+  };
+
   const confirmDelete = () => {
     Alert.alert(
       "Supprimer cet événement ?",
@@ -683,8 +843,7 @@ export default function EventDetailScreen() {
           headerRight: () =>
             event.hasFullAccess ? (
               <HeaderIconButton
-                emoji="💬"
-                fontSize={20}
+                name="chat"
                 accessibilityLabel="Ouvrir le chat de l'événement"
                 badge={chatUnread}
                 onPress={() => {
@@ -770,6 +929,58 @@ export default function EventDetailScreen() {
           />
         )}
 
+      {/* Bandeau d'annulation — avant tout le reste : c'est l'information qui
+          conditionne la lecture de toute la page. */}
+      {event.status === "cancelled" && (
+        <View style={styles.cancelledCard}>
+          <Text style={styles.cancelledTitle}>❌ Événement annulé</Text>
+          <Text style={styles.cancelledText}>
+            {event.cancellationReason
+              ? event.cancellationReason
+              : "L'organisateur n'a pas indiqué de raison."}
+          </Text>
+          <Text style={styles.cancelledHint}>
+            La page reste consultable, mais l'événement n'aura pas lieu. Si tu
+            l'avais ajouté à ton agenda, pense à l'y supprimer.
+          </Text>
+        </View>
+      )}
+
+      {/* Proposition de transfert reçue — au-dessus de tout : c'est une
+          décision à prendre, pas une information à faire défiler. */}
+      {iAmTransferTarget && (
+        <View style={styles.transferCard}>
+          <Text style={styles.transferTitle}>🤝 On te propose d'organiser</Text>
+          <Text style={styles.cancelledText}>
+            {event.pendingTransfer?.requestedBy?.name ?? "L'organisateur"} te
+            propose de reprendre l'organisation de « {event.title} ».
+          </Text>
+          <Text style={styles.cancelledHint}>
+            Tu deviendrais responsable des invitations, des votes et de
+            l'organisation. Une éventuelle cagnotte ne suit pas : les sommes
+            déjà versées restent sur le compte de l'organisateur actuel.
+          </Text>
+          <View style={styles.orgRow}>
+            <Pressable
+              style={styles.orgBtn}
+              disabled={transferBusy}
+              onPress={onAcceptTransfer}
+            >
+              <Text style={styles.orgBtnText}>✅ Accepter</Text>
+            </Pressable>
+            <Pressable
+              style={[styles.orgBtn, styles.orgBtnDanger]}
+              disabled={transferBusy}
+              onPress={onWithdrawTransfer}
+            >
+              <Text style={[styles.orgBtnText, { color: colors.danger }]}>
+                Refuser
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+      )}
+
       {/* Organisation (organizer) — juste après les infos */}
       {isOrganizer && (
         <View style={styles.card}>
@@ -787,14 +998,54 @@ export default function EventDetailScreen() {
             >
               <Text style={styles.orgBtnText}>💳 Cagnotte</Text>
             </Pressable>
-            <Pressable
-              style={[styles.orgBtn, styles.orgBtnDanger]}
-              onPress={confirmDelete}
-            >
-              <Text style={[styles.orgBtnText, { color: colors.danger }]}>
-                🗑️ Supprimer
-              </Text>
-            </Pressable>
+            {pendingTransferTo ? (
+              <Pressable
+                style={styles.orgBtn}
+                disabled={transferBusy}
+                onPress={onWithdrawTransfer}
+              >
+                <Text style={styles.orgBtnText}>
+                  ⏳ En attente de {pendingTransferTo.name} — retirer
+                </Text>
+              </Pressable>
+            ) : (
+              event.status !== "cancelled" && (
+                <Pressable
+                  style={styles.orgBtn}
+                  onPress={() => setTransferSheet(true)}
+                >
+                  <Text style={styles.orgBtnText}>🤝 Transférer</Text>
+                </Pressable>
+              )
+            )}
+            {/* Annuler avant supprimer : le serveur refuse désormais de
+                supprimer un événement publié sans passer par l'annulation, pour
+                que les invités soient prévenus au lieu de le voir disparaître.
+                L'ordre des boutons reflète ce chemin. */}
+            {event.status === "cancelled" ? (
+              <Pressable style={styles.orgBtn} onPress={confirmUncancel}>
+                <Text style={styles.orgBtnText}>↩️ Rétablir</Text>
+              </Pressable>
+            ) : (
+              <Pressable
+                style={[styles.orgBtn, styles.orgBtnDanger]}
+                onPress={() => setCancelSheet(true)}
+              >
+                <Text style={[styles.orgBtnText, { color: colors.danger }]}>
+                  ❌ Annuler
+                </Text>
+              </Pressable>
+            )}
+            {(event.status === "cancelled" || event.status === "draft") && (
+              <Pressable
+                style={[styles.orgBtn, styles.orgBtnDanger]}
+                onPress={confirmDelete}
+              >
+                <Text style={[styles.orgBtnText, { color: colors.danger }]}>
+                  🗑️ Supprimer
+                </Text>
+              </Pressable>
+            )}
           </View>
         </View>
       )}
@@ -822,6 +1073,15 @@ export default function EventDetailScreen() {
               );
             })}
           </View>
+
+          {/* Quitter : discret et en bas de la carte réponse, pas dans une
+              carte à lui. Répondre « non » et quitter sont deux choses
+              différentes — décliner laisse l'organisateur informé, quitter
+              retire l'invitation — et les placer côte à côte rend la nuance
+              lisible au moment où elle se pose. */}
+          <Pressable style={styles.leaveBtn} onPress={confirmLeave}>
+            <Text style={styles.leaveBtnText}>🚪 Quitter l'événement</Text>
+          </Pressable>
         </View>
       )}
 
@@ -1347,6 +1607,14 @@ export default function EventDetailScreen() {
               <Pressable style={styles.shareBtn} onPress={onShare}>
                 <Text style={styles.shareBtnText}>Partager le lien + code</Text>
               </Pressable>
+              {/* Copier le code seul : partager le lien complet ouvre la feuille
+                  de partage du système, alors qu'on veut souvent juste coller
+                  le code dans une conversation déjà ouverte ailleurs. */}
+              <Pressable style={styles.shareBtn} onPress={onCopyCode}>
+                <Text style={styles.shareBtnText}>
+                  {codeCopied ? "✓ Code copié" : "📋 Copier le code d'accès"}
+                </Text>
+              </Pressable>
               {share && (
                 <Text style={styles.detail}>
                   Code d'accès :{" "}
@@ -1440,6 +1708,85 @@ export default function EventDetailScreen() {
         onImport={importGifts}
         busy={giftSending}
       />
+
+      {/* Choix du repreneur. Seuls les participants AYANT CONFIRMÉ apparaissent :
+          le serveur refuse les autres, et proposer l'organisation à quelqu'un
+          qui a décliné — ou qui n'a pas de compte — n'a pas de sens. */}
+      <BottomSheet
+        visible={transferSheet}
+        onClose={() => setTransferSheet(false)}
+      >
+        <Text style={styles.sheetTitle}>Transférer l'organisation</Text>
+        <Text style={styles.cancelledHint}>
+          La personne choisie devra accepter. Tant qu'elle n'a pas répondu, tu
+          restes l'organisateur.
+          {pool?.active || (pool?.totalCollected ?? 0) > 0
+            ? " La cagnotte ne suivra pas : les sommes déjà versées restent sur ton compte Stripe, à toi de les rembourser ou de les reverser."
+            : ""}
+        </Text>
+        {(() => {
+          const eligible = (invitations ?? []).filter(
+            (inv) => inv.user && inv.status === "accepted" && inv.user._id !== user?._id,
+          );
+          if (eligible.length === 0) {
+            return (
+              <Text style={styles.cancelledHint}>
+                Personne n'a encore confirmé sa présence : il n'y a personne à
+                qui transférer pour l'instant.
+              </Text>
+            );
+          }
+          return eligible.map((inv) => (
+            <Pressable
+              key={inv._id}
+              style={styles.transferRow}
+              disabled={transferBusy}
+              onPress={() =>
+                onOfferTransfer(inv.user!._id, inv.user!.name)
+              }
+            >
+              <Text style={styles.transferName}>
+                {inv.user!.name} {inv.user!.surname}
+              </Text>
+              <Text style={styles.orgBtnText}>Proposer →</Text>
+            </Pressable>
+          ));
+        })()}
+      </BottomSheet>
+
+      {/* Motif d'annulation. Le champ est facultatif : forcer une justification
+          pousse à écrire n'importe quoi, et un motif inventé vaut moins qu'une
+          absence de motif assumée — le message dit alors simplement que
+          l'organisateur n'en a pas donné. */}
+      <BottomSheet visible={cancelSheet} onClose={() => setCancelSheet(false)}>
+        <Text style={styles.sheetTitle}>Annuler l'événement</Text>
+        <Text style={styles.cancelledHint}>
+          Tous les invités seront prévenus par notification et par email.
+          L'événement restera consultable, barré, avec ton motif. Tu pourras le
+          rétablir ou le supprimer ensuite.
+          {pool?.active
+            ? " La cagnotte sera fermée : plus aucune contribution ne pourra arriver. Les sommes déjà versées ne sont pas remboursées automatiquement."
+            : ""}
+        </Text>
+        <TextInput
+          style={[styles.input, { minHeight: 80, textAlignVertical: "top" }]}
+          placeholder="Motif (facultatif) — ex : salle indisponible"
+          placeholderTextColor={colors.placeholder}
+          multiline
+          maxLength={500}
+          value={cancelReason}
+          onChangeText={setCancelReason}
+        />
+        <Pressable
+          onPress={doCancel}
+          disabled={cancelling}
+          style={[styles.sheetDeleteBtn, cancelling && { opacity: 0.5 }]}
+        >
+          <Text style={styles.sheetDeleteText}>
+            {cancelling ? "Annulation…" : "❌ Confirmer l'annulation"}
+          </Text>
+        </Pressable>
+      </BottomSheet>
     </ScrollView>
 
       {pendingDelete && (
@@ -1770,6 +2117,45 @@ const makeStyles = (c: ThemeColors) =>
     marginTop: 4,
   },
   giftSubmitText: { color: c.white, fontWeight: "600" },
+  leaveBtn: {
+    marginTop: 12,
+    paddingTop: 12,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: c.border,
+    alignItems: "center",
+  },
+  leaveBtnText: { color: c.danger, fontSize: 13, fontWeight: "600" },
+  transferCard: {
+    backgroundColor: c.primarySoft,
+    borderWidth: 1,
+    borderColor: c.primary,
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 12,
+    gap: 6,
+  },
+  transferTitle: { color: c.primary, fontWeight: "800", fontSize: 16 },
+  transferRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: c.border,
+  },
+  transferName: { color: c.text, fontSize: 15, fontWeight: "600" },
+  cancelledCard: {
+    backgroundColor: c.dangerSoft ?? "rgba(239,68,68,0.12)",
+    borderWidth: 1,
+    borderColor: c.danger,
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 12,
+    gap: 6,
+  },
+  cancelledTitle: { color: c.danger, fontWeight: "800", fontSize: 16 },
+  cancelledText: { color: c.text, fontSize: 14, lineHeight: 19 },
+  cancelledHint: { color: c.sub, fontSize: 12, lineHeight: 17 },
   shareBtn: {
     borderWidth: 1,
     borderColor: c.primary,

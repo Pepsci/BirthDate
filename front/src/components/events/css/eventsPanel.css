@@ -300,3 +300,29 @@
     min-width: 30px;
   }
 }
+
+/* Bascule de la section « Événements passés ». Repliée par défaut : ces
+   événements s'accumulent sans fin et n'appellent aucune action, mais le
+   compte reste visible pour qu'on sache qu'ils sont là. */
+.events-past-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  margin-top: 18px;
+  padding: 12px 14px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+
+.events-past-toggle:hover {
+  border-color: var(--primary);
+  color: var(--text-primary);
+}

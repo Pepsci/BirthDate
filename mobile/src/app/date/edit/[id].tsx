@@ -72,7 +72,7 @@ export default function EditDateScreen() {
           title: `Modifier ${entry.name}`,
           headerRight: () => (
             <HeaderIconButton
-              emoji="🗑️"
+              name="trash"
               accessibilityLabel="Supprimer cette date"
               onPress={confirmDelete}
             />

@@ -132,6 +132,12 @@ export function webLinkToMobileRoute(url: string | null | undefined): string {
   if (url.startsWith("/event/")) return url;
   if (url.startsWith("/auth/reset/")) return url; // reset mdp par token
   if (url.includes("/shared-invites")) return "/shared-invites";
+  // Liste commune : le backend résout, pour chaque destinataire, la carte qui
+  // porte la liste (/home?tab=date&dateId=…) ou, à défaut, l'écran de
+  // rattachement. Ce dernier n'a pas d'équivalent web, on le laisse passer tel
+  // quel — sans cette règle il retombait sur "/" (accueil).
+  const attach = url.match(/\/shared-list\/([a-f0-9]+)\/attach/i);
+  if (attach) return `/shared-list/${attach[1]}/attach`;
   if (url.includes("tab=events")) return "/events";
   if (url.includes("tab=agenda")) return "/agenda";
   if (url.includes("tab=date") && url.includes("dateId=")) {

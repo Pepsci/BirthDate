@@ -793,3 +793,133 @@
 .ep-share-pool-btn:hover {
   background: var(--bg-tertiary);
 }
+
+/* ── Annulation & transfert d'organisation ──────────────────────────────────
+   Ajouté avec le chantier « annuler / transférer / rembourser ». Ces blocs
+   vivent dans le hero parce qu'ils portent une information qui conditionne la
+   lecture de toute la page — pas un détail rangé dans un onglet. */
+
+.ep-cancelled-banner,
+.ep-transfer-banner {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 16px;
+  padding: 14px 18px;
+  border-radius: 14px;
+  text-align: left;
+  max-width: 620px;
+}
+
+.ep-cancelled-banner {
+  background: var(--bg-secondary);
+  border: 1px solid var(--danger);
+}
+
+.ep-cancelled-banner strong {
+  color: var(--danger);
+  font-size: 1rem;
+}
+
+.ep-cancelled-banner span {
+  color: var(--text-primary);
+  line-height: 1.45;
+}
+
+.ep-cancelled-banner em {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-style: normal;
+  line-height: 1.4;
+}
+
+.ep-transfer-banner {
+  background: var(--bg-secondary);
+  border: 1px solid var(--primary);
+}
+
+.ep-transfer-banner strong {
+  color: var(--primary);
+  font-size: 1rem;
+}
+
+.ep-transfer-banner span {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.ep-transfer-banner-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+/* Formulaire d'annulation et sélecteur de repreneur : même conteneur, parce
+   que ce sont deux décisions d'organisateur qui s'ouvrent au même endroit. */
+.ep-cancel-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 14px auto 0;
+  padding: 16px 18px;
+  max-width: 620px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  text-align: left;
+}
+
+.ep-cancel-form-hint {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.ep-cancel-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.95rem;
+  resize: vertical;
+}
+
+.ep-cancel-textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.ep-cancel-form-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.ep-transfer-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ep-transfer-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-primary);
+}
+
+.ep-transfer-list li:last-child {
+  border-bottom: none;
+}
+
+.ep-copy-code {
+  margin-left: 10px;
+}

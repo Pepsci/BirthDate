@@ -11,7 +11,10 @@ const { notify } = require("../../utils/notify");
 const { sendPushToUser } = require("../../services/pushService");
 const {
   sendEventDateChangedEmail,
+  sendEventCancelledEmail,
 } = require("../../services/emailTemplates/eventEmails");
+const User = require("../../models/user.model");
+const { audit } = require("../../services/auditLog");
 
 // Code d'accès cryptographiquement sûr (8 caractères hex majuscules)
 const generateAccessCode = () =>
@@ -111,6 +114,19 @@ router.post("/", isAuthenticated, async (req, res) => {
     );
 
     res.status(201).json(newEvent);
+
+    // Après la réponse : le journal ne doit ni retarder ni faire échouer la
+    // création, qui est déjà en base à ce stade.
+    await audit(req, {
+      action: "event_create",
+      userId: req.payload._id,
+      metadata: {
+        eventShortId: newEvent.shortId,
+        title: newEvent.title,
+        type: newEvent.type,
+        status: newEvent.status,
+      },
+    });
   } catch (error) {
     console.error("❌ Error creating event:", error);
     res
@@ -184,7 +200,11 @@ router.get("/:shortId", async (req, res) => {
         populate: { path: "user", select: "name surname avatar publicKey" },
       })
       .populate("forPerson", "name surname avatar")
-      .populate("forDate", "name date");
+      .populate("forDate", "name date")
+      // Le destinataire d'une proposition de transfert doit pouvoir l'afficher
+      // avec un nom, pas un identifiant.
+      .populate("pendingTransfer.toUser", "name surname avatar")
+      .populate("pendingTransfer.requestedBy", "name surname");
 
     if (!event)
       return res.status(404).json({ message: "Événement introuvable" });
@@ -255,6 +275,13 @@ router.get("/:shortId", async (req, res) => {
       description: event.description,
       type: event.type,
       status: event.status,
+      // Le motif d'annulation accompagne le statut. Sans lui, la page publique
+      // afficherait « annulé — l'organisateur n'a pas indiqué de raison » alors
+      // qu'il en a donné une : un message faux, pire que pas de message. Il est
+      // du même ordre de confidentialité que le titre et la description, déjà
+      // exposés ici.
+      cancelledAt: event.cancelledAt,
+      cancellationReason: event.cancellationReason,
       dateMode: event.dateMode,
       fixedDate: event.fixedDate,
       dateOptions: event.dateOptions,
@@ -483,6 +510,38 @@ router.delete("/:shortId", isAuthenticated, async (req, res) => {
     if (event.organizer.toString() !== req.payload._id)
       return res.status(403).json({ message: "Non autorisé" });
 
+    // ⚠️ La suppression définitive est désormais réservée aux brouillons et aux
+    // événements déjà annulés. Supprimer directement un événement publié le
+    // faisait disparaître de la liste de chaque invité sans un mot, en
+    // emportant le chat et l'historique : c'est précisément ce que l'annulation
+    // évite. On demande donc d'annuler d'abord — les invités sont prévenus et
+    // comprennent — puis de supprimer si on veut vraiment effacer.
+    if (event.status !== "draft" && event.status !== "cancelled") {
+      return res.status(409).json({
+        code: "CANCEL_BEFORE_DELETE",
+        message:
+          "Annule d'abord cet événement : tes invités seront prévenus. Tu pourras le supprimer ensuite.",
+      });
+    }
+
+    // Trace écrite AVANT la suppression : après, il ne resterait plus rien à
+    // décrire — ni le titre, ni la date, ni le nombre d'invités prévenus.
+    const invitationCount = await EventInvitation.countDocuments({
+      event: event._id,
+    });
+    await audit(req, {
+      action: "event_delete",
+      userId: req.payload._id,
+      metadata: {
+        eventShortId: event.shortId,
+        title: event.title,
+        status: event.status,
+        date: event.selectedDate || event.fixedDate || null,
+        invitationCount,
+        poolWasActive: !!event.giftPool?.active,
+      },
+    });
+
     await EventInvitation.deleteMany({ event: event._id });
     await EventGiftProposal.deleteMany({ event: event._id });
     await EventMessage.deleteMany({ event: event._id });
@@ -491,6 +550,248 @@ router.delete("/:shortId", isAuthenticated, async (req, res) => {
     res.status(200).json({ message: "Événement supprimé" });
   } catch (error) {
     console.error("❌ Error deleting event:", error);
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+});
+
+/*
+ * POST /api/events/:shortId/cancel — annuler un événement (organizer only)
+ * Body: { reason?: string }
+ *
+ * ⚠️ Annuler n'est PAS supprimer, et c'est délibéré. Une suppression fait
+ * disparaître l'événement de la liste de chaque invité sans un mot : ils
+ * gardent une date en tête, un cadeau acheté, parfois une contribution versée,
+ * et plus rien à consulter. L'annulation conserve la page, le chat et
+ * l'historique, en les surmontant d'un motif. La suppression définitive reste
+ * possible, mais après.
+ */
+router.post("/:shortId/cancel", isAuthenticated, async (req, res) => {
+  try {
+    const event = await Event.findOne({ shortId: req.params.shortId });
+    if (!event)
+      return res.status(404).json({ message: "Événement introuvable" });
+    if (event.organizer.toString() !== req.payload._id)
+      return res.status(403).json({ message: "Non autorisé" });
+    if (event.status === "cancelled")
+      return res.status(400).json({ message: "Événement déjà annulé" });
+    if (event.status === "draft")
+      return res.status(400).json({
+        code: "DRAFT_NOT_CANCELLABLE",
+        message:
+          "Un brouillon n'a jamais été annoncé : il se supprime, il ne s'annule pas.",
+      });
+
+    const reason = (req.body?.reason || "").trim().slice(0, 500) || null;
+
+    event.status = "cancelled";
+    event.cancelledAt = new Date();
+    event.cancelledBy = req.payload._id;
+    event.cancellationReason = reason;
+
+    // ── Cagnotte ──────────────────────────────────────────────────────────
+    // On coupe la collecte : accepter de nouvelles contributions sur un
+    // événement annulé serait indéfendable. On ne rembourse rien ici — c'est
+    // une décision qui appartient à l'organisateur, et une opération Stripe
+    // qui a son propre écran (voir la gestion des remboursements).
+    const poolWasActive = !!event.giftPool?.active;
+    if (poolWasActive) {
+      event.giftPool.active = false;
+      event.giftPoolEnabled = false;
+    }
+
+    await event.save();
+
+    const organizer = await User.findById(event.organizer).select("name");
+    const organizerName = organizer?.name || null;
+
+    res.status(200).json({
+      status: event.status,
+      cancelledAt: event.cancelledAt,
+      cancellationReason: event.cancellationReason,
+      poolFrozen: poolWasActive,
+    });
+
+    // ── Après la réponse : personne à prévenir ne doit retarder l'annulation,
+    //    déjà enregistrée en base à ce stade. ───────────────────────────────
+    await audit(req, {
+      action: "event_cancel",
+      userId: req.payload._id,
+      metadata: {
+        eventShortId: event.shortId,
+        title: event.title,
+        reason,
+        date: event.selectedDate || event.fixedDate || null,
+        poolFrozen: poolWasActive,
+      },
+    });
+    if (poolWasActive) {
+      await audit(req, {
+        action: "pool_freeze",
+        userId: req.payload._id,
+        metadata: { eventShortId: event.shortId, cause: "event_cancelled" },
+      });
+    }
+
+    const invitations = await EventInvitation.find({ event: event._id });
+    const body = reason
+      ? reason.slice(0, 120)
+      : "L'organisateur n'a pas indiqué de raison.";
+
+    for (const inv of invitations) {
+      // L'organisateur sait déjà qu'il vient d'annuler.
+      if (inv.user && inv.user.toString() === req.payload._id) continue;
+
+      if (inv.user) {
+        await notify(req.app, {
+          userId: inv.user,
+          type: "event_cancelled",
+          data: {
+            eventTitle: event.title,
+            eventShortId: event.shortId,
+            reason,
+            message: `« ${event.title} » a été annulé.`,
+          },
+          link: `/event/${event.shortId}`,
+        });
+        await sendPushToUser(inv.user, {
+          title: `❌ Annulé — ${event.title}`,
+          body,
+          url: `/event/${event.shortId}`,
+          tag: `event-cancelled-${event.shortId}`,
+          type: "events",
+        });
+      }
+    }
+
+    // ── Invités externes : l'email est leur seul canal ────────────────────
+    // Sans compte, ni notification in-app ni push ne les atteint. Un même
+    // email peut porter plusieurs invitations (invité nommément puis arrivé
+    // par le code) : on n'envoie qu'une fois.
+    const seenEmails = new Set();
+    for (const inv of invitations) {
+      const to = (inv.externalEmail || "").trim().toLowerCase();
+      if (!to || seenEmails.has(to)) continue;
+      seenEmails.add(to);
+      try {
+        await sendEventCancelledEmail(inv.externalEmail, {
+          event,
+          reason,
+          organizerName,
+        });
+      } catch (mailErr) {
+        console.error(
+          `❌ Email d'annulation non envoyé à ${inv.externalEmail}:`,
+          mailErr.message,
+        );
+      }
+    }
+
+    // Les comptes reçoivent aussi l'email : une notification push se rate, et
+    // une annulation est exactement le message qu'on ne veut pas rater.
+    const memberIds = invitations
+      .filter((i) => i.user && i.user.toString() !== req.payload._id)
+      .map((i) => i.user);
+    if (memberIds.length) {
+      const members = await User.find({
+        _id: { $in: memberIds },
+        deletedAt: { $exists: false },
+      }).select("email");
+      for (const m of members) {
+        const to = (m.email || "").trim().toLowerCase();
+        if (!to || seenEmails.has(to)) continue;
+        seenEmails.add(to);
+        try {
+          await sendEventCancelledEmail(m.email, {
+            event,
+            reason,
+            organizerName,
+          });
+        } catch (mailErr) {
+          console.error(
+            `❌ Email d'annulation non envoyé à ${m.email}:`,
+            mailErr.message,
+          );
+        }
+      }
+    }
+
+    // Temps réel : une page ouverte doit afficher le bandeau sans refresh.
+    req.app.get("io")?.to(`event:${event.shortId}`).emit("event:cancelled", {
+      shortId: event.shortId,
+      reason,
+      cancelledAt: event.cancelledAt,
+    });
+  } catch (error) {
+    console.error("❌ Error cancelling event:", error);
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+});
+
+/*
+ * POST /api/events/:shortId/uncancel — rétablir un événement annulé
+ *
+ * Une annulation part d'un geste unique et irrattrapable autrement : erreur de
+ * manipulation, ou décision revue dans la foulée. Rétablir remet l'événement
+ * en "published" et prévient tout le monde — mais ne réactive PAS la cagnotte :
+ * relancer une collecte d'argent est une décision distincte, que l'organisateur
+ * doit reprendre explicitement depuis son écran.
+ */
+router.post("/:shortId/uncancel", isAuthenticated, async (req, res) => {
+  try {
+    const event = await Event.findOne({ shortId: req.params.shortId });
+    if (!event)
+      return res.status(404).json({ message: "Événement introuvable" });
+    if (event.organizer.toString() !== req.payload._id)
+      return res.status(403).json({ message: "Non autorisé" });
+    if (event.status !== "cancelled")
+      return res.status(400).json({ message: "Cet événement n'est pas annulé" });
+
+    const previousReason = event.cancellationReason;
+    event.status = "published";
+    event.cancelledAt = null;
+    event.cancelledBy = null;
+    event.cancellationReason = null;
+    await event.save();
+
+    res.status(200).json({ status: event.status });
+
+    await audit(req, {
+      action: "event_uncancel",
+      userId: req.payload._id,
+      metadata: {
+        eventShortId: event.shortId,
+        title: event.title,
+        previousReason,
+      },
+    });
+
+    const invitations = await EventInvitation.find({ event: event._id });
+    for (const inv of invitations) {
+      if (!inv.user || inv.user.toString() === req.payload._id) continue;
+      await notify(req.app, {
+        userId: inv.user,
+        type: "event_uncancelled",
+        data: {
+          eventTitle: event.title,
+          eventShortId: event.shortId,
+          message: `« ${event.title} » est rétabli : il aura bien lieu.`,
+        },
+        link: `/event/${event.shortId}`,
+      });
+      await sendPushToUser(inv.user, {
+        title: `✅ Rétabli — ${event.title}`,
+        body: "L'événement aura finalement bien lieu.",
+        url: `/event/${event.shortId}`,
+        tag: `event-uncancelled-${event.shortId}`,
+        type: "events",
+      });
+    }
+
+    req.app.get("io")?.to(`event:${event.shortId}`).emit("event:uncancelled", {
+      shortId: event.shortId,
+    });
+  } catch (error) {
+    console.error("❌ Error uncancelling event:", error);
     res.status(500).json({ message: "Erreur serveur" });
   }
 });

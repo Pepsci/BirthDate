@@ -1,5 +1,11 @@
 import { Pressable, View, Text, StyleSheet } from "react-native";
 import { useTheme } from "../lib/theme-context";
+import Icon, { IconName } from "./icons/Icon";
+import {
+  HEADER_ICON_INSET,
+  SHOW_OWN_RING,
+  headerButtonBase,
+} from "./headerButtonStyle";
 
 /**
  * Bouton d'action dans l'en-tête (crayon, chat, corbeille…), pendant droit de
@@ -16,20 +22,27 @@ import { useTheme } from "../lib/theme-context";
  *
  * Le badge est donc positionné en absolu : dans le flux, il changerait la
  * largeur du bouton et ramènerait exactement le problème.
+ *
+ * L'icône est un SVG et non plus un emoji : un glyphe repose sur la ligne de
+ * base et sa boîte réserve la place du jambage descendant, si bien qu'un emoji
+ * centré par le conteneur apparaît trop haut — on corrigeait ça par un `top`
+ * proportionnel à la taille de police, dont la bonne valeur dépendait de la
+ * police système. Le viewBox SVG rend ce réglage inutile.
  */
 export default function HeaderIconButton({
-  emoji,
+  name,
   onPress,
   badge = 0,
   accessibilityLabel,
-  fontSize = 18,
+  inset = HEADER_ICON_INSET,
 }: {
-  emoji: string;
+  name: IconName;
   onPress: () => void;
   /** Pastille de non-lus ; masquée si 0. */
   badge?: number;
   accessibilityLabel: string;
-  fontSize?: number;
+  /** Marge du tracé dans le bouton, en unités de viewBox (voir Icon). */
+  inset?: number;
 }) {
   const { colors } = useTheme();
 
@@ -40,14 +53,16 @@ export default function HeaderIconButton({
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
       style={({ pressed }) => [
-        styles.btn,
-        { backgroundColor: colors.card, borderColor: colors.border },
+        headerButtonBase.btn,
+        SHOW_OWN_RING && {
+          backgroundColor: colors.card,
+          borderColor: colors.border,
+          borderWidth: StyleSheet.hairlineWidth,
+        },
         pressed && { opacity: 0.6 },
       ]}
     >
-      <Text style={[styles.emoji, { fontSize, top: fontSize * 0.1 }]}>
-        {emoji}
-      </Text>
+      <Icon name={name} fill inset={inset} color={colors.primary} />
       {badge > 0 && (
         <View style={[styles.badge, { backgroundColor: colors.danger }]}>
           <Text style={styles.badgeText}>{badge > 99 ? "99+" : badge}</Text>
@@ -58,33 +73,13 @@ export default function HeaderIconButton({
 }
 
 const styles = StyleSheet.create({
-  btn: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    borderWidth: StyleSheet.hairlineWidth,
-    alignItems: "center",
-    justifyContent: "center",
-    // Aucune marge : voir HeaderBackButton. Le fond natif dessiné par iOS
-    // épouse la vue marges comprises, une marge décentre donc le rond dans son
-    // propre fond.
-  },
-  emoji: {
-    // includeFontPadding/textAlignVertical : sans eux, l'emoji est décalé
-    // vers le bas dans le rond sur Android.
-    includeFontPadding: false,
-    textAlignVertical: "center",
-    // Le `top` est calculé à l'appel, en proportion de la taille de police.
-    // Motif : le conteneur centre la BOÎTE DE TEXTE, or un glyphe repose sur la
-    // ligne de base et la boîte réserve sous elle la place du jambage
-    // descendant (« p », « g »), que l'emoji n'utilise pas. L'encre se
-    // retrouve donc trop haute d'environ la moitié de ce jambage, soit ~10 %
-    // de la taille de police. On la redescend d'autant.
-  },
+  // Le bouton grandissant de 34 à 44 pt (voir headerButtonStyle.ts), la
+  // pastille sortait trop loin du glyphe avec ses anciens -4 : on la ramène
+  // sur le bord visuel de l'icône.
   badge: {
     position: "absolute",
-    top: -4,
-    right: -4,
+    top: 3,
+    right: 3,
     borderRadius: 9,
     minWidth: 18,
     height: 18,

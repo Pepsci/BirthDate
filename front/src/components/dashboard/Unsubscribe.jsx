@@ -7,8 +7,14 @@ function Unsubscribe() {
   const [status, setStatus] = useState("loading");
   const [message, setMessage] = useState("");
 
-  const userId = searchParams.get("userid");
-  const dateId = searchParams.get("dateid");
+  // ⚠️ URLSearchParams.get() est SENSIBLE À LA CASSE. Tous les emails
+  // construisent leurs liens en `?userId=…&dateId=…` (camelCase) alors que
+  // cette page lisait "userid" et "dateid" en minuscules : la valeur était donc
+  // toujours nulle et chaque lien « se désabonner » affichait « ID utilisateur
+  // manquant ». On accepte les deux graphies pour couvrir aussi les emails
+  // déjà partis dans les boîtes de réception.
+  const userId = searchParams.get("userId") || searchParams.get("userid");
+  const dateId = searchParams.get("dateId") || searchParams.get("dateid");
   const type = searchParams.get("type") || "all_birthdays";
 
   useEffect(() => {
@@ -23,15 +29,19 @@ function Unsubscribe() {
         }
 
         // Appeler l'API pour désabonner l'utilisateur
-        await apiHandler.post("/unsubscribe", {
+        const { data } = await apiHandler.post("/unsubscribe", {
           userId,
           dateId,
           type,
         });
 
         setStatus("success");
+        // Le serveur sait ce qu'il a coupé (récap mensuel, fêtes, un
+        // anniversaire précis…) : on affiche SON message plutôt qu'un texte
+        // générique parlant d'anniversaires, faux dans la plupart des cas.
         setMessage(
-          "Vous avez été désabonné avec succès des notifications d'anniversaire."
+          data?.message ||
+            "Vous avez été désabonné avec succès de ces notifications."
         );
       } catch (error) {
         console.error("Erreur lors du désabonnement:", error);

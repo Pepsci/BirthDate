@@ -16,6 +16,7 @@ import { ActivityIndicator, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { StatusBar } from "expo-status-bar";
 import HeaderBackButton from "../components/HeaderBackButton";
+import AppStackHeader from "../components/AppStackHeader";
 import { AuthProvider, useAuth } from "../lib/auth-context";
 import { UnreadProvider } from "../lib/unread-context";
 import { ThemeProvider, useTheme } from "../lib/theme-context";
@@ -63,17 +64,33 @@ function RootNavigator() {
     return () => sub.remove();
   }, []);
 
-  // Navigation différée : exécutée seulement quand tout est monté
+  // Navigation différée : exécutée seulement quand tout est monté.
+  //
+  // ⚠️ L'ordre des deux instructions est le bug qui empêchait TOUT tap sur une
+  // notification système d'ouvrir la bonne page. La version précédente faisait
+  // `setPendingNotifRoute(null)` AVANT de programmer le `setTimeout` : ce
+  // setState re-rend le composant, les dépendances de l'effet changent
+  // (pendingNotifRoute : route → null), React exécute donc le nettoyage de
+  // l'effet précédent — c'est-à-dire `clearTimeout(t)` — avant que le timer de
+  // 0 ms, qui est une macrotâche, ait eu la moindre chance de se déclencher.
+  // La navigation était annulée à chaque fois. Le centre de notifications
+  // in-app, lui, appelle router.push() directement : c'est pour ça qu'il
+  // fonctionnait alors que les notifications du téléphone ne menaient nulle
+  // part.
+  //
+  // On capture donc la route dans une constante locale, et on ne vide l'état
+  // qu'à l'intérieur du timer, une fois la navigation faite.
   useEffect(() => {
     if (!pendingNotifRoute || !navigationReady || isLoading) return;
-    setPendingNotifRoute(null);
+    const route = pendingNotifRoute;
     // setTimeout : laisse le Stack terminer son premier rendu au cold start
     const t = setTimeout(() => {
       try {
-        router.push(pendingNotifRoute as never);
+        router.push(route as never);
       } catch (e) {
         console.warn("[notif] navigation impossible", e);
       }
+      setPendingNotifRoute(null);
     }, 0);
     return () => clearTimeout(t);
   }, [pendingNotifRoute, navigationReady, isLoading, router]);
@@ -118,9 +135,11 @@ function RootNavigator() {
   return (
     <Stack
       screenOptions={({ navigation }) => ({
-        headerStyle: { backgroundColor: colors.headerBg },
-        headerTintColor: colors.text,
-        headerTitleStyle: { color: colors.text },
+        // En-tête rendu en JS, comme celui des onglets (AppHeader). L'en-tête
+        // natif d'iOS enveloppe chaque bouton dans un UIBarButtonItem et dessine
+        // derrière lui une capsule qu'il ne centre pas exactement sur notre vue
+        // — décalage impossible à corriger depuis le JS. Voir AppStackHeader.
+        header: (props) => <AppStackHeader {...props} />,
         contentStyle: { backgroundColor: colors.bg },
         // Bouton retour custom (piloté en JS) : le bouton natif iOS devient
         // parfois inopérant sur les écrans empilés (cartes, profil…). On ne

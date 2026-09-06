@@ -4,6 +4,7 @@ const Event = require("../../models/event.model");
 const OrganizerBankInfo = require("../../models/organizerBankInfo.model");
 const { isAuthenticated } = require("../../middleware/jwt.middleware");
 const { encrypt, decrypt } = require("../../utils/bankCrypto");
+const { audit } = require("../../services/auditLog");
 
 // Durées autorisées pour l'expiration (en jours) — garde-fou
 const ALLOWED_DURATIONS = [7, 14, 30, 60, 90];
@@ -104,6 +105,21 @@ router.put("/:shortId/bank-info", isAuthenticated, async (req, res) => {
       expiresAt: bankInfo.expiresAt,
       holderName: bankInfo.holderName,
     });
+
+    // ⚠️ Le journal ne consigne JAMAIS l'IBAN, ni même une partie. Il est
+    // chiffré au repos justement pour qu'un dump de la base ne le révèle pas :
+    // le recopier en clair ici annulerait toute la protection. On garde ce qui
+    // permet de répondre à « ce RIB a été mis en ligne quand, par qui, et
+    // jusqu'à quand » — rien de plus.
+    await audit(req, {
+      action: "bankinfo_set",
+      userId: req.payload._id,
+      metadata: {
+        eventShortId: event.shortId,
+        holderName: bankInfo.holderName,
+        expiresAt: bankInfo.expiresAt,
+      },
+    });
   } catch (error) {
     console.error("❌ Error saving bank info:", error);
     res.status(500).json({ message: "Erreur lors de l'enregistrement du RIB" });
@@ -177,6 +193,12 @@ router.delete("/:shortId/bank-info", isAuthenticated, async (req, res) => {
     emitTransferUpdate(req, event);
 
     res.status(200).json({ deleted: true });
+
+    await audit(req, {
+      action: "bankinfo_delete",
+      userId: req.payload._id,
+      metadata: { eventShortId: event.shortId, manual: true },
+    });
   } catch (error) {
     console.error("❌ Error deleting bank info:", error);
     res.status(500).json({ message: "Erreur lors de la suppression du RIB" });

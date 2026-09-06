@@ -147,12 +147,59 @@ const PaginatedSection = ({
 };
 
 // ─── Panel principal ─────────────────────────────────────
+/**
+ * Date effective d'un événement : celle issue du vote si le vote est tranché,
+ * sinon la date fixe. Null quand aucune n'est arrêtée (vote en cours).
+ */
+const effectiveDate = (e) => {
+  const iso = e.selectedDate ?? e.fixedDate;
+  return iso ? new Date(iso) : null;
+};
+
+/**
+ * Un événement est « passé » quand plus aucune de ses dates n'est à venir.
+ *
+ * ⚠️ Toujours RECALCULÉ, jamais stocké. C'est ce qui permet à un événement
+ * archivé de redevenir « à venir » tout seul dès qu'une date future
+ * réapparaît : l'organisateur repousse un dîner qui n'a pas eu lieu, ou ajoute
+ * une option à un vote périmé. Le jour où l'on stockerait un booléen
+ * « archivé » en base, ce retour en arrière cesserait de fonctionner.
+ *
+ * Trois cas :
+ *  - annulé → passé immédiatement, quelle que soit sa date : il n'aura pas lieu ;
+ *  - une date arrêtée → elle décide seule ;
+ *  - pas de date arrêtée mais des options au vote → passé seulement si TOUTES
+ *    sont écoulées. Une seule option future suffit à le ramener à venir.
+ *
+ * La comparaison se fait au DÉBUT de la journée, pas à l'instant présent : un
+ * dîner prévu ce soir à 19 h reste « à venir » toute la journée plutôt que de
+ * basculer aux archives à 19 h 01 alors qu'il est encore en cours.
+ */
+const isPastEvent = (e) => {
+  if (e.status === "cancelled") return true;
+
+  const startOfToday = new Date();
+  startOfToday.setHours(0, 0, 0, 0);
+
+  const d = effectiveDate(e);
+  if (d) return d < startOfToday;
+
+  const options = (e.dateOptions ?? [])
+    .map((iso) => new Date(iso))
+    .filter((x) => !Number.isNaN(x.getTime()));
+  if (options.length === 0) return false;
+  return options.every((x) => x < startOfToday);
+};
+
 const EventsPanel = ({ allDates }) => {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
+  // Repliée par défaut : les événements passés s'accumulent sans fin et
+  // n'appellent aucune action.
+  const [showPast, setShowPast] = useState(false);
   const [showEventForm, setShowEventForm] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null);
 
@@ -169,10 +216,13 @@ const EventsPanel = ({ allDates }) => {
         if (!allEvtsMap.has(e._id))
           allEvtsMap.set(e._id, { ...e, isOrganizer: false });
       });
+      // ⚠️ selectedDate PRIME sur fixedDate : c'est la date issue d'un vote
+      // tranché, donc la date réelle de l'événement. L'ordre inverse triait un
+      // événement déplacé sur son ancienne date.
       const sorted = Array.from(allEvtsMap.values()).sort((a, b) => {
-        const dateA = a.fixedDate || a.selectedDate || a.createdAt;
-        const dateB = b.fixedDate || b.selectedDate || b.createdAt;
-        return new Date(dateA) - new Date(dateB);
+        const dateA = effectiveDate(a) ?? new Date(a.createdAt);
+        const dateB = effectiveDate(b) ?? new Date(b.createdAt);
+        return dateA - dateB;
       });
       setEvents(sorted);
     } catch (err) {
@@ -205,15 +255,12 @@ const EventsPanel = ({ allDates }) => {
   };
 
   const getFilteredEvents = () => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
     return events.filter((e) => {
-      const eDate = e.dateMode === "fixed" ? e.fixedDate : e.selectedDate;
-      const isPast = eDate && new Date(eDate) < today;
+      const past = isPastEvent(e);
       if (filter === "mine") return e.isOrganizer;
       if (filter === "invited") return !e.isOrganizer;
-      if (filter === "upcoming") return !isPast;
-      if (filter === "past") return isPast;
+      if (filter === "upcoming") return !past;
+      if (filter === "past") return past;
       if (filter === "pending")
         return !e.isOrganizer && e.myRsvpStatus === "pending";
       return true;
@@ -221,9 +268,28 @@ const EventsPanel = ({ allDates }) => {
   };
 
   const filteredEvents = getFilteredEvents();
-  const organized = filteredEvents.filter((e) => e.isOrganizer);
-  const invited = filteredEvents.filter((e) => !e.isOrganizer);
   const flatMode = filter === "mine" || filter === "invited";
+
+  // En vue « Tous », les passés sortent des deux sections et se regroupent dans
+  // une troisième, repliée. Sur les autres filtres, l'utilisateur a déjà choisi
+  // ce qu'il veut voir : on ne recoupe pas sa sélection.
+  const splitPast = filter === "all";
+  const upcoming = splitPast
+    ? filteredEvents.filter((e) => !isPastEvent(e))
+    : filteredEvents;
+  const organized = upcoming.filter((e) => e.isOrganizer);
+  const invited = upcoming.filter((e) => !e.isOrganizer);
+  // Le plus récent d'abord : dans une pile d'archives, on cherche celui de la
+  // semaine dernière, pas celui d'il y a deux ans.
+  const pastEvents = splitPast
+    ? filteredEvents
+        .filter(isPastEvent)
+        .sort(
+          (a, b) =>
+            (effectiveDate(b)?.getTime() ?? 0) -
+            (effectiveDate(a)?.getTime() ?? 0),
+        )
+    : [];
 
   const filters = [
     { key: "all", label: "Tous" },
@@ -337,6 +403,29 @@ const EventsPanel = ({ allDates }) => {
                   navigate={navigate}
                   onLeave={handleLeaveEvent}
                 />
+                {pastEvents.length > 0 && (
+                  <>
+                    <button
+                      type="button"
+                      className="events-past-toggle"
+                      onClick={() => setShowPast((v) => !v)}
+                      aria-expanded={showPast}
+                    >
+                      <span>🗄️ Événements passés ({pastEvents.length})</span>
+                      <span>{showPast ? "▾" : "▸"}</span>
+                    </button>
+                    {showPast && (
+                      <PaginatedSection
+                        title=""
+                        events={pastEvents}
+                        navigate={navigate}
+                        onEdit={setEditingEvent}
+                        onDelete={handleDeleteEvent}
+                        onLeave={handleLeaveEvent}
+                      />
+                    )}
+                  </>
+                )}
               </>
             )}
           </motion.div>

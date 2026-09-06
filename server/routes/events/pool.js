@@ -6,10 +6,28 @@ const User = require("../../models/user.model");
 const StripeAccount = require("../../models/stripeAccount.model");
 const GiftPoolContribution = require("../../models/giftPoolContribution.model");
 const { isAuthenticated } = require("../../middleware/jwt.middleware");
+const { audit } = require("../../services/auditLog");
 
 // Montant min/max d'une contribution (centimes) — garde-fous
 const MIN_AMOUNT = 100; // 1 €
 const MAX_AMOUNT = 1000000; // 10 000 €
+
+// Frais Stripe France, carte européenne standard : 1,5 % + 0,25 € PAR
+// transaction. Le fixe s'applique à CHAQUE contribution, pas une fois sur le
+// total. Mêmes constantes que le calcul affiché côté front.
+const FEE_PERCENT = 0.015;
+const FEE_FIXED = 25;
+
+/**
+ * Ce qu'un remboursement coûte à l'organisateur, en centimes.
+ *
+ * ⚠️ Stripe ne restitue PAS les frais de la transaction d'origine. Le
+ * contributeur, lui, récupère l'intégralité de ce qu'il a payé. L'écart est
+ * donc entièrement à la charge de l'organisateur : c'est le chiffre qu'il faut
+ * lui montrer AVANT qu'il déclenche l'opération, pas après.
+ */
+const refundFeeLoss = (amountCents) =>
+  Math.round(amountCents * FEE_PERCENT) + FEE_FIXED;
 
 /*
  * GET /api/events/mine/pools
@@ -81,6 +99,164 @@ router.get("/mine/pools", isAuthenticated, async (req, res) => {
     res.status(200).json({ pools });
   } catch (error) {
     console.error("❌ Error fetching my pools:", error);
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+});
+
+/*
+ * GET /api/events/:shortId/pool/refund-preview — chiffrer avant d'agir
+ * (organizer only)
+ *
+ * Séparé de l'exécution à dessein : l'organisateur doit voir ce que
+ * l'opération lui coûte AVANT de la déclencher. Rembourser 12 contributions
+ * lui fait perdre 12 × (1,5 % + 0,25 €) qui ne lui seront jamais rendus, et
+ * découvrir ce chiffre après coup serait une mauvaise surprise à nos frais.
+ */
+router.get(
+  "/:shortId/pool/refund-preview",
+  isAuthenticated,
+  async (req, res) => {
+    try {
+      const event = await Event.findOne({ shortId: req.params.shortId });
+      if (!event)
+        return res.status(404).json({ message: "Événement introuvable" });
+      if (event.organizer.toString() !== req.payload._id)
+        return res.status(403).json({ message: "Non autorisé" });
+
+      const rows = await GiftPoolContribution.find({
+        event: event._id,
+        status: "succeeded",
+      }).select("amount");
+
+      const total = rows.reduce((sum, r) => sum + r.amount, 0);
+      const feeLoss = rows.reduce((sum, r) => sum + refundFeeLoss(r.amount), 0);
+
+      res.status(200).json({
+        count: rows.length,
+        // Ce que les contributeurs récupèrent : l'intégralité.
+        totalRefunded: total,
+        // Ce que ça coûte à l'organisateur, en plus.
+        feeLoss,
+        currency: event.giftPool?.currency || "eur",
+      });
+    } catch (error) {
+      console.error("❌ Error previewing refunds:", error);
+      res.status(500).json({ message: "Erreur serveur" });
+    }
+  },
+);
+
+/*
+ * POST /api/events/:shortId/pool/refund-all — rembourser tout le monde
+ * (organizer only)
+ *
+ * ⚠️ Stripe n'a pas d'endpoint de remboursement en lot : c'est un appel par
+ * contribution, et la boucle vit donc ici. Elle est volontairement tolérante
+ * aux échecs — un remboursement refusé (carte expirée côté réseau, solde
+ * insuffisant sur le compte connecté) ne doit pas empêcher les onze autres
+ * d'aboutir. On renvoie un rapport, et l'organisateur relance : l'opération
+ * est idempotente puisque seules les contributions encore "succeeded" sont
+ * reprises.
+ *
+ * ⚠️ Le passage en "refunded" n'est PAS prononcé ici mais par le webhook
+ * `charge.refunded`, comme l'encaissement l'est par `payment_intent.succeeded`.
+ * Stripe reste la source de vérité de ce qui s'est réellement passé côté
+ * argent.
+ */
+router.post("/:shortId/pool/refund-all", isAuthenticated, async (req, res) => {
+  try {
+    const event = await Event.findOne({ shortId: req.params.shortId });
+    if (!event)
+      return res.status(404).json({ message: "Événement introuvable" });
+    if (event.organizer.toString() !== req.payload._id)
+      return res.status(403).json({ message: "Non autorisé" });
+
+    const account = await StripeAccount.findOne({ user: event.organizer });
+    if (!account?.stripeAccountId)
+      return res.status(400).json({
+        code: "NO_STRIPE_ACCOUNT",
+        message: "Aucun compte Stripe connecté pour cet événement.",
+      });
+
+    const rows = await GiftPoolContribution.find({
+      event: event._id,
+      status: "succeeded",
+    });
+    if (rows.length === 0)
+      return res
+        .status(400)
+        .json({ code: "NOTHING_TO_REFUND", message: "Aucune contribution à rembourser" });
+
+    // La collecte se ferme d'abord : rembourser pendant qu'une contribution
+    // peut encore arriver produirait un reliquat invisible dans le rapport.
+    if (event.giftPool?.active) {
+      event.giftPool.active = false;
+      event.giftPoolEnabled = false;
+      await event.save();
+      await audit(req, {
+        action: "pool_freeze",
+        userId: req.payload._id,
+        metadata: { eventShortId: event.shortId, cause: "refund_all" },
+      });
+    }
+
+    const report = { refunded: 0, failed: 0, amount: 0, feeLoss: 0, errors: [] };
+
+    for (const row of rows) {
+      const loss = refundFeeLoss(row.amount);
+      try {
+        const refund = await stripe.refunds.create(
+          {
+            payment_intent: row.stripePaymentIntentId,
+            // La trace remonte dans le dashboard Stripe de l'organisateur, qui
+            // n'a aucune autre façon de relier ce mouvement à l'événement.
+            metadata: {
+              eventShortId: event.shortId,
+              contributionId: row._id.toString(),
+            },
+          },
+          { stripeAccount: account.stripeAccountId },
+        );
+        row.stripeRefundId = refund.id;
+        row.refundFeeLoss = loss;
+        // Statut laissé à "succeeded" : c'est `charge.refunded` qui le fera
+        // basculer. Si le webhook n'arrive jamais, la contribution reste
+        // reprise au prochain appel — mais Stripe refusera un second
+        // remboursement du même PaymentIntent, donc aucun double débit.
+        await row.save();
+        report.refunded += 1;
+        report.amount += row.amount;
+        report.feeLoss += loss;
+      } catch (err) {
+        report.failed += 1;
+        report.errors.push({
+          contributionId: row._id.toString(),
+          amount: row.amount,
+          message: err?.message || "Erreur Stripe",
+        });
+        console.error(
+          `❌ Remboursement échoué (${row.stripePaymentIntentId}):`,
+          err?.message,
+        );
+      }
+    }
+
+    res.status(200).json(report);
+
+    await audit(req, {
+      action: "pool_refund",
+      userId: req.payload._id,
+      metadata: {
+        eventShortId: event.shortId,
+        requested: rows.length,
+        refunded: report.refunded,
+        failed: report.failed,
+        amountCents: report.amount,
+        feeLossCents: report.feeLoss,
+      },
+    });
+  } catch (error) {
+    console.error("❌ Error refunding pool:", error);
     res.status(500).json({ message: "Erreur serveur" });
   }
 });
@@ -200,6 +376,7 @@ router.put("/:shortId/pool", isAuthenticated, async (req, res) => {
     }
 
     const current = event.giftPool || {};
+    const wasActive = !!current.active;
     const nextMode = mode || current.mode || "free";
 
     event.giftPool = {
@@ -216,6 +393,22 @@ router.put("/:shortId/pool", isAuthenticated, async (req, res) => {
 
     await event.save();
     res.status(200).json(event.giftPool);
+
+    // On ne consigne que les BASCULES d'activation, pas chaque réglage de
+    // montant : c'est l'ouverture et la fermeture d'une collecte d'argent qui
+    // engagent l'organisateur, pas le passage d'un objectif de 200 à 250 €.
+    if (wasActive !== event.giftPool.active) {
+      await audit(req, {
+        action: event.giftPool.active ? "pool_enable" : "pool_disable",
+        userId: req.payload._id,
+        metadata: {
+          eventShortId: event.shortId,
+          mode: event.giftPool.mode,
+          goal: event.giftPool.goal,
+          currency: event.giftPool.currency,
+        },
+      });
+    }
   } catch (error) {
     console.error("❌ Error updating gift pool:", error);
     res.status(500).json({ message: "Erreur serveur" });

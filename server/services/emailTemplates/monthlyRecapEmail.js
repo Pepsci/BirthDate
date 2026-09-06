@@ -197,7 +197,9 @@ function getEmptyMonthTemplate({
     paragraph(
       `Rien à l'horizon pour ${monthName}, ${ownerName}.<br>Un peu de répit — pensez à préparer ${nextMonthName} !`,
     ) +
-    ctaButton(nextMonthUrl, `Voir ${nextMonthName} →`) +
+    // ⚠️ Pas de flèche ici : ctaButton() ajoute déjà " →" au libellé.
+    //    En la remettant, le bouton affichait « Voir octobre → → ».
+    ctaButton(nextMonthUrl, `Voir ${nextMonthName}`) +
     `<tr>
       <td style="border-top:1px solid rgba(255,255,255,0.1);padding:20px 40px 8px;" align="center">
         <p style="margin:0 0 12px;font-size:13px;color:rgba(255,255,255,0.6);">
@@ -288,8 +290,14 @@ async function sendMonthlyRecapEmail(owner, dates) {
       },
     };
 
-    await sesClient.send(new SendEmailCommand(params));
-    console.log(`✅ Récap mensuel ${monthName} envoyé à ${owner.email}`);
+    // MessageId tracé : c'est la SEULE façon de retrouver ensuite un envoi
+    // dans SES (delivery, bounce, complaint, suppression list). Sans lui, un
+    // « je n'ai pas reçu le récap » est indébogable — on ne peut même pas
+    // distinguer un email jamais parti d'un email bloqué par SES.
+    const sent = await sesClient.send(new SendEmailCommand(params));
+    console.log(
+      `✅ Récap mensuel ${monthName} envoyé à ${owner.email} — SES MessageId=${sent?.MessageId || "?"}`,
+    );
   } catch (error) {
     console.error(`❌ Erreur récap mensuel à ${owner.email}:`, error);
   }

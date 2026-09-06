@@ -153,6 +153,28 @@ const eventSchema = new Schema(
       default: "draft",
     },
 
+    // ── Annulation ────────────────────────────────────────────────────────
+    // Un événement annulé N'EST PAS supprimé : les invités doivent pouvoir
+    // rouvrir la page et comprendre ce qui s'est passé, sinon l'événement
+    // disparaît de leur liste sans explication. D'où ces trois champs, qui
+    // portent le « qui, quand, pourquoi » affiché dans le bandeau.
+    cancelledAt: { type: Date, default: null },
+    cancelledBy: { type: Schema.Types.ObjectId, ref: "User", default: null },
+    // Vide = l'organisateur n'a pas donné de raison. L'interface affiche alors
+    // un message générique plutôt que d'inventer un motif.
+    cancellationReason: { type: String, default: null, maxlength: 500 },
+
+    // ── Transfert d'organisation ──────────────────────────────────────────
+    // Une proposition en attente, pas un transfert immédiat : on ne peut pas
+    // imposer à quelqu'un la charge d'organiser un événement — invitations à
+    // gérer, votes à trancher, parfois de l'argent. L'ancien organisateur
+    // garde donc la main tant que la proposition n'est pas acceptée.
+    pendingTransfer: {
+      toUser: { type: Schema.Types.ObjectId, ref: "User", default: null },
+      requestedBy: { type: Schema.Types.ObjectId, ref: "User", default: null },
+      requestedAt: { type: Date, default: null },
+    },
+
     organizerNotificationPrefs: {
       rsvp: { type: Boolean, default: true },
       dateVote: { type: Boolean, default: true },
