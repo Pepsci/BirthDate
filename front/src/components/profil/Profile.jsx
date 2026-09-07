@@ -9,6 +9,7 @@ import Countdown from "../dashboard/Countdown";
 import DatePickerMobile from "../dashboard/DatePickerMobile";
 import GestionNotification from "./GestionNotifications";
 import Wishlist from "../wishlist/Wishlist";
+import SharedInvites from "./SharedInvites";
 import E2ESettings from "./E2ESettings";
 import BlockedUsers from "./BlockedUsers";
 import FriendsMobileView from "../friends/FriendsMobileView";
@@ -71,6 +72,12 @@ const ProfilDetails = ({
     { id: "friends", title: "Amis", icon: "👥" },
     { id: "merge", title: "Doublons", icon: "🔄" },
     { id: "wishlist", title: "Ma wishlist", icon: "🎁" },
+    // ⚠️ Point d'entrée permanent vers les listes communes. L'écran
+    // /shared-invites n'était atteignable QUE depuis une notification : une
+    // invitation fermée par erreur, ou une liste partagée dont on n'a pas
+    // terminé le rattachement, devenaient définitivement introuvables. Une
+    // action en attente ne doit jamais dépendre d'un message éphémère.
+    { id: "shared", title: "Listes communes", icon: "👨‍👩‍👧" },
     {
       id: "e2e",
       title:
@@ -469,6 +476,8 @@ const ProfilDetails = ({
         return <MergeDuplicatesSection />;
       case "wishlist":
         return <Wishlist />;
+      case "shared":
+        return <SharedInvites embedded />;
       case "e2e":
         return (
           <>

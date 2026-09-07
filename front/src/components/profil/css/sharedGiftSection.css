@@ -164,3 +164,52 @@
   font-weight: 700;
   cursor: pointer;
 }
+
+/* Deux actions dans l'en-tête (Partager / Ajouter) depuis l'ajout du panneau
+   de partage : elles se placent côte à côte et passent à la ligne sur mobile. */
+.sgs-header-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* Listes partagées non encore rattachées (page /shared-invites).
+   Elles n'apparaissent nulle part ailleurs tant qu'elles ne sont pas posées
+   sur une carte : c'est le seul endroit où les retrouver. */
+.sgi-pending {
+  margin-bottom: 1.25rem;
+}
+
+.sgi-pending-title {
+  margin: 0 0 0.6rem;
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+}
+
+.sgi-pending-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  width: 100%;
+  margin-bottom: 0.6rem;
+  padding: 1rem;
+  text-align: left;
+  background: var(--bg-secondary);
+  border: 1px solid var(--primary);
+  border-radius: 12px;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.sgi-pending-card:hover {
+  background: var(--bg-tertiary, var(--bg-secondary));
+}
+
+.sgi-pending-hint {
+  color: var(--primary);
+  font-size: 0.85rem;
+  font-weight: 600;
+}

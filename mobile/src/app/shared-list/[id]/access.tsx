@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -33,7 +33,7 @@ import {
  * seul endroit où on les voit d'un coup et où on peut retirer un accès.
  */
 export default function SharedListAccessScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, add } = useLocalSearchParams<{ id: string; add?: string }>();
   const styles = useThemedStyles(makeStyles);
   const { colors } = useTheme();
 
@@ -58,6 +58,20 @@ export default function SharedListAccessScreen() {
       load();
     }, [load]),
   );
+
+  // Arrivée depuis « Partager à un contact » : on ouvre directement le
+  // sélecteur d'amis. Sans ça, l'utilisateur qui vient de cliquer sur cette
+  // action retombe sur l'écran de gestion complet et doit chercher le bouton
+  // « ＋ » — un pas de plus pour l'action la plus courante.
+  const autoOpened = useRef(false);
+  useEffect(() => {
+    if (add === "1" && access && !autoOpened.current) {
+      autoOpened.current = true;
+      openPicker();
+    }
+    // openPicker dépend de `access`, déjà dans les dépendances.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [add, access]);
 
   const run = async (fn: () => Promise<unknown>) => {
     if (busy) return;

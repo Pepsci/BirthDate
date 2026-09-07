@@ -1,0 +1,138 @@
+/* Écran de rattachement d'une liste commune reçue (route /shared-list/:id/attach). */
+
+.asl {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 24px 16px 48px;
+}
+
+.asl-title {
+  margin: 0 0 8px;
+  font-size: 1.4rem;
+  color: var(--text-primary);
+}
+
+.asl-muted {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.asl-error {
+  margin: 12px 0 0;
+  color: var(--danger);
+  font-size: 0.88rem;
+}
+
+.asl-section {
+  margin-top: 22px;
+  padding: 16px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+}
+
+.asl-section-title {
+  margin: 0 0 10px;
+  font-size: 1rem;
+  color: var(--text-primary);
+}
+
+.asl-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.asl-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-primary);
+}
+
+.asl-list li:last-child {
+  border-bottom: none;
+}
+
+.asl-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.asl-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.asl-label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+
+.asl-input {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.95rem;
+}
+
+.asl-input:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.asl-btn {
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--primary);
+  background: var(--primary);
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.asl-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.asl-btn--sm {
+  padding: 7px 12px;
+  font-size: 0.83rem;
+}
+
+/* Bloc « la personne concernée » : c'est le chemin recommandé quand le serveur
+   sait de qui il s'agit, il est donc mis en avant. */
+.asl-section--suggested {
+  border-color: var(--primary);
+}
+
+.asl-section--suggested .asl-btn {
+  margin-top: 10px;
+  width: 100%;
+}

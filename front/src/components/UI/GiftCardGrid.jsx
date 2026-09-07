@@ -66,6 +66,24 @@ const GiftCardGrid = ({
         year: item.year,
         status: st,
         isPurchased: st !== "to_buy",
+        // ⚠️ Ces trois champs n'étaient calculés que pour type "wishlist".
+        // Résultat : une réservation faite depuis le mobile ou depuis le lien
+        // public restait totalement invisible sur le web, et le bouton
+        // « Je réserve » n'existait nulle part.
+        //
+        // Le serveur renvoie deux formes selon le rôle : un MEMBRE reçoit
+        // `reservedBy` (peuplé ou brut) et `reservedByGuest` ; un INVITÉ ne
+        // reçoit que les booléens `isReserved` et `reservedByMe`, les identités
+        // lui étant masquées. On accepte les deux.
+        isReserved:
+          item.isReserved ?? (!!item.reservedBy || !!item.reservedByGuest),
+        isReservedByMe:
+          item.reservedByMe ??
+          (item.reservedBy?._id?.toString() === currentUserId ||
+            item.reservedBy?.toString() === currentUserId),
+        reservedByName: item.reservedBy?.name
+          ? `${item.reservedBy.name}${item.reservedBy.surname ? " " + item.reservedBy.surname : ""}`
+          : item.reservedByGuest || null,
         raw: item,
       };
     }
@@ -359,6 +377,43 @@ const GiftCardGrid = ({
                         {GIFT_STATUS_META[item.status].emoji}{" "}
                         {GIFT_STATUS_META[item.status].short}
                       </button>
+                    </>
+                  )}
+
+                  {/* Liste commune consultée sans droit d'édition (invité) :
+                      réserver est la seule action qui lui est ouverte, et c'est
+                      celle qui évite le double achat. Le bloc wishlist juste
+                      en dessous ne s'appliquait qu'à `type === "wishlist"`. */}
+                  {type === "gifts" && readOnly && !item.isPurchased && (
+                    <>
+                      {!item.isReserved ? (
+                        <button
+                          className="gcg-btn gcg-btn--primary"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onReserve?.(item.id);
+                          }}
+                        >
+                          🎁 Je m'en occupe
+                        </button>
+                      ) : item.isReservedByMe ? (
+                        <button
+                          className="gcg-btn gcg-btn--ghost"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onUnreserve?.(item.id);
+                          }}
+                        >
+                          ↩️ Je ne m'en occupe plus
+                        </button>
+                      ) : (
+                        <p className="gcg-reserved-friend">
+                          🧑 Réservé
+                          {item.reservedByName
+                            ? ` par ${item.reservedByName}`
+                            : ""}
+                        </p>
+                      )}
                     </>
                   )}
 

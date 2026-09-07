@@ -60,34 +60,59 @@ async function notifyOtherMembers(
   app,
   list,
   actorId,
-  { type, data, pushTitle, pushBody },
+  { type, data, pushTitle, pushBody, alsoViewers = [] },
 ) {
-  try {
-    const others = (list.members || []).filter(
-      (m) => m && m.toString() !== actorId.toString(),
-    );
-    if (!others.length) return;
+  const others = (list.members || []).filter(
+    (m) => m && m.toString() !== actorId.toString(),
+  );
 
-    for (const memberId of others) {
+  // ── Invités ───────────────────────────────────────────────────────────────
+  // Ils ne reçoivent PAS tout : un invité n'a pas à suivre chaque changement
+  // de statut d'une liste qui ne lui appartient pas. L'appelant décide, cas par
+  // cas, lesquels concerner — en pratique l'ajout d'une idée (il peut vouloir
+  // s'en charger) et le retrait d'un cadeau qu'il avait réservé (il comptait
+  // dessus). D'où cette liste explicite plutôt qu'un booléen.
+  const recipients = [...others, ...alsoViewers].filter(
+    (id) => id && id.toString() !== actorId.toString(),
+  );
+
+  // Dédoublonnage : un même identifiant pourrait figurer dans les deux listes.
+  const seen = new Set();
+  for (const rawId of recipients) {
+    const userId = rawId.toString();
+    if (seen.has(userId)) continue;
+    seen.add(userId);
+
+    // ⚠️ try/catch PAR DESTINATAIRE. Il englobait toute la boucle : un échec
+    // sur le premier (token push mort, utilisateur supprimé) privait tous les
+    // suivants de leur notification, sans que rien ne le signale.
+    try {
       // Lien PAR DESTINATAIRE. Une liste commune est posée sur une carte
       // différente chez chaque membre (Date.sharedGiftList), donc il n'existe
       // pas de lien unique valable pour tous : c'est pour ça que le lien était
       // jusqu'ici "/home?tab=friends", qui renvoyait tout le monde sur la
       // liste d'amis au lieu de la liste de cadeaux concernée.
-      const link = await sharedListLinkFor(memberId, list._id);
-      await notify(app, { userId: memberId, type, data, link });
-      await sendPushToUser(memberId, {
+      const link = await sharedListLinkFor(userId, list._id);
+      await notify(app, { userId, type, data, link });
+      await sendPushToUser(userId, {
         title: pushTitle,
         body: pushBody,
         url: link,
         tag: `shared-list-${list._id}`,
         type: "shared_list",
       });
+    } catch (err) {
+      console.error(
+        `❌ Notification liste commune échouée pour ${userId}:`,
+        err.message,
+      );
     }
-  } catch (err) {
-    console.error("❌ Notification liste commune échouée:", err.message);
   }
 }
+
+/** Identifiants des invités (viewers) d'une liste. */
+const viewerIds = (list) =>
+  (list.viewers || []).filter((v) => v && v.user).map((v) => v.user);
 
 /** Nom de l'auteur de l'action, pour le texte des notifications. */
 async function actorName(userId) {
@@ -178,7 +203,10 @@ router.get("/invitations", isAuthenticated, async (req, res) => {
       status: "pending",
     })
       .populate("fromUser", "name surname avatar")
-      .populate("fromDate", "name surname")
+      // `date` et `nameday` en plus du nom : ils permettent au client de
+      // proposer la création de la carte préremplie. L'invitation porte déjà
+      // tout ce qu'il faut sur la personne concernée — inutile de le redemander.
+      .populate("fromDate", "name surname date nameday")
       .sort({ createdAt: -1 });
     res.json(invs);
   } catch (err) {
@@ -224,22 +252,52 @@ router.post("/invitations/:id/cancel", isAuthenticated, async (req, res) => {
 // ── Accepter une invitation (en choisissant sa carte) ───────────────────────
 router.post("/invitations/:id/accept", isAuthenticated, async (req, res) => {
   try {
-    const { dateId } = req.body;
+    const { dateId, newDate } = req.body;
     const inv = await SharedGiftListInvitation.findById(req.params.id);
     if (!inv || inv.toUser.toString() !== req.payload._id)
       return res.status(404).json({ message: "Invitation introuvable" });
     if (inv.status !== "pending")
       return res.status(400).json({ message: "Invitation déjà traitée" });
 
-    const myDate = await DateModel.findOne({
-      _id: dateId,
-      owner: req.payload._id,
-    });
-    if (!myDate) return res.status(404).json({ message: "Carte introuvable" });
-
     const fromDate = await DateModel.findById(inv.fromDate);
     if (!fromDate)
       return res.status(404).json({ message: "Carte initiatrice introuvable" });
+
+    // ── Sur quelle carte poser la liste ? ────────────────────────────────
+    // Une liste commune ne s'affiche que posée sur une carte. Jusqu'ici il
+    // fallait donc DÉJÀ avoir enregistré la personne concernée pour pouvoir
+    // accepter — un blocage courant, puisqu'on est souvent invité à préparer
+    // le cadeau de quelqu'un qu'on n'a pas dans son carnet.
+    //
+    // On accepte maintenant `newDate` : le client peut demander la création de
+    // la carte au passage. Les champs absents sont repris de la carte de celui
+    // qui invite, qui décrit la même personne — c'est ce qui permet de proposer
+    // « Créer la carte de Tom » sans rien faire saisir.
+    let myDate = null;
+
+    if (dateId) {
+      myDate = await DateModel.findOne({ _id: dateId, owner: req.payload._id });
+      if (!myDate)
+        return res.status(404).json({ message: "Carte introuvable" });
+    } else if (newDate) {
+      const birth = newDate.date || fromDate.date;
+      if (!birth)
+        return res.status(400).json({
+          message:
+            "Impossible de créer la carte : aucune date de naissance connue.",
+        });
+      myDate = await DateModel.create({
+        owner: req.payload._id,
+        name: newDate.name || fromDate.name || "",
+        surname: newDate.surname ?? fromDate.surname ?? "",
+        date: birth,
+        nameday: newDate.nameday ?? fromDate.nameday ?? null,
+      });
+    } else {
+      return res
+        .status(400)
+        .json({ message: "Précise une carte existante ou une nouvelle" });
+    }
 
     // Récupère ou crée la liste commune
     let list = null;
@@ -304,7 +362,9 @@ router.post("/invitations/:id/accept", isAuthenticated, async (req, res) => {
       link: `/home?tab=date&dateId=${inv.fromDate}`,
     });
 
-    res.json({ sharedGiftList: list._id });
+    // dateId renvoyé aussi : quand la carte vient d'être créée, le client n'a
+    // aucun autre moyen de savoir où naviguer ensuite.
+    res.json({ sharedGiftList: list._id, dateId: myDate._id });
   } catch (err) {
     console.error("❌ shared accept:", err);
     res.status(500).json({ message: "Erreur serveur" });
@@ -371,6 +431,21 @@ async function loadListAsParticipant(req, res, next) {
  * booléen : c'est ici, au seul endroit qui sérialise la liste, qu'on garantit
  * qu'aucun prénom de réserveur ne fuite vers un non-membre.
  */
+/**
+ * Statuts qu'un INVITÉ (viewer) ne doit pas voir du tout.
+ *
+ * Une liste commune sert à empêcher qu'on offre deux fois la même chose. Un
+ * cadeau déjà offert n'a plus d'intérêt, et un cadeau déjà acheté n'est plus à
+ * prendre : les afficher à un invité l'invite au doublon exact que la liste
+ * évite. Il ne voit donc que ce qui reste à faire.
+ *
+ * ⚠️ "to_give" est inclus, alors que la demande ne citait que "offert" et
+ * "acheté" : ce statut signifie « acheté, en attente d'être remis », donc le
+ * cadeau est tout aussi verrouillé. Le laisser visible rouvrirait la porte au
+ * double achat. Une ligne à retirer ici si tu préfères l'inverse.
+ */
+const HIDDEN_STATUSES_FOR_VIEWER = new Set(["bought", "to_give", "offered"]);
+
 function serializeListForRole(list, role, userId) {
   const obj = list.toObject ? list.toObject() : list;
   if (role === "member") return obj;
@@ -381,20 +456,22 @@ function serializeListForRole(list, role, userId) {
     viewers: undefined,
     accessCode: undefined,
     members: undefined,
-    gifts: (obj.gifts || []).map((g) => {
-      // reservedBy peut être peuplé (objet) ou brut (ObjectId) selon l'appel.
-      const rid = g.reservedBy?._id ?? g.reservedBy;
-      return {
-        ...g,
-        addedBy: undefined,
-        reservedBy: undefined,
-        reservedByGuest: undefined,
-        isReserved: !!g.reservedBy || !!g.reservedByGuest,
-        // Le seul lien conservé : est-ce MOI qui ai réservé ? Sans lui,
-        // l'invité ne pourrait pas annuler sa propre réservation.
-        reservedByMe: !!rid && String(rid) === String(userId),
-      };
-    }),
+    gifts: (obj.gifts || [])
+      .filter((g) => !HIDDEN_STATUSES_FOR_VIEWER.has(g.status))
+      .map((g) => {
+        // reservedBy peut être peuplé (objet) ou brut (ObjectId) selon l'appel.
+        const rid = g.reservedBy?._id ?? g.reservedBy;
+        return {
+          ...g,
+          addedBy: undefined,
+          reservedBy: undefined,
+          reservedByGuest: undefined,
+          isReserved: !!g.reservedBy || !!g.reservedByGuest,
+          // Le seul lien conservé : est-ce MOI qui ai réservé ? Sans lui,
+          // l'invité ne pourrait pas annuler sa propre réservation.
+          reservedByMe: !!rid && String(rid) === String(userId),
+        };
+      }),
   };
 }
 
@@ -404,6 +481,34 @@ function serializeListForRole(list, role, userId) {
 // d'atteindre la liste : elle existerait pour lui sans être joignable.
 //
 // ⚠️ Déclarée AVANT `/:id` — sinon "shared-with-me" serait pris pour un id.
+/**
+ * Identité de la personne dont la liste parle, déduite d'une carte déjà
+ * rattachée à cette liste.
+ *
+ * Une liste commune est posée, chez chaque membre, sur la carte de la personne
+ * concernée : n'importe laquelle de ces cartes décrit donc cette personne. On
+ * s'en sert pour proposer la création de la carte préremplie à quelqu'un qui
+ * reçoit la liste et n'a pas encore enregistré cette personne — sans quoi il
+ * doit ressaisir un nom et une date de naissance qu'il ne connaît peut-être
+ * même pas.
+ *
+ * Aucune fuite : on ne le renvoie qu'à des participants de la liste, et savoir
+ * POUR QUI on cherche des idées est précisément l'objet du partage. Le libellé
+ * de la liste porte d'ailleurs souvent déjà ce prénom.
+ */
+async function suggestedCardFor(listId) {
+  const ref = await DateModel.findOne({ sharedGiftList: listId }).select(
+    "name surname date nameday",
+  );
+  if (!ref) return null;
+  return {
+    name: ref.name || "",
+    surname: ref.surname || "",
+    date: ref.date || null,
+    nameday: ref.nameday || null,
+  };
+}
+
 router.get("/shared-with-me", isAuthenticated, async (req, res) => {
   try {
     const uid = req.payload._id;
@@ -421,17 +526,21 @@ router.get("/shared-with-me", isAuthenticated, async (req, res) => {
       attached.map((d) => d.sharedGiftList.toString()),
     );
 
+    const pending = lists.filter((l) => !attachedIds.has(l._id.toString()));
+
     res.json(
-      lists
-        .filter((l) => !attachedIds.has(l._id.toString()))
-        .map((l) => ({
+      await Promise.all(
+        pending.map(async (l) => ({
           _id: l._id,
           label: l.label || null,
           giftCount: (l.gifts || []).length,
           from: l.createdBy
             ? { name: l.createdBy.name, surname: l.createdBy.surname }
             : null,
+          // Permet de proposer « Créer la carte de X » sans rien faire saisir.
+          suggestedCard: await suggestedCardFor(l._id),
         })),
+      ),
     );
   } catch (err) {
     console.error("❌ shared-with-me:", err);
@@ -451,6 +560,9 @@ router.get("/:id", isAuthenticated, loadListAsParticipant, async (req, res) => {
     res.json({
       ...serializeListForRole(list, req.listRole, req.payload._id),
       myRole: req.listRole,
+      // L'écran de rattachement ne connaît que l'id de la liste : c'est ici
+      // qu'il récupère de quoi proposer la carte préremplie.
+      suggestedCard: await suggestedCardFor(list._id),
     });
   } catch (err) {
     console.error("❌ shared get:", err);
@@ -476,7 +588,13 @@ router.post("/:id/gifts", isAuthenticated, loadListAsMember, async (req, res) =>
       addedBy: req.payload._id,
     });
     await req.sharedList.save();
-    res.status(201).json(req.sharedList);
+    // Même forme que GET /:id : le front réinjecte cette réponse
+    // directement dans son état, une divergence de forme y produirait des
+    // champs manquants jusqu'au rechargement suivant.
+    res.status(201).json({
+      ...serializeListForRole(req.sharedList, req.listRole, req.payload._id),
+      myRole: req.listRole,
+    });
 
     // Après la réponse : l'ajout est acquis, la notification ne doit ni le
     // retarder ni le faire échouer.
@@ -487,6 +605,9 @@ router.post("/:id/gifts", isAuthenticated, loadListAsMember, async (req, res) =>
       data: { fromName: who, giftName: giftName.trim(), listLabel: label },
       pushTitle: "🎁 Nouvelle idée dans votre liste commune",
       pushBody: `${who} a ajouté « ${giftName.trim()} »`,
+      // Une idée qui arrive peut intéresser un invité : c'est peut-être lui qui
+      // s'en chargera. C'est l'un des deux seuls cas où on le dérange.
+      alsoViewers: viewerIds(req.sharedList),
     });
   } catch (err) {
     console.error("❌ shared add gift:", err);
@@ -515,7 +636,10 @@ router.patch(
         gift.purchased = status !== "to_buy";
       }
       await req.sharedList.save();
-      res.json(req.sharedList);
+      res.json({
+        ...serializeListForRole(req.sharedList, req.listRole, req.payload._id),
+        myRole: req.listRole,
+      });
 
       const who = await actorName(req.payload._id);
       // Le passage en acheté/offert est l'information la plus utile de toutes
@@ -559,12 +683,24 @@ router.delete(
       // .pull() retire l'élément du tableau, toutes versions confondues.
       // Nom retenu AVANT le pull : après, le sous-document n'existe plus.
       const removedName = gift.giftName;
+      // Qui l'avait réservé, AVANT le pull — après, le sous-document n'existe
+      // plus. Cette personne comptait s'en charger : si c'est un invité, il
+      // fait partie des rares cas où on le notifie, parce qu'il aurait sinon
+      // découvert la disparition en arrivant les mains vides.
+      const reserverId = gift.reservedBy ? gift.reservedBy.toString() : null;
       req.sharedList.gifts.pull(req.params.giftId);
       await req.sharedList.save();
-      res.json(req.sharedList);
+      res.json({
+        ...serializeListForRole(req.sharedList, req.listRole, req.payload._id),
+        myRole: req.listRole,
+      });
 
       const who = await actorName(req.payload._id);
+      const concernedViewers = viewerIds(req.sharedList).filter(
+        (v) => reserverId && v.toString() === reserverId,
+      );
       await notifyOtherMembers(req.app, req.sharedList, req.payload._id, {
+        alsoViewers: concernedViewers,
         type: "shared_gift_removed",
         data: {
           fromName: who,
@@ -836,12 +972,24 @@ router.post(
         target = await DateModel.findOne({ _id: dateId, owner: uid });
         if (!target)
           return res.status(404).json({ message: "Carte introuvable" });
-      } else if (newDate?.name && newDate?.date) {
+      } else if (newDate) {
+        // Les champs absents sont repris de la carte d'un membre, qui décrit
+        // la même personne : `{ newDate: {} }` suffit donc pour créer la carte,
+        // et le client peut proposer « Créer la carte de X » en un geste.
+        const ref = await suggestedCardFor(list._id);
+        const birth = newDate.date || ref?.date;
+        const name = newDate.name || ref?.name;
+        if (!name || !birth)
+          return res.status(400).json({
+            message:
+              "Impossible de créer la carte : prénom ou date de naissance manquants.",
+          });
         target = await DateModel.create({
           owner: uid,
-          name: newDate.name,
-          surname: newDate.surname || "",
-          date: newDate.date,
+          name,
+          surname: newDate.surname ?? ref?.surname ?? "",
+          date: birth,
+          nameday: newDate.nameday ?? ref?.nameday ?? null,
         });
       } else {
         return res
@@ -925,7 +1073,48 @@ router.patch(
 );
 
 // ── Quitter la liste commune ────────────────────────────────────────────────
-router.post("/:id/leave", isAuthenticated, loadListAsMember, async (req, res) => {
+/**
+ * Quitter une liste commune.
+ *
+ * ⚠️ Ouvert aux MEMBRES ET AUX INVITÉS. La route était gardée par
+ * `loadListAsMember` : un invité recevait 403, son entrée restait dans
+ * `viewers`, et sa carte restait rattachée — il « quittait » la liste et la
+ * revoyait au rechargement suivant. Il n'existait aucune autre route pour
+ * retirer sa propre entrée d'invité (seul un membre pouvait le faire via
+ * DELETE /:id/viewers/:userId), donc aucun moyen de partir de son plein gré.
+ */
+router.post(
+  "/:id/leave",
+  isAuthenticated,
+  loadListAsParticipant,
+  async (req, res) => {
+    try {
+      const list = req.sharedList;
+
+      // ── Invité : on retire son accès, la liste elle-même ne bouge pas ────
+      if (req.listRole !== "member") {
+        list.viewers = (list.viewers || []).filter(
+          (v) => !v.user || v.user.toString() !== req.payload._id,
+        );
+        await list.save();
+        // Sa carte cesse de porter la liste, sinon elle continuerait de
+        // l'afficher alors qu'il n'y a plus accès (403 au prochain fetch).
+        await DateModel.updateMany(
+          { owner: req.payload._id, sharedGiftList: list._id },
+          { sharedGiftList: null },
+        );
+        return res.json({ success: true, role: "viewer" });
+      }
+
+      return leaveAsMember(req, res);
+    } catch (err) {
+      console.error("❌ shared leave:", err);
+      res.status(500).json({ message: "Erreur serveur" });
+    }
+  },
+);
+
+async function leaveAsMember(req, res) {
   try {
     const list = req.sharedList;
     list.members = list.members.filter(
@@ -968,9 +1157,9 @@ router.post("/:id/leave", isAuthenticated, loadListAsMember, async (req, res) =>
       );
     }
   } catch (err) {
-    console.error("❌ shared leave:", err);
+    console.error("❌ shared leave (membre):", err);
     res.status(500).json({ message: "Erreur serveur" });
   }
-});
+}
 
 module.exports = router;

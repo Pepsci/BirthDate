@@ -1,0 +1,146 @@
+/* Panneau « Partage et accès » d'une liste commune (membres uniquement). */
+
+.slsp {
+  margin-top: 14px;
+  padding: 16px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+}
+
+.slsp-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.slsp-head h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--text-primary);
+}
+
+.slsp-close {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+.slsp-section {
+  padding: 14px 0;
+  border-top: 1px solid var(--border-color);
+}
+
+.slsp-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.slsp-section-head h4 {
+  margin: 0;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+}
+
+.slsp-muted {
+  margin: 6px 0 0;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+.slsp-error {
+  margin: 8px 0 0;
+  color: var(--danger);
+  font-size: 0.85rem;
+}
+
+.slsp-people,
+.slsp-picker {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+}
+
+.slsp-people li,
+.slsp-picker li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--border-color);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+
+.slsp-people li:last-child,
+.slsp-picker li:last-child {
+  border-bottom: none;
+}
+
+.slsp-btn {
+  padding: 7px 12px;
+  border-radius: 9px;
+  border: 1px solid var(--primary);
+  background: var(--primary);
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.slsp-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.slsp-btn--sm {
+  padding: 6px 10px;
+  font-size: 0.8rem;
+}
+
+.slsp-btn--ghost {
+  background: transparent;
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.slsp-copyrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.slsp-input {
+  flex: 1;
+  min-width: 180px;
+  padding: 8px 10px;
+  border-radius: 9px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+}
+
+.slsp-code {
+  padding: 8px 14px;
+  border-radius: 9px;
+  background: var(--bg-primary);
+  border: 1px dashed var(--border-color);
+  color: var(--text-primary);
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+}

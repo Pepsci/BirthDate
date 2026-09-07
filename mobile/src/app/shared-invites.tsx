@@ -76,12 +76,26 @@ export default function SharedInvitesScreen() {
     }
   };
 
-  const confirmAccept = async (dateId: string) => {
+  /**
+   * @param target carte existante, ou `{ newDate: {} }` pour la créer au
+   *   passage — le serveur reprend alors le nom et la date de naissance depuis
+   *   la carte de celui qui invite, qui décrit la même personne.
+   */
+  const confirmAccept = async (
+    target: { dateId: string } | { newDate: Record<string, unknown> },
+  ) => {
     if (!accepting || busy) return;
     setBusy(true);
     try {
-      await acceptSharedInvitation(accepting._id, dateId);
+      const res = await acceptSharedInvitation(accepting._id, target);
+      const created = "newDate" in target;
       setAccepting(null);
+      // Une carte tout juste créée n'est visible nulle part tant qu'on n'y va
+      // pas : on emmène dessus, la liste commune y est déjà posée.
+      if (created && res.dateId) {
+        router.replace(`/date/${res.dateId}`);
+        return;
+      }
       await load();
     } catch (e: any) {
       setError(e?.message ?? "Erreur.");
@@ -89,6 +103,15 @@ export default function SharedInvitesScreen() {
       setBusy(false);
     }
   };
+
+  // Prénom de la personne concernée, repris de l'invitation.
+  const acceptTargetName = accepting
+    ? [accepting.fromDate?.name, accepting.fromDate?.surname]
+        .filter(Boolean)
+        .join(" ") ||
+      accepting.label ||
+      null
+    : null;
 
   const decline = async (inv: SharedInvitation) => {
     if (busy) return;
@@ -193,14 +216,32 @@ export default function SharedInvitesScreen() {
       <BottomSheet visible={!!accepting} onClose={() => setAccepting(null)}>
         <Text style={styles.sheetTitle}>Associer à quelle carte ?</Text>
         <Text style={styles.sheetSub}>
-          Choisis la carte anniversaire à relier à cette liste commune.
+          Une liste commune s'affiche sur la carte de la personne concernée.
+          Choisis-en une, ou crée-la.
         </Text>
+
+        {/* Créer la carte au passage. C'était le blocage : il fallait DÉJÀ
+            avoir enregistré la personne pour accepter, alors qu'on est
+            justement invité à préparer le cadeau de quelqu'un qu'on n'a pas
+            forcément dans son carnet. Nom et date viennent de l'invitation. */}
+        {acceptTargetName && (
+          <Pressable
+            style={styles.createRow}
+            disabled={busy}
+            onPress={() => confirmAccept({ newDate: {} })}
+          >
+            <Text style={styles.createRowText}>
+              ➕ Créer la carte de {acceptTargetName}
+            </Text>
+          </Pressable>
+        )}
+
         {dates.map((d) => (
           <Pressable
             key={d._id}
             style={styles.dateRow}
             disabled={busy}
-            onPress={() => confirmAccept(d._id)}
+            onPress={() => confirmAccept({ dateId: d._id })}
           >
             <Text style={styles.dateName}>
               {(d.name || d.linkedUser?.name) ?? "?"}{" "}
@@ -212,7 +253,9 @@ export default function SharedInvitesScreen() {
           </Pressable>
         ))}
         {dates.length === 0 && (
-          <Text style={styles.empty}>Aucune carte disponible.</Text>
+          <Text style={styles.empty}>
+            Tu n'as encore aucune carte — utilise le bouton ci-dessus.
+          </Text>
         )}
       </BottomSheet>
     </View>
@@ -267,6 +310,19 @@ const makeStyles = (c: ThemeColors) =>
   acceptText: { color: c.white, fontWeight: "700" },
   sheetTitle: { fontSize: 18, fontWeight: "800", color: c.text },
   sheetSub: { color: c.sub, fontSize: 13, marginTop: 4, marginBottom: 12 },
+  // Action « créer la carte » : mise en avant par rapport aux cartes existantes
+  // — c'est le seul chemin disponible quand l'utilisateur n'en a aucune.
+  createRow: {
+    marginTop: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    backgroundColor: c.primarySoft,
+    borderWidth: 1,
+    borderColor: c.primary,
+    alignItems: "center",
+  },
+  createRowText: { color: c.primary, fontWeight: "700", fontSize: 14.5 },
   dateRow: {
     flexDirection: "row",
     alignItems: "center",

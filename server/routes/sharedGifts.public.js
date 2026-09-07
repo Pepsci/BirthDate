@@ -19,11 +19,65 @@
 
 const router = require("express").Router();
 const SharedGiftList = require("../models/sharedGiftList.model");
+const { notify } = require("../utils/notify");
+const { sendPushToUser } = require("../services/pushService");
+
+/**
+ * Statuts invisibles depuis le lien public — même règle que pour les invités
+ * dans l'application (voir HIDDEN_STATUSES_FOR_VIEWER dans sharedGifts.js).
+ * Un cadeau déjà acheté ou déjà offert n'est plus à prendre : l'afficher à
+ * quelqu'un qui vient chercher quoi offrir l'invite au doublon.
+ */
+const HIDDEN_STATUSES = new Set(["bought", "to_give", "offered"]);
 
 /** Comparaison de code : insensible à la casse et aux espaces collés. */
 const codeMatches = (given, expected) =>
   !!expected &&
   String(given || "").trim().toUpperCase() === String(expected).toUpperCase();
+
+/**
+ * Prévient les membres qu'un visiteur du lien public a réservé une idée.
+ *
+ * Jamais bloquant : la réservation est déjà enregistrée quand on arrive ici, et
+ * la réponse est déjà partie. Le lien pointe vers la carte de chaque
+ * destinataire — résolu côté sharedGifts.js pour les routes authentifiées ;
+ * ici on reste simple et on vise l'accueil, faute de contexte utilisateur.
+ */
+async function notifySharedListMembers(req, list, { giftName, guestName }) {
+  for (const memberId of list.members || []) {
+    try {
+      const card = await require("../models/date.model")
+        .findOne({ owner: memberId, sharedGiftList: list._id })
+        .select("_id");
+      const link = card
+        ? `/home?tab=date&dateId=${card._id}`
+        : "/home?tab=friends";
+      await notify(req.app, {
+        userId: memberId,
+        type: "shared_gift_updated",
+        data: {
+          fromName: guestName,
+          giftName,
+          statusLabel: "s'occupe de",
+          listLabel: list.label || null,
+        },
+        link,
+      });
+      await sendPushToUser(memberId, {
+        title: "🎁 Cadeau réservé",
+        body: `${guestName} s'occupe de « ${giftName} »`,
+        url: link,
+        tag: `shared-list-${list._id}`,
+        type: "shared_list",
+      });
+    } catch (err) {
+      console.error(
+        `[sharedGifts.public] notification échouée pour ${memberId}:`,
+        err.message,
+      );
+    }
+  }
+}
 
 // ─── GET /api/shared-gifts/public/:slug ──────────────────────
 router.get("/:slug", async (req, res) => {
@@ -43,16 +97,18 @@ router.get("/:slug", async (req, res) => {
       // Permet à la page de savoir s'il faut demander un code avant de
       // réserver, sans jamais transmettre le code lui-même.
       requiresCode: !!list.accessCode,
-      gifts: (list.gifts || []).map((g) => ({
-        _id: g._id,
-        giftName: g.giftName,
-        occasion: g.occasion,
-        price: g.price,
-        url: g.url,
-        image: g.image,
-        status: g.status,
-        isReserved: !!g.reservedBy || !!g.reservedByGuest,
-      })),
+      gifts: (list.gifts || [])
+        .filter((g) => !HIDDEN_STATUSES.has(g.status))
+        .map((g) => ({
+          _id: g._id,
+          giftName: g.giftName,
+          occasion: g.occasion,
+          price: g.price,
+          url: g.url,
+          image: g.image,
+          status: g.status,
+          isReserved: !!g.reservedBy || !!g.reservedByGuest,
+        })),
     });
   } catch (err) {
     console.error("[sharedGifts.public] GET error:", err);
@@ -105,11 +161,22 @@ router.post("/:slug/gifts/:giftId/reserve", async (req, res) => {
     if (gift.reservedBy || gift.reservedByGuest)
       return res.status(409).json({ message: "Ce cadeau est déjà réservé" });
 
-    gift.reservedByGuest = String(guestName).trim().slice(0, 40);
+    const who = String(guestName).trim().slice(0, 40);
+    gift.reservedByGuest = who;
     gift.reservedAt = new Date();
     await list.save();
 
     res.json({ ok: true });
+
+    // ⚠️ Une réservation depuis le lien public ne prévenait PERSONNE : les
+    // membres continuaient de voir une idée « à prendre » que quelqu'un avait
+    // déjà bloquée, et pouvaient l'acheter en double. C'est le seul canal par
+    // lequel une réservation peut arriver sans compte, donc le seul où
+    // l'information manquait complètement.
+    await notifySharedListMembers(req, list, {
+      giftName: gift.giftName,
+      guestName: who,
+    });
   } catch (err) {
     console.error("[sharedGifts.public] reserve error:", err);
     res.status(500).json({ message: "Erreur serveur" });

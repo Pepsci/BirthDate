@@ -75,9 +75,16 @@ const PushTab = () => {
   const [pushEnabled, setPushEnabled] = useState(false);
   const [pushEvents, setPushEvents] = useState({
     birthdays: true,
+    // Les fêtes suivaient l'interrupteur des anniversaires côté web alors
+    // qu'elles ont leur propre catégorie serveur (User.pushEvents.namedays) :
+    // impossible de garder les unes sans les autres depuis le web.
+    namedays: true,
     chat: true,
     friends: true,
     gifts: true,
+    // Activité des listes communes. La catégorie existait côté serveur et dans
+    // l'app mobile, mais pas ici : un utilisateur web ne pouvait pas la couper.
+    sharedLists: true,
     events: true,
   });
   const [pushTimings, setPushTimings] = useState([1, 0]);
@@ -94,6 +101,11 @@ const PushTab = () => {
       if (u.pushEvents)
         setPushEvents({
           ...u.pushEvents,
+          // Défauts explicites : un compte créé avant l'ajout de ces catégories
+          // n'a pas le champ, et `undefined` rendrait l'interrupteur
+          // incontrôlé (React passe de non contrôlé à contrôlé au 1er clic).
+          namedays: u.pushEvents.namedays ?? true,
+          sharedLists: u.pushEvents.sharedLists ?? true,
           events: u.pushEvents.events ?? true,
         });
       if (u.pushBirthdayTimings) setPushTimings(u.pushBirthdayTimings);
@@ -354,10 +366,24 @@ const PushTab = () => {
                 }
               />
               <PrefToggle
+                label="🌸 Rappels de fêtes"
+                checked={pushEvents.namedays ?? true}
+                onChange={(v) =>
+                  setPushEvents((prev) => ({ ...prev, namedays: v }))
+                }
+              />
+              <PrefToggle
                 label="🎁 Nouveaux vœux sur ma liste cadeaux"
                 checked={pushEvents.gifts}
                 onChange={(v) =>
                   setPushEvents((prev) => ({ ...prev, gifts: v }))
+                }
+              />
+              <PrefToggle
+                label="👨‍👩‍👧 Listes communes"
+                checked={pushEvents.sharedLists ?? true}
+                onChange={(v) =>
+                  setPushEvents((prev) => ({ ...prev, sharedLists: v }))
                 }
               />
               <PrefToggle

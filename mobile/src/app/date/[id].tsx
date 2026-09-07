@@ -625,13 +625,19 @@ export default function DateDetailScreen() {
 
   const onLeaveShared = () => {
     if (!entry?.sharedGiftList) return;
+    // Le texte diffère selon le rôle : un membre peut faire disparaître la
+    // liste s'il est le dernier, un invité perd seulement son accès. Jusqu'ici
+    // le serveur refusait purement et simplement la demande d'un invité (403) :
+    // il « quittait » la liste et la retrouvait au rechargement suivant.
     Alert.alert(
-      "Quitter la liste commune ?",
-      "Tu ne verras plus cette liste. Les autres membres la gardent.",
+      isSharedMember ? "Quitter la liste commune ?" : "Ne plus suivre ?",
+      isSharedMember
+        ? "Tes idées restent pour les autres membres. Si tu es le dernier, la liste sera supprimée."
+        : "Tu perdras l'accès à cette liste. Un membre pourra te la repartager plus tard.",
       [
         { text: "Annuler", style: "cancel" },
         {
-          text: "Quitter",
+          text: isSharedMember ? "Quitter" : "Ne plus suivre",
           style: "destructive",
           onPress: async () => {
             try {
@@ -1529,7 +1535,11 @@ export default function DateDetailScreen() {
               </View>
 
               <Pressable onPress={onLeaveShared} style={{ marginTop: 6 }}>
-                <Text style={styles.leaveShared}>Quitter la liste commune</Text>
+                <Text style={styles.leaveShared}>
+                  {isSharedMember
+                    ? "Quitter la liste commune"
+                    : "Ne plus suivre cette liste"}
+                </Text>
               </Pressable>
             </>
           )}
@@ -1793,6 +1803,26 @@ export default function DateDetailScreen() {
             </Pressable>
           </>
         )}
+
+        {/* Partager à un contact, en un geste. C'était enterré dans l'écran
+            « Gérer les accès », à deux niveaux de profondeur : partager la
+            liste à quelqu'un est pourtant l'action la plus courante de cette
+            feuille, elle mérite d'y figurer directement. L'écran de gestion
+            reste accessible juste en dessous pour le reste (retirer un accès,
+            régénérer le code). */}
+        <Pressable
+          style={styles.publicShareBtn}
+          onPress={() => {
+            setShareSheetOpen(false);
+            router.push(
+              `/shared-list/${entry.sharedGiftList}/access?add=1`,
+            );
+          }}
+        >
+          <Text style={styles.publicShareBtnText}>
+            👤 Partager à un contact
+          </Text>
+        </Pressable>
 
         <Pressable
           style={styles.publicShareBtn}

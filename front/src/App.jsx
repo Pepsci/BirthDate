@@ -24,6 +24,7 @@ import Footer from "./components/layout/Footer";
 import GuidePage from "./components/pages/GuidePage";
 import ContactPage from "./components/pages/ContactPage";
 import SharedInvites from "./components/profil/SharedInvites";
+import AttachSharedList from "./components/sharedGifts/AttachSharedList";
 import ScrollToTop from "./components/layout/ScrollToTop";
 import EventsPanel from "./components/events/EventsPanel";
 import EventPage from "./components/events/EventPage";
@@ -104,6 +105,14 @@ function App() {
             <Route path="/home" element={<Home />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/shared-invites" element={<SharedInvites />} />
+            {/* Rattachement d'une liste commune reçue. Cette route manquait
+                alors que le serveur y envoie toutes les notifications de
+                partage : le clic sur « X t'a partagé sa liste » tombait dans le
+                vide côté web. */}
+            <Route
+              path="/shared-list/:id/attach"
+              element={<AttachSharedList />}
+            />
             <Route path="/birthday/:id" element={<BirthdayView />} />
             <Route path="/update-date/:id" element={<UpdateDate />} />
             <Route path="/merge-duplicates" element={<MergeDuplicates />} />

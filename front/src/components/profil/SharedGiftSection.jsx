@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import apiHandler from "../../api/apiHandler";
 import GiftCardGrid from "../UI/GiftCardGrid";
+import SharedListSharePanel from "../sharedGifts/SharedListSharePanel";
 import useAuth from "../../context/useAuth";
 import "./css/sharedGiftSection.css";
 
@@ -37,6 +38,7 @@ export default function SharedGiftSection({ currentDate, onUpdate }) {
   const [sentInvites, setSentInvites] = useState([]);
 
   // Formulaire cadeau (ajout / édition)
+  const [showShare, setShowShare] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState({
@@ -47,6 +49,13 @@ export default function SharedGiftSection({ currentDate, onUpdate }) {
   });
 
   const listId = currentDate.sharedGiftList;
+
+  // ⚠️ Rôle du visiteur. Le serveur renvoie `myRole` ("member" | "viewer") sur
+  // GET /:id et sur les routes de mutation ; le web l'ignorait totalement et
+  // affichait à un invité les boutons d'ajout, d'édition et de suppression,
+  // qui renvoyaient tous 403. On retombe sur "member" en l'absence du champ :
+  // avant cette version, seuls des membres pouvaient atteindre cet écran.
+  const isMember = !list || list.myRole !== "viewer";
 
   const loadSent = useCallback(async () => {
     try {
@@ -181,14 +190,48 @@ export default function SharedGiftSection({ currentDate, onUpdate }) {
     setShowForm(true);
   };
 
+  // ── Réservation ──────────────────────────────────────────────────────────
+  // « Je m'en occupe » : c'est ce qui évite que deux personnes achètent la même
+  // chose. Le web n'appelait tout simplement pas ces routes — une réservation
+  // faite depuis le mobile ou le lien public n'apparaissait nulle part ici, et
+  // aucune ne pouvait être créée depuis le web.
+  const reserve = async (giftId) => {
+    try {
+      const res = await apiHandler.post(
+        `/shared-gifts/${listId}/gifts/${giftId}/reserve`,
+      );
+      setList(res.data);
+    } catch (err) {
+      setError(
+        err?.response?.data?.message || "Impossible de réserver ce cadeau.",
+      );
+    }
+  };
+
+  const unreserve = async (giftId) => {
+    try {
+      const res = await apiHandler.post(
+        `/shared-gifts/${listId}/gifts/${giftId}/unreserve`,
+      );
+      setList(res.data);
+    } catch (err) {
+      setError(err?.response?.data?.message || "Erreur.");
+    }
+  };
+
   const leave = async () => {
-    if (!window.confirm("Quitter la liste commune ?")) return;
+    // Le texte diffère selon le rôle : un membre peut faire disparaître la
+    // liste s'il est le dernier, un invité perd seulement son accès.
+    const message = isMember
+      ? "Quitter la liste commune ?\n\nVos idées y restent pour les autres membres. Si vous êtes le dernier, la liste sera supprimée."
+      : "Ne plus suivre cette liste ?\n\nVous perdrez l'accès. Un membre pourra vous la repartager plus tard.";
+    if (!window.confirm(message)) return;
     try {
       await apiHandler.post(`/shared-gifts/${listId}/leave`);
       onUpdate?.({ ...currentDate, sharedGiftList: null });
       setList(null);
-    } catch {
-      setError("Erreur.");
+    } catch (err) {
+      setError(err?.response?.data?.message || "Erreur.");
     }
   };
 
@@ -255,31 +298,62 @@ export default function SharedGiftSection({ currentDate, onUpdate }) {
     <div className="sgs-wrapper">
       <div className="sgs-header">
         <h2>👥 Idées communes</h2>
-        <button
-          className="sgs-btn sgs-btn--sm"
-          onClick={() => {
-            setEditing(null);
-            setForm({
-              giftName: "",
-              occasion: "Anniversaire",
-              price: "",
-              url: "",
-            });
-            setShowForm((v) => !v);
-          }}
-        >
-          {showForm ? "✕ Fermer" : "＋ Ajouter"}
-        </button>
+        {isMember && (
+          <div className="sgs-header-actions">
+            <button
+              className="sgs-btn sgs-btn--sm"
+              onClick={() => setShowShare((v) => !v)}
+            >
+              {showShare ? "✕ Fermer" : "🔗 Partager"}
+            </button>
+            <button
+              className="sgs-btn sgs-btn--sm"
+              onClick={() => {
+                setEditing(null);
+                setForm({
+                  giftName: "",
+                  occasion: "Anniversaire",
+                  price: "",
+                  url: "",
+                });
+                setShowForm((v) => !v);
+              }}
+            >
+              {showForm ? "✕ Fermer" : "＋ Ajouter"}
+            </button>
+          </div>
+        )}
       </div>
-      <p className="sgs-members">
-        Membres :{" "}
-        {list.members
-          .map((m) => `${m.name}${m.surname ? " " + m.surname : ""}`)
-          .join(", ")}
-      </p>
+
+      {/* ⚠️ Garde indispensable : pour un invité, le serveur met `members` à
+          undefined (les identités lui sont masquées) — sans le `?? []`, ce
+          .map() faisait planter tout l'écran. */}
+      {isMember && (
+        <p className="sgs-members">
+          Membres :{" "}
+          {(list.members ?? [])
+            .map((m) => `${m.name}${m.surname ? " " + m.surname : ""}`)
+            .join(", ")}
+        </p>
+      )}
+
+      {!isMember && (
+        <p className="sgs-members">
+          Vous consultez cette liste en invité : vous pouvez réserver une idée,
+          mais pas la modifier. Les cadeaux déjà achetés ou offerts ne vous sont
+          pas montrés.
+        </p>
+      )}
+
+      {isMember && showShare && (
+        <SharedListSharePanel
+          listId={listId}
+          onClose={() => setShowShare(false)}
+        />
+      )}
       {error && <p className="sgs-error">{error}</p>}
 
-      {showForm && (
+      {isMember && showForm && (
         <form className="sgs-form" onSubmit={submitForm}>
           <input
             className="sgs-input"
@@ -323,19 +397,27 @@ export default function SharedGiftSection({ currentDate, onUpdate }) {
         items={list.gifts}
         type="gifts"
         currentUserId={currentUser?._id}
-        onEdit={startEdit}
-        onDelete={deleteGift}
-        onToggle={toggleStatus}
-        onSetStatus={(raw, status) =>
-          apiHandler
-            .patch(`/shared-gifts/${listId}/gifts/${raw._id}`, { status })
-            .then((res) => setList(res.data))
-            .catch(() => setError("Erreur."))
+        // readOnly retire les actions de gestion et fait apparaître, à la
+        // place, le bouton de réservation — la seule action ouverte à un invité.
+        readOnly={!isMember}
+        onEdit={isMember ? startEdit : undefined}
+        onDelete={isMember ? deleteGift : undefined}
+        onToggle={isMember ? toggleStatus : undefined}
+        onReserve={reserve}
+        onUnreserve={unreserve}
+        onSetStatus={
+          isMember
+            ? (raw, status) =>
+                apiHandler
+                  .patch(`/shared-gifts/${listId}/gifts/${raw._id}`, { status })
+                  .then((res) => setList(res.data))
+                  .catch(() => setError("Erreur."))
+            : undefined
         }
       />
 
       <button className="sgs-leave" onClick={leave}>
-        Quitter la liste commune
+        {isMember ? "Quitter la liste commune" : "Ne plus suivre cette liste"}
       </button>
     </div>
   );

@@ -31,12 +31,33 @@ export interface SharedGiftList {
   createdBy?: string;
   /** Renvoyé par GET /shared-gifts/:id — pilote ce que l'écran autorise. */
   myRole?: SharedListRole;
+  /**
+   * Identité de la personne dont la liste parle, déduite par le serveur d'une
+   * carte déjà rattachée chez un membre. Permet de proposer la création de la
+   * carte préremplie à qui reçoit la liste sans connaître cette personne.
+   */
+  suggestedCard?: SuggestedCard | null;
+}
+
+export interface SuggestedCard {
+  name: string;
+  surname: string;
+  date: string | null;
+  nameday: string | null;
 }
 
 export interface SharedInvitation {
   _id: string;
   fromUser: { _id: string; name: string; surname?: string; avatar?: string };
-  fromDate: { _id: string; name: string; surname?: string };
+  // `date` et `nameday` viennent du populate élargi côté serveur : ils
+  // permettent de proposer la création de la carte préremplie.
+  fromDate: {
+    _id: string;
+    name: string;
+    surname?: string;
+    date?: string;
+    nameday?: string | null;
+  };
   label?: string | null;
   status: string;
   createdAt: string;
@@ -65,7 +86,15 @@ export async function fetchSharedInvitations(): Promise<SharedInvitation[]> {
 export interface SentInvitation {
   _id: string;
   toUser: { _id: string; name: string; surname?: string };
-  fromDate: { _id: string; name: string; surname?: string };
+  // `date` et `nameday` viennent du populate élargi côté serveur : ils
+  // permettent de proposer la création de la carte préremplie.
+  fromDate: {
+    _id: string;
+    name: string;
+    surname?: string;
+    date?: string;
+    nameday?: string | null;
+  };
   status: string;
 }
 
@@ -80,13 +109,22 @@ export async function cancelSharedInvitation(id: string): Promise<void> {
   await api(`/shared-gifts/invitations/${id}/cancel`, { method: "POST" });
 }
 
+/**
+ * Accepter une invitation à une liste commune.
+ *
+ * `{ dateId }` pose la liste sur une carte existante. `{ newDate: {} }` demande
+ * au serveur de créer la carte au passage : il reprend le nom et la date de
+ * naissance depuis la carte de celui qui invite, qui décrit la même personne —
+ * on peut donc accepter sans avoir enregistré cette personne au préalable, ce
+ * qui était jusqu'ici un blocage complet.
+ */
 export async function acceptSharedInvitation(
   id: string,
-  dateId: string,
-): Promise<{ sharedGiftList: string }> {
+  target: { dateId: string } | { newDate: Record<string, unknown> },
+): Promise<{ sharedGiftList: string; dateId: string }> {
   return api(`/shared-gifts/invitations/${id}/accept`, {
     method: "POST",
-    body: JSON.stringify({ dateId }),
+    body: JSON.stringify(target),
   });
 }
 
@@ -240,7 +278,14 @@ export async function attachSharedList(
   listId: string,
   body: {
     dateId?: string;
-    newDate?: { name: string; surname?: string; date: string };
+    // Champs tous optionnels : le serveur complète depuis la carte d'un
+    // membre, qui décrit la même personne. `{ newDate: {} }` suffit donc.
+    newDate?: {
+      name?: string;
+      surname?: string;
+      date?: string;
+      nameday?: string | null;
+    };
     replace?: boolean;
   },
 ): Promise<{ ok: boolean; dateId: string }> {
@@ -255,6 +300,7 @@ export interface SharedListPending {
   label: string | null;
   giftCount: number;
   from: { name: string; surname?: string } | null;
+  suggestedCard?: SuggestedCard | null;
 }
 
 /**

@@ -10,7 +10,11 @@ import {
   Alert,
 } from "react-native";
 import { Stack, useLocalSearchParams, useRouter, useFocusEffect } from "expo-router";
-import { attachSharedList } from "../../../lib/sharedGifts";
+import {
+  attachSharedList,
+  fetchSharedList,
+  SuggestedCard,
+} from "../../../lib/sharedGifts";
 import { DateEntry, fetchDates, formatBirthday } from "../../../lib/dates";
 import {
   useTheme,
@@ -45,11 +49,36 @@ export default function AttachSharedListScreen() {
   const [name, setName] = useState("");
   const [surname, setSurname] = useState("");
   const [birth, setBirth] = useState("");
+  // Identité de la personne dont la liste parle, déduite par le serveur d'une
+  // carte déjà rattachée chez un membre.
+  const [suggested, setSuggested] = useState<SuggestedCard | null>(null);
 
   useFocusEffect(
     useCallback(() => {
+      // La suggestion vient du détail de la liste : cet écran ne connaît que
+      // son id.
+      fetchSharedList(id!)
+        .then((l) => {
+          const sc = l.suggestedCard ?? null;
+          setSuggested(sc);
+          if (sc) {
+            setName(sc.name || "");
+            setSurname(sc.surname || "");
+            setBirth(sc.date ? String(sc.date).slice(0, 10) : "");
+          }
+        })
+        .catch(() => {});
+
       fetchDates()
-        .then(setDates)
+        .then((list) => {
+          setDates(list);
+          // Sans aucune carte, le seul chemin possible est la création : on
+          // déplie la section d'emblée. Repliée, l'écran ne présentait qu'un
+          // « Tu n'as encore aucune carte » et rien de cliquable — un
+          // cul-de-sac au moment précis où l'utilisateur découvre la
+          // fonctionnalité.
+          if (list.length === 0) setCreating(true);
+        })
         .catch((e) => setError(e?.message ?? "Erreur de chargement."));
     }, []),
   );
@@ -126,6 +155,10 @@ export default function AttachSharedListScreen() {
     ),
   );
 
+  const suggestedName = suggested
+    ? [suggested.name, suggested.surname].filter(Boolean).join(" ")
+    : null;
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Stack.Screen options={{ title: "Ajouter la liste" }} />
@@ -135,6 +168,35 @@ export default function AttachSharedListScreen() {
         les idees et reserver un cadeau.
       </Text>
       {error && <Text style={styles.error}>{error}</Text>}
+
+      {/* Création en un geste, quand le serveur sait de qui il s'agit. Sans
+          elle, l'utilisateur devait ressaisir un nom et une date de naissance
+          qu'il ne connaît parfois même pas — c'est justement pour ça qu'il n'a
+          pas encore la carte. */}
+      {suggestedName ? (
+        <View style={[styles.card, styles.suggestedCard]}>
+          <Text style={styles.sectionTitle}>La personne concernée</Text>
+          <Text style={styles.suggestedName}>{suggestedName}</Text>
+          {!!suggested?.date && (
+            <Text style={styles.hint}>
+              né(e) le {formatBirthday(suggested.date)}
+            </Text>
+          )}
+          <Pressable
+            style={styles.suggestedBtn}
+            disabled={busy}
+            onPress={() => attach({ newDate: {} })}
+          >
+            <Text style={styles.suggestedBtnText}>
+              ➕ Créer sa carte et rattacher
+            </Text>
+          </Pressable>
+          <Text style={styles.hint}>
+            Les informations viennent du carnet de la personne qui partage. Tu
+            pourras les corriger ensuite depuis la carte.
+          </Text>
+        </View>
+      ) : null}
 
       <View style={styles.card}>
         <Text style={styles.sectionTitle}>Une carte existante</Text>
@@ -227,6 +289,18 @@ const makeStyles = (c: ThemeColors) =>
     intro: { fontSize: 13, color: c.sub, lineHeight: 18, paddingHorizontal: 4 },
     error: { color: c.danger, textAlign: "center", padding: 8 },
     card: { backgroundColor: c.card, borderRadius: 14, padding: 14, gap: 6 },
+    // Chemin recommandé quand le serveur sait de qui il s'agit : mis en avant
+    // par une bordure, au-dessus du choix d'une carte existante.
+    suggestedCard: { borderWidth: 1, borderColor: c.primary },
+    suggestedName: { fontSize: 17, fontWeight: "800", color: c.text },
+    suggestedBtn: {
+      marginTop: 8,
+      paddingVertical: 12,
+      borderRadius: 12,
+      backgroundColor: c.primary,
+      alignItems: "center",
+    },
+    suggestedBtnText: { color: c.white, fontWeight: "700", fontSize: 14.5 },
     sectionHeader: {
       flexDirection: "row",
       alignItems: "center",

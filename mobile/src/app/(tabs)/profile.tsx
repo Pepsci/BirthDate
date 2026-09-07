@@ -122,6 +122,16 @@ export default function ProfileScreen() {
             onPress={() => router.push("/profile/wishlist")}
           />
         </TourTarget>
+        {/* ⚠️ Point d'entrée permanent vers les listes communes. L'écran
+            n'était atteignable QUE depuis une notification : une invitation
+            fermée par erreur, ou une liste partagée dont on n'a pas terminé le
+            rattachement, devenaient définitivement introuvables. Une action en
+            attente ne doit jamais dépendre d'un message éphémère. */}
+        <MenuRow
+          emoji="👨‍👩‍👧"
+          label="Listes communes"
+          onPress={() => router.push("/shared-invites")}
+        />
         <MenuRow
           emoji="🔑"
           label="Changer mon mot de passe"
