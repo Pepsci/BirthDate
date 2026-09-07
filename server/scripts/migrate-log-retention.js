@@ -25,13 +25,29 @@
 // anciens documents deviendraient éternels. On remplit d'abord, on supprime
 // ensuite.
 //
-// ⚠️ À lancer une seule fois, sur chaque environnement :
+// ⚠️ À lancer une seule fois, sur chaque environnement, depuis n'importe où :
 //     node server/scripts/migrate-log-retention.js
 //   Ajouter --dry-run pour voir ce qui serait fait sans rien écrire.
+//
+// ⚠️ ORDRE : déployer et redémarrer le serveur AVANT de lancer ce script. C'est
+// le démarrage qui fait créer par Mongoose le nouvel index sur expiresAt ;
+// supprimer l'ancien avant qu'il existe laisserait le journal sans purge.
 
-require("dotenv").config();
+// ⚠️ Chemin ABSOLU vers le .env, pas le comportement par défaut de dotenv.
+// dotenv.config() sans argument lit le .env du RÉPERTOIRE COURANT : le script
+// ne fonctionnait donc que lancé depuis server/, et échouait sur
+// « MONGO_URI undefined » depuis la racine du dépôt. Pour un script qui touche
+// aux index d'une base de production, dépendre du dossier d'appel est un piège.
+require("dotenv").config({ path: require("path").join(__dirname, "..", ".env") });
 const mongoose = require("mongoose");
 const Log = require("../models/log.model");
+
+if (!process.env.MONGO_URI) {
+  console.error(
+    "❌ MONGO_URI introuvable. Vérifie que server/.env existe et le contient.",
+  );
+  process.exit(1);
+}
 
 const DRY_RUN = process.argv.includes("--dry-run");
 const YEAR_MS = 365 * 24 * 60 * 60 * 1000;
