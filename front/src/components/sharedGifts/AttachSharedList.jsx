@@ -32,6 +32,7 @@ export default function AttachSharedList() {
   const [suggested, setSuggested] = useState(null);
 
   const [creating, setCreating] = useState(false);
+  const [picked, setPicked] = useState("");
   const [form, setForm] = useState({ name: "", surname: "", date: "" });
 
   useEffect(() => {
@@ -110,6 +111,14 @@ export default function AttachSharedList() {
     });
   };
 
+  const sortedDates = [...dates].sort((a, b) =>
+    `${a.name ?? ""} ${a.surname ?? ""}`.localeCompare(
+      `${b.name ?? ""} ${b.surname ?? ""}`,
+      "fr",
+      { sensitivity: "base" },
+    ),
+  );
+
   const suggestedName = suggested
     ? [suggested.name, suggested.surname].filter(Boolean).join(" ")
     : null;
@@ -138,7 +147,7 @@ export default function AttachSharedList() {
           pas encore la carte. */}
       {suggestedName && (
         <section className="asl-section asl-section--suggested">
-          <h2 className="asl-section-title">La personne concernée</h2>
+          <h2 className="asl-section-title">🎁 Liste de cadeaux pour</h2>
           <p className="asl-muted">
             {suggestedName}
             {suggested?.date
@@ -166,22 +175,32 @@ export default function AttachSharedList() {
             Vous n'avez encore aucune carte — créez-en une ci-dessous.
           </p>
         ) : (
-          <ul className="asl-list">
-            {dates.map((d) => (
-              <li key={d._id}>
-                <span>
-                  {d.name} {d.surname}
-                </span>
-                <button
-                  className="asl-btn asl-btn--sm"
-                  disabled={busy}
-                  onClick={() => attach({ dateId: d._id })}
-                >
-                  Choisir
-                </button>
-              </li>
-            ))}
-          </ul>
+          /* ⚠️ Menu déroulant, et non la liste complète : ce sont TOUTES les
+             cartes du carnet. Au-delà de quelques-unes, les afficher en entier
+             noie le reste de l'écran — dont le bouton « créer la carte », qui
+             est souvent le bon choix quand on reçoit une liste. */
+          <div className="asl-picker">
+            <select
+              className="asl-input"
+              value={picked}
+              onChange={(e) => setPicked(e.target.value)}
+            >
+              <option value="">Choisir une carte…</option>
+              {sortedDates.map((d) => (
+                <option key={d._id} value={d._id}>
+                  {[d.name, d.surname].filter(Boolean).join(" ")}
+                  {d.sharedGiftList ? " · a déjà une liste commune" : ""}
+                </option>
+              ))}
+            </select>
+            <button
+              className="asl-btn asl-btn--sm"
+              disabled={busy || !picked}
+              onClick={() => attach({ dateId: picked })}
+            >
+              Rattacher
+            </button>
+          </div>
         )}
       </section>
 

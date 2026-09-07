@@ -52,6 +52,11 @@ export default function AttachSharedListScreen() {
   // Identité de la personne dont la liste parle, déduite par le serveur d'une
   // carte déjà rattachée chez un membre.
   const [suggested, setSuggested] = useState<SuggestedCard | null>(null);
+  // Repli et recherche de la liste des cartes. Elle contient TOUTES les cartes
+  // du carnet : au-delà de quelques-unes, l'afficher en entier noie le reste de
+  // l'écran — dont le bouton « créer la carte », qui est souvent le bon choix.
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [search, setSearch] = useState("");
 
   useFocusEffect(
     useCallback(() => {
@@ -78,6 +83,10 @@ export default function AttachSharedListScreen() {
           // cul-de-sac au moment précis où l'utilisateur découvre la
           // fonctionnalité.
           if (list.length === 0) setCreating(true);
+          // Dépliée quand le carnet est court — la voir d'un coup d'œil est
+          // alors plus rapide que de la déplier. Repliée au-delà, pour ne pas
+          // noyer le bouton « créer la carte » sous cinquante lignes.
+          setPickerOpen(list.length > 0 && list.length <= 5);
         })
         .catch((e) => setError(e?.message ?? "Erreur de chargement."));
     }, []),
@@ -155,6 +164,18 @@ export default function AttachSharedListScreen() {
     ),
   );
 
+  // Recherche insensible à la casse et aux accents, sur le prénom comme sur le
+  // nom : « loic » doit trouver « Loïc ».
+  const norm = (v: string) =>
+    v
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+  const q = norm(search.trim());
+  const filtered = q
+    ? sorted.filter((d) => norm(`${d.name ?? ""} ${d.surname ?? ""}`).includes(q))
+    : sorted;
+
   const suggestedName = suggested
     ? [suggested.name, suggested.surname].filter(Boolean).join(" ")
     : null;
@@ -175,7 +196,7 @@ export default function AttachSharedListScreen() {
           pas encore la carte. */}
       {suggestedName ? (
         <View style={[styles.card, styles.suggestedCard]}>
-          <Text style={styles.sectionTitle}>La personne concernée</Text>
+          <Text style={styles.sectionTitle}>Liste de cadeaux pour</Text>
           <Text style={styles.suggestedName}>{suggestedName}</Text>
           {!!suggested?.date && (
             <Text style={styles.hint}>
@@ -199,29 +220,58 @@ export default function AttachSharedListScreen() {
       ) : null}
 
       <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Une carte existante</Text>
-        {sorted.length === 0 && (
+        <Pressable
+          style={styles.sectionHeader}
+          onPress={() => setPickerOpen((v) => !v)}
+        >
+          <Text style={styles.sectionTitle}>
+            Une carte existante{sorted.length > 0 ? ` (${sorted.length})` : ""}
+          </Text>
+          <Text style={styles.chevron}>{pickerOpen ? "▾" : "▸"}</Text>
+        </Pressable>
+
+        {pickerOpen && sorted.length === 0 && (
           <Text style={styles.empty}>Tu n'as encore aucune carte.</Text>
         )}
-        {sorted.map((d) => (
-          <Pressable
-            key={d._id}
-            style={styles.row}
-            disabled={busy}
-            onPress={() => attach({ dateId: d._id })}
-          >
-            <View style={{ flex: 1 }}>
-              <Text style={styles.name}>
-                {d.name} {d.surname ?? ""}
-              </Text>
-              <Text style={styles.hint}>
-                {d.date ? formatBirthday(d.date) : ""}
-                {d.sharedGiftList ? " · a deja une liste commune" : ""}
-              </Text>
-            </View>
-            <Text style={styles.chevron}>›</Text>
-          </Pressable>
-        ))}
+
+        {/* Recherche seulement quand la liste est assez longue pour qu'on ait
+            besoin de chercher : en dessous, un champ vide occupe de la place
+            sans rien résoudre. */}
+        {pickerOpen && sorted.length > 6 && (
+          <TextInput
+            style={styles.input}
+            placeholder="Rechercher un prénom…"
+            placeholderTextColor={colors.placeholder}
+            value={search}
+            onChangeText={setSearch}
+            autoCorrect={false}
+          />
+        )}
+
+        {pickerOpen &&
+          filtered.map((d) => (
+            <Pressable
+              key={d._id}
+              style={styles.row}
+              disabled={busy}
+              onPress={() => attach({ dateId: d._id })}
+            >
+              <View style={{ flex: 1 }}>
+                <Text style={styles.name}>
+                  {d.name} {d.surname ?? ""}
+                </Text>
+                <Text style={styles.hint}>
+                  {d.date ? formatBirthday(d.date) : ""}
+                  {d.sharedGiftList ? " · a deja une liste commune" : ""}
+                </Text>
+              </View>
+              <Text style={styles.chevron}>›</Text>
+            </Pressable>
+          ))}
+
+        {pickerOpen && sorted.length > 0 && filtered.length === 0 && (
+          <Text style={styles.empty}>Aucune carte à ce nom.</Text>
+        )}
       </View>
 
       <View style={styles.card}>

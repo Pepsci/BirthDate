@@ -136,3 +136,17 @@
   margin-top: 10px;
   width: 100%;
 }
+
+/* Sélecteur de carte : menu déroulant + bouton de validation, pour ne pas
+   dérouler tout le carnet dans la page. */
+.asl-picker {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.asl-picker .asl-input {
+  flex: 1;
+  min-width: 180px;
+}
