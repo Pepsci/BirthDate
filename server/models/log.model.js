@@ -85,8 +85,19 @@ const logSchema = new Schema(
      * ⚠️ MIGRATION : l'ancien index { createdAt: 1 } doit être supprimé, sinon
      * il continue de tout purger à un an et ce champ ne sert à rien. Voir
      * server/scripts/migrate-log-retention.js.
+     *
+     * ⚠️ Le défaut vaut UN AN, pas null. MongoDB ignore les documents dont le
+     * champ TTL n'est pas une date : un défaut à null aurait rendu éternelle
+     * toute écriture ne renseignant pas explicitement ce champ — c'est-à-dire
+     * les Log.create() de auth.js et le middleware logAction, qui ne le
+     * connaissent pas. Le comportement par défaut doit être la rétention
+     * ordinaire ; c'est la conservation indéfinie qui se demande explicitement,
+     * en passant null (voir services/auditLog.js).
      */
-    expiresAt: { type: Date, default: null },
+    expiresAt: {
+      type: Date,
+      default: () => new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
+    },
   },
   {
     timestamps: true, // Ajoute createdAt et updatedAt

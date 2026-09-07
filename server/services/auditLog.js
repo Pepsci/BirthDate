@@ -16,8 +16,6 @@ const Log = require("../models/log.model");
  * trace. Toute erreur est donc avalée et signalée en console.
  */
 
-const YEAR_MS = 365 * 24 * 60 * 60 * 1000;
-
 /**
  * Actions conservées indéfiniment : elles engagent des personnes entre elles,
  * et parfois de l'argent. Une trace de remboursement qui s'efface au bout d'un
@@ -71,10 +69,10 @@ async function audit(req, { action, userId, metadata = {} }) {
       ipAddress: clientIp(req),
       userAgent: req?.headers?.["user-agent"],
       metadata,
-      // Absent = jamais purgé (voir le champ expiresAt dans log.model.js).
-      expiresAt: PERMANENT_ACTIONS.has(action)
-        ? null
-        : new Date(Date.now() + YEAR_MS),
+      // null = jamais purgé. Pour les autres, on laisse le défaut du schéma
+      // (un an) s'appliquer plutôt que de recalculer la même valeur ici : une
+      // seule définition de la rétention ordinaire, dans le modèle.
+      ...(PERMANENT_ACTIONS.has(action) ? { expiresAt: null } : {}),
     });
   } catch (err) {
     console.error(`❌ [AUDIT] échec d'écriture (${action}):`, err.message);
