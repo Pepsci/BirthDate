@@ -806,10 +806,20 @@ export default function EventDetailScreen() {
       ];
   const acceptedCount = invitations.filter((i) => i.status === "accepted").length;
   const mine = invitations.find((i) => i.user?._id === user?._id) ?? null;
+  // ⚠️ Un événement annulé n'accepte plus aucune participation. Le serveur le
+  // refuse désormais (409 EVENT_CANCELLED), mais il faut aussi retirer les
+  // boutons : sinon l'invité vote dans le vide, et surtout chaque tentative
+  // notifiait l'organisateur — qui recevait « X a voté pour le 12 mars » sur
+  // un événement qu'il venait d'annuler.
+  const isCancelled = event.status === "cancelled";
   const showDateVote =
-    event.hasFullAccess && event.dateMode === "vote" && !event.selectedDate;
+    event.hasFullAccess &&
+    !isCancelled &&
+    event.dateMode === "vote" &&
+    !event.selectedDate;
   const showLocationVote =
     event.hasFullAccess &&
+    !isCancelled &&
     event.locationMode === "vote" &&
     !event.selectedLocation?.name;
 
@@ -1054,7 +1064,17 @@ export default function EventDetailScreen() {
       {event.hasFullAccess && !isOrganizer && (
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Ta réponse</Text>
-          <View style={styles.rsvpRow}>
+          {isCancelled && (
+            <Text style={styles.cancelledHint}>
+              L'événement est annulé : les réponses sont closes.
+            </Text>
+          )}
+          {/* Grisé plutôt que retiré : l'invité doit pouvoir relire ce qu'il
+              avait répondu, même si l'événement n'a plus lieu. */}
+          <View
+            style={[styles.rsvpRow, isCancelled && { opacity: 0.4 }]}
+            pointerEvents={isCancelled ? "none" : "auto"}
+          >
             {RSVP_OPTIONS.map((opt) => {
               const active = event.myRsvpStatus === opt.status;
               return (
@@ -1199,7 +1219,7 @@ export default function EventDetailScreen() {
         )}
 
       {/* Propositions de cadeaux */}
-      {event.hasFullAccess && event.giftMode === "proposals" && (
+      {event.hasFullAccess && !isCancelled && event.giftMode === "proposals" && (
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>🎁 Propositions</Text>
           <View style={styles.giftBtnRow}>

@@ -14,6 +14,10 @@ import {
   TourTarget,
   useGuidedTour,
 } from "../../lib/guided-tour";
+import {
+  toggleCagnottesVisible,
+  useCagnottesStrip,
+} from "../../lib/cagnottes-strip";
 
 /**
  * Header personnalisé : bannière logo tout en haut, puis la ligne
@@ -120,6 +124,31 @@ function TabIcon({ emoji, focused }: { emoji: string; focused: boolean }) {
   );
 }
 
+/**
+ * Bouton d'en-tête qui ramène le bandeau « Mes cagnottes ».
+ *
+ * Composant à part, et non un rendu inline : il doit s'abonner au magasin
+ * (useCagnottesStrip), donc appeler un hook — impossible dans la fonction
+ * `headerLeft`, qui n'est pas un composant React.
+ */
+function CagnottesToggle() {
+  const { visible, hasPools } = useCagnottesStrip();
+
+  // Rien à rappeler : aucune cagnotte, ou bandeau déjà affiché.
+  if (!hasPools || visible) return null;
+
+  return (
+    <Pressable
+      onPress={toggleCagnottesVisible}
+      hitSlop={10}
+      accessibilityRole="button"
+      accessibilityLabel="Afficher mes cagnottes"
+    >
+      <Text style={{ fontSize: 20 }}>🐷</Text>
+    </Pressable>
+  );
+}
+
 export default function TabsLayout() {
   return (
     <GuidedTourProvider>
@@ -180,11 +209,26 @@ function TabsInner() {
             </View>
           ),
           headerLeft: () => (
-            <TourTarget id="tourAgenda" style={{ marginLeft: 16 }}>
-              <Pressable onPress={() => router.push("/agenda")} hitSlop={10}>
-                <Text style={{ fontSize: 20 }}>📅</Text>
-              </Pressable>
-            </TourTarget>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 14,
+                marginLeft: 16,
+              }}
+            >
+              <TourTarget id="tourAgenda">
+                <Pressable onPress={() => router.push("/agenda")} hitSlop={10}>
+                  <Text style={{ fontSize: 20 }}>📅</Text>
+                </Pressable>
+              </TourTarget>
+              {/* Rappel du bandeau « Mes cagnottes » une fois masqué. Il est
+                  ici, à côté de l'agenda, et non dans le corps de l'écran :
+                  le titre de l'en-tête est centré en absolu, ajouter une
+                  action d'un côté ne le décale donc pas. Le bouton n'existe
+                  que s'il y a réellement une cagnotte à montrer. */}
+              <CagnottesToggle />
+            </View>
           ),
         }}
       />

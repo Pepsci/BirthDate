@@ -509,6 +509,73 @@ async function suggestedCardFor(listId) {
   };
 }
 
+/*
+ * GET /api/shared-gifts/mine — toutes mes listes communes, actives
+ *
+ * ⚠️ DOIT ÊTRE DÉCLARÉE AVANT "/:id", sinon "mine" serait pris pour un
+ * identifiant de liste.
+ *
+ * Complète /shared-with-me, qui ne renvoie que les listes reçues et NON encore
+ * rattachées. Une fois rattachée, une liste n'était plus atteignable que par la
+ * carte de la personne concernée : il fallait se souvenir de qui il s'agissait
+ * pour la retrouver. Cette route alimente l'entrée « Listes communes » du
+ * profil, qui devient le point d'accès unique.
+ */
+router.get("/mine", isAuthenticated, async (req, res) => {
+  try {
+    const uid = req.payload._id;
+
+    const lists = await SharedGiftList.find({
+      $or: [{ members: uid }, { "viewers.user": uid }],
+    })
+      .select("label gifts members viewers createdBy")
+      .populate("createdBy", "name surname");
+
+    // La carte qui porte chaque liste, chez MOI : c'est là que l'application
+    // l'affiche, donc la destination du lien.
+    const myCards = await DateModel.find({
+      owner: uid,
+      sharedGiftList: { $ne: null },
+    }).select("sharedGiftList name surname");
+    const cardByList = new Map(
+      myCards.map((c) => [c.sharedGiftList.toString(), c]),
+    );
+
+    res.json(
+      lists.map((l) => {
+        const isMember = (l.members || []).some((m) => m.toString() === uid);
+        const card = cardByList.get(l._id.toString()) || null;
+        // Un invité ne compte que ce qu'il voit : lui annoncer 12 idées alors
+        // que 8 sont déjà achetées serait faux de son point de vue.
+        const gifts = isMember
+          ? l.gifts || []
+          : (l.gifts || []).filter(
+              (g) => !HIDDEN_STATUSES_FOR_VIEWER.has(g.status),
+            );
+        return {
+          _id: l._id,
+          label: l.label || null,
+          role: isMember ? "member" : "viewer",
+          giftCount: gifts.length,
+          memberCount: (l.members || []).length,
+          // Absente si la liste n'est posée sur aucune de mes cartes : il faut
+          // alors passer par le rattachement avant de pouvoir la consulter.
+          dateId: card?._id || null,
+          personName: card
+            ? `${card.name || ""} ${card.surname || ""}`.trim() || null
+            : null,
+          from: l.createdBy
+            ? { name: l.createdBy.name, surname: l.createdBy.surname }
+            : null,
+        };
+      }),
+    );
+  } catch (err) {
+    console.error("❌ shared mine:", err);
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+});
+
 router.get("/shared-with-me", isAuthenticated, async (req, res) => {
   try {
     const uid = req.payload._id;

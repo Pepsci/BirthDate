@@ -7,6 +7,10 @@ export default function SharedInvites({ embedded = false }) {
   const navigate = useNavigate();
   const [invites, setInvites] = useState(null);
   const [pending, setPending] = useState([]);
+  // Listes déjà rattachées, que je gère ou où je suis invité. Sans elles, ce
+  // menu ne montrait que ce qui est « en attente » : une liste active n'était
+  // atteignable que par la carte de la personne concernée.
+  const [mine, setMine] = useState([]);
   const [error, setError] = useState(null);
   const [accepting, setAccepting] = useState(null); // invitation en cours
   const [dates, setDates] = useState([]);
@@ -25,12 +29,16 @@ export default function SharedInvites({ embedded = false }) {
       // sans terminer le rattachement, elle devient définitivement
       // introuvable. Une action en attente ne doit jamais dépendre d'un
       // message éphémère.
-      const [inv, shared] = await Promise.all([
+      const [inv, shared, active] = await Promise.all([
         apiHandler.get("/shared-gifts/invitations"),
         apiHandler.get("/shared-gifts/shared-with-me").catch(() => ({ data: [] })),
+        apiHandler.get("/shared-gifts/mine").catch(() => ({ data: [] })),
       ]);
       setInvites(inv.data);
       setPending(shared.data || []);
+      // Une liste non rattachée figure déjà dans `pending`, avec son bouton de
+      // rattachement : la répéter ici n'apporterait rien.
+      setMine((active.data || []).filter((l) => l.dateId));
     } catch {
       setError("Erreur de chargement.");
     }
@@ -116,6 +124,32 @@ export default function SharedInvites({ embedded = false }) {
       <h2>👥 Listes de cadeaux communes</h2>
       {error && <p className="sgs-error">{error}</p>}
       {!invites && <p className="sgs-loading">Chargement…</p>}
+      {mine.length > 0 && (
+        <section className="sgi-pending">
+          <h3 className="sgi-pending-title">Mes listes communes</h3>
+          {mine.map((l) => (
+            <button
+              key={l._id}
+              className="sgi-pending-card sgi-mine-card"
+              onClick={() => navigate(`/home?tab=date&dateId=${l.dateId}`)}
+            >
+              <strong>{l.personName || l.label || "Liste commune"}</strong>
+              <span className="sgi-mine-meta">
+                {l.giftCount} idée{l.giftCount > 1 ? "s" : ""} ·{" "}
+                {l.role === "member"
+                  ? `${l.memberCount} gestionnaire${l.memberCount > 1 ? "s" : ""}`
+                  : "invité en lecture"}
+              </span>
+              <span className="sgi-pending-hint">
+                {l.role === "member"
+                  ? "Ouvrir la carte pour gérer la liste et ses accès →"
+                  : "Ouvrir la carte pour voir la liste →"}
+              </span>
+            </button>
+          ))}
+        </section>
+      )}
+
       {pending.length > 0 && (
         <section className="sgi-pending">
           <h3 className="sgi-pending-title">Listes partagées avec vous</h3>
@@ -143,9 +177,12 @@ export default function SharedInvites({ embedded = false }) {
         </section>
       )}
 
-      {invites && invites.length === 0 && pending.length === 0 && (
-        <p className="sgs-loading">Aucune invitation en attente.</p>
-      )}
+      {invites &&
+        invites.length === 0 &&
+        pending.length === 0 &&
+        mine.length === 0 && (
+          <p className="sgs-loading">Aucune invitation en attente.</p>
+        )}
 
       {invites?.map((inv) => (
         <div

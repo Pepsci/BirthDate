@@ -213,3 +213,14 @@
   font-size: 0.85rem;
   font-weight: 600;
 }
+
+/* Listes communes déjà actives : même carte que les listes en attente, mais
+   bordure neutre — il n'y a rien à traiter, c'est un simple accès. */
+.sgi-mine-card {
+  border-color: var(--border-color, #e5e7eb);
+}
+
+.sgi-mine-meta {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}

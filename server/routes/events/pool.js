@@ -428,6 +428,17 @@ router.post("/:shortId/pool/contribute", async (req, res) => {
     if (!event)
       return res.status(404).json({ message: "Événement introuvable" });
 
+    // La cagnotte est coupée à l'annulation, donc `pool.active` suffirait —
+    // mais un message explicite vaut mieux qu'un « cagnotte inactive » pour
+    // quelqu'un qui ne sait pas encore que l'événement est annulé.
+    if (event.status === "cancelled") {
+      return res.status(409).json({
+        code: "EVENT_CANCELLED",
+        message:
+          "Cet événement est annulé : la cagnotte n'accepte plus de contribution.",
+      });
+    }
+
     const pool = event.giftPool || {};
     if (!pool.active) {
       return res

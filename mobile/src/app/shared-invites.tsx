@@ -11,9 +11,11 @@ import {
 import { Stack, useFocusEffect, useRouter } from "expo-router";
 import {
   SharedInvitation,
+  MySharedList,
   SharedListPending,
   fetchSharedInvitations,
   fetchListsSharedWithMe,
+  fetchMySharedLists,
   acceptSharedInvitation,
   declineSharedInvitation,
 } from "../lib/sharedGifts";
@@ -40,16 +42,24 @@ export default function SharedInvitesScreen() {
   // une carte. Sans cette liste, supprimer la notification les rendrait
   // définitivement introuvables.
   const [pending, setPending] = useState<SharedListPending[]>([]);
+  // Listes déjà rattachées, que je gère ou où je suis invité. Sans elles, cet
+  // écran ne montrait que ce qui est « en attente » — une liste active
+  // n'était atteignable que par la carte de la personne concernée.
+  const [mine, setMine] = useState<MySharedList[]>([]);
 
   const load = useCallback(async () => {
     try {
       setError(null);
-      const [inv, shared] = await Promise.all([
+      const [inv, shared, active] = await Promise.all([
         fetchSharedInvitations(),
         fetchListsSharedWithMe().catch(() => []),
+        fetchMySharedLists().catch(() => []),
       ]);
       setInvites(inv);
       setPending(shared);
+      // Une liste non rattachée figure déjà dans `pending`, avec son bouton de
+      // rattachement : la répéter ici n'apporterait rien.
+      setMine(active.filter((l) => l.dateId));
     } catch (e: any) {
       setError(e?.message ?? "Erreur de chargement.");
     }
@@ -152,7 +162,44 @@ export default function SharedInvitesScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
         ListHeaderComponent={
-          pending.length > 0 ? (
+          <View>
+            {/* Listes déjà actives. Elles n'apparaissaient nulle part dans ce
+                menu : une fois l'invitation acceptée, la liste n'était plus
+                joignable que par la carte de la personne concernée. */}
+            {mine.length > 0 && (
+              <View style={{ marginBottom: 8 }}>
+                <Text style={styles.sectionTitle}>Mes listes communes</Text>
+                {mine.map((l) => (
+                  <Pressable
+                    key={l._id}
+                    style={[styles.card, { marginBottom: 10 }]}
+                    onPress={() => router.push(`/date/${l.dateId}`)}
+                  >
+                    <Text style={styles.cardText}>
+                      <Text style={styles.bold}>
+                        {l.personName || l.label || "Liste commune"}
+                      </Text>
+                      {"\n"}
+                      {l.giftCount} idée{l.giftCount > 1 ? "s" : ""} ·{" "}
+                      {l.role === "member"
+                        ? `${l.memberCount} gestionnaire${l.memberCount > 1 ? "s" : ""}`
+                        : "invité en lecture"}
+                    </Text>
+                    {l.role === "member" && (
+                      <Pressable
+                        style={styles.manageBtn}
+                        onPress={() =>
+                          router.push(`/shared-list/${l._id}/access`)
+                        }
+                      >
+                        <Text style={styles.manageBtnText}>Gérer l'accès</Text>
+                      </Pressable>
+                    )}
+                  </Pressable>
+                ))}
+              </View>
+            )}
+            {pending.length > 0 && (
             <View style={{ marginBottom: 8 }}>
               <Text style={styles.sectionTitle}>Listes partagées avec toi</Text>
               {pending.map((l) => (
@@ -177,10 +224,11 @@ export default function SharedInvitesScreen() {
                 </Pressable>
               ))}
             </View>
-          ) : null
+            )}
+          </View>
         }
         ListEmptyComponent={
-          pending.length > 0 ? null : (
+          pending.length > 0 || mine.length > 0 ? null : (
             <Text style={styles.empty}>Aucune invitation en attente.</Text>
           )
         }
@@ -281,6 +329,17 @@ const makeStyles = (c: ThemeColors) =>
     marginBottom: 6,
   },
   pendingHint: { fontSize: 12, color: c.primary, marginTop: 6 },
+  // Bouton secondaire posé DANS la carte : la carte entière ouvre la liste,
+  // ce bouton emmène sur la gestion des accès sans quitter l'écran par erreur.
+  manageBtn: {
+    alignSelf: "flex-start",
+    borderWidth: 1,
+    borderColor: c.borderStrong,
+    borderRadius: 10,
+    paddingVertical: 7,
+    paddingHorizontal: 14,
+  },
+  manageBtnText: { color: c.sub, fontWeight: "600", fontSize: 13 },
   empty: { textAlign: "center", color: c.sub, marginTop: 32 },
   card: {
     backgroundColor: c.card,

@@ -19,6 +19,14 @@ router.post("/:shortId/invite", isAuthenticated, async (req, res) => {
     const event = await Event.findOne({ shortId: req.params.shortId }).populate("organizer", "name surname");
     if (!event) return res.status(404).json({ message: "Événement introuvable" });
 
+    // Inviter quelqu'un à un événement annulé n'a aucun sens : il recevrait une
+    // invitation pour quelque chose qui n'aura pas lieu.
+    if (event.status === "cancelled")
+      return res.status(409).json({
+        code: "EVENT_CANCELLED",
+        message: "Cet événement est annulé : il n'accepte plus d'invitations.",
+      });
+
     const isOrganizer = event.organizer._id.toString() === req.payload._id;
     if (!isOrganizer) {
       // Un invité peut inviter ses amis uniquement si l'organisateur l'a autorisé
@@ -94,6 +102,11 @@ router.post("/:shortId/join", async (req, res) => {
     const event = await Event.findOne({ shortId: req.params.shortId });
 
     if (!event) return res.status(404).json({ message: "Événement introuvable" });
+    if (event.status === "cancelled")
+      return res.status(409).json({
+        code: "EVENT_CANCELLED",
+        message: "Cet événement est annulé.",
+      });
     if (event.accessCode !== code) return res.status(403).json({ message: "Code d'accès invalide" });
 
     let tokenPayload = null;

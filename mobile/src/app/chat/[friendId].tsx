@@ -13,7 +13,6 @@ import {
 import { Alert } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { promptReport, promptBlock } from "../../lib/moderation";
-import { useHeaderHeight } from "@react-navigation/elements";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   useKeyboardPadding,
@@ -64,7 +63,6 @@ export default function DMChatScreen() {
   const { colors } = useTheme();
   const { user } = useAuth();
   const router = useRouter();
-  const headerHeight = useHeaderHeight();
   const keyboardPadding = useKeyboardPadding();
   const keyboardVisible = useKeyboardVisible();
   const insets = useSafeAreaInsets();
@@ -428,7 +426,19 @@ export default function DMChatScreen() {
     <KeyboardAvoidingView
       style={[styles.container, { paddingBottom: bottomPad }]}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
-      keyboardVerticalOffset={Platform.OS === "ios" ? headerHeight : 0}
+      // ⚠️ Décalage à 0, et pas la hauteur de l'en-tête.
+      //
+      // KeyboardAvoidingView en mode "padding" calcule sa marge basse ainsi :
+      //   marge = bas_de_la_vue − haut_du_clavier + keyboardVerticalOffset
+      // Comme cette vue descend jusqu'au bas de l'écran, le premier terme vaut
+      // déjà exactement la hauteur du clavier : tout décalage ajouté se
+      // retrouve en trou entre le champ de saisie et le clavier.
+      //
+      // La valeur précédente venait de l'en-tête natif. Depuis que la pile
+      // rend son en-tête en JS (AppStackHeader), celui-ci est au-dessus de
+      // cette vue dans l'arbre : sa hauteur est déjà exclue de la mesure, et
+      // la réintroduire ici la comptait deux fois.
+      keyboardVerticalOffset={0}
     >
       <Stack.Screen
         options={{

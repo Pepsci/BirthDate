@@ -3,12 +3,13 @@ const router = express.Router();
 const User = require("../../models/user.model");
 const EventInvitation = require("../../models/eventInvitation.model");
 const { checkGuestOrAuth } = require("../../middleware/checkGuestOrAuth");
+const { rejectIfCancelled } = require("../../middleware/rejectIfCancelled");
 const { notifyOrganizer } = require("./notifyOrganizer");
 
 /*
  * PUT /api/events/:shortId/rsvp -> répondre invitation
  */
-router.put("/:shortId/rsvp", checkGuestOrAuth, async (req, res) => {
+router.put("/:shortId/rsvp", checkGuestOrAuth, rejectIfCancelled, async (req, res) => {
   try {
     const { status } = req.body;
     if (req.userRole === "organizer") return res.status(400).json({ message: "L'organisateur ne peut pas modifier son RSVP via cette route." });
@@ -44,7 +45,7 @@ router.put("/:shortId/rsvp", checkGuestOrAuth, async (req, res) => {
 /*
  * POST /api/events/:shortId/vote/date -> vote date
  */
-router.post("/:shortId/vote/date", checkGuestOrAuth, async (req, res) => {
+router.post("/:shortId/vote/date", checkGuestOrAuth, rejectIfCancelled, async (req, res) => {
   try {
     const { dates } = req.body;
     if (req.userRole === "organizer") return res.status(400).json({ message: "L'organisateur ne vote pas via cette route." });
@@ -79,7 +80,7 @@ router.post("/:shortId/vote/date", checkGuestOrAuth, async (req, res) => {
 /*
  * POST /api/events/:shortId/vote/location -> vote lieu
  */
-router.post("/:shortId/vote/location", checkGuestOrAuth, async (req, res) => {
+router.post("/:shortId/vote/location", checkGuestOrAuth, rejectIfCancelled, async (req, res) => {
   try {
     const { locationId } = req.body;
     if (req.userRole === "organizer") return res.status(400).json({ message: "L'organisateur ne vote pas via cette route." });

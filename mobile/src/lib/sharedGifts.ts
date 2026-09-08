@@ -309,6 +309,28 @@ export interface SharedListPending {
  * dans l'app : c'est le seul moyen de la retrouver après avoir supprimé la
  * notification.
  */
+export interface MySharedList {
+  _id: string;
+  label: string | null;
+  role: SharedListRole;
+  giftCount: number;
+  memberCount: number;
+  /** Carte qui porte la liste chez moi. Null si pas encore rattachée. */
+  dateId: string | null;
+  personName: string | null;
+  from: { name: string; surname?: string } | null;
+}
+
+/**
+ * Toutes mes listes communes, celles que je gère comme celles où je suis
+ * invité. Complète fetchListsSharedWithMe, qui ne renvoie que les listes
+ * reçues et non encore rattachées : une fois rattachée, une liste n'était plus
+ * atteignable que par la carte de la personne concernée.
+ */
+export async function fetchMySharedLists(): Promise<MySharedList[]> {
+  return api("/shared-gifts/mine");
+}
+
 export async function fetchListsSharedWithMe(): Promise<SharedListPending[]> {
   return api("/shared-gifts/shared-with-me");
 }

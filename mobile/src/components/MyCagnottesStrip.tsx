@@ -3,6 +3,11 @@ import { View, Text, Pressable, StyleSheet, ScrollView } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
 import { useThemedStyles, ThemeColors } from "../lib/theme-context";
 import { fetchMyPools, MyPoolSummary } from "../lib/events";
+import {
+  setCagnottesVisible,
+  setHasPools,
+  useCagnottesStrip,
+} from "../lib/cagnottes-strip";
 
 const euro = (cents: number) =>
   (cents / 100).toLocaleString("fr-FR", { style: "currency", currency: "EUR" });
@@ -16,13 +21,19 @@ export default function MyCagnottesStrip() {
   const router = useRouter();
   const styles = useThemedStyles(makeStyles);
   const [pools, setPools] = useState<MyPoolSummary[]>([]);
+  const { visible } = useCagnottesStrip();
 
   useFocusEffect(
     useCallback(() => {
       let cancelled = false;
       fetchMyPools()
         .then((list) => {
-          if (!cancelled) setPools(list);
+          if (cancelled) return;
+          setPools(list);
+          // L'en-tête n'a aucun moyen de savoir s'il y a des cagnottes : c'est
+          // ce bandeau qui le lui dit, pour que son bouton n'apparaisse que
+          // quand il ouvre réellement quelque chose.
+          setHasPools(list.length > 0);
         })
         .catch(() => {
           // silencieux : ce n'est qu'un bandeau d'accueil optionnel
@@ -35,9 +46,24 @@ export default function MyCagnottesStrip() {
 
   if (pools.length === 0) return null;
 
+  // Replié : on ne laisse RIEN, pas même un titre. Le but est de rendre la
+  // page des dates à elle-même ; une barre résiduelle la dénaturerait tout
+  // autant. Le bandeau se rappelle depuis le bouton de l'en-tête.
+  if (!visible) return null;
+
   return (
     <View style={styles.wrap}>
-      <Text style={styles.title}>🐷 Mes cagnottes</Text>
+      <View style={styles.header}>
+        <Text style={styles.title}>🐷 Mes cagnottes</Text>
+        <Pressable
+          onPress={() => setCagnottesVisible(false)}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel="Masquer mes cagnottes"
+        >
+          <Text style={styles.collapse}>Masquer ▴</Text>
+        </Pressable>
+      </View>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -95,6 +121,13 @@ export default function MyCagnottesStrip() {
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
     wrap: { paddingTop: 10, paddingBottom: 4 },
+    header: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingRight: 12,
+    },
+    collapse: { color: c.sub, fontSize: 13, fontWeight: "600" },
     title: {
       fontSize: 15,
       fontWeight: "700",

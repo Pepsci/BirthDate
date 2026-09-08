@@ -17,6 +17,36 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.6.0",
+    date: "2026-09-07",
+    build: "38",
+    title:
+      "Annulation et transfert d'événement, cagnotte remboursable, listes communes revues",
+    note: "Merci de signaler tout ce qui bloque. Les points marqués ⚠️ nécessitent la nouvelle version du serveur.",
+    items: [
+      "🔔 Les notifications du téléphone n'ouvraient pas la bonne page : appuyer dessus ne menait nulle part. Toutes les notifications système étaient concernées, pas seulement les anniversaires — le centre de notifications dans l'application, lui, fonctionnait.",
+      "🗓️ Ajouter un événement à ton agenda ne posait aucun rappel : l'entrée ne se signalait qu'à l'heure de l'événement. Ce n'était pas Apple ni Google, c'est l'application qui n'en demandait aucun. Nouveau réglage dans Profil → Réglages → Rappels du calendrier, avec un choix distinct pour les événements et pour les anniversaires.",
+      "❌ ⚠️ Annuler un événement, avec un motif facultatif. L'événement n'est pas supprimé : il reste consultable, barré, et tous les invités sont prévenus par notification et par email. Il peut être rétabli. Un événement publié ne peut plus être supprimé directement — il faut l'annuler d'abord, pour que personne ne le voie disparaître sans explication.",
+      "🚫 ⚠️ Un événement annulé n'accepte plus aucune participation : votes de date et de lieu, réponse de présence, propositions de cadeaux, invitations et contributions à la cagnotte sont fermés. L'organisateur recevait sinon des notifications de vote sur un événement qu'il venait d'annuler, depuis les téléphones qui n'avaient pas encore rechargé la page. Le chat reste ouvert : c'est le moment où l'on a le plus besoin de se parler.",
+      "🤝 ⚠️ Transférer l'organisation d'un événement à un participant. Il doit accepter : tant qu'il n'a pas répondu, tu restes l'organisateur. La cagnotte ne suit jamais le transfert — les sommes déjà versées sont sur ton compte de paiement, à toi de les rembourser ou de les reverser, et le message envoyé aux participants le dit explicitement.",
+      "💸 ⚠️ Rembourser tous les contributeurs d'une cagnotte, depuis l'écran Cagnotte. Les contributeurs récupèrent l'intégralité de ce qu'ils ont versé ; les frais du paiement d'origine, eux, ne sont pas restitués et restent à ta charge — le montant exact t'est annoncé avant que tu valides.",
+      "🚪 Bouton pour quitter un événement auquel tu es invité, sous ta réponse de présence. Décliner prévient l'organisateur, quitter retire l'invitation : ce sont deux gestes différents.",
+      "📋 Bouton pour copier seulement le code d'accès d'un événement, quand tu veux le coller dans une conversation déjà ouverte ailleurs.",
+      "🗄️ Les événements passés sont regroupés dans une section repliable en bas de la liste, avec les événements annulés. Un événement dont la date est repoussée en ressort tout seul.",
+      "🎁 ⚠️ Listes communes — les cadeaux déjà achetés ou offerts ne sont plus montrés aux invités : les leur montrer les poussait à acheter en double, ce que la liste sert précisément à éviter.",
+      "🚪 ⚠️ Listes communes — un invité peut enfin quitter une liste. Le bouton existait mais le serveur refusait la demande : l'accès restait, et la liste réapparaissait au rechargement suivant.",
+      "➕ ⚠️ Listes communes — quand on te partage une liste pour quelqu'un que tu n'as pas dans ton carnet, l'application te propose de créer sa carte en un geste, préremplie avec son nom et sa date de naissance. Tu pourras les corriger ensuite. La liste des cartes existantes se replie et devient cherchable au lieu de tout dérouler.",
+      "📂 ⚠️ Listes communes — nouvelle entrée dans le menu Profil. Une liste partagée dont tu n'as pas terminé le rattachement s'y retrouve, même si tu as fermé la notification : elle n'était jusqu'ici accessible que depuis ce message.",
+      "👤 Listes communes — « Partager à un contact » est directement dans la feuille de partage, au lieu d'être enterré dans l'écran de gestion des accès.",
+      "🔔 ⚠️ Listes communes — les invités reçoivent une notification quand une idée est ajoutée, et quand un cadeau qu'ils avaient réservé est retiré. Une réservation faite depuis le lien public prévient désormais les membres : elle ne prévenait personne.",
+      "📧 ⚠️ Les liens « se désabonner » des emails ne fonctionnaient pas — sauf celui des demandes d'ami, qui passait par un autre chemin.",
+      "🎂 Sur l'accueil, « C'est la fête de Louis et Louis ! » quand deux proches portent le même prénom. Et à zéro, le compteur d'anniversaires affiche une phrase plutôt qu'un « 0 » qui se lisait comme un échec.",
+      "🃏 Les cartes cadeaux de la grille se décalaient entre elles selon la longueur du titre.",
+      "🔘 Les boutons ronds de l'en-tête n'étaient toujours pas centrés : les icônes sont redessinées, et l'en-tête ne dépend plus du fond que le système dessine derrière.",
+      "✉️ Récap mensuel : une double flèche traînait sur le bouton « Voir le mois prochain ».",
+    ],
+  },
+  {
     version: "1.5.0",
     date: "2026-08-19",
     build: "36",

@@ -3,12 +3,13 @@ const router = express.Router();
 const EventGiftProposal = require("../../models/eventGiftProposal.model");
 const User = require("../../models/user.model");
 const { checkGuestOrAuth } = require("../../middleware/checkGuestOrAuth");
+const { rejectIfCancelled } = require("../../middleware/rejectIfCancelled");
 const { notifyOrganizer } = require("./notifyOrganizer");
 
 /*
  * POST /api/events/:shortId/gifts -> proposer un cadeau
  */
-router.post("/:shortId/gifts", checkGuestOrAuth, async (req, res) => {
+router.post("/:shortId/gifts", checkGuestOrAuth, rejectIfCancelled, async (req, res) => {
   try {
     const { name, url, price, image } = req.body;
     const event = req.event;
@@ -94,6 +95,7 @@ router.get("/:shortId/gifts", checkGuestOrAuth, async (req, res) => {
 router.post(
   "/:shortId/gifts/:giftId/vote",
   checkGuestOrAuth,
+  rejectIfCancelled,
   async (req, res) => {
     try {
       const proposal = await EventGiftProposal.findById(req.params.giftId);
@@ -194,7 +196,7 @@ router.patch(
 /*
  * PUT /api/events/:shortId/gifts/:giftId -> modifier une proposition
  */
-router.put("/:shortId/gifts/:giftId", checkGuestOrAuth, async (req, res) => {
+router.put("/:shortId/gifts/:giftId", checkGuestOrAuth, rejectIfCancelled, async (req, res) => {
   try {
     const proposal = await EventGiftProposal.findById(req.params.giftId);
     if (!proposal)
