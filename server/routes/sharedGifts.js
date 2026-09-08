@@ -893,7 +893,15 @@ router.post(
 
       if (!gift.reservedBy)
         return res.status(400).json({ message: "Ce cadeau n'est pas réservé" });
-      if (gift.reservedBy.toString() !== req.payload._id)
+      // Le réserveur libère la sienne ; un MEMBRE peut libérer n'importe
+      // laquelle. Sans ça, une idée réservée par quelqu'un qui ne revient
+      // jamais reste bloquée indéfiniment, et les gestionnaires de la liste
+      // — ceux qui en répondent — n'y peuvent rien. Un invité, lui, reste
+      // limité à sa propre réservation.
+      if (
+        gift.reservedBy.toString() !== req.payload._id &&
+        req.listRole !== "member"
+      )
         return res
           .status(403)
           .json({ message: "Seul le membre qui a réservé peut annuler" });

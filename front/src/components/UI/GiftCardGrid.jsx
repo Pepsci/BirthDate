@@ -380,6 +380,68 @@ const GiftCardGrid = ({
                     </>
                   )}
 
+                  {/* Réservation, côté GESTIONNAIRE d'une liste commune.
+                      Le web n'en avait aucune trace : « je m'en occupe »
+                      n'existait que pour les invités, et une réservation faite
+                      depuis le mobile ou le lien public n'apparaissait pas ici.
+                      Un membre voyait donc une idée libre alors que quelqu'un
+                      s'en était déjà chargé. */}
+                  {type === "gifts" && !readOnly && !item.isPurchased && (
+                    <>
+                      {!item.isReserved ? (
+                        <button
+                          className="gcg-btn gcg-btn--primary"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onReserve?.(item.id);
+                          }}
+                        >
+                          🎁 Je m'en occupe
+                        </button>
+                      ) : item.isReservedByMe ? (
+                        <button
+                          className="gcg-btn gcg-btn--ghost"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onUnreserve?.(item.id);
+                          }}
+                        >
+                          ↩️ Je ne m'en occupe plus
+                        </button>
+                      ) : (
+                        <>
+                          <p className="gcg-reserved-friend">
+                            🔒 Réservé
+                            {item.reservedByName
+                              ? ` par ${item.reservedByName}`
+                              : ""}
+                          </p>
+                          {/* Libérer la réservation d'un autre : action
+                              distincte, réservée aux gestionnaires. Sans elle,
+                              une idée réservée par quelqu'un qui ne revient
+                              jamais — un visiteur du lien public, surtout —
+                              restait bloquée pour toujours. */}
+                          <button
+                            className="gcg-btn gcg-btn--danger"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const who = item.reservedByName || "Quelqu'un";
+                              if (
+                                window.confirm(
+                                  `${who} s'est engagé à offrir « ${item.title} ». Libérer la réservation ? L'idée redeviendra disponible pour tout le monde.`,
+                                )
+                              ) {
+                                onUnreserve?.(item.id);
+                              }
+                            }}
+                          >
+                            ↩️ Libérer la réservation
+                          </button>
+                        </>
+                      )}
+                    </>
+                  )}
+
                   {/* Liste commune consultée sans droit d'édition (invité) :
                       réserver est la seule action qui lui est ouverte, et c'est
                       celle qui évite le double achat. Le bloc wishlist juste

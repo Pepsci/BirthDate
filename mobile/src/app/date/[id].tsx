@@ -384,18 +384,49 @@ export default function DateDetailScreen() {
   const toggleSharedReservation = (g: SharedGift) => {
     if (!entry?.sharedGiftList || busy) return;
     const mine = isReservedByMe(g);
-    // Réservation venue du lien public : le visiteur n'a pas de compte, et
-    // s'il a perdu son jeton personne ne peut plus libérer l'idée. Les
-    // membres gèrent la liste, ce sont eux qui peuvent la débloquer.
-    const guestHeld = !!g.reservedByGuest && isSharedMember;
-    if (isReserved(g) && !mine && !guestHeld) return;
+    // Prendre ou lâcher SA propre réservation, rien d'autre. Défaire celle
+    // d'un autre passe par `releaseSharedReservation` : c'est un geste d'une
+    // autre nature, qui mérite son bouton et sa confirmation.
+    if (isReserved(g) && !mine) return;
     runShared(() =>
-      mine || guestHeld
+      mine
         ? unreserveSharedGift(entry.sharedGiftList!, g._id)
         : reserveSharedGift(entry.sharedGiftList!, g._id),
     );
   };
 
+
+  /**
+   * Libérer la réservation de quelqu'un d'autre. Réservé aux membres : ce
+   * sont eux qui répondent de la liste. Sans ce geste, une idée réservée par
+   * un visiteur qui ne revient jamais — ou par un membre injoignable — restait
+   * bloquée pour toujours, et personne ne pouvait l'offrir.
+   *
+   * Confirmation obligatoire : on défait l'engagement d'un autre, et le
+   * risque, si on se trompe, est le double achat que la réservation existait
+   * précisément pour éviter.
+   */
+  const releaseSharedReservation = (g: SharedGift) => {
+    if (!entry?.sharedGiftList || busy) return;
+    const who = reserverName(g);
+    Alert.alert(
+      "Libérer cette réservation ?",
+      who
+        ? `${who} s'est engagé à offrir « ${g.giftName} ». L'idée redeviendra disponible pour tout le monde.`
+        : `« ${g.giftName} » redeviendra disponible pour tout le monde.`,
+      [
+        { text: "Annuler", style: "cancel" },
+        {
+          text: "Libérer",
+          style: "destructive",
+          onPress: () =>
+            runShared(() =>
+              unreserveSharedGift(entry.sharedGiftList!, g._id),
+            ),
+        },
+      ],
+    );
+  };
 
   const reloadShared = async () => {
     if (entry?.sharedGiftList) {
@@ -1218,10 +1249,19 @@ export default function DateDetailScreen() {
                   {occasionEmoji(g.occasion)} {g.occasion}
                   {g.year ? ` · ${g.year}` : ""}
                 </Text>
-                <View style={styles.giftGridRow}>
-                  {g.price != null && (
+                <View style={[styles.giftGridRow, styles.cardBottom]}>
+                  {/* La pastille de prix est toujours posée, même sans
+                      montant : sans elle, le badge de statut d'une carte sans
+                      prix remontait se coller à gauche pendant que celui de sa
+                      voisine restait décalé. Aligner demande une place
+                      réservée, pas un élément qui disparaît. */}
+                  {g.price != null ? (
                     <View style={styles.pricePill}>
                       <Text style={styles.pricePillText}>{g.price} €</Text>
+                    </View>
+                  ) : (
+                    <View style={[styles.pricePill, styles.pricePillEmpty]}>
+                      <Text style={styles.pricePillEmptyText}>—</Text>
                     </View>
                   )}
                   <Pressable
@@ -1549,10 +1589,13 @@ export default function DateDetailScreen() {
                           la liste, il n'y a donc pas de surprise à protéger —
                           et savoir qui s'en occupe est justement ce qui évite
                           le double achat. */}
+                      {/* Pied de carte ancré en bas : les cartes d'une même
+                          rangée sont étirées à la hauteur de la plus haute,
+                          donc sans ça la pastille et le prix flottaient à des
+                          hauteurs différentes selon la longueur du titre. */}
+                      <View style={styles.sharedCardBottom}>
                       <Pressable
-                        disabled={
-                          busy || (reservedByOther && !g.reservedByGuest)
-                        }
+                        disabled={busy || reservedByOther}
                         onPress={() => toggleSharedReservation(g)}
                         style={[
                           styles.reservePill,
@@ -1576,10 +1619,28 @@ export default function DateDetailScreen() {
                               : "＋ Je m'en occupe"}
                         </Text>
                       </Pressable>
+                      {/* Action distincte, et non un second sens caché dans
+                          la pastille : libérer la réservation d'un autre n'est
+                          pas le même geste que prendre ou lâcher la sienne. */}
+                      {reservedByOther && isSharedMember && (
+                        <Pressable
+                          disabled={busy}
+                          onPress={() => releaseSharedReservation(g)}
+                          style={styles.releasePill}
+                        >
+                          <Text style={styles.releasePillText} numberOfLines={1}>
+                            ↩︎ Libérer la réservation
+                          </Text>
+                        </Pressable>
+                      )}
                       <View style={styles.giftGridRow}>
-                        {g.price != null && (
+                        {g.price != null ? (
                           <View style={styles.pricePill}>
                             <Text style={styles.pricePillText}>{g.price} €</Text>
+                          </View>
+                        ) : (
+                          <View style={[styles.pricePill, styles.pricePillEmpty]}>
+                            <Text style={styles.pricePillEmptyText}>—</Text>
                           </View>
                         )}
                         {/* Changer le statut modifie la liste : lecture
@@ -1598,6 +1659,7 @@ export default function DateDetailScreen() {
                             {meta.emoji} {meta.short}
                           </Text>
                         </Pressable>
+                      </View>
                       </View>
                     </Pressable>
                   );
@@ -2359,7 +2421,19 @@ const makeStyles = (c: ThemeColors) =>
   },
   checkboxOn: { backgroundColor: c.success, borderColor: c.success },
   checkmark: { color: c.white, fontWeight: "700", fontSize: 14 },
-  giftName: { color: c.text, fontWeight: "600" },
+  // ⚠️ Hauteur réservée pour DEUX lignes (numberOfLines={2} à l'usage).
+  // Sans elle, une carte au titre court et sa voisine au titre long
+  // n'alignaient plus rien de ce qui suit : occasion, prix et badge se
+  // retrouvaient à des hauteurs différentes d'une carte à l'autre.
+  // `lineHeight` est fixé explicitement pour que 2 × lineHeight soit exact —
+  // sinon la valeur dépend de la police du système.
+  giftName: {
+    color: c.text,
+    fontWeight: "600",
+    fontSize: 13,
+    lineHeight: 17,
+    minHeight: 34,
+  },
   giftDone: { textDecorationLine: "line-through", color: c.faint },
   deleteX: { color: c.danger, fontSize: 16, fontWeight: "700" },
   newIdeaBtn: {
@@ -2502,7 +2576,9 @@ const makeStyles = (c: ThemeColors) =>
     justifyContent: "space-between",
     gap: 8,
   },
-  giftMeta: { color: c.sub, fontSize: 12 },
+  // Une ligne, toujours occupée : une idée sans occasion ne doit pas faire
+  // remonter tout le pied de sa carte par rapport à ses voisines.
+  giftMeta: { color: c.sub, fontSize: 12, lineHeight: 16, minHeight: 16 },
   giftCardFooter: {
     flexDirection: "row",
     alignItems: "center",
@@ -2516,6 +2592,10 @@ const makeStyles = (c: ThemeColors) =>
     paddingVertical: 2,
   },
   pricePillText: { color: c.primaryStrong, fontWeight: "700", fontSize: 12 },
+  // Place tenue pour un prix absent : discrète, mais de la même taille, sinon
+  // elle ne tient justement pas la place.
+  pricePillEmpty: { backgroundColor: c.bgSecondary },
+  pricePillEmptyText: { color: c.faint, fontWeight: "700", fontSize: 12 },
   giftBadge: { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
   giftBadgePending: { backgroundColor: c.warningSoft },
   giftBadgeDone: { backgroundColor: c.successSoft },
@@ -2590,6 +2670,10 @@ const makeStyles = (c: ThemeColors) =>
   },
   giftGridCard: {
     width: "48.5%",
+    // Les cartes d'une rangée sont étirées à la hauteur de la plus haute :
+    // on l'assume explicitement pour que le `marginTop: "auto"` du pied ait
+    // de quoi jouer. Même recette que components/GiftGridCard.
+    alignSelf: "stretch",
     backgroundColor: c.card,
     borderRadius: 12,
     borderWidth: 1,
@@ -2597,6 +2681,13 @@ const makeStyles = (c: ThemeColors) =>
     padding: 8,
     gap: 4,
   },
+  // Colle un pied de carte en bas, quelle que soit la longueur du titre.
+  cardBottom: { marginTop: "auto" },
+  // Pied de la carte « idée commune » : la pastille de réservation, le bouton
+  // de libération et la ligne prix/statut forment un seul bloc ancré en bas —
+  // deux `marginTop: "auto"` séparés se partageraient l'espace libre et les
+  // écarteraient l'un de l'autre.
+  sharedCardBottom: { marginTop: "auto", gap: 4 },
   giftGridImg: { width: "100%", height: 90, borderRadius: 8 },
   giftGridEmoji: { fontSize: 30 },
   giftGridRow: {
@@ -2772,6 +2863,17 @@ const makeStyles = (c: ThemeColors) =>
     alignItems: "center",
   },
   reservePillTaken: { backgroundColor: c.primarySoft, borderColor: c.primary },
+  // Libérer la réservation d'un autre : en teinte danger et sans fond, pour
+  // que le geste se distingue de la pastille juste au-dessus.
+  releasePill: {
+    borderWidth: 1,
+    borderColor: c.danger,
+    borderRadius: 8,
+    paddingVertical: 5,
+    paddingHorizontal: 8,
+    alignItems: "center",
+  },
+  releasePillText: { fontSize: 11, fontWeight: "700", color: c.danger },
   // Préfixe « shared » : `reserveText` est déjà pris par la réservation des
   // cadeaux de la wishlist personnelle, plus haut dans cette même feuille.
   sharedReserveText: { fontSize: 11, fontWeight: "700", color: c.sub },
