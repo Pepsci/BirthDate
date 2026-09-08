@@ -448,7 +448,27 @@ const HIDDEN_STATUSES_FOR_VIEWER = new Set(["bought", "to_give", "offered"]);
 
 function serializeListForRole(list, role, userId) {
   const obj = list.toObject ? list.toObject() : list;
-  if (role === "member") return obj;
+
+  if (role === "member") {
+    // ⚠️ Les membres recevaient l'objet brut, donc sans `isReserved`. Leur
+    // interface testait `g.isReserved ?? !!g.reservedBy` et retombait sur
+    // `reservedBy` seul : une réservation faite depuis le lien public
+    // (`reservedByGuest`) n'apparaissait NULLE PART chez eux. Ils voyaient
+    // une idée « à prendre » que quelqu'un avait déjà bloquée. On calcule
+    // donc le même booléen pour les deux rôles, pour que l'app et le web
+    // lisent le même champ quel que soit le rôle.
+    return {
+      ...obj,
+      gifts: (obj.gifts || []).map((g) => ({
+        ...g,
+        isReserved: !!g.reservedBy || !!g.reservedByGuest,
+        // L'adresse d'un visiteur ne sort jamais : elle n'a servi qu'à lui
+        // envoyer son accusé de réception.
+        reservedByGuestEmail: undefined,
+        reservedByGuestToken: undefined,
+      })),
+    };
+  }
 
   return {
     ...obj,
@@ -466,6 +486,8 @@ function serializeListForRole(list, role, userId) {
           addedBy: undefined,
           reservedBy: undefined,
           reservedByGuest: undefined,
+          reservedByGuestEmail: undefined,
+          reservedByGuestToken: undefined,
           isReserved: !!g.reservedBy || !!g.reservedByGuest,
           // Le seul lien conservé : est-ce MOI qui ai réservé ? Sans lui,
           // l'invité ne pourrait pas annuler sa propre réservation.
@@ -803,6 +825,14 @@ router.post(
         return res
           .status(409)
           .json({ message: "Ce cadeau est déjà réservé par un membre" });
+      // Une réservation venue du lien public compte autant qu'une autre :
+      // sans ce garde-fou, un membre passait par-dessus, les deux champs se
+      // retrouvaient posés en même temps, et le visiteur gardait un mail lui
+      // annonçant qu'il s'occupait d'un cadeau pris par quelqu'un d'autre.
+      if (gift.reservedByGuest)
+        return res.status(409).json({
+          message: `Ce cadeau est déjà réservé par ${gift.reservedByGuest}`,
+        });
 
       gift.reservedBy = req.payload._id;
       gift.reservedAt = new Date();
@@ -840,6 +870,27 @@ router.post(
     try {
       const gift = req.sharedList.gifts.id(req.params.giftId);
       if (!gift) return res.status(404).json({ message: "Cadeau introuvable" });
+
+      // Réservation faite depuis le lien public. Le visiteur n'a pas de
+      // compte : s'il perd son jeton — navigateur nettoyé, appareil changé
+      // sans avoir demandé le mail — personne ne peut plus libérer l'idée et
+      // elle reste bloquée pour toujours. Les membres gèrent la liste, ce
+      // sont eux qui doivent pouvoir la débloquer.
+      if (gift.reservedByGuest) {
+        if (req.listRole !== "member")
+          return res
+            .status(403)
+            .json({ message: "Seuls les membres peuvent libérer cette réservation" });
+        gift.reservedByGuest = null;
+        gift.reservedByGuestToken = null;
+        gift.reservedByGuestEmail = null;
+        gift.reservedAt = null;
+        await req.sharedList.save();
+        return res.json(
+          serializeListForRole(req.sharedList, req.listRole, req.payload._id),
+        );
+      }
+
       if (!gift.reservedBy)
         return res.status(400).json({ message: "Ce cadeau n'est pas réservé" });
       if (gift.reservedBy.toString() !== req.payload._id)
@@ -914,7 +965,14 @@ router.post(
     try {
       req.sharedList.accessCode = generateAccessCode();
       await req.sharedList.save();
-      res.json({ accessCode: req.sharedList.accessCode });
+      // Le lien qui porte le code change avec lui : sans le renvoyer ici, le
+      // panneau continuerait à proposer l'ancien, devenu invalide.
+      res.json({
+        accessCode: req.sharedList.accessCode,
+        publicUrlWithCode: req.sharedList.publicSlug
+          ? `${publicUrlFor(req.sharedList.publicSlug)}?c=${encodeURIComponent(req.sharedList.accessCode)}`
+          : null,
+      });
     } catch (err) {
       console.error("❌ shared access code:", err);
       res.status(500).json({ message: "Erreur serveur" });
@@ -1097,6 +1155,16 @@ router.get("/:id/share", isAuthenticated, loadListAsMember, async (req, res) => 
       isPublic: !!list.isPublic,
       publicSlug: list.publicSlug || null,
       publicUrl: list.publicSlug ? publicUrlFor(list.publicSlug) : null,
+      // Le code garde désormais la porte : le lien nu ne montre plus rien.
+      // Sans ce second lien, partager une liste protégée demanderait deux
+      // envois — le lien, puis le code — et la moitié des gens n'iraient
+      // jamais au bout. Le lien nu reste proposé pour qui veut transmettre
+      // le code séparément.
+      accessCode: list.accessCode || null,
+      publicUrlWithCode:
+        list.publicSlug && list.accessCode
+          ? `${publicUrlFor(list.publicSlug)}?c=${encodeURIComponent(list.accessCode)}`
+          : null,
     });
   } catch (err) {
     console.error("❌ shared share get:", err);
@@ -1127,10 +1195,17 @@ router.patch(
       list.isPublic = !list.isPublic;
       await list.save();
 
+      // Même forme que GET /:id/share : les deux clients remplacent leur état
+      // par cette réponse, et il leur manquait alors le code et le lien qui
+      // le porte — le panneau affichait « lien seul » juste après activation.
       res.json({
         isPublic: list.isPublic,
         publicSlug: list.publicSlug,
         publicUrl: publicUrlFor(list.publicSlug),
+        accessCode: list.accessCode || null,
+        publicUrlWithCode: list.accessCode
+          ? `${publicUrlFor(list.publicSlug)}?c=${encodeURIComponent(list.accessCode)}`
+          : null,
       });
     } catch (err) {
       console.error("❌ shared share toggle:", err);

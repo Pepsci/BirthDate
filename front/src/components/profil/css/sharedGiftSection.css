@@ -224,3 +224,40 @@
   color: var(--text-secondary);
   font-size: 0.85rem;
 }
+
+/* La ligne porte deux actions de poids très différents : ouvrir (toute la
+   carte) et quitter (un bouton discret, en retrait). */
+.sgi-mine-row {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  margin-bottom: 0.6rem;
+}
+
+.sgi-mine-row .sgi-mine-card {
+  flex: 1;
+  margin-bottom: 0;
+}
+
+.sgi-leave-btn {
+  flex: 0 0 auto;
+  align-self: center;
+  padding: 0.5rem 0.9rem;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  color: var(--danger);
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.sgi-leave-btn:hover:not(:disabled) {
+  background: var(--bg-tertiary, var(--bg-secondary));
+}
+
+.sgi-leave-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}

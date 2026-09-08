@@ -107,6 +107,17 @@ export default function SharedListSharePanel({ listId, onClose }) {
     try {
       const res = await apiHandler.post(`/shared-gifts/${listId}/access/code`);
       setAccess((prev) => ({ ...prev, accessCode: res.data.accessCode }));
+      // Le lien « lien + code » embarque l'ancien code : le laisser affiché
+      // ferait copier un lien qui ne déverrouille plus rien.
+      setShare((prev) =>
+        prev
+          ? {
+              ...prev,
+              accessCode: res.data.accessCode,
+              publicUrlWithCode: res.data.publicUrlWithCode,
+            }
+          : prev,
+      );
     } catch (err) {
       setError(err?.response?.data?.message || "Erreur.");
     } finally {
@@ -232,27 +243,55 @@ export default function SharedListSharePanel({ listId, onClose }) {
           </button>
         </div>
         <p className="slsp-muted">
-          Pour partager la liste à quelqu'un qui n'a pas de compte. Le lien
-          permet de consulter ; réserver demande le code ci-dessous.
+          Pour partager la liste à quelqu'un qui n'a pas de compte.{" "}
+          {access.accessCode
+            ? "Avec un code, le lien ne montre rien tant qu'il n'est pas saisi."
+            : "Sans code, toute personne ayant le lien voit les idées et peut en réserver."}
         </p>
 
         {share.isPublic && share.publicUrl && (
-          <div className="slsp-copyrow">
-            <input readOnly value={share.publicUrl} className="slsp-input" />
-            <button
-              className="slsp-btn slsp-btn--sm"
-              onClick={() => copy(share.publicUrl)}
-            >
-              {copied ? "✓ Copié" : "📋 Copier"}
-            </button>
-          </div>
+          <>
+            {/* Le lien qui porte le code passe en premier : depuis que le
+                code garde la porte, envoyer le lien nu oblige à envoyer le
+                code dans un second message, et la moitié des gens ne le font
+                pas. Le lien nu reste dessous pour qui préfère transmettre le
+                code de vive voix. */}
+            {share.publicUrlWithCode && (
+              <div className="slsp-copyrow">
+                <input
+                  readOnly
+                  value={share.publicUrlWithCode}
+                  className="slsp-input"
+                />
+                <button
+                  className="slsp-btn slsp-btn--sm"
+                  onClick={() => copy(share.publicUrlWithCode)}
+                >
+                  {copied ? "✓ Copié" : "📋 Lien + code"}
+                </button>
+              </div>
+            )}
+            <div className="slsp-copyrow">
+              <input readOnly value={share.publicUrl} className="slsp-input" />
+              <button
+                className="slsp-btn slsp-btn--sm"
+                onClick={() => copy(share.publicUrl)}
+              >
+                {copied
+                  ? "✓ Copié"
+                  : share.publicUrlWithCode
+                    ? "📋 Lien seul"
+                    : "📋 Copier"}
+              </button>
+            </div>
+          </>
         )}
       </section>
 
       {/* ── Code de réservation ────────────────────────────────────────── */}
       <section className="slsp-section">
         <div className="slsp-section-head">
-          <h4>🔑 Code de réservation</h4>
+          <h4>🔑 Code d'accès</h4>
           <button
             className="slsp-btn slsp-btn--sm"
             disabled={busy}
@@ -262,8 +301,10 @@ export default function SharedListSharePanel({ listId, onClose }) {
           </button>
         </div>
         <p className="slsp-muted">
-          Demandé aux visiteurs du lien public au moment de réserver — jamais
-          pour consulter. Il empêche un inconnu de bloquer vos idées.
+          Demandé aux visiteurs du lien public pour OUVRIR la liste. Tant
+          qu'il n'est pas saisi, les idées ne sont pas envoyées : le lien peut
+          circuler sans montrer ce que vous préparez. Régénérer le code
+          invalide les liens déjà distribués qui le contenaient.
         </p>
         {access.accessCode && (
           <div className="slsp-copyrow">

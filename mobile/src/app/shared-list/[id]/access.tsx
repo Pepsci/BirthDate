@@ -190,16 +190,18 @@ export default function SharedListAccessScreen() {
       </View>
 
       <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Code de reservation</Text>
+        <Text style={styles.sectionTitle}>Code d'acces</Text>
         <Text style={styles.hint}>
-          Demande aux personnes qui arrivent par le lien public, uniquement au
-          moment de reserver. Consulter la liste ne l'exige pas.
+          Demande aux personnes qui arrivent par le lien public pour OUVRIR la
+          liste. Tant qu'il n'est pas saisi, les idees ne leur sont pas
+          envoyees : le lien peut circuler sans montrer ce que tu prepares.
         </Text>
         {access.accessCode ? (
           <Text style={styles.code}>{access.accessCode}</Text>
         ) : (
           <Text style={styles.empty}>
-            Aucun code : toute personne ayant le lien peut reserver.
+            Aucun code : toute personne ayant le lien voit la liste et peut
+            reserver.
           </Text>
         )}
         <Pressable
@@ -209,7 +211,7 @@ export default function SharedListAccessScreen() {
             Alert.alert(
               access.accessCode ? "Changer le code ?" : "Generer un code ?",
               access.accessCode
-                ? "L'ancien code cessera de fonctionner immediatement."
+                ? "L'ancien code cessera de fonctionner immediatement, y compris dans les liens deja envoyes qui le contenaient."
                 : "Il sera demande pour reserver depuis le lien public.",
               [
                 { text: "Annuler", style: "cancel" },

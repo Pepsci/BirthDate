@@ -7,6 +7,7 @@ import {
   FlatList,
   ActivityIndicator,
   RefreshControl,
+  Alert,
 } from "react-native";
 import { Stack, useFocusEffect, useRouter } from "expo-router";
 import {
@@ -18,6 +19,7 @@ import {
   fetchMySharedLists,
   acceptSharedInvitation,
   declineSharedInvitation,
+  leaveSharedList,
 } from "../lib/sharedGifts";
 import { DateEntry, fetchDates } from "../lib/dates";
 import BottomSheet from "../components/BottomSheet";
@@ -123,6 +125,40 @@ export default function SharedInvitesScreen() {
       null
     : null;
 
+  /**
+   * Quitter depuis le menu. Confirmation obligatoire : pour un membre, partir
+   * fait perdre l'accès à une liste qu'il a peut-être remplie, et le geste
+   * est ici à un doigt d'un simple appui pour ouvrir.
+   */
+  const leave = (l: MySharedList) => {
+    const isMember = l.role === "member";
+    Alert.alert(
+      isMember ? "Quitter la liste ?" : "Ne plus suivre cette liste ?",
+      isMember
+        ? "Tu ne verras plus les idées de cette liste, et elle sera retirée de ta carte. Les autres membres la gardent."
+        : "Elle sera retirée de ta carte. Tu pourras y revenir si on te la repartage.",
+      [
+        { text: "Annuler", style: "cancel" },
+        {
+          text: isMember ? "Quitter" : "Ne plus suivre",
+          style: "destructive",
+          onPress: async () => {
+            if (busy) return;
+            setBusy(true);
+            try {
+              await leaveSharedList(l._id);
+              await load();
+            } catch (e: any) {
+              setError(e?.message ?? "Erreur.");
+            } finally {
+              setBusy(false);
+            }
+          },
+        },
+      ],
+    );
+  };
+
   const decline = async (inv: SharedInvitation) => {
     if (busy) return;
     setBusy(true);
@@ -173,7 +209,13 @@ export default function SharedInvitesScreen() {
                   <Pressable
                     key={l._id}
                     style={[styles.card, { marginBottom: 10 }]}
-                    onPress={() => router.push(`/date/${l.dateId}`)}
+                    // `focus=shared` ouvre la carte directement sur la liste :
+                    // atterrir sur la fiche de la personne puis chercher le
+                    // bon onglet n'est pas ce qu'on demande en choisissant une
+                    // liste dans un menu de listes.
+                    onPress={() =>
+                      router.push(`/date/${l.dateId}?focus=shared`)
+                    }
                   >
                     <Text style={styles.cardText}>
                       <Text style={styles.bold}>
@@ -185,16 +227,30 @@ export default function SharedInvitesScreen() {
                         ? `${l.memberCount} gestionnaire${l.memberCount > 1 ? "s" : ""}`
                         : "invité en lecture"}
                     </Text>
-                    {l.role === "member" && (
+                    <View style={styles.mineActions}>
+                      {l.role === "member" && (
+                        <Pressable
+                          style={styles.manageBtn}
+                          disabled={busy}
+                          onPress={() =>
+                            router.push(`/shared-list/${l._id}/access`)
+                          }
+                        >
+                          <Text style={styles.manageBtnText}>
+                            Gérer l'accès
+                          </Text>
+                        </Pressable>
+                      )}
                       <Pressable
-                        style={styles.manageBtn}
-                        onPress={() =>
-                          router.push(`/shared-list/${l._id}/access`)
-                        }
+                        style={styles.leaveBtn}
+                        disabled={busy}
+                        onPress={() => leave(l)}
                       >
-                        <Text style={styles.manageBtnText}>Gérer l'accès</Text>
+                        <Text style={styles.leaveBtnText}>
+                          {l.role === "member" ? "Quitter" : "Ne plus suivre"}
+                        </Text>
                       </Pressable>
-                    )}
+                    </View>
                   </Pressable>
                 ))}
               </View>
@@ -340,6 +396,16 @@ const makeStyles = (c: ThemeColors) =>
     paddingHorizontal: 14,
   },
   manageBtnText: { color: c.sub, fontWeight: "600", fontSize: 13 },
+  mineActions: { flexDirection: "row", gap: 8, flexWrap: "wrap" },
+  // Départ volontairement discret : c'est une sortie, pas une invitation.
+  leaveBtn: {
+    borderWidth: 1,
+    borderColor: c.border,
+    borderRadius: 10,
+    paddingVertical: 7,
+    paddingHorizontal: 14,
+  },
+  leaveBtnText: { color: c.danger, fontWeight: "600", fontSize: 13 },
   empty: { textAlign: "center", color: c.sub, marginTop: 32 },
   card: {
     backgroundColor: c.card,

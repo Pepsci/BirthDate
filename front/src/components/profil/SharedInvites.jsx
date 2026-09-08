@@ -97,6 +97,30 @@ export default function SharedInvites({ embedded = false }) {
       null
     : null;
 
+  /**
+   * Quitter depuis le menu. Confirmation obligatoire : partir fait perdre
+   * l'accès à une liste qu'on a peut-être remplie, et le bouton est ici à
+   * quelques pixels de celui qui ouvre simplement la liste.
+   */
+  const leave = async (l) => {
+    const isMember = l.role === "member";
+    const ok = window.confirm(
+      isMember
+        ? "Quitter cette liste commune ? Vous ne verrez plus ses idées et elle sera retirée de votre carte. Les autres membres la gardent."
+        : "Ne plus suivre cette liste ? Elle sera retirée de votre carte.",
+    );
+    if (!ok || busy) return;
+    setBusy(true);
+    try {
+      await apiHandler.post(`/shared-gifts/${l._id}/leave`);
+      await load();
+    } catch (err) {
+      setError(err?.response?.data?.message || "Erreur.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const decline = async (inv) => {
     setBusy(true);
     try {
@@ -128,24 +152,36 @@ export default function SharedInvites({ embedded = false }) {
         <section className="sgi-pending">
           <h3 className="sgi-pending-title">Mes listes communes</h3>
           {mine.map((l) => (
-            <button
-              key={l._id}
-              className="sgi-pending-card sgi-mine-card"
-              onClick={() => navigate(`/home?tab=date&dateId=${l.dateId}`)}
-            >
-              <strong>{l.personName || l.label || "Liste commune"}</strong>
-              <span className="sgi-mine-meta">
-                {l.giftCount} idée{l.giftCount > 1 ? "s" : ""} ·{" "}
-                {l.role === "member"
-                  ? `${l.memberCount} gestionnaire${l.memberCount > 1 ? "s" : ""}`
-                  : "invité en lecture"}
-              </span>
-              <span className="sgi-pending-hint">
-                {l.role === "member"
-                  ? "Ouvrir la carte pour gérer la liste et ses accès →"
-                  : "Ouvrir la carte pour voir la liste →"}
-              </span>
-            </button>
+            <div key={l._id} className="sgi-mine-row">
+              <button
+                type="button"
+                className="sgi-pending-card sgi-mine-card"
+                onClick={() =>
+                  navigate(`/birthday/${l.dateId}?section=shared`)
+                }
+              >
+                <strong>{l.personName || l.label || "Liste commune"}</strong>
+                <span className="sgi-mine-meta">
+                  {l.giftCount} idée{l.giftCount > 1 ? "s" : ""} ·{" "}
+                  {l.role === "member"
+                    ? `${l.memberCount} gestionnaire${l.memberCount > 1 ? "s" : ""}`
+                    : "invité en lecture"}
+                </span>
+                <span className="sgi-pending-hint">
+                  {l.role === "member"
+                    ? "Ouvrir la liste et gérer ses accès →"
+                    : "Ouvrir la liste →"}
+                </span>
+              </button>
+              <button
+                type="button"
+                className="sgi-leave-btn"
+                disabled={busy}
+                onClick={() => leave(l)}
+              >
+                {l.role === "member" ? "Quitter" : "Ne plus suivre"}
+              </button>
+            </div>
           ))}
         </section>
       )}

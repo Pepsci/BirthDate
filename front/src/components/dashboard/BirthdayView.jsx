@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import apiHandler from "../../api/apiHandler";
 import FriendProfile from "../profil/FriendProfile";
 
@@ -10,6 +10,11 @@ import FriendProfile from "../profil/FriendProfile";
 const BirthdayView = () => {
   const { id } = useParams(); // Récupère l'ID depuis l'URL
   const navigate = useNavigate();
+  // `?section=shared` ouvre la carte directement sur la liste commune. Le menu
+  // « Listes communes » y envoie : choisir une liste dans un menu de listes
+  // doit mener à la liste, pas à la fiche qui la porte.
+  const [searchParams] = useSearchParams();
+  const initialSection = searchParams.get("section") || "info";
   const [birthday, setBirthday] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -87,7 +92,13 @@ const BirthdayView = () => {
   }
 
   // Afficher FriendProfile avec les données chargées
-  return <FriendProfile date={birthday} onCancel={handleCancel} />;
+  return (
+    <FriendProfile
+      date={birthday}
+      onCancel={handleCancel}
+      initialSection={initialSection}
+    />
+  );
 };
 
 export default BirthdayView;

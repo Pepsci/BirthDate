@@ -9,8 +9,18 @@ export interface SharedGift extends Gift {
   addedBy?: { _id: string; name: string; surname?: string } | null;
   /** Membre qui s'est réservé ce cadeau, ou null s'il est libre. */
   reservedBy?: { _id: string; name: string; surname?: string } | null;
+  /**
+   * Prénom d'un visiteur venu du lien public, qui n'a pas de compte. Renvoyé
+   * aux seuls membres — un invité ne voit jamais qui réserve.
+   */
+  reservedByGuest?: string | null;
   reservedAt?: string | null;
-  /** Vue « invité » : le serveur remplace les identités par ces booléens. */
+  /**
+   * Réservé, par qui que ce soit — membre OU visiteur du lien public.
+   * Calculé par le serveur pour les deux rôles : les membres ne le recevaient
+   * pas et testaient `reservedBy` seul, donc une réservation venue du lien
+   * public n'apparaissait pas chez eux.
+   */
   isReserved?: boolean;
   reservedByMe?: boolean;
 }
@@ -204,6 +214,14 @@ export interface SharedListShareSettings {
   isPublic: boolean;
   publicSlug: string | null;
   publicUrl: string | null;
+  /** Code qui ouvre la liste depuis le lien public, s'il en existe un. */
+  accessCode: string | null;
+  /**
+   * Le même lien, code inclus. Depuis que le code garde la porte, envoyer le
+   * lien nu oblige à envoyer le code dans un second message — et la moitié
+   * des gens ne le font pas. Ce lien-ci suffit à lui seul.
+   */
+  publicUrlWithCode: string | null;
 }
 
 /** État du partage public de la liste (lien consultable sans compte). */

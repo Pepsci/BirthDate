@@ -26,9 +26,22 @@ const sharedGiftSchema = new Schema(
     // concernée n'y a pas accès — donc afficher le nom ne gâche aucune
     // surprise, et c'est ce qui évite le double achat.
     reservedBy: { type: Schema.Types.ObjectId, ref: "User", default: null },
-    // Visiteur du lien public : pas de compte, on ne garde que le prénom qu'il
-    // a saisi. C'est ce qui lui permet ensuite de libérer SA réservation.
+    // Visiteur du lien public : pas de compte. Le prénom est ce que les
+    // membres verront — c'est la seule part de son identité qui sort d'ici.
     reservedByGuest: { type: String, default: null },
+    // ⚠️ Le prénom NE PEUT PAS servir de preuve d'identité. Il l'a fait, et
+    // ça donnait deux défauts : le serveur ne savait pas reconnaître le
+    // navigateur du réserveur (tout le monde voyait « libérer ma
+    // réservation »), et connaître un prénom suffisait à défaire la
+    // réservation de quelqu'un d'autre. Le jeton, lui, est tiré au hasard et
+    // ne quitte jamais le navigateur du visiteur — sauf par le mail de
+    // confirmation, qui est justement ce qui lui permet de retrouver sa
+    // réservation depuis un autre appareil.
+    reservedByGuestToken: { type: String, default: null },
+    // Facultatif : uniquement pour l'accusé de réception et le lien de
+    // gestion. Jamais renvoyée par l'API — ni aux membres, ni sur la page
+    // publique — et jamais réutilisée pour autre chose.
+    reservedByGuestEmail: { type: String, default: null },
     reservedAt: { type: Date, default: null },
   },
   { timestamps: true },
@@ -53,9 +66,10 @@ const sharedGiftListSchema = new Schema(
       },
     ],
 
-    // Code demandé aux visiteurs du lien public AU MOMENT DE RÉSERVER — jamais
-    // pour consulter. Même principe que le code ami des wishlists : le lien
-    // circule librement, mais bloquer un cadeau demande de connaître le code.
+    // Code demandé aux visiteurs du lien public POUR OUVRIR LA LISTE. Tant
+    // qu'il n'est pas donné, l'API ne renvoie même pas les idées : le lien
+    // seul ne montre rien. Une liste sans code reste consultable et
+    // réservable avec le lien seul.
     accessCode: { type: String, default: null },
     // Libellé indicatif (ex : "Idées pour Tom")
     label: { type: String, default: null },

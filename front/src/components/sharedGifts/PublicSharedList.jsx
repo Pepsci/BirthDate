@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
 import "./css/publicSharedList.css";
@@ -34,17 +34,83 @@ function withPreposition(name) {
   return /[aeiouyàâäéèêëîïôöùûü]/.test(first) ? `d'${name}` : `de ${name}`;
 }
 
-// Identite du visiteur, conservee localement : c'est elle qui lui permettra
-// de liberer SA reservation plus tard, depuis le meme navigateur.
+// ── Identite du visiteur ────────────────────────────────────────────────────
+// Le prenom ne peut PAS jouer ce role : il ne prouve rien, il se devine, et
+// le serveur ne peut pas s'en servir pour reconnaitre le navigateur qui a
+// reserve. D'ou un jeton tire au hasard, garde en local — c'est lui qui vaut
+// « c'est bien moi », et lui seul autorise a liberer une reservation.
+const tokenKey = "psl_guest_token";
 const nameKey = "psl_guest_name";
+const emailKey = "psl_guest_email";
 const codeKey = (slug) => `psl_code_${slug}`;
+
+/** Lecture tolerante : un navigateur peut refuser le stockage local. */
+function readLocal(key) {
+  try {
+    return localStorage.getItem(key) || "";
+  } catch {
+    return "";
+  }
+}
+
+function writeLocal(key, value) {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    /* navigation privee, stockage bloque : on continue sans memoriser */
+  }
+}
+
+/**
+ * Jeton du visiteur. `randomUUID` est absent des contextes non securises
+ * (http) et des navigateurs anciens : le repli doit rester assez long pour
+ * que le serveur l'accepte (16 caracteres minimum).
+ */
+function newToken() {
+  return typeof crypto !== "undefined" && crypto.randomUUID
+    ? crypto.randomUUID()
+    : `g_${Date.now().toString(36)}_${Math.random().toString(36).slice(2)}${Math.random().toString(36).slice(2)}`;
+}
+
+/**
+ * Identite du visiteur pour cette visite, etablie UNE fois avant tout appel.
+ *
+ * ⚠️ L'ordre compte. Le lien du mail de confirmation porte le jeton (`g`) et
+ * le code (`c`) : c'est ce qui permet de retrouver sa reservation depuis un
+ * autre appareil, ou le stockage local est vide. Si on lit le stockage local
+ * avant de regarder l'URL, on repart avec un jeton tout neuf et le lien du
+ * mail ne sert plus a rien — la fonctionnalite entiere tombe.
+ *
+ * L'adresse est nettoyee ensuite : un copier-coller de l'URL ne doit pas
+ * diffuser le jeton de quelqu'un.
+ */
+function bootstrapGuest(slug) {
+  const params = new URLSearchParams(window.location.search);
+  const fromLink = params.get("g");
+  const codeFromLink = params.get("c");
+
+  if (fromLink && fromLink.length >= 16) writeLocal(tokenKey, fromLink);
+
+  let token = readLocal(tokenKey);
+  if (!token) {
+    token = newToken();
+    writeLocal(tokenKey, token);
+  }
+
+  const code = codeFromLink || readLocal(codeKey(slug)) || "";
+  if (codeFromLink || fromLink) {
+    window.history.replaceState({}, "", window.location.pathname);
+  }
+  return { token, code };
+}
 
 /**
  * Vue publique d'une liste d'idees commune — /liste/:slug, sans compte.
  *
- * Le lien seul suffit pour CONSULTER. Reserver demande le code de la liste,
- * exactement comme le code ami des wishlists personnelles : le lien peut donc
- * circuler librement sans que quiconque puisse bloquer tous les cadeaux.
+ * Le CODE OUVRE LA LISTE : tant qu'il n'est pas donne, l'API ne renvoie meme
+ * pas les idees. Le lien seul ne montre donc rien, et peut circuler sans
+ * exposer ce que quelqu'un prepare. Une liste sans code reste ouverte au lien
+ * seul, c'est le choix de celui qui partage.
  *
  * Les prenoms des reserveurs ne sont jamais exposes ici — un lien public peut
  * etre transfere a la personne concernee. Seuls les membres, dans
@@ -58,87 +124,143 @@ export default function PublicSharedList() {
   const [error, setError] = useState(null);
   const [brokenImages, setBrokenImages] = useState(() => new Set());
 
-  const [guestName, setGuestName] = useState(
-    () => localStorage.getItem(nameKey) || "",
-  );
-  const [code, setCode] = useState(
-    () => localStorage.getItem(codeKey(publicSlug)) || "",
-  );
+  // Etabli avant le premier rendu et fige pour toute la visite.
+  const boot = useRef(null);
+  if (boot.current === null) boot.current = bootstrapGuest(publicSlug);
+  const guestToken = boot.current.token;
 
-  const [pendingGift, setPendingGift] = useState(null); // { id, action }
-  const [modalOpen, setModalOpen] = useState(false);
-  const [nameInput, setNameInput] = useState("");
+  const [guestName, setGuestName] = useState(() => readLocal(nameKey));
+  const [guestEmail, setGuestEmail] = useState(() => readLocal(emailKey));
+  const [code, setCode] = useState("");
+
+  // Deverrouillage
   const [codeInput, setCodeInput] = useState("");
+  const [unlockError, setUnlockError] = useState("");
+  const [unlocking, setUnlocking] = useState(false);
+
+  // Saisie prenom / mail avant la premiere reservation
+  const [pendingGift, setPendingGift] = useState(null);
+  const [nameInput, setNameInput] = useState("");
+  const [emailInput, setEmailInput] = useState("");
   const [modalError, setModalError] = useState("");
   const [workingId, setWorkingId] = useState(null);
 
-  const fetchList = useCallback(async () => {
-    try {
-      const res = await axios.get(
-        `${API_URL}/shared-gifts/public/${publicSlug}`,
-      );
-      setData(res.data);
-    } catch (err) {
-      setError(
-        err?.response?.status === 404
-          ? "Cette liste n'existe pas ou n'est plus partagee."
-          : "Impossible de charger cette liste pour le moment.",
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, [publicSlug]);
+  /**
+   * Charge la liste. Sans code on ne recoit que la coquille (titre + « il faut
+   * un code ») ; avec un code valide, les idees.
+   */
+  const fetchList = useCallback(
+    async (withCode) => {
+      try {
+        const shell = await axios.get(
+          `${API_URL}/shared-gifts/public/${publicSlug}`,
+        );
+
+        if (!shell.data.locked) {
+          setData(shell.data);
+          return true;
+        }
+
+        setData(shell.data);
+        if (!withCode) return false;
+
+        const full = await axios.post(
+          `${API_URL}/shared-gifts/public/${publicSlug}/view`,
+          { code: withCode, guestToken },
+        );
+        setData(full.data);
+        setCode(withCode);
+        writeLocal(codeKey(publicSlug), withCode);
+        return true;
+      } catch (err) {
+        const status = err?.response?.status;
+        if (status === 403) return false;
+        setError(
+          status === 404
+            ? "Cette liste n'existe pas ou n'est plus partagee."
+            : "Impossible de charger cette liste pour le moment.",
+        );
+        return false;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [publicSlug, guestToken],
+  );
 
   useEffect(() => {
-    fetchList();
+    fetchList(boot.current.code);
   }, [fetchList]);
 
-  // Envoie la reservation. Retourne false si le serveur refuse le code, pour
-  // que l'appelant puisse redemander une saisie plutot qu'afficher une erreur.
-  const send = async (giftId, action, withName, withCode) => {
+  const submitUnlock = async (e) => {
+    e.preventDefault();
+    const c = codeInput.trim().toUpperCase();
+    if (!c) {
+      setUnlockError("Saisis le code de la liste.");
+      return;
+    }
+    setUnlocking(true);
+    const ok = await fetchList(c);
+    setUnlocking(false);
+    setUnlockError(ok ? "" : "Ce code ne correspond pas a cette liste.");
+  };
+
+  /**
+   * Envoie une reservation ou une liberation. Renvoie le `reason` du serveur
+   * en cas de refus — « code invalide » et « ce n'est pas ta reservation »
+   * arrivent tous deux en 403, et les confondre affichait « code incorrect »
+   * a quelqu'un dont le code etait bon.
+   */
+  const send = async (giftId, action, payload) => {
     setWorkingId(giftId);
     try {
-      await axios.post(
+      const res = await axios.post(
         `${API_URL}/shared-gifts/public/${publicSlug}/gifts/${giftId}/${action}`,
-        { guestName: withName, code: withCode },
+        { code, guestToken, ...payload },
       );
-      await fetchList();
-      return true;
+      setData(res.data);
+      return { ok: true };
     } catch (err) {
-      const status = err?.response?.status;
-      if (status === 403) return false;
-      setError(
-        err?.response?.data?.message ?? "L'operation n'a pas pu aboutir.",
-      );
-      return true;
+      return {
+        ok: false,
+        reason: err?.response?.data?.reason ?? null,
+        message: err?.response?.data?.message ?? null,
+      };
     } finally {
       setWorkingId(null);
     }
   };
 
-  // Reserver / liberer. On ouvre la fenetre de saisie seulement si une
-  // information manque (prenom, ou code quand la liste en exige un).
-  const act = async (gift, action) => {
-    const needsCode = data?.requiresCode && !code;
-    if (!guestName || needsCode) {
-      setPendingGift({ id: gift._id, action });
-      setNameInput(guestName);
-      setCodeInput(code);
-      setModalError("");
-      setModalOpen(true);
+  const handleFailure = (res) => {
+    if (res.reason === "BAD_CODE") {
+      // Le code a change pendant la visite : on renvoie a la porte.
+      writeLocal(codeKey(publicSlug), "");
+      setCode("");
+      setData((d) => (d ? { ...d, locked: true, gifts: [] } : d));
+      setUnlockError("Le code de cette liste a change.");
       return;
     }
-    const ok = await send(gift._id, action, guestName, code);
-    if (!ok) {
-      // Code devenu invalide (change par un membre) : on le redemande.
-      localStorage.removeItem(codeKey(publicSlug));
-      setCode("");
-      setPendingGift({ id: gift._id, action });
+    setError(res.message ?? "L'operation n'a pas pu aboutir.");
+  };
+
+  const reserve = async (gift) => {
+    if (!guestName) {
+      setPendingGift(gift._id);
       setNameInput(guestName);
-      setCodeInput("");
-      setModalError("Ce code n'est plus valide.");
-      setModalOpen(true);
+      setEmailInput(guestEmail);
+      setModalError("");
+      return;
     }
+    const res = await send(gift._id, "reserve", {
+      guestName,
+      guestEmail: guestEmail || undefined,
+    });
+    if (!res.ok) handleFailure(res);
+  };
+
+  const release = async (gift) => {
+    const res = await send(gift._id, "unreserve", {});
+    if (!res.ok) handleFailure(res);
   };
 
   const submitModal = async (e) => {
@@ -148,19 +270,24 @@ export default function PublicSharedList() {
       setModalError("Indique ton prenom.");
       return;
     }
-    const c = codeInput.trim().toUpperCase();
-    const ok = await send(pendingGift.id, pendingGift.action, n, c);
-    if (!ok) {
-      setModalError("Code d'acces invalide.");
+    const mail = emailInput.trim();
+    const res = await send(pendingGift, "reserve", {
+      guestName: n,
+      guestEmail: mail || undefined,
+    });
+    if (!res.ok) {
+      if (res.reason === "BAD_EMAIL") {
+        setModalError("Cette adresse email ne semble pas valide.");
+        return;
+      }
+      setPendingGift(null);
+      handleFailure(res);
       return;
     }
-    localStorage.setItem(nameKey, n);
+    writeLocal(nameKey, n);
     setGuestName(n);
-    if (c) {
-      localStorage.setItem(codeKey(publicSlug), c);
-      setCode(c);
-    }
-    setModalOpen(false);
+    writeLocal(emailKey, mail);
+    setGuestEmail(mail);
     setPendingGift(null);
   };
 
@@ -177,22 +304,66 @@ export default function PublicSharedList() {
     );
   }
 
+  const header = (
+    <header className="psl-header">
+      <div className="psl-header-inner">
+        <a href="https://birthreminder.com" className="psl-logo">
+          🎂 BirthReminder
+        </a>
+        <p className="psl-tagline">
+          {data?.label
+            ? `Liste de cadeaux ${withPreposition(data.label)}`
+            : "Liste de cadeaux commune"}
+        </p>
+      </div>
+    </header>
+  );
+
+  // ── Porte fermee ──────────────────────────────────────────────────────────
+  // Les idees ne sont pas dans `data` : le serveur ne les a pas envoyees.
+  // Rien a cacher cote client, donc rien a contourner en lisant la page.
+  if (data?.locked) {
+    return (
+      <div className="psl-page">
+        {header}
+        <main className="psl-main">
+          <div className="psl-gate">
+            <span className="psl-gate-icon">🔒</span>
+            <h2 className="psl-gate-title">Cette liste est protegee</h2>
+            <p className="psl-gate-sub">
+              Saisis le code communique par la personne qui t'a partage le
+              lien pour voir les idees et en reserver une.
+            </p>
+            <form onSubmit={submitUnlock} className="psl-gate-form">
+              <input
+                type="text"
+                value={codeInput}
+                onChange={(e) => setCodeInput(e.target.value.toUpperCase())}
+                placeholder="ABC123"
+                maxLength={6}
+                autoFocus
+                className="psl-modal-input psl-modal-input--code"
+              />
+              {unlockError && <p className="psl-modal-error">{unlockError}</p>}
+              <button
+                type="submit"
+                className="psl-modal-confirm"
+                disabled={unlocking}
+              >
+                {unlocking ? "Verification…" : "Ouvrir la liste"}
+              </button>
+            </form>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   const gifts = data?.gifts ?? [];
 
   return (
     <div className="psl-page">
-      <header className="psl-header">
-        <div className="psl-header-inner">
-          <a href="https://birthreminder.com" className="psl-logo">
-            🎂 BirthReminder
-          </a>
-          <p className="psl-tagline">
-            {data?.label
-              ? `Liste de cadeaux ${withPreposition(data.label)}`
-              : "Liste de cadeaux commune"}
-          </p>
-        </div>
-      </header>
+      {header}
 
       <main className="psl-main">
         {error && <p className="psl-inline-error">{error}</p>}
@@ -246,7 +417,7 @@ export default function PublicSharedList() {
                       )}
                       {g.isReserved && (
                         <span className="psl-badge psl-badge--reserved">
-                          Reserve
+                          {g.reservedByMe ? "Ta reservation" : "Reserve"}
                         </span>
                       )}
                     </div>
@@ -262,20 +433,36 @@ export default function PublicSharedList() {
                       </a>
                     )}
 
-                    <button
-                      type="button"
-                      className={`psl-btn${g.isReserved ? " psl-btn--free" : " psl-btn--reserve"}`}
-                      disabled={workingId === g._id}
-                      onClick={() =>
-                        act(g, g.isReserved ? "unreserve" : "reserve")
-                      }
-                    >
-                      {workingId === g._id
-                        ? "…"
-                        : g.isReserved
-                          ? "Liberer ma reservation"
-                          : "Je m'en occupe"}
-                    </button>
+                    {/* Trois etats bien distincts. Avant, tout cadeau reserve
+                        affichait « liberer ma reservation » a TOUT LE MONDE :
+                        le serveur ne pouvait pas dire qui avait reserve, donc
+                        chaque visiteur croyait que la reservation etait la
+                        sienne — et se prenait un refus en cliquant. */}
+                    {g.reservedByMe ? (
+                      <button
+                        type="button"
+                        className="psl-btn psl-btn--free"
+                        disabled={workingId === g._id}
+                        onClick={() => release(g)}
+                      >
+                        {workingId === g._id
+                          ? "…"
+                          : "Liberer ma reservation"}
+                      </button>
+                    ) : g.isReserved ? (
+                      <button type="button" className="psl-btn" disabled>
+                        Deja reserve
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className="psl-btn psl-btn--reserve"
+                        disabled={workingId === g._id}
+                        onClick={() => reserve(g)}
+                      >
+                        {workingId === g._id ? "…" : "Je m'en occupe"}
+                      </button>
+                    )}
                   </div>
                 </article>
               ))}
@@ -289,7 +476,7 @@ export default function PublicSharedList() {
         </p>
       </main>
 
-      {modalOpen && (
+      {pendingGift && (
         <div className="psl-modal-overlay">
           <div className="psl-modal">
             <h3>Avant de reserver</h3>
@@ -305,21 +492,22 @@ export default function PublicSharedList() {
                 className="psl-modal-input"
               />
 
-              {data?.requiresCode && (
-                <>
-                  <label className="psl-modal-label">
-                    Code de la liste
-                  </label>
-                  <input
-                    type="text"
-                    value={codeInput}
-                    onChange={(e) => setCodeInput(e.target.value.toUpperCase())}
-                    placeholder="ABC123"
-                    maxLength={6}
-                    className="psl-modal-input psl-modal-input--code"
-                  />
-                </>
-              )}
+              <label className="psl-modal-label">
+                Ton email <span className="psl-optional">(facultatif)</span>
+              </label>
+              <input
+                type="email"
+                value={emailInput}
+                onChange={(e) => setEmailInput(e.target.value)}
+                placeholder="marie@exemple.fr"
+                maxLength={120}
+                className="psl-modal-input"
+              />
+              <p className="psl-modal-hint">
+                Pour recevoir la confirmation et retrouver ta reservation
+                depuis un autre appareil. Sans email, elle ne sera modifiable
+                que depuis ce navigateur.
+              </p>
 
               {modalError && <p className="psl-modal-error">{modalError}</p>}
 
@@ -327,15 +515,12 @@ export default function PublicSharedList() {
                 <button
                   type="button"
                   className="psl-modal-cancel"
-                  onClick={() => {
-                    setModalOpen(false);
-                    setPendingGift(null);
-                  }}
+                  onClick={() => setPendingGift(null)}
                 >
                   Annuler
                 </button>
                 <button type="submit" className="psl-modal-confirm">
-                  Valider
+                  Reserver
                 </button>
               </div>
             </form>

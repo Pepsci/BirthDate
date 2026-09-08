@@ -300,3 +300,60 @@
   color: #fff;
   border: none;
 }
+
+/* ── Porte d'entree ───────────────────────────────────────────────────────
+   Le code n'ouvrait avant que le bouton « reserver » : la liste s'affichait
+   a qui recevait le lien. Il ouvre desormais la page entiere, et les idees
+   ne sont meme pas envoyees tant qu'il n'est pas donne. */
+.psl-gate {
+  max-width: 380px;
+  margin: 48px auto;
+  padding: 28px 24px;
+  text-align: center;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+}
+
+.psl-gate-icon {
+  font-size: 34px;
+  display: block;
+  margin-bottom: 12px;
+}
+
+.psl-gate-title {
+  margin: 0 0 8px;
+  font-size: 18px;
+  color: var(--text-primary);
+}
+
+.psl-gate-sub {
+  margin: 0 0 20px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+.psl-gate-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.psl-gate-form .psl-modal-confirm {
+  width: 100%;
+}
+
+/* Champ facultatif : la mention doit se lire comme une permission de passer
+   outre, pas comme une precision qu'on survole. */
+.psl-optional {
+  font-weight: 400;
+  color: var(--text-tertiary);
+}
+
+.psl-modal-hint {
+  margin: 6px 0 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-tertiary);
+}

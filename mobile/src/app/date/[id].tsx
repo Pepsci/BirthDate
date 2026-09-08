@@ -102,7 +102,14 @@ const UNDO_ACTION = "#93c5fd";
 const UNDO_TRACK = "rgba(255,255,255,0.2)";
 
 export default function DateDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  /**
+   * `focus=shared` ouvre la carte directement sur la liste commune, sans
+   * passer par la fiche puis l'onglet. Le menu « Listes communes » y envoie :
+   * quelqu'un qui choisit une liste dans une liste de listes veut la liste,
+   * pas la carte qui la porte.
+   */
+  const { id, focus } = useLocalSearchParams<{ id: string; focus?: string }>();
+  const openOnShared = focus === "shared";
   const router = useRouter();
   const styles = useThemedStyles(makeStyles);
   // Voir use-scroll-bounds-guard : changer d'onglet (Idées / Wishlist / Liste
@@ -121,12 +128,14 @@ export default function DateDetailScreen() {
   const [editingGift, setEditingGift] = useState<Gift | null>(null);
   const [busy, setBusy] = useState(false);
   // Vue de la carte : "info" (accueil) ou "gifts" (cadeaux plein écran)
-  const [view, setView] = useState<"info" | "gifts">("info");
+  const [view, setView] = useState<"info" | "gifts">(
+    openOnShared ? "gifts" : "info",
+  );
   // Mode "liste commune seule" (ouvert via son bouton dédié) → masque les onglets
-  const [sharedOnly, setSharedOnly] = useState(false);
+  const [sharedOnly, setSharedOnly] = useState(openOnShared);
   // Vue cadeaux : mes idées / sa wishlist / liste commune
   const [giftTab, setGiftTab] = useState<"ideas" | "wishlist" | "shared">(
-    "ideas",
+    openOnShared ? "shared" : "ideas",
   );
   // Filtre des idées par occasion ("all" ou une valeur d'occasion)
   const [giftFilter, setGiftFilter] = useState<string>("all");
@@ -361,14 +370,27 @@ export default function DateDetailScreen() {
     g.reservedByMe ?? g.reservedBy?._id === user?._id;
 
   /** Réservé, tout court — un invité ne reçoit pas `reservedBy`. */
-  const isReserved = (g: SharedGift) => g.isReserved ?? !!g.reservedBy;
+  const isReserved = (g: SharedGift) =>
+    g.isReserved ?? (!!g.reservedBy || !!g.reservedByGuest);
+
+  /**
+   * Qui s'en occupe, pour un membre. `reservedByGuest` est un visiteur venu
+   * du lien public : sans lui, une réservation faite depuis le web ne portait
+   * aucun nom dans l'app, et le cadeau restait affiché comme libre.
+   */
+  const reserverName = (g: SharedGift) =>
+    g.reservedBy?.name ?? g.reservedByGuest ?? null;
 
   const toggleSharedReservation = (g: SharedGift) => {
     if (!entry?.sharedGiftList || busy) return;
     const mine = isReservedByMe(g);
-    if (isReserved(g) && !mine) return; // réservé par quelqu'un d'autre
+    // Réservation venue du lien public : le visiteur n'a pas de compte, et
+    // s'il a perdu son jeton personne ne peut plus libérer l'idée. Les
+    // membres gèrent la liste, ce sont eux qui peuvent la débloquer.
+    const guestHeld = !!g.reservedByGuest && isSharedMember;
+    if (isReserved(g) && !mine && !guestHeld) return;
     runShared(() =>
-      mine
+      mine || guestHeld
         ? unreserveSharedGift(entry.sharedGiftList!, g._id)
         : reserveSharedGift(entry.sharedGiftList!, g._id),
     );
@@ -1430,6 +1452,52 @@ export default function DateDetailScreen() {
                 <Text style={styles.muted}>Aucune idée commune pour l'instant.</Text>
               )}
 
+              {/* ── Vue INVITÉ ────────────────────────────────────────
+                  Un invité ne fait que deux choses : regarder et réserver.
+                  Lui montrer la grille des membres — pastille de statut « à
+                  acheter », bouton de changement d'état — lui proposait des
+                  commandes inertes et lui demandait de comprendre un
+                  vocabulaire de gestion qui ne le concerne pas. On reprend
+                  donc exactement la carte des wishlists, où la seule question
+                  posée est : disponible, ou déjà pris ? */}
+              {!isSharedMember ? (
+                <View style={giftGridStyles.grid}>
+                  {sharedList.gifts.map((g) => {
+                    const mine = isReservedByMe(g);
+                    const taken = isReserved(g);
+                    return (
+                      <GiftGridCard
+                        key={g._id}
+                        imageUri={g.image}
+                        placeholderEmoji={occasionEmoji(g.occasion)}
+                        title={g.giftName}
+                        price={g.price ?? null}
+                        dimmed={taken && !mine}
+                        badge={
+                          mine
+                            ? {
+                                label: "Réservé par toi",
+                                color: colors.successStrong,
+                                bg: colors.successSoft,
+                              }
+                            : taken
+                              ? {
+                                  label: "Réservé",
+                                  color: colors.sub,
+                                  bg: colors.bgSecondary,
+                                }
+                              : {
+                                  label: "Disponible",
+                                  color: colors.sub,
+                                  bg: colors.bgSecondary,
+                                }
+                        }
+                        onPress={() => setSelectedSharedGift(g)}
+                      />
+                    );
+                  })}
+                </View>
+              ) : (
               <View style={styles.giftGrid}>
                 {sharedList.gifts
                   .filter(
@@ -1482,7 +1550,9 @@ export default function DateDetailScreen() {
                           et savoir qui s'en occupe est justement ce qui évite
                           le double achat. */}
                       <Pressable
-                        disabled={busy || reservedByOther}
+                        disabled={
+                          busy || (reservedByOther && !g.reservedByGuest)
+                        }
                         onPress={() => toggleSharedReservation(g)}
                         style={[
                           styles.reservePill,
@@ -1500,8 +1570,8 @@ export default function DateDetailScreen() {
                             ? "✓ Tu t'en occupes · annuler"
                             : reservedByOther
                               ? // Le prénom n'est connu que des membres.
-                                g.reservedBy?.name
-                                ? `🔒 Réservé par ${g.reservedBy.name}`
+                                reserverName(g)
+                                ? `🔒 Réservé par ${reserverName(g)}`
                                 : "🔒 Réservé"
                               : "＋ Je m'en occupe"}
                         </Text>
@@ -1533,6 +1603,7 @@ export default function DateDetailScreen() {
                   );
                 })}
               </View>
+              )}
 
               <Pressable onPress={onLeaveShared} style={{ marginTop: 6 }}>
                 <Text style={styles.leaveShared}>
@@ -1632,24 +1703,106 @@ export default function DateDetailScreen() {
           })()}
       </BottomSheet>
 
-      {/* Détail d'un cadeau commun (réutilise le modal cadeau) */}
-      <GiftDetailModal
-        gift={selectedSharedGift as Gift | null}
-        busy={busy}
-        onClose={() => setSelectedSharedGift(null)}
-        onSetStatus={(g, status) =>
-          setSharedGiftStatus(g as SharedGift, status)
-        }
-        onEdit={(g) => {
-          setSelectedSharedGift(null);
-          setShowSharedForm(false);
-          setEditingSharedGift(g as SharedGift);
-        }}
-        onDelete={(g) => {
-          setSelectedSharedGift(null);
-          requestDelete(g, "shared");
-        }}
-      />
+      {/* Détail d'un cadeau commun.
+          ⚠️ Le modal des membres était servi à tout le monde : un invité y
+          trouvait « Modifier », « Supprimer » et les trois statuts, sur une
+          liste qu'il n'a pas le droit de toucher. Le serveur refusait, mais
+          après le geste — et proposer une commande pour la refuser ensuite
+          est pire que ne pas la proposer. */}
+      {isSharedMember ? (
+        <GiftDetailModal
+          gift={selectedSharedGift as Gift | null}
+          busy={busy}
+          onClose={() => setSelectedSharedGift(null)}
+          onSetStatus={(g, status) =>
+            setSharedGiftStatus(g as SharedGift, status)
+          }
+          onEdit={(g) => {
+            setSelectedSharedGift(null);
+            setShowSharedForm(false);
+            setEditingSharedGift(g as SharedGift);
+          }}
+          onDelete={(g) => {
+            setSelectedSharedGift(null);
+            requestDelete(g, "shared");
+          }}
+        />
+      ) : (
+        <BottomSheet
+          visible={!!selectedSharedGift}
+          onClose={() => setSelectedSharedGift(null)}
+        >
+          {selectedSharedGift &&
+            (() => {
+              const g = selectedSharedGift;
+              const mine = isReservedByMe(g);
+              const taken = isReserved(g);
+              return (
+                <>
+                  {g.image ? (
+                    <Image
+                      source={{ uri: g.image }}
+                      style={styles.sheetImage}
+                    />
+                  ) : (
+                    <View
+                      style={[styles.sheetImage, styles.sheetImgPlaceholder]}
+                    >
+                      <Text style={{ fontSize: 56 }}>
+                        {occasionEmoji(g.occasion)}
+                      </Text>
+                    </View>
+                  )}
+                  <Text style={styles.sheetTitle}>{g.giftName}</Text>
+                  <View style={styles.sheetInfoRow}>
+                    <Text style={styles.sheetPrice}>
+                      {g.price != null ? `${g.price} €` : "Prix libre"}
+                    </Text>
+                    {g.url ? (
+                      <Text
+                        style={styles.link}
+                        onPress={() => Linking.openURL(g.url!)}
+                      >
+                        🔗 Voir le produit
+                      </Text>
+                    ) : null}
+                  </View>
+                  {taken && !mine && (
+                    <Text style={styles.sheetReserved}>
+                      🧑 Déjà réservé par quelqu'un
+                    </Text>
+                  )}
+                  {!taken && (
+                    <Pressable
+                      style={styles.sheetPrimaryBtn}
+                      disabled={busy}
+                      onPress={() => {
+                        setSelectedSharedGift(null);
+                        toggleSharedReservation(g);
+                      }}
+                    >
+                      <Text style={styles.sheetPrimaryText}>🎁 Je réserve</Text>
+                    </Pressable>
+                  )}
+                  {mine && (
+                    <Pressable
+                      style={styles.sheetGhostBtn}
+                      disabled={busy}
+                      onPress={() => {
+                        setSelectedSharedGift(null);
+                        toggleSharedReservation(g);
+                      }}
+                    >
+                      <Text style={styles.sheetGhostText}>
+                        ↩️ Annuler ma réservation
+                      </Text>
+                    </Pressable>
+                  )}
+                </>
+              );
+            })()}
+        </BottomSheet>
+      )}
 
       {/* Sélecteur d'ami + mode de partage pour créer une liste commune */}
       <BottomSheet
@@ -1775,7 +1928,9 @@ export default function DateDetailScreen() {
             <Text style={styles.publicShareTitle}>Lien public</Text>
             <Text style={styles.publicShareSub}>
               {shareSettings?.isPublic
-                ? "Toute personne ayant le lien peut la consulter"
+                ? shareSettings.accessCode
+                  ? "Le code est demandé pour ouvrir la liste"
+                  : "Toute personne ayant le lien peut la consulter"
                 : "Génère un lien à envoyer à qui tu veux"}
             </Text>
           </View>
@@ -1793,14 +1948,38 @@ export default function DateDetailScreen() {
         {shareSettings?.isPublic && shareSettings.publicUrl && (
           <>
             <Text style={styles.publicShareUrl} numberOfLines={1}>
-              {shareSettings.publicUrl}
+              {shareSettings.publicUrlWithCode ?? shareSettings.publicUrl}
             </Text>
+            {/* Le lien qui porte le code est proposé en premier : c'est le
+                seul qui marche en un envoi. Le lien nu reste dessous pour
+                qui préfère donner le code de vive voix. */}
             <Pressable
               style={styles.publicShareBtn}
-              onPress={() => Share.share({ message: shareSettings.publicUrl! })}
+              onPress={() =>
+                Share.share({
+                  message:
+                    shareSettings.publicUrlWithCode ?? shareSettings.publicUrl!,
+                })
+              }
             >
-              <Text style={styles.publicShareBtnText}>📤 Envoyer le lien</Text>
+              <Text style={styles.publicShareBtnText}>
+                {shareSettings.accessCode
+                  ? "📤 Envoyer le lien (code inclus)"
+                  : "📤 Envoyer le lien"}
+              </Text>
             </Pressable>
+            {!!shareSettings.accessCode && (
+              <Pressable
+                style={styles.publicShareBtn}
+                onPress={() =>
+                  Share.share({ message: shareSettings.publicUrl! })
+                }
+              >
+                <Text style={styles.publicShareBtnText}>
+                  🔗 Envoyer le lien sans le code
+                </Text>
+              </Pressable>
+            )}
           </>
         )}
 
@@ -1837,8 +2016,8 @@ export default function DateDetailScreen() {
         </Pressable>
 
         <Text style={styles.publicShareSub}>
-          Les invités consultent et réservent, sans modifier la liste. Le code
-          n'est demandé qu'au moment de réserver depuis le lien public.
+          Les invités consultent et réservent, sans modifier la liste. Avec un
+          code, le lien public ne montre rien tant qu'il n'est pas saisi.
         </Text>
       </BottomSheet>
 
