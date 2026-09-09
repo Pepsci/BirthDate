@@ -1,0 +1,84 @@
+/* Fenêtre de confirmation — voir ConfirmModal.jsx */
+
+.cfm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.cfm-box {
+  width: 100%;
+  max-width: 420px;
+  padding: 1.5rem;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+}
+
+.cfm-title {
+  margin: 0 0 0.5rem;
+  font-size: 1.05rem;
+  color: var(--text-primary);
+}
+
+.cfm-message {
+  margin: 0 0 1.35rem;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+/* L'action se place à droite, l'annulation à sa gauche : l'ordre de lecture
+   met la sortie sûre en premier sous le pouce qui remonte. */
+.cfm-actions {
+  display: flex;
+  gap: 0.6rem;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.cfm-btn {
+  padding: 9px 18px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cfm-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.cfm-btn--ghost {
+  border-color: var(--border-color);
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+.cfm-btn--ghost:hover:not(:disabled) {
+  background: var(--bg-secondary);
+}
+
+.cfm-btn--danger {
+  background: var(--danger, #ef4444);
+  color: #fff;
+}
+
+.cfm-btn--primary {
+  background: var(--primary);
+  color: #fff;
+}
+
+.cfm-btn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}

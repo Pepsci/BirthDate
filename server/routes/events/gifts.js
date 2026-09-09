@@ -6,6 +6,42 @@ const { checkGuestOrAuth } = require("../../middleware/checkGuestOrAuth");
 const { rejectIfCancelled } = require("../../middleware/rejectIfCancelled");
 const { notifyOrganizer } = require("./notifyOrganizer");
 
+/**
+ * Vue d'une proposition de cadeau, adaptée à celui qui la demande.
+ *
+ * ⚠️ `guestVotes` ne doit JAMAIS sortir d'ici. Ce tableau contient les jetons
+ * des invités sans compte — et un jeton d'invité ouvre l'événement à qui le
+ * détient (voir checkGuestOrAuth). Les documents étaient renvoyés bruts : tout
+ * participant, y compris un autre invité, pouvait lire les jetons des autres
+ * dans la réponse et se faire passer pour eux.
+ *
+ * On renvoie donc des comptes, pas des identités :
+ *  - `voteCount` additionne les votes des comptes ET ceux des invités. Les
+ *    clients comptaient `votes.length` seul, si bien que les votes des invités
+ *    n'apparaissaient nulle part côté mobile ;
+ *  - `votedByMe` répond à la seule question que le client se pose, sans qu'il
+ *    ait besoin de comparer quoi que ce soit lui-même.
+ */
+function serializeProposal(doc, { userId, guestToken } = {}) {
+  const o = doc?.toObject ? doc.toObject() : { ...doc };
+  const guestVotes = o.guestVotes || [];
+  const votes = o.votes || [];
+  return {
+    ...o,
+    guestVotes: undefined,
+    voteCount: votes.length + guestVotes.length,
+    votedByMe: userId
+      ? votes.some((v) => String(v?._id ?? v) === String(userId))
+      : !!guestToken && guestVotes.includes(guestToken),
+  };
+}
+
+/** Contexte d'appel, pour `serializeProposal`. */
+const viewerOf = (req) => ({
+  userId: req.payload?._id,
+  guestToken: req.headers["x-guest-token"],
+});
+
 /*
  * POST /api/events/:shortId/gifts -> proposer un cadeau
  */
@@ -67,7 +103,7 @@ router.post("/:shortId/gifts", checkGuestOrAuth, rejectIfCancelled, async (req, 
       });
     }
 
-    res.status(201).json(newProposal);
+    res.status(201).json(serializeProposal(newProposal, viewerOf(req)));
   } catch (error) {
     console.error("❌ Error creating gift proposal:", error);
     res.status(500).json({ message: "Erreur serveur" });
@@ -82,7 +118,8 @@ router.get("/:shortId/gifts", checkGuestOrAuth, async (req, res) => {
     const proposals = await EventGiftProposal.find({
       event: req.event._id,
     }).populate("proposedBy", "name surname");
-    res.status(200).json(proposals);
+    const viewer = viewerOf(req);
+    res.status(200).json(proposals.map((p) => serializeProposal(p, viewer)));
   } catch (error) {
     console.error("❌ Error loading gift proposals:", error);
     res.status(500).json({ message: "Erreur serveur" });
@@ -159,7 +196,7 @@ router.post(
         });
       }
 
-      res.status(200).json(proposal);
+      res.status(200).json(serializeProposal(proposal, viewerOf(req)));
     } catch (error) {
       console.error("❌ Error voting for gift:", error);
       res.status(500).json({ message: "Erreur serveur" });
@@ -185,7 +222,7 @@ router.patch(
 
       proposal.selected = !proposal.selected;
       await proposal.save();
-      res.status(200).json(proposal);
+      res.status(200).json(serializeProposal(proposal, viewerOf(req)));
     } catch (error) {
       console.error("❌ Error selecting gift:", error);
       res.status(500).json({ message: "Erreur serveur" });
@@ -216,7 +253,7 @@ router.put("/:shortId/gifts/:giftId", checkGuestOrAuth, rejectIfCancelled, async
     if (price !== undefined) proposal.price = price ? Number(price) : undefined;
     if (image !== undefined) proposal.image = image || undefined;
     await proposal.save();
-    res.status(200).json(proposal);
+    res.status(200).json(serializeProposal(proposal, viewerOf(req)));
   } catch (error) {
     console.error("❌ Error updating gift proposal:", error);
     res.status(500).json({ message: "Erreur serveur" });

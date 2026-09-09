@@ -29,6 +29,7 @@ import {
   RsvpStatus,
   fetchEvent,
   sendRsvp,
+  updateEvent,
   voteDate,
   voteLocation,
   GiftProposal,
@@ -322,6 +323,91 @@ export default function EventDetailScreen() {
     } finally {
       setVoteSending(false);
     }
+  };
+
+  /**
+   * Trancher un vote, côté organisateur.
+   *
+   * ⚠️ Ça n'existait que sur le web : sur mobile, l'organisateur voyait les
+   * résultats sans aucun moyen d'en tirer une conclusion. Il devait rouvrir
+   * « Modifier l'événement » et rebasculer la date en mode fixe — c'est-à-dire
+   * traverser tout le formulaire, sans plus avoir les décomptes sous les yeux
+   * au moment de choisir.
+   *
+   * Confirmation obligatoire : côté serveur, arrêter une date remet toutes les
+   * présences en « en attente » et prévient tout le monde. On ne déclenche pas
+   * ça d'un appui distrait sur une ligne qui, la seconde d'avant, servait à
+   * voter.
+   */
+  const onKeepDate = (optionIso: string) => {
+    if (!shortId || voteSending) return;
+    Alert.alert(
+      "Retenir cette date ?",
+      `${formatEventDate(new Date(optionIso))}\n\nLe vote sera clos. Tous les participants seront prévenus et devront reconfirmer leur présence.`,
+      [
+        { text: "Annuler", style: "cancel" },
+        {
+          text: "Retenir",
+          onPress: async () => {
+            setVoteSending(true);
+            try {
+              await updateEvent(shortId, {
+                selectedDate: optionIso,
+                dateMode: "fixed",
+                fixedDate: optionIso,
+              } as any);
+              await load();
+            } catch (e: any) {
+              setError(e?.message ?? "Impossible de retenir cette date.");
+            } finally {
+              setVoteSending(false);
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  const onKeepLocation = (opt: {
+    _id: string;
+    name?: string;
+    address?: string | null;
+  }) => {
+    if (!shortId || voteSending) return;
+    // Une option de lieu peut n'avoir qu'une adresse : on ne retient jamais un
+    // lieu sans nom affichable, sinon la fiche annoncerait un lieu vide.
+    const label = opt.name || opt.address || "Lieu proposé";
+    Alert.alert(
+      "Retenir ce lieu ?",
+      `${label}\n\nLe vote sera clos et les participants seront prévenus.`,
+      [
+        { text: "Annuler", style: "cancel" },
+        {
+          text: "Retenir",
+          onPress: async () => {
+            setVoteSending(true);
+            try {
+              await updateEvent(shortId, {
+                selectedLocation: {
+                  name: label,
+                  address: opt.address || "",
+                },
+                locationMode: "fixed",
+                fixedLocation: {
+                  name: label,
+                  address: opt.address || "",
+                },
+              } as any);
+              await load();
+            } catch (e: any) {
+              setError(e?.message ?? "Impossible de retenir ce lieu.");
+            } finally {
+              setVoteSending(false);
+            }
+          },
+        },
+      ],
+    );
   };
 
   const onVoteLocation = async (locationId: string) => {
@@ -1122,8 +1208,13 @@ export default function EventDetailScreen() {
             return (
               <Pressable
                 key={opt}
-                disabled={isOrganizer || voteSending}
-                onPress={() => onVoteDate(opt)}
+                disabled={voteSending}
+                // L'organisateur ne vote pas, il tranche : le même appui a
+                // deux sens selon qui appuie, et le libellé sous la liste le
+                // dit explicitement pour lever l'ambiguïté.
+                onPress={() =>
+                  isOrganizer ? onKeepDate(opt) : onVoteDate(opt)
+                }
                 style={[styles.voteOption, votedByMe && styles.voteOptionActive]}
               >
                 <Text
@@ -1137,9 +1228,11 @@ export default function EventDetailScreen() {
               </Pressable>
             );
           })}
-          {showDateVoteSection && !isOrganizer && (
+          {showDateVoteSection && (
             <Text style={styles.voteHint}>
-              Plusieurs choix possibles — appuie pour (dé)cocher.
+              {isOrganizer
+                ? "Appuie sur une date pour la retenir : le vote sera clos et chacun devra reconfirmer sa présence."
+                : "Plusieurs choix possibles — appuie pour (dé)cocher."}
             </Text>
           )}
         </View>
@@ -1160,8 +1253,10 @@ export default function EventDetailScreen() {
             return (
               <Pressable
                 key={opt._id}
-                disabled={isOrganizer || voteSending}
-                onPress={() => onVoteLocation(opt._id)}
+                disabled={voteSending}
+                onPress={() =>
+                  isOrganizer ? onKeepLocation(opt) : onVoteLocation(opt._id)
+                }
                 style={[styles.voteOption, votedByMe && styles.voteOptionActive]}
               >
                 <View style={{ flex: 1 }}>
@@ -1336,7 +1431,9 @@ export default function EventDetailScreen() {
           )}
           <View style={giftGridStyles.grid}>
             {visibleGifts.map((g) => {
-              const votedByMe = !!user && g.votes.includes(user._id);
+              const votedByMe =
+                g.votedByMe ?? (!!user && g.votes.includes(user._id));
+              const voteCount = g.voteCount ?? g.votes.length;
               const by = g.proposedBy
                 ? `par ${g.proposedBy.name}`
                 : g.guestName
@@ -1344,7 +1441,7 @@ export default function EventDetailScreen() {
                   : "";
               const lines = [
                 by,
-                `❤️ ${g.votes.length} vote${g.votes.length > 1 ? "s" : ""}`,
+                `❤️ ${voteCount} vote${voteCount > 1 ? "s" : ""}`,
               ].filter(Boolean) as string[];
               return (
                 <GiftGridCard
@@ -1382,7 +1479,9 @@ export default function EventDetailScreen() {
             {selectedProposal &&
               (() => {
                 const g = selectedProposal;
-                const votedByMe = !!user && g.votes.includes(user._id);
+                const votedByMe =
+                  g.votedByMe ?? (!!user && g.votes.includes(user._id));
+                const voteCount = g.voteCount ?? g.votes.length;
                 const by = g.proposedBy
                   ? `Proposé par ${g.proposedBy.name}`
                   : g.guestName
@@ -1431,7 +1530,7 @@ export default function EventDetailScreen() {
                           votedByMe && styles.sheetVoteTextActive,
                         ]}
                       >
-                        {votedByMe ? "❤️ Voté" : "🤍 Voter"} · {g.votes.length}
+                        {votedByMe ? "❤️ Voté" : "🤍 Voter"} · {voteCount}
                       </Text>
                     </Pressable>
                     {isOrganizer && (

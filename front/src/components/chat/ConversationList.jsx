@@ -19,6 +19,17 @@ function ConversationList({
   const [showNewChat, setShowNewChat] = useState(false);
   const [localConversations, setLocalConversations] = useState(conversations);
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+  /**
+   * Discussions d'événement. Elles n'apparaissaient nulle part dans cette
+   * liste : on ne pouvait les retrouver qu'en rouvrant l'événement, alors que
+   * c'est ici qu'on vient lire ses messages.
+   *
+   * Onglet à part, et non fusion avec les conversations privées : ce ne sont
+   * pas les mêmes objets — l'une se supprime, l'autre appartient à un
+   * événement — et les mêler rendrait le bouton de suppression ambigu.
+   */
+  const [eventChats, setEventChats] = useState([]);
+  const [tab, setTab] = useState("dm");
   const navigate = useNavigate();
 
   const currentUserId = localStorage.getItem("userId");
@@ -190,6 +201,24 @@ function ConversationList({
     }
   };
 
+  useEffect(() => {
+    let alive = true;
+    apiHandler
+      .get("/events/mine/chats")
+      // Une erreur ici ne doit pas priver l'utilisateur de ses conversations
+      // privées : les deux sources sont indépendantes.
+      .then((res) => alive && setEventChats(res.data || []))
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const eventUnread = eventChats.reduce(
+    (n, c) => n + (c.unreadCount || 0),
+    0,
+  );
+
   const getOtherParticipant = (conversation) => {
     return conversation.participants?.find((p) => p?._id && p._id !== currentUserId);
   };
@@ -274,6 +303,72 @@ function ConversationList({
         </div>
       )}
 
+      {/* L'onglet n'apparaît que s'il y a quelque chose derrière : sans
+          événement, il n'ajouterait qu'une décision à prendre. */}
+      {eventChats.length > 0 && (
+        <div className="cl-tabs">
+          <button
+            type="button"
+            className={`cl-tab ${tab === "dm" ? "cl-tab--on" : ""}`}
+            onClick={() => setTab("dm")}
+          >
+            Amis
+          </button>
+          <button
+            type="button"
+            className={`cl-tab ${tab === "events" ? "cl-tab--on" : ""}`}
+            onClick={() => setTab("events")}
+          >
+            Événements
+            {eventUnread > 0 && (
+              <span className="cl-tab-badge">{eventUnread}</span>
+            )}
+          </button>
+        </div>
+      )}
+
+      {tab === "events" ? (
+        <div className="conversations">
+          {eventChats.length === 0 ? (
+            <div className="no-conversations">
+              <p>Aucune discussion d'événement</p>
+            </div>
+          ) : (
+            eventChats.map((chat) => {
+              const preview = chat.lastMessage?.isEncrypted
+                ? "🔒 Message chiffré"
+                : chat.lastMessage?.content || "";
+              const who = chat.lastMessage?.sender?.name;
+              return (
+                <div
+                  key={chat._id}
+                  className="conversation-item"
+                  onClick={() => navigate(`/event/${chat.shortId}`)}
+                >
+                  {/* Pas d'avatar pour une discussion de groupe : une pastille
+                      occupe la même place, pour que les deux listes
+                      s'alignent. */}
+                  <div className="cl-event-icon">🎉</div>
+                  <div className="conversation-info">
+                    <div className="conversation-header">
+                      <span className="conversation-name">{chat.title}</span>
+                      <span className="conversation-time">
+                        {formatLastMessageTime(chat.lastMessageAt)}
+                      </span>
+                    </div>
+                    <div className="conversation-preview">
+                      {who ? `${who} : ${preview}` : preview}
+                    </div>
+                  </div>
+                  {chat.unreadCount > 0 && (
+                    <span className="cl-tab-badge">{chat.unreadCount}</span>
+                  )}
+                </div>
+              );
+            })
+          )}
+        </div>
+      ) : (
       <div className="conversations">
         {localConversations.length === 0 ? (
           <div className="no-conversations">
@@ -371,6 +466,7 @@ function ConversationList({
           })
         )}
       </div>
+      )}
     </div>
   );
 }

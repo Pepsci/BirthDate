@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import apiHandler from "../../api/apiHandler";
+import ConfirmModal from "../UI/ConfirmModal";
 import "./css/sharedGiftSection.css";
 
 export default function SharedInvites({ embedded = false }) {
@@ -11,6 +12,10 @@ export default function SharedInvites({ embedded = false }) {
   // menu ne montrait que ce qui est « en attente » : une liste active n'était
   // atteignable que par la carte de la personne concernée.
   const [mine, setMine] = useState([]);
+  // Liste dont on s'apprête à sortir. Portée par un état plutôt que par un
+  // `window.confirm` : le texte peut alors nommer la liste concernée, ce que
+  // la boîte système ne permettait pas de faire proprement.
+  const [leaving, setLeaving] = useState(null);
   const [error, setError] = useState(null);
   const [accepting, setAccepting] = useState(null); // invitation en cours
   const [dates, setDates] = useState([]);
@@ -102,19 +107,16 @@ export default function SharedInvites({ embedded = false }) {
    * l'accès à une liste qu'on a peut-être remplie, et le bouton est ici à
    * quelques pixels de celui qui ouvre simplement la liste.
    */
-  const leave = async (l) => {
-    const isMember = l.role === "member";
-    const ok = window.confirm(
-      isMember
-        ? "Quitter cette liste commune ? Vous ne verrez plus ses idées et elle sera retirée de votre carte. Les autres membres la gardent."
-        : "Ne plus suivre cette liste ? Elle sera retirée de votre carte.",
-    );
-    if (!ok || busy) return;
+  const confirmLeave = async () => {
+    const l = leaving;
+    if (!l || busy) return;
     setBusy(true);
     try {
       await apiHandler.post(`/shared-gifts/${l._id}/leave`);
+      setLeaving(null);
       await load();
     } catch (err) {
+      setLeaving(null);
       setError(err?.response?.data?.message || "Erreur.");
     } finally {
       setBusy(false);
@@ -177,7 +179,7 @@ export default function SharedInvites({ embedded = false }) {
                 type="button"
                 className="sgi-leave-btn"
                 disabled={busy}
-                onClick={() => leave(l)}
+                onClick={() => setLeaving(l)}
               >
                 {l.role === "member" ? "Quitter" : "Ne plus suivre"}
               </button>
@@ -251,6 +253,26 @@ export default function SharedInvites({ embedded = false }) {
 
       {/* Nom de la personne concernée, repris de l'invitation : `fromDate` est
           la carte de celui qui invite, elle décrit la même personne. */}
+      <ConfirmModal
+        open={!!leaving}
+        busy={busy}
+        title={
+          leaving?.role === "member"
+            ? "Quitter cette liste commune ?"
+            : "Ne plus suivre cette liste ?"
+        }
+        message={
+          leaving?.role === "member"
+            ? `Vous ne verrez plus les idées de « ${leaving?.personName || leaving?.label || "cette liste"} » et elle sera retirée de votre carte. Les autres membres la gardent.`
+            : `« ${leaving?.personName || leaving?.label || "Cette liste"} » sera retirée de votre carte. Vous pourrez y revenir si on vous la repartage.`
+        }
+        confirmLabel={
+          leaving?.role === "member" ? "Quitter" : "Ne plus suivre"
+        }
+        onConfirm={confirmLeave}
+        onCancel={() => setLeaving(null)}
+      />
+
       {accepting && (
         <div className="sgs-modal-overlay" onClick={() => setAccepting(null)}>
           <div className="sgs-modal" onClick={(e) => e.stopPropagation()}>

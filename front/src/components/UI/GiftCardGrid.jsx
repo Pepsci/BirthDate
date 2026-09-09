@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import "./css/giftCardGrid.css";
 import GiftDetailModal from "./GiftDetailModal";
+import ConfirmModal from "./ConfirmModal";
 import { GIFT_STATUS_META, giftStatusOf } from "../../utils/giftStatus";
 
 const GiftCardGrid = ({
@@ -26,6 +27,9 @@ const GiftCardGrid = ({
   onAdd,
 }) => {
   const [selectedItem, setSelectedItem] = useState(null);
+  // Réservation qu'on s'apprête à libérer — c'est celle d'une autre personne,
+  // elle mérite d'être nommée dans la question posée.
+  const [releasing, setReleasing] = useState(null);
 
   const normalize = (item) => {
     if (type === "wishlist") {
@@ -93,11 +97,18 @@ const GiftCardGrid = ({
     }
 
     if (type === "event") {
-      const hasVoted = currentUserId
-        ? item.votes
-            ?.map((v) => v._id?.toString() || v.toString())
-            .includes(currentUserId)
-        : false;
+      // ⚠️ `votedByMe` et `voteCount` sont calculés par le SERVEUR. Il est le
+      // seul à savoir si un invité sans compte a voté : son vote est identifié
+      // par un jeton, et ce jeton ne doit pas circuler (il ouvrirait
+      // l'événement à qui le lirait). Le repli local ne sert qu'aux réponses
+      // d'une version antérieure du serveur.
+      const hasVoted =
+        item.votedByMe ??
+        (currentUserId
+          ? item.votes
+              ?.map((v) => v._id?.toString() || v.toString())
+              .includes(currentUserId)
+          : false);
 
       const isOwner = currentUserId
         ? item.proposedBy?._id?.toString() === currentUserId
@@ -113,7 +124,9 @@ const GiftCardGrid = ({
         url: item.url,
         image: null,
         badge: null,
-        voteCount: (item.votes?.length || 0) + (item.guestVotes?.length || 0),
+        voteCount:
+          item.voteCount ??
+          (item.votes?.length || 0) + (item.guestVotes?.length || 0),
         hasVoted,
         isOwner,
         proposedBy: item.proposedBy?.name || item.guestName,
@@ -433,14 +446,7 @@ const GiftCardGrid = ({
                             className="gcg-btn gcg-btn--danger"
                             onClick={(e) => {
                               e.stopPropagation();
-                              const who = item.reservedByName || "Quelqu'un";
-                              if (
-                                window.confirm(
-                                  `${who} s'est engagé à offrir « ${item.title} ». Libérer la réservation ? L'idée redeviendra disponible pour tout le monde.`,
-                                )
-                              ) {
-                                onUnreserve?.(item.id);
-                              }
+                              setReleasing(item);
                             }}
                           >
                             ↩️ Libérer la réservation
@@ -585,6 +591,18 @@ const GiftCardGrid = ({
           </div>
         );
       })}
+
+      <ConfirmModal
+        open={!!releasing}
+        title="Libérer cette réservation ?"
+        message={`${releasing?.reservedByName || "Quelqu'un"} s'est engagé à offrir « ${releasing?.title} ». L'idée redeviendra disponible pour tout le monde.`}
+        confirmLabel="Libérer"
+        onConfirm={() => {
+          onUnreserve?.(releasing.id);
+          setReleasing(null);
+        }}
+        onCancel={() => setReleasing(null)}
+      />
 
       {selectedItem && (
         <GiftDetailModal

@@ -294,7 +294,15 @@ export interface GiftProposal {
   image?: string | null;
   proposedBy: { _id: string; name: string; surname?: string } | null;
   guestName?: string | null;
-  votes: string[]; // userIds
+  votes: string[]; // userIds — comptes uniquement
+  /**
+   * Total des votes, comptes ET invités sans compte confondus, calculé par le
+   * serveur. `votes.length` seul ignorait les invités : leurs votes
+   * n'apparaissaient donc nulle part dans l'application.
+   */
+  voteCount?: number;
+  /** Ai-je voté ? Tranché par le serveur, qui seul identifie les invités. */
+  votedByMe?: boolean;
   selected?: boolean; // retenu par l'organisateur
 }
 
@@ -548,6 +556,33 @@ export async function acceptLeadTransfer(
   return api<TransferAcceptResult>(`/events/${shortId}/transfer-lead/accept`, {
     method: "POST",
   });
+}
+
+// ---- Conversations d'événement ----
+
+/**
+ * Discussion d'un événement, telle qu'elle apparaît dans la liste des
+ * conversations. Le serveur ne renvoie que les événements ayant DÉJÀ des
+ * messages : une liste de discussions vides n'aide personne à trouver la
+ * sienne.
+ */
+export interface EventChatSummary {
+  _id: string;
+  shortId: string;
+  title: string;
+  type?: string;
+  unreadCount: number;
+  lastMessage: {
+    content: string;
+    isEncrypted: boolean;
+    sender: { _id: string; name: string } | null;
+    createdAt: string;
+  };
+  lastMessageAt: string;
+}
+
+export async function fetchEventChats(): Promise<EventChatSummary[]> {
+  return api<EventChatSummary[]>("/events/mine/chats");
 }
 
 // ---- Remboursement de cagnotte ----

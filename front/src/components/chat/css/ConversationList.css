@@ -501,3 +501,63 @@
         padding: 8px 12px;
     }
 }
+
+/* ── Onglets Amis / Événements ───────────────────────────────────────────
+   Les discussions d'événement vivent à côté des conversations privées, pas
+   mêlées à elles : ce sont deux objets différents, et le bouton de
+   suppression n'a de sens que pour l'une des deux. */
+.cl-tabs {
+  display: flex;
+  gap: 8px;
+  padding: 10px 12px 4px;
+}
+
+.cl-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.cl-tab--on {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: #fff;
+}
+
+.cl-tab-badge {
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--danger, #ef4444);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Pastille d'événement, à la place de l'avatar : même gabarit, pour que les
+   deux listes s'alignent quand on passe de l'une à l'autre. */
+.cl-event-icon {
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+}

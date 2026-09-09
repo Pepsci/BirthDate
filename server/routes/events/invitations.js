@@ -196,9 +196,20 @@ router.post("/:shortId/claim", isAuthenticated, async (req, res) => {
       user: userId,
     });
 
-    // Déjà participant avec ce compte. Si la personne avait AUSSI une
-    // participation invité, on récupère ses idées cadeaux et on supprime le
-    // doublon — sans quoi elle figurerait deux fois dans la liste.
+    // Déjà participant avec ce compte, ET une participation invité en plus.
+    // Les deux lignes décrivent une seule personne : il faut n'en garder
+    // qu'une, sinon elle figure deux fois dans la liste et compte double dans
+    // les places disponibles.
+    //
+    // ⚠️ Supprimer purement et simplement la ligne invité effacerait ce que la
+    // personne a fait AVANT de se connaître un compte : sa réponse à
+    // l'invitation et ses votes vivent sur cette ligne-là. On reporte donc ce
+    // que le compte n'a pas déjà, puis seulement on supprime.
+    //
+    // Règle de report, volontairement bête et prévisible : le compte l'emporte
+    // dès qu'il s'est prononcé, l'invité comble les blancs. Arbitrer par
+    // ancienneté serait plus malin et beaucoup moins compréhensible — la
+    // personne verrait sa réponse changer sans savoir pourquoi.
     if (mine) {
       if (guestInv) {
         if (guestInv.guestName) {
@@ -207,6 +218,29 @@ router.post("/:shortId/claim", isAuthenticated, async (req, res) => {
             { proposedBy: userId, guestName: null },
           );
         }
+
+        let changed = false;
+        if (
+          (!mine.status || mine.status === "pending") &&
+          guestInv.status &&
+          guestInv.status !== "pending"
+        ) {
+          mine.status = guestInv.status;
+          changed = true;
+        }
+        if (
+          (!mine.dateVote || mine.dateVote.length === 0) &&
+          guestInv.dateVote?.length
+        ) {
+          mine.dateVote = guestInv.dateVote;
+          changed = true;
+        }
+        if (!mine.locationVote && guestInv.locationVote) {
+          mine.locationVote = guestInv.locationVote;
+          changed = true;
+        }
+        if (changed) await mine.save();
+
         await guestInv.deleteOne();
       }
       return res

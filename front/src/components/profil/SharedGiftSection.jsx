@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import apiHandler from "../../api/apiHandler";
 import GiftCardGrid from "../UI/GiftCardGrid";
+import ConfirmModal from "../UI/ConfirmModal";
 import SharedListSharePanel from "../sharedGifts/SharedListSharePanel";
 import useAuth from "../../context/useAuth";
 import "./css/sharedGiftSection.css";
@@ -45,6 +46,7 @@ export default function SharedGiftSection({ currentDate, onUpdate }) {
   // « ce qui reste à prendre pour Noël » croise les deux, et n'aurait pas de
   // réponse si l'un remplaçait l'autre.
   const [reservedFilter, setReservedFilter] = useState("all");
+  const [confirmLeave, setConfirmLeave] = useState(false);
 
   // Formulaire cadeau (ajout / édition)
   const [showShare, setShowShare] = useState(false);
@@ -288,17 +290,13 @@ export default function SharedGiftSection({ currentDate, onUpdate }) {
   };
 
   const leave = async () => {
-    // Le texte diffère selon le rôle : un membre peut faire disparaître la
-    // liste s'il est le dernier, un invité perd seulement son accès.
-    const message = isMember
-      ? "Quitter la liste commune ?\n\nVos idées y restent pour les autres membres. Si vous êtes le dernier, la liste sera supprimée."
-      : "Ne plus suivre cette liste ?\n\nVous perdrez l'accès. Un membre pourra vous la repartager plus tard.";
-    if (!window.confirm(message)) return;
     try {
       await apiHandler.post(`/shared-gifts/${listId}/leave`);
+      setConfirmLeave(false);
       onUpdate?.({ ...currentDate, sharedGiftList: null });
       setList(null);
     } catch (err) {
+      setConfirmLeave(false);
       setError(err?.response?.data?.message || "Erreur.");
     }
   };
@@ -559,7 +557,24 @@ export default function SharedGiftSection({ currentDate, onUpdate }) {
         </section>
       )}
 
-      <button className="sgs-leave" onClick={leave}>
+      {/* Le texte diffère selon le rôle : un membre peut faire disparaître la
+          liste s'il est le dernier, un invité perd seulement son accès. */}
+      <ConfirmModal
+        open={confirmLeave}
+        title={
+          isMember ? "Quitter la liste commune ?" : "Ne plus suivre cette liste ?"
+        }
+        message={
+          isMember
+            ? "Vos idées y restent pour les autres membres. Si vous êtes le dernier, la liste sera supprimée."
+            : "Vous perdrez l'accès à cette liste. Un membre pourra vous la repartager plus tard."
+        }
+        confirmLabel={isMember ? "Quitter" : "Ne plus suivre"}
+        onConfirm={leave}
+        onCancel={() => setConfirmLeave(false)}
+      />
+
+      <button className="sgs-leave" onClick={() => setConfirmLeave(true)}>
         {isMember ? "Quitter la liste commune" : "Ne plus suivre cette liste"}
       </button>
     </div>

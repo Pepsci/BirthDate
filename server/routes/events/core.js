@@ -172,6 +172,90 @@ router.get("/mine", isAuthenticated, async (req, res) => {
 });
 
 /*
+ * GET /api/events/mine/chats -> mes conversations d'événement
+ *
+ * Les discussions d'événement n'apparaissaient nulle part dans la liste des
+ * conversations : on ne pouvait les retrouver qu'en rouvrant l'événement
+ * lui-même. Un message y restait donc invisible tant qu'on n'allait pas le
+ * chercher, alors que c'est exactement l'endroit où l'on va lire ses messages.
+ *
+ * Seuls les événements AYANT DÉJÀ des messages sont renvoyés : une liste de
+ * conversations vides n'aide personne à trouver la sienne.
+ *
+ * ⚠️ Doit être déclarée AVANT `/:shortId` — sinon "mine" serait pris pour un
+ * identifiant d'événement.
+ */
+router.get("/mine/chats", isAuthenticated, async (req, res) => {
+  try {
+    const userId = req.payload._id;
+    const EventMessage = require("../../models/eventMessage.model");
+
+    const [organized, invitations] = await Promise.all([
+      Event.find({ organizer: userId, status: { $ne: "cancelled" } }).select(
+        "shortId title forPerson type",
+      ),
+      EventInvitation.find({ user: userId }).populate({
+        path: "event",
+        match: { status: { $ne: "cancelled" } },
+        select: "shortId title forPerson type organizer",
+      }),
+    ]);
+
+    const byId = new Map();
+    for (const e of organized) byId.set(e._id.toString(), e);
+    for (const inv of invitations) {
+      if (inv.event) byId.set(inv.event._id.toString(), inv.event);
+    }
+    const events = [...byId.values()];
+    if (events.length === 0) return res.status(200).json([]);
+
+    const rows = await Promise.all(
+      events.map(async (ev) => {
+        const last = await EventMessage.findOne({ event: ev._id })
+          .sort({ createdAt: -1 })
+          .populate("sender", "name surname");
+        if (!last) return null;
+
+        const unreadCount = await EventMessage.countDocuments({
+          event: ev._id,
+          sender: { $ne: userId },
+          "readBy.user": { $ne: userId },
+        });
+
+        return {
+          _id: ev._id,
+          shortId: ev.shortId,
+          title: ev.title,
+          type: ev.type,
+          unreadCount,
+          lastMessage: {
+            // Le contenu chiffré ne se déchiffre que sur l'appareil : on le
+            // transmet tel quel, le client affichera « message chiffré ».
+            content: last.content,
+            isEncrypted: !!last.isEncrypted,
+            sender: last.sender
+              ? { _id: last.sender._id, name: last.sender.name }
+              : null,
+            createdAt: last.createdAt,
+          },
+          lastMessageAt: last.createdAt,
+        };
+      }),
+    );
+
+    const chats = rows
+      .filter(Boolean)
+      .sort(
+        (a, b) => new Date(b.lastMessageAt) - new Date(a.lastMessageAt),
+      );
+    res.status(200).json(chats);
+  } catch (error) {
+    console.error("❌ Error fetching event chats:", error);
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+});
+
+/*
  * GET /api/events/check/:id (DOIT ÊTRE AVANT /:shortId)
  */
 router.get("/check/:id", isAuthenticated, async (req, res) => {
@@ -322,6 +406,11 @@ router.put("/:shortId", isAuthenticated, async (req, res) => {
     // détecter un vrai changement de date (et donc réinitialiser les RSVP).
     // On la lit ici, avant que les champs soient écrasés plus bas.
     const dateBefore = eventEffectiveDate(event);
+    // Idem pour le lieu : trancher un vote de lieu est une nouvelle, pas une
+    // « modification ordinaire ». Sans ce repère, ceux qui ont voté
+    // recevaient « l'événement a été modifié » et devaient aller voir
+    // eux-mêmes quelle option l'avait emporté.
+    const locationBefore = event.selectedLocation?.name || null;
 
     const fields = [
       "title",
@@ -381,6 +470,8 @@ router.put("/:shortId", isAuthenticated, async (req, res) => {
     // Passer de "aucune date" à une date (confirmation d'un vote) compte aussi :
     // les invités avaient répondu sans savoir quand, leur réponse est caduque.
     const dateChanged = dateAfter !== null && dateAfter !== dateBefore;
+    const locationAfter = event.selectedLocation?.name || null;
+    const locationSettled = !!locationAfter && locationAfter !== locationBefore;
 
     // Invités inscrits, hors organisateur : il ne se notifie pas lui-même de
     // ses propres modifications, et sa présence n'est jamais remise en cause.
@@ -471,6 +562,11 @@ router.put("/:shortId", isAuthenticated, async (req, res) => {
       }
     } else {
       // ── Modification ordinaire (titre, lieu, description…) ────────────────
+      // Un lieu qui vient d'être retenu porte l'information la plus attendue
+      // du moment : on le dit, plutôt que de laisser le message générique.
+      const label = locationSettled
+        ? `Le lieu est retenu : ${locationAfter}`
+        : "L'événement a été modifié par l'organisateur";
       for (const inv of invitations) {
         await notify(req.app, {
           userId: inv.user,
@@ -478,13 +574,17 @@ router.put("/:shortId", isAuthenticated, async (req, res) => {
           data: {
             eventTitle: event.title,
             eventShortId: event.shortId,
-            message: "L'événement a été modifié par l'organisateur",
+            message: label,
           },
           link: `/event/${event.shortId}`,
         });
         await sendPushToUser(inv.user, {
-          title: `✏️ Événement modifié — ${event.title}`,
-          body: "L'organisateur a mis à jour les informations",
+          title: locationSettled
+            ? `📍 Lieu retenu — ${event.title}`
+            : `✏️ Événement modifié — ${event.title}`,
+          body: locationSettled
+            ? locationAfter
+            : "L'organisateur a mis à jour les informations",
           url: `/event/${event.shortId}`,
           tag: `event-updated-${event.shortId}`,
           type: "events",

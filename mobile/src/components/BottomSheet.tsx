@@ -8,6 +8,8 @@ import {
   Animated,
   PanResponder,
   Dimensions,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { useThemedStyles, ThemeColors } from "../lib/theme-context";
 
@@ -62,24 +64,45 @@ export default function BottomSheet({
 
   return (
     <Modal visible transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable style={styles.overlay} onPress={onClose}>
-        <Animated.View
-          style={[styles.sheet, { transform: [{ translateY }] }]}
-        >
-          <View style={styles.handleZone} {...panResponder.panHandlers}>
-            <View style={styles.handle} />
-          </View>
-          <Pressable onPress={() => {}}>
-            <ScrollView showsVerticalScrollIndicator={false}>{children}</ScrollView>
-          </Pressable>
-        </Animated.View>
-      </Pressable>
+      {/* ⚠️ La feuille est collée au bas de l'écran : sans ça, le clavier
+          passe PAR-DESSUS son contenu. Le motif d'annulation d'un événement
+          se saisissait à l'aveugle, le champ étant caché par le clavier au
+          moment même où on écrivait dedans.
+          iOS n'ajuste rien de lui-même dans une Modal, d'où `padding` ;
+          Android redimensionne déjà la fenêtre (adjustResize), et lui ajouter
+          un second ajustement décollerait la feuille du bas. */}
+      <KeyboardAvoidingView
+        style={styles.fill}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
+        <Pressable style={styles.overlay} onPress={onClose}>
+          <Animated.View
+            style={[styles.sheet, { transform: [{ translateY }] }]}
+          >
+            <View style={styles.handleZone} {...panResponder.panHandlers}>
+              <View style={styles.handle} />
+            </View>
+            <Pressable onPress={() => {}}>
+              {/* keyboardShouldPersistTaps : clavier ouvert, le premier appui
+                  sur un bouton était avalé pour fermer le clavier — il fallait
+                  appuyer deux fois pour valider. */}
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+              >
+                {children}
+              </ScrollView>
+            </Pressable>
+          </Animated.View>
+        </Pressable>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
 
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
+    fill: { flex: 1 },
     overlay: {
       flex: 1,
       backgroundColor: c.overlay,
