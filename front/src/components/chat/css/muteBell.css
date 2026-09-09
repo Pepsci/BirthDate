@@ -1,0 +1,87 @@
+/* Cloche de silencieux — voir MuteBell.jsx */
+
+.mb-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.mb-btn {
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-color);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.mb-btn:hover {
+  background: var(--bg-secondary);
+}
+
+/* Coupé : la couleur porte l'information, la cloche barrée la confirme. */
+.mb-btn--on {
+  color: var(--danger, #ef4444);
+  border-color: var(--danger, #ef4444);
+}
+
+.mb-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+}
+
+.mb-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 41;
+  min-width: 230px;
+  padding: 10px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+}
+
+.mb-menu-head {
+  margin: 0 0 2px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.mb-menu-hint {
+  margin: 0 0 8px;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+
+.mb-item {
+  display: block;
+  width: 100%;
+  padding: 9px 10px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.85rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.mb-item:hover {
+  background: var(--bg-secondary);
+}
+
+.mb-item--on {
+  margin-top: 4px;
+  color: var(--primary);
+  font-weight: 700;
+}

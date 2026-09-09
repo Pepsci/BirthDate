@@ -1789,6 +1789,21 @@ export default function EventDetailScreen() {
           </Text>
         </Pressable>
       )}
+
+      {/* Réglages de notifications de CET événement. Ouvert à tous les
+          participants, pas seulement à l'organisateur : jusqu'ici, couper le
+          bruit d'un seul événement demandait de couper la catégorie
+          « Événements » en entier, donc tous les autres avec. */}
+      {event.hasFullAccess && (
+        <Pressable
+          style={styles.giftsBtn}
+          onPress={() => router.push(`/event/notifications/${shortId}`)}
+        >
+          <Text style={styles.giftsBtnText} numberOfLines={1}>
+            🔔 Notifications de cet événement
+          </Text>
+        </Pressable>
+      )}
         </>
       )}
 

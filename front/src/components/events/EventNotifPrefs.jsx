@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import apiHandler from "../../api/apiHandler";
 
 const PREFS = [
@@ -40,6 +40,12 @@ const PREFS = [
     icon: "fa-comment",
   },
   {
+    key: "eventUpdates",
+    label: "Mises à jour de l'événement",
+    description: "Lieu retenu, informations modifiées",
+    icon: "fa-pen",
+  },
+  {
     key: "poolContribution",
     label: "Contributions à la cagnotte",
     description: "Quand un participant verse de l'argent dans la cagnotte",
@@ -47,28 +53,47 @@ const PREFS = [
   },
 ];
 
-const EventNotifPrefs = ({ shortId, initialPrefs }) => {
-  const [prefs, setPrefs] = useState({
-    rsvp: true,
-    dateVote: true,
-    locationVote: true,
-    giftProposed: true,
-    giftVote: true,
-    chatMessage: true,
-    poolContribution: true,
-    ...initialPrefs,
-  });
+/**
+ * Notifications de CET événement, pour la personne qui consulte.
+ *
+ * ⚠️ Les catégories dépendent du rôle, et c'est voulu. Les réponses, les
+ * votes, les cadeaux proposés et les contributions ne partent qu'à
+ * l'organisateur : les proposer à un invité afficherait des interrupteurs sans
+ * effet. Le serveur renvoie donc les clés qui concernent le demandeur, et
+ * n'accepte que celles-là — on n'affiche que ce qu'il envoie.
+ *
+ * L'écran servait auparavant `/notification-prefs`, réservée à
+ * l'organisateur : un invité n'avait aucun moyen de régler ses propres
+ * notifications, et devait couper la catégorie « Événements » en entier.
+ */
+const EventNotifPrefs = ({ shortId }) => {
+  const [prefs, setPrefs] = useState(null);
   const [saving, setSaving] = useState(null);
+
+  useEffect(() => {
+    let alive = true;
+    apiHandler
+      .get(`/events/${shortId}/my-notifications`)
+      .then((res) => alive && setPrefs(res.data?.prefs || {}))
+      .catch(() => alive && setPrefs({}));
+    return () => {
+      alive = false;
+    };
+  }, [shortId]);
 
   const handleToggle = async (key) => {
     const newValue = !prefs[key];
+    // Bascule optimiste : un interrupteur qui attend le réseau donne
+    // l'impression de ne pas répondre.
     setPrefs((prev) => ({ ...prev, [key]: newValue }));
     setSaving(key);
 
     try {
-      await apiHandler.put(`/events/${shortId}/notification-prefs`, {
-        [key]: newValue,
-      });
+      const res = await apiHandler.put(
+        `/events/${shortId}/my-notifications`,
+        { [key]: newValue },
+      );
+      setPrefs(res.data?.prefs || {});
     } catch (err) {
       setPrefs((prev) => ({ ...prev, [key]: !newValue }));
       console.error("Error updating notification prefs", err);
@@ -76,6 +101,8 @@ const EventNotifPrefs = ({ shortId, initialPrefs }) => {
       setSaving(null);
     }
   };
+
+  if (!prefs) return null;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
@@ -89,7 +116,7 @@ const EventNotifPrefs = ({ shortId, initialPrefs }) => {
         Choisissez les actions qui vous envoient une notification.
       </p>
 
-      {PREFS.map((pref) => (
+      {PREFS.filter((pref) => pref.key in prefs).map((pref) => (
         <div
           key={pref.key}
           style={{

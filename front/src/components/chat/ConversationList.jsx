@@ -343,7 +343,9 @@ function ConversationList({
                 <div
                   key={chat._id}
                   className="conversation-item"
-                  onClick={() => navigate(`/event/${chat.shortId}`)}
+                  onClick={() =>
+                    navigate(`/event/${chat.shortId}?tab=chat`)
+                  }
                 >
                   {/* Pas d'avatar pour une discussion de groupe : une pastille
                       occupe la même place, pour que les deux listes

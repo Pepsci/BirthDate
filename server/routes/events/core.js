@@ -568,6 +568,10 @@ router.put("/:shortId", isAuthenticated, async (req, res) => {
         ? `Le lieu est retenu : ${locationAfter}`
         : "L'événement a été modifié par l'organisateur";
       for (const inv of invitations) {
+        // Réglage propre à cette personne et à cet événement. L'annulation et
+        // le changement de date, eux, ne se coupent pas : voir la branche
+        // au-dessus et le modèle EventInvitation.
+        if (inv.notificationPreferences?.eventUpdates === false) continue;
         await notify(req.app, {
           userId: inv.user,
           type: "event_updated",

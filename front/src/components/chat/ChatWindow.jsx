@@ -14,6 +14,7 @@ import MessageInput from "./MessageInput";
 import GiftShareCard from "./GiftShareCard";
 import DateShareCard from "./DateShareCard";
 import Avatar from "../UI/Avatar";
+import MuteBell from "./MuteBell";
 import PersonPreviewCard from "./PersonPreviewCard";
 import "./css/chatWindow.css";
 
@@ -698,6 +699,10 @@ function ChatWindow({ conversation, onBack, onRead }) {
             )}
           </div>
         </div>
+        {/* Silencieux de CETTE conversation : jusqu'ici, se taire demandait de
+            couper toutes les notifications de chat, donc celles de tout le
+            monde. */}
+        <MuteBell kind="dm" targetId={conversation._id} />
         {isE2EConversation && (
           <div
             className="e2e-badge"

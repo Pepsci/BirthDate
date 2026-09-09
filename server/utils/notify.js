@@ -81,6 +81,9 @@ const notify = async (app, { userId, type, data = {}, link = null }) => {
           body: `${data.senderName} : ${data.preview || "Nouveau message"}`,
           url: `${process.env.FRONTEND_URL}${link || "/"}`,
           tag: `event-chat-${data.eventShortId}`,
+          // Idem pour la discussion d'un événement : le silencieux vise CET
+          // événement, pas la catégorie « événements » entière.
+          muteScope: { kind: "event", id: data.eventShortId },
           type: "events",
         });
       }

@@ -303,6 +303,126 @@ router.post("/:shortId/claim", isAuthenticated, async (req, res) => {
 });
 
 /*
+ * GET/PUT /api/events/:shortId/my-notifications
+ * Réglages de notifications de CET événement, pour CELUI QUI DEMANDE.
+ *
+ * ⚠️ À ne pas confondre avec PUT /invitations/:id/notifications, réservée à
+ * l'organisateur : elle sert à régler les notifications de QUELQU'UN D'AUTRE,
+ * et personne ne pouvait donc régler les siennes.
+ *
+ * Les catégories dépendent du rôle, parce que les notifications ne partent
+ * pas aux mêmes personnes : les réponses, les votes, les cadeaux proposés et
+ * les contributions ne concernent que l'organisateur. Proposer ces
+ * interrupteurs à un invité afficherait des réglages sans effet.
+ */
+function myNotificationPayload(event, invitation, isOrganizer) {
+  if (isOrganizer) {
+    const p = event.organizerNotificationPrefs || {};
+    return {
+      role: "organizer",
+      prefs: {
+        chatMessage: p.chatMessage !== false,
+        rsvp: p.rsvp !== false,
+        dateVote: p.dateVote !== false,
+        locationVote: p.locationVote !== false,
+        giftProposed: p.giftProposed !== false,
+        giftVote: p.giftVote !== false,
+        poolContribution: p.poolContribution !== false,
+      },
+    };
+  }
+  const p = invitation?.notificationPreferences || {};
+  return {
+    role: "participant",
+    prefs: {
+      chatMessage: p.chatMessage !== false,
+      eventUpdates: p.eventUpdates !== false,
+    },
+  };
+}
+
+router.get("/:shortId/my-notifications", isAuthenticated, async (req, res) => {
+  try {
+    const event = await Event.findOne({ shortId: req.params.shortId });
+    if (!event)
+      return res.status(404).json({ message: "Événement introuvable" });
+
+    const isOrganizer = event.organizer.toString() === req.payload._id;
+    const invitation = isOrganizer
+      ? null
+      : await EventInvitation.findOne({
+          event: event._id,
+          user: req.payload._id,
+        });
+    if (!isOrganizer && !invitation)
+      return res.status(403).json({ message: "Non autorisé" });
+
+    res
+      .status(200)
+      .json(myNotificationPayload(event, invitation, isOrganizer));
+  } catch (error) {
+    console.error("❌ Error reading my notification prefs:", error);
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+});
+
+router.put("/:shortId/my-notifications", isAuthenticated, async (req, res) => {
+  try {
+    const event = await Event.findOne({ shortId: req.params.shortId });
+    if (!event)
+      return res.status(404).json({ message: "Événement introuvable" });
+
+    const isOrganizer = event.organizer.toString() === req.payload._id;
+    const body = req.body || {};
+    // Seules les clés reconnues sont écrites, et seulement celles du rôle :
+    // un participant ne doit pas pouvoir poser des réglages d'organisateur.
+    const allowed = isOrganizer
+      ? [
+          "chatMessage",
+          "rsvp",
+          "dateVote",
+          "locationVote",
+          "giftProposed",
+          "giftVote",
+          "poolContribution",
+        ]
+      : ["chatMessage", "eventUpdates"];
+
+    if (isOrganizer) {
+      const current = event.organizerNotificationPrefs || {};
+      const next = { ...current.toObject?.() ?? current };
+      for (const key of allowed) {
+        if (body[key] !== undefined) next[key] = !!body[key];
+      }
+      event.organizerNotificationPrefs = next;
+      await event.save();
+      return res
+        .status(200)
+        .json(myNotificationPayload(event, null, true));
+    }
+
+    const invitation = await EventInvitation.findOne({
+      event: event._id,
+      user: req.payload._id,
+    });
+    if (!invitation)
+      return res.status(403).json({ message: "Non autorisé" });
+
+    const current = invitation.notificationPreferences || {};
+    const next = { ...(current.toObject?.() ?? current) };
+    for (const key of allowed) {
+      if (body[key] !== undefined) next[key] = !!body[key];
+    }
+    invitation.notificationPreferences = next;
+    await invitation.save();
+    res.status(200).json(myNotificationPayload(event, invitation, false));
+  } catch (error) {
+    console.error("❌ Error updating my notification prefs:", error);
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+});
+
+/*
  * DELETE /api/events/:shortId/leave -> quitter (invité only)
  */
 router.delete("/:shortId/leave", isAuthenticated, async (req, res) => {

@@ -171,6 +171,7 @@ app.use("/api/merge-dates", mergeDatesRouter);
 app.use("/api/push", pushRoutes);
 app.use("/api/events", eventsRouter);
 app.use("/api/notifications", notificationsRouter);
+app.use("/api/mutes", require("./routes/chatMutes"));
 app.use("/api/stats", statsRouter);
 app.use("/api/stripe/connect", stripeConnectRouter);
 app.use("/api/support", require("./routes/support"));

@@ -181,6 +181,12 @@ const eventSchema = new Schema(
       locationVote: { type: Boolean, default: true },
       giftProposed: { type: Boolean, default: true },
       giftVote: { type: Boolean, default: true },
+      // ⚠️ Absent du schéma jusqu'ici, alors que la route
+      // PUT /:shortId/notification-prefs l'écrivait et que l'interface
+      // proposait l'interrupteur : Mongoose supprimait silencieusement le
+      // champ (mode strict), et couper les notifications du chat n'avait
+      // aucun effet.
+      chatMessage: { type: Boolean, default: true },
       poolContribution: { type: Boolean, default: true },
     },
   },

@@ -10,7 +10,10 @@ import {
   Platform,
   ActivityIndicator,
 } from "react-native";
-import { Stack, useLocalSearchParams } from "expo-router";
+import { Stack, useLocalSearchParams, useRouter } from "expo-router";
+import HeaderIconButton from "../../../components/HeaderIconButton";
+import MuteSheet from "../../../components/MuteSheet";
+import { useMute } from "../../../lib/mutes";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   useKeyboardPadding,
@@ -43,6 +46,7 @@ const ON_PRIMARY_SOFT = "#dbeafe";
 
 export default function EventChatScreen() {
   const { shortId } = useLocalSearchParams<{ shortId: string }>();
+  const router = useRouter();
   const styles = useThemedStyles(makeStyles);
   const { colors } = useTheme();
   const { user } = useAuth();
@@ -60,6 +64,17 @@ export default function EventChatScreen() {
   const [input, setInput] = useState("");
   const [typingName, setTypingName] = useState<string | null>(null);
   const [e2eReady, setE2eReady] = useState<boolean | null>(null);
+  /**
+   * Titre de l'événement.
+   *
+   * ⚠️ L'écran s'intitulait « Chat de l'événement » — lisible quand on y
+   * arrive depuis l'événement lui-même, illisible depuis la liste des
+   * discussions : on ouvre une conversation sans savoir laquelle. L'événement
+   * est déjà chargé ici pour les clés de chiffrement, on en garde le titre.
+   */
+  const [eventTitle, setEventTitle] = useState<string | null>(null);
+  const [muteSheet, setMuteSheet] = useState(false);
+  const mute = useMute("event", shortId ?? null);
 
   // Refs pour éviter les stale closures dans les handlers socket
   // (même règle que chatHandlers.js côté serveur / web)
@@ -91,6 +106,7 @@ export default function EventChatScreen() {
           fetchEvent(shortId),
           getPrivateKey(),
         ]);
+        setEventTitle(ev.title ?? null);
         setPrivateKey(privKey);
         console.log(
           `🔐 Chat: clé privée ${privKey ? "présente ✅" : "ABSENTE ❌"}`,
@@ -271,7 +287,44 @@ export default function EventChatScreen() {
       // la réintroduire ici la comptait deux fois.
       keyboardVerticalOffset={0}
     >
-      <Stack.Screen options={{ title: "Chat de l'événement" }} />
+      <Stack.Screen
+        options={{
+          title: eventTitle ?? "Chat de l'événement",
+          headerRight: () => (
+            <HeaderIconButton
+              name={mute.mute ? "bell-off" : "bell"}
+              accessibilityLabel={
+                mute.mute
+                  ? "Réactiver les notifications"
+                  : "Couper les notifications"
+              }
+              onPress={() => setMuteSheet(true)}
+            />
+          ),
+        }}
+      />
+
+      <MuteSheet
+        visible={muteSheet}
+        mute={mute.mute}
+        onClose={() => setMuteSheet(false)}
+        onSelect={(d) => mute.set(d)}
+        onClear={() => mute.clear()}
+      />
+
+      {/* Retour à l'événement. Depuis la liste des discussions, cet écran est
+          une impasse : on lit un message qui parle de la date ou d'un cadeau,
+          et rien ne mène à l'endroit où en décider. Le bouton « retour » de
+          l'en-tête ramène à la liste, pas à l'événement. */}
+      <Pressable
+        style={styles.eventLink}
+        onPress={() => router.push(`/event/${shortId}`)}
+      >
+        <Text style={styles.eventLinkText} numberOfLines={1}>
+          🎉 {eventTitle ?? "Voir l'événement"}
+        </Text>
+        <Text style={styles.eventLinkGo}>Ouvrir ›</Text>
+      </Pressable>
 
       {error && <Text style={styles.error}>{error}</Text>}
       {e2eReady === false && (
@@ -430,6 +483,26 @@ const makeStyles = (c: ThemeColors) =>
       alignItems: "center",
       backgroundColor: c.bg,
     },
+    // Bandeau discret : il informe et donne une sortie, il ne doit pas
+    // concurrencer la conversation elle-même.
+    eventLink: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 10,
+      paddingVertical: 10,
+      paddingHorizontal: 14,
+      backgroundColor: c.bgSecondary,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: c.border,
+    },
+    eventLinkText: {
+      flex: 1,
+      color: c.text,
+      fontWeight: "700",
+      fontSize: 14,
+    },
+    eventLinkGo: { color: c.primary, fontWeight: "700", fontSize: 13 },
     error: { color: c.danger, textAlign: "center", padding: 6 },
     e2eWarn: {
       color: c.warningStrong,

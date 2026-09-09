@@ -4,6 +4,7 @@ import apiHandler from "../../../api/apiHandler";
 import socketService from "../../services/socket.service";
 import { AuthContext } from "../../../context/auth.context";
 import Avatar from "../../UI/Avatar";
+import MuteBell from "../../chat/MuteBell";
 import {
   getPrivateKey,
   getOldPrivateKey,
@@ -294,6 +295,9 @@ const EventChat = ({ shortId, participants = {} }) => {
         {isE2EActive && (
           <span className="event-chat-e2e-badge">🔒 Chiffrement E2E</span>
         )}
+        {/* La cible est le `shortId` : c'est ce que porte déjà le payload de
+            push d'une discussion d'événement, rien à résoudre côté serveur. */}
+        <MuteBell kind="event" targetId={shortId} />
       </div>
 
       <div ref={messagesContainerRef} className="event-chat-messages">

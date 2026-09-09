@@ -206,7 +206,17 @@ const EventPage = () => {
   const [showEditForm, setShowEditForm] = useState(false);
   const [invitations, setInvitations] = useState([]);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
-  const [activeTab, setActiveTab] = useState("info");
+  /**
+   * `?tab=chat` ouvre directement la discussion.
+   *
+   * La liste des conversations mène ici : y arriver sur les informations
+   * générales, après avoir cliqué sur un message, oblige à retrouver l'onglet
+   * soi-même. L'onglet n'existe que si on a l'accès complet (voir `tabs`
+   * plus bas) ; sans lui la page retombe naturellement sur « Infos ».
+   */
+  const [activeTab, setActiveTab] = useState(
+    () => new URLSearchParams(location.search).get("tab") || "info",
+  );
   const [myDateVotes, setMyDateVotes] = useState([]);
   const [showChatModal, setShowChatModal] = useState(false);
   // Coordonnées retrouvées par géocodage quand le lieu n'en a pas d'enregistrées
@@ -621,9 +631,10 @@ const EventPage = () => {
           ...(event.dateMode === "vote" || event.locationMode === "vote"
             ? [{ id: "vote", label: "Votes", icon: "fa-check-to-slot" }]
             : []),
-          ...(isOrganizer
-            ? [{ id: "notifications", label: "Notifs", icon: "fa-bell" }]
-            : []),
+          // Ouvert à tous les participants, plus seulement à l'organisateur :
+          // couper le bruit d'un seul événement demandait jusqu'ici de couper
+          // la catégorie « Événements » entière, donc tous les autres avec.
+          { id: "notifications", label: "Notifs", icon: "fa-bell" },
         ]
       : []),
   ];
@@ -1420,10 +1431,7 @@ const EventPage = () => {
                       <i className="fa-solid fa-bell ep-card-icon"></i>
                       <h3>Mes notifications</h3>
                     </div>
-                    <EventNotifPrefs
-                      shortId={shortId}
-                      initialPrefs={event.organizerNotificationPrefs || {}}
-                    />
+                    <EventNotifPrefs shortId={shortId} />
                   </GlassCard>
                 </motion.div>
               )}

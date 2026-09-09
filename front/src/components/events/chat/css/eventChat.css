@@ -332,3 +332,22 @@
   line-height: 1.5;
   color: var(--text-tertiary, var(--text-secondary));
 }
+
+/* La cloche vit ici sur le fond coloré de l'en-tête : ses couleurs par défaut
+   (texte secondaire sur fond clair) y seraient illisibles. */
+.event-chat-header .mb-btn {
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.event-chat-header .mb-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Coupé : on garde le blanc plein plutôt que le rouge, qui passerait mal sur
+   cette teinte — la cloche barrée suffit à dire l'état. */
+.event-chat-header .mb-btn--on {
+  color: #fff;
+  background: rgba(0, 0, 0, 0.2);
+  border-color: #fff;
+}

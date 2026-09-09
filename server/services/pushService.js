@@ -60,12 +60,49 @@ function initVapid() {
 }
 
 /**
+ * Ce destinataire a-t-il mis cette conversation en silencieux ?
+ *
+ * La vérification est faite ICI et nulle part ailleurs : les messages privés
+ * appellent `sendPushToUser` directement, les messages d'événement passent
+ * par `notify()` qui appelle ensuite `sendPushToUser`. C'est le seul point
+ * que les deux traversent — le test posé plus haut aurait été à répéter à
+ * chaque appel, donc à oublier au prochain.
+ *
+ * La comparaison de date reste nécessaire malgré l'index TTL : Mongo passe
+ * balayer les expirations environ une fois par minute, un silencieux tout
+ * juste échu peut donc encore exister en base.
+ */
+async function isMutedFor(userId, muteScope) {
+  if (!muteScope?.kind || !muteScope?.id) return false;
+  try {
+    const ChatMute = require("../models/chatMute.model");
+    const mute = await ChatMute.findOne({
+      user: userId,
+      kind: muteScope.kind,
+      targetId: String(muteScope.id),
+    }).select("until");
+    if (!mute) return false;
+    return !mute.until || mute.until > new Date();
+  } catch (err) {
+    // Un silencieux illisible ne doit pas faire taire une notification : on
+    // laisse passer plutôt que de perdre le message.
+    console.error("[Push] Lecture du silencieux impossible:", err.message);
+    return false;
+  }
+}
+
+/**
  * Envoie une push notification à un utilisateur (tous ses appareils)
  * @param {ObjectId} userId
  * @param {Object} payload  { title, body, icon, url, tag, type, friendId }
  *   type: "chat" | "birthday" | "friend" | "gift" | "default"
+ * @param {Object} [payload.muteScope] { kind: "dm"|"event", id } — conversation
+ *   visée. Présent, il permet à la personne d'avoir mis CETTE conversation en
+ *   silencieux ; absent, la notification part toujours.
  */
 async function sendPushToUser(userId, payload) {
+  if (await isMutedFor(userId, payload.muteScope)) return;
+
   // Push natif mobile (Expo) — indépendant du web push, jamais bloquant
   // `webOnly: true` = uniquement web push (ex : récap "messages non lus" du cron,
   // redondant sur mobile où chaque message a déjà sa propre notification)

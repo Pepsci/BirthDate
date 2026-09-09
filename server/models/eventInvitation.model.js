@@ -34,6 +34,30 @@ const eventInvitationSchema = new Schema(
       default: null,
       index: true,
     },
+
+    /**
+     * Notifications que CE participant accepte de recevoir pour CET
+     * événement. Tout est activé par défaut : personne ne doit avoir à
+     * configurer quoi que ce soit pour que l'application marche.
+     *
+     * ⚠️ Le champ existait déjà dans une route (PUT .../notifications) mais
+     * pas dans ce schéma : Mongoose le supprimait en silence, et la route ne
+     * faisait donc rien. Elle était de surcroît réservée à l'organisateur —
+     * un invité ne pouvait pas régler ses propres notifications.
+     *
+     * Ne couvre QUE ce qu'un participant reçoit réellement. Les réponses aux
+     * invitations, les votes, les cadeaux proposés et les contributions ne
+     * partent qu'à l'organisateur : ses réglages à lui vivent sur
+     * l'événement (`organizerNotificationPrefs`).
+     *
+     * Volontairement absentes d'ici : l'annulation et le changement de date.
+     * Ce sont les deux seules dont l'utilité est de rattraper quelqu'un qui
+     * ne regarde pas l'application ; les couper, c'est se déplacer pour rien.
+     */
+    notificationPreferences: {
+      chatMessage: { type: Boolean, default: true },
+      eventUpdates: { type: Boolean, default: true },
+    },
   },
   { timestamps: true },
 );

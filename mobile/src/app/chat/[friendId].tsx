@@ -27,6 +27,8 @@ import { useAuth } from "../../lib/auth-context";
 import { useUnread } from "../../lib/unread-context";
 import { getSocket } from "../../lib/socket";
 import HeaderIconButton from "../../components/HeaderIconButton";
+import MuteSheet from "../../components/MuteSheet";
+import { useMute } from "../../lib/mutes";
 import {
   DMMessage,
   startConversation,
@@ -91,6 +93,14 @@ export default function DMChatScreen() {
 
   const socketRef = useRef<Socket | null>(null);
   const conversationIdRef = useRef<string | null>(null);
+  /**
+   * Silencieux de CETTE conversation. L'id n'est connu qu'après le premier
+   * chargement (l'écran est ouvert par `friendId`), d'où l'état qui suit la
+   * ref : le hook attend qu'il existe avant d'interroger le serveur.
+   */
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [muteSheet, setMuteSheet] = useState(false);
+  const mute = useMute("dm", conversationId);
   // Ref (accès depuis les callbacks socket/menus) + state (le ref seul ne
   // déclenche pas de re-render → messages affichés « chiffrés » si la clé
   // arrive après le premier rendu, ex. ouverture via une notification).
@@ -114,6 +124,7 @@ export default function DMChatScreen() {
         // 1. Trouver/créer la conversation, puis charger le reste en parallèle
         const conv = await startConversation(friendId);
         conversationIdRef.current = conv._id;
+        setConversationId(conv._id);
 
         const [history, privKey, friendKey, myKey] = await Promise.all([
           fetchDMMessages(conv._id),
@@ -462,6 +473,16 @@ export default function DMChatScreen() {
             // biscornue — d'où un bouton visiblement plus gros et plus décalé
             // que les autres. Il utilise maintenant le même composant que les
             // autres actions d'en-tête.
+            <View style={{ flexDirection: "row", gap: 8 }}>
+            <HeaderIconButton
+              name={mute.mute ? "bell-off" : "bell"}
+              accessibilityLabel={
+                mute.mute
+                  ? "Réactiver les notifications"
+                  : "Couper les notifications"
+              }
+              onPress={() => setMuteSheet(true)}
+            />
             <HeaderIconButton
               name="more"
               accessibilityLabel="Options de la conversation"
@@ -487,8 +508,17 @@ export default function DMChatScreen() {
                 ])
               }
             />
+            </View>
           ),
         }}
+      />
+
+      <MuteSheet
+        visible={muteSheet}
+        mute={mute.mute}
+        onClose={() => setMuteSheet(false)}
+        onSelect={(d) => mute.set(d)}
+        onClear={() => mute.clear()}
       />
 
       <PersonPreviewCard

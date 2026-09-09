@@ -112,11 +112,7 @@ module.exports = (io, socket, app) => {
           const eventWithPrefs = await Event.findOne({ shortId }).select(
             "organizerNotificationPrefs organizer",
           );
-          const chatNotifEnabled =
-            eventWithPrefs?.organizerNotificationPrefs?.event_chat_message !==
-            false;
-
-          if (chatNotifEnabled) {
+          {
             const sender = await User.findById(socket.userId, "name surname");
             const senderName = sender
               ? `${sender.name}${sender.surname ? " " + sender.surname : ""}`
@@ -127,11 +123,13 @@ module.exports = (io, socket, app) => {
               : content.trim().slice(0, 60) +
                 (content.trim().length > 60 ? "…" : "");
 
+            // « maybe » manquait : quelqu'un qui répond « peut-être » reste
+            // un participant, il n'a aucune raison d'être coupé du chat.
             const invitations = await EventInvitation.find({
               event: event._id,
               user: { $nin: [null, socket.userId] },
-              status: { $in: ["accepted", "pending"] },
-            }).select("user");
+              status: { $in: ["accepted", "pending", "maybe"] },
+            }).select("user notificationPreferences");
 
             const roomSockets = await io.in(`event:${shortId}`).allSockets();
             const onlineUserIds = new Set();
@@ -140,31 +138,45 @@ module.exports = (io, socket, app) => {
               if (s?.userId) onlineUserIds.add(s.userId.toString());
             }
 
-            // Notifier les invités absents de la room
-            for (const invitation of invitations) {
-              const participantId = invitation.user.toString();
+            const organizerId = eventWithPrefs.organizer.toString();
+            const senderId = socket.userId.toString();
+            const prefs = eventWithPrefs.organizerNotificationPrefs || {};
+
+            /*
+             * ⚠️ Destinataires DÉDOUBLONNÉS.
+             *
+             * L'organisateur était notifié deux fois : une fois par la boucle
+             * sur les invitations — il a désormais la sienne, il compte parmi
+             * les participants — et une fois par un bloc qui lui était dédié,
+             * écrit à l'époque où il n'en avait pas. Les notifications in-app
+             * étant dédoublonnées par événement (voir utils/notify.js), ça ne
+             * se voyait pas dans le centre de notifications : seul le PUSH
+             * partait en double, une fois par appel.
+             *
+             * Le bloc dédié reste utile pour les événements créés avant que
+             * l'organisateur ait sa propre invitation ; c'est le Set qui
+             * garantit qu'il ne compte qu'une fois.
+             */
+            const recipients = new Set(
+              invitations
+                // Réglage propre à cette personne et à cet événement.
+                .filter(
+                  (inv) => inv.notificationPreferences?.chatMessage !== false,
+                )
+                .map((inv) => inv.user.toString()),
+            );
+            recipients.add(organizerId);
+            recipients.delete(senderId);
+
+            for (const participantId of recipients) {
               if (onlineUserIds.has(participantId)) continue;
+              // La préférence de l'organisateur ne vaut QUE pour lui. Elle
+              // coupait auparavant les notifications de tout le monde, ce qui
+              // revenait à décider à la place des invités.
+              if (participantId === organizerId && prefs.chatMessage === false)
+                continue;
               await notify(app, {
                 userId: participantId,
-                type: "event_chat_message",
-                data: {
-                  eventShortId: event.shortId,
-                  eventTitle: event.title,
-                  senderName,
-                  preview,
-                },
-                link: `/event/${event.shortId}`,
-              });
-            }
-
-            // Notifier l'organisateur s'il n'est pas l'expéditeur et pas dans la room
-            const organizerId = eventWithPrefs.organizer.toString();
-            if (
-              organizerId !== socket.userId.toString() &&
-              !onlineUserIds.has(organizerId)
-            ) {
-              await notify(app, {
-                userId: organizerId,
                 type: "event_chat_message",
                 data: {
                   eventShortId: event.shortId,

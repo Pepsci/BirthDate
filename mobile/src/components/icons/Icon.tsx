@@ -25,7 +25,14 @@ import Svg, { Path } from "react-native-svg";
  * (12, 12) — c'est la règle à respecter en ajoutant une icône.
  */
 
-export type IconName = "chevron-left" | "chat" | "pencil" | "trash" | "more";
+export type IconName =
+  | "chevron-left"
+  | "chat"
+  | "pencil"
+  | "trash"
+  | "more"
+  | "bell"
+  | "bell-off";
 
 const PATHS: Record<IconName, string[]> = {
   // Emprise x : 8,75 → 15,25 · y : 5 → 19 — symétrique autour de (12, 12).
@@ -45,6 +52,21 @@ const PATHS: Record<IconName, string[]> = {
   // Trois points. Chaque point est un segment de longueur nulle rendu rond par
   // strokeLinecap="round". Emprise x : 6 → 18, centrée sur 12.
   more: ["M6 12h.01", "M12 12h.01", "M18 12h.01"],
+
+  // Cloche. Emprise x : 5 → 19, centrée sur 12 ; le battant sous la base est
+  // compris dans l'emprise verticale pour que l'ensemble reste centré.
+  bell: [
+    "M18 15.5V10a6 6 0 1 0-12 0v5.5L4.6 17.4a.6.6 0 0 0 .5.95h13.8a.6.6 0 0 0 .5-.95L18 15.5Z",
+    "M10 20.4a2.2 2.2 0 0 0 4 0",
+  ],
+
+  // Cloche barrée : même tracé, plus la barre en diagonale. Celle-ci va de
+  // (5,5) à (19,19), donc symétrique autour de (12,12) comme le reste.
+  "bell-off": [
+    "M18 15.5V10a6 6 0 1 0-12 0v5.5L4.6 17.4a.6.6 0 0 0 .5.95h13.8a.6.6 0 0 0 .5-.95L18 15.5Z",
+    "M10 20.4a2.2 2.2 0 0 0 4 0",
+    "M5 5 L19 19",
+  ],
 
   // Corbeille. Emprise x : 4 → 20, centrée sur 12.
   trash: [

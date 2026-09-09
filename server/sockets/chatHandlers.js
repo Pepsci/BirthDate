@@ -206,6 +206,9 @@ module.exports = (io, socket, connectedUsers, app) => {
             messageId: message._id.toString(),
             url: `/home?tab=chat&conversationId=${conversationId}`,
             tag: `chat-${conversationId}`,
+            // Permet à ce destinataire d'avoir mis CETTE conversation en
+            // silencieux, sans couper toutes ses notifications de chat.
+            muteScope: { kind: "dm", id: conversationId },
             friendId: socket.userId,
             // Fallback affiché si déchiffrement impossible / iOS sans NSE :
             title: `💬 ${senderName}`,
@@ -229,6 +232,9 @@ module.exports = (io, socket, connectedUsers, app) => {
             body: pushBody,
             url: `/home?tab=chat&conversationId=${conversationId}`,
             tag: `chat-${conversationId}`,
+            // Permet à ce destinataire d'avoir mis CETTE conversation en
+            // silencieux, sans couper toutes ses notifications de chat.
+            muteScope: { kind: "dm", id: conversationId },
             type: "chat",
             friendId: socket.userId,
           }).catch((err) => console.error("❌ Push chat error:", err));
