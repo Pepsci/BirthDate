@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useContext } from "react";
+import { useNavigate } from "react-router-dom";
 import apiHandler from "../../../api/apiHandler";
 import socketService from "../../services/socket.service";
 import { AuthContext } from "../../../context/auth.context";
@@ -26,6 +27,7 @@ const EventChat = ({ shortId, participants = {} }) => {
   const participantKeysRef = useRef(participants);
 
   const currentUserId = localStorage.getItem("userId") || null;
+  const navigate = useNavigate();
 
   shortIdRef.current = shortId;
 
@@ -240,10 +242,47 @@ const EventChat = ({ shortId, participants = {} }) => {
   const isE2EActive =
     !!currentUser?.publicKey && Object.keys(participants).length > 0;
 
+  /**
+   * Invité sans compte.
+   *
+   * La discussion reste réservée aux comptes : elle est chiffrée de bout en
+   * bout, avec un contenu chiffré pour chaque destinataire, et quelqu'un sans
+   * compte n'a pas de clé. Plutôt qu'une impasse, on propose la sortie — et on
+   * retient l'événement, pour que la participation déjà commencée (réponse à
+   * l'invitation, votes, idées cadeaux) suive la personne sur son compte au
+   * lieu d'être perdue.
+   */
   if (!currentUserId) {
+    const goAuth = (panel) => {
+      localStorage.setItem("pendingEventJoin", shortId);
+      navigate(panel, { state: { from: { pathname: `/event/${shortId}` } } });
+    };
     return (
       <div className="event-chat-guest">
-        Connectez-vous pour participer à la discussion.
+        <p className="event-chat-guest-text">
+          La discussion est réservée aux membres : elle est chiffrée de bout en
+          bout, ce qui demande un compte.
+        </p>
+        <div className="event-chat-guest-actions">
+          <button
+            type="button"
+            className="event-chat-guest-btn event-chat-guest-btn--primary"
+            onClick={() => goAuth("/login")}
+          >
+            Se connecter
+          </button>
+          <button
+            type="button"
+            className="event-chat-guest-btn"
+            onClick={() => goAuth("/signup")}
+          >
+            Créer un compte
+          </button>
+        </div>
+        <p className="event-chat-guest-note">
+          Votre participation à cet événement sera reprise sur votre compte :
+          réponse, votes et idées cadeaux vous suivent.
+        </p>
       </div>
     );
   }

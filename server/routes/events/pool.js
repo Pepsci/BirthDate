@@ -19,15 +19,32 @@ const FEE_PERCENT = 0.015;
 const FEE_FIXED = 25;
 
 /**
+ * Estimation des frais, au tarif d'une carte européenne STANDARD.
+ *
+ * ⚠️ Ne vaut que pour ce cas : une carte européenne professionnelle est à
+ * 2,8 %, une britannique à 2,5 %, une carte hors Europe à 3,15 % plus 2 % de
+ * conversion. Ce n'est donc qu'un repli, pour les contributions encaissées
+ * avant qu'on ne stocke les frais réels.
+ */
+const estimatedFee = (amountCents) =>
+  Math.round(amountCents * FEE_PERCENT) + FEE_FIXED;
+
+/**
  * Ce qu'un remboursement coûte à l'organisateur, en centimes.
  *
  * ⚠️ Stripe ne restitue PAS les frais de la transaction d'origine. Le
  * contributeur, lui, récupère l'intégralité de ce qu'il a payé. L'écart est
  * donc entièrement à la charge de l'organisateur : c'est le chiffre qu'il faut
  * lui montrer AVANT qu'il déclenche l'opération, pas après.
+ *
+ * On utilise les frais RÉELS relevés à l'encaissement dès qu'ils existent —
+ * l'estimation ci-dessus pouvait valoir la moitié de la perte réelle selon la
+ * carte utilisée par le contributeur.
  */
-const refundFeeLoss = (amountCents) =>
-  Math.round(amountCents * FEE_PERCENT) + FEE_FIXED;
+const refundFeeLoss = (contribution) =>
+  typeof contribution.feeCents === "number"
+    ? contribution.feeCents
+    : estimatedFee(contribution.amount);
 
 /*
  * GET /api/events/mine/pools
@@ -126,10 +143,17 @@ router.get(
       const rows = await GiftPoolContribution.find({
         event: event._id,
         status: "succeeded",
-      }).select("amount");
+      }).select("amount feeCents");
 
       const total = rows.reduce((sum, r) => sum + r.amount, 0);
-      const feeLoss = rows.reduce((sum, r) => sum + refundFeeLoss(r.amount), 0);
+      const feeLoss = rows.reduce((sum, r) => sum + refundFeeLoss(r), 0);
+      // Contributions dont les frais restent estimés : encaissées avant qu'on
+      // ne relève le montant réel, ou webhook qui n'a pas pu le lire. Le front
+      // s'en sert pour dire « environ » plutôt que d'annoncer un chiffre exact
+      // qui ne l'est pas.
+      const estimatedCount = rows.filter(
+        (r) => typeof r.feeCents !== "number",
+      ).length;
 
       res.status(200).json({
         count: rows.length,
@@ -137,6 +161,7 @@ router.get(
         totalRefunded: total,
         // Ce que ça coûte à l'organisateur, en plus.
         feeLoss,
+        estimatedCount,
         currency: event.giftPool?.currency || "eur",
       });
     } catch (error) {
@@ -203,7 +228,7 @@ router.post("/:shortId/pool/refund-all", isAuthenticated, async (req, res) => {
     const report = { refunded: 0, failed: 0, amount: 0, feeLoss: 0, errors: [] };
 
     for (const row of rows) {
-      const loss = refundFeeLoss(row.amount);
+      const loss = refundFeeLoss(row);
       try {
         const refund = await stripe.refunds.create(
           {

@@ -477,7 +477,9 @@ function serializeListForRole(list, role, userId) {
     accessCode: undefined,
     members: undefined,
     gifts: (obj.gifts || [])
-      .filter((g) => !HIDDEN_STATUSES_FOR_VIEWER.has(g.status))
+      .filter(
+        (g) => !HIDDEN_STATUSES_FOR_VIEWER.has(g.status) && !g.hiddenFromViewers,
+      )
       .map((g) => {
         // reservedBy peut être peuplé (objet) ou brut (ObjectId) selon l'appel.
         const rid = g.reservedBy?._id ?? g.reservedBy;
@@ -662,7 +664,16 @@ router.get("/:id", isAuthenticated, loadListAsParticipant, async (req, res) => {
 // ── Ajouter un cadeau commun ────────────────────────────────────────────────
 router.post("/:id/gifts", isAuthenticated, loadListAsMember, async (req, res) => {
   try {
-    const { giftName, occasion, year, url, price, image, status } = req.body;
+    const {
+      giftName,
+      occasion,
+      year,
+      url,
+      price,
+      image,
+      status,
+      hiddenFromViewers,
+    } = req.body;
     if (!giftName || !giftName.trim())
       return res.status(400).json({ message: "Nom requis" });
     req.sharedList.gifts.push({
@@ -674,6 +685,7 @@ router.post("/:id/gifts", isAuthenticated, loadListAsMember, async (req, res) =>
       url: url || null,
       price: price ?? null,
       image: image || null,
+      hiddenFromViewers: !!hiddenFromViewers,
       addedBy: req.payload._id,
     });
     await req.sharedList.save();
@@ -713,7 +725,16 @@ router.patch(
     try {
       const gift = req.sharedList.gifts.id(req.params.giftId);
       if (!gift) return res.status(404).json({ message: "Cadeau introuvable" });
-      const { giftName, occasion, year, url, price, image, status } = req.body;
+      const {
+        giftName,
+        occasion,
+        year,
+        url,
+        price,
+        image,
+        status,
+        hiddenFromViewers,
+      } = req.body;
       if (giftName !== undefined) gift.giftName = giftName;
       if (occasion !== undefined) gift.occasion = occasion;
       if (year !== undefined) gift.year = year;
@@ -724,6 +745,8 @@ router.patch(
         gift.status = status;
         gift.purchased = status !== "to_buy";
       }
+      if (hiddenFromViewers !== undefined)
+        gift.hiddenFromViewers = !!hiddenFromViewers;
       await req.sharedList.save();
       res.json({
         ...serializeListForRole(req.sharedList, req.listRole, req.payload._id),

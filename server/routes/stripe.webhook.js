@@ -58,6 +58,49 @@ router.post("/", async (req, res) => {
         // Si pas trouvée (ex: trigger CLI générique), on s'arrête là proprement
         if (!contribution) break;
 
+        // ── Frais réels prélevés par Stripe ────────────────────────────────
+        // On les lit maintenant, une fois, et on les fige. Les estimer à
+        // partir d'une constante ne marche que pour une carte européenne
+        // standard ; une carte professionnelle, britannique ou hors Europe
+        // coûte nettement plus, et c'est ce chiffre qu'on montre à
+        // l'organisateur avant un remboursement irréversible.
+        //
+        // ⚠️ Charges directes : la charge et sa `balance_transaction` vivent
+        // sur le compte de l'ORGANISATEUR, pas sur le nôtre. Sans l'en-tête
+        // `stripeAccount`, Stripe répond « ressource introuvable ».
+        //
+        // Jamais bloquant : le paiement est encaissé et le contributeur
+        // notifié quoi qu'il arrive. Sans ce champ, le remboursement
+        // retombera simplement sur l'estimation.
+        if (contribution.feeCents == null) {
+          try {
+            const connectedAccountId = event.account || null;
+            const chargeId =
+              typeof pi.latest_charge === "string"
+                ? pi.latest_charge
+                : pi.latest_charge?.id;
+            if (chargeId) {
+              const charge = await stripe.charges.retrieve(
+                chargeId,
+                { expand: ["balance_transaction"] },
+                connectedAccountId
+                  ? { stripeAccount: connectedAccountId }
+                  : undefined,
+              );
+              const fee = charge?.balance_transaction?.fee;
+              if (typeof fee === "number") {
+                contribution.feeCents = fee;
+                await contribution.save();
+              }
+            }
+          } catch (err) {
+            console.error(
+              `[stripe.webhook] frais réels illisibles pour ${pi.id}:`,
+              err.message,
+            );
+          }
+        }
+
         const eventDoc = await Event.findById(contribution.event).select(
           "shortId title organizer organizerNotificationPrefs",
         );

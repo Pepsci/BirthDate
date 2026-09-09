@@ -89,7 +89,20 @@ const AuthPage = () => {
   const { storeToken, authenticateUser, setUserSession, isLoggedIn } =
     useContext(AuthContext);
 
-  const from = location.state?.from?.pathname || "/home";
+  /**
+   * Destination après authentification.
+   *
+   * ⚠️ `pendingEventJoin` passe AVANT l'état du routeur. Une personne arrivée
+   * par le lien d'un événement et venue créer un compte pour participer à la
+   * discussion passe par l'inscription, qui renvoie vers la connexion : l'état
+   * du routeur est perdu en route, et elle atterrissait sur l'accueil sans
+   * comprendre où était passé l'événement. Ce repère, lui, survit au détour.
+   * Il est consommé par la page de l'événement, qui rattache la participation.
+   */
+  const pendingEvent = localStorage.getItem("pendingEventJoin");
+  const from = pendingEvent
+    ? `/event/${pendingEvent}`
+    : location.state?.from?.pathname || "/home";
   const isFromFriends = location.state?.from?.search?.includes("tab=friends");
 
   useEffect(() => {

@@ -271,6 +271,53 @@ const EventPage = () => {
     fetchEvent();
   }, [shortId, refreshKey]);
 
+  /**
+   * Rattachement de la participation invité au compte, au retour de connexion.
+   *
+   * ⚠️ Ne se contente pas de « rejoindre » : le serveur CONVERTIT l'invitation
+   * invité. Sans ça, la personne qui se crée un compte pour pouvoir écrire
+   * dans la discussion perdrait sa réponse à l'invitation, ses votes de date et
+   * de lieu, et le droit de modifier les idées cadeaux qu'elle a proposées —
+   * elle apparaîtrait même deux fois dans la liste des participants.
+   *
+   * Idempotent : la route répond `alreadyIn` sans rien changer si le compte
+   * participe déjà, on peut donc l'appeler à chaque chargement sans risque.
+   */
+  useEffect(() => {
+    if (!currentUser?._id) return;
+    const storedGuestToken = localStorage.getItem(`guestToken_${shortId}`);
+    const storedCode = sessionStorage.getItem(`event_code_${shortId}`);
+    const pending = localStorage.getItem("pendingEventJoin") === shortId;
+    if (!storedGuestToken && !(pending && storedCode)) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await apiHandler.post(`/events/${shortId}/claim`, {
+          guestToken: storedGuestToken || undefined,
+          code: storedCode || undefined,
+        });
+        if (cancelled) return;
+        // Le jeton invité ne vaut plus rien : le serveur l'a effacé en
+        // convertissant l'invitation. Le garder ferait envoyer un en-tête mort
+        // à chaque requête.
+        if (res.data?.claimed) {
+          localStorage.removeItem(`guestToken_${shortId}`);
+          localStorage.removeItem(`guestName_${shortId}`);
+          setRefreshKey((k) => k + 1);
+        }
+      } catch {
+        // Code absent ou périmé : la personne reste sur la vue publique et
+        // peut rejoindre normalement. Rien à signaler ici.
+      } finally {
+        if (!cancelled) localStorage.removeItem("pendingEventJoin");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [currentUser?._id, shortId]);
+
   // Géocodage de secours : si le lieu fixe n'a pas de coordonnées enregistrées
   // (adresse saisie en texte libre), on les retrouve via Nominatim (OSM, gratuit)
   // pour pouvoir afficher la carte Leaflet.
@@ -666,8 +713,22 @@ const EventPage = () => {
             </motion.div>
           )}
 
-          {/* Proposition de transfert adressée à l'utilisateur courant. */}
-          {event.pendingTransfer?.toUser?._id === currentUser?._id && (
+          {/* Proposition de transfert adressée à l'utilisateur courant.
+
+              ⚠️ La condition testait `event.pendingTransfer?.toUser?._id ===
+              currentUser?._id`. Sur la page publique, un visiteur sans compte
+              n'a pas de `currentUser`, et la vue publique ne contient pas
+              `pendingTransfer` : les deux côtés valaient `undefined`, donc
+              l'égalité était VRAIE et la bannière s'affichait à tout le monde.
+              Les boutons n'auraient rien pu faire (le serveur exige d'être le
+              destinataire) et aucune donnée n'était exposée — mais on
+              proposait à un inconnu de reprendre l'organisation d'un événement
+              privé qu'il n'a même pas rejoint.
+
+              D'où la comparaison explicite : deux identifiants qui existent
+              vraiment, et qui sont égaux. */}
+          {!!currentUser?._id &&
+            event.pendingTransfer?.toUser?._id === currentUser._id && (
             <motion.div className="ep-transfer-banner" {...fadeUp(0.3)}>
               <strong>🤝 On vous propose d'organiser</strong>
               <span>

@@ -83,6 +83,26 @@ const SECTIONS = [
         q: "À quoi servent les votes ?",
         a: "Si tu hésites sur la date ou le lieu, propose plusieurs options : les invités votent, et tu confirmes ensuite le choix retenu.",
       },
+      {
+        q: "Comment annuler un événement ?",
+        a: "Depuis la page de l'événement, choisis « Annuler l'événement ». Tu peux joindre une raison, qui sera transmise telle quelle : sans elle, les invités reçoivent un message générique. Tout le monde est prévenu par notification, par push et par email.",
+      },
+      {
+        q: "Que devient un événement annulé ?",
+        a: "Il bascule dans les événements passés avec un bandeau « Annulé », et plus personne ne peut y voter, répondre à l'invitation, proposer un cadeau ou contribuer à la cagnotte. Rien n'est effacé : tu peux le réactiver, ou le supprimer définitivement une fois annulé.",
+      },
+      {
+        q: "Puis-je confier l'organisation à quelqu'un d'autre ?",
+        a: "Oui. Depuis la page de l'événement, propose le rôle d'organisateur à un participant : il doit l'accepter pour que le transfert soit effectif. Tant qu'il n'a pas accepté, rien ne change.",
+      },
+      {
+        q: "Que devient la cagnotte si je transmets l'organisation ?",
+        a: "Elle est gelée et tes coordonnées bancaires sont retirées de l'événement : plus aucune contribution n'est possible. L'argent déjà collecté reste sur TON compte Stripe — il ne suit pas le rôle. C'est à toi de le reverser ou de le rembourser, et le nouvel organisateur peut ouvrir sa propre cagnotte. Tous les participants sont prévenus.",
+      },
+      {
+        q: "Comment quitter un événement auquel je participe ?",
+        a: "Depuis la page de l'événement, « Quitter l'événement ». Tu ne recevras plus ses notifications. Si tu as contribué à la cagnotte, quitter ne te rembourse pas : demande-le à l'organisateur.",
+      },
     ],
   },
   {
@@ -100,7 +120,19 @@ const SECTIONS = [
       },
       {
         q: "Que se passe-t-il si l'événement est annulé ?",
-        a: "L'organisateur est responsable de rembourser les participants. BirthReminder ne détenant pas les fonds, il ne peut pas procéder au remboursement à sa place. Ne contribue qu'à des cagnottes ouvertes par des personnes que tu connais.",
+        a: "La cagnotte est gelée immédiatement : plus aucune contribution n'est possible. L'organisateur reste responsable de rembourser les participants, et dispose pour cela d'un bouton « Tout rembourser » qui rend à chacun l'intégralité de ce qu'il a versé. BirthReminder ne détenant jamais les fonds, il ne peut pas rembourser à sa place : ne contribue qu'à des cagnottes ouvertes par des personnes que tu connais.",
+      },
+      {
+        q: "Combien me coûte un remboursement en tant qu'organisateur ?",
+        a: "Le contributeur récupère 100 % de ce qu'il a payé, mais Stripe ne te restitue pas les frais de la transaction d'origine : environ 1,5 % du montant plus 0,25 € par contribution restent à ta charge. L'application te montre ce total AVANT que tu lances l'opération, pas après.",
+      },
+      {
+        q: "Comment savoir que j'ai été remboursé ?",
+        a: "Tu reçois une notification dès que le remboursement est enregistré, et la contribution passe en « remboursée » sur la page de l'événement. Le crédit sur ton relevé bancaire peut prendre quelques jours ouvrés selon ta banque — ce délai ne dépend ni de nous ni de l'organisateur.",
+      },
+      {
+        q: "Un remboursement est-il possible sur une cagnotte par virement ?",
+        a: "Non. L'application ne voit pas ces virements et ne peut rien rembourser : tout se règle de banque à banque, directement avec l'organisateur.",
       },
       {
         q: "Puis-je collecter par virement plutôt que par carte ?",
@@ -150,7 +182,35 @@ const SECTIONS = [
       },
       {
         q: "À quoi sert une liste de cadeaux commune ?",
-        a: "Elle permet à deux personnes de préparer ensemble les cadeaux d'un proche : vous voyez et modifiez la même liste, ce qui évite les doublons. Lance-la depuis la fiche de la personne, onglet Liste commune.",
+        a: "Elle permet à plusieurs personnes de préparer ensemble les cadeaux d'un proche : vous voyez et modifiez la même liste, ce qui évite les doublons. Lance-la depuis la fiche de la personne, onglet Liste commune.",
+      },
+      {
+        q: "Quelle différence entre un gestionnaire et un invité ?",
+        a: "Un gestionnaire ajoute, modifie et supprime des idées, et gère les accès. Un invité consulte et réserve, rien de plus : il ne voit ni les cadeaux déjà achetés ou offerts, ni qui a réservé quoi.",
+      },
+      {
+        q: "Où retrouver mes listes communes ?",
+        a: "Dans ton profil → Listes communes. Tu y vois celles que tu gères et celles où tu es invité, avec le nombre d'idées, et tu peux les ouvrir directement ou les quitter.",
+      },
+      {
+        q: "À quoi sert « Je m'en occupe » ?",
+        a: "À signaler aux autres que tu prends ce cadeau en charge, pour que personne ne l'achète en double. Tu peux libérer ta réservation à tout moment. Un gestionnaire peut aussi libérer celle de quelqu'un d'autre — utile quand la personne ne revient jamais.",
+      },
+      {
+        q: "Comment partager la liste à quelqu'un qui n'a pas de compte ?",
+        a: "Active le lien public depuis Partager. Si la liste a un code d'accès, le lien seul ne montre rien tant que le code n'est pas saisi : utilise le bouton « Lien + code » pour tout envoyer en une fois. Régénérer le code invalide les liens déjà distribués qui le contenaient.",
+      },
+      {
+        q: "Puis-je cacher une idée aux invités ?",
+        a: "Oui. Ouvre l'idée et choisis « Masquer aux invités » : elle reste visible des gestionnaires, marquée 🙈, mais disparaît pour les invités et pour le lien public.",
+      },
+      {
+        q: "Comment m'y retrouver dans une longue liste ?",
+        a: "Le filtre permet de croiser deux critères : l'occasion, et l'état de réservation (libres, réservées, ou celles dont tu t'occupes). Les cadeaux déjà offerts descendent automatiquement sous un trait, en bas : ils ne sont pas supprimés, c'est la mémoire de ce qui a déjà été offert.",
+      },
+      {
+        q: "Que se passe-t-il si je quitte une liste commune ?",
+        a: "Elle est retirée de ta carte et tu n'en vois plus les idées. Les autres membres la conservent. Il faudra qu'on te la repartage pour y revenir.",
       },
     ],
   },

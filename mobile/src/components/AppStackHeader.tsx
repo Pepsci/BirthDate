@@ -1,4 +1,5 @@
-import { View, Text, StyleSheet } from "react-native";
+import { useState } from "react";
+import { View, Text, StyleSheet, LayoutChangeEvent } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useThemedStyles, ThemeColors } from "../lib/theme-context";
 
@@ -27,6 +28,28 @@ export default function AppStackHeader({ options, route }: any) {
   const insets = useSafeAreaInsets();
   const s = useThemedStyles(makeStyles);
 
+  /**
+   * Marge tenue de part et d'autre du titre.
+   *
+   * ⚠️ Elle était fixée à 64 px, ce qui suppose des boutons courts. Sur l'écran
+   * des notifications, « Tout lire » et « Tout supprimer » occupent bien plus :
+   * le titre, centré en absolu, passait dessous et les deux textes se
+   * chevauchaient. On mesure donc les deux côtés et on retient le PLUS LARGE
+   * comme marge symétrique — le titre reste exactement au centre de l'écran
+   * (c'est tout l'objet de ce composant) et se tronque au lieu de déborder.
+   */
+  const [leftW, setLeftW] = useState(0);
+  const [rightW, setRightW] = useState(0);
+  const measure =
+    (current: number, set: (n: number) => void) => (e: LayoutChangeEvent) => {
+      const w = Math.round(e.nativeEvent.layout.width);
+      // Le titre est en position absolue : sa marge n'influence pas la largeur
+      // des côtés, il n'y a donc pas de boucle de layout. La comparaison évite
+      // simplement un rendu inutile.
+      if (w !== current) set(w);
+    };
+  const inset = Math.max(44, Math.max(leftW, rightW) + 16);
+
   const left = options.headerLeft?.({});
   const right = options.headerRight?.({});
 
@@ -51,14 +74,23 @@ export default function AppStackHeader({ options, route }: any) {
         {/* Titre centré en absolu, et déclaré EN PREMIER pour passer sous les
             boutons : un titre long ne peut donc jamais les recouvrir.
             Les marges left/right le tiennent à l'écart des deux côtés. */}
-        <View style={s.titleWrap}>{title}</View>
+        <View style={[s.titleWrap, { left: inset, right: inset }]}>
+          {title}
+        </View>
 
-        <View style={s.side}>{left}</View>
+        <View style={s.side} onLayout={measure(leftW, setLeftW)}>
+          {left}
+        </View>
         {/* pointerEvents none : cet espaceur couvre le titre, sans quoi il
             intercepterait les appuis destinés à un titre interactif (l'avatar
             de la conversation ouvre la fiche du contact). */}
         <View style={s.spacer} pointerEvents="none" />
-        <View style={[s.side, s.sideRight]}>{right}</View>
+        <View
+          style={[s.side, s.sideRight]}
+          onLayout={measure(rightW, setRightW)}
+        >
+          {right}
+        </View>
       </View>
     </View>
   );
@@ -79,8 +111,8 @@ const makeStyles = (c: ThemeColors) =>
     },
     titleWrap: {
       position: "absolute",
-      left: 64,
-      right: 64,
+      // left / right sont posés à l'exécution, d'après la largeur mesurée des
+      // deux côtés (voir plus haut).
       top: 0,
       bottom: 0,
       alignItems: "center",

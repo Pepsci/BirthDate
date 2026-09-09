@@ -95,6 +95,26 @@ const SECTIONS: Section[] = [
         q: "Comment fonctionne la cagnotte ?",
         a: "L'organisateur peut ouvrir une cagnotte en connectant son compte Stripe (paiements sécurisés). Les invités peuvent ensuite participer directement depuis la page de l'événement, et chacun voit le total collecté.",
       },
+      {
+        q: "Comment annuler un événement ?",
+        a: "Sur la page de l'événement → Annuler l'événement. Tu peux joindre une raison, transmise telle quelle ; sans elle, les invités reçoivent un message générique. Tout le monde est prévenu par notification, push et email.",
+      },
+      {
+        q: "Que devient un événement annulé ?",
+        a: "Il passe dans les événements passés avec un bandeau « Annulé », et plus personne ne peut y voter, répondre, proposer un cadeau ou contribuer. Rien n'est effacé : tu peux le réactiver, ou le supprimer définitivement une fois annulé.",
+      },
+      {
+        q: "Puis-je confier l'organisation à quelqu'un d'autre ?",
+        a: "Oui : propose le rôle à un participant depuis la page de l'événement. Il doit l'accepter pour que le transfert soit effectif ; tant qu'il n'a pas accepté, rien ne change.",
+      },
+      {
+        q: "Que devient la cagnotte si je transmets l'organisation ?",
+        a: "Elle est gelée et tes coordonnées bancaires sont retirées de l'événement. L'argent déjà collecté reste sur TON compte Stripe — il ne suit pas le rôle. C'est à toi de le reverser ou de le rembourser, et le nouvel organisateur peut ouvrir sa propre cagnotte. Tous les participants sont prévenus.",
+      },
+      {
+        q: "Comment quitter un événement ?",
+        a: "Depuis la page de l'événement → Quitter l'événement. Tu ne recevras plus ses notifications. Si tu as contribué à la cagnotte, quitter ne te rembourse pas : demande-le à l'organisateur.",
+      },
     ],
   },
   {
@@ -111,7 +131,19 @@ const SECTIONS: Section[] = [
       },
       {
         q: "Et si l'événement est annulé ?",
-        a: "L'organisateur est responsable de rembourser les participants. Comme nous ne détenons pas les fonds, nous ne pouvons pas le faire à sa place. Ne contribue qu'à des cagnottes ouvertes par des personnes que tu connais.",
+        a: "La cagnotte est gelée immédiatement : plus aucune contribution n'est possible. L'organisateur reste responsable de rembourser, et dispose d'un bouton « Tout rembourser » qui rend à chacun l'intégralité de ce qu'il a versé. Comme nous ne détenons pas les fonds, nous ne pouvons pas le faire à sa place : ne contribue qu'à des cagnottes ouvertes par des personnes que tu connais.",
+      },
+      {
+        q: "Combien me coûte un remboursement en tant qu'organisateur ?",
+        a: "Le contributeur récupère 100 % de ce qu'il a payé, mais Stripe ne te restitue pas les frais de la transaction d'origine : environ 1,5 % du montant plus 0,25 € par contribution restent à ta charge. L'application te montre ce total AVANT que tu lances l'opération.",
+      },
+      {
+        q: "Comment savoir que j'ai été remboursé ?",
+        a: "Tu reçois une notification dès que le remboursement est enregistré, et ta contribution passe en « remboursée » sur la page de l'événement. Le crédit sur ton relevé peut prendre quelques jours ouvrés selon ta banque.",
+      },
+      {
+        q: "Un remboursement est-il possible sur une cagnotte par virement ?",
+        a: "Non. L'application ne voit pas ces virements et ne peut rien rembourser : tout se règle de banque à banque, directement avec l'organisateur.",
       },
       {
         q: "Puis-je collecter par virement plutôt que par carte ?",
@@ -159,7 +191,35 @@ const SECTIONS: Section[] = [
       },
       {
         q: "À quoi sert une liste de cadeaux commune ?",
-        a: "À préparer les cadeaux d'un proche à deux : vous voyez et modifiez la même liste, ce qui évite les doublons. Lance-la depuis la fiche de la personne → Liste commune.",
+        a: "À préparer les cadeaux d'un proche à plusieurs : vous voyez et modifiez la même liste, ce qui évite les doublons. Lance-la depuis la fiche de la personne → Liste commune.",
+      },
+      {
+        q: "Quelle différence entre un gestionnaire et un invité ?",
+        a: "Un gestionnaire ajoute, modifie et supprime des idées, et gère les accès. Un invité consulte et réserve, rien de plus : il ne voit ni les cadeaux déjà achetés ou offerts, ni qui a réservé quoi.",
+      },
+      {
+        q: "Où retrouver mes listes communes ?",
+        a: "Profil → Listes communes. Tu y vois celles que tu gères et celles où tu es invité, et tu peux les ouvrir directement ou les quitter.",
+      },
+      {
+        q: "À quoi sert « Je m'en occupe » ?",
+        a: "À signaler aux autres que tu prends ce cadeau en charge, pour que personne ne l'achète en double. Tu peux libérer ta réservation à tout moment, et un gestionnaire peut libérer celle de quelqu'un d'autre — utile quand la personne ne revient jamais.",
+      },
+      {
+        q: "Comment partager la liste à quelqu'un sans compte ?",
+        a: "Active le lien public depuis Partager. Si la liste a un code d'accès, le lien seul ne montre rien tant que le code n'est pas saisi : utilise « Envoyer le lien (code inclus) » pour tout transmettre en une fois. Changer le code invalide les liens déjà envoyés qui le contenaient.",
+      },
+      {
+        q: "Puis-je cacher une idée aux invités ?",
+        a: "Oui : ouvre l'idée puis « Masquer aux invités ». Elle reste visible des gestionnaires, marquée 🙈, mais disparaît pour les invités et pour le lien public.",
+      },
+      {
+        q: "Comment m'y retrouver dans une longue liste ?",
+        a: "Le filtre croise deux critères : l'occasion, et l'état de réservation (libres, réservées, ou celles dont tu t'occupes). Les cadeaux déjà offerts descendent sous un trait en bas : ils ne sont pas supprimés, c'est la mémoire de ce qui a déjà été offert.",
+      },
+      {
+        q: "Que se passe-t-il si je quitte une liste commune ?",
+        a: "Elle est retirée de ta carte et tu n'en vois plus les idées. Les autres membres la conservent, et il faudra qu'on te la repartage pour y revenir.",
       },
     ],
   },

@@ -75,7 +75,7 @@ export default function PoolConfigScreen() {
     if (!preview) return;
     Alert.alert(
       "Rembourser tout le monde ?",
-      `${preview.count} contribution${preview.count > 1 ? "s" : ""} pour ${(preview.totalRefunded / 100).toFixed(2)} €.\n\nLes contributeurs récupèrent l'intégralité. Cette opération te coûtera ${(preview.feeLoss / 100).toFixed(2)} € : Stripe ne restitue pas les frais des paiements d'origine.\n\nLa cagnotte sera fermée. C'est irréversible.`,
+      `${preview.count} contribution${preview.count > 1 ? "s" : ""} pour ${(preview.totalRefunded / 100).toFixed(2)} €.\n\nLes contributeurs récupèrent l'intégralité. Cette opération te coûtera ${preview.estimatedCount > 0 ? "environ " : ""}${(preview.feeLoss / 100).toFixed(2)} € : Stripe ne restitue pas les frais des paiements d'origine.\n\nLa cagnotte sera fermée. C'est irréversible.`,
       [
         { text: "Annuler", style: "cancel" },
         {
@@ -255,6 +255,31 @@ export default function PoolConfigScreen() {
         />
       </View>
 
+      {/* ── Ce que l'organisateur s'engage à faire ────────────────────────
+          Posé ICI, juste après l'interrupteur, et non enterré dans les CGU :
+          ouvrir une cagnotte crée une obligation de remboursement en cas
+          d'annulation, et cette obligation coûte de l'argent. La découvrir au
+          moment d'annuler serait la découvrir trop tard. */}
+      {active && (
+        <View style={styles.commitBox}>
+          <Text style={styles.commitTitle}>Ce que tu t'engages à faire</Text>
+          <Text style={styles.commitText}>
+            L'argent arrive directement sur ton compte Stripe : BirthReminder ne
+            le détient jamais. Si l'événement est annulé, ou si le cadeau n'est
+            finalement pas acheté, c'est à toi de rembourser les participants —
+            un bouton « Rembourser les contributeurs » apparaît ci-dessous dès
+            la première contribution reçue.
+          </Text>
+          <Text style={styles.commitText}>
+            Les contributeurs récupèrent l'intégralité de ce qu'ils ont versé,
+            mais Stripe ne te restitue pas les frais du paiement d'origine :
+            environ 1,5 % + 0,25 € par contribution, davantage pour une carte
+            professionnelle ou étrangère. Ce montant reste à ta charge, en plus
+            des sommes rendues.
+          </Text>
+        </View>
+      )}
+
       {active && (
         <>
           <Text style={styles.label}>Mode</Text>
@@ -349,9 +374,26 @@ export default function PoolConfigScreen() {
               l'écart reste à la charge de l'organisateur. Le découvrir après
               coup serait une mauvaise surprise. */}
           <Text style={styles.refundWarn}>
-            ⚠️ Cette opération te coûtera {(preview!.feeLoss / 100).toFixed(2)} €
-            : Stripe ne rend pas les frais des paiements d'origine.
+            ⚠️ Cette opération te coûtera{" "}
+            {preview!.estimatedCount > 0 ? "environ " : ""}
+            {(preview!.feeLoss / 100).toFixed(2)} € : Stripe ne rend pas les
+            frais des paiements d'origine.
           </Text>
+          {/* Les frais dépendent de la carte utilisée par chaque contributeur
+              — 1,5 % pour une carte européenne standard, jusqu'à 3,15 % plus
+              conversion pour une carte étrangère. On les relève désormais à
+              l'encaissement ; pour les contributions plus anciennes, il ne
+              reste qu'une estimation, et l'annoncer comme un chiffre exact
+              serait mentir sur une opération irréversible. */}
+          {preview!.estimatedCount > 0 && (
+            <Text style={styles.refundNote}>
+              {preview!.estimatedCount} contribution
+              {preview!.estimatedCount > 1 ? "s" : ""} sur {preview!.count} est
+              chiffrée au tarif d'une carte européenne standard. Le coût réel
+              peut être plus élevé si le paiement venait d'une carte
+              professionnelle ou étrangère.
+            </Text>
+          )}
           <Pressable
             style={[styles.refundBtn, refunding && { opacity: 0.5 }]}
             disabled={refunding}
@@ -505,6 +547,20 @@ const makeStyles = (c: ThemeColors) =>
     },
     label: { fontSize: 13, fontWeight: "700", color: c.sub, marginTop: 10 },
     hint: { color: c.faint, fontSize: 12 },
+    // Encadré d'engagement : ton informatif, pas alarmiste — il ne signale
+    // pas un danger, il énonce ce à quoi on souscrit en activant.
+    commitBox: {
+      marginTop: 4,
+      padding: 14,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: c.border,
+      backgroundColor: c.bgSecondary,
+      gap: 8,
+    },
+    commitTitle: { fontWeight: "800", fontSize: 14, color: c.text },
+    commitText: { fontSize: 13, lineHeight: 19, color: c.sub },
+    refundNote: { fontSize: 12, lineHeight: 17, marginTop: 8 },
     refundWarn: {
       color: c.warning,
       fontSize: 12.5,

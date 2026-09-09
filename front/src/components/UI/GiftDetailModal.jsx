@@ -37,6 +37,12 @@ const GiftDetailModal = ({
   onUnreserve,
   onOffered,
   onVote,
+  /**
+   * Idée d'une liste commune masquée aux invités et au lien public.
+   * Optionnel : les idées personnelles n'ont personne à qui se cacher, la
+   * bascule n'apparaît donc que si l'appelant la fournit.
+   */
+  onToggleHidden,
 }) => {
   // Fermer sur Escape
   useEffect(() => {
@@ -246,6 +252,23 @@ const GiftDetailModal = ({
                     );
                   })}
                 </div>
+                {/* Visibilité pour les invités. Posée avant Modifier /
+                    Supprimer parce qu'elle ne change pas l'idée, seulement
+                    qui la voit — et parce que se tromper ici expose ce qu'on
+                    voulait garder entre gestionnaires. */}
+                {onToggleHidden && (
+                  <button
+                    className={`gdm-btn gdm-visibility ${item.hiddenFromViewers ? "gdm-visibility--on" : ""}`}
+                    onClick={() => {
+                      onToggleHidden(item.raw, !item.hiddenFromViewers);
+                      onClose();
+                    }}
+                  >
+                    {item.hiddenFromViewers
+                      ? "🙈 Masquée aux invités · rendre visible"
+                      : "👁️ Visible par les invités · masquer"}
+                  </button>
+                )}
                 <button
                   className="gdm-btn gdm-btn--primary"
                   onClick={handleEditClick}

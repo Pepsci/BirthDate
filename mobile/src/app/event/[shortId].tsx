@@ -1785,7 +1785,7 @@ export default function EventDetailScreen() {
           L'événement restera consultable, barré, avec ton motif. Tu pourras le
           rétablir ou le supprimer ensuite.
           {pool?.active
-            ? " La cagnotte sera fermée : plus aucune contribution ne pourra arriver. Les sommes déjà versées ne sont pas remboursées automatiquement."
+            ? " La cagnotte sera fermée : plus aucune contribution ne pourra arriver. Les sommes déjà versées ne sont PAS remboursées automatiquement — c'est à toi de le faire depuis la configuration de la cagnotte, et les frais Stripe des paiements d'origine resteront à ta charge."
             : ""}
         </Text>
         <TextInput

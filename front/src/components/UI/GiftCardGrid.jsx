@@ -12,6 +12,7 @@ const GiftCardGrid = ({
   onSetStatus,
   onReserve,
   onUnreserve,
+  onToggleHidden,
   onVote,
   onOffered,
   currentUserId,
@@ -84,6 +85,9 @@ const GiftCardGrid = ({
         reservedByName: item.reservedBy?.name
           ? `${item.reservedBy.name}${item.reservedBy.surname ? " " + item.reservedBy.surname : ""}`
           : item.reservedByGuest || null,
+        // N'arrive qu'aux membres : le serveur retire purement et simplement
+        // les idées masquées de ce qu'il envoie aux invités.
+        hiddenFromViewers: !!item.hiddenFromViewers,
         raw: item,
       };
     }
@@ -259,6 +263,10 @@ const GiftCardGrid = ({
                 )}
                 {type === "gifts" && item.occasion && (
                   <p className="gcg-meta">
+                    {/* Le marqueur passe DEVANT le reste : c'est
+                        l'information la plus surprenante de la carte, et
+                        celle qu'on doit voir sans lire. */}
+                    {item.hiddenFromViewers ? "🙈 " : ""}
                     {getOccasionEmoji(item.occasion)} {item.occasion}
                     {item.year ? ` · ${item.year}` : ""}
                   </p>
@@ -608,6 +616,7 @@ const GiftCardGrid = ({
             onUnreserve?.(id);
             setSelectedItem(null);
           }}
+          onToggleHidden={onToggleHidden}
           onOffered={(raw) => {
             onOffered?.(raw);
             setSelectedItem(null);

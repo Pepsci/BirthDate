@@ -21,6 +21,26 @@ const giftPoolContributionSchema = new Schema(
       default: "pending",
     },
 
+    /**
+     * Frais RÉELLEMENT prélevés par Stripe sur ce paiement, en centimes, lus
+     * sur la `balance_transaction` de la charge et figés à l'encaissement.
+     *
+     * ⚠️ Pourquoi ce champ existe. Le coût d'un remboursement était estimé à
+     * partir d'une constante — 1,5 % + 0,25 €, le tarif d'une carte
+     * européenne standard. Or c'est un cas de figure sur quatre : une carte
+     * européenne professionnelle est à 2,8 %, une carte britannique à 2,5 %,
+     * une carte hors Europe à 3,15 % plus 2 % de conversion. L'organisateur
+     * voyait donc, AVANT une opération irréversible, un chiffre qui pouvait
+     * valoir la moitié de ce qu'il allait réellement perdre.
+     *
+     * Figé au moment de l'encaissement, jamais recalculé : c'est le barème
+     * appliqué CE jour-là qui compte, et Stripe fait évoluer sa grille.
+     *
+     * `null` pour les contributions encaissées avant l'ajout de ce champ :
+     * elles retombent sur l'estimation, faute de mieux.
+     */
+    feeCents: { type: Number, default: null },
+
     // ── Remboursement ─────────────────────────────────────────────────────
     // Le passage en "refunded" est prononcé par le webhook `charge.refunded`,
     // jamais par la route qui déclenche le remboursement : Stripe reste la

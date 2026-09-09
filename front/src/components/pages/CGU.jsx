@@ -292,6 +292,13 @@ export default function CGU() {
             <li>de ses éventuelles obligations déclaratives ou fiscales.</li>
           </ul>
           <p>
+            L'application met à sa disposition une fonction de remboursement
+            (article 5.4). Elle facilite l'exécution de cette obligation, elle
+            ne la transfère pas : le fait qu'un outil existe ne rend pas
+            BirthReminder responsable des sommes, et le fait qu'il ne soit pas
+            utilisé ne dispense pas l'organisateur de rembourser.
+          </p>
+          <p>
             En ouvrant une cagnotte, il doit créer un compte auprès de Stripe et
             se soumettre à ses vérifications d'identité. Il accepte les
             conditions de Stripe en plus des présentes.
@@ -305,8 +312,52 @@ export default function CGU() {
             pas l'achat d'un bien ou d'un service : le droit de rétractation
             applicable aux achats en ligne ne s'y applique pas.
           </p>
+          <p>
+            Vous ne pouvez pas annuler vous-même une contribution déjà versée :
+            seul l'organisateur peut déclencher un remboursement, et quitter
+            l'événement ne vous rembourse pas. Adressez-vous à lui.
+          </p>
 
-          <h3>5.4 Litiges</h3>
+          <h3>5.4 Remboursement des contributions</h3>
+          <p>
+            L'organisateur peut rembourser une contribution, ou l'ensemble
+            d'entre elles, depuis la page de l'événement. Le remboursement est
+            exécuté <strong>sur son propre compte Stripe</strong> : nous
+            transmettons l'ordre, nous ne déplaçons aucun fonds et nous ne
+            pouvons pas rembourser à sa place, y compris s'il ne le fait pas.
+          </p>
+          <p>
+            Le contributeur récupère <strong>l'intégralité</strong> de la somme
+            versée. En revanche, Stripe ne restitue pas les frais prélevés sur
+            la transaction d'origine : environ <strong>1,5 % du montant plus
+            0,25 €</strong> par contribution restent à la charge de
+            l'organisateur, en plus de la somme rendue. Ce coût lui est affiché
+            avant qu'il ne confirme l'opération. Ces frais sont fixés par
+            Stripe et peuvent évoluer indépendamment de nous.
+          </p>
+          <p>
+            L'annulation d'un événement, comme le transfert du rôle
+            d'organisateur, <strong>gèle la cagnotte</strong> : plus aucune
+            contribution ne peut y être versée. Les sommes déjà collectées
+            restent sur le compte Stripe de l'organisateur qui les a encaissées
+            — elles ne suivent pas le transfert du rôle. Il lui appartient de
+            les reverser au nouvel organisateur ou de les rembourser aux
+            participants.
+          </p>
+          <p className="warning">
+            ⚠️ Le remboursement est irréversible et ne peut pas être annulé
+            depuis l'application. Le crédit effectif sur le compte du
+            contributeur dépend ensuite de sa banque et peut prendre plusieurs
+            jours ouvrés : ce délai ne dépend ni de BirthReminder ni de
+            l'organisateur.
+          </p>
+          <p>
+            Les contributions reçues par virement bancaire (article 5.6) ne
+            peuvent pas être remboursées par l'application, qui n'en a aucune
+            trace.
+          </p>
+
+          <h3>5.5 Litiges</h3>
           <p>
             Tout différend relatif à une cagnotte se règle{" "}
             <strong>entre le participant et l'organisateur</strong>.
@@ -322,7 +373,7 @@ export default function CGU() {
             concernées ou aux autorités compétentes sur demande légitime.
           </p>
 
-          <h3>5.5 Cagnotte par virement bancaire</h3>
+          <h3>5.6 Cagnotte par virement bancaire</h3>
           <p className="warning">
             ⚠️ L'organisateur peut choisir de communiquer ses coordonnées
             bancaires plutôt que de passer par le paiement par carte. Dans ce
@@ -336,7 +387,7 @@ export default function CGU() {
             l'organisateur.
           </p>
 
-          <h3>5.6 Gratuité du service</h3>
+          <h3>5.7 Gratuité du service</h3>
           <p>
             L'ensemble des fonctionnalités de BirthReminder est aujourd'hui
             gratuit et sans publicité : dates illimitées, amis illimités, chat
@@ -491,7 +542,7 @@ export default function CGU() {
         </section>
 
         <p className="last-update">
-          <strong>Dernière mise à jour :</strong> 10 février 2026
+          <strong>Dernière mise à jour :</strong> 8 septembre 2026
         </p>
       </div>
     </div>

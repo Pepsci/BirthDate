@@ -140,6 +140,17 @@ export default function DateDetailScreen() {
   // Filtre des idées par occasion ("all" ou une valeur d'occasion)
   const [giftFilter, setGiftFilter] = useState<string>("all");
   const [showFilters, setShowFilters] = useState(false);
+  // Filtre propre à la liste commune. Séparé de celui des idées perso : ce
+  // sont deux listes différentes, avec des occasions différentes, et partager
+  // un même filtre ferait disparaître des idées en changeant d'onglet.
+  const [sharedFilter, setSharedFilter] = useState<string>("all");
+  // Second axe : l'état de réservation. Indépendant de l'occasion — chercher
+  // « ce qui reste à prendre pour Noël » croise les deux, et n'aurait pas de
+  // réponse si l'un remplaçait l'autre.
+  const [sharedReserved, setSharedReserved] = useState<
+    "all" | "free" | "taken" | "mine"
+  >("all");
+  const [showSharedFilters, setShowSharedFilters] = useState(false);
   const [selectedGift, setSelectedGift] = useState<Gift | null>(null);
   const [selectedWish, setSelectedWish] = useState<WishlistItem | null>(null);
   // Liste commune
@@ -425,6 +436,185 @@ export default function DateDetailScreen() {
             ),
         },
       ],
+    );
+  };
+
+  // Idées communes visibles, une fois retirée celle en cours de suppression
+  // (bandeau « Annuler » de 5 s) et appliqué le filtre par occasion.
+  const sharedGiftsAll = (sharedList?.gifts ?? []).filter(
+    (g) =>
+      !(pendingDelete?.scope === "shared" && pendingDelete.gift._id === g._id),
+  );
+  const sharedByOccasion =
+    sharedFilter === "all"
+      ? sharedGiftsAll
+      : sharedGiftsAll.filter((g) => g.occasion === sharedFilter);
+  const sharedFiltered = sharedByOccasion.filter((g) => {
+    if (sharedReserved === "free") return !isReserved(g);
+    if (sharedReserved === "taken") return isReserved(g);
+    if (sharedReserved === "mine") return isReservedByMe(g);
+    return true;
+  });
+  /**
+   * Les idées déjà offertes descendent sous un séparateur.
+   *
+   * Une liste commune sert pendant des mois : au bout de deux Noëls, les
+   * idées vivantes se noient parmi celles qui sont derrière nous. Elles ne
+   * sont pas supprimées pour autant — c'est la mémoire de ce qui a déjà été
+   * offert, et donc ce qui évite d'offrir deux fois la même chose.
+   *
+   * Les invités ne sont pas concernés : le serveur ne leur envoie jamais les
+   * cadeaux `offered`, cette séparation n'existe donc que pour les membres.
+   */
+  // Résumé porté par le bouton refermé : sans lui, un filtre actif devient
+  // invisible et la liste semble avoir perdu des idées.
+  const RESERVED_FILTER_LABEL = {
+    all: null,
+    free: "Libres",
+    taken: "Réservées",
+    mine: "Je m'en occupe",
+  } as const;
+  const sharedFilterActive =
+    sharedFilter !== "all" || sharedReserved !== "all";
+  const sharedFilterLabel = [
+    sharedFilter !== "all"
+      ? `${occasionEmoji(sharedFilter)} ${sharedFilter}`
+      : null,
+    RESERVED_FILTER_LABEL[sharedReserved],
+  ]
+    .filter(Boolean)
+    .join(" · ");
+
+  const sharedActive = sharedFiltered.filter(
+    (g) => giftStatusOf(g) !== "offered",
+  );
+  const sharedOffered = sharedFiltered.filter(
+    (g) => giftStatusOf(g) === "offered",
+  );
+
+  /**
+   * Carte d'une idee commune, vue GESTIONNAIRE. Extraite de la grille
+   * parce qu'elle est desormais rendue a deux endroits : les idees en
+   * cours, et celles deja offertes sous leur separateur.
+   */
+  const renderSharedCard = (g: SharedGift) => {
+    const st = giftStatusOf(g);
+    const meta = GIFT_STATUS_META[st];
+    const reservedByMe = isReservedByMe(g);
+    const reservedByOther = isReserved(g) && !reservedByMe;
+    return (
+      <Pressable
+        key={g._id}
+        style={[
+          styles.giftGridCard,
+          st !== "to_buy" && styles.giftCardDone,
+          // Réservé par un autre : grisé, mais jamais retiré de
+          // la liste — le voir disparaître ferait croire à une
+          // suppression.
+          reservedByOther && styles.giftCardReserved,
+        ]}
+        onPress={() => setSelectedSharedGift(g)}
+      >
+        {g.image ? (
+          <Image
+            source={{ uri: g.image }}
+            style={styles.giftGridImg}
+          />
+        ) : (
+          <View style={[styles.giftGridImg, styles.giftCardNoImg]}>
+            <Text style={styles.giftGridEmoji}>
+              {occasionEmoji(g.occasion)}
+            </Text>
+          </View>
+        )}
+        <Text style={styles.giftName} numberOfLines={2}>
+          {g.giftName}
+        </Text>
+        <Text style={styles.giftMeta} numberOfLines={1}>
+          {/* Le marqueur passe DEVANT le reste : c'est l'information la plus
+              surprenante de la carte, et celle qu'on doit voir sans lire. */}
+          {g.hiddenFromViewers ? "🙈 " : ""}
+          {occasionEmoji(g.occasion)} {g.occasion}
+          {g.addedBy?.name ? ` · ${g.addedBy.name}` : ""}
+        </Text>
+        {/* Réservation. Le nom est affiché : les membres sont
+            les offrants, la personne concernée n'a pas accès à
+            la liste, il n'y a donc pas de surprise à protéger —
+            et savoir qui s'en occupe est justement ce qui évite
+            le double achat. */}
+        {/* Pied de carte ancré en bas : les cartes d'une même
+            rangée sont étirées à la hauteur de la plus haute,
+            donc sans ça la pastille et le prix flottaient à des
+            hauteurs différentes selon la longueur du titre. */}
+        <View style={styles.sharedCardBottom}>
+        <Pressable
+          disabled={busy || reservedByOther}
+          onPress={() => toggleSharedReservation(g)}
+          style={[
+            styles.reservePill,
+            isReserved(g) && styles.reservePillTaken,
+          ]}
+        >
+          <Text
+            style={[
+              styles.sharedReserveText,
+              isReserved(g) && styles.sharedReserveTextTaken,
+            ]}
+            numberOfLines={1}
+          >
+            {reservedByMe
+              ? "✓ Tu t'en occupes · annuler"
+              : reservedByOther
+                ? // Le prénom n'est connu que des membres.
+                  reserverName(g)
+                  ? `🔒 Réservé par ${reserverName(g)}`
+                  : "🔒 Réservé"
+                : "＋ Je m'en occupe"}
+          </Text>
+        </Pressable>
+        {/* Action distincte, et non un second sens caché dans
+            la pastille : libérer la réservation d'un autre n'est
+            pas le même geste que prendre ou lâcher la sienne. */}
+        {reservedByOther && isSharedMember && (
+          <Pressable
+            disabled={busy}
+            onPress={() => releaseSharedReservation(g)}
+            style={styles.releasePill}
+          >
+            <Text style={styles.releasePillText} numberOfLines={1}>
+              ↩︎ Libérer la réservation
+            </Text>
+          </Pressable>
+        )}
+        <View style={styles.giftGridRow}>
+          {g.price != null ? (
+            <View style={styles.pricePill}>
+              <Text style={styles.pricePillText}>{g.price} €</Text>
+            </View>
+          ) : (
+            <View style={[styles.pricePill, styles.pricePillEmpty]}>
+              <Text style={styles.pricePillEmptyText}>—</Text>
+            </View>
+          )}
+          {/* Changer le statut modifie la liste : lecture
+              seule pour un invité, qui voit l'état sans
+              pouvoir le faire basculer. */}
+          <Pressable
+            disabled={busy || !isSharedMember}
+            onPress={() =>
+              setSharedGiftStatus(g, nextGiftStatus(st))
+            }
+            style={[styles.giftBadge, { backgroundColor: meta.bg }]}
+          >
+            <Text
+              style={[styles.giftBadgeText, { color: meta.color }]}
+            >
+              {meta.emoji} {meta.short}
+            </Text>
+          </Pressable>
+        </View>
+        </View>
+      </Pressable>
     );
   };
 
@@ -1488,8 +1678,133 @@ export default function DateDetailScreen() {
                 />
               )}
 
-              {sharedList.gifts.length === 0 && (
-                <Text style={styles.muted}>Aucune idée commune pour l'instant.</Text>
+              {/* Filtre par occasion — même mécanique que les idées perso.
+                  Une liste commune vit longtemps et mélange Noël,
+                  anniversaire et le reste : sans filtre, préparer UNE
+                  occasion oblige à faire le tri à l'œil à chaque visite. */}
+              {sharedGiftsAll.length > 0 && (
+                <>
+                  <Pressable
+                    style={[
+                      styles.filterToggle,
+                      (showSharedFilters || sharedFilterActive) &&
+                        styles.filterToggleOn,
+                    ]}
+                    onPress={() => {
+                      // Fermer remet tout : un filtre actif et invisible
+                      // ferait croire à des idées disparues.
+                      if (showSharedFilters) {
+                        setSharedFilter("all");
+                        setSharedReserved("all");
+                      }
+                      setShowSharedFilters((v) => !v);
+                    }}
+                  >
+                    <Text
+                      style={[
+                        styles.filterToggleText,
+                        (showSharedFilters || sharedFilterActive) &&
+                          styles.filterToggleTextOn,
+                      ]}
+                    >
+                      {showSharedFilters
+                        ? "✕ Fermer le filtre"
+                        : sharedFilterActive
+                          ? `🔎 ${sharedFilterLabel}`
+                          : "🔎 Filtrer"}
+                    </Text>
+                  </Pressable>
+
+                  {showSharedFilters && (
+                    <View style={styles.filterWrap}>
+                      <Pressable
+                        style={[
+                          styles.filterChip,
+                          sharedFilter === "all" && styles.filterChipOn,
+                        ]}
+                        onPress={() => setSharedFilter("all")}
+                      >
+                        <Text
+                          style={[
+                            styles.filterChipText,
+                            sharedFilter === "all" && styles.filterChipTextOn,
+                          ]}
+                        >
+                          Tous
+                        </Text>
+                      </Pressable>
+                      {/* Seules les occasions réellement présentes : proposer
+                          un filtre qui ne renvoie rien est une impasse. */}
+                      {OCCASIONS.filter((o) =>
+                        sharedGiftsAll.some((g) => g.occasion === o.value),
+                      ).map((o) => (
+                        <Pressable
+                          key={o.value}
+                          style={[
+                            styles.filterChip,
+                            sharedFilter === o.value && styles.filterChipOn,
+                          ]}
+                          onPress={() => setSharedFilter(o.value)}
+                        >
+                          <Text
+                            style={[
+                              styles.filterChipText,
+                              sharedFilter === o.value &&
+                                styles.filterChipTextOn,
+                            ]}
+                          >
+                            {o.emoji} {o.label}
+                          </Text>
+                        </Pressable>
+                      ))}
+                    </View>
+                  )}
+
+                  {/* Second axe : l'état de réservation. Sur une liste tenue
+                      à plusieurs, la question courante n'est pas « quelles
+                      idées » mais « qu'est-ce qui reste à prendre ». */}
+                  {showSharedFilters && (
+                    <View style={styles.filterWrap}>
+                      {(
+                        [
+                          ["all", "Toutes"],
+                          ["free", "🆓 Libres"],
+                          ["taken", "🔒 Réservées"],
+                          ["mine", "✓ Je m'en occupe"],
+                        ] as const
+                      ).map(([value, label]) => (
+                        <Pressable
+                          key={value}
+                          style={[
+                            styles.filterChip,
+                            sharedReserved === value && styles.filterChipOn,
+                          ]}
+                          onPress={() => setSharedReserved(value)}
+                        >
+                          <Text
+                            style={[
+                              styles.filterChipText,
+                              sharedReserved === value &&
+                                styles.filterChipTextOn,
+                            ]}
+                          >
+                            {label}
+                          </Text>
+                        </Pressable>
+                      ))}
+                    </View>
+                  )}
+                </>
+              )}
+
+              {sharedFiltered.length === 0 && (
+                <Text style={styles.muted}>
+                  {sharedGiftsAll.length === 0
+                    ? "Aucune idée commune pour l'instant."
+                    : sharedReserved === "free"
+                      ? "Tout est déjà réservé pour ce filtre 🎁"
+                      : "Aucune idée pour ce filtre."}
+                </Text>
               )}
 
               {/* ── Vue INVITÉ ────────────────────────────────────────
@@ -1502,7 +1817,7 @@ export default function DateDetailScreen() {
                   posée est : disponible, ou déjà pris ? */}
               {!isSharedMember ? (
                 <View style={giftGridStyles.grid}>
-                  {sharedList.gifts.map((g) => {
+                  {sharedFiltered.map((g) => {
                     const mine = isReservedByMe(g);
                     const taken = isReserved(g);
                     return (
@@ -1538,133 +1853,26 @@ export default function DateDetailScreen() {
                   })}
                 </View>
               ) : (
-              <View style={styles.giftGrid}>
-                {sharedList.gifts
-                  .filter(
-                    (g) =>
-                      !(
-                        pendingDelete?.scope === "shared" &&
-                        pendingDelete.gift._id === g._id
-                      ),
-                  )
-                  .map((g) => {
-                  const st = giftStatusOf(g);
-                  const meta = GIFT_STATUS_META[st];
-                  const reservedByMe = isReservedByMe(g);
-                  const reservedByOther = isReserved(g) && !reservedByMe;
-                  return (
-                    <Pressable
-                      key={g._id}
-                      style={[
-                        styles.giftGridCard,
-                        st !== "to_buy" && styles.giftCardDone,
-                        // Réservé par un autre : grisé, mais jamais retiré de
-                        // la liste — le voir disparaître ferait croire à une
-                        // suppression.
-                        reservedByOther && styles.giftCardReserved,
-                      ]}
-                      onPress={() => setSelectedSharedGift(g)}
-                    >
-                      {g.image ? (
-                        <Image
-                          source={{ uri: g.image }}
-                          style={styles.giftGridImg}
-                        />
-                      ) : (
-                        <View style={[styles.giftGridImg, styles.giftCardNoImg]}>
-                          <Text style={styles.giftGridEmoji}>
-                            {occasionEmoji(g.occasion)}
-                          </Text>
-                        </View>
-                      )}
-                      <Text style={styles.giftName} numberOfLines={2}>
-                        {g.giftName}
+                <>
+                  <View style={styles.giftGrid}>
+                    {sharedActive.map(renderSharedCard)}
+                  </View>
+
+                  {/* Déjà offerts, sous un trait. Rangés, pas cachés : c'est
+                      la mémoire de ce qui a été offert, et donc ce qui évite
+                      d'offrir deux fois la même chose l'année suivante. */}
+                  {sharedOffered.length > 0 && (
+                    <View style={styles.offeredSection}>
+                      <View style={styles.offeredDivider} />
+                      <Text style={styles.offeredTitle}>
+                        🎉 Déjà offerts · {sharedOffered.length}
                       </Text>
-                      <Text style={styles.giftMeta} numberOfLines={1}>
-                        {occasionEmoji(g.occasion)} {g.occasion}
-                        {g.addedBy?.name ? ` · ${g.addedBy.name}` : ""}
-                      </Text>
-                      {/* Réservation. Le nom est affiché : les membres sont
-                          les offrants, la personne concernée n'a pas accès à
-                          la liste, il n'y a donc pas de surprise à protéger —
-                          et savoir qui s'en occupe est justement ce qui évite
-                          le double achat. */}
-                      {/* Pied de carte ancré en bas : les cartes d'une même
-                          rangée sont étirées à la hauteur de la plus haute,
-                          donc sans ça la pastille et le prix flottaient à des
-                          hauteurs différentes selon la longueur du titre. */}
-                      <View style={styles.sharedCardBottom}>
-                      <Pressable
-                        disabled={busy || reservedByOther}
-                        onPress={() => toggleSharedReservation(g)}
-                        style={[
-                          styles.reservePill,
-                          isReserved(g) && styles.reservePillTaken,
-                        ]}
-                      >
-                        <Text
-                          style={[
-                            styles.sharedReserveText,
-                            isReserved(g) && styles.sharedReserveTextTaken,
-                          ]}
-                          numberOfLines={1}
-                        >
-                          {reservedByMe
-                            ? "✓ Tu t'en occupes · annuler"
-                            : reservedByOther
-                              ? // Le prénom n'est connu que des membres.
-                                reserverName(g)
-                                ? `🔒 Réservé par ${reserverName(g)}`
-                                : "🔒 Réservé"
-                              : "＋ Je m'en occupe"}
-                        </Text>
-                      </Pressable>
-                      {/* Action distincte, et non un second sens caché dans
-                          la pastille : libérer la réservation d'un autre n'est
-                          pas le même geste que prendre ou lâcher la sienne. */}
-                      {reservedByOther && isSharedMember && (
-                        <Pressable
-                          disabled={busy}
-                          onPress={() => releaseSharedReservation(g)}
-                          style={styles.releasePill}
-                        >
-                          <Text style={styles.releasePillText} numberOfLines={1}>
-                            ↩︎ Libérer la réservation
-                          </Text>
-                        </Pressable>
-                      )}
-                      <View style={styles.giftGridRow}>
-                        {g.price != null ? (
-                          <View style={styles.pricePill}>
-                            <Text style={styles.pricePillText}>{g.price} €</Text>
-                          </View>
-                        ) : (
-                          <View style={[styles.pricePill, styles.pricePillEmpty]}>
-                            <Text style={styles.pricePillEmptyText}>—</Text>
-                          </View>
-                        )}
-                        {/* Changer le statut modifie la liste : lecture
-                            seule pour un invité, qui voit l'état sans
-                            pouvoir le faire basculer. */}
-                        <Pressable
-                          disabled={busy || !isSharedMember}
-                          onPress={() =>
-                            setSharedGiftStatus(g, nextGiftStatus(st))
-                          }
-                          style={[styles.giftBadge, { backgroundColor: meta.bg }]}
-                        >
-                          <Text
-                            style={[styles.giftBadgeText, { color: meta.color }]}
-                          >
-                            {meta.emoji} {meta.short}
-                          </Text>
-                        </Pressable>
+                      <View style={styles.giftGrid}>
+                        {sharedOffered.map(renderSharedCard)}
                       </View>
-                      </View>
-                    </Pressable>
-                  );
-                })}
-              </View>
+                    </View>
+                  )}
+                </>
               )}
 
               <Pressable onPress={onLeaveShared} style={{ marginTop: 6 }}>
@@ -1787,6 +1995,23 @@ export default function DateDetailScreen() {
           onDelete={(g) => {
             setSelectedSharedGift(null);
             requestDelete(g, "shared");
+          }}
+          hidden={!!selectedSharedGift?.hiddenFromViewers}
+          onToggleHidden={(g, next) => {
+            if (!entry?.sharedGiftList) return;
+            // La fiche ouverte tient une COPIE du cadeau : sans cette mise à
+            // jour locale, le libellé du bouton ne bougerait qu'au rechargement
+            // et le geste semblerait n'avoir rien fait.
+            setSelectedSharedGift((cur) =>
+              cur && cur._id === g._id
+                ? { ...cur, hiddenFromViewers: next }
+                : cur,
+            );
+            runShared(() =>
+              updateSharedGift(entry.sharedGiftList!, g._id, {
+                hiddenFromViewers: next,
+              }),
+            );
           }}
         />
       ) : (
@@ -2874,6 +3099,20 @@ const makeStyles = (c: ThemeColors) =>
     alignItems: "center",
   },
   releasePillText: { fontSize: 11, fontWeight: "700", color: c.danger },
+  // Bloc « déjà offerts ». Le trait fait le travail : il dit « ce qui suit
+  // appartient au passé » sans qu'on ait à le lire.
+  offeredSection: { marginTop: 16, gap: 10 },
+  offeredDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: c.borderStrong,
+  },
+  offeredTitle: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: c.sub,
+    textTransform: "uppercase",
+    letterSpacing: 0.3,
+  },
   // Préfixe « shared » : `reserveText` est déjà pris par la réservation des
   // cadeaux de la wishlist personnelle, plus haut dans cette même feuille.
   sharedReserveText: { fontSize: 11, fontWeight: "700", color: c.sub },

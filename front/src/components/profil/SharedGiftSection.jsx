@@ -37,6 +37,15 @@ export default function SharedGiftSection({ currentDate, onUpdate }) {
   const [inviteMsg, setInviteMsg] = useState(null);
   const [sentInvites, setSentInvites] = useState([]);
 
+  // Filtre par occasion. Une liste commune vit longtemps et mélange Noël,
+  // anniversaire et le reste : sans filtre, préparer UNE occasion oblige à
+  // faire le tri à l'œil à chaque visite.
+  const [filter, setFilter] = useState("all");
+  // Second axe : l'état de réservation. Indépendant de l'occasion — chercher
+  // « ce qui reste à prendre pour Noël » croise les deux, et n'aurait pas de
+  // réponse si l'un remplaçait l'autre.
+  const [reservedFilter, setReservedFilter] = useState("all");
+
   // Formulaire cadeau (ajout / édition)
   const [showShare, setShowShare] = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -56,6 +65,32 @@ export default function SharedGiftSection({ currentDate, onUpdate }) {
   // qui renvoyaient tous 403. On retombe sur "member" en l'absence du champ :
   // avant cette version, seuls des membres pouvaient atteindre cet écran.
   const isMember = !list || list.myRole !== "viewer";
+
+  // Idées à afficher : filtre par occasion, puis séparation des déjà offerts.
+  const allGifts = list?.gifts ?? [];
+  // Le serveur renvoie deux formes selon le rôle : un MEMBRE reçoit
+  // `reservedBy` / `reservedByGuest`, un INVITÉ seulement les booléens.
+  const giftIsReserved = (g) =>
+    g.isReserved ?? (!!g.reservedBy || !!g.reservedByGuest);
+  // Le `!!currentUser?._id` n'est pas décoratif : sans lui, un cadeau non
+  // réservé donne `undefined` à gauche, et un visiteur sans session `undefined`
+  // à droite — l'égalité serait vraie et le filtre « Je m'en occupe »
+  // retournerait TOUTE la liste.
+  const giftIsMine = (g) =>
+    g.reservedByMe ??
+    (!!currentUser?._id &&
+      (g.reservedBy?._id?.toString() === currentUser._id ||
+        g.reservedBy?.toString() === currentUser._id));
+  const byOccasion =
+    filter === "all" ? allGifts : allGifts.filter((g) => g.occasion === filter);
+  const filtered = byOccasion.filter((g) => {
+    if (reservedFilter === "free") return !giftIsReserved(g);
+    if (reservedFilter === "taken") return giftIsReserved(g);
+    if (reservedFilter === "mine") return giftIsMine(g);
+    return true;
+  });
+  const active = filtered.filter((g) => (g.status || "to_buy") !== "offered");
+  const offered = filtered.filter((g) => (g.status || "to_buy") === "offered");
 
   const loadSent = useCallback(async () => {
     try {
@@ -163,6 +198,39 @@ export default function SharedGiftSection({ currentDate, onUpdate }) {
       const res = await apiHandler.patch(
         `/shared-gifts/${listId}/gifts/${raw._id}`,
         { status: next },
+      );
+      setList(res.data);
+    } catch {
+      setError("Erreur.");
+    }
+  };
+
+  const setStatus = async (raw, status) => {
+    try {
+      const res = await apiHandler.patch(
+        `/shared-gifts/${listId}/gifts/${raw._id}`,
+        { status },
+      );
+      setList(res.data);
+    } catch {
+      setError("Erreur.");
+    }
+  };
+
+  /**
+   * Masquer une idée aux invités et au lien public. Elle reste dans la liste
+   * pour les gestionnaires — c'est ce qu'on garde entre soi : le gros cadeau
+   * qu'on se réserve, l'idée encore incertaine.
+   *
+   * Le filtrage est fait par le SERVEUR : une idée masquée ne part jamais sur
+   * le réseau vers quelqu'un qui n'y a pas droit, plutôt que d'être cachée à
+   * l'affichage.
+   */
+  const toggleHidden = async (raw, next) => {
+    try {
+      const res = await apiHandler.patch(
+        `/shared-gifts/${listId}/gifts/${raw._id}`,
+        { hiddenFromViewers: next },
       );
       setList(res.data);
     } catch {
@@ -393,8 +461,64 @@ export default function SharedGiftSection({ currentDate, onUpdate }) {
         </form>
       )}
 
+      {/* Filtre par occasion — seules celles réellement présentes : proposer
+          un filtre qui ne renvoie rien est une impasse. */}
+      {list.gifts.length > 0 && (
+        <div className="sgs-filters">
+          <button
+            type="button"
+            className={`sgs-chip ${filter === "all" ? "sgs-chip--on" : ""}`}
+            onClick={() => setFilter("all")}
+          >
+            Toutes
+          </button>
+          {OCCASIONS.filter((o) =>
+            list.gifts.some((g) => g.occasion === o),
+          ).map((o) => (
+            <button
+              key={o}
+              type="button"
+              className={`sgs-chip ${filter === o ? "sgs-chip--on" : ""}`}
+              onClick={() => setFilter(o)}
+            >
+              {o}
+            </button>
+          ))}
+
+          {/* Second axe : l'état de réservation. Sur une liste tenue à
+              plusieurs, la question courante n'est pas « quelles idées » mais
+              « qu'est-ce qui reste à prendre ». */}
+          <span className="sgs-chip-sep" aria-hidden="true" />
+          {[
+            ["all", "Toutes"],
+            ["free", "🆓 Libres"],
+            ["taken", "🔒 Réservées"],
+            ["mine", "✓ Je m'en occupe"],
+          ].map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              className={`sgs-chip ${reservedFilter === value ? "sgs-chip--on" : ""}`}
+              onClick={() => setReservedFilter(value)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {filtered.length === 0 && (
+        <p className="sgs-loading">
+          {list.gifts.length === 0
+            ? "Aucune idée commune pour l'instant."
+            : reservedFilter === "free"
+              ? "Tout est déjà réservé pour ce filtre 🎁"
+              : "Aucune idée pour ce filtre."}
+        </p>
+      )}
+
       <GiftCardGrid
-        items={list.gifts}
+        items={active}
         type="gifts"
         currentUserId={currentUser?._id}
         // readOnly retire les actions de gestion et fait apparaître, à la
@@ -405,16 +529,35 @@ export default function SharedGiftSection({ currentDate, onUpdate }) {
         onToggle={isMember ? toggleStatus : undefined}
         onReserve={reserve}
         onUnreserve={unreserve}
-        onSetStatus={
-          isMember
-            ? (raw, status) =>
-                apiHandler
-                  .patch(`/shared-gifts/${listId}/gifts/${raw._id}`, { status })
-                  .then((res) => setList(res.data))
-                  .catch(() => setError("Erreur."))
-            : undefined
-        }
+        onToggleHidden={isMember ? toggleHidden : undefined}
+        onSetStatus={isMember ? setStatus : undefined}
       />
+
+      {/* Déjà offerts, sous un trait. Rangés, pas cachés : c'est la mémoire de
+          ce qui a été offert, et donc ce qui évite d'offrir deux fois la même
+          chose l'année suivante. Les invités ne sont pas concernés — le
+          serveur ne leur envoie jamais les cadeaux « offert ». */}
+      {offered.length > 0 && (
+        <section className="sgs-offered">
+          <div className="sgs-offered-divider" />
+          <h4 className="sgs-offered-title">
+            🎉 Déjà offerts · {offered.length}
+          </h4>
+          <GiftCardGrid
+            items={offered}
+            type="gifts"
+            currentUserId={currentUser?._id}
+            readOnly={!isMember}
+            onEdit={isMember ? startEdit : undefined}
+            onDelete={isMember ? deleteGift : undefined}
+            onToggle={isMember ? toggleStatus : undefined}
+            onReserve={reserve}
+            onUnreserve={unreserve}
+            onToggleHidden={isMember ? toggleHidden : undefined}
+            onSetStatus={isMember ? setStatus : undefined}
+          />
+        </section>
+      )}
 
       <button className="sgs-leave" onClick={leave}>
         {isMember ? "Quitter la liste commune" : "Ne plus suivre cette liste"}

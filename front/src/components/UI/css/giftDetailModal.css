@@ -356,3 +356,17 @@
     height: 180px;
   }
 }
+
+/* Visibilité d'une idée commune pour les invités. Neutre par défaut, teintée
+   d'alerte une fois masquée : l'état « caché » est celui qui surprend si on
+   l'oublie, c'est donc lui qui doit se voir. */
+.gdm-visibility {
+  border: 1px solid var(--border-color);
+  background: transparent;
+  color: var(--text-primary);
+}
+
+.gdm-visibility--on {
+  border-color: var(--warning, #f59e0b);
+  color: var(--warning, #f59e0b);
+}

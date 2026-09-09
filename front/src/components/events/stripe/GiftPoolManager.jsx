@@ -192,6 +192,32 @@ const GiftPoolManager = ({ shortId, pool, onUpdated }) => {
           />
         </label>
 
+        {/* ── Ce que l'organisateur s'engage à faire ────────────────────
+            Posé ICI, juste après l'interrupteur, et non enterré dans les CGU :
+            ouvrir une cagnotte crée une obligation de remboursement en cas
+            d'annulation, et cette obligation coûte de l'argent. La découvrir
+            au moment d'annuler serait la découvrir trop tard. */}
+        {active && (
+          <div className="gp-commit">
+            <p className="gp-commit-title">Ce que vous vous engagez à faire</p>
+            <p className="gp-commit-text">
+              L'argent arrive directement sur votre compte Stripe :
+              BirthReminder ne le détient jamais. Si l'événement est annulé, ou
+              si le cadeau n'est finalement pas acheté, c'est à vous de
+              rembourser les participants, un bouton «&nbsp;Rembourser les
+              contributeurs&nbsp;» apparaît plus bas dès la première
+              contribution reçue.
+            </p>
+            <p className="gp-commit-text">
+              Les contributeurs récupèrent l'intégralité de ce qu'ils ont versé,
+              mais Stripe ne vous restitue pas les frais du paiement d'origine :
+              environ 1,5&nbsp;% + 0,25&nbsp;€ par contribution, davantage pour
+              une carte professionnelle ou étrangère. Ce montant reste à votre
+              charge, en plus des sommes rendues.
+            </p>
+          </div>
+        )}
+
         {active && (
           <>
             <div className="gp-field">
@@ -299,10 +325,27 @@ const GiftPoolManager = ({ shortId, pool, onUpdated }) => {
               récupère tout, et l'écart reste à sa charge. Le découvrir après
               coup serait une mauvaise surprise. */}
           <p className="gp-refund-warn">
-            ⚠️ Cette opération vous coûtera <strong>{euro(refund.feeLoss)}</strong> :
-            Stripe ne rend pas les frais des paiements d'origine. La cagnotte
-            sera fermée, et l'opération est irréversible.
+            ⚠️ Cette opération vous coûtera{" "}
+            {refund.estimatedCount > 0 ? "environ " : ""}
+            <strong>{euro(refund.feeLoss)}</strong> : Stripe ne rend pas les
+            frais des paiements d'origine. La cagnotte sera fermée, et
+            l'opération est irréversible.
           </p>
+          {/* Les frais dépendent de la carte de chaque contributeur — 1,5 %
+              pour une carte européenne standard, jusqu'à 3,15 % plus
+              conversion pour une carte étrangère. On les relève désormais à
+              l'encaissement ; pour les contributions plus anciennes il ne
+              reste qu'une estimation, et l'annoncer comme un chiffre exact
+              serait mentir sur une opération irréversible. */}
+          {refund.estimatedCount > 0 && (
+            <p className="gp-refund-note">
+              {refund.estimatedCount} contribution
+              {refund.estimatedCount > 1 ? "s" : ""} sur {refund.count} est
+              chiffrée au tarif d'une carte européenne standard. Le coût réel
+              peut être plus élevé si le paiement venait d'une carte
+              professionnelle ou étrangère.
+            </p>
+          )}
           {error && <p className="gp-error">{error}</p>}
           <motion.button
             className="gp-btn gp-btn-full gp-btn-danger"

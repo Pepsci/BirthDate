@@ -150,24 +150,26 @@ export default function NotificationsScreen() {
 
   return (
     <View style={styles.container}>
-      <Stack.Screen
-        options={{
-          title: "Notifications",
-          headerRight: () =>
-            items.length > 0 ? (
-              <View style={styles.headerActions}>
-                {hasUnread && (
-                  <Pressable onPress={readAll} hitSlop={10}>
-                    <Text style={styles.readAll}>Tout lire</Text>
-                  </Pressable>
-                )}
-                <Pressable onPress={removeAll} hitSlop={10}>
-                  <Text style={styles.deleteAll}>Tout supprimer</Text>
-                </Pressable>
-              </View>
-            ) : null,
-        }}
-      />
+      <Stack.Screen options={{ title: "Notifications" }} />
+
+      {/* ⚠️ Ces deux actions vivaient dans l'en-tête, à droite du titre. Deux
+          libellés de cette longueur n'y tiennent pas : le titre, centré, finit
+          par passer dessous et les textes se chevauchent. Les descendre sous
+          l'en-tête leur rend leur lisibilité, et l'en-tête sa symétrie. */}
+      {items.length > 0 && (
+        <View style={styles.bulkBar}>
+          {hasUnread ? (
+            <Pressable onPress={readAll} hitSlop={8} style={styles.bulkBtn}>
+              <Text style={styles.readAll}>Tout marquer comme lu</Text>
+            </Pressable>
+          ) : (
+            <View />
+          )}
+          <Pressable onPress={removeAll} hitSlop={8} style={styles.bulkBtn}>
+            <Text style={styles.deleteAll}>Tout supprimer</Text>
+          </Pressable>
+        </View>
+      )}
 
       {error && <Text style={styles.error}>{error}</Text>}
 
@@ -230,7 +232,18 @@ const makeStyles = (c: ThemeColors) =>
       backgroundColor: c.bg,
     },
     error: { color: c.danger, textAlign: "center", padding: 6 },
-    headerActions: { flexDirection: "row", alignItems: "center", gap: 16 },
+    // Barre d'actions groupées, sous l'en-tête. `space-between` plutôt qu'un
+    // alignement à droite : « tout supprimer » gagne à être loin du pouce qui
+    // vient de marquer les notifications comme lues.
+    bulkBar: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingHorizontal: 16,
+      paddingTop: 10,
+      paddingBottom: 2,
+    },
+    bulkBtn: { paddingVertical: 4 },
     readAll: { color: c.primary, fontWeight: "600", fontSize: 13 },
     deleteAll: { color: c.danger, fontWeight: "600", fontSize: 13 },
     list: { padding: 12, gap: 8, paddingBottom: 8 },

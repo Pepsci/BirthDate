@@ -7,6 +7,12 @@ export type SharedListRole = "member" | "viewer";
 
 export interface SharedGift extends Gift {
   addedBy?: { _id: string; name: string; surname?: string } | null;
+  /**
+   * Idée gardée entre gestionnaires : ni les invités ni le lien public ne la
+   * reçoivent. Le filtrage est fait par le serveur, donc ce champ n'arrive
+   * qu'aux membres — un invité ne verra jamais ces idées, même à false.
+   */
+  hiddenFromViewers?: boolean;
   /** Membre qui s'est réservé ce cadeau, ou null s'il est libre. */
   reservedBy?: { _id: string; name: string; surname?: string } | null;
   /**

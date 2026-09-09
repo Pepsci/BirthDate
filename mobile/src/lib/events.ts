@@ -558,6 +558,14 @@ export interface RefundPreview {
   totalRefunded: number;
   /** Ce que l'opération coûte en plus à l'organisateur (frais non restitués). */
   feeLoss: number;
+  /**
+   * Contributions dont les frais restent ESTIMÉS, faute d'avoir été relevés
+   * auprès de Stripe à l'encaissement. Tant qu'il y en a, `feeLoss` est un
+   * ordre de grandeur et doit se présenter comme tel : l'estimation vaut pour
+   * une carte européenne standard, une carte professionnelle ou étrangère
+   * coûte sensiblement plus.
+   */
+  estimatedCount: number;
   currency: string;
 }
 

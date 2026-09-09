@@ -261,3 +261,63 @@
   opacity: 0.5;
   cursor: default;
 }
+
+/* ── Filtre par occasion ─────────────────────────────────────────────────
+   Une liste commune vit longtemps et mélange les occasions : préparer Noël
+   sans filtre oblige à faire le tri à l'œil à chaque visite. */
+.sgs-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0.75rem 0 1rem;
+}
+
+.sgs-chip {
+  padding: 5px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.sgs-chip--on {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: #fff;
+}
+
+/* ── Déjà offerts ────────────────────────────────────────────────────────
+   Rangés sous un trait, jamais supprimés : c'est la mémoire de ce qui a été
+   offert, donc ce qui évite d'offrir deux fois la même chose. Le trait fait
+   le travail — il dit « ce qui suit appartient au passé » sans se lire. */
+.sgs-offered {
+  margin-top: 1.5rem;
+}
+
+.sgs-offered-divider {
+  height: 1px;
+  background: var(--border-color);
+  margin-bottom: 0.9rem;
+}
+
+.sgs-offered-title {
+  margin: 0 0 0.75rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+/* Sépare les deux axes du filtre — occasion à gauche, état de réservation à
+   droite — sans imposer une seconde ligne quand la place ne le demande pas. */
+.sgs-chip-sep {
+  width: 1px;
+  align-self: stretch;
+  margin: 2px 4px;
+  background: var(--border-color);
+}

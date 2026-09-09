@@ -115,7 +115,9 @@ function publicView(list, guestToken) {
     requiresCode: !!list.accessCode,
     locked: false,
     gifts: (list.gifts || [])
-      .filter((g) => !HIDDEN_STATUSES.has(g.status))
+      // `hiddenFromViewers` : idée réservée aux membres. Le lien public est
+      // le canal le plus large de tous — c'est là que le filtre compte le plus.
+      .filter((g) => !HIDDEN_STATUSES.has(g.status) && !g.hiddenFromViewers)
       .map((g) => ({
         _id: g._id,
         giftName: g.giftName,

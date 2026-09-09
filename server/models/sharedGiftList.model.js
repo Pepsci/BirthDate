@@ -20,6 +20,19 @@ const sharedGiftSchema = new Schema(
     price: { type: Number, default: null },
     image: { type: String, default: null },
     addedBy: { type: Schema.Types.ObjectId, ref: "User", default: null },
+    /**
+     * Idée réservée aux MEMBRES : invisible aux invités internes comme aux
+     * visiteurs du lien public. Même intention que `isShared` sur un article
+     * de wishlist — sauf qu'ici on cache à ceux à qui la liste est partagée,
+     * pas à la personne concernée.
+     *
+     * Sert à ce qu'on garde entre gestionnaires : le gros cadeau qu'on se
+     * réserve, l'idée encore incertaine, celle dont le prix ne regarde pas
+     * tout le monde. Filtré côté SERVEUR, jamais côté client : une idée
+     * cachée ne doit pas partir sur le réseau vers quelqu'un qui n'y a pas
+     * droit, même si elle reste invisible à l'écran.
+     */
+    hiddenFromViewers: { type: Boolean, default: false },
     // Réservation : « je m'en occupe », avant tout achat. Distinct de `status`,
     // qui décrit l'avancement du cadeau ; ici on retient QUI s'en charge.
     // Les membres d'une liste commune sont les offrants — la personne

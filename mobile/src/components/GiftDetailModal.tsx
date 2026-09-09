@@ -35,6 +35,8 @@ export default function GiftDetailModal({
   onEdit,
   onDelete,
   onSetStatus,
+  hidden,
+  onToggleHidden,
 }: {
   gift: Gift | null;
   busy: boolean;
@@ -42,6 +44,13 @@ export default function GiftDetailModal({
   onEdit: (g: Gift) => void;
   onDelete: (g: Gift) => void;
   onSetStatus: (g: Gift, status: GiftStatus) => void;
+  /**
+   * Idée d'une liste commune masquée aux invités et au lien public.
+   * Optionnel : les idées personnelles n'ont personne à qui se cacher, la
+   * bascule n'apparaît donc que si l'appelant la fournit.
+   */
+  hidden?: boolean;
+  onToggleHidden?: (g: Gift, next: boolean) => void;
 }) {
   const styles = useThemedStyles(makeStyles);
   const translateY = useRef(new Animated.Value(0)).current;
@@ -174,6 +183,34 @@ export default function GiftDetailModal({
               })}
             </View>
 
+            {/* Visibilité pour les invités. Posée au-dessus de Modifier /
+                Supprimer parce qu'elle ne change pas l'idée, seulement qui
+                la voit — et parce que se tromper ici expose quelque chose
+                qu'on voulait garder entre gestionnaires. */}
+            {onToggleHidden && (
+              <Pressable
+                style={[styles.visibilityRow, hidden && styles.visibilityRowOn]}
+                disabled={busy}
+                onPress={() => onToggleHidden(gift, !hidden)}
+              >
+                <Text
+                  style={[
+                    styles.visibilityText,
+                    hidden && styles.visibilityTextOn,
+                  ]}
+                >
+                  {hidden
+                    ? "🙈 Masquée aux invités · rendre visible"
+                    : "👁️ Visible par les invités · masquer"}
+                </Text>
+                <Text style={styles.visibilityHint}>
+                  {hidden
+                    ? "Seuls les gestionnaires de la liste la voient."
+                    : "Elle apparaît aux invités et sur le lien public."}
+                </Text>
+              </Pressable>
+            )}
+
             {/* Actions */}
             <View style={styles.actions}>
               <Pressable
@@ -276,6 +313,19 @@ const makeStyles = (c: ThemeColors) =>
     },
     statusBtnText: { fontSize: 16, fontWeight: "700", color: c.text },
     statusCheck: { fontSize: 16, fontWeight: "800", color: c.text },
+    visibilityRow: {
+      marginTop: 18,
+      borderWidth: 1,
+      borderColor: c.border,
+      borderRadius: 12,
+      paddingVertical: 12,
+      paddingHorizontal: 14,
+      gap: 3,
+    },
+    visibilityRowOn: { borderColor: c.warningStrong, backgroundColor: c.warningSoft },
+    visibilityText: { color: c.text, fontWeight: "700", fontSize: 14 },
+    visibilityTextOn: { color: c.warningStrong },
+    visibilityHint: { color: c.sub, fontSize: 12 },
     actions: { flexDirection: "row", gap: 12, marginTop: 20 },
     actionBtn: {
       flex: 1,

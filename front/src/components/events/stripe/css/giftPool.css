@@ -559,3 +559,42 @@
 .gp-btn-danger:hover:not(:disabled) {
   filter: brightness(1.08);
 }
+
+/* Précision sur la fiabilité du chiffre annoncé juste au-dessus. Discrète :
+   elle nuance, elle n'alarme pas — l'alarme, c'est le montant lui-même. */
+.gp-refund-note {
+  margin: 6px 0 0;
+  padding: 0 2px;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+/* Encadré d'engagement affiché à l'activation de la cagnotte. Ton informatif,
+   pas alarmiste : il ne signale pas un danger, il énonce ce à quoi on
+   souscrit — l'alerte, elle, est réservée au montant d'un remboursement. */
+.gp-commit {
+  margin: 10px 0 4px;
+  padding: 12px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--bg-secondary);
+}
+
+.gp-commit-title {
+  margin: 0 0 6px;
+  font-size: 0.9rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.gp-commit-text {
+  margin: 0 0 6px;
+  font-size: 0.85rem;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+
+.gp-commit-text:last-child {
+  margin-bottom: 0;
+}

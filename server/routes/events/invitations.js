@@ -152,6 +152,123 @@ router.post("/:shortId/join", async (req, res) => {
 });
 
 /*
+ * POST /api/events/:shortId/claim -> rattacher une participation invité au compte
+ *
+ * Appelé juste après une connexion ou une inscription, quand la personne était
+ * jusque-là un invité sans compte (`guestToken` en local).
+ *
+ * ⚠️ On CONVERTIT l'invitation existante, on n'en crée pas une seconde. Tout ce
+ * que la personne a déjà fait vit sur cette invitation — sa réponse à
+ * l'invitation, ses votes de date, son vote de lieu. En créant une nouvelle
+ * ligne, elle repartirait de zéro et l'organisateur verrait deux participants
+ * là où il n'y a qu'une personne.
+ *
+ * Les idées cadeaux, elles, sont ailleurs et portent un `guestName` en clair :
+ * on les réattribue au compte, sinon leur auteur perdrait le droit de les
+ * modifier ou de les retirer le jour où il se crée un compte.
+ */
+router.post("/:shortId/claim", isAuthenticated, async (req, res) => {
+  try {
+    const { guestToken, code } = req.body || {};
+    const userId = req.payload._id;
+
+    const event = await Event.findOne({ shortId: req.params.shortId });
+    if (!event)
+      return res.status(404).json({ message: "Événement introuvable" });
+
+    // L'organisateur n'a rien à rattacher : il participe par définition.
+    if (event.organizer.toString() === userId)
+      return res.status(200).json({ claimed: false, alreadyIn: true });
+
+    const EventGiftProposal = require("../../models/eventGiftProposal.model");
+
+    // L'invitation invité visée, s'il y en a une.
+    const guestInv = guestToken
+      ? await EventInvitation.findOne({
+          event: event._id,
+          guestToken,
+          user: null,
+        })
+      : null;
+
+    const mine = await EventInvitation.findOne({
+      event: event._id,
+      user: userId,
+    });
+
+    // Déjà participant avec ce compte. Si la personne avait AUSSI une
+    // participation invité, on récupère ses idées cadeaux et on supprime le
+    // doublon — sans quoi elle figurerait deux fois dans la liste.
+    if (mine) {
+      if (guestInv) {
+        if (guestInv.guestName) {
+          await EventGiftProposal.updateMany(
+            { event: event._id, guestName: guestInv.guestName },
+            { proposedBy: userId, guestName: null },
+          );
+        }
+        await guestInv.deleteOne();
+      }
+      return res
+        .status(200)
+        .json({ claimed: !!guestInv, alreadyIn: true, invitation: mine });
+    }
+
+    if (guestInv) {
+      if (guestInv.guestName) {
+        await EventGiftProposal.updateMany(
+          { event: event._id, guestName: guestInv.guestName },
+          { proposedBy: userId, guestName: null },
+        );
+      }
+      guestInv.user = userId;
+      // Le nom saisi à la volée s'efface au profit du nom du compte : c'est
+      // désormais une personne identifiée, et les notifications comme la liste
+      // des participants doivent l'appeler par son vrai nom.
+      guestInv.guestName = null;
+      // Le jeton invité ne doit plus ouvrir cette participation : elle
+      // appartient à un compte, et une seule identité doit y donner accès.
+      guestInv.guestToken = null;
+      await guestInv.save();
+      return res.status(200).json({ claimed: true, invitation: guestInv });
+    }
+
+    // Aucune trace d'invité : la personne arrive par le lien et vient de créer
+    // son compte. Le code d'accès reste exigé, exactement comme pour rejoindre.
+    if (!code || code !== event.accessCode)
+      return res
+        .status(403)
+        .json({ code: "NO_GUEST_SESSION", message: "Code d'accès requis." });
+
+    if (event.status === "cancelled")
+      return res
+        .status(409)
+        .json({ code: "EVENT_CANCELLED", message: "Cet événement est annulé." });
+
+    if (event.maxGuests !== null) {
+      const count = await EventInvitation.countDocuments({
+        event: event._id,
+        status: { $in: ["accepted", "maybe"] },
+        user: { $nin: [event.organizer] },
+      });
+      if (count >= event.maxGuests)
+        return res.status(400).json({ message: "L'événement est complet" });
+    }
+
+    const created = await EventInvitation.create({
+      event: event._id,
+      user: userId,
+      joinedViaCode: true,
+      status: "accepted",
+    });
+    return res.status(200).json({ claimed: true, invitation: created });
+  } catch (error) {
+    console.error("❌ Error claiming event participation:", error);
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+});
+
+/*
  * DELETE /api/events/:shortId/leave -> quitter (invité only)
  */
 router.delete("/:shortId/leave", isAuthenticated, async (req, res) => {
