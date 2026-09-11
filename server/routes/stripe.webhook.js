@@ -6,6 +6,9 @@ const GiftPoolContribution = require("../models/giftPoolContribution.model");
 const Event = require("../models/event.model");
 const User = require("../models/user.model");
 const { notify } = require("../utils/notify");
+const {
+  sendContributionReceiptEmail,
+} = require("../services/emailTemplates/contributionReceiptEmail");
 
 /*
  * POST /api/stripe/webhook
@@ -149,6 +152,63 @@ router.post("/", async (req, res) => {
           });
         }
 
+        // c) Accusé de réception au CONTRIBUTEUR — sa preuve de paiement.
+        //
+        // ⚠️ Ne dépend pas des préférences de l'organisateur : ce mail ne lui
+        // appartient pas. C'est la seule trace que gardera un contributeur sans
+        // compte, et le document qu'il produira le jour où il réclamera son
+        // remboursement. Le reçu automatique de Stripe ne suffit pas : sur une
+        // charge directe il est émis par le compte de l'organisateur et suit
+        // SES réglages, qu'on ne maîtrise pas.
+        //
+        // Jamais bloquant, et jamais envoyé deux fois : Stripe rejoue ses
+        // webhooks, `receiptSentAt` fait garde-fou.
+        if (!contribution.receiptSentAt) {
+          try {
+            let to = contribution.guestEmail || null;
+            let toName = contribution.guestName || null;
+            if (contribution.contributor) {
+              const u = await User.findById(
+                contribution.contributor,
+                "name email",
+              );
+              if (u?.email) {
+                to = u.email;
+                toName = toName || u.name || null;
+              }
+            }
+
+            if (to) {
+              const org = await User.findById(
+                eventDoc.organizer,
+                "name surname",
+              );
+              const organizerName = org
+                ? `${org.name}${org.surname ? " " + org.surname : ""}`
+                : "l'organisateur";
+
+              await sendContributionReceiptEmail({
+                email: to,
+                guestName: toName,
+                amount: contribution.amount,
+                eventTitle: eventDoc.title,
+                eventShortId: eventDoc.shortId,
+                organizerName,
+                reference: contribution.stripePaymentIntentId,
+                paidAt: contribution.updatedAt || new Date(),
+              });
+
+              contribution.receiptSentAt = new Date();
+              await contribution.save();
+            }
+          } catch (err) {
+            console.error(
+              `[stripe.webhook] reçu contributeur non envoyé pour ${pi.id}:`,
+              err.message,
+            );
+          }
+        }
+
         break;
       }
 
@@ -182,9 +242,15 @@ router.post("/", async (req, res) => {
           "title shortId",
         );
 
-        // Le contributeur est prévenu — c'est son argent. Un invité externe
-        // (contributor null) n'a pas de compte : Stripe lui envoie son propre
-        // avis de remboursement à l'adresse du reçu, on ne double pas.
+        // Le contributeur est prévenu — c'est son argent.
+        //
+        // ⚠️ Un invité externe (contributor null) n'a pas de compte, donc pas
+        // de notification in-app. On compte pour lui sur l'avis de
+        // remboursement de Stripe, envoyé à l'adresse du reçu (`guestEmail`,
+        // désormais toujours renseignée). Ce n'est pas une garantie : sur une
+        // charge directe, ces emails suivent les réglages du compte de
+        // l'ORGANISATEUR, qui peut les avoir coupés. TODO : notre propre avis
+        // de remboursement, sur le modèle de contributionReceiptEmail.
         if (contribution.contributor && eventDoc) {
           await notify(req.app, {
             userId: contribution.contributor,

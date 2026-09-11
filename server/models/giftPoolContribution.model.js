@@ -33,6 +33,35 @@ const giftPoolContributionSchema = new Schema(
      * compte, la dupliquer ici n'apporterait rien.
      */
     guestTermsAcceptedAt: { type: Date, default: null },
+
+    /**
+     * Adresse du contributeur SANS COMPTE, saisie avant le paiement.
+     *
+     * ⚠️ Ce champ est la preuve de paiement du seul contributeur qui n'en a
+     * aucune autre. Un inscrit retrouve sa contribution dans l'application et
+     * reçoit le reçu Stripe sur l'adresse de son compte ; un visiteur venu par
+     * le lien public n'a ni l'un ni l'autre. Sans adresse, il paie et il ne
+     * reste rien : ni reçu, ni référence, ni trace côté navigateur. Le jour où
+     * l'événement est annulé, il ne peut même pas prouver à l'organisateur
+     * qu'il a versé quelque chose.
+     *
+     * Le reçu automatique de Stripe ne suffit pas à lui seul : sur une charge
+     * directe il dépend des réglages du compte de l'ORGANISATEUR, qui peut
+     * avoir coupé les emails de paiement. D'où notre propre accusé de
+     * réception, envoyé par le webhook.
+     *
+     * Usage strictement limité à cet envoi : jamais renvoyée par l'API, jamais
+     * montrée à l'organisateur ni aux autres participants.
+     *
+     * `null` pour un contributeur inscrit : son adresse vit sur son compte.
+     */
+    guestEmail: { type: String, trim: true, lowercase: true, default: null },
+
+    /**
+     * Horodatage de l'envoi de notre accusé de réception, pour que le rejeu
+     * d'un webhook par Stripe n'envoie pas le mail deux fois.
+     */
+    receiptSentAt: { type: Date, default: null },
     status: {
       type: String,
       enum: ["pending", "succeeded", "failed", "refunded"],

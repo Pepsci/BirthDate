@@ -471,7 +471,7 @@ router.post("/:shortId/pool/contribute", async (req, res) => {
         .json({ message: "La cagnotte n'est pas active pour cet événement." });
     }
 
-    const { amount, message, anonymous, guestName } = req.body;
+    const { amount, message, anonymous, guestName, guestEmail } = req.body;
     const amountInt = Number(amount);
 
     if (
@@ -516,12 +516,35 @@ router.post("/:shortId/pool/contribute", async (req, res) => {
       });
     }
 
-    // Email pour le reçu Stripe : récupéré du compte si l'utilisateur est connecté.
-    // Pour un invité, Stripe collecte l'email via le PaymentElement (pas besoin ici).
+    // ── Adresse du contributeur ───────────────────────────────────────────
+    // Elle sert deux fois : à Stripe pour son reçu automatique, et à nous pour
+    // notre propre accusé de réception (envoyé par le webhook).
+    //
+    // ⚠️ Obligatoire pour un invité. On a longtemps cru que le PaymentElement
+    // s'en chargeait — il ne le fait pas : il ne collecte l'email que dans
+    // certaines configurations, et ça n'alimente de toute façon pas
+    // `receipt_email`. Un invité repartait donc sans la moindre trace de son
+    // paiement, alors que c'est précisément lui qui n'a pas de compte où la
+    // retrouver. Sans preuve, il n'a aucun recours le jour où ça se passe mal.
     let receiptEmail = null;
     if (contributorId) {
       const u = await User.findById(contributorId).select("email");
       if (u?.email) receiptEmail = u.email;
+    } else {
+      const raw = String(guestEmail ?? "").trim().toLowerCase();
+      if (!raw || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(raw)) {
+        return res.status(400).json({
+          code: "EMAIL_REQUIRED",
+          message:
+            "Une adresse email valide est nécessaire pour vous envoyer le reçu de votre contribution.",
+        });
+      }
+      if (raw.length > 254) {
+        return res
+          .status(400)
+          .json({ code: "EMAIL_REQUIRED", message: "Adresse email trop longue." });
+      }
+      receiptEmail = raw;
     }
 
     // PaymentIntent créé SUR le compte de l'organisateur (charge directe)
@@ -555,6 +578,7 @@ router.post("/:shortId/pool/contribute", async (req, res) => {
       event: event._id,
       contributor: contributorId,
       guestTermsAcceptedAt: contributorId ? null : new Date(),
+      guestEmail: contributorId ? null : receiptEmail,
       guestName: guestName ? String(guestName).trim().slice(0, 60) : undefined,
       amount: amountInt,
       currency: pool.currency || "eur",

@@ -133,6 +133,16 @@ const ContributeModal = ({ shortId, onClose, onSuccess }) => {
    */
   const isSignedIn = !!localStorage.getItem("userId");
   const [acceptTerms, setAcceptTerms] = useState(false);
+  /*
+   * Adresse du contributeur SANS COMPTE.
+   *
+   * ⚠️ Obligatoire, et ce n'est pas du confort : c'est sa seule preuve de
+   * paiement. Un inscrit retrouve sa contribution dans l'application ; un
+   * visiteur du lien public n'a ni compte ni historique. Le PaymentElement de
+   * Stripe ne comble pas ce trou — il ne collecte pas l'email de façon fiable,
+   * et ça n'alimente de toute façon pas `receipt_email`.
+   */
+  const [guestEmail, setGuestEmail] = useState("");
   const [clientSecret, setClientSecret] = useState(null);
   const [stripeAccountId, setStripeAccountId] = useState(null);
   const [creating, setCreating] = useState(false);
@@ -156,6 +166,10 @@ const ContributeModal = ({ shortId, onClose, onSuccess }) => {
       setError("Le montant minimum est de 1 €.");
       return;
     }
+    if (!isSignedIn && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(guestEmail.trim())) {
+      setError("Indiquez une adresse email valide pour recevoir votre reçu.");
+      return;
+    }
     if (!isSignedIn && !acceptTerms) {
       setError("Vous devez accepter les conditions d'utilisation.");
       return;
@@ -168,6 +182,7 @@ const ContributeModal = ({ shortId, onClose, onSuccess }) => {
         anonymous,
         guestName: guestName || undefined,
         acceptTerms: isSignedIn ? undefined : acceptTerms,
+        guestEmail: isSignedIn ? undefined : guestEmail.trim(),
       });
       setClientSecret(res.data.clientSecret);
       setStripeAccountId(res.data.stripeAccountId);
@@ -257,6 +272,27 @@ const ContributeModal = ({ shortId, onClose, onSuccess }) => {
                 masque votre vrai nom, y compris pour l'organisateur.
               </p>
             </div>
+
+            {!isSignedIn && (
+              <div className="gp-field">
+                <label className="gp-label">Votre email</label>
+                <input
+                  type="email"
+                  value={guestEmail}
+                  onChange={(e) => setGuestEmail(e.target.value)}
+                  className="gp-input"
+                  placeholder="vous@exemple.fr"
+                  autoComplete="email"
+                  required
+                />
+                <p className="gp-help">
+                  Pour recevoir le reçu de votre contribution. C'est votre seule
+                  preuve de paiement : sans compte, vous n'aurez pas d'autre
+                  trace. Elle n'est pas montrée à l'organisateur ni aux autres
+                  participants.
+                </p>
+              </div>
+            )}
 
             <label className="gp-toggle-row">
               <span>Apparaître anonymement</span>
@@ -353,6 +389,11 @@ const ContributeModal = ({ shortId, onClose, onSuccess }) => {
             <p className="gp-muted">
               Votre paiement est en cours de confirmation. Il apparaîtra dans la
               cagnotte dans un instant.
+            </p>
+            <p className="gp-muted">
+              Un reçu vient de vous être envoyé par email :{" "}
+              <strong>conservez-le</strong>, c'est votre preuve de paiement si
+              vous avez besoin de réclamer un remboursement à l'organisateur.
             </p>
             <motion.button
               className="gp-btn gp-btn-primary gp-btn-full"

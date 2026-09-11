@@ -356,8 +356,22 @@ export default function CGU() {
             L'organisateur peut rembourser une contribution, ou l'ensemble
             d'entre elles, depuis la page de l'événement. Le remboursement est
             exécuté <strong>sur son propre compte Stripe</strong> : nous
-            transmettons l'ordre, nous ne déplaçons aucun fonds et nous ne
-            pouvons pas rembourser à sa place, y compris s'il ne le fait pas.
+            transmettons l'ordre, nous ne déplaçons aucun fonds, et nous
+            n'avons pas à nous substituer à lui s'il ne le fait pas.
+          </p>
+          <p>
+            Nous disposons toutefois d'une capacité technique d'intervention
+            sur les paiements encaissés via l'application.{" "}
+            <strong>
+              Nous n'arbitrons pas les désaccords et n'intervenons pas à la
+              demande d'un participant mécontent
+            </strong>{" "}
+            : cette faculté est réservée à des situations exceptionnelles et
+            documentées — fraude caractérisée, organisateur injoignable ou
+            compte supprimé, décision d'une autorité compétente. Elle reste par
+            ailleurs limitée par le solde disponible sur le compte de
+            l'organisateur : une fois les sommes virées sur son compte
+            bancaire, plus personne ne peut les rappeler à sa place.
           </p>
           <p>
             Le contributeur récupère <strong>l'intégralité</strong> de la somme
@@ -390,15 +404,59 @@ export default function CGU() {
             trace.
           </p>
 
-          <h3>5.5 Litiges</h3>
+          <h3>5.5 Litiges : que faire et dans quel ordre</h3>
           <p>
-            Tout différend relatif à une cagnotte se règle{" "}
-            <strong>entre le participant et l'organisateur</strong>.
-            BirthReminder n'arbitre pas ces litiges et ne peut ni rembourser ni
-            reverser des sommes qu'il ne détient pas. Le remboursement d'un
-            paiement par carte relève du compte Stripe de l'organisateur ; à
-            défaut, votre banque reste votre interlocuteur.
+            Une cagnotte met en relation deux particuliers. Tout différend se
+            règle donc <strong>entre le participant et l'organisateur</strong> :
+            BirthReminder n'est pas partie à l'opération, n'arbitre pas ces
+            litiges et ne peut reverser des sommes qu'il ne détient pas. Nous
+            pouvons en revanche établir la réalité d'un paiement, et c'est
+            souvent ce qui débloque la situation.
           </p>
+          <p>
+            Chaque contribution par carte donne lieu à l'envoi d'un reçu à son
+            auteur, comportant le montant, la date, l'identité de
+            l'organisateur qui l'a encaissée et la référence du paiement.{" "}
+            <strong>Conservez ce message</strong> : c'est votre preuve, et la
+            première pièce qu'on vous demandera à chaque étape ci-dessous.
+          </p>
+          <ol>
+            <li>
+              <strong>Adressez-vous à l'organisateur.</strong> Il est le seul à
+              détenir les fonds et le seul à pouvoir déclencher le
+              remboursement. Indiquez-lui la référence figurant sur votre reçu.
+              La grande majorité des situations se règle ici.
+            </li>
+            <li>
+              <strong>Écrivez-nous</strong> depuis la page contact si vous
+              restez sans réponse. Nous ne trancherons pas le fond du
+              désaccord, mais nous pouvons confirmer le paiement, vérifier que
+              le compte de l'organisateur existe toujours et le relancer.
+            </li>
+            <li>
+              <strong>Saisissez un conciliateur de justice</strong> si le
+              désaccord persiste. Le recours est gratuit, il se demande auprès
+              de la mairie ou du tribunal de proximité, et il constitue un{" "}
+              <em>préalable obligatoire</em> avant toute action en justice pour
+              les litiges inférieurs à 5 000 €. À noter : le médiateur de la
+              consommation n'est pas compétent ici, puisqu'il suppose un litige
+              entre un consommateur et un professionnel.
+            </li>
+            <li>
+              <strong>Contestez le paiement auprès de votre banque</strong> en
+              dernier recours. Sachez que cette démarche fait supporter à
+              l'organisateur des frais de litige non remboursables, en plus du
+              montant repris.
+            </li>
+            <li>
+              <strong>Déposez plainte</strong> si vous estimez avoir été victime
+              d'une escroquerie — événement inventé, organisateur disparu avec
+              les fonds. Le dépôt de plainte en ligne pour escroquerie sur
+              internet se fait via le dispositif THESEE, sur le site du
+              ministère de l'Intérieur. Signalez-le-nous également : nous gelons
+              la cagnotte concernée et coopérons avec les autorités.
+            </li>
+          </ol>
           <p>
             Pour les paiements par carte, nous conservons trace de chaque
             contribution : identité du contributeur, montant, date et référence
