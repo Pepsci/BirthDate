@@ -3,8 +3,36 @@
 
 const express = require("express");
 const router = express.Router();
+const geoip = require("geoip-country");
 
 const Log = require("../../models/log.model");
+
+// Nom de pays en français ("États-Unis") — Intl.DisplayNames est natif à
+// Node, donc pas de dépendance supplémentaire pour ça. geoip-country ne
+// renvoie qu'un code ISO à 2 lettres ("US").
+const countryNames = new Intl.DisplayNames(["fr"], { type: "region" });
+
+// Emoji drapeau à partir d'un code pays ISO — trick Unicode standard
+// (indicateurs régionaux), aucune lib nécessaire.
+function flagEmoji(iso) {
+  if (!iso || iso.length !== 2) return "";
+  return String.fromCodePoint(
+    ...[...iso.toUpperCase()].map((c) => 127397 + c.charCodeAt(0)),
+  );
+}
+
+// "system" (webhook/cron), IP locale (127.0.0.1, ::1) ou IP non résolue par
+// la base geoip-country → pas de pays, on ne renvoie rien plutôt qu'un faux
+// résultat.
+function countryFromIp(ip) {
+  try {
+    const geo = geoip.lookup(ip);
+    if (!geo?.country) return null;
+    return { code: geo.country, flag: flagEmoji(geo.country), name: countryNames.of(geo.country) };
+  } catch (_) {
+    return null;
+  }
+}
 
 /*
  * GET /api/admin/logs?action=&userId=&page=&limit=
@@ -28,7 +56,12 @@ router.get("/", async (req, res) => {
       Log.countDocuments(query),
     ]);
 
-    res.json({ logs, total, page, pages: Math.ceil(total / limit) });
+    const logsWithCountry = logs.map((log) => ({
+      ...log.toObject(),
+      country: countryFromIp(log.ipAddress),
+    }));
+
+    res.json({ logs: logsWithCountry, total, page, pages: Math.ceil(total / limit) });
   } catch (error) {
     console.error("❌ Admin logs error:", error);
     res.status(500).json({ message: "Erreur serveur" });

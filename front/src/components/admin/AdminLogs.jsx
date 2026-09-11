@@ -92,7 +92,12 @@ const AdminLogs = () => {
                     <span className="admin-muted"> · {log.metadata.email}</span>
                   )}
                 </td>
-                <td className="admin-muted">{log.ipAddress}</td>
+                <td className="admin-muted">
+                  {log.ipAddress}
+                  {log.country && (
+                    <span title={log.country.name}> {log.country.flag}</span>
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>
