@@ -8,10 +8,48 @@ import { getPrivateKey, getOldPrivateKey, decryptMessage } from "../../utils/enc
 import Avatar from "../UI/Avatar";
 import "./css/ConversationList.css";
 
+const SUPPORT_STATUS_LABEL = { open: "Ouvert", answered: "Répondu", closed: "Fermé" };
+
+// Item de la liste des tickets support, avec un badge de statut coloré
+// (vert = en cours, rouge = fermé) pour distinguer les fils actifs des
+// résolus d'un coup d'œil — même code couleur que l'en-tête du fil
+// (SupportThread.jsx).
+function SupportTicketItem({ ticket, selected, onSelect, formatLastMessageTime }) {
+  return (
+    <div
+      className={`conversation-item ${selected ? "active" : ""}`}
+      onClick={() => onSelect(ticket)}
+    >
+      <div className="cl-event-icon">🎫</div>
+      <div className="conversation-info">
+        <div className="conversation-header">
+          <span className="conversation-name">{ticket.subject}</span>
+          <span className="conversation-time">
+            {formatLastMessageTime(ticket.lastMessageAt)}
+          </span>
+        </div>
+        <div className="conversation-preview">
+          <span
+            className={`cl-support-status cl-support-status--${ticket.status}`}
+          >
+            {SUPPORT_STATUS_LABEL[ticket.status]}
+          </span>
+        </div>
+      </div>
+      {ticket.unreadUser && <span className="cl-tab-badge">•</span>}
+    </div>
+  );
+}
+
 function ConversationList({
   conversations,
   selectedConversation,
   onSelectConversation,
+  tab,
+  onTabChange,
+  tickets = [],
+  selectedTicket,
+  onSelectTicket,
 }) {
   const { isUserOnline } = useOnlineStatus(); // ⭐ NOUVEAU
   const { currentUser } = useContext(AuthContext);
@@ -29,7 +67,6 @@ function ConversationList({
    * événement — et les mêler rendrait le bouton de suppression ambigu.
    */
   const [eventChats, setEventChats] = useState([]);
-  const [tab, setTab] = useState("dm");
   const navigate = useNavigate();
 
   const currentUserId = localStorage.getItem("userId");
@@ -218,6 +255,14 @@ function ConversationList({
     (n, c) => n + (c.unreadCount || 0),
     0,
   );
+  const supportUnread = tickets.reduce(
+    (n, t) => n + (t.unreadUser ? 1 : 0),
+    0,
+  );
+  // Fils en cours d'abord, résolus ensuite — avec un espace entre les deux
+  // groupes (voir le rendu de l'onglet Support ci-dessous).
+  const openTickets = tickets.filter((t) => t.status !== "closed");
+  const closedTickets = tickets.filter((t) => t.status === "closed");
 
   const getOtherParticipant = (conversation) => {
     return conversation.participants?.find((p) => p?._id && p._id !== currentUserId);
@@ -303,29 +348,42 @@ function ConversationList({
         </div>
       )}
 
-      {/* L'onglet n'apparaît que s'il y a quelque chose derrière : sans
-          événement, il n'ajouterait qu'une décision à prendre. */}
-      {eventChats.length > 0 && (
-        <div className="cl-tabs">
-          <button
-            type="button"
-            className={`cl-tab ${tab === "dm" ? "cl-tab--on" : ""}`}
-            onClick={() => setTab("dm")}
-          >
-            Amis
-          </button>
+      {/* Amis toujours là ; Événements seulement s'il y a quelque chose
+          derrière (sinon ça n'ajoute qu'une décision à prendre) ; Support
+          toujours là aussi — c'est une conversation avec l'équipe comme une
+          autre, on ne veut pas que l'utilisateur ait à deviner où la
+          retrouver. */}
+      <div className="cl-tabs">
+        <button
+          type="button"
+          className={`cl-tab ${tab === "dm" ? "cl-tab--on" : ""}`}
+          onClick={() => onTabChange("dm")}
+        >
+          Amis
+        </button>
+        {eventChats.length > 0 && (
           <button
             type="button"
             className={`cl-tab ${tab === "events" ? "cl-tab--on" : ""}`}
-            onClick={() => setTab("events")}
+            onClick={() => onTabChange("events")}
           >
             Événements
             {eventUnread > 0 && (
               <span className="cl-tab-badge">{eventUnread}</span>
             )}
           </button>
-        </div>
-      )}
+        )}
+        <button
+          type="button"
+          className={`cl-tab ${tab === "support" ? "cl-tab--on" : ""}`}
+          onClick={() => onTabChange("support")}
+        >
+          Support
+          {supportUnread > 0 && (
+            <span className="cl-tab-badge">{supportUnread}</span>
+          )}
+        </button>
+      </div>
 
       {tab === "events" ? (
         <div className="conversations">
@@ -368,6 +426,48 @@ function ConversationList({
                 </div>
               );
             })
+          )}
+        </div>
+      ) : tab === "support" ? (
+        <div className="conversations">
+          {tickets.length === 0 ? (
+            <div className="no-conversations">
+              <p>Aucune conversation avec le support</p>
+              <p className="hint">
+                Passe par la page{" "}
+                <span
+                  className="cl-support-link"
+                  onClick={() => navigate("/contact")}
+                >
+                  Contact
+                </span>{" "}
+                pour ouvrir un premier sujet
+              </p>
+            </div>
+          ) : (
+            <>
+              {openTickets.map((ticket) => (
+                <SupportTicketItem
+                  key={ticket._id}
+                  ticket={ticket}
+                  selected={selectedTicket?._id === ticket._id}
+                  onSelect={onSelectTicket}
+                  formatLastMessageTime={formatLastMessageTime}
+                />
+              ))}
+              {openTickets.length > 0 && closedTickets.length > 0 && (
+                <div className="cl-support-divider" />
+              )}
+              {closedTickets.map((ticket) => (
+                <SupportTicketItem
+                  key={ticket._id}
+                  ticket={ticket}
+                  selected={selectedTicket?._id === ticket._id}
+                  onSelect={onSelectTicket}
+                  formatLastMessageTime={formatLastMessageTime}
+                />
+              ))}
+            </>
           )}
         </div>
       ) : (

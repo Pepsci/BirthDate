@@ -9,6 +9,7 @@ import {
   ShieldAlert,
   Flag,
   ArrowLeft,
+  Inbox,
 } from "lucide-react";
 import apiHandler from "../../api/apiHandler";
 import "./css/admin.css";
@@ -17,6 +18,7 @@ const AdminLayout = () => {
   const navigate = useNavigate();
   const [alertCount, setAlertCount] = useState(0);
   const [reportCount, setReportCount] = useState(0);
+  const [supportUnread, setSupportUnread] = useState(0);
 
   useEffect(() => {
     apiHandler
@@ -26,6 +28,10 @@ const AdminLayout = () => {
     apiHandler
       .get("/moderation/reports?status=pending")
       .then((res) => setReportCount(res.data?.length || 0))
+      .catch(() => {});
+    apiHandler
+      .get("/admin/support?status=open&limit=1")
+      .then((res) => setSupportUnread(res.data?.unreadCount || 0))
       .catch(() => {});
   }, []);
 
@@ -59,6 +65,12 @@ const AdminLayout = () => {
             <Flag size={18} /> Signalements
             {reportCount > 0 && (
               <span className="admin-nav-badge">{reportCount}</span>
+            )}
+          </NavLink>
+          <NavLink to="/admin/support">
+            <Inbox size={18} /> Support
+            {supportUnread > 0 && (
+              <span className="admin-nav-badge">{supportUnread}</span>
             )}
           </NavLink>
           <NavLink to="/admin/logs">

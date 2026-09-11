@@ -1,0 +1,164 @@
+/* ── Fil de discussion support (dans le volet chat) ─────────────────────── */
+
+.support-thread {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  min-height: 0;
+  background: var(--bg-primary);
+  padding: 16px 20px;
+  box-sizing: border-box;
+}
+
+.support-thread-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.support-thread-header h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  color: var(--text-primary);
+}
+
+.support-thread-status {
+  flex-shrink: 0;
+  background: var(--bg-tertiary, var(--bg-secondary));
+  color: var(--text-secondary);
+  border-radius: 20px;
+  padding: 0.22rem 0.65rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.support-thread-status--open,
+.support-thread-status--answered {
+  background: color-mix(in srgb, #22c55e 15%, var(--bg-primary));
+  color: #16a34a;
+}
+
+.support-thread-status--closed {
+  background: color-mix(in srgb, #ef4444 15%, var(--bg-primary));
+  color: var(--danger, #ef4444);
+}
+
+.support-thread-messages {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  overflow-y: auto;
+  padding-right: 0.2rem;
+  margin-bottom: 0.75rem;
+  min-height: 0;
+}
+
+.support-thread-msg {
+  border-radius: 12px;
+  padding: 0.6rem 0.85rem;
+  max-width: 80%;
+}
+
+.support-thread-msg--user {
+  background: var(--bg-secondary);
+  align-self: flex-end;
+}
+
+.support-thread-msg--admin {
+  background: color-mix(in srgb, var(--primary) 12%, var(--bg-primary));
+  align-self: flex-start;
+}
+
+.support-thread-msg-body {
+  color: var(--text-primary);
+  font-size: 0.92rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.support-thread-msg-meta {
+  color: var(--text-tertiary);
+  font-size: 0.72rem;
+  margin-top: 0.3rem;
+}
+
+.support-thread-error {
+  color: var(--danger, #ef4444);
+  font-size: 0.85rem;
+  margin: 0 0 0.5rem;
+}
+
+.support-thread-reply {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-end;
+  flex-shrink: 0;
+}
+
+.support-thread-reply textarea {
+  flex: 1;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 0.6rem 0.8rem;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.92rem;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.support-thread-reply button {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 0.6rem 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.support-thread-reply button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Ticket fermé : plus d'input, juste le rappel + un lien pour repartir sur
+   un nouveau sujet — pas de réouverture silencieuse d'un problème résolu. */
+.support-thread-closed {
+  flex-shrink: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  background: color-mix(in srgb, #22c55e 10%, var(--bg-primary));
+  border: 1px solid color-mix(in srgb, #22c55e 30%, var(--border-color));
+  border-radius: 10px;
+  padding: 0.75rem 1rem;
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+}
+
+.support-thread-closed a {
+  color: var(--primary);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.support-thread-closed a:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+  .support-thread {
+    padding: 16px;
+  }
+}

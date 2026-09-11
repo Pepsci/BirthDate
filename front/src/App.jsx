@@ -40,6 +40,7 @@ import AdminUsers from "./components/admin/AdminUsers";
 import AdminPools from "./components/admin/AdminPools";
 import AdminEvents from "./components/admin/AdminEvents";
 import AdminLogs from "./components/admin/AdminLogs";
+import AdminSupport from "./components/admin/AdminSupport";
 import AdminAlerts from "./components/admin/AdminAlerts";
 import AdminReports from "./components/admin/AdminReports";
 import AnalyticsTracker from "./analytics/AnalyticsTracker";
@@ -141,6 +142,7 @@ function App() {
               <Route path="alerts" element={<AdminAlerts />} />
               <Route path="reports" element={<AdminReports />} />
               <Route path="logs" element={<AdminLogs />} />
+              <Route path="support" element={<AdminSupport />} />
             </Route>
           </Route>
         </Routes>

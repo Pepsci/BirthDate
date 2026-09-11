@@ -1,0 +1,172 @@
+/* ── Support — layout deux colonnes (liste + fil) ───────────────────────── */
+
+.support-layout {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: 1rem;
+  align-items: start;
+}
+
+.support-list {
+  min-width: 0;
+}
+
+.support-row--active {
+  background: var(--bg-tertiary);
+}
+
+.support-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--primary);
+  margin-right: 0.4rem;
+}
+
+/* ── Détail / fil de discussion ─────────────────────────────────────────── */
+
+.support-detail {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 1.1rem 1.2rem;
+  min-height: 300px;
+  position: sticky;
+  top: 1rem;
+}
+
+.support-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0.85rem;
+  margin-bottom: 0.85rem;
+}
+
+.support-detail-header h2 {
+  margin: 0 0 0.25rem;
+  font-size: 1.05rem;
+  color: var(--text-primary);
+}
+
+.support-detail-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.support-status-btn {
+  background: none;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  border-radius: 8px;
+  padding: 0.35rem 0.7rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.support-status-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.support-thread {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  max-height: 420px;
+  overflow-y: auto;
+  margin-bottom: 0.85rem;
+  padding-right: 0.2rem;
+}
+
+.support-msg {
+  border-radius: 10px;
+  padding: 0.6rem 0.8rem;
+  max-width: 85%;
+}
+
+.support-msg--user {
+  background: var(--bg-secondary);
+  align-self: flex-start;
+}
+
+.support-msg--admin {
+  background: color-mix(in srgb, var(--primary) 12%, var(--bg-primary));
+  align-self: flex-end;
+}
+
+.support-msg-body {
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.support-msg-meta {
+  color: var(--text-tertiary);
+  font-size: 0.72rem;
+  margin-top: 0.3rem;
+}
+
+.support-email-note {
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  padding: 0.5rem 0.7rem;
+  margin: 0 0 0.75rem;
+}
+
+.support-reply {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.support-reply textarea {
+  width: 100%;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 0.6rem 0.75rem;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.9rem;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+.support-reply button {
+  align-self: flex-end;
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.5rem 1.1rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.support-reply button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Mobile ──────────────────────────────────────────────────────────────── */
+
+@media (max-width: 900px) {
+  .support-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .support-detail {
+    position: static;
+  }
+}

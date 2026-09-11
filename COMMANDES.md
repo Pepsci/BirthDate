@@ -46,11 +46,16 @@ npx expo start -c      # -c vide le cache (utile après un changement de .env / 
 cd ~/Dev/birthreminder
 git add -A && git commit -m "message" && git push
 
-# Sur le serveur : récupérer + redémarrer
+# Sur le serveur : récupérer + installer + redémarrer
 ssh -i ~/Downloads/paris-joss-mdp.pem ubuntu@birthreminder.com
-cd ~/BirthDate && git pull
+cd ~/BirthDate/server && git pull -C .. && npm install
 pm2 restart birthreminder-api
 ```
+> ⚠️ **Ne jamais sauter le `npm install`** dès que `package.json` a changé (nouvelle
+> dépendance). Sinon `require(...)` plante au démarrage sur le module manquant et
+> **plus aucune route ne répond** (login web ET mobile inclus, même quand seule une
+> fonctionnalité admin utilisait la nouvelle dépendance) — c'est déjà arrivé avec
+> `geoip-country`.
 
 ---
 

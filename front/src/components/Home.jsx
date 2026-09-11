@@ -21,6 +21,7 @@ const Home = () => {
   const resetChatRef = useRef(null);
   const resetDateListRef = useRef(null);
   const openChatRef = useRef(null); // ← nouveau : ouvrir le chat depuis l'extérieur
+  const openSupportRef = useRef(null); // ← ouvrir le chat direct sur l'onglet Support
 
   const [date] = useState([]);
   const [showProfile, setShowProfile] = useState(false);
@@ -36,6 +37,9 @@ const Home = () => {
   const [initialEventsOpen, setInitialEventsOpen] = useState(false);
   const [initialChatConversationId, setInitialChatConversationId] =
     useState(null);
+  // null = rien en attente ; "" = ouvrir Support sans ticket précis ;
+  // sinon l'id du ticket ciblé par la notif.
+  const [initialSupportTicketId, setInitialSupportTicketId] = useState(null);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -61,6 +65,7 @@ const Home = () => {
     const month = searchParams.get("month");
     const year = searchParams.get("year");
     const conversationId = searchParams.get("conversationId");
+    const ticketId = searchParams.get("ticketId");
 
     if (!tab) return;
 
@@ -87,6 +92,15 @@ const Home = () => {
       setViewingFriendProfile(null);
       setAgendaParams(null);
       setInitialEventsOpen(true);
+      navigate("/home", { replace: true });
+    } else if (tab === "support") {
+      // ── Deep link support depuis la notif de réponse admin : ouvre le
+      // chat direct sur son onglet Support (voir ConversationList) ──
+      setShowProfile(false);
+      setEditingDate(null);
+      setViewingFriendProfile(null);
+      setAgendaParams(null);
+      setInitialSupportTicketId(ticketId || "");
       navigate("/home", { replace: true });
     } else if (tab === "chat") {
       // ── Deep link chat depuis une notif ──
@@ -122,6 +136,15 @@ const Home = () => {
     }
   }, [initialChatConversationId, openChatRef.current]);
 
+  // Idem pour le deep link support (ticketId optionnel)
+  useEffect(() => {
+    if (initialSupportTicketId === null) return;
+    if (openSupportRef.current) {
+      openSupportRef.current(initialSupportTicketId || null);
+      setInitialSupportTicketId(null);
+    }
+  }, [initialSupportTicketId, openSupportRef.current]);
+
   const handleLogoClick = () => {
     if (resetChatRef.current) resetChatRef.current();
     if (resetDateListRef.current) resetDateListRef.current();
@@ -132,8 +155,8 @@ const Home = () => {
     setCardToMerge(null);
     setProfileInitialSection("personal");
     setAgendaParams(null);
-    setInitialEventsOpen(false);
     setInitialChatConversationId(null);
+    setInitialSupportTicketId(null);
     setSavedPage(1);
     navigate("/home");
   };
@@ -257,6 +280,9 @@ const Home = () => {
                 }}
                 onOpenChat={(fn) => {
                   openChatRef.current = fn;
+                }}
+                onOpenSupport={(fn) => {
+                  openSupportRef.current = fn;
                 }}
               />
             )}

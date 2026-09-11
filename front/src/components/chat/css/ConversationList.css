@@ -561,3 +561,46 @@
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
 }
+
+.cl-support-link {
+  color: var(--primary);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cl-support-link:hover {
+  text-decoration: underline;
+}
+
+/* Statut d'un ticket support dans la liste : vert = en cours (ouvert ou
+   répondu), rouge = fermé — pour distinguer les fils actifs des résolus
+   sans avoir à lire le texte. */
+.cl-support-status {
+  display: inline-block;
+  border-radius: 20px;
+  padding: 0.1rem 0.55rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  border: 1px solid transparent;
+}
+
+.cl-support-status--open,
+.cl-support-status--answered {
+  color: #16a34a;
+  background: color-mix(in srgb, #22c55e 15%, var(--bg-primary));
+  border-color: color-mix(in srgb, #22c55e 35%, transparent);
+}
+
+.cl-support-status--closed {
+  color: var(--danger, #ef4444);
+  background: color-mix(in srgb, #ef4444 12%, var(--bg-primary));
+  border-color: color-mix(in srgb, #ef4444 35%, transparent);
+}
+
+/* Espace entre les tickets en cours et les tickets résolus, pour que le
+   regroupement se voie sans avoir à comparer les statuts un par un. */
+.cl-support-divider {
+  height: 1px;
+  margin: 0.65rem 0.5rem;
+  background: var(--border-color);
+}

@@ -1,5 +1,5 @@
-import { useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useRef, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import apiHandler from "../../api/apiHandler";
 import useAuth from "../../context/useAuth";
@@ -12,11 +12,8 @@ const MESSAGE_MAX = 2000;
 
 export default function ContactPage() {
   const { isLoggedIn, currentUser } = useAuth();
-  // Connecté : on connaît déjà son nom/email (côté serveur, via son
-  // compte) — inutile de les redemander, et ça évite qu'il se trompe en
-  // les retapant. Le formulaire passe alors par /api/support au lieu de
-  // /api/support/public.
   const loggedIn = Boolean(isLoggedIn && currentUser);
+  const navigate = useNavigate();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -25,20 +22,44 @@ export default function ContactPage() {
   const [sending, setSending] = useState(false);
   const [error, setError] = useState(null);
   const [sent, setSent] = useState(false);
+  const [sentLoggedIn, setSentLoggedIn] = useState(false);
 
   // Le centre d'aide est la première chose que voit l'utilisateur : le
   // formulaire ne s'affiche que quand il a cliqué "Contacter le support"
-  // (soit à tout moment depuis le centre d'aide, soit après avoir consulté
-  // une réponse qui ne lui convenait pas).
+  // depuis une réponse consultée qui ne lui convenait pas (voir HelpCenter).
   const [formOpen, setFormOpen] = useState(false);
   const formRef = useRef(null);
 
+  // Un seul ticket actif à la fois (voir routes/support.js) : un utilisateur
+  // connecté qui en a déjà un en cours continue cette conversation dans le
+  // dashboard (onglet Support) plutôt que d'en ouvrir un nouveau ici. Un
+  // ticket fermé (résolu) ne compte pas — il peut repartir sur un nouveau
+  // sujet normalement.
+  const [activeTicket, setActiveTicket] = useState(null);
+
+  useEffect(() => {
+    if (!loggedIn) return;
+    apiHandler
+      .get("/support/mine")
+      .then((res) => {
+        const list = res.data?.tickets || [];
+        setActiveTicket(list.find((t) => t.status !== "closed") || null);
+      })
+      .catch(() => {});
+  }, [loggedIn]);
+
   const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim());
   const canSend = loggedIn
-    ? Boolean(subject.trim() && message.trim())
-    : Boolean(emailOk && subject.trim() && message.trim());
+    ? subject.trim() && message.trim()
+    : emailOk && subject.trim() && message.trim();
 
   const handleNeedHelp = (context) => {
+    // Déjà une conversation en cours : on continue là-bas plutôt que
+    // d'ouvrir un nouveau sujet en parallèle.
+    if (loggedIn && activeTicket) {
+      navigate(`/home?tab=support&ticketId=${activeTicket._id}`);
+      return;
+    }
     setFormOpen(true);
     // On ne pré-remplit que si l'utilisateur n'a pas déjà commencé à écrire
     // son propre objet — jamais écraser ce qu'il a tapé.
@@ -62,6 +83,10 @@ export default function ContactPage() {
           subject: subject.trim(),
           message: message.trim(),
         });
+        setFormOpen(false);
+        setSubject("");
+        setMessage("");
+        setSentLoggedIn(true);
       } else {
         await apiHandler.post("/support/public", {
           name: name.trim(),
@@ -69,9 +94,17 @@ export default function ContactPage() {
           subject: subject.trim(),
           message: message.trim(),
         });
+        setSent(true);
       }
-      setSent(true);
     } catch (err) {
+      if (err?.response?.status === 409 && err?.response?.data?.ticket) {
+        // Course rare : un ticket actif a été créé entre-temps (autre onglet
+        // par ex.) — on redirige plutôt que d'afficher une simple erreur.
+        setActiveTicket(err.response.data.ticket);
+        setFormOpen(false);
+        navigate(`/home?tab=support&ticketId=${err.response.data.ticket._id}`);
+        return;
+      }
       setError(
         err?.response?.data?.message ?? "Erreur lors de l'envoi du message.",
       );
@@ -107,6 +140,19 @@ export default function ContactPage() {
               Retour à l'accueil
             </Link>
           </div>
+        ) : sentLoggedIn ? (
+          <div className="contact-done">
+            <div className="contact-done-emoji">✅</div>
+            <h1>Message envoyé</h1>
+            <p>
+              Retrouve l'échange avec l'équipe dans l'onglet{" "}
+              <strong>Support</strong> de ton espace, dès qu'elle t'aura
+              répondu.
+            </p>
+            <Link to="/home?tab=support" className="contact-btn">
+              Voir mes échanges
+            </Link>
+          </div>
         ) : (
           <>
             <div className="contact-hero-emoji">✉️</div>
@@ -116,7 +162,22 @@ export default function ContactPage() {
               formulaire si tu préfères nous écrire.
             </p>
 
-            <HelpCenter onNeedHelp={handleNeedHelp} />
+            {loggedIn && activeTicket && (
+              <div className="contact-existing-thread-banner">
+                <span>Tu as déjà une conversation avec le support.</span>
+                <Link
+                  to={`/home?tab=support&ticketId=${activeTicket._id}`}
+                  className="contact-btn contact-btn--ghost"
+                >
+                  Voir mes échanges
+                </Link>
+              </div>
+            )}
+
+            <HelpCenter
+              onNeedHelp={handleNeedHelp}
+              hasActiveTicket={loggedIn && Boolean(activeTicket)}
+            />
 
             {formOpen && (
               <div ref={formRef} className="contact-form-wrapper">

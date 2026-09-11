@@ -265,18 +265,34 @@ export default function PoolConfigScreen() {
           <Text style={styles.commitTitle}>Ce que tu t'engages à faire</Text>
           <Text style={styles.commitText}>
             L'argent arrive directement sur ton compte Stripe : BirthReminder ne
-            le détient jamais. Si l'événement est annulé, ou si le cadeau n'est
-            finalement pas acheté, c'est à toi de rembourser les participants —
-            un bouton « Rembourser les contributeurs » apparaît ci-dessous dès
-            la première contribution reçue.
+            le détient jamais et n'intervient à aucun moment sur les fonds. Tu
+            restes le seul responsable de la cagnotte vis-à-vis des
+            contributeurs.
           </Text>
           <Text style={styles.commitText}>
-            Les contributeurs récupèrent l'intégralité de ce qu'ils ont versé,
-            mais Stripe ne te restitue pas les frais du paiement d'origine :
-            environ 1,5 % + 0,25 € par contribution, davantage pour une carte
-            professionnelle ou étrangère. Ce montant reste à ta charge, en plus
-            des sommes rendues.
+            À savoir : si tu rembourses une contribution, les frais prélevés lors
+            du paiement d'origine ne te sont pas restitués par Stripe.
           </Text>
+          <View style={styles.commitLinks}>
+            <Text
+              style={styles.commitLink}
+              onPress={() =>
+                WebBrowser.openBrowserAsync(
+                  "https://stripe.com/fr/legal/connect-account"
+                )
+              }
+            >
+              Contrat de compte Stripe Connect
+            </Text>
+            <Text
+              style={styles.commitLink}
+              onPress={() =>
+                WebBrowser.openBrowserAsync("https://stripe.com/fr/legal/ssa")
+              }
+            >
+              Conditions des services Stripe
+            </Text>
+          </View>
         </View>
       )}
 
@@ -560,6 +576,14 @@ const makeStyles = (c: ThemeColors) =>
     },
     commitTitle: { fontWeight: "800", fontSize: 14, color: c.text },
     commitText: { fontSize: 13, lineHeight: 19, color: c.sub },
+    commitLinks: { gap: 4, marginTop: 2 },
+    commitLink: {
+      fontSize: 12.5,
+      lineHeight: 18,
+      color: c.primary,
+      fontWeight: "600",
+      textDecorationLine: "underline",
+    },
     refundNote: { fontSize: 12, lineHeight: 17, marginTop: 8 },
     refundWarn: {
       color: c.warning,

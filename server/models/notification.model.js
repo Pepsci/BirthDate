@@ -53,6 +53,9 @@ const notificationSchema = new mongoose.Schema(
         "shared_gift_member_left",
         // Liste partagée à un contact en lecture + réservation.
         "shared_gift_shared",
+        // Réponse de l'équipe support à un ticket ouvert par un utilisateur
+        // connecté (formulaire de contact / centre d'aide).
+        "support_reply",
       ],
       required: true,
     },

@@ -146,6 +146,7 @@ const DateList = ({
   onResetChat,
   onResetDateList,
   onOpenChat,
+  onOpenSupport,
   initialPage = 1,
   agendaParams = null,
   initialFilter = null,
@@ -175,6 +176,12 @@ const DateList = ({
   const [selectedFriendName, setSelectedFriendName] = useState("");
   const [viewMode, setViewMode] = useState(agendaParams ? "agenda" : "card");
   const [initialConversationId, setInitialConversationId] = useState(null);
+  // ── Support : le fil de discussion vit désormais dans l'onglet "Support"
+  // du chat lui-même (à côté d'Amis / Événements), pas comme panneau séparé
+  // du dashboard. On garde juste de quoi router un deep link vers ce
+  // sous-onglet, sur le même principe qu'initialConversationId ci-dessus.
+  const [initialChatTab, setInitialChatTab] = useState(null);
+  const [initialSupportTicketId, setInitialSupportTicketId] = useState(null);
 
   // ─── Expose le reset complet à Home via ref ──────────────
   useEffect(() => {
@@ -232,7 +239,24 @@ const DateList = ({
       setIsFilterVisible(false);
       setIsEventsVisible(false);
       resetUnreadCount();
+      setInitialChatTab(null);
       if (conversationId) setInitialConversationId(conversationId);
+    });
+  }, []);
+
+  // ── Deep link support (notif de réponse admin) : ouvre le chat direct sur
+  // son onglet "Support", éventuellement sur un ticket précis. Même
+  // mécanique que onOpenChat ci-dessus, un ref distinct côté Home.
+  useEffect(() => {
+    if (!onOpenSupport) return;
+    onOpenSupport((ticketId) => {
+      setIsChatVisible(true);
+      setIsFormVisible(false);
+      setIsFilterVisible(false);
+      setIsEventsVisible(false);
+      resetUnreadCount();
+      setInitialChatTab("support");
+      setInitialSupportTicketId(ticketId || "any");
     });
   }, []);
 
@@ -555,7 +579,13 @@ const DateList = ({
             exit={{ opacity: 0, y: -12 }}
             transition={{ duration: 0.25 }}
           >
-            <Chat initialConversationId={initialConversationId} />
+            <Chat
+              initialConversationId={initialConversationId}
+              initialTab={initialChatTab}
+              initialTicketId={
+                initialSupportTicketId === "any" ? null : initialSupportTicketId
+              }
+            />
           </motion.div>
         )}
 

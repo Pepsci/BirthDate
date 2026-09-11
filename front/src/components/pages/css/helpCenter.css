@@ -4,7 +4,7 @@
   margin-bottom: 1.5rem;
 }
 
-/* ── Recherche ────────────────────────────────────────────────────────────── */
+/* ── Recherche ───────────────────────────────────────────────────────────── */
 
 .helpcenter-search {
   margin-bottom: 1rem;
@@ -84,7 +84,7 @@
   color: var(--text-tertiary);
 }
 
-/* ── Catégories ───────────────────────────────────────────────────────── */
+/* ── Catégories ──────────────────────────────────────────────────────────── */
 
 .helpcenter-categories {
   display: grid;
@@ -127,6 +127,49 @@
 
 .helpcenter-section {
   margin-bottom: 1rem;
+}
+
+/* Tuile de la catégorie active, épinglée en haut de la recherche guidée —
+   même esprit que .helpcenter-category mais en pleine largeur, avec un
+   indice qu'elle est cliquable pour changer de catégorie. */
+.helpcenter-active-category {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  width: 100%;
+  border: 1px solid var(--primary);
+  background: var(--bg-secondary);
+  border-radius: 12px;
+  padding: 0.85rem 1rem;
+  margin-bottom: 0.75rem;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+
+.helpcenter-active-category:hover {
+  border-color: var(--text-primary);
+}
+
+.helpcenter-active-category-emoji {
+  font-size: 1.6rem;
+  flex-shrink: 0;
+}
+
+.helpcenter-active-category-title {
+  flex: 1;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.helpcenter-active-category-change {
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--primary);
 }
 
 .helpcenter-breadcrumb {
@@ -226,7 +269,7 @@
   background: var(--bg-secondary);
 }
 
-/* ── Mobile ─────────────────────────────────────────────────────────────── */
+/* ── Mobile ──────────────────────────────────────────────────────────────── */
 
 @media (max-width: 420px) {
   .helpcenter-categories {

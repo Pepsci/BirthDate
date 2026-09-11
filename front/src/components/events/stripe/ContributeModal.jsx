@@ -123,6 +123,16 @@ const ContributeModal = ({ shortId, onClose, onSuccess }) => {
   const [message, setMessage] = useState("");
   const [anonymous, setAnonymous] = useState(false);
   const [guestName, setGuestName] = useState("");
+  /**
+   * Acceptation des conditions, demandée aux SEULS contributeurs sans compte.
+   *
+   * Un contributeur inscrit les a acceptées à l'inscription — case obligatoire,
+   * horodatée sur son compte : la redemander serait une friction sans objet.
+   * Un visiteur arrivé par le lien public n'avait, lui, jamais rien accepté, et
+   * c'est pourtant lui qui se retournera vers nous si l'événement est annulé.
+   */
+  const isSignedIn = !!localStorage.getItem("userId");
+  const [acceptTerms, setAcceptTerms] = useState(false);
   const [clientSecret, setClientSecret] = useState(null);
   const [stripeAccountId, setStripeAccountId] = useState(null);
   const [creating, setCreating] = useState(false);
@@ -146,6 +156,10 @@ const ContributeModal = ({ shortId, onClose, onSuccess }) => {
       setError("Le montant minimum est de 1 €.");
       return;
     }
+    if (!isSignedIn && !acceptTerms) {
+      setError("Vous devez accepter les conditions d'utilisation.");
+      return;
+    }
     setCreating(true);
     try {
       const res = await apiHandler.post(`/events/${shortId}/pool/contribute`, {
@@ -153,6 +167,7 @@ const ContributeModal = ({ shortId, onClose, onSuccess }) => {
         message: message || undefined,
         anonymous,
         guestName: guestName || undefined,
+        acceptTerms: isSignedIn ? undefined : acceptTerms,
       });
       setClientSecret(res.data.clientSecret);
       setStripeAccountId(res.data.stripeAccountId);
@@ -260,6 +275,29 @@ const ContributeModal = ({ shortId, onClose, onSuccess }) => {
               </p>
             )}
 
+            {/* Ce que le contributeur doit savoir AVANT de payer, et non dans
+                un texte qu'il ne lira pas : l'argent va à l'organisateur, pas
+                à nous. C'est la réponse à la seule question qu'il se posera
+                le jour où l'événement est annulé. */}
+            {!isSignedIn && (
+              <label className="gp-terms">
+                <input
+                  type="checkbox"
+                  checked={acceptTerms}
+                  onChange={(e) => setAcceptTerms(e.target.checked)}
+                />
+                <span>
+                  J'ai lu et j'accepte les{" "}
+                  <a href="/cgu" target="_blank" rel="noreferrer">
+                    conditions d'utilisation
+                  </a>
+                  . Ma contribution est encaissée directement par
+                  l'organisateur : BirthReminder ne détient jamais les fonds et
+                  ne peut pas rembourser à sa place.
+                </span>
+              </label>
+            )}
+
             {error && <p className="gp-error">{error}</p>}
 
             <motion.button
@@ -290,6 +328,21 @@ const ContributeModal = ({ shortId, onClose, onSuccess }) => {
                 onBack={() => setStep("amount")}
               />
             </Elements>
+            {/* Sous le bouton de paiement : le contributeur ne contracte pas
+                avec Stripe, mais ses données de carte y transitent — le lien
+                qui le concerne est la politique de confidentialité. Le rappel
+                sur la détention des fonds, lui, engage l'organisateur. */}
+            <p className="gp-stripe-note">
+              Paiement traité par Stripe — les fonds vont directement à
+              l'organisateur, BirthReminder ne les détient jamais.{" "}
+              <a
+                href="https://stripe.com/fr/privacy"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Politique de confidentialité de Stripe
+              </a>
+            </p>
           </>
         )}
 

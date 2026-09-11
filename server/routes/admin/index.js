@@ -14,5 +14,6 @@ router.use("/users", require("./users"));
 router.use("/pools", require("./pools"));
 router.use("/events", require("./events"));
 router.use("/logs", require("./logs"));
+router.use("/support", require("./support"));
 
 module.exports = router;

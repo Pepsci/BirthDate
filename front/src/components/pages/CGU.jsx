@@ -300,8 +300,34 @@ export default function CGU() {
           </p>
           <p>
             En ouvrant une cagnotte, il doit créer un compte auprès de Stripe et
-            se soumettre à ses vérifications d'identité. Il accepte les
-            conditions de Stripe en plus des présentes.
+            se soumettre à ses vérifications d'identité. Il accepte, en plus des
+            présentes, le{" "}
+            <a
+              href="https://stripe.com/fr/legal/connect-account"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              contrat de compte Stripe Connect
+            </a>{" "}
+            et les{" "}
+            <a
+              href="https://stripe.com/fr/legal/ssa"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              conditions des services Stripe
+            </a>
+            . Ces documents restent accessibles depuis la page de gestion de la
+            cagnotte.
+          </p>
+          <p>
+            Ces conditions encadrent le compte de paiement, pas la cagnotte
+            elle-même : <strong>elles ne prévoient aucune obligation de
+            remboursement en cas d'annulation</strong>. Stripe y précise au
+            contraire que le titulaire du compte est seul responsable des biens
+            et services fournis à ses clients, et que les frais déjà prélevés
+            ne sont pas restituables. Les obligations de l'organisateur envers
+            les participants relèvent donc uniquement du présent article 5.
           </p>
 
           <h3>5.3 Responsabilité du participant</h3>
@@ -316,6 +342,13 @@ export default function CGU() {
             Vous ne pouvez pas annuler vous-même une contribution déjà versée :
             seul l'organisateur peut déclencher un remboursement, et quitter
             l'événement ne vous rembourse pas. Adressez-vous à lui.
+          </p>
+          <p>
+            Les présentes conditions sont acceptées à la création du compte. Un
+            participant qui contribue <strong>sans compte</strong>, depuis un
+            lien d'invitation, les accepte explicitement avant le paiement : la
+            case de confirmation affichée à cette étape vaut acceptation, et la
+            date en est conservée avec la contribution.
           </p>
 
           <h3>5.4 Remboursement des contributions</h3>
@@ -542,7 +575,7 @@ export default function CGU() {
         </section>
 
         <p className="last-update">
-          <strong>Dernière mise à jour :</strong> 8 septembre 2026
+          <strong>Dernière mise à jour :</strong> 11 septembre 2026
         </p>
       </div>
     </div>

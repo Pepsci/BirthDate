@@ -15,6 +15,24 @@ const giftPoolContributionSchema = new Schema(
     message: { type: String, maxlength: 280, trim: true },
     anonymous: { type: Boolean, default: false },
     stripePaymentIntentId: { type: String, required: true, unique: true },
+
+    /**
+     * Horodatage de l'acceptation des conditions d'utilisation par un
+     * contributeur SANS COMPTE.
+     *
+     * ⚠️ Un contributeur inscrit a accepté les conditions à l'inscription, et
+     * le serveur l'horodate déjà sur son compte (`acceptedTermsAt`). Un
+     * visiteur arrivé par le lien public, lui, n'avait jamais rien accepté :
+     * il pouvait payer sans qu'aucun texte ne lui soit opposable. Or c'est
+     * exactement la personne qui se retournera vers nous le jour où
+     * l'événement est annulé — et le seul texte qui répond à sa question
+     * (« BirthReminder ne détient pas les fonds, le litige se règle avec
+     * l'organisateur ») ne vaut que si elle l'a accepté.
+     *
+     * `null` pour un contributeur inscrit : son acceptation vit sur son
+     * compte, la dupliquer ici n'apporterait rien.
+     */
+    guestTermsAcceptedAt: { type: Date, default: null },
     status: {
       type: String,
       enum: ["pending", "succeeded", "failed", "refunded"],

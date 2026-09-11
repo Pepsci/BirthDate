@@ -504,6 +504,18 @@ router.post("/:shortId/pool/contribute", async (req, res) => {
       } catch (_) {}
     }
 
+    // ── Acceptation des conditions, pour les contributeurs SANS COMPTE ────
+    // Un contributeur inscrit les a acceptées à l'inscription (case obligatoire
+    // sur les deux applications, horodatée sur son compte) : on ne la redemande
+    // pas. Un visiteur du lien public n'avait, lui, jamais rien accepté.
+    if (!contributorId && req.body.acceptTerms !== true) {
+      return res.status(400).json({
+        code: "TERMS_REQUIRED",
+        message:
+          "Vous devez accepter les conditions d'utilisation pour contribuer.",
+      });
+    }
+
     // Email pour le reçu Stripe : récupéré du compte si l'utilisateur est connecté.
     // Pour un invité, Stripe collecte l'email via le PaymentElement (pas besoin ici).
     let receiptEmail = null;
@@ -542,6 +554,7 @@ router.post("/:shortId/pool/contribute", async (req, res) => {
     await GiftPoolContribution.create({
       event: event._id,
       contributor: contributorId,
+      guestTermsAcceptedAt: contributorId ? null : new Date(),
       guestName: guestName ? String(guestName).trim().slice(0, 60) : undefined,
       amount: amountInt,
       currency: pool.currency || "eur",

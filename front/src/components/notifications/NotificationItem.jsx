@@ -33,6 +33,7 @@ const TYPE_CONFIG = {
   shared_gift_removed: { icon: "🗑️" },
   shared_gift_member_left: { icon: "👋" },
   shared_gift_shared: { icon: "🎁" },
+  support_reply: { icon: "💬" },
 };
 
 const timeAgo = (dateStr) => {
@@ -294,6 +295,13 @@ const buildText = (type, data) => {
         <>
           <strong>{data.fromName}</strong> a rejoint votre liste de cadeaux
           commune{data.personName ? <> — {data.personName}</> : null}
+        </>
+      );
+    case "support_reply":
+      return (
+        <>
+          L'équipe support a répondu à «{" "}
+          <strong>{data.subject}</strong> »
         </>
       );
     default:

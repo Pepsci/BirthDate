@@ -35,6 +35,8 @@ const io = new Server(server, {
 const socketAuthMiddleware = require("./middleware/socketAuth");
 io.use(socketAuthMiddleware);
 
+const User = require("./models/user.model");
+
 const setupChatHandlers = require("./sockets/chatHandlers");
 const setupEventHandlers = require("./sockets/eventHandlers");
 
@@ -47,6 +49,18 @@ io.app = app;
 // Un seul io.on("connection") — évite les doublons de listeners
 io.on("connection", (socket) => {
   socket.join(`user:${socket.userId}`);
+  // Room "admin" : permet de pousser en direct les nouveaux messages support
+  // (nouveau ticket, réponse utilisateur) à tous les admins connectés, sans
+  // qu'ils aient à recharger la page pour les voir arriver — voir
+  // routes/support.js et AdminSupport.jsx.
+  User.findById(socket.userId)
+    .select("role")
+    .then((user) => {
+      if (user?.role === "admin") socket.join("admin");
+    })
+    .catch((error) => {
+      console.error("❌ Erreur vérification rôle socket:", error);
+    });
   console.log("🔍 app dans connection handler:", typeof app, !!app); // ← ajouter
   setupChatHandlers(io, socket, connectedUsers, app);
   setupEventHandlers(io, socket, app);

@@ -12,6 +12,7 @@ import {
 } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { StripeProvider, useStripe } from "@stripe/stripe-react-native";
+import * as WebBrowser from "expo-web-browser";
 import { contributeToPool } from "../../../lib/events";
 import {
   useTheme,
@@ -220,7 +221,16 @@ function ContributeForm({
 
       <Text style={styles.secure}>
         🔒 Paiement sécurisé par Stripe — l'argent va directement à
-        l'organisateur.
+        l'organisateur. BirthReminder ne détient jamais les fonds : en cas
+        d'annulation, le remboursement relève de l'organisateur.
+      </Text>
+      <Text
+        style={styles.secureLink}
+        onPress={() =>
+          WebBrowser.openBrowserAsync("https://stripe.com/fr/legal/ssa")
+        }
+      >
+        Conditions des services Stripe
       </Text>
     </ScrollView>
   );
@@ -278,4 +288,11 @@ const makeStyles = (c: ThemeColors) =>
   },
   payText: { color: c.white, fontWeight: "700", fontSize: 16 },
   secure: { textAlign: "center", color: c.faint, fontSize: 12, marginTop: 8 },
+  secureLink: {
+    textAlign: "center",
+    color: c.faint,
+    fontSize: 12,
+    marginTop: 4,
+    textDecorationLine: "underline",
+  },
 });

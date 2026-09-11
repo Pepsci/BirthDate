@@ -7,7 +7,7 @@ function normalize(str) {
   return String(str || "")
     .toLowerCase()
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
+    .replace(/[̀-ͯ]/g, "");
 }
 
 // À plat, une seule fois : toutes les questions avec leur catégorie
@@ -31,13 +31,13 @@ const MAX_RESULTS = 6;
  * plutôt qu'un simple lien vers le Guide.
  *
  * `onNeedHelp(context)` est appelé quand l'utilisateur indique que rien ne
- * répond à sa question. `context` est soit une chaîne décrivant la question
- * consultée en dernier (pour pré-remplir l'objet du formulaire), soit
- * `null` si l'utilisateur saute directement au formulaire sans avoir
- * consulté de réponse précise. Ce bouton reste TOUJOURS visible, à chaque
- * étape : le centre d'aide guide, il ne bloque jamais l'accès au formulaire.
+ * répond à sa question. `context` est une chaîne décrivant la question
+ * consultée en dernier (pour pré-remplir l'objet du formulaire). Le bouton
+ * n'apparaît qu'une fois qu'une réponse a été consultée : la recherche est
+ * assez intuitive pour laisser sa chance au centre d'aide avant de proposer
+ * d'écrire directement au support.
  */
-export default function HelpCenter({ onNeedHelp }) {
+export default function HelpCenter({ onNeedHelp, hasActiveTicket = false }) {
   const [query, setQuery] = useState("");
   const [activeSectionId, setActiveSectionId] = useState(null);
   const [activeItemIndex, setActiveItemIndex] = useState(null);
@@ -138,13 +138,36 @@ export default function HelpCenter({ onNeedHelp }) {
         </div>
       ) : (
         <div className="helpcenter-section">
+          {/* Grosse tuile "catégorie active" : reprend le style des tuiles
+              de la grille de départ et reste épinglée en haut tant qu'on
+              reste dans cette catégorie, pour se repérer dans la recherche
+              guidée. Elle change dès qu'on choisit une autre catégorie, et
+              disparaît quand on revient à la grille de départ. */}
           <button
             type="button"
-            className="helpcenter-breadcrumb"
-            onClick={activeItem ? backToQuestions : backToCategories}
+            className="helpcenter-active-category"
+            onClick={backToCategories}
           >
-            ← {activeItem ? activeSection.title : "Toutes les catégories"}
+            <span className="helpcenter-active-category-emoji">
+              {activeSection.emoji}
+            </span>
+            <span className="helpcenter-active-category-title">
+              {activeSection.title}
+            </span>
+            <span className="helpcenter-active-category-change">
+              Changer de catégorie ↺
+            </span>
           </button>
+
+          {activeItem && (
+            <button
+              type="button"
+              className="helpcenter-breadcrumb"
+              onClick={backToQuestions}
+            >
+              ← Toutes les questions
+            </button>
+          )}
 
           {activeItem && (
             <div className="helpcenter-answer">
@@ -171,20 +194,18 @@ export default function HelpCenter({ onNeedHelp }) {
         </div>
       )}
 
-      <div className="helpcenter-cta">
-        <p>
-          {activeItem
-            ? "Cette réponse ne résout pas ton problème ?"
-            : "Toujours besoin d'aide ?"}
-        </p>
-        <button
-          type="button"
-          className="helpcenter-cta-btn"
-          onClick={() => onNeedHelp(currentContext)}
-        >
-          Contacter le support
-        </button>
-      </div>
+      {activeItem && !hasActiveTicket && (
+        <div className="helpcenter-cta">
+          <p>Cette réponse ne résout pas ton problème ?</p>
+          <button
+            type="button"
+            className="helpcenter-cta-btn"
+            onClick={() => onNeedHelp(currentContext)}
+          >
+            Contacter le support
+          </button>
+        </div>
+      )}
     </div>
   );
 }

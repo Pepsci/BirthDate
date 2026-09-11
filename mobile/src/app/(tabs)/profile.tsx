@@ -214,7 +214,7 @@ export default function ProfileScreen() {
 
       <Pressable
         style={styles.contactBtn}
-        onPress={() => router.push("/support")}
+        onPress={() => router.push("/contact")}
       >
         <Text style={styles.contactBtnText}>✉️ Contacter le support</Text>
       </Pressable>

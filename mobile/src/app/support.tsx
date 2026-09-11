@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -9,7 +9,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
-import { Stack, useRouter } from "expo-router";
+import { Stack, useRouter, useLocalSearchParams } from "expo-router";
 import { sendSupportMessage } from "../lib/support";
 import {
   useTheme,
@@ -17,17 +17,33 @@ import {
   ThemeColors,
 } from "../lib/theme-context";
 
+const SUBJECT_MAX = 120;
+
 export default function SupportScreen() {
   const styles = useThemedStyles(makeStyles);
   const { colors } = useTheme();
   const router = useRouter();
+  // Contexte optionnel transmis par l'écran de recherche guidée (/contact) :
+  // la question consultée qui n'a pas résolu le problème (voir ContactPage
+  // côté web pour le même mécanisme).
+  const { context } = useLocalSearchParams<{ context?: string }>();
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
 
-  const SUBJECT_MAX = 120;
+  useEffect(() => {
+    if (context && !subject.trim()) {
+      setSubject(
+        `Question non résolue : ${context}`.slice(0, SUBJECT_MAX),
+      );
+    }
+    // On ne réagit qu'au premier montage avec un contexte : ne jamais
+    // écraser ce que l'utilisateur a commencé à taper.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const MESSAGE_MAX = 2000;
   const canSend = subject.trim().length > 0 && message.trim().length > 0;
 
@@ -66,7 +82,7 @@ export default function SupportScreen() {
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <Stack.Screen options={{ title: "Contacter le support" }} />
+      <Stack.Screen options={{ title: "Écris-nous" }} />
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.intro}>
           Une question, un bug, une suggestion ? Écris-nous, on te répond par

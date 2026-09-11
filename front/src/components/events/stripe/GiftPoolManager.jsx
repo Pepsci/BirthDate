@@ -202,18 +202,30 @@ const GiftPoolManager = ({ shortId, pool, onUpdated }) => {
             <p className="gp-commit-title">Ce que vous vous engagez à faire</p>
             <p className="gp-commit-text">
               L'argent arrive directement sur votre compte Stripe :
-              BirthReminder ne le détient jamais. Si l'événement est annulé, ou
-              si le cadeau n'est finalement pas acheté, c'est à vous de
-              rembourser les participants, un bouton «&nbsp;Rembourser les
-              contributeurs&nbsp;» apparaît plus bas dès la première
-              contribution reçue.
+              BirthReminder ne le détient jamais et n'intervient à aucun moment
+              sur les fonds. Vous restez le seul responsable de la cagnotte
+              vis-à-vis des contributeurs.
             </p>
             <p className="gp-commit-text">
-              Les contributeurs récupèrent l'intégralité de ce qu'ils ont versé,
-              mais Stripe ne vous restitue pas les frais du paiement d'origine :
-              environ 1,5&nbsp;% + 0,25&nbsp;€ par contribution, davantage pour
-              une carte professionnelle ou étrangère. Ce montant reste à votre
-              charge, en plus des sommes rendues.
+              À savoir : si vous remboursez une contribution, les frais prélevés
+              lors du paiement d'origine ne vous sont pas restitués par Stripe.
+            </p>
+            <p className="gp-commit-links">
+              <a
+                href="https://stripe.com/fr/legal/connect-account"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Contrat de compte Stripe Connect
+              </a>
+              <span aria-hidden="true"> · </span>
+              <a
+                href="https://stripe.com/fr/legal/ssa"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Conditions des services Stripe
+              </a>
             </p>
           </div>
         )}
