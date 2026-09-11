@@ -4,6 +4,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const rateLimit = require("express-rate-limit");
+const { ipKeyGenerator } = require("express-rate-limit");
 
 const userModel = require("./../models/user.model");
 const Log = require("../models/log.model");
@@ -23,26 +24,84 @@ const {
 const router = express.Router();
 const saltRounds = 10;
 
+// Clé composite IP + email (en minuscule) : deux utilisateurs derrière la
+// même IP (box familiale, bureau, CGNAT opérateur mobile) ne doivent pas
+// pouvoir se bloquer mutuellement en tentant de se connecter sur LEUR propre
+// compte. `ipKeyGenerator` gère correctement l'IPv6 (regroupement par /64).
+function ipAndEmailKey(req) {
+  const email = String(req.body?.email || "").trim().toLowerCase();
+  return `${ipKeyGenerator(req)}:${email || "no-email"}`;
+}
+
+// Limiteur ciblé : n'affecte qu'un couple (IP, email) donné.
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator: ipAndEmailKey,
   message: { message: "Trop de tentatives, réessayez dans 15 minutes." },
+});
+
+// Garde-fou complémentaire, purement par IP : sans lui, une IP pourrait
+// tenter 10 mots de passe sur 1000 emails différents (bourrage
+// d'identifiants) sans jamais toucher le limiteur ciblé ci-dessus.
+// Plafond plus large pour ne pas gêner une IP partagée par plusieururs
+// utilisateurs légitimes.
+const authLimiterByIp = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 40,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: ipKeyGenerator,
+  message: { message: "Trop de tentatives depuis cette adresse, réessayez dans 15 minutes." },
 });
 
 // Limiteur propre au mot de passe oublié. Il était auparavant confondu avec
 // authLimiter : le compteur de /login mangeait celui de /forgot-password, et
 // une seule IP pouvait déclencher 10 envois SES vers des adresses arbitraires.
 // Fenêtre plus longue, quota plus bas — un utilisateur légitime demande un
-// reset une à deux fois, pas cinq.
+// reset une à deux fois, pas cinq. Même principe de clé composite IP+email
+// que pour le login.
 const passwordResetLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   max: 5,
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator: ipAndEmailKey,
   message: {
     message: "Trop de demandes de réinitialisation, réessayez dans une heure.",
+  },
+});
+
+// Garde-fou par IP pour le mot de passe oublié : empêche une IP de
+// mail-bomber des dizaines de comptes différents en restant sous le radar
+// du limiteur ciblé ci-dessus.
+const passwordResetLimiterByIp = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: ipKeyGenerator,
+  message: {
+    message: "Trop de demandes de réinitialisation depuis cette adresse, réessayez plus tard.",
+  },
+});
+
+// Création de compte : aucune notion de "compte cible" à protéger (le
+// compte n'existe pas encore), donc pas de clé composite ici — seul un
+// volume anormal depuis UNE IP compte. Plafond volontairement large pour
+// ne pas bloquer une famille/un bureau qui s'inscrit en même temps, tout en
+// coupant un bot qui créerait des dizaines de comptes (coût SES + pollution
+// de la base avec des comptes non vérifiés).
+const signupLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 8,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: ipKeyGenerator,
+  message: {
+    message: "Trop de créations de compte depuis cette adresse, réessayez plus tard.",
   },
 });
 
@@ -69,7 +128,7 @@ const validatePassword = (password) => {
 // ========================================
 // POST /auth/signup
 // ========================================
-router.post("/signup", async (req, res) => {
+router.post("/signup", signupLimiter, async (req, res) => {
   const { email, password, name, surname, birthDate, acceptedTerms } = req.body;
 
   // CGU « tolérance zéro » (conformité Apple 1.2) — requis si le client l'envoie explicitement à false
@@ -213,7 +272,7 @@ router.post("/signup", async (req, res) => {
 // ========================================
 // POST /auth/login
 // ========================================
-router.post("/login", authLimiter, async (req, res) => {
+router.post("/login", authLimiterByIp, authLimiter, async (req, res) => {
   const { email, password, rememberMe, platform, appVersion } = req.body;
 
   if (
@@ -389,7 +448,7 @@ router.post("/logout", (req, res) => {
 // ========================================
 // POST /auth/forgot-password
 // ========================================
-router.post("/forgot-password", passwordResetLimiter, async (req, res) => {
+router.post("/forgot-password", passwordResetLimiterByIp, passwordResetLimiter, async (req, res) => {
   const { email } = req.body;
 
   try {

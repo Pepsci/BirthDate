@@ -182,17 +182,50 @@ app.use("/api/shared-gifts/public", require("./routes/sharedGifts.public"));
 app.use("/api/shared-gifts", require("./routes/sharedGifts"));
 app.use("/api/admin", require("./routes/admin/index"));
 
-// Cron jobs
-purgeDeletedAccounts.start();
-require("./jobs/purgeClearedConversations").start();
-sendReminders.start();
-eventReminders.start();
-require("./jobs/poolFraudAlerts").start();
-chatCronInstant.start();
-chatCronDaily.start();
-chatCronTwiceDaily.start();
-chatCronWeekly.start();
+// ── Tâches planifiées ───────────────────────────────────────────────────────
+//
+// ⚠️ `CRONS_DISABLED=true` DOIT être posé dans le .env de toute machine de
+// développement.
+//
+// Le .env local pointe sur la base de PRODUCTION. Un `npm run dev` lancé sur
+// un poste de développement démarrait donc, en plus du serveur, toutes les
+// tâches planifiées — sur les données réelles. Deux processus, deux exécutions
+// à minuit : chaque utilisateur recevait ses rappels d'anniversaire en double,
+// et le récap mensuel partait deux fois.
+//
+// Le symptôme était trompeur : seules les notifications issues d'un CRON
+// doublaient. Un message de chat ou une notification d'événement part de la
+// machine qui reçoit la requête — une seule — alors qu'une tâche planifiée
+// s'exécute sur chaque processus qui tourne.
+//
+// Plus grave que les doublons : `purgeDeletedAccounts` et
+// `purgeClearedConversations` SUPPRIMENT des données. Les faire tourner depuis
+// un poste de développement, sur la base de production, est un risque qu'on ne
+// prend pas.
+//
+// Le réglage est un OPT-OUT et non un opt-in : oublier la variable sur un
+// poste de développement redonne le doublon, ce qui se voit et se corrige ;
+// l'oublier sur le serveur arrêterait tous les rappels de tout le monde, en
+// silence. La panne la moins grave doit être la plus probable.
+const cronsDisabled = process.env.CRONS_DISABLED === "true";
 
+if (cronsDisabled) {
+  console.log(
+    "⏸️  Tâches planifiées DÉSACTIVÉES (CRONS_DISABLED=true) — poste de développement",
+  );
+} else {
+  purgeDeletedAccounts.start();
+  require("./jobs/purgeClearedConversations").start();
+  sendReminders.start();
+  eventReminders.start();
+  require("./jobs/poolFraudAlerts").start();
+  chatCronInstant.start();
+  chatCronDaily.start();
+  chatCronTwiceDaily.start();
+  chatCronWeekly.start();
+}
+
+if (!cronsDisabled) {
 console.log("🤖 Cron jobs activés :");
 console.log("   ✅ Purge comptes supprimés (tous les jours à 3h)");
 console.log("   ✅ Emails anniversaires & fêtes (tous les jours à minuit)");
@@ -201,6 +234,7 @@ console.log("   ✅ Emails chat instantané (toutes les 5 minutes)");
 console.log("   ✅ Emails chat quotidien (tous les jours à 9h)");
 console.log("   ✅ Emails chat hebdomadaire (chaque lundi à 9h)");
 console.log("   ✅ Contrôle anti-fraude cagnottes (tous les jours à 8h)");
+}
 
 app.use("/api/*", (req, res, next) => {
   res.status(404).json({ message: "Ressource API non trouvée." });

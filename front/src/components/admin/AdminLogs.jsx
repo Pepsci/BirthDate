@@ -12,6 +12,7 @@ const ACTIONS = [
   "account_delete",
   "friend_add",
   "message_send",
+  "support_message",
 ];
 
 const AdminLogs = () => {
@@ -83,6 +84,12 @@ const AdminLogs = () => {
                       envois d'emails réellement effectués. */}
                   {log.metadata?.throttled && (
                     <span className="admin-muted"> · bloquée (anti-spam)</span>
+                  )}
+                  {/* Formulaire de support public : pas de compte, donc
+                      userId est vide — l'email saisi dans le formulaire est
+                      la seule piste pour repérer un visiteur ou un bot. */}
+                  {log.action === "support_message" && log.metadata?.email && (
+                    <span className="admin-muted"> · {log.metadata.email}</span>
                   )}
                 </td>
                 <td className="admin-muted">{log.ipAddress}</td>

@@ -1,288 +1,269 @@
 # Notes TestFlight — à tester
 
-Version 1.6.0, build 38.
+Version 1.7.0, build 39.
 
 <!--
   Le champ "What to Test" de TestFlight est limité à 4 000 caractères.
   Le bloc ci-dessous tient dans cette limite : c'est celui à coller.
   Le détail par point, plus bas, sert de référence et peut être envoyé
   séparément aux testeurs (message, email) pour ceux qui creusent.
+
+  Volontairement absent du bloc court : le correctif de sécurité sur les
+  jetons d'invité. Il n'apporte rien à leurs tests, et le détailler à des
+  testeurs externes revient à décrire une faille corrigée à des gens qui
+  n'ont pas à en connaître le fonctionnement. Il figure dans le patch note
+  interne de l'application.
 -->
 
 ## Version courte — à coller dans TestFlight
 
-Merci de signaler tout ce qui bloque, même mineur. Beaucoup de points
-dépendent de la nouvelle version du serveur : si quelque chose échoue, cela
-peut venir de là.
+Cette version tourne autour des notifications : les couper sans tout couper.
+Et elle termine le chantier des listes communes.
 
-NOUVEAU
+À TESTER EN PRIORITÉ
 
-- Annuler un événement, avec un motif. Les invités sont prévenus par
-  notification et par email, la page reste consultable. L'annulation peut être
-  défaite. Un événement publié doit être annulé avant d'être supprimé.
-- Transférer l'organisation d'un événement à un participant, qui doit
-  accepter. La cagnotte ne suit pas le transfert.
-- Un événement annulé n'accepte plus aucune participation : votes, réponses de
-  présence, propositions de cadeaux, invitations et contributions sont fermés.
-  Le chat, lui, reste ouvert.
-- Rembourser tous les contributeurs d'une cagnotte. À tester avec une carte de
-  test uniquement : cette partie n'a jamais été exécutée de bout en bout.
-- Quitter un événement auquel on est invité, et copier son code d'accès seul.
-- Les événements passés et annulés sont regroupés dans une section repliable.
-- Rappels du calendrier réglables (Profil, Réglages). Jusqu'ici, ajouter un
-  événement à son agenda ne posait aucun rappel.
-- Listes communes : créer la carte de la personne en un geste quand on reçoit
-  une liste, retrouver une demande non terminée dans Profil, Listes communes,
-  et partager à un contact directement depuis la feuille de partage.
+Couper les notifications d'une conversation. Une cloche apparaît en haut de
+chaque discussion, privée comme d'événement : 1 heure, 8 heures, 1 semaine, ou
+jusqu'à réactivation. Après avoir coupé, un message envoyé depuis un autre
+compte ne doit plus faire sonner le téléphone, mais la conversation doit
+remonter dans la liste avec son compteur de non-lus. C'est voulu : on coupe la
+sonnerie, pas le message.
+
+Réglages de notifications par événement, bouton "Notifications de cet
+événement". Ouvert à tous les participants, plus seulement à l'organisateur.
+Chacun voit les catégories qui le concernent : sept pour un organisateur, deux
+pour un invité. L'annulation et le changement de date ne sont volontairement
+pas coupables.
+
+Discussions d'événement dans l'écran Discussions, sous un onglet "Événements".
+Elles n'étaient joignables qu'en rouvrant l'événement.
+
+Retenir une date ou un lieu. Organisateurs : appuyez directement sur une ligne
+de résultats du vote. Il fallait jusqu'ici passer par "Modifier l'événement".
+
+Listes communes : filtre par occasion et par état de réservation, cadeaux déjà
+offerts rangés sous un trait, possibilité de masquer une idée aux invités. Les
+gestionnaires voient enfin les réservations faites depuis le lien public et
+peuvent les libérer. La vue des invités reprend celle des wishlists.
+
+Lien public d'une liste : le code ouvre désormais la liste entière, sans lui le
+lien ne montre rien. Le partage propose un lien qui embarque le code. En
+réservant, on peut laisser son email pour retrouver sa réservation depuis un
+autre appareil.
+
+Rejoindre un événement sans compte : depuis la discussion, un invité peut se
+connecter ou s'inscrire, et sa participation le suit — réponse de présence,
+votes et idées cadeaux sont repris sur son compte.
 
 CORRIGÉ
 
-- Les notifications reçues sur le téléphone n'ouvraient pas la bonne page.
-  Toutes étaient touchées, pas seulement les anniversaires.
-- Listes communes : les cadeaux déjà achetés ou offerts restaient visibles par
-  les invités, au risque d'un double achat. Un invité ne pouvait pas quitter
-  une liste. Une réservation par lien public ne prévenait personne.
-- Les liens "se désabonner" des emails ne fonctionnaient pas, sauf celui des
-  demandes d'ami.
-- Accueil : "C'est la fête de Louis et Louis" avec deux prénoms identiques, et
-  "0 anniversaire souhaité aujourd'hui" remplacé par une phrase.
-- Les cartes cadeaux se décalaient entre elles selon la longueur du titre.
-- Les boutons ronds de l'en-tête n'étaient pas centrés.
+- Envoyer un message dans un chat d'événement déclenchait deux notifications
+  chez l'organisateur.
+- Les votes des invités sans compte n'étaient comptés nulle part sur les
+  cadeaux.
+- Le clavier masquait le champ du motif à l'annulation d'un événement, et le
+  premier appui sur un bouton était avalé.
+- Dans les notifications, "Tout lire" et "Tout supprimer" chevauchaient le
+  titre.
+- Les cartes d'idées cadeaux ne s'alignaient pas entre elles.
+- Le coût d'un remboursement de cagnotte était sous-estimé : il est calculé sur
+  les frais réellement prélevés.
 
-À REGARDER EN PRIORITÉ
+POINTS DE VIGILANCE
 
-1. Appuyer sur une notification depuis l'écran verrouillé : la bonne page
-   doit s'ouvrir.
-2. À deux comptes : partager une liste commune, la rattacher côté invité en
-   créant la carte, passer un cadeau en "acheté" côté membre et vérifier qu'il
-   disparaît côté invité.
-3. Annuler un événement et vérifier que l'invité reçoit bien la notification
-   et l'email.
+Le remboursement d'une cagnotte n'a toujours jamais été exécuté de bout en bout
+avec de l'argent réel. Ne le déclenchez pas sur une cagnotte alimentée sans me
+prévenir.
+
+Si la cloche ou l'écran de notifications d'un événement renvoie une erreur,
+c'est que le serveur n'est pas encore à jour : signalez-le, ce n'est pas un bug
+de l'application.
+
+COMMENT SIGNALER
+
+Une capture d'écran et ce que vous faisiez juste avant suffisent. Précisez le
+modèle de téléphone si l'affichage est en cause.
 
 ---
 
 ## Détail par point
 
-Merci de signaler tout ce qui bloque, même mineur. Les points 3, 4, 5, 8, 9,
-10 et 11 nécessitent la nouvelle version du serveur : si quelque chose y
-échoue, signalez-le, cela peut venir de là.
+Les points 1 à 8 nécessitent la nouvelle version du serveur : si quelque chose
+y échoue, signalez-le, cela peut venir de là.
 
-## 1. Notifications du téléphone
+## 1. Couper les notifications d'une conversation
 
-Appuyer sur une notification reçue sur le téléphone n'ouvrait pas la page
-concernée : on arrivait sur l'accueil, ou nulle part. Toutes les
-notifications système étaient touchées, pas seulement les anniversaires. Les
-mêmes notifications ouvertes depuis le centre de notifications de
-l'application, elles, fonctionnaient — d'où l'impression que le problème
-n'existait que sur certaines.
+Jusqu'ici, faire taire une conversation trop bavarde n'était pas possible : on
+ne pouvait que couper la catégorie entière dans Profil, Notifications, Push —
+donc toutes les conversations, ou tous les événements.
 
-À vérifier : depuis l'écran verrouillé et depuis le centre de notifications
-du téléphone, un rappel d'anniversaire ouvre la carte de la personne, une
-notification d'événement ouvre l'événement, un message ouvre la conversation.
+Une cloche apparaît maintenant en haut de chaque discussion, privée comme
+d'événement. Quatre durées : 1 heure, 8 heures, 1 semaine, ou jusqu'à
+réactivation. La cloche se barre et se colore quand c'est actif, et indique
+jusqu'à quand.
 
-## 2. Rappels du calendrier
+Ce qui est coupé : uniquement la notification poussée sur le téléphone. La
+conversation reste dans votre liste, ses messages non lus continuent de
+s'afficher, et le centre de notifications de l'application les garde. Couper
+les deux ferait disparaître les messages sans laisser de trace, et on ne
+saurait plus qu'on a raté quelque chose.
 
-Ajouter un événement à votre agenda ne posait aucun rappel : l'entrée ne se
-signalait qu'à l'heure de l'événement. Ce n'était pas un comportement d'Apple
-ou de Google, c'est l'application qui n'en demandait aucun.
+À vérifier, à deux comptes : coupez pour 1 heure, faites envoyer un message
+depuis l'autre compte, vérifiez que le téléphone ne sonne pas mais que la
+conversation remonte avec son badge. Puis réactivez et refaites l'essai.
 
-Nouveau réglage dans Profil, Réglages, "Rappels du calendrier". Deux groupes
-séparés : les événements datés se règlent en durée avant l'heure (1 jour
-avant, 1 heure avant), les anniversaires et fêtes en heure d'horloge, puisque
-ce sont des journées entières (la veille à 18 h, le jour même à 9 h).
+## 2. Réglages de notifications par événement
 
-À vérifier : ajoutez un événement à votre agenda, puis ouvrez l'entrée créée
-dans l'application Calendrier — les rappels doivent y figurer. Changez les
-réglages et refaites l'opération sur un autre événement.
+Nouveau bouton "Notifications de cet événement" sur la page d'un événement.
+Ouvert à tous les participants : l'écran existait, mais était réservé à
+l'organisateur, si bien qu'un invité n'avait aucun moyen de régler ses propres
+notifications.
 
-## 3. Annuler un événement
+Les catégories dépendent du rôle, et c'est voulu. Les réponses aux invitations,
+les votes, les cadeaux proposés et les contributions ne partent qu'à
+l'organisateur : les proposer à un invité afficherait des interrupteurs sans
+effet. Un organisateur voit donc sept catégories, un invité en voit deux —
+messages du chat, et mises à jour de l'événement.
 
-Un organisateur peut annuler son événement, avec un motif facultatif.
-L'événement n'est pas supprimé : la page reste consultable, barrée, avec le
-motif affiché en haut. Tous les invités sont prévenus par notification et par
-email. L'annulation peut être défaite.
+L'annulation et le changement de date ne figurent pas dans la liste. Ce sont
+les deux seules notifications dont l'utilité est de rattraper quelqu'un qui ne
+regarde pas l'application ; les couper, c'est se déplacer pour rien un samedi.
 
-Un événement publié ne peut plus être supprimé directement : il faut
-l'annuler d'abord. Sans cela il disparaissait de la liste de chaque invité
-sans un mot, en emportant le chat et l'historique.
+À vérifier : coupez "Messages du chat" sur un événement, faites envoyer un
+message, vérifiez que rien n'arrive. Puis vérifiez qu'une modification de date
+sur ce même événement vous prévient malgré tout.
 
-À vérifier, idéalement à deux comptes : l'invité reçoit bien la notification
-et l'email, voit le motif, et l'événement est passé dans la section
-"Événements passés". Vérifiez aussi qu'un événement annulé puis rétabli
-revient dans les événements à venir.
+## 3. Discussions d'événement dans l'écran Discussions
 
-À vérifier également, en gardant la page de l'événement ouverte côté invité
-pendant que l'organisateur annule : les votes et la réponse de présence
-doivent être refusés, et l'organisateur ne doit plus recevoir de notification
-de vote.
+Les discussions d'événement n'apparaissaient nulle part dans la liste des
+conversations : on ne pouvait les retrouver qu'en rouvrant l'événement, alors
+que c'est précisément cet écran qu'on ouvre pour lire ses messages.
 
-Un événement annulé n'accepte plus aucune participation : votes de date et de
-lieu, réponse de présence, propositions et votes de cadeaux, invitations,
-rejoindre par code, contributions à la cagnotte. Tout cela est refusé par le
-serveur, pas seulement masqué à l'écran : un téléphone resté sur la page sans
-la recharger continuait sinon d'envoyer des votes, et l'organisateur recevait
-des notifications de vote sur un événement qu'il venait d'annuler.
+Un onglet "Événements" apparaît à côté de "Amis" dès qu'une discussion existe,
+avec le total des non-lus. Seuls les événements ayant déjà des messages y
+figurent : une liste de discussions vides n'aide personne.
 
-Le chat reste ouvert, volontairement : c'est le moment où les participants ont
-le plus besoin de se parler. Quitter l'événement reste possible également.
+Le chat d'un événement porte désormais son nom en titre, et un bandeau ramène à
+l'événement. Ouvert depuis la liste, cet écran était une impasse : on lisait un
+message parlant de la date ou d'un cadeau sans pouvoir rejoindre l'endroit où
+en décider.
 
-Attention : l'entrée déjà créée dans votre agenda ne disparaît pas. Une
-application ne peut pas modifier une entrée de calendrier après coup, l'email
-le rappelle.
+## 4. Retenir une date ou un lieu
 
-## 4. Transférer l'organisation d'un événement
+Un organisateur voyait les résultats du vote sans aucun moyen d'en tirer une
+conclusion : il devait rouvrir "Modifier l'événement" et rebasculer la date en
+mode fixe, c'est-à-dire traverser tout le formulaire sans plus avoir les
+décomptes sous les yeux au moment de choisir.
 
-Un organisateur peut proposer l'organisation à un participant ayant confirmé
-sa présence. La personne doit accepter : tant qu'elle n'a pas répondu, rien
-ne change et l'organisateur garde la main. Elle peut refuser, et
-l'organisateur peut retirer sa proposition.
+Il suffit maintenant d'appuyer sur une ligne de résultats. Une confirmation
+prévient de ce que ça déclenche : le vote est clos, tous les participants sont
+avertis et doivent reconfirmer leur présence. Retenir un lieu prévient aussi
+les participants, en le nommant — ils recevaient auparavant un message générique
+"l'événement a été modifié" et devaient aller voir eux-mêmes.
 
-Une fois le transfert accepté, tous les participants sont prévenus, et
-l'ancien organisateur reste participant.
+À vérifier, à deux comptes : votez depuis le second compte, retenez une date
+depuis l'organisateur, vérifiez la notification reçue et que la présence est
+bien repassée en attente.
 
-La cagnotte ne suit jamais le transfert. L'argent déjà versé se trouve sur le
-compte de paiement de l'ancien organisateur et ne peut pas en être déplacé :
-la cagnotte est fermée, et c'est à lui de rembourser ou de reverser. Le
-message envoyé aux participants le dit explicitement.
+## 5. Listes communes — tri et visibilité
 
-À vérifier : la proposition arrive bien chez la personne visée, refuser
-prévient l'organisateur, et après acceptation les deux comptes voient le bon
-organisateur.
+Un filtre croise deux critères : l'occasion, et l'état de réservation (libres,
+réservées, celles dont vous vous occupez). Chercher "ce qui reste à prendre
+pour Noël" demande les deux à la fois.
 
-## 5. Rembourser une cagnotte
+Les cadeaux déjà offerts descendent sous un trait, en bas. Ils ne sont pas
+supprimés : c'est la mémoire de ce qui a déjà été offert, et donc ce qui évite
+d'offrir deux fois la même chose l'année suivante.
 
-Nouveau bloc dans l'écran Cagnotte, visible dès qu'il y a quelque chose à
-rembourser — y compris quand la cagnotte est déjà fermée par une annulation
-ou un transfert.
+Nouvelle option pour masquer une idée aux invités et au lien public, tout en la
+gardant visible entre gestionnaires — marquée d'un œil barré sur la carte.
 
-Les contributeurs récupèrent l'intégralité de ce qu'ils ont versé. Les frais
-du paiement d'origine, eux, ne sont pas restitués et restent à la charge de
-l'organisateur : le montant exact est annoncé avant validation. L'opération
-est irréversible et ferme la cagnotte.
+La vue des invités reprend celle des wishlists : "Disponible" ou "Réservé", et
+un bouton pour réserver. Ils voyaient jusqu'ici les commandes des gestionnaires
+— statut, modification, suppression — qui échouaient toutes.
 
-Si un remboursement échoue, les autres aboutissent quand même et l'opération
-peut être relancée : seules les contributions non remboursées sont reprises.
+## 6. Listes communes — réservations
 
-À vérifier : le montant annoncé correspond, et après quelques instants les
-contributions apparaissent comme remboursées, les contributeurs recevant leur
-notification.
+Les réservations faites depuis le lien public n'apparaissaient nulle part dans
+l'application : les gestionnaires voyaient une idée libre alors que quelqu'un
+s'en occupait déjà. Elles s'affichent maintenant au nom du visiteur.
 
-Attention : à tester avec une carte de test, pas un vrai paiement. C'est la
-seule partie de cette version qui touche à de l'argent réel, et elle n'a
-encore jamais été exécutée de bout en bout.
+Un gestionnaire peut aussi libérer la réservation de quelqu'un d'autre. Sans
+cela, une idée réservée par un visiteur qui ne revient jamais restait bloquée
+pour toujours.
 
-## 6. Quitter un événement, copier le code
+## 7. Listes communes — lien public
 
-Un bouton "Quitter l'événement" est apparu sous votre réponse de présence.
-Répondre "Non" et quitter sont deux gestes différents : décliner laisse
-l'organisateur informé, quitter retire l'invitation.
+Le code d'accès n'était demandé qu'au moment de réserver : le lien montrait
+donc toute la liste à quiconque le recevait. Il ouvre désormais la liste
+entière, et tant qu'il n'est pas saisi, les idées ne sont même pas envoyées par
+le serveur.
 
-Un bouton copie seulement le code d'accès, pour le coller dans une
-conversation déjà ouverte ailleurs — le partage existant envoie le lien
-complet par la feuille de partage du système.
+Le partage propose en conséquence un lien qui embarque le code, pour ne pas
+avoir à l'envoyer dans un second message. Le lien nu reste disponible pour qui
+préfère donner le code de vive voix. Régénérer le code invalide les liens déjà
+distribués qui le contenaient.
 
-## 7. Événements passés
+En réservant, on peut laisser son email : on reçoit une confirmation avec un
+lien qui permet de retrouver sa réservation depuis n'importe quel appareil.
+Auparavant, changer de navigateur faisait tout perdre — et il suffisait de
+connaître un prénom pour défaire la réservation d'un autre.
 
-Les événements passés sont regroupés dans une section repliable en bas de la
-liste, avec le nombre entre parenthèses. Les événements annulés y vont aussi,
-quelle que soit leur date.
+## 8. Rejoindre un événement sans compte
 
-Rien n'est archivé définitivement : si l'organisateur repousse un événement à
-une date future, il remonte tout seul dans les à-venir. Même chose pour un
-vote sur plusieurs dates dont toutes sont passées, si une nouvelle option est
-ajoutée.
+La discussion d'un événement reste réservée aux comptes, parce qu'elle est
+chiffrée de bout en bout et qu'un invité sans compte n'a pas de clé. Deux
+boutons mènent désormais à la connexion ou à l'inscription.
 
-À vérifier : la section se replie et se déplie, l'état est retenu quand on
-revient, et un événement dont la date est repoussée ressort des archives.
+Le point important : la participation suit. Réponse de présence, votes de date
+et de lieu, idées cadeaux proposées — tout est repris sur le compte au lieu
+d'être perdu. Sans cela, se créer un compte pour pouvoir écrire aurait fait
+repartir de zéro, et l'organisateur aurait vu deux participants pour une seule
+personne.
 
-## 8. Listes communes — ce que voient les invités
+## 9. Cagnotte — coût réel d'un remboursement
 
-Un invité (quelqu'un à qui la liste a été partagée, sans pouvoir la modifier)
-voyait tous les cadeaux, y compris ceux déjà achetés ou offerts. Il pouvait
-donc acheter en double, ce que la liste sert précisément à éviter. Ces
-cadeaux ne lui sont plus montrés, ni dans l'application ni via le lien
-public.
+Le coût annoncé avant de valider un remboursement était estimé au tarif d'une
+carte européenne standard. Une carte professionnelle ou étrangère coûte
+sensiblement plus : le chiffre affiché pouvait valoir la moitié de la perte
+réelle, avant une opération irréversible.
 
-Un invité peut désormais quitter une liste. Le bouton existait, mais le
-serveur refusait la demande : l'accès restait et la liste réapparaissait au
-rechargement suivant.
+Les frais réellement prélevés sont maintenant relevés à l'encaissement et
+additionnés tels quels. Pour les contributions encaissées avant cette version,
+il ne reste qu'une estimation : l'écran l'annonce alors comme un ordre de
+grandeur, en précisant combien de contributions sont concernées.
 
-Un invité ne voit plus les boutons qui lui étaient interdits — ajouter,
-modifier, supprimer une idée renvoyaient une erreur.
+En ouvrant une cagnotte, un encadré rappelle ce à quoi on s'engage : en cas
+d'annulation, c'est à l'organisateur de rembourser, et les frais du paiement
+d'origine restent à sa charge.
 
-À vérifier, à deux comptes : passez un cadeau en "acheté" côté membre, il
-doit disparaître côté invité. Puis quittez la liste côté invité et
-rechargez : elle ne doit plus apparaître.
+RAPPEL : cette partie n'a toujours jamais été exécutée de bout en bout avec de
+l'argent réel. Ne déclenchez pas de remboursement sur une cagnotte alimentée
+sans me prévenir.
 
-## 9. Listes communes — recevoir et rattacher
+## 10. Corrections diverses
 
-Une liste commune ne s'affiche que posée sur la carte de la personne
-concernée. Il fallait donc déjà avoir cette personne dans son carnet pour
-accepter — alors qu'on est justement invité à préparer le cadeau de
-quelqu'un qu'on n'a pas forcément enregistré.
+Envoyer un message dans un chat d'événement déclenchait deux notifications sur
+le téléphone de l'organisateur pour un seul message. Le doublon ne se voyait
+que sur le téléphone : le centre de notifications de l'application, lui,
+regroupait les deux.
 
-L'application propose maintenant de créer la carte en un geste, préremplie
-avec le nom et la date de naissance de la personne, repris du carnet de
-celui qui partage. Ces informations restent modifiables ensuite depuis la
-carte, y compris si la date était fausse chez lui.
+L'interrupteur "messages du chat" des réglages d'un événement n'avait aucun
+effet — le réglage était enregistré puis perdu — et coupait de surcroît les
+notifications de tous les invités, pas seulement celles de l'organisateur.
 
-La liste des cartes existantes se replie au-delà de cinq cartes et devient
-cherchable, pour ne plus dérouler tout le carnet.
+Les votes des invités sans compte n'étaient comptés nulle part sur les
+propositions de cadeaux : seuls ceux des membres apparaissaient.
 
-À vérifier : depuis un compte sans la carte de la personne, la création en un
-geste fonctionne et vous emmène sur la carte créée.
+Le clavier masquait le champ du motif quand on annulait un événement : on
+écrivait à l'aveugle. Et clavier ouvert, le premier appui sur un bouton était
+avalé pour fermer le clavier — il fallait appuyer deux fois. Corrigé pour
+toutes les fenêtres à saisie, pas seulement celle-ci.
 
-## 10. Listes communes — retrouver une demande, partager, notifications
+Dans l'écran des notifications, "Tout lire" et "Tout supprimer" chevauchaient
+le titre. Les deux actions sont descendues sous l'en-tête, et les en-têtes
+s'adaptent maintenant à la largeur de leurs boutons.
 
-Nouvelle entrée "Listes communes" dans le menu Profil. Une liste partagée
-dont vous n'avez pas terminé le rattachement s'y retrouve, ainsi que les
-invitations en attente. Jusqu'ici ces demandes n'étaient accessibles que
-depuis la notification : la fermer par erreur les rendait introuvables.
-
-"Partager à un contact" figure directement dans la feuille de partage, au
-lieu d'être enterré dans l'écran de gestion des accès.
-
-Les invités reçoivent une notification quand une idée est ajoutée, et quand
-un cadeau qu'ils avaient réservé est retiré — ils comptaient dessus. Ils ne
-reçoivent rien d'autre, pour ne pas suivre chaque changement d'une liste qui
-ne leur appartient pas.
-
-Une réservation faite depuis le lien public prévient désormais les membres.
-Elle ne prévenait personne : les membres continuaient de voir une idée à
-prendre que quelqu'un avait déjà bloquée.
-
-À vérifier : ouvrez la notification de partage, fermez l'écran sans rattacher
-la liste, supprimez la notification, puis retrouvez la demande dans Profil,
-Listes communes.
-
-## 11. Emails
-
-Les liens "se désabonner" des emails ne fonctionnaient pas, à l'exception de
-celui des demandes d'ami qui passait par un autre chemin. Ils fonctionnent
-tous désormais, et la page confirme précisément ce qui a été désactivé.
-
-Le récap mensuel affichait une double flèche sur son bouton.
-
-À vérifier : le lien de désabonnement d'un rappel d'anniversaire ouvre une
-page de confirmation, et le réglage correspondant est bien coupé dans votre
-profil.
-
-## 12. Corrections d'affichage
-
-Sur l'accueil, "C'est la fête de Louis et Louis" quand deux proches portaient
-le même prénom. Le compteur d'anniversaires affichait "0 anniversaire
-souhaité aujourd'hui", ce qui se lisait comme un échec ; il affiche
-maintenant une phrase.
-
-Les cartes cadeaux de la grille se décalaient entre elles selon la longueur
-du titre.
-
-Les boutons ronds de l'en-tête n'étaient toujours pas centrés. Les icônes
-sont redessinées et l'en-tête ne dépend plus du fond dessiné par le système
-derrière les boutons.
-
-L'écran de modification d'un événement affichait "Modifier - Nom" avec un
-tiret superflu.
-
-À vérifier : les en-têtes sur plusieurs écrans (carte, événement,
-conversation), en thème clair comme en thème sombre.
+Les cartes d'idées cadeaux ne s'alignaient pas entre elles : selon la longueur
+du titre ou l'absence de prix, l'occasion, le prix et le statut se retrouvaient
+à des hauteurs différentes d'une carte à l'autre.

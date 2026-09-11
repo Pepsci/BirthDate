@@ -32,9 +32,6 @@ export default function Footer() {
               <Link to="/contact">Contact</Link>
             </li>
             <li>
-              <a href="mailto:support@birthreminder.com">Aide</a>
-            </li>
-            <li>
               <Link to="/profile">Mon compte</Link>
             </li>
           </ul>
@@ -80,9 +77,6 @@ export default function Footer() {
               >
                 LinkedIn
               </a>
-            </li>
-            <li>
-              <a href="mailto:hello@birthreminder.com">Nous contacter</a>
             </li>
           </ul>
         </div>

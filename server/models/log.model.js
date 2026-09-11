@@ -18,7 +18,10 @@ const logSchema = new Schema(
     userId: {
       type: Schema.Types.ObjectId,
       ref: "User",
-      required: true,
+      // Absent pour "support_message" quand le formulaire public est utilisé
+      // sans compte (visiteur anonyme) — toutes les autres actions restent
+      // rattachées à un utilisateur.
+      required: false,
     },
     action: {
       type: String,
@@ -37,6 +40,10 @@ const logSchema = new Schema(
         "account_delete",
         "friend_add",
         "message_send",
+        // Soumission d'un message via le formulaire de support (connecté ou
+        // public) — sert à distinguer un vrai visiteur d'un bot qui teste le
+        // formulaire, et à repérer une IP qui spam.
+        "support_message",
 
         // ── Événements ────────────────────────────────────────────────────
         // Ces actions changent l'événement pour TOUS ses participants, pas
