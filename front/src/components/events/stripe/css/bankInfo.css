@@ -266,3 +266,21 @@
 a.bi-btn {
   text-decoration: none;
 }
+
+/* Cagnotte tenue sur un autre service — l'avertissement doit se lire AVANT
+   le clic, pas après. D'où le ton neutre mais la place qu'il occupe. */
+.bi-external-warning {
+  margin-bottom: 10px;
+  line-height: 1.55;
+}
+
+/* Domaine réel sous le bouton : le libellé est choisi par l'organisateur,
+   le domaine ne ment pas. */
+.bi-external-host {
+  margin: 6px 0 0;
+  text-align: center;
+  font-size: 0.74rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--text-tertiary, var(--text-secondary));
+  overflow-wrap: anywhere;
+}

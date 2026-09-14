@@ -69,11 +69,52 @@ export default function DirectTransferViewer({
     }
   };
 
-  if (!dt.ibanEnabled && !dt.paypalEnabled) return null;
+  if (!dt.ibanEnabled && !dt.paypalEnabled && !dt.externalPoolEnabled)
+    return null;
+
+  /* Afficher le domaine réel sous le bouton : le libellé est choisi par
+     l'organisateur et ne prouve rien, le domaine permet de reconnaître un
+     service légitime — ou de repérer une adresse douteuse avant de cliquer. */
+  const hostOf = (url: string) => {
+    try {
+      return new URL(url).hostname.replace(/^www\./, "");
+    } catch {
+      return url;
+    }
+  };
 
   return (
     <View style={styles.wrap}>
       <Text style={styles.title}>💸 Autres moyens de participer</Text>
+
+      {/* Cagnotte sur un autre service */}
+      {dt.externalPoolEnabled && dt.externalPoolUrl ? (
+        <View style={{ gap: 6 }}>
+          {/* ⚠️ L'avertissement se lit AVANT le clic. Un invité qui croit
+              payer « sur BirthReminder » se retournera vers nous, alors que
+              nous n'avons aucune trace de cette collecte. */}
+          <Text style={styles.muted}>
+            {dt.externalPoolLabel || "Cagnotte externe"} — l'organisateur l'a
+            ouverte sur un autre service. Ta participation s'y déroule
+            entièrement : BirthReminder n'en a aucune trace et ne pourra ni la
+            confirmer ni la rembourser.
+          </Text>
+          <Pressable
+            style={styles.payBtn}
+            onPress={() => Linking.openURL(dt.externalPoolUrl!)}
+          >
+            <Text style={styles.payBtnText}>🔗 Ouvrir la cagnotte</Text>
+          </Pressable>
+          <Text style={[styles.muted, { textAlign: "center" }]}>
+            {hostOf(dt.externalPoolUrl)}
+          </Text>
+        </View>
+      ) : dt.externalPoolEnabled && !dt.externalPoolUrl ? (
+        <Text style={styles.muted}>
+          L'organisateur a annoncé une cagnotte externe mais n'a pas encore
+          renseigné le lien.
+        </Text>
+      ) : null}
 
       {/* PayPal */}
       {dt.paypalEnabled && dt.paypalLink ? (

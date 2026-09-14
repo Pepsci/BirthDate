@@ -132,6 +132,16 @@ export default function ProfileScreen() {
           label="Listes communes"
           onPress={() => router.push("/shared-invites")}
         />
+        {/* ⚠️ Trace des sommes versées. En charges directes l'argent part chez
+            l'organisateur et l'app n'en gardait aucune vue côté contributeur :
+            montant, date et référence disparaissaient dès l'écran fermé. C'est
+            pourtant ce qu'il faut produire pour réclamer un remboursement — à
+            quelqu'un qui n'est pas nous. */}
+        <MenuRow
+          emoji="💝"
+          label="Mes contributions"
+          onPress={() => router.push("/profile/contributions")}
+        />
         <MenuRow
           emoji="🔑"
           label="Changer mon mot de passe"

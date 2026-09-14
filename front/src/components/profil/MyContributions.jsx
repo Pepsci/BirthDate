@@ -44,10 +44,29 @@ const MyContributions = () => {
       );
   }, []);
 
-  const copyReference = async (reference, id) => {
+  /*
+   * On copie un RÉCAPITULATIF, pas la référence seule.
+   *
+   * Un `pi_3ToKuh3ZbPfimmX51j8TUNlk` collé tout nu dans un message ne dit rien
+   * à personne : l'organisateur ne reconnaît pas ce code, il reconnaît « 25 €
+   * le 19 juin pour l'anniversaire de Marie ». La référence reste dedans parce
+   * qu'elle est le seul identifiant sans ambiguïté — c'est ce que le support
+   * recherche, et ce que l'organisateur retrouvera dans son tableau de bord
+   * Stripe si le doute persiste. Mais elle accompagne le message, elle ne le
+   * remplace pas.
+   */
+  const copySummary = async (c) => {
+    const lines = [
+      `Contribution de ${euros(c.amount)}`,
+      c.event ? `Événement : ${c.event.title}` : null,
+      `Date : ${formatDate(c.createdAt)}`,
+      c.event?.organizer ? `Encaissée par : ${c.event.organizer}` : null,
+      `Référence de paiement : ${c.reference}`,
+    ].filter(Boolean);
+
     try {
-      await navigator.clipboard.writeText(reference);
-      setCopied(id);
+      await navigator.clipboard.writeText(lines.join("\n"));
+      setCopied(c.id);
       setTimeout(() => setCopied(null), 2000);
     } catch {
       // Presse-papiers refusé (contexte non sécurisé, permission) : la
@@ -120,11 +139,16 @@ const MyContributions = () => {
                 <button
                   type="button"
                   className="mycontrib-ref"
-                  onClick={() => copyReference(c.reference, c.id)}
-                  title="Copier la référence de paiement"
+                  onClick={() => copySummary(c)}
+                  title="Copier le récapitulatif à envoyer à l'organisateur"
                 >
-                  <span>{c.reference}</span>
-                  <em>{copied === c.id ? "copiée" : "copier"}</em>
+                  <span>
+                    <small>Référence de paiement</small>
+                    {c.reference}
+                  </span>
+                  <em>
+                    {copied === c.id ? "copié ✓" : "copier le récapitulatif"}
+                  </em>
                 </button>
               </li>
             ))}
@@ -142,11 +166,13 @@ const MyContributions = () => {
             </p>
             <p>
               Si un événement est annulé ou si le cadeau n'est pas acheté,
-              contactez l'organisateur en lui donnant la référence de votre
-              contribution. Sans réponse de sa part,{" "}
-              <a href="/contact">écrivez-nous</a> : nous ne pouvons pas
-              trancher un désaccord, mais nous pouvons confirmer le paiement et
-              le relancer.
+              contactez l'organisateur : le bouton « copier le récapitulatif »
+              prépare un message tout fait avec le montant, la date et la
+              référence. Sans réponse de sa part,{" "}
+              <a href="/contact">écrivez-nous</a> en joignant ce récapitulatif :
+              nous ne pouvons pas trancher un désaccord, mais la référence nous
+              permet de retrouver le paiement et de confirmer qu'il a bien eu
+              lieu.
             </p>
           </div>
         </>

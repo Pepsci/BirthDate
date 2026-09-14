@@ -4,6 +4,7 @@ const Event = require("../../models/event.model");
 const EventInvitation = require("../../models/eventInvitation.model");
 const EventGiftProposal = require("../../models/eventGiftProposal.model");
 const EventMessage = require("../../models/eventMessage.model");
+const GiftPoolContribution = require("../../models/giftPoolContribution.model");
 const crypto = require("crypto");
 const { nanoid } = require("nanoid");
 const { isAuthenticated } = require("../../middleware/jwt.middleware");
@@ -625,6 +626,38 @@ router.delete("/:shortId", isAuthenticated, async (req, res) => {
         code: "CANCEL_BEFORE_DELETE",
         message:
           "Annule d'abord cet événement : tes invités seront prévenus. Tu pourras le supprimer ensuite.",
+      });
+    }
+
+    // ⚠️ Une cagnotte qui a encaissé ne se supprime pas.
+    //
+    // Les contributions ne sont PAS effacées avec l'événement — et c'est
+    // volontaire, ce sont des mouvements d'argent. Mais tout le reste du
+    // remboursement passe par l'événement : la route organisateur est montée
+    // sur /:shortId, et la route admin lit `contribution.event.organizer`.
+    // Supprimer l'événement rend donc le remboursement matériellement
+    // impossible, des deux côtés, définitivement. L'argent reste chez Stripe
+    // sans plus aucun moyen de le rendre à qui que ce soit.
+    //
+    // Côté contributeur, c'est encore pire : sa contribution s'affiche
+    // « Événement supprimé », sans titre ni organisateur à qui réclamer.
+    //
+    // On exige donc que tout soit remboursé avant. Ce n'est pas une gêne
+    // arbitraire : tant qu'il reste de l'argent encaissé, l'organisateur a une
+    // obligation envers ses participants, et supprimer l'événement reviendrait
+    // à effacer la preuve de cette obligation.
+    const liveContributions = await GiftPoolContribution.countDocuments({
+      event: event._id,
+      status: "succeeded",
+    });
+    if (liveContributions > 0) {
+      return res.status(409).json({
+        code: "POOL_NOT_SETTLED",
+        message:
+          `Cet événement a ${liveContributions} contribution${liveContributions > 1 ? "s" : ""} ` +
+          `encaissée${liveContributions > 1 ? "s" : ""} et non remboursée${liveContributions > 1 ? "s" : ""}. ` +
+          "Rembourse les participants avant de supprimer : une fois l'événement " +
+          "effacé, plus aucun remboursement n'est possible.",
       });
     }
 

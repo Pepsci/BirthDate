@@ -1695,7 +1695,8 @@ export default function EventDetailScreen() {
       {/* Virement direct — section autonome (visible même sans cagnotte) */}
       {event.hasFullAccess &&
         (event.directTransfer?.ibanEnabled ||
-          event.directTransfer?.paypalEnabled) && (
+          event.directTransfer?.paypalEnabled ||
+          event.directTransfer?.externalPoolEnabled) && (
           <View style={styles.card}>
             <Text style={styles.sectionTitle}>💳 Virement direct</Text>
             <DirectTransferViewer

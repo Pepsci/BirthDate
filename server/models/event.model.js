@@ -114,6 +114,24 @@ const eventSchema = new Schema(
       ibanEnabled: { type: Boolean, default: false },
       paypalEnabled: { type: Boolean, default: false },
       paypalLink: { type: String, default: "" }, // PayPal.Me — lien public, en clair
+
+      /**
+       * Cagnotte tenue sur un AUTRE service (Leetchi, Lydia, Le Pot Commun…).
+       *
+       * Beaucoup d'organisateurs ont déjà ouvert une cagnotte ailleurs avant de
+       * créer l'événement, ou préfèrent un service qu'ils connaissent. Sans
+       * cet emplacement, ils collent le lien dans le chat, où il se perd sous
+       * les messages, et les invités arrivés plus tard ne le voient jamais.
+       *
+       * ⚠️ BirthReminder n'a AUCUNE visibilité sur ces collectes : ni montant,
+       * ni contributeurs, ni preuve de versement, ni possibilité de rembourser.
+       * C'est un simple lien affiché, et l'interface doit le dire clairement —
+       * sinon les invités croiront payer « sur BirthReminder » et se
+       * retourneront vers nous en cas de problème.
+       */
+      externalPoolEnabled: { type: Boolean, default: false },
+      externalPoolUrl: { type: String, default: "" },
+      externalPoolLabel: { type: String, default: "" }, // ex. « Notre Leetchi »
     },
 
     // Invitations

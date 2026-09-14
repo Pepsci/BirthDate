@@ -66,6 +66,45 @@ const GiftPoolManager = ({ shortId, pool, onUpdated }) => {
     pool?.goal ? String(pool.goal / 100) : "",
   );
 
+  /*
+   * Solde du compte connecté.
+   *
+   * ⚠️ « Où est mon argent ? » est LA question de l'organisateur, et
+   * l'application n'y répondait pas du tout : il fallait retrouver un vieil
+   * email de Stripe. Un solde à zéro veut d'ailleurs presque toujours dire
+   * « déjà viré sur votre banque » — d'où l'affichage des derniers virements
+   * à côté, sans lesquels un zéro inquiète au lieu de rassurer.
+   */
+  const [balance, setBalance] = useState(null);
+  const [dashLoading, setDashLoading] = useState(false);
+
+  const fetchBalance = async () => {
+    try {
+      const res = await apiHandler.get("/stripe/connect/balance");
+      setBalance(res.data);
+    } catch {
+      setBalance(null);
+    }
+  };
+
+  const openDashboard = async () => {
+    setDashLoading(true);
+    setError("");
+    try {
+      const res = await apiHandler.post("/stripe/connect/dashboard");
+      // Nouvel onglet : le lien ouvre une session authentifiée chez Stripe,
+      // on ne veut pas sortir l'organisateur de son événement.
+      window.open(res.data.url, "_blank", "noopener,noreferrer");
+    } catch (err) {
+      setError(
+        err?.response?.data?.message ||
+          "Impossible d'ouvrir votre tableau de bord Stripe.",
+      );
+    } finally {
+      setDashLoading(false);
+    }
+  };
+
   const fetchStatus = async () => {
     setLoadingStatus(true);
     try {
@@ -81,6 +120,7 @@ const GiftPoolManager = ({ shortId, pool, onUpdated }) => {
   useEffect(() => {
     fetchStatus();
     fetchRefundPreview();
+    fetchBalance();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shortId]);
 
@@ -147,12 +187,64 @@ const GiftPoolManager = ({ shortId, pool, onUpdated }) => {
         {loadingStatus ? (
           <p className="gp-muted">Vérification du compte…</p>
         ) : ready ? (
-          <div className="gp-status gp-status-ok">
-            <i className="fa-solid fa-circle-check"></i>
-            <span>
-              Compte Stripe connecté — vous pouvez encaisser une cagnotte.
-            </span>
-          </div>
+          <>
+            <div className="gp-status gp-status-ok">
+              <i className="fa-solid fa-circle-check"></i>
+              <span>
+                Compte Stripe connecté — vous pouvez encaisser une cagnotte.
+              </span>
+            </div>
+
+            {balance?.connected && (
+              <div className="gp-balance">
+                <div className="gp-balance-row">
+                  <span>Disponible</span>
+                  <strong>{euro(balance.availableCents)}</strong>
+                </div>
+                {balance.pendingCents > 0 && (
+                  <div className="gp-balance-row">
+                    <span>En attente de règlement</span>
+                    <strong>{euro(balance.pendingCents)}</strong>
+                  </div>
+                )}
+
+                {balance.payouts?.length > 0 ? (
+                  <p className="gp-balance-note">
+                    Dernier virement : {euro(balance.payouts[0].amount)}
+                    {balance.payouts[0].arrivalDate && (
+                      <>
+                        {" "}
+                        — arrivée le{" "}
+                        {new Date(
+                          balance.payouts[0].arrivalDate,
+                        ).toLocaleDateString("fr-FR")}
+                      </>
+                    )}
+                  </p>
+                ) : (
+                  <p className="gp-balance-note">
+                    Aucun virement pour l'instant. Stripe verse automatiquement
+                    sur votre compte bancaire selon son calendrier.
+                  </p>
+                )}
+
+                <motion.button
+                  className="gp-btn gp-btn-ghost gp-btn-full"
+                  onClick={openDashboard}
+                  disabled={dashLoading}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  {dashLoading
+                    ? "Ouverture…"
+                    : "Voir mes virements sur Stripe"}
+                </motion.button>
+                <p className="gp-balance-hint">
+                  Solde, virements et coordonnées bancaires se gèrent depuis
+                  votre tableau de bord Stripe.
+                </p>
+              </div>
+            )}
+          </>
         ) : (
           <div className="gp-connect-prompt">
             <p className="gp-muted">

@@ -46,6 +46,17 @@ const DirectTransferViewer = ({ shortId, directTransfer }) => {
     }
   };
 
+  /* Afficher le domaine réel sous le bouton : c'est ce qui permet à l'invité
+     de reconnaître un service légitime, et de repérer une adresse douteuse
+     avant de cliquer. Un libellé choisi par l'organisateur ne prouve rien. */
+  const hostOf = (url) => {
+    try {
+      return new URL(url).hostname.replace(/^www\./, "");
+    } catch {
+      return url;
+    }
+  };
+
   const handleCopy = () => {
     if (info?.iban) {
       navigator.clipboard.writeText(info.iban.replace(/\s+/g, ""));
@@ -55,10 +66,48 @@ const DirectTransferViewer = ({ shortId, directTransfer }) => {
   };
 
   // Aucune option activée → rien
-  if (!dt.ibanEnabled && !dt.paypalEnabled) return null;
+  if (!dt.ibanEnabled && !dt.paypalEnabled && !dt.externalPoolEnabled)
+    return null;
 
   return (
     <div className="bi-viewer">
+      {/* ---- Cagnotte sur un autre service ---- */}
+      {dt.externalPoolEnabled && dt.externalPoolUrl && (
+        <div className="bi-method">
+          <p className="bi-viewer-intro">
+            <i className="fa-solid fa-arrow-up-right-from-square"></i>{" "}
+            {dt.externalPoolLabel || "Cagnotte externe"}
+          </p>
+
+          {/* ⚠️ Dire avant le clic que ça sort de BirthReminder.
+              Un invité qui croit payer « sur BirthReminder » se retournera
+              vers nous en cas de problème, alors que nous n'avons aucune
+              visibilité sur cette collecte : ni montant, ni preuve, ni
+              remboursement possible. */}
+          <p className="bi-muted bi-external-warning">
+            L'organisateur a ouvert cette cagnotte sur un autre service.
+            Votre participation s'y déroule entièrement : BirthReminder n'en a
+            aucune trace et ne pourra ni la confirmer ni la rembourser.
+          </p>
+
+          <a
+            href={dt.externalPoolUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="bi-btn bi-btn-primary bi-btn-full"
+          >
+            Ouvrir la cagnotte
+          </a>
+          <p className="bi-external-host">{hostOf(dt.externalPoolUrl)}</p>
+        </div>
+      )}
+
+      {dt.externalPoolEnabled && !dt.externalPoolUrl && (
+        <p className="bi-muted">
+          L'organisateur a annoncé une cagnotte externe mais n'a pas encore
+          renseigné le lien.
+        </p>
+      )}
       {/* ---- PayPal ---- */}
       {dt.paypalEnabled && dt.paypalLink && (
         <div className="bi-method">

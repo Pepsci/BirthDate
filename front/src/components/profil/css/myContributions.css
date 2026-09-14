@@ -155,3 +155,15 @@
   color: var(--primary);
   font-weight: 600;
 }
+
+/* La référence porte désormais un intitulé : sans lui, un identifiant Stripe
+   brut ressemble à une erreur d'affichage plutôt qu'à une information. */
+.mycontrib-ref span small {
+  display: block;
+  font-family: var(--font-family, inherit);
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--text-tertiary, var(--text-secondary));
+  margin-bottom: 2px;
+  letter-spacing: 0.02em;
+}

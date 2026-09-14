@@ -664,3 +664,45 @@
   color: inherit;
   text-decoration: underline;
 }
+
+/* Solde du compte connecté, côté organisateur.
+   « Où est mon argent ? » est sa question la plus fréquente — et un solde à
+   zéro veut presque toujours dire « déjà viré », d'où la ligne sur le dernier
+   virement juste en dessous. */
+.gp-balance {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--bg-secondary);
+}
+
+.gp-balance-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.86rem;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.gp-balance-row strong {
+  font-size: 1rem;
+  color: var(--text-primary);
+}
+
+.gp-balance-note {
+  margin: 8px 0 10px;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.gp-balance-hint {
+  margin: 8px 0 0;
+  font-size: 0.76rem;
+  line-height: 1.5;
+  color: var(--text-tertiary, var(--text-secondary));
+  text-align: center;
+}

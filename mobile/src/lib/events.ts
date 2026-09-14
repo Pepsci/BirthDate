@@ -157,6 +157,13 @@ export interface DirectTransfer {
   ibanEnabled?: boolean;
   paypalEnabled?: boolean;
   paypalLink?: string;
+  /**
+   * Cagnotte tenue sur un autre service. ⚠️ BirthReminder n'a aucune
+   * visibilité dessus : ni montant, ni participants, ni remboursement.
+   */
+  externalPoolEnabled?: boolean;
+  externalPoolUrl?: string;
+  externalPoolLabel?: string;
 }
 
 export interface BankInfo {
@@ -221,6 +228,65 @@ export async function setPaypalOption(
     method: "PUT",
     body: JSON.stringify({ enabled, paypalLink: paypalLink ?? "" }),
   });
+}
+
+/**
+ * Cagnotte tenue sur un AUTRE service (Leetchi, Lydia…).
+ *
+ * ⚠️ BirthReminder n'a aucune visibilité sur ces collectes : ni montant, ni
+ * participants, ni preuve, ni remboursement possible. L'interface doit le dire
+ * des deux côtés — sinon l'invité croira payer « sur BirthReminder » et se
+ * retournera vers nous.
+ */
+export async function setExternalPoolOption(
+  shortId: string,
+  enabled: boolean,
+  url?: string,
+  label?: string,
+): Promise<{
+  externalPoolEnabled: boolean;
+  externalPoolUrl: string;
+  externalPoolLabel: string;
+}> {
+  return api(`/events/${shortId}/direct-transfer/external-pool`, {
+    method: "PUT",
+    body: JSON.stringify({ enabled, url: url ?? "", label: label ?? "" }),
+  });
+}
+
+export type MyContribution = {
+  id: string;
+  amount: number;
+  currency: string;
+  status: "succeeded" | "refunded";
+  message: string | null;
+  anonymous: boolean;
+  createdAt: string;
+  refundedAt: string | null;
+  /** Référence Stripe : le seul identifiant sans ambiguïté d'un paiement. */
+  reference: string;
+  event: {
+    shortId: string;
+    title: string;
+    status: string;
+    organizer: string | null;
+  } | null;
+};
+
+/**
+ * Historique des contributions de l'utilisateur.
+ *
+ * ⚠️ Écran de PREUVE, pas de confort. En charges directes, l'argent part chez
+ * l'organisateur et l'application n'en gardait aucune trace côté contributeur :
+ * montant, date et référence disparaissaient dès la page fermée. C'est pourtant
+ * ce qu'il faut produire pour réclamer un remboursement — à quelqu'un qui n'est
+ * pas nous.
+ */
+export async function fetchMyContributions(): Promise<MyContribution[]> {
+  const res = await api<{ contributions: MyContribution[] }>(
+    "/events/mine/contributions",
+  );
+  return res.contributions;
 }
 
 export async function fetchEvent(shortId: string): Promise<EventDetail> {
@@ -736,4 +802,37 @@ export async function stripeStatus(): Promise<{
   ready: boolean;
 }> {
   return api("/stripe/connect/status");
+}
+
+/**
+ * Lien de connexion au tableau de bord Express de l'organisateur.
+ *
+ * ⚠️ C'est la réponse à « comment je récupère l'argent de ma cagnotte ? ». Les
+ * virements sont automatiques, mais l'organisateur n'avait aucun moyen de voir
+ * son solde, ses virements ou de changer son RIB depuis l'application.
+ *
+ * Le lien est à usage unique et expire vite : il ouvre une session
+ * authentifiée, il ne se partage pas.
+ */
+export async function stripeDashboardLink(): Promise<string> {
+  const { url } = await api<{ url: string }>("/stripe/connect/dashboard", {
+    method: "POST",
+  });
+  return url;
+}
+
+export type ConnectBalance = {
+  connected: boolean;
+  availableCents?: number;
+  pendingCents?: number;
+  payouts?: {
+    id: string;
+    amount: number;
+    status: string;
+    arrivalDate: string | null;
+  }[];
+};
+
+export async function stripeBalance(): Promise<ConnectBalance> {
+  return api("/stripe/connect/balance");
 }

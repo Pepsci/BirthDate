@@ -20,12 +20,16 @@ import {
   updatePool,
   stripeOnboardingLink,
   stripeStatus,
+  stripeDashboardLink,
+  stripeBalance,
+  ConnectBalance,
   fetchEvent,
   fetchBankInfo,
   saveBankInfo,
   deleteBankInfo,
   toggleIbanOption,
   setPaypalOption,
+  setExternalPoolOption,
   refundPreview,
   refundAll,
   RefundPreview,
@@ -54,6 +58,17 @@ export default function PoolConfigScreen() {
   const [showPicker, setShowPicker] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [stripeNotReady, setStripeNotReady] = useState(false);
+  /*
+   * Solde du compte connecté.
+   *
+   * ⚠️ « Où est mon argent ? » est la question la plus fréquente d'un
+   * organisateur, et l'app n'y répondait pas : il fallait retrouver un vieil
+   * email de Stripe. Un solde à zéro signifie presque toujours « déjà viré » —
+   * d'où l'affichage du dernier virement juste à côté, sans lequel un zéro
+   * inquiète au lieu de rassurer.
+   */
+  const [balance, setBalance] = useState<ConnectBalance | null>(null);
+  const [openingDash, setOpeningDash] = useState(false);
   const [onboarding, setOnboarding] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -112,6 +127,12 @@ export default function PoolConfigScreen() {
   const [ibanSaved, setIbanSaved] = useState(false);
   const [paypalEnabled, setPaypalEnabled] = useState(false);
   const [paypalLink, setPaypalLink] = useState("");
+  // Cagnotte ouverte sur un autre service (Leetchi, Lydia…). Sans cet
+  // emplacement, l'organisateur colle son lien dans le chat, où il descend
+  // sous les messages et devient invisible pour les invités suivants.
+  const [externalEnabled, setExternalEnabled] = useState(false);
+  const [externalUrl, setExternalUrl] = useState("");
+  const [externalLabel, setExternalLabel] = useState("");
 
   useEffect(() => {
     if (!shortId) return;
@@ -125,12 +146,18 @@ export default function PoolConfigScreen() {
           setDeadline(p.deadline ? new Date(p.deadline) : null);
         })
         .catch(() => {}),
+      stripeBalance()
+        .then(setBalance)
+        .catch(() => {}),
       fetchEvent(shortId)
         .then((ev) => {
           const dt = ev.directTransfer ?? {};
           setIbanEnabled(!!dt.ibanEnabled);
           setPaypalEnabled(!!dt.paypalEnabled);
           setPaypalLink(dt.paypalLink ?? "");
+          setExternalEnabled(!!dt.externalPoolEnabled);
+          setExternalUrl(dt.externalPoolUrl ?? "");
+          setExternalLabel(dt.externalPoolLabel ?? "");
         })
         .catch(() => {}),
       // RIB existant (organisateur → déchiffré) pour préremplir
@@ -159,6 +186,7 @@ export default function PoolConfigScreen() {
       if (status.ready) {
         setStripeNotReady(false);
         setError(null);
+        stripeBalance().then(setBalance).catch(() => {});
       } else {
         setError(
           "Onboarding pas encore terminé — reprends-le quand tu veux avec le même bouton.",
@@ -202,6 +230,16 @@ export default function PoolConfigScreen() {
         shortId!,
         paypalEnabled,
         paypalEnabled ? paypalLink.trim() : "",
+      );
+
+      // Le serveur refuse une cagnotte externe activée sans lien : on
+      // n'envoie donc l'activation que si l'URL est renseignée, sinon on
+      // enregistrerait une option qui ne s'affiche nulle part.
+      await setExternalPoolOption(
+        shortId!,
+        externalEnabled && !!externalUrl.trim(),
+        externalUrl.trim(),
+        externalLabel.trim(),
       );
 
       // 2. Cagnotte Stripe (inchangée)
@@ -512,6 +550,106 @@ export default function PoolConfigScreen() {
         />
       )}
 
+      <View style={[styles.switchRow, { marginTop: 10 }]}>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.switchLabel}>Cagnotte sur un autre service</Text>
+          <Text style={styles.hint}>Leetchi, Lydia, Le Pot Commun…</Text>
+        </View>
+        <Switch
+          value={externalEnabled}
+          onValueChange={setExternalEnabled}
+          trackColor={{ true: colors.success }}
+        />
+      </View>
+
+      {externalEnabled && (
+        <>
+          <TextInput
+            placeholderTextColor={colors.placeholder}
+            style={styles.input}
+            placeholder="https://www.leetchi.com/c/..."
+            autoCapitalize="none"
+            autoCorrect={false}
+            keyboardType="url"
+            value={externalUrl}
+            onChangeText={setExternalUrl}
+          />
+          <TextInput
+            placeholderTextColor={colors.placeholder}
+            style={styles.input}
+            placeholder="Nom affiché (optionnel)"
+            maxLength={60}
+            value={externalLabel}
+            onChangeText={setExternalLabel}
+          />
+          {/* Dit une fois, clairement, ce que ça implique pour lui. */}
+          <Text style={styles.hint}>
+            La collecte se déroule entièrement sur le service choisi.
+            BirthReminder n'en voit ni les montants ni les participants, ne peut
+            rien confirmer en cas de litige et ne pourra rien rembourser : tes
+            invités devront s'adresser à toi, ou à ce service.
+          </Text>
+        </>
+      )}
+
+      {!stripeNotReady && balance?.connected && (
+        <View style={styles.balanceBox}>
+          <View style={styles.balanceRow}>
+            <Text style={styles.balanceLabel}>Disponible</Text>
+            <Text style={styles.balanceValue}>
+              {((balance.availableCents ?? 0) / 100).toFixed(2)} €
+            </Text>
+          </View>
+          {(balance.pendingCents ?? 0) > 0 && (
+            <View style={styles.balanceRow}>
+              <Text style={styles.balanceLabel}>En attente de règlement</Text>
+              <Text style={styles.balanceValue}>
+                {((balance.pendingCents ?? 0) / 100).toFixed(2)} €
+              </Text>
+            </View>
+          )}
+
+          <Text style={styles.balanceNote}>
+            {balance.payouts && balance.payouts.length > 0
+              ? `Dernier virement : ${(balance.payouts[0].amount / 100).toFixed(2)} €${
+                  balance.payouts[0].arrivalDate
+                    ? ` — arrivée le ${new Date(balance.payouts[0].arrivalDate).toLocaleDateString("fr-FR")}`
+                    : ""
+                }`
+              : "Aucun virement pour l'instant. Stripe verse automatiquement sur ton compte bancaire selon son calendrier."}
+          </Text>
+
+          <Pressable
+            style={[styles.dashBtn, openingDash && { opacity: 0.6 }]}
+            disabled={openingDash}
+            onPress={async () => {
+              setOpeningDash(true);
+              setError(null);
+              try {
+                const url = await stripeDashboardLink();
+                await WebBrowser.openBrowserAsync(url);
+              } catch (e: any) {
+                setError(
+                  e?.message ?? "Impossible d'ouvrir ton tableau de bord Stripe.",
+                );
+              } finally {
+                setOpeningDash(false);
+              }
+            }}
+          >
+            {openingDash ? (
+              <ActivityIndicator color={colors.primary} />
+            ) : (
+              <Text style={styles.dashBtnText}>Voir mes virements sur Stripe</Text>
+            )}
+          </Pressable>
+          <Text style={styles.hint}>
+            Solde, virements et coordonnées bancaires se gèrent depuis ton
+            tableau de bord Stripe.
+          </Text>
+        </View>
+      )}
+
       {stripeNotReady && (
         <View style={styles.warn}>
           <Text style={styles.warnText}>
@@ -576,6 +714,33 @@ const makeStyles = (c: ThemeColors) =>
     },
     commitTitle: { fontWeight: "800", fontSize: 14, color: c.text },
     commitText: { fontSize: 13, lineHeight: 19, color: c.sub },
+    balanceBox: {
+      marginTop: 14,
+      padding: 14,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: c.border,
+      backgroundColor: c.bgSecondary,
+      gap: 4,
+    },
+    balanceRow: {
+      flexDirection: "row",
+      alignItems: "baseline",
+      justifyContent: "space-between",
+      gap: 12,
+    },
+    balanceLabel: { fontSize: 13, color: c.sub },
+    balanceValue: { fontSize: 16, fontWeight: "800", color: c.text },
+    balanceNote: { fontSize: 12.5, lineHeight: 18, color: c.sub, marginTop: 4 },
+    dashBtn: {
+      marginTop: 10,
+      paddingVertical: 12,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: c.primary,
+      alignItems: "center",
+    },
+    dashBtnText: { color: c.primary, fontWeight: "700", fontSize: 14 },
     commitLinks: { gap: 4, marginTop: 2 },
     commitLink: {
       fontSize: 12.5,

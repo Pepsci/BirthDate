@@ -304,4 +304,87 @@ router.put(
   },
 );
 
+/*
+ * PUT /api/events/:shortId/direct-transfer/external-pool
+ * Lien vers une cagnotte tenue ailleurs (organizer only).
+ * Body: { enabled, url, label }
+ *
+ * ⚠️ On n'accepte que du HTTPS, et on refuse explicitement un lien qui
+ * pointerait vers BirthReminder : un organisateur qui colle par erreur l'URL
+ * de son propre événement créerait une boucle incompréhensible pour ses
+ * invités. Aucune liste blanche de services en revanche — en imposer une
+ * reviendrait à cautionner ceux qu'on y met, ce qu'on ne veut surtout pas.
+ */
+router.put(
+  "/:shortId/direct-transfer/external-pool",
+  isAuthenticated,
+  async (req, res) => {
+    try {
+      const event = await Event.findOne({ shortId: req.params.shortId });
+      if (!event)
+        return res.status(404).json({ message: "Événement introuvable" });
+      if (event.organizer.toString() !== req.payload._id)
+        return res.status(403).json({ message: "Non autorisé" });
+
+      const enabled = req.body.enabled === true;
+      let url = String(req.body.url || "").trim();
+      const label = String(req.body.label || "").trim().slice(0, 60);
+
+      if (enabled) {
+        if (!url) {
+          return res
+            .status(400)
+            .json({ message: "Indiquez le lien de votre cagnotte." });
+        }
+        if (!/^https?:\/\//i.test(url)) url = "https://" + url;
+
+        // HTTPS obligatoire : ces pages demandent un paiement.
+        if (!/^https:\/\//i.test(url)) {
+          return res.status(400).json({
+            message:
+              "Le lien doit être en https :// — une page de paiement non " +
+              "sécurisée ne peut pas être proposée à vos invités.",
+          });
+        }
+
+        let host;
+        try {
+          host = new URL(url).hostname.toLowerCase();
+        } catch (_) {
+          return res.status(400).json({ message: "Lien invalide." });
+        }
+
+        if (/(^|\.)birthreminder\.(com|fr)$/i.test(host)) {
+          return res.status(400).json({
+            message:
+              "Ce lien pointe vers BirthReminder. Pour une cagnotte sur " +
+              "BirthReminder, utilisez la cagnotte intégrée de l'événement.",
+          });
+        }
+      } else {
+        url = "";
+      }
+
+      event.directTransfer = {
+        ...(event.directTransfer || {}),
+        externalPoolEnabled: enabled,
+        externalPoolUrl: url,
+        externalPoolLabel: enabled ? label : "",
+      };
+      await event.save();
+
+      emitTransferUpdate(req, event);
+
+      res.status(200).json({
+        externalPoolEnabled: enabled,
+        externalPoolUrl: url,
+        externalPoolLabel: event.directTransfer.externalPoolLabel,
+      });
+    } catch (error) {
+      console.error("❌ Error updating external pool link:", error);
+      res.status(500).json({ message: "Erreur serveur" });
+    }
+  },
+);
+
 module.exports = router;

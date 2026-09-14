@@ -21,6 +21,7 @@ import GiftPoolManager from "./stripe/GiftPoolManager";
 import GiftPoolWidget from "./stripe/GiftPoolWidget";
 import BankInfoManager from "./stripe/BankInfoManager";
 import PaypalManager from "./stripe/PaypalManager";
+import ExternalPoolManager from "./stripe/ExternalPoolManager";
 import DirectTransferViewer from "./stripe/DirectTransferViewer";
 import "./css/eventPage.css";
 
@@ -1337,6 +1338,27 @@ const EventPage = () => {
                           paypalLink={event.directTransfer?.paypalLink}
                         />
                       </GlassCard>
+
+                      {/* Cagnotte ouverte ailleurs. Sa place est ici, à côté
+                          des autres moyens de participer : sans emplacement
+                          dédié, le lien finit collé dans le chat où les
+                          invités arrivés plus tard ne le voient jamais. */}
+                      <GlassCard className="ep-card">
+                        <div className="ep-card-header">
+                          <i className="fa-solid fa-arrow-up-right-from-square ep-card-icon"></i>
+                          <h3>Cagnotte sur un autre service</h3>
+                        </div>
+                        <ExternalPoolManager
+                          shortId={shortId}
+                          externalPoolEnabled={
+                            event.directTransfer?.externalPoolEnabled
+                          }
+                          externalPoolUrl={event.directTransfer?.externalPoolUrl}
+                          externalPoolLabel={
+                            event.directTransfer?.externalPoolLabel
+                          }
+                        />
+                      </GlassCard>
                     </>
                   ) : (
                     <>
@@ -1345,7 +1367,8 @@ const EventPage = () => {
                       </GlassCard>
                       {currentUser &&
                         (event.directTransfer?.ibanEnabled ||
-                          event.directTransfer?.paypalEnabled) && (
+                          event.directTransfer?.paypalEnabled ||
+                          event.directTransfer?.externalPoolEnabled) && (
                           <GlassCard className="ep-card">
                             <div className="ep-card-header">
                               <i className="fa-solid fa-money-bill-transfer ep-card-icon"></i>
