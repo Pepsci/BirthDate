@@ -28,6 +28,41 @@ const supportMessageSchema = new Schema(
     name: { type: String, trim: true },
     email: { type: String, required: true, trim: true, lowercase: true },
     subject: { type: String, required: true, trim: true, maxlength: 150 },
+
+    /**
+     * Nature du ticket.
+     *
+     * ⚠️ "pool" échappe à la règle du ticket unique — et c'est délibéré.
+     *
+     * La règle « une seule conversation à la fois » sert à éviter des fils
+     * parallèles sur le même sujet. Appliquée aux litiges de cagnotte, elle
+     * produit l'inverse de ce qu'on veut : quelqu'un qui a une question en
+     * cours sur autre chose se retrouve incapable de signaler qu'il n'a pas
+     * été remboursé. C'est le seul cas où de l'argent est en jeu, et c'est
+     * précisément celui qu'on bloquait.
+     *
+     * Le garde-fou devient alors : un ticket ouvert par cagnotte concernée
+     * (voir `relatedEvent`), ce qui borne naturellement leur nombre à celui
+     * des cagnottes auxquelles la personne a réellement participé.
+     */
+    category: {
+      type: String,
+      enum: ["general", "pool"],
+      default: "general",
+    },
+
+    /**
+     * Cagnotte concernée, pour un ticket de catégorie "pool".
+     *
+     * Côté admin, c'est ce qui permet d'ouvrir directement la cagnotte en
+     * question au lieu de la chercher à partir d'un message en texte libre.
+     * Côté serveur, c'est la clé du plafond : un ticket ouvert par événement.
+     */
+    relatedEvent: {
+      type: Schema.Types.ObjectId,
+      ref: "Event",
+      default: null,
+    },
     status: {
       type: String,
       enum: ["open", "answered", "closed"],
@@ -43,6 +78,8 @@ const supportMessageSchema = new Schema(
 );
 
 supportMessageSchema.index({ status: 1, lastMessageAt: -1 });
+// Recherche du ticket ouvert pour une cagnotte donnée (plafond + admin).
+supportMessageSchema.index({ userId: 1, relatedEvent: 1, status: 1 });
 supportMessageSchema.index({ userId: 1, lastMessageAt: -1 });
 
 module.exports = model("SupportMessage", supportMessageSchema);

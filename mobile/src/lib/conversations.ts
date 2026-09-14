@@ -52,6 +52,14 @@ export interface DMMessage {
   /** Empreinte laissée quand le compte de l'expéditeur a été purgé. */
   senderSnapshot?: { name?: string; publicKey?: string } | null;
   replyTo?: string | null;
+  /**
+   * Réactions posées sur ce message.
+   *
+   * ⚠️ Clé sémantique ("love"), pas un emoji : le dessin peut changer sans
+   * toucher aux données. Non chiffrées, contrairement au contenu — compromis
+   * assumé, l'emoji seul ne dit presque rien sans le texte.
+   */
+  reactions?: { user: string; reaction: string }[];
   edited?: boolean;
   editedAt?: string;
   type?: string;

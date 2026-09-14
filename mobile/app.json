@@ -121,7 +121,8 @@
           "appleTeamId": "8UHXMY6BW5"
         }
       ],
-      "./plugins/withNsePod"
+      "./plugins/withNsePod",
+      "./plugins/withFmtConstevalFix"
     ],
     "experiments": {
       "typedRoutes": true,

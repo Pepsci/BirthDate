@@ -12,6 +12,8 @@ const StripeAccount = require("../../models/stripeAccount.model");
 const GiftPoolContribution = require("../../models/giftPoolContribution.model");
 const { audit } = require("../../services/auditLog");
 const PoolAlertReview = require("../../models/poolAlertReview.model");
+const Log = require("../../models/log.model");
+const SupportMessage = require("../../models/supportMessage.model");
 
 /*
  * GET /api/admin/pools?page=&limit=&active=true
@@ -56,8 +58,29 @@ router.get("/", async (req, res) => {
       totalsByEvent[id][t._id.status] = { count: t.count, total: t.total };
     });
 
+    // ⚠️ Litiges en cours sur chaque cagnotte.
+    //
+    // Sans ce croisement, la liste des cagnottes et celle des tickets ne se
+    // rencontrent jamais : on peut passer en revue toutes les cagnottes sans
+    // voir laquelle a un contributeur mécontent qui attend une réponse. C'est
+    // pourtant la seule qu'il faut regarder en premier.
+    const ticketAgg = await SupportMessage.aggregate([
+      { $match: { relatedEvent: { $in: eventIds } } },
+      {
+        $group: {
+          _id: "$relatedEvent",
+          total: { $sum: 1 },
+          open: { $sum: { $cond: [{ $ne: ["$status", "closed"] }, 1, 0] } },
+        },
+      },
+    ]);
+    const ticketsByEvent = {};
+    ticketAgg.forEach((t) => (ticketsByEvent[String(t._id)] = t));
+
     res.json({
       pools: events.map((e) => ({
+        ticketsCount: ticketsByEvent[String(e._id)]?.total || 0,
+        openTicketsCount: ticketsByEvent[String(e._id)]?.open || 0,
         eventId: e._id,
         shortId: e.shortId,
         title: e.title,
@@ -143,6 +166,209 @@ router.get("/alerts", async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Admin pool alerts error:", error);
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+});
+
+/*
+ * PATCH /api/admin/pools/:eventId/freeze
+ * Body: { frozen: boolean, reason: string }
+ *
+ * Gèle ou rouvre une cagnotte depuis l'admin.
+ *
+ * ⚠️ Geler ≠ rembourser. Le gel ferme le robinet — plus aucune contribution ne
+ * peut entrer — mais ne touche pas à l'argent déjà collecté, qui reste sur le
+ * compte Stripe de l'organisateur. C'est l'intervention la plus utile face à
+ * une cagnotte suspecte : elle limite le nombre de victimes sans nous faire
+ * décider à la place de qui que ce soit, et elle est réversible.
+ *
+ * Jusqu'ici le gel n'existait qu'en conséquence automatique d'une annulation
+ * ou d'un transfert d'organisation. Face à une alerte de fraude, il n'y avait
+ * donc aucun moyen d'agir : on pouvait constater et rembourser, mais pas
+ * simplement arrêter l'hémorragie.
+ *
+ * Motif obligatoire : c'est une décision qui prive l'organisateur d'une
+ * fonctionnalité, elle doit pouvoir être justifiée.
+ */
+router.patch("/:eventId/freeze", async (req, res) => {
+  try {
+    const frozen = req.body.frozen === true;
+    const reason = String(req.body.reason || "").trim();
+    if (reason.length < 10) {
+      return res.status(400).json({
+        code: "REASON_REQUIRED",
+        message:
+          "Un motif d'au moins 10 caractères est obligatoire : geler une " +
+          "cagnotte prive l'organisateur d'une fonctionnalité.",
+      });
+    }
+
+    const event = await Event.findById(req.params.eventId).select(
+      "shortId title organizer giftPool",
+    );
+    if (!event) {
+      return res.status(404).json({ message: "Événement introuvable" });
+    }
+    if (!event.giftPool) {
+      return res.status(400).json({ message: "Cet événement n'a pas de cagnotte." });
+    }
+
+    // `active: false` est exactement ce que lit la route de contribution :
+    // aucun nouveau paiement ne peut plus être créé.
+    event.giftPool.active = !frozen;
+    await event.save();
+
+    await audit(req, {
+      action: frozen ? "pool_freeze" : "pool_enable",
+      userId: req.payload._id,
+      metadata: {
+        scope: "admin",
+        eventId: String(event._id),
+        eventShortId: event.shortId,
+        organizerId: String(event.organizer),
+        reason,
+      },
+    });
+
+    req.app
+      .get("io")
+      ?.to(`event:${event.shortId}`)
+      .emit("event:pool_update", { shortId: event.shortId });
+
+    res.json({
+      message: frozen ? "Cagnotte gelée" : "Cagnotte rouverte",
+      active: event.giftPool.active,
+    });
+  } catch (error) {
+    console.error("❌ Admin pool freeze error:", error);
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+});
+
+/*
+ * GET /api/admin/pools/:eventId/evidence
+ * Dossier de preuve d'une cagnotte, en JSON téléchargeable.
+ *
+ * ⚠️ À quoi ça sert concrètement : le jour où un contributeur, un organisateur,
+ * une banque ou une autorité demande « prouvez ce qui s'est passé », il faut
+ * pouvoir produire en une fois l'intégralité de ce que nous savons. Reconstituer
+ * ça à la main depuis trois écrans, sous pression et parfois des mois après,
+ * c'est la garantie d'oublier une pièce.
+ *
+ * Le dossier réunit les trois sources qui font foi : les contributions (avec
+ * leurs références Stripe, les seuls identifiants opposables), le journal
+ * d'audit permanent (qui a décidé quoi, quand, pour quel motif) et les tickets
+ * de support rattachés à cette cagnotte.
+ *
+ * ⚠️ Contient des données personnelles : à ne transmettre qu'aux personnes
+ * concernées ou sur demande légitime, jamais par simple curiosité.
+ */
+router.get("/:eventId/evidence", async (req, res) => {
+  try {
+    const event = await Event.findById(req.params.eventId)
+      .select("shortId title status organizer giftPool createdAt")
+      .populate("organizer", "name surname email");
+    if (!event) {
+      return res.status(404).json({ message: "Événement introuvable" });
+    }
+
+    const [contributions, logs, tickets, account] = await Promise.all([
+      GiftPoolContribution.find({ event: event._id })
+        .populate("contributor", "name surname email")
+        .sort({ createdAt: 1 })
+        .lean(),
+      Log.find({
+        "metadata.eventShortId": event.shortId,
+      })
+        .sort({ createdAt: 1 })
+        .lean(),
+      SupportMessage.find({ relatedEvent: event._id })
+        .populate("userId", "name surname email")
+        .sort({ createdAt: 1 })
+        .lean(),
+      StripeAccount.findOne({ user: event.organizer?._id }).lean(),
+    ]);
+
+    const dossier = {
+      generatedAt: new Date().toISOString(),
+      generatedBy: String(req.payload._id),
+      avertissement:
+        "Document interne contenant des données personnelles. Ne transmettre " +
+        "qu'aux personnes concernées ou sur demande légitime.",
+      evenement: {
+        shortId: event.shortId,
+        titre: event.title,
+        statut: event.status,
+        creeLe: event.createdAt,
+        cagnotteActive: !!event.giftPool?.active,
+        organisateur: event.organizer
+          ? {
+              id: String(event.organizer._id),
+              nom: `${event.organizer.name} ${event.organizer.surname || ""}`.trim(),
+              email: event.organizer.email,
+            }
+          : null,
+        compteStripe: account
+          ? {
+              id: account.stripeAccountId,
+              encaissementsActifs: account.chargesEnabled,
+              virementsActifs: account.payoutsEnabled,
+            }
+          : null,
+      },
+      contributions: contributions.map((c) => ({
+        id: String(c._id),
+        montantCentimes: c.amount,
+        devise: c.currency,
+        statut: c.status,
+        date: c.createdAt,
+        // La référence Stripe est le seul identifiant opposable : c'est elle
+        // qu'une banque ou un juge pourra recouper.
+        referencePaiement: c.stripePaymentIntentId,
+        referenceRemboursement: c.stripeRefundId,
+        rembourseLe: c.refundedAt,
+        fraisReelsCentimes: c.feeCents,
+        contributeur: c.contributor
+          ? {
+              id: String(c.contributor._id),
+              nom: `${c.contributor.name} ${c.contributor.surname || ""}`.trim(),
+              email: c.contributor.email,
+            }
+          : { invite: true, email: c.guestEmail || null, nom: c.guestName || null },
+        anonyme: !!c.anonymous,
+        conditionsAccepteesLe: c.guestTermsAcceptedAt,
+        recuEnvoyeLe: c.receiptSentAt,
+      })),
+      journal: logs.map((l) => ({
+        date: l.createdAt,
+        action: l.action,
+        auteur: l.userId ? String(l.userId) : null,
+        ip: l.ipAddress,
+        details: l.metadata,
+      })),
+      tickets: tickets.map((t) => ({
+        id: String(t._id),
+        objet: t.subject,
+        statut: t.status,
+        ouvertLe: t.createdAt,
+        auteur: t.userId
+          ? `${t.userId.name} ${t.userId.surname || ""}`.trim()
+          : t.name,
+        email: t.email,
+        messages: t.messages?.map((m) => ({
+          de: m.sender,
+          date: m.createdAt,
+          texte: m.body,
+        })),
+      })),
+    };
+
+    const filename = `preuves-${event.shortId}-${new Date().toISOString().slice(0, 10)}.json`;
+    res.setHeader("Content-Type", "application/json; charset=utf-8");
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    res.send(JSON.stringify(dossier, null, 2));
+  } catch (error) {
+    console.error("❌ Admin evidence error:", error);
     res.status(500).json({ message: "Erreur serveur" });
   }
 });

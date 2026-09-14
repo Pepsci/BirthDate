@@ -23,9 +23,30 @@ export async function clearToken(): Promise<void> {
 
 export class ApiError extends Error {
   status: number;
-  constructor(status: number, message: string) {
+  /**
+   * Code machine renvoyé par le serveur (TERMS_REQUIRED, POOL_NOT_SETTLED…),
+   * pour distinguer un refus métier attendu d'une panne.
+   */
+  code?: string;
+  /**
+   * Précision technique accompagnant le message.
+   *
+   * ⚠️ Sans elle, un refus de Stripe arrivait sur mobile réduit à « Erreur
+   * lors de la connexion Stripe » : le serveur nommait pourtant le champ
+   * fautif. On perdait l'information au dernier mètre, et il fallait aller
+   * lire les logs serveur pour une cause souvent triviale.
+   */
+  detail?: string;
+
+  constructor(
+    status: number,
+    message: string,
+    extra?: { code?: string; detail?: string },
+  ) {
     super(message);
     this.status = status;
+    this.code = extra?.code;
+    this.detail = extra?.detail;
   }
 }
 
@@ -55,7 +76,16 @@ export async function api<T = unknown>(
   }
 
   if (!res.ok) {
-    throw new ApiError(res.status, data?.message ?? `Erreur ${res.status}`);
+    // Le détail est concaténé au message : tous les écrans affichent
+    // `e.message`, et une information qui n'atteint pas l'écran ne sert à rien.
+    // Il reste accessible séparément via `error.detail` si besoin.
+    const base = data?.message ?? `Erreur ${res.status}`;
+    const detail = data?.detail || null;
+    throw new ApiError(
+      res.status,
+      detail ? `${base} — ${detail}` : base,
+      { code: data?.code, detail },
+    );
   }
   return data as T;
 }

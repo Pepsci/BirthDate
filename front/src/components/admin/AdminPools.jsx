@@ -78,6 +78,61 @@ const AdminPools = () => {
       });
   };
 
+  /*
+   * Geler une cagnotte.
+   *
+   * ⚠️ Geler ≠ rembourser. Le gel ferme le robinet — plus aucune contribution
+   * ne peut entrer — sans toucher à l'argent déjà collecté, qui reste chez
+   * l'organisateur. C'est l'intervention la plus utile face à une cagnotte
+   * suspecte : elle limite le nombre de victimes sans nous faire décider à la
+   * place de qui que ce soit, et elle est réversible.
+   */
+  const toggleFreeze = async (event, frozen) => {
+    const reason = window.prompt(
+      frozen
+        ? "Motif du gel (obligatoire, 10 caractères minimum) :"
+        : "Motif de la réouverture (obligatoire, 10 caractères minimum) :",
+    );
+    if (reason === null) return;
+    try {
+      await apiHandler.patch(`/admin/pools/${event._id}/freeze`, {
+        frozen,
+        reason,
+      });
+      openContributions(event._id);
+      load();
+    } catch (err) {
+      alert(err.response?.data?.message || "Erreur");
+    }
+  };
+
+  /*
+   * Dossier de preuve.
+   *
+   * Le jour où un contributeur, une banque ou une autorité demande de prouver
+   * ce qui s'est passé, il faut pouvoir produire en une fois tout ce qu'on
+   * sait : contributions et références Stripe, journal d'audit, tickets liés.
+   * Reconstituer ça à la main depuis trois écrans, des mois après et sous
+   * pression, c'est la garantie d'oublier une pièce.
+   */
+  const downloadEvidence = async (event) => {
+    try {
+      const res = await apiHandler.get(`/admin/pools/${event._id}/evidence`, {
+        responseType: "blob",
+      });
+      const url = URL.createObjectURL(new Blob([res.data]));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `preuves-${event.shortId}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      alert("Téléchargement impossible.");
+    }
+  };
+
   if (error) return <p className="admin-error">{error}</p>;
 
   return (
@@ -116,6 +171,26 @@ const AdminPools = () => {
                 <td>
                   {p.title}{" "}
                   <span className="admin-muted">({p.shortId})</span>
+                  {/* Un litige en cours est la seule information qui doit
+                      sauter aux yeux dans une longue liste : c'est la cagnotte
+                      à regarder avant toutes les autres. */}
+                  {p.openTicketsCount > 0 && (
+                    <span className="admin-tag admin-tag-danger admin-event-ticket-tag">
+                      ⚠️ {p.openTicketsCount} litige
+                      {p.openTicketsCount > 1 ? "s" : ""}
+                    </span>
+                  )}
+                  {p.openTicketsCount === 0 && p.ticketsCount > 0 && (
+                    <span className="admin-tag admin-event-ticket-tag">
+                      {p.ticketsCount} ticket
+                      {p.ticketsCount > 1 ? "s" : ""} clos
+                    </span>
+                  )}
+                  {p.giftPool && p.giftPool.active === false && (
+                    <span className="admin-tag admin-tag-warning admin-event-ticket-tag">
+                      ❄️ gelée
+                    </span>
+                  )}
                 </td>
                 <td>
                   {p.organizer
@@ -174,6 +249,36 @@ const AdminPools = () => {
 
             {/* État du compte qui détient réellement l'argent. Sans ça, on
                 clique « Rembourser » sans savoir s'il reste quelque chose. */}
+            <div className="admin-pool-actions">
+              <button
+                className="admin-btn-small"
+                onClick={() =>
+                  window.open(`/event/${expanded.event.shortId}`, "_blank")
+                }
+              >
+                Voir l'événement
+              </button>
+              <button
+                className="admin-btn-small"
+                onClick={() =>
+                  toggleFreeze(
+                    expanded.event,
+                    !!expanded.event.giftPool?.active,
+                  )
+                }
+              >
+                {expanded.event.giftPool?.active
+                  ? "❄️ Geler la cagnotte"
+                  : "Rouvrir la cagnotte"}
+              </button>
+              <button
+                className="admin-btn-small"
+                onClick={() => downloadEvidence(expanded.event)}
+              >
+                ⬇️ Dossier de preuve
+              </button>
+            </div>
+
             {expanded.connectedAccount && (
               <div
                 className={

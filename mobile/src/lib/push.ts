@@ -129,6 +129,14 @@ export function webLinkToMobileRoute(url: string | null | undefined): string {
     }
   }
 
+  // Discussion d'un événement : le web l'ouvre par un onglet de la même page,
+  // le mobile a un écran dédié. Sans cette règle, une notification de message
+  // ouvrait l'accueil de l'événement et il fallait retrouver l'onglet à la
+  // main — pour lire le message qu'on venait justement d'être notifié.
+  const eventChat = url.match(/^\/event\/([^/?#]+)/i);
+  if (eventChat && /[?&]tab=chat\b/.test(url)) {
+    return `/event/chat/${eventChat[1]}`;
+  }
   if (url.startsWith("/event/")) return url;
   if (url.startsWith("/auth/reset/")) return url; // reset mdp par token
   if (url.includes("/shared-invites")) return "/shared-invites";

@@ -11,8 +11,12 @@
 //   "application" → BirthReminder couvre (réserve retenue sur notre solde,
 //                   ponction après 180 jours de négatif)
 //
-// Les comptes Express historiques sont en "application". Ce script le vérifie
-// sur les comptes réellement créés plutôt que sur la documentation.
+// ⚠️ "application" est la valeur ATTENDUE, pas une anomalie : Stripe refuse
+// de dissocier le tableau de bord Express de la responsabilité des pertes
+// (« When stripe_dashboard[type]=express, your platform must collect fees and
+// be liable for negative balances or refunds and chargebacks »). Ce script
+// sert donc à repérer un compte qui SORTIRAIT de la configuration attendue,
+// pas à réclamer une bascule impossible.
 //
 // Lecture seule. Usage : node scripts/check-connect-liability.js
 
@@ -51,9 +55,9 @@ const StripeAccount = require("../models/stripeAccount.model");
   for (const [k, n] of Object.entries(tally)) {
     const verdict =
       k === "application"
-        ? "⚠️  BirthReminder porte la perte"
+        ? "BirthReminder porte la perte (attendu avec Express)"
         : k === "stripe"
-          ? "✅ Stripe porte la perte"
+          ? "Stripe porte la perte"
           : "?";
     console.log(`  ${k} : ${n} compte(s)  ${verdict}`);
   }

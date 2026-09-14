@@ -65,7 +65,7 @@ export function eventLocationLabel(
 export const EVENT_TYPE_LABELS: Record<EventType, string> = {
   birthday: "🎂 Anniversaire",
   party: "🎉 Fête",
-  dinner: "🍽️ Dîner",
+  dinner: "🍽️ Repas",
   other: "📌 Autre",
 };
 
@@ -442,6 +442,8 @@ export interface EventChatMessage {
   isEncrypted?: boolean;
   encryptedFor?: Record<string, string>;
   readBy?: { user: string }[];
+  /** Voir DMMessage.reactions : clé sémantique, non chiffrée. */
+  reactions?: { user: string; reaction: string }[];
 }
 
 export async function fetchMessages(
@@ -835,4 +837,20 @@ export type ConnectBalance = {
 
 export async function stripeBalance(): Promise<ConnectBalance> {
   return api("/stripe/connect/balance");
+}
+
+/**
+ * Déconnecte le compte de paiement de l'organisateur.
+ *
+ * ⚠️ Le serveur refuse tant qu'il reste des contributions encaissées non
+ * remboursées : couper le lien rendrait tout remboursement impossible depuis
+ * l'application, alors que l'obligation de rendre l'argent subsiste. Les
+ * cagnottes encore ouvertes sont fermées au passage — en laisser une active
+ * sans compte pour encaisser produirait des erreurs incompréhensibles pour
+ * les invités.
+ */
+export async function disconnectStripeAccount(): Promise<{
+  poolsClosed: number;
+}> {
+  return api("/stripe/connect/account", { method: "DELETE" });
 }

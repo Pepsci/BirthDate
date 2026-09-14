@@ -80,6 +80,44 @@ export default function MyContributionsScreen() {
     setTimeout(() => setCopied(null), 2000);
   };
 
+  /*
+   * Ouvre le support avec la contribution déjà décrite.
+   *
+   * La dernière question du gabarit — « ai-je contacté l'organisateur ? » —
+   * est la plus utile : c'est la première marche de la procédure, et la
+   * grande majorité des situations se règlent là. Connaître la réponse dès le
+   * premier message évite un aller-retour.
+   */
+  const reportIssue = (c: MyContribution) => {
+    const lines = [
+      "— Ma contribution —",
+      `Montant : ${euros(c.amount)}`,
+      `Date : ${formatDate(c.createdAt)}`,
+      c.event ? `Événement : ${c.event.title}` : "Événement : ",
+      c.event?.organizer ? `Encaissé par : ${c.event.organizer}` : "Encaissé par : ",
+      `Référence de paiement : ${c.reference}`,
+      "",
+      "— Ce qui se passe —",
+      "",
+      "",
+      "— Ai-je déjà contacté l'organisateur ? —",
+      "(oui, le … / pas encore)",
+      "",
+    ];
+    router.push({
+      pathname: "/support",
+      params: {
+        poolSubject: c.event
+          ? `Problème de cagnotte — ${c.event.title}`
+          : "Problème avec une cagnotte",
+        poolMessage: lines.join("\n"),
+        // Rattache le ticket à cette cagnotte : lien direct côté admin, et
+        // dérogation à la règle du ticket unique côté serveur.
+        eventShortId: c.event?.shortId ?? "",
+      },
+    });
+  };
+
   const total = (contributions ?? [])
     .filter((c) => c.status === "succeeded")
     .reduce((sum, c) => sum + c.amount, 0);
@@ -165,6 +203,14 @@ export default function MyContributionsScreen() {
                   {copied === c.id ? "copié ✓" : "copier"}
                 </Text>
               </Pressable>
+
+              {c.status !== "refunded" && (
+                <Pressable onPress={() => reportIssue(c)} hitSlop={6}>
+                  <Text style={styles.reportLink}>
+                    Un problème avec cette contribution ?
+                  </Text>
+                </Pressable>
+              )}
             </View>
           ))}
 
@@ -251,6 +297,13 @@ const makeStyles = (c: ThemeColors) =>
     refLabel: { fontSize: 10.5, fontWeight: "600", color: c.faint },
     refValue: { fontSize: 11.5, color: c.sub, fontFamily: "Courier" },
     refAction: { fontSize: 12, fontWeight: "700", color: c.primary },
+    reportLink: {
+      marginTop: 8,
+      fontSize: 12.5,
+      fontWeight: "600",
+      color: c.primary,
+      textAlign: "center",
+    },
 
     note: {
       marginTop: 8,

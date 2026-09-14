@@ -3,6 +3,7 @@ const EventMessage = require("../models/eventMessage.model");
 const EventInvitation = require("../models/eventInvitation.model");
 const User = require("../models/user.model");
 const { notify } = require("../utils/notify");
+const { REACTIONS } = require("../constants/reactions");
 
 module.exports = (io, socket, app) => {
   socket.on("event:join", async ({ shortId }) => {
@@ -184,7 +185,13 @@ module.exports = (io, socket, app) => {
                   senderName,
                   preview,
                 },
-                link: `/event/${event.shortId}`,
+                // ⚠️ Viser la DISCUSSION, pas la page de l'événement.
+                // Une notification « nouveau message » qui ouvre l'accueil de
+                // l'événement oblige à retrouver l'onglet à la main : c'est le
+                // message qu'on venait lire. Le web lit `?tab=`, et le mobile
+                // traduit cette forme vers son écran de chat dédié
+                // (webLinkToMobileRoute).
+                link: `/event/${event.shortId}?tab=chat`,
               });
             }
           }
@@ -201,6 +208,69 @@ module.exports = (io, socket, app) => {
         tempId,
         error: "Impossible d'envoyer le message",
       });
+    }
+  });
+
+  /*
+   * Réaction sur un message de discussion d'événement.
+   *
+   * ⚠️ Même règle que pour les messages privés : une réaction par personne et
+   * par message, la nouvelle remplace l'ancienne, et renvoyer la même la
+   * retire. C'est le comportement attendu par quiconque a déjà utilisé
+   * WhatsApp — s'en écarter surprendrait plus que ça n'apporterait.
+   *
+   * Le contrôle d'accès s'appuie sur la présence dans la room de l'événement,
+   * déjà accordée par `event:join` qui vérifie l'invitation. Sans lui,
+   * connaître un identifiant de message suffirait à réagir dessus.
+   */
+  socket.on("event:message_react", async ({ shortId, messageId, reaction }) => {
+    try {
+      if (!socket.userId) return;
+      if (reaction !== null && !REACTIONS.includes(reaction)) {
+        return socket.emit("error", { message: "Réaction inconnue" });
+      }
+      if (!socket.rooms.has(`event:${shortId}`)) {
+        return socket.emit("error", { message: "Non autorisé" });
+      }
+
+      const message = await EventMessage.findById(messageId).select(
+        "event reactions",
+      );
+      if (!message) return;
+
+      const event = await Event.findOne({ shortId }).select("_id").lean();
+      if (!event || String(message.event) !== String(event._id)) {
+        return socket.emit("error", { message: "Non autorisé" });
+      }
+
+      const existing = message.reactions.find(
+        (r) => String(r.user) === socket.userId,
+      );
+      const removing = reaction === null || existing?.reaction === reaction;
+
+      message.reactions = message.reactions.filter(
+        (r) => String(r.user) !== socket.userId,
+      );
+      if (!removing) {
+        message.reactions.push({
+          user: socket.userId,
+          reaction,
+          createdAt: new Date(),
+        });
+      }
+      await message.save();
+
+      io.to(`event:${shortId}`).emit("event:message_reacted", {
+        messageId,
+        shortId,
+        reactions: message.reactions.map((r) => ({
+          user: String(r.user),
+          reaction: r.reaction,
+        })),
+      });
+    } catch (error) {
+      console.error("❌ Error reacting to event message:", error);
+      socket.emit("error", { message: "Réaction impossible" });
     }
   });
 

@@ -22,6 +22,7 @@ import {
   stripeStatus,
   stripeDashboardLink,
   stripeBalance,
+  disconnectStripeAccount,
   ConnectBalance,
   fetchEvent,
   fetchBankInfo,
@@ -645,17 +646,56 @@ export default function PoolConfigScreen() {
           </Pressable>
           <Text style={styles.hint}>
             Solde, virements et coordonnées bancaires se gèrent depuis ton
-            tableau de bord Stripe.
+            tableau de bord Stripe, avec les identifiants du compte créé lors
+            de la configuration.
           </Text>
+
+          {/* Action rare et lourde : discrète, mais présente. Ne pas pouvoir
+              revenir en arrière sur un compte qu'on a créé soi-même est
+              difficilement défendable. */}
+          <Pressable
+            hitSlop={6}
+            onPress={() =>
+              Alert.alert(
+                "Déconnecter ton compte de paiement ?",
+                "Tes cagnottes encore ouvertes seront fermées et tu ne pourras plus encaisser de contributions. Tu pourras reconnecter un compte plus tard, mais il faudra refaire la vérification Stripe.",
+                [
+                  { text: "Annuler", style: "cancel" },
+                  {
+                    text: "Déconnecter",
+                    style: "destructive",
+                    onPress: async () => {
+                      try {
+                        await disconnectStripeAccount();
+                        setBalance(null);
+                        setStripeNotReady(true);
+                        setError(null);
+                      } catch (e: any) {
+                        setError(
+                          e?.message ??
+                            "Impossible de déconnecter ton compte.",
+                        );
+                      }
+                    },
+                  },
+                ],
+              )
+            }
+          >
+            <Text style={styles.disconnect}>
+              Déconnecter mon compte de paiement
+            </Text>
+          </Pressable>
         </View>
       )}
 
       {stripeNotReady && (
         <View style={styles.warn}>
           <Text style={styles.warnText}>
-            ⚠️ Pour encaisser la cagnotte, connecte ton compte Stripe (une
-            seule fois, environ 5 minutes — identité et RIB demandés par
-            Stripe).
+            ⚠️ Pour encaisser la cagnotte, tu dois créer un compte Stripe
+            (une seule fois, environ 5 minutes — identité et RIB demandés par
+            Stripe). C'est ton compte : tu y gères tes virements, et
+            BirthReminder ne détient jamais l'argent.
           </Text>
           <Pressable
             style={[styles.stripeBtn, onboarding && { opacity: 0.6 }]}
@@ -741,6 +781,13 @@ const makeStyles = (c: ThemeColors) =>
       alignItems: "center",
     },
     dashBtnText: { color: c.primary, fontWeight: "700", fontSize: 14 },
+    disconnect: {
+      marginTop: 12,
+      textAlign: "center",
+      fontSize: 12.5,
+      color: c.sub,
+      textDecorationLine: "underline",
+    },
     commitLinks: { gap: 4, marginTop: 2 },
     commitLink: {
       fontSize: 12.5,

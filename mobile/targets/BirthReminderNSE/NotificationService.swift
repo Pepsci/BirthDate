@@ -99,22 +99,66 @@ class NotificationService: UNNotificationServiceExtension {
     }
 
     /// Lit la clé privée E2E depuis le Keychain partagé de l'App Group.
-    /// expo-secure-store stocke une string base64 ; on la reconvertit en octets.
+    ///
+    /// ⚠️ Il faut interroger le Keychain EXACTEMENT comme expo-secure-store y a
+    /// écrit, et sa façon de faire n'est pas celle qu'on suppose (voir
+    /// node_modules/expo-secure-store/ios/SecureStoreModule.swift, `query(with:)`) :
+    ///
+    ///   - `kSecAttrAccount` vaut `Data(key.utf8)`, PAS la chaîne "e2ePrivateKey".
+    ///     Une requête avec une String ne matche pas un attribut stocké en Data,
+    ///     et SecItemCopyMatching renvoie simplement errSecItemNotFound. Silence
+    ///     total : l'extension retombait sur le fallback "🔒 Nouveau message
+    ///     chiffré" sans qu'aucune erreur n'apparaisse nulle part. C'est LE bug
+    ///     qui faisait croire que la NSE n'était pas installée.
+    ///
+    ///   - `kSecAttrService` vaut "app:no-auth" et non "app" : le module suffixe
+    ///     le service avec le mode d'authentification au moment de l'écriture
+    ///     (`requireAuthentication` vaut false par défaut, donc ":no-auth").
+    ///
+    /// On essaie donc plusieurs combinaisons, de la plus probable à la plus
+    /// permissive, pour rester robuste si expo-secure-store change ses
+    /// conventions ou si une clé subsiste d'une version antérieure.
     private func loadPrivateKey(sodium: Sodium) -> [UInt8]? {
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrAccount as String: privateKeyAccount,
-            kSecAttrAccessGroup as String: appGroup,
-            kSecReturnData as String: true,
-            kSecMatchLimit as String: kSecMatchLimitOne,
-        ]
-        var item: CFTypeRef?
-        let status = SecItemCopyMatching(query as CFDictionary, &item)
-        guard status == errSecSuccess, let data = item as? Data else { return nil }
+        let accountData = Data(privateKeyAccount.utf8)
 
-        // expo-secure-store enregistre la valeur en UTF-8 ; ici c'est le base64
-        // de la clé privée (cf. storePrivateKey → encodeBase64).
-        guard let b64 = String(data: data, encoding: .utf8) else { return nil }
-        return sodium.utils.base642bin(b64, variant: .ORIGINAL)
+        // (service, valeur de kSecAttrAccount)
+        let attempts: [(String?, Any)] = [
+            ("app:no-auth", accountData),   // écriture actuelle
+            ("app", accountData),           // service sans suffixe
+            ("app:auth", accountData),      // variante avec biométrie
+            (nil, accountData),             // sans contrainte de service
+            ("app:no-auth", privateKeyAccount), // au cas où un jour c'est une String
+            (nil, privateKeyAccount),
+        ]
+
+        for (service, account) in attempts {
+            var query: [String: Any] = [
+                kSecClass as String: kSecClassGenericPassword,
+                kSecAttrAccount as String: account,
+                kSecAttrAccessGroup as String: appGroup,
+                kSecReturnData as String: true,
+                kSecMatchLimit as String: kSecMatchLimitOne,
+            ]
+            if let service {
+                query[kSecAttrService as String] = service
+            }
+
+            var item: CFTypeRef?
+            let status = SecItemCopyMatching(query as CFDictionary, &item)
+            guard status == errSecSuccess, let data = item as? Data else {
+                continue
+            }
+
+            // expo-secure-store enregistre la valeur en UTF-8 ; ici c'est le
+            // base64 de la clé privée (cf. storePrivateKey → encodeBase64).
+            guard
+                let b64 = String(data: data, encoding: .utf8),
+                let bytes = sodium.utils.base642bin(b64, variant: .ORIGINAL)
+            else { continue }
+
+            return bytes
+        }
+
+        return nil
     }
 }

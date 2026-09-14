@@ -410,7 +410,7 @@ const EventForm = ({
                       >
                         <option value="birthday">Anniversaire 🎂</option>
                         <option value="party">Fête 🎊</option>
-                        <option value="dinner">Dîner 🍽️</option>
+                        <option value="dinner">Repas 🍽️</option>
                         <option value="other">Autre / Événement 📅</option>
                       </select>
                     </div>

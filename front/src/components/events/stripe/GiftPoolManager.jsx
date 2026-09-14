@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { motion } from "motion/react";
 import apiHandler from "../../../api/apiHandler";
 import { euro } from "./lib/stripeFees";
+import ConfirmModal from "../../UI/ConfirmModal";
 import "./css/giftPool.css";
 
 const GiftPoolManager = ({ shortId, pool, onUpdated }) => {
@@ -78,6 +79,41 @@ const GiftPoolManager = ({ shortId, pool, onUpdated }) => {
   const [balance, setBalance] = useState(null);
   const [dashLoading, setDashLoading] = useState(false);
 
+  /*
+   * Déconnexion du compte de paiement.
+   *
+   * ⚠️ Sans ce bouton, un organisateur qui a créé un compte Stripe une fois
+   * n'avait aucun moyen de revenir en arrière depuis l'application. Avec des
+   * comptes Standard — de vrais comptes Stripe lui appartenant — pouvoir
+   * couper le lien est une attente légitime.
+   *
+   * Le serveur refuse tant qu'il reste des contributions encaissées non
+   * remboursées : couper le lien rendrait tout remboursement impossible,
+   * alors que l'obligation de rendre l'argent, elle, subsiste.
+   */
+  const [confirmDisconnect, setConfirmDisconnect] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
+
+  const disconnect = async () => {
+    setDisconnecting(true);
+    setError("");
+    try {
+      await apiHandler.delete("/stripe/connect/account");
+      setConfirmDisconnect(false);
+      setBalance(null);
+      await fetchStatus();
+      onUpdated?.();
+    } catch (err) {
+      setConfirmDisconnect(false);
+      setError(
+        err?.response?.data?.message ||
+          "Impossible de déconnecter votre compte.",
+      );
+    } finally {
+      setDisconnecting(false);
+    }
+  };
+
   const fetchBalance = async () => {
     try {
       const res = await apiHandler.get("/stripe/connect/balance");
@@ -90,15 +126,42 @@ const GiftPoolManager = ({ shortId, pool, onUpdated }) => {
   const openDashboard = async () => {
     setDashLoading(true);
     setError("");
+
+    // ⚠️ L'onglet doit être ouvert MAINTENANT, pas après l'appel réseau.
+    //
+    // Un `window.open` exécuté après un `await` a perdu le contexte du clic :
+    // les navigateurs le traitent comme une fenêtre surgissante non
+    // sollicitée et la bloquent, silencieusement. Aucune erreur, aucun
+    // onglet — exactement le symptôme « le bouton ne fait rien ».
+    //
+    // On ouvre donc l'onglet dans la foulée du clic, puis on y pose l'adresse
+    // quand elle arrive. Si l'ouverture a quand même été refusée, on le dit
+    // au lieu de laisser croire à une panne.
+    const tab = window.open("", "_blank", "noopener,noreferrer");
+
     try {
       const res = await apiHandler.post("/stripe/connect/dashboard");
-      // Nouvel onglet : le lien ouvre une session authentifiée chez Stripe,
-      // on ne veut pas sortir l'organisateur de son événement.
-      window.open(res.data.url, "_blank", "noopener,noreferrer");
+      if (tab) {
+        tab.location.href = res.data.url;
+      } else {
+        setError(
+          "Votre navigateur a bloqué l'ouverture du tableau de bord Stripe. " +
+            "Autorisez les fenêtres surgissantes pour ce site, ou rendez-vous " +
+            "sur dashboard.stripe.com.",
+        );
+      }
     } catch (err) {
+      // L'onglet a été ouvert avant l'appel : le refermer, sinon l'organisateur
+      // se retrouve avec une page blanche sans explication.
+      tab?.close();
+      const d = err?.response?.data;
       setError(
-        err?.response?.data?.message ||
-          "Impossible d'ouvrir votre tableau de bord Stripe.",
+        [
+          d?.message || "Impossible d'ouvrir votre tableau de bord Stripe.",
+          d?.detail,
+        ]
+          .filter(Boolean)
+          .join(" — "),
       );
     } finally {
       setDashLoading(false);
@@ -131,9 +194,14 @@ const GiftPoolManager = ({ shortId, pool, onUpdated }) => {
       const res = await apiHandler.post("/stripe/connect/onboard");
       window.location.href = res.data.url;
     } catch (err) {
+      // Le `detail` porte le message exact de Stripe (champ refusé, URL non
+      // publique…). Sans lui, l'utilisateur — et toi en développement — restez
+      // devant une erreur générique sans piste.
+      const d = err?.response?.data;
       setError(
-        err?.response?.data?.message ||
-          "Impossible de démarrer la connexion Stripe.",
+        [d?.message || "Impossible de démarrer la connexion Stripe.", d?.detail]
+          .filter(Boolean)
+          .join(" — "),
       );
       setOnboarding(false);
     }
@@ -240,8 +308,17 @@ const GiftPoolManager = ({ shortId, pool, onUpdated }) => {
                 </motion.button>
                 <p className="gp-balance-hint">
                   Solde, virements et coordonnées bancaires se gèrent depuis
-                  votre tableau de bord Stripe.
+                  votre tableau de bord Stripe, avec les identifiants du compte
+                  créé lors de la configuration.
                 </p>
+
+                <button
+                  type="button"
+                  className="gp-disconnect"
+                  onClick={() => setConfirmDisconnect(true)}
+                >
+                  Déconnecter mon compte de paiement
+                </button>
               </div>
             )}
           </>
@@ -250,7 +327,7 @@ const GiftPoolManager = ({ shortId, pool, onUpdated }) => {
             <p className="gp-muted">
               {connectStatus?.connected
                 ? "Votre compte Stripe n'est pas encore finalisé."
-                : "Connectez un compte Stripe pour recevoir les contributions directement."}
+                : "Créez votre compte Stripe pour recevoir les contributions directement. C'est votre compte : vous y gérez vos virements, et BirthReminder ne détient jamais l'argent."}
             </p>
             <motion.button
               className="gp-btn gp-btn-primary"
@@ -263,7 +340,7 @@ const GiftPoolManager = ({ shortId, pool, onUpdated }) => {
                 ? "Redirection…"
                 : connectStatus?.connected
                   ? "Finaliser mon compte"
-                  : "Connecter Stripe"}
+                  : "Créer mon compte Stripe"}
             </motion.button>
           </div>
         )}
@@ -466,6 +543,21 @@ const GiftPoolManager = ({ shortId, pool, onUpdated }) => {
           </motion.button>
         </div>
       )}
+
+      <ConfirmModal
+        open={confirmDisconnect}
+        title="Déconnecter votre compte de paiement ?"
+        message={
+          "Vos cagnottes encore ouvertes seront fermées et vous ne pourrez " +
+          "plus encaisser de contributions. Vous pourrez reconnecter un " +
+          "compte plus tard, mais il faudra refaire la vérification Stripe."
+        }
+        confirmLabel="Déconnecter"
+        tone="danger"
+        busy={disconnecting}
+        onConfirm={disconnect}
+        onCancel={() => setConfirmDisconnect(false)}
+      />
     </div>
   );
 };

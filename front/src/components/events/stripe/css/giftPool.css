@@ -706,3 +706,25 @@
   color: var(--text-tertiary, var(--text-secondary));
   text-align: center;
 }
+
+/* Déconnexion du compte de paiement : action rare et lourde de conséquences,
+   donc discrète — mais présente, parce que ne pas pouvoir revenir en arrière
+   sur un compte qu'on a créé est difficilement défendable. */
+.gp-disconnect {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  text-align: center;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.gp-disconnect:hover {
+  color: var(--danger);
+}

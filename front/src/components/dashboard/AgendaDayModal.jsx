@@ -5,7 +5,7 @@ import "./css/agendaDayModal.css";
 const TYPE_LABELS = {
   birthday: "Anniversaire",
   party: "Soirée",
-  dinner: "Dîner",
+  dinner: "Repas",
   other: "Autre",
 };
 

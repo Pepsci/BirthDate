@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import apiHandler from "../../api/apiHandler";
 import "./css/myContributions.css";
 
@@ -31,6 +32,7 @@ const formatDate = (d) =>
   });
 
 const MyContributions = () => {
+  const navigate = useNavigate();
   const [contributions, setContributions] = useState(null);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(null);
@@ -72,6 +74,35 @@ const MyContributions = () => {
       // Presse-papiers refusé (contexte non sécurisé, permission) : la
       // référence reste sélectionnable à la main, on ne bloque rien.
     }
+  };
+
+  /*
+   * Ouvre le formulaire de contact avec la contribution déjà décrite.
+   *
+   * ⚠️ La contribution passe par l'état de navigation, JAMAIS par l'URL : une
+   * référence de paiement n'a rien à faire dans une barre d'adresse ni dans un
+   * historique de navigateur.
+   *
+   * L'intérêt n'est pas le confort mais le contenu du ticket : sans ça
+   * arrivent des messages « j'ai payé quelque part et je n'ai rien reçu »,
+   * sans montant ni référence, qui coûtent deux allers-retours avant même de
+   * pouvoir identifier le paiement.
+   */
+  const reportIssue = (c) => {
+    navigate("/contact", {
+      state: {
+        poolIssue: {
+          amountLabel: euros(c.amount),
+          dateLabel: formatDate(c.createdAt),
+          eventTitle: c.event?.title || null,
+          organizer: c.event?.organizer || null,
+          reference: c.reference,
+          // Rattache le futur ticket à cette cagnotte : côté admin, le lien
+          // vers les contributions est alors immédiat.
+          eventShortId: c.event?.shortId || null,
+        },
+      },
+    });
   };
 
   if (error) return <p className="mycontrib-error">{error}</p>;
@@ -150,6 +181,16 @@ const MyContributions = () => {
                     {copied === c.id ? "copié ✓" : "copier le récapitulatif"}
                   </em>
                 </button>
+
+                {c.status !== "refunded" && (
+                  <button
+                    type="button"
+                    className="mycontrib-report"
+                    onClick={() => reportIssue(c)}
+                  >
+                    Un problème avec cette contribution ?
+                  </button>
+                )}
               </li>
             ))}
           </ul>
@@ -169,7 +210,9 @@ const MyContributions = () => {
               contactez l'organisateur : le bouton « copier le récapitulatif »
               prépare un message tout fait avec le montant, la date et la
               référence. Sans réponse de sa part,{" "}
-              <a href="/contact">écrivez-nous</a> en joignant ce récapitulatif :
+              <a href="/contact">écrivez-nous</a> — le bouton « Un problème
+              avec cette contribution ? » prépare la demande avec les bons
+              éléments :
               nous ne pouvons pas trancher un désaccord, mais la référence nous
               permet de retrouver le paiement et de confirmer qu'il a bien eu
               lieu.

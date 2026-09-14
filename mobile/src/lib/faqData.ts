@@ -167,7 +167,7 @@ export const FAQ_SECTIONS: Section[] = [
       },
       {
         q: "Comment savoir que j'ai été remboursé ?",
-        a: "Tu reçois une notification dès que le remboursement est enregistré, et ta contribution passe en « remboursée » sur la page de l'événement. Le crédit sur ton relevé peut prendre quelques jours ouvrés selon ta banque.",
+        a: "Tu reçois une notification dès que le remboursement est enregistré, et ta contribution passe en « remboursée » sur la page de l'événement. Le crédit apparaît ensuite sur ton relevé sous 5 à 10 jours ouvrés selon ta banque. Attention : si le remboursement intervient peu après ton paiement, ta banque peut simplement annuler l'opération d'origine au lieu de créditer une somme. Dans ce cas tu ne verras aucun remboursement arriver — c'est le paiement lui-même qui disparaît de ton relevé. C'est normal, et le compte est bon.",
       },
       {
         q: "Un remboursement est-il possible sur une cagnotte par virement ?",

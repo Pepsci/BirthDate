@@ -13,6 +13,12 @@ import {
 import { Alert } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { promptReport, promptBlock } from "../../lib/moderation";
+import { markConversationNotifsRead } from "../../lib/notifications";
+import MessageActionSheet, {
+  MessageAction,
+} from "../../components/MessageActionSheet";
+import ReactionPills from "../../components/ReactionPills";
+import { ReactionName } from "../../components/icons/ReactionIcon";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   useKeyboardPadding,
@@ -92,6 +98,10 @@ export default function DMChatScreen() {
   const [showPersonPreview, setShowPersonPreview] = useState(false);
 
   const socketRef = useRef<Socket | null>(null);
+  /* Message visé par l'appui long : porte à la fois les réactions et les
+     actions, d'où un état unique plutôt qu'une alerte système. */
+  const [menuTarget, setMenuTarget] = useState<DMMessage | null>(null);
+  const [menuActions, setMenuActions] = useState<MessageAction[]>([]);
   const conversationIdRef = useRef<string | null>(null);
   /**
    * Silencieux de CETTE conversation. L'id n'est connu qu'après le premier
@@ -125,6 +135,11 @@ export default function DMChatScreen() {
         const conv = await startConversation(friendId);
         conversationIdRef.current = conv._id;
         setConversationId(conv._id);
+
+        // Ouvrir la conversation vaut lecture : sans ça, la pastille du centre
+        // de notifications reste rouge pour des messages qu'on vient de lire,
+        // et un compteur qui ment finit par ne plus être regardé du tout.
+        markConversationNotifsRead("dm", conv._id);
 
         const [history, privKey, friendKey, myKey] = await Promise.all([
           fetchDMMessages(conv._id),
@@ -231,6 +246,19 @@ export default function DMChatScreen() {
         socket.emit("conversation:join", { conversationId: convId });
       };
 
+      const onReacted = ({
+        messageId,
+        reactions,
+      }: {
+        messageId: string;
+        reactions: { user: string; reaction: string }[];
+      }) => {
+        setMessages((prev) =>
+          prev.map((m) => (m._id === messageId ? { ...m, reactions } : m)),
+        );
+      };
+
+      socket.on("message:reacted", onReacted);
       socket.on("message:new", onNew);
       socket.on("message:deleted", onDeleted);
       socket.on("message:edited", onEdited);
@@ -242,6 +270,7 @@ export default function DMChatScreen() {
       if (socket.connected) register();
 
       cleanupRef.current = () => {
+        socket.off("message:reacted", onReacted);
         socket.off("message:new", onNew);
         socket.off("message:deleted", onDeleted);
         socket.off("message:edited", onEdited);
@@ -327,7 +356,12 @@ export default function DMChatScreen() {
     setInput("");
   }, [input, editTarget, replyTarget]);
 
-  // ── Menu contextuel d'un message (long-press) ──────────────────────────────
+  // ── Menu contextuel d'un message (appui long) ─────────────────────────────
+  //
+  // ⚠️ Feuille maison et non `Alert.alert`, depuis l'ajout des réactions.
+  // Une réaction se pose d'un geste : on vise l'icône et on tape. Dans une
+  // alerte système il aurait fallu six lignes de texte à lire avant de
+  // choisir, pour une action qui doit être un réflexe.
   const openMessageMenu = (message: DMMessage) => {
     const isMine = message.sender?._id === user?._id;
     const text = displayContent(
@@ -337,9 +371,9 @@ export default function DMChatScreen() {
     );
     const locked = text.startsWith("🔒");
 
-    const options: NonNullable<Parameters<typeof Alert.alert>[2]> = [
+    const actions: MessageAction[] = [
       {
-        text: "↩️ Répondre",
+        label: "↩️  Répondre",
         onPress: () => {
           setEditTarget(null);
           setReplyTarget(message);
@@ -353,8 +387,8 @@ export default function DMChatScreen() {
         !locked &&
         Date.now() - new Date(message.createdAt).getTime() < EDIT_TIME_LIMIT;
       if (canEdit) {
-        options.push({
-          text: "✏️ Modifier",
+        actions.push({
+          label: "✏️  Modifier",
           onPress: () => {
             setReplyTarget(null);
             setEditTarget(message);
@@ -362,9 +396,9 @@ export default function DMChatScreen() {
           },
         });
       }
-      options.push({
-        text: "🗑️ Supprimer",
-        style: "destructive",
+      actions.push({
+        label: "🗑️  Supprimer",
+        destructive: true,
         onPress: () =>
           Alert.alert(
             "Supprimer ce message ?",
@@ -384,9 +418,9 @@ export default function DMChatScreen() {
           ),
       });
     } else {
-      options.push({
-        text: "🚩 Signaler",
-        style: "destructive",
+      actions.push({
+        label: "🚩  Signaler",
+        destructive: true,
         onPress: () =>
           promptReport({
             contentType: "message",
@@ -397,12 +431,31 @@ export default function DMChatScreen() {
       });
     }
 
-    options.push({ text: "Annuler", style: "cancel" });
-    Alert.alert(
-      "Message",
-      locked ? undefined : text.length > 80 ? `${text.slice(0, 80)}…` : text,
-      options,
-    );
+    setMenuActions(actions);
+    setMenuTarget(message);
+  };
+
+  /*
+   * Pose ou retire une réaction.
+   *
+   * ⚠️ Aucune mise à jour optimiste : le serveur renvoie l'état complet des
+   * réactions du message à toute la conversation, y compris à nous. Anticiper
+   * localement ferait clignoter l'affichage quand les deux se croisent, pour
+   * un gain imperceptible sur une action aussi légère.
+   */
+  const react = (messageId: string, reaction: ReactionName | null) => {
+    socketRef.current?.emit("message:react", {
+      messageId,
+      conversationId: conversationIdRef.current,
+      reaction,
+    });
+  };
+
+  /** Réaction déjà posée par l'utilisateur sur ce message, s'il y en a une. */
+  const myReaction = (m: DMMessage | null): ReactionName | null => {
+    if (!m || !user?._id) return null;
+    const mine = m.reactions?.find((r) => r.user === user._id);
+    return (mine?.reaction as ReactionName) ?? null;
   };
 
   // Résout la citation d'une réponse depuis la liste locale (E2E safe)
@@ -553,6 +606,10 @@ export default function DMChatScreen() {
               privateKey={privateKey}
               quote={getQuote(item)}
               onLongPress={() => openMessageMenu(item)}
+              myReaction={myReaction(item)}
+              onToggleReaction={(r) =>
+                react(item._id, myReaction(item) === r ? null : r)
+              }
             />
           )
         }
@@ -598,6 +655,14 @@ export default function DMChatScreen() {
         </View>
       )}
 
+      <MessageActionSheet
+        visible={!!menuTarget}
+        currentReaction={myReaction(menuTarget)}
+        onReact={(r) => menuTarget && react(menuTarget._id, r)}
+        actions={menuActions}
+        onClose={() => setMenuTarget(null)}
+      />
+
       <View style={[styles.inputRow, { paddingBottom: inputBottom }]}>
         <TextInput placeholderTextColor={colors.placeholder}
           style={styles.input}
@@ -626,6 +691,8 @@ function Bubble({
   privateKey,
   quote,
   onLongPress,
+  myReaction,
+  onToggleReaction,
 }: {
   message: DMMessage;
   isMine: boolean;
@@ -633,6 +700,8 @@ function Bubble({
   privateKey: Uint8Array | null;
   quote?: { author: string; text: string } | null;
   onLongPress?: () => void;
+  myReaction?: ReactionName | null;
+  onToggleReaction?: (reaction: ReactionName) => void;
 }) {
   const styles = useThemedStyles(makeStyles);
   const time = new Date(message.createdAt).toLocaleTimeString("fr-FR", {
@@ -670,6 +739,21 @@ function Bubble({
           {message.edited ? " · modifié" : ""}
         </Text>
       </Pressable>
+
+      {/* Les pastilles sont HORS de la bulle, légèrement remontées : posées
+          dedans, elles feraient grandir le fond coloré à chaque réaction et
+          déformeraient le message. */}
+      {message.reactions && message.reactions.length > 0 && (
+        <View style={[styles.pillsWrap, isMine && styles.pillsWrapMine]}>
+          <ReactionPills
+            reactions={
+              message.reactions as { user: string; reaction: ReactionName }[]
+            }
+            myUserId={myUserId}
+            onToggle={onToggleReaction}
+          />
+        </View>
+      )}
     </View>
   );
 }
@@ -718,8 +802,12 @@ const makeStyles = (c: ThemeColors) =>
       transform: [{ scaleY: -1 }],
       marginTop: 40,
     },
-    bubbleRow: { flexDirection: "row" },
-    bubbleRowMine: { justifyContent: "flex-end" },
+    // La bulle et ses pastilles s'empilent : d'où une colonne, alignée à
+    // droite pour mes messages.
+    bubbleRow: { flexDirection: "column", alignItems: "flex-start" },
+    bubbleRowMine: { alignItems: "flex-end" },
+    pillsWrap: { marginLeft: 8, marginTop: 2 },
+    pillsWrapMine: { marginLeft: 0, marginRight: 8 },
     bubble: {
       maxWidth: "80%",
       borderRadius: 14,

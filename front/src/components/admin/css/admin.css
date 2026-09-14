@@ -619,3 +619,21 @@
   border-color: var(--danger);
   color: var(--danger);
 }
+
+/* Barre d'actions de la fiche cagnotte : voir l'événement, geler, exporter
+   les preuves. Elle est au-dessus du solde et des contributions parce que
+   c'est ce qu'on vient faire quand on ouvre cette fiche. */
+.admin-pool-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+/* Événements liés à un litige : la seule information qui doit sauter aux yeux
+   dans une longue liste. */
+.admin-event-ticket-tag {
+  display: inline-block;
+  margin-left: 6px;
+  font-size: 0.7rem;
+}

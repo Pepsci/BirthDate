@@ -106,7 +106,25 @@ export const FAQ_SECTIONS = [
     id: "cagnotte",
     emoji: "💶",
     title: "Cagnotte",
+    // Bouton d'action propre à cette catégorie : un litige qui porte sur de
+    // l'argent mérite un chemin direct, pas la même sortie générique que
+    // « je n'ai pas trouvé ma réponse ».
+    action: {
+      kind: "poolIssue",
+      label: "Un souci avec votre participation à une cagnotte ?",
+    },
     items: [
+      {
+        q: "J'ai un problème avec ma participation : que dois-je faire ?",
+        a: "BirthReminder ne détient jamais l'argent d'une cagnotte : il est encaissé directement par l'organisateur. Nous ne pouvons donc pas rembourser à sa place, ni trancher un désaccord — mais nous pouvons prouver que vous avez payé, et relancer l'organisateur. Suivez les étapes dans l'ordre, la plupart des situations se règlent à la première.",
+        steps: [
+          "Contactez l'organisateur. Il est le seul à détenir les fonds et le seul à pouvoir déclencher le remboursement. Donnez-lui la référence de votre contribution : vous la trouvez dans « Mes contributions », avec un bouton qui prépare le message pour vous.",
+          "Écrivez-nous si vous restez sans réponse. Nous confirmons le paiement, vérifions que le compte de l'organisateur existe toujours et le relançons. Le bouton en bas de cette page prépare la demande avec les bons éléments.",
+          "Saisissez un conciliateur de justice si le désaccord persiste. C'est gratuit, cela se demande auprès de votre mairie, et c'est un préalable obligatoire avant toute action en justice pour les litiges de moins de 5 000 €.",
+          "Contestez le paiement auprès de votre banque en dernier recours seulement : cette démarche fait supporter des frais à l'organisateur, en plus du montant repris.",
+          "Déposez plainte si vous pensez avoir été victime d'une escroquerie — événement inventé, organisateur disparu avec les fonds. Signalez-le-nous aussi : nous gelons la cagnotte concernée.",
+        ],
+      },
       {
         q: "Comment fonctionne la cagnotte d'un événement ?",
         a: "En tant qu'organisateur, tu peux ouvrir une cagnotte pour financer un cadeau commun. Les invités contribuent par carte, et l'argent arrive directement sur ton compte : BirthReminder ne le détient jamais et ne prélève aucune commission.",
@@ -125,7 +143,7 @@ export const FAQ_SECTIONS = [
       },
       {
         q: "Comment savoir que j'ai été remboursé ?",
-        a: "Tu reçois une notification dès que le remboursement est enregistré, et la contribution passe en « remboursée » sur la page de l'événement. Le crédit sur ton relevé bancaire peut prendre quelques jours ouvrés selon ta banque — ce délai ne dépend ni de nous ni de l'organisateur.",
+        a: "Tu reçois une notification dès que le remboursement est enregistré, et la contribution passe en « remboursée » sur la page de l'événement. Le crédit apparaît ensuite sur ton relevé sous 5 à 10 jours ouvrés selon ta banque — ce délai ne dépend ni de nous ni de l'organisateur. Attention : si le remboursement intervient peu après ton paiement, ta banque peut simplement annuler l'opération d'origine au lieu de créditer une somme. Dans ce cas tu ne verras aucun remboursement arriver : c'est le paiement lui-même qui disparaît de ton relevé. C'est normal, et le compte est bon.",
       },
       {
         q: "Un remboursement est-il possible sur une cagnotte par virement ?",

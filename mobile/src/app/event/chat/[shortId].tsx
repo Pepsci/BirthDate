@@ -14,6 +14,12 @@ import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import HeaderIconButton from "../../../components/HeaderIconButton";
 import MuteSheet from "../../../components/MuteSheet";
 import { useMute } from "../../../lib/mutes";
+import { markConversationNotifsRead } from "../../../lib/notifications";
+import MessageActionSheet, {
+  MessageAction,
+} from "../../../components/MessageActionSheet";
+import ReactionPills from "../../../components/ReactionPills";
+import { ReactionName } from "../../../components/icons/ReactionIcon";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   useKeyboardPadding,
@@ -94,6 +100,21 @@ export default function EventChatScreen() {
   const typingTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const cleanupRef = useRef<(() => void) | null>(null);
+  /* Appui long : réactions et actions au même endroit. */
+  const [menuTarget, setMenuTarget] = useState<EventChatMessage | null>(null);
+  const [menuActions, setMenuActions] = useState<MessageAction[]>([]);
+
+  /*
+   * Ouvrir la discussion vaut lecture.
+   *
+   * ⚠️ Sans ça, on lit les messages ici et la pastille du centre de
+   * notifications reste rouge pour ces mêmes messages. Un compteur qui ne
+   * retombe jamais finit par être ignoré, y compris quand il signale quelque
+   * chose d'important.
+   */
+  useEffect(() => {
+    if (shortId) markConversationNotifsRead("event", shortId);
+  }, [shortId]);
 
   useEffect(() => {
     if (!shortId) return;
@@ -191,6 +212,19 @@ export default function EventChatScreen() {
 
       socket.on("connect_error", onConnectError);
       socket.on("event:message_error", onMessageError);
+      const onReacted = ({
+        messageId,
+        reactions,
+      }: {
+        messageId: string;
+        reactions: { user: string; reaction: string }[];
+      }) => {
+        setMessages((prev) =>
+          prev.map((m) => (m._id === messageId ? { ...m, reactions } : m)),
+        );
+      };
+
+      socket.on("event:message_reacted", onReacted);
       socket.on("event:message_new", onNew);
       socket.on("event:typing_start", onTypingStart);
       socket.on("event:typing_stop", onTypingStop);
@@ -202,6 +236,7 @@ export default function EventChatScreen() {
         socket.emit("event:leave", { shortId });
         socket.off("connect_error", onConnectError);
         socket.off("event:message_error", onMessageError);
+        socket.off("event:message_reacted", onReacted);
         socket.off("event:message_new", onNew);
         socket.off("event:typing_start", onTypingStart);
         socket.off("event:typing_stop", onTypingStop);
@@ -267,6 +302,52 @@ export default function EventChatScreen() {
   }
 
   // Ordre d'affichage : plus récent en premier (liste inversée)
+  /*
+   * Pose ou retire une réaction.
+   *
+   * ⚠️ Pas de mise à jour optimiste : le serveur renvoie l'état complet à
+   * toute la room, nous compris. Anticiper localement ferait clignoter
+   * l'affichage quand les deux se croisent.
+   */
+  const react = (messageId: string, reaction: ReactionName | null) => {
+    socketRef.current?.emit("event:message_react", {
+      shortId,
+      messageId,
+      reaction,
+    });
+  };
+
+  const myReaction = (m: EventChatMessage | null): ReactionName | null => {
+    if (!m || !user?._id) return null;
+    const mine = m.reactions?.find((r) => r.user === user._id);
+    return (mine?.reaction as ReactionName) ?? null;
+  };
+
+  /* Appui long : réactions pour tous, signalement seulement sur le message
+     d'autrui — on ne se signale pas soi-même. */
+  const openMessageMenu = (message: EventChatMessage) => {
+    const actions: MessageAction[] = [];
+    if (message.sender?._id !== user?._id) {
+      actions.push({
+        label: "🚩  Signaler",
+        destructive: true,
+        onPress: () =>
+          promptReport({
+            contentType: "eventMessage",
+            contentId: message._id,
+            targetUserId: message.sender?._id,
+            contentPreview: displayContent(
+              message,
+              user?._id ?? null,
+              privateKeyRef.current,
+            ),
+          }),
+      });
+    }
+    setMenuActions(actions);
+    setMenuTarget(message);
+  };
+
   const ordered = [...messages].reverse();
 
   return (
@@ -354,20 +435,10 @@ export default function EventChatScreen() {
             showName={isFirstOfRun}
             myUserId={user?._id ?? null}
             privateKey={privateKey}
-            onReport={
-              item.sender?._id !== user?._id
-                ? () =>
-                    promptReport({
-                      contentType: "eventMessage",
-                      contentId: item._id,
-                      targetUserId: item.sender?._id,
-                      contentPreview: displayContent(
-                        item,
-                        user?._id ?? null,
-                        privateKeyRef.current,
-                      ),
-                    })
-                : undefined
+            onLongPress={() => openMessageMenu(item)}
+            myReaction={myReaction(item)}
+            onToggleReaction={(r) =>
+              react(item._id, myReaction(item) === r ? null : r)
             }
           />
           );
@@ -375,6 +446,14 @@ export default function EventChatScreen() {
         ListEmptyComponent={
           <Text style={styles.empty}>Aucun message. Lance la discussion !</Text>
         }
+      />
+
+      <MessageActionSheet
+        visible={!!menuTarget}
+        currentReaction={myReaction(menuTarget)}
+        onReact={(r) => menuTarget && react(menuTarget._id, r)}
+        actions={menuActions}
+        onClose={() => setMenuTarget(null)}
       />
 
       {typingName && (
@@ -409,7 +488,9 @@ function MessageBubble({
   showName = true,
   myUserId,
   privateKey,
-  onReport,
+  onLongPress,
+  myReaction,
+  onToggleReaction,
 }: {
   message: EventChatMessage;
   isMine: boolean;
@@ -417,7 +498,9 @@ function MessageBubble({
   showName?: boolean;
   myUserId: string | null;
   privateKey: Uint8Array | null;
-  onReport?: () => void;
+  onLongPress?: () => void;
+  myReaction?: ReactionName | null;
+  onToggleReaction?: (reaction: ReactionName) => void;
 }) {
   const styles = useThemedStyles(makeStyles);
   const time = new Date(message.createdAt).toLocaleTimeString("fr-FR", {
@@ -426,6 +509,7 @@ function MessageBubble({
   });
 
   return (
+    <View style={[styles.bubbleCol, isMine && styles.bubbleColMine]}>
     <View style={[styles.bubbleRow, isMine && styles.bubbleRowMine]}>
       {!isMine &&
         (showAvatar ? (
@@ -439,7 +523,7 @@ function MessageBubble({
           <View style={styles.avatarSpacer} />
         ))}
       <Pressable
-        onLongPress={onReport}
+        onLongPress={onLongPress}
         delayLongPress={400}
         style={[styles.bubble, isMine ? styles.bubbleMine : styles.bubbleOther]}
       >
@@ -453,6 +537,21 @@ function MessageBubble({
         </Text>
         <Text style={[styles.time, isMine && styles.timeMine]}>{time}</Text>
       </Pressable>
+    </View>
+
+    {/* Hors de la bulle : dedans, le fond coloré grandirait à chaque
+        réaction et déformerait le message. */}
+    {message.reactions && message.reactions.length > 0 && (
+      <View style={[styles.pillsWrap, isMine && styles.pillsWrapMine]}>
+        <ReactionPills
+          reactions={
+            message.reactions as { user: string; reaction: ReactionName }[]
+          }
+          myUserId={myUserId}
+          onToggle={onToggleReaction}
+        />
+      </View>
+    )}
     </View>
   );
 }
@@ -520,6 +619,11 @@ const makeStyles = (c: ThemeColors) =>
     },
     bubbleRow: { flexDirection: "row", alignItems: "flex-end", gap: 6 },
     bubbleRowMine: { justifyContent: "flex-end" },
+    // Colonne englobante : la bulle et ses pastilles s'empilent.
+    bubbleCol: { flexDirection: "column", alignItems: "flex-start" },
+    bubbleColMine: { alignItems: "flex-end" },
+    pillsWrap: { marginLeft: 40, marginTop: 2 },
+    pillsWrapMine: { marginLeft: 0, marginRight: 4 },
     avatarSpacer: { width: 28 },
     bubble: {
       maxWidth: "80%",

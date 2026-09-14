@@ -77,7 +77,40 @@ router.post("/", async (req, res) => {
         // retombera simplement sur l'estimation.
         if (contribution.feeCents == null) {
           try {
-            const connectedAccountId = event.account || null;
+            // ⚠️ Ne pas dépendre du seul `event.account`.
+            //
+            // En charges directes, la charge et sa `balance_transaction`
+            // vivent sur le compte de l'ORGANISATEUR. Stripe renseigne
+            // normalement `event.account`, mais pas toujours selon la façon
+            // dont les événements sont transmis — en local notamment, quand
+            // les événements de compte connecté arrivent sans leur contexte.
+            //
+            // Sans ce repli, la lecture part sur le compte plateforme où la
+            // charge n'existe pas : elle échoue, le paiement et le reçu
+            // passent quand même, et seuls les frais manquent. Panne
+            // parfaitement silencieuse, dont la conséquence n'apparaît que
+            // bien plus tard — un coût de remboursement estimé au lieu du
+            // vrai, montré juste avant une opération irréversible.
+            //
+            // On retrouve donc le compte par l'organisateur de l'événement,
+            // qui est la source de vérité de notre côté.
+            let connectedAccountId = event.account || null;
+            if (!connectedAccountId) {
+              const ev = await Event.findById(contribution.event).select(
+                "organizer",
+              );
+              if (ev?.organizer) {
+                const acc = await StripeAccount.findOne({
+                  user: ev.organizer,
+                }).select("stripeAccountId");
+                connectedAccountId = acc?.stripeAccountId || null;
+              }
+              if (connectedAccountId) {
+                console.log(
+                  `[stripe.webhook] event.account absent — compte retrouvé via l'organisateur : ${connectedAccountId}`,
+                );
+              }
+            }
             const chargeId =
               typeof pi.latest_charge === "string"
                 ? pi.latest_charge
@@ -94,6 +127,13 @@ router.post("/", async (req, res) => {
               if (typeof fee === "number") {
                 contribution.feeCents = fee;
                 await contribution.save();
+                console.log(
+                  `[stripe.webhook] frais réels ${fee} centimes enregistrés pour ${pi.id}`,
+                );
+              } else {
+                console.warn(
+                  `[stripe.webhook] balance_transaction sans frais pour ${pi.id}`,
+                );
               }
             }
           } catch (err) {

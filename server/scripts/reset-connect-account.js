@@ -227,8 +227,22 @@ const ask = (q) =>
       console.log(`✅ Supprimé chez Stripe : ${record.stripeAccountId}`);
     } catch (e) {
       console.log(`⚠️  Suppression Stripe impossible : ${e.message}`);
+      // ⚠️ Cas normal et documenté, pas une panne : en mode LIVE, un compte
+      // Standard ne peut pas être supprimé par la plateforme (« Live-mode
+      // accounts that have access to the standard dashboard and Stripe is
+      // responsible for negative account balances cannot be deleted »). Les
+      // comptes de TEST, eux, se suppriment toujours.
+      //
+      // Retirer la ligne en base suffit de toute façon : c'est elle qui
+      // empêche l'application de créer un nouveau compte. L'ancien reste chez
+      // Stripe, rattaché à personne.
       console.log(
-        "   On retire quand même la ligne en base pour débloquer l'onboarding.",
+        "   Attendu pour un compte Standard en mode live : Stripe interdit\n" +
+          "   à la plateforme de supprimer un compte ayant accès au tableau de\n" +
+          "   bord complet. Le compte reste chez Stripe, orphelin et inoffensif.",
+      );
+      console.log(
+        "   On retire la ligne en base : c'est elle qui bloque un nouvel onboarding.",
       );
     }
   }

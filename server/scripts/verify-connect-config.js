@@ -36,6 +36,18 @@ if (!key.startsWith("sk_test_")) {
 
 const stripe = require("stripe")(key);
 
+// ⚠️ CE SCRIPT DOCUMENTE UN ÉCHEC CONNU.
+//
+// La combinaison ci-dessous a été refusée par Stripe en production le
+// 14/09/2026 : « When stripe_dashboard[type]=express, your platform must
+// collect fees and be liable for negative balances or refunds and
+// chargebacks. » Le tableau de bord Express et la responsabilité des pertes
+// ne se dissocient pas.
+//
+// Le script est conservé pour pouvoir reconstater le refus si Stripe fait
+// évoluer ses règles — pas pour être appliqué tel quel. Voir le commentaire
+// d'arbitrage en tête de routes/stripe.connect.js.
+
 const TARGET = {
   "controller.losses.payments": "stripe",
   "controller.fees.payer": "account",

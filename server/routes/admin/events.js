@@ -9,6 +9,7 @@ const EventInvitation = require("../../models/eventInvitation.model");
 const EventGiftProposal = require("../../models/eventGiftProposal.model");
 const EventMessage = require("../../models/eventMessage.model");
 const GiftPoolContribution = require("../../models/giftPoolContribution.model");
+const SupportMessage = require("../../models/supportMessage.model");
 
 /*
  * GET /api/admin/events?search=&status=&page=&limit=
@@ -45,10 +46,43 @@ router.get("/", async (req, res) => {
     const countsByEvent = {};
     inviteCounts.forEach((c) => (countsByEvent[String(c._id)] = c.count));
 
+    // ⚠️ Signaler les événements faisant l'objet d'un litige.
+    //
+    // Sans ce marqueur, la liste des événements et celle des tickets vivent
+    // côte à côte sans jamais se croiser : on peut parcourir les cagnottes
+    // sans voir que l'une d'elles a un contributeur mécontent qui attend une
+    // réponse. C'est précisément l'événement qu'il faut regarder en premier.
+    const ticketAgg = await SupportMessage.aggregate([
+      { $match: { relatedEvent: { $in: eventIds } } },
+      {
+        $group: {
+          _id: "$relatedEvent",
+          total: { $sum: 1 },
+          open: {
+            $sum: { $cond: [{ $ne: ["$status", "closed"] }, 1, 0] },
+          },
+        },
+      },
+    ]);
+    const ticketsByEvent = {};
+    ticketAgg.forEach((t) => (ticketsByEvent[String(t._id)] = t));
+
+    // Totaux encaissés, pour savoir d'un coup d'œil si de l'argent est en jeu.
+    const poolAgg = await GiftPoolContribution.aggregate([
+      { $match: { event: { $in: eventIds }, status: "succeeded" } },
+      { $group: { _id: "$event", total: { $sum: "$amount" }, count: { $sum: 1 } } },
+    ]);
+    const poolByEvent = {};
+    poolAgg.forEach((p) => (poolByEvent[String(p._id)] = p));
+
     res.json({
       events: events.map((e) => ({
         ...e.toObject({ virtuals: false }),
         invitationsCount: countsByEvent[String(e._id)] || 0,
+        ticketsCount: ticketsByEvent[String(e._id)]?.total || 0,
+        openTicketsCount: ticketsByEvent[String(e._id)]?.open || 0,
+        collectedCents: poolByEvent[String(e._id)]?.total || 0,
+        contributionsCount: poolByEvent[String(e._id)]?.count || 0,
       })),
       total,
       page,

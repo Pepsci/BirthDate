@@ -25,6 +25,9 @@ router.get("/", async (req, res) => {
     const [tickets, total, unreadCount] = await Promise.all([
       SupportMessage.find(query)
         .populate("userId", "name surname email")
+        // Cagnotte concernée pour un ticket de litige : sans ça, l'admin doit
+        // retrouver l'événement à partir d'un message en texte libre.
+        .populate("relatedEvent", "shortId title")
         .sort({ lastMessageAt: -1 })
         .skip((page - 1) * limit)
         .limit(limit),
@@ -48,10 +51,9 @@ router.get("/", async (req, res) => {
 // GET /api/admin/support/:id -> détail d'un ticket, marque comme lu côté admin
 router.get("/:id", async (req, res) => {
   try {
-    const ticket = await SupportMessage.findById(req.params.id).populate(
-      "userId",
-      "name surname email",
-    );
+    const ticket = await SupportMessage.findById(req.params.id)
+      .populate("userId", "name surname email")
+      .populate("relatedEvent", "shortId title");
     if (!ticket) {
       return res.status(404).json({ message: "Ticket introuvable" });
     }

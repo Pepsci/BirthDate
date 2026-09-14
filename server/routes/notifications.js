@@ -39,6 +39,52 @@ router.patch("/read-all", isAuthenticated, async (req, res) => {
   }
 });
 
+/*
+ * PATCH /api/notifications/read-conversation
+ * Body: { kind: "dm" | "event", id }
+ *
+ * Marque comme lues les notifications qui portent sur une conversation qu'on
+ * vient d'ouvrir.
+ *
+ * ⚠️ Pourquoi c'est nécessaire : un utilisateur lit rarement ses messages
+ * depuis le centre de notifications. Il ouvre l'application, va dans le chat,
+ * lit — et la pastille reste rouge pour un message déjà lu. Il finit par ne
+ * plus la croire, et le compteur ne veut plus rien dire. Une notification
+ * décrit un fait ; quand ce fait est consommé ailleurs, elle doit s'éteindre.
+ *
+ * Le champ visé est verrouillé par `kind` : on ne laisse pas le client choisir
+ * quel type et quelle clé filtrer, sinon la route deviendrait un « marque
+ * comme lu ce que je veux » piloté depuis l'extérieur.
+ */
+router.patch("/read-conversation", isAuthenticated, async (req, res) => {
+  try {
+    const userId = req.payload._id;
+    const { kind, id } = req.body;
+    if (!id || typeof id !== "string") {
+      return res.status(400).json({ message: "Identifiant manquant." });
+    }
+
+    let filter;
+    if (kind === "dm") {
+      filter = { type: "new_message", "data.conversationId": id };
+    } else if (kind === "event") {
+      filter = { type: "event_chat_message", "data.eventShortId": id };
+    } else {
+      return res.status(400).json({ message: "Type de conversation inconnu." });
+    }
+
+    const result = await Notification.updateMany(
+      { userId, read: false, ...filter },
+      { read: true },
+    );
+
+    res.json({ success: true, updated: result.modifiedCount ?? 0 });
+  } catch (err) {
+    console.error("❌ PATCH /notifications/read-conversation:", err);
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+});
+
 // PATCH /api/notifications/:id/read
 router.patch("/:id/read", isAuthenticated, async (req, res) => {
   try {

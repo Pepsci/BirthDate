@@ -299,23 +299,26 @@ export default function CGU() {
             utilisé ne dispense pas l'organisateur de rembourser.
           </p>
           <p>
-            En ouvrant une cagnotte, il doit créer un compte auprès de Stripe et
-            se soumettre à ses vérifications d'identité. Il accepte, en plus des
-            présentes, le{" "}
-            <a
-              href="https://stripe.com/fr/legal/connect-account"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              contrat de compte Stripe Connect
-            </a>{" "}
-            et les{" "}
+            En ouvrant une cagnotte, il crée <strong>son propre compte
+            Stripe</strong> et se soumet aux vérifications d'identité exigées
+            par la réglementation. Ce compte lui appartient : il y accède
+            directement, y consulte ses encaissements et y gère ses
+            coordonnées bancaires, comme il le ferait sur n'importe quelle
+            autre plateforme. Il accepte à ce titre, en plus des présentes, les{" "}
             <a
               href="https://stripe.com/fr/legal/ssa"
               target="_blank"
               rel="noopener noreferrer"
             >
               conditions des services Stripe
+            </a>{" "}
+            et, le cas échéant, le{" "}
+            <a
+              href="https://stripe.com/fr/legal/connect-account"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              contrat de compte Stripe Connect
             </a>
             . Ces documents restent accessibles depuis la page de gestion de la
             cagnotte.
@@ -653,22 +656,26 @@ export default function CGU() {
 
         <section>
           <h2>13. Contact</h2>
-          <p>Pour toute question concernant ces CGU, contactez-nous :</p>
+          <p>
+            Pour toute question concernant ces conditions, utilisez le{" "}
+            <a href="/contact">formulaire de contact</a>. Il est accessible avec
+            ou sans compte, et il ouvre un suivi : votre demande n'est pas un
+            simple email perdu dans une boîte, vous pouvez consulter les
+            réponses et poursuivre l'échange.
+          </p>
           <ul>
             <li>
-              <strong>Email :</strong>{" "}
-              <a href="mailto:contact@birthreminder.com">
-                contact@birthreminder.com
-              </a>
+              <strong>Formulaire :</strong>{" "}
+              <a href="/contact">birthreminder.com/contact</a>
             </li>
             <li>
-              <strong>Délai de réponse :</strong> Sous 48h maximum
+              <strong>Délai de réponse :</strong> sous 48 h maximum
             </li>
           </ul>
         </section>
 
         <p className="last-update">
-          <strong>Dernière mise à jour :</strong> 14 septembre 2026
+          <strong>Dernière mise à jour :</strong> 15 septembre 2026
         </p>
       </div>
     </div>

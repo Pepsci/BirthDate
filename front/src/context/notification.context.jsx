@@ -236,9 +236,50 @@ export const NotificationProvider = ({ children }) => {
     });
   };
 
+  /*
+   * Éteint les notifications du centre qui portent sur une conversation qu'on
+   * vient d'ouvrir.
+   *
+   * ⚠️ Personne ne lit ses messages depuis le centre de notifications : on
+   * ouvre l'app, on va dans le chat, on lit. Sans ça la pastille reste rouge
+   * pour un message déjà lu — et un compteur qui ment finit par ne plus être
+   * regardé du tout.
+   */
+  const markConversationNotifsRead = useCallback(async (kind, id) => {
+    if (!id) return;
+    // Optimiste côté affichage : le badge doit tomber tout de suite, pas au
+    // retour du serveur.
+    setAppNotifications((prev) => {
+      let cleared = 0;
+      const next = prev.map((n) => {
+        const match =
+          !n.read &&
+          ((kind === "dm" &&
+            n.type === "new_message" &&
+            n.data?.conversationId === id) ||
+            (kind === "event" &&
+              n.type === "event_chat_message" &&
+              n.data?.eventShortId === id));
+        if (match) cleared += 1;
+        return match ? { ...n, read: true } : n;
+      });
+      if (cleared) setAppUnreadCount((c) => Math.max(0, c - cleared));
+      return next;
+    });
+
+    try {
+      await apiHandler.patch("/notifications/read-conversation", { kind, id });
+    } catch (err) {
+      console.error("markConversationNotifsRead error:", err);
+    }
+  }, []);
+
   const setActiveConversation = (conversationId) => {
     setActiveConversationId(conversationId);
-    if (conversationId) markAsRead(conversationId);
+    if (conversationId) {
+      markAsRead(conversationId);
+      markConversationNotifsRead("dm", conversationId);
+    }
   };
 
   const resetUnreadCount = () => {
@@ -265,6 +306,7 @@ export const NotificationProvider = ({ children }) => {
         appHasMore,
         markAppRead,
         markAllAppRead,
+        markConversationNotifsRead,
         deleteAppNotification,
         deleteAllAppNotifications,
         loadMoreAppNotifications,

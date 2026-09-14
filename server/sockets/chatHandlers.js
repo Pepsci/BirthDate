@@ -4,6 +4,7 @@ const User = require("../models/user.model");
 const { sendPushToUser } = require("../services/pushService");
 const { notify } = require("../utils/notify");
 const { isBlockedBetween } = require("../utils/blocking");
+const { REACTIONS } = require("../constants/reactions");
 
 module.exports = (io, socket, connectedUsers, app) => {
   console.log(`📱 User connected: ${socket.userId}`);
@@ -366,6 +367,81 @@ module.exports = (io, socket, connectedUsers, app) => {
       }
     } catch (error) {
       console.error("❌ Error marking messages as read:", error);
+    }
+  });
+
+  /*
+   * Poser ou retirer une réaction sur un message.
+   *
+   * ⚠️ Une seule réaction par personne et par message : envoyer la même
+   * remplace un retrait (bascule), envoyer une autre remplace la précédente.
+   * C'est le comportement de WhatsApp, et c'est ce qui évite qu'un message se
+   * retrouve avec quatre réactions du même utilisateur.
+   *
+   * ⚠️ On n'exige PAS d'être l'auteur : réagir au message d'autrui est tout
+   * l'intérêt. En revanche il faut appartenir à la conversation — sans ce
+   * contrôle, n'importe qui connaissant un identifiant de message pourrait
+   * réagir dessus.
+   */
+  socket.on("message:react", async ({ messageId, conversationId, reaction }) => {
+    try {
+      if (reaction !== null && !REACTIONS.includes(reaction)) {
+        return socket.emit("error", { message: "Réaction inconnue" });
+      }
+
+      const message = await Message.findById(messageId).select(
+        "conversation reactions",
+      );
+      if (!message) {
+        return socket.emit("error", { message: "Message introuvable" });
+      }
+
+      const conversation = await Conversation.findById(message.conversation)
+        .select("participants")
+        .lean();
+      const isParticipant = conversation?.participants?.some(
+        (p) => String(p) === socket.userId,
+      );
+      if (!isParticipant) {
+        return socket.emit("error", { message: "Non autorisé" });
+      }
+
+      const existing = message.reactions.find(
+        (r) => String(r.user) === socket.userId,
+      );
+
+      // Même réaction que celle déjà posée, ou `null` explicite → on retire.
+      const removing = reaction === null || existing?.reaction === reaction;
+
+      message.reactions = message.reactions.filter(
+        (r) => String(r.user) !== socket.userId,
+      );
+      if (!removing) {
+        message.reactions.push({
+          user: socket.userId,
+          reaction,
+          createdAt: new Date(),
+        });
+      }
+      await message.save();
+
+      // Diffusion à toute la conversation, y compris à l'auteur de la
+      // réaction : c'est ce qui garantit que tous les appareils d'une même
+      // personne restent d'accord entre eux.
+      io.to(`conversation:${String(message.conversation)}`).emit(
+        "message:reacted",
+        {
+          messageId,
+          conversationId: conversationId || String(message.conversation),
+          reactions: message.reactions.map((r) => ({
+            user: String(r.user),
+            reaction: r.reaction,
+          })),
+        },
+      );
+    } catch (error) {
+      console.error("❌ Error reacting to message:", error);
+      socket.emit("error", { message: "Réaction impossible" });
     }
   });
 

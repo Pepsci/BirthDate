@@ -5,6 +5,7 @@ import socketService from "../../services/socket.service";
 import { AuthContext } from "../../../context/auth.context";
 import Avatar from "../../UI/Avatar";
 import MuteBell from "../../chat/MuteBell";
+import useNotifications from "../../../context/useNotifications";
 import {
   getPrivateKey,
   getOldPrivateKey,
@@ -22,6 +23,19 @@ const EventChat = ({ shortId, participants = {} }) => {
   const { currentUser } = useContext(AuthContext);
   const messagesContainerRef = useRef(null);
   const shortIdRef = useRef(shortId);
+  const { markConversationNotifsRead } = useNotifications();
+
+  /*
+   * Ouvrir la discussion vaut lecture.
+   *
+   * ⚠️ Sans ça, un participant lit les messages ici et garde une pastille
+   * rouge dans son centre de notifications pour ces mêmes messages. Un
+   * compteur qui ne retombe jamais finit par être ignoré, y compris quand il
+   * signale quelque chose d'important.
+   */
+  useEffect(() => {
+    if (shortId) markConversationNotifsRead?.("event", shortId);
+  }, [shortId, markConversationNotifsRead]);
   const hasJoinedRef = useRef(false);
   const typingTimeoutRef = useRef(null);
   const plaintextCacheRef = useRef({});

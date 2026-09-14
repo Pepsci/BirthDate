@@ -1,8 +1,10 @@
 import React, { useEffect, useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import apiHandler from "../../api/apiHandler";
 import "./css/admin.css";
 
 const AdminEvents = () => {
+  const navigate = useNavigate();
   const [data, setData] = useState({ events: [], total: 0, page: 1, pages: 1 });
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
@@ -82,10 +84,36 @@ const AdminEvents = () => {
             {data.events.map((ev) => (
               <tr
                 key={ev._id}
-                onClick={() => window.open(`/event/${ev.shortId}`, "_blank")}
+                /*
+                 * ⚠️ Ouvrir la page publique de l'événement était un cul-de-sac :
+                 * on y voit ce qu'un invité voit, sans aucune action possible.
+                 * Dès qu'il y a de l'argent en jeu, on envoie donc vers la
+                 * fiche cagnotte de l'admin, d'où l'on peut geler, rembourser
+                 * et exporter les preuves. La page publique reste accessible
+                 * par le bouton dédié de cette fiche.
+                 */
+                onClick={() =>
+                  ev.contributionsCount > 0 || ev.giftPool?.active
+                    ? navigate("/admin/pools")
+                    : window.open(`/event/${ev.shortId}`, "_blank")
+                }
               >
                 <td>
                   {ev.title} <span className="admin-muted">({ev.shortId})</span>
+                  {/* Un litige en cours est la seule information qui doit
+                      sauter aux yeux dans une longue liste. */}
+                  {ev.openTicketsCount > 0 && (
+                    <span className="admin-tag admin-tag-danger admin-event-ticket-tag">
+                      ⚠️ {ev.openTicketsCount} litige
+                      {ev.openTicketsCount > 1 ? "s" : ""}
+                    </span>
+                  )}
+                  {ev.openTicketsCount === 0 && ev.ticketsCount > 0 && (
+                    <span className="admin-tag admin-event-ticket-tag">
+                      {ev.ticketsCount} ticket
+                      {ev.ticketsCount > 1 ? "s" : ""} clos
+                    </span>
+                  )}
                 </td>
                 <td>{ev.type}</td>
                 <td>
@@ -117,6 +145,16 @@ const AdminEvents = () => {
                   </span>
                   {ev.giftPool?.active && (
                     <span className="admin-tag admin-tag-primary">cagnotte</span>
+                  )}
+                  {ev.collectedCents > 0 && (
+                    <span className="admin-muted">
+                      {" "}
+                      {(ev.collectedCents / 100).toLocaleString("fr-FR", {
+                        style: "currency",
+                        currency: "EUR",
+                      })}{" "}
+                      collectés
+                    </span>
                   )}
                 </td>
                 <td>
