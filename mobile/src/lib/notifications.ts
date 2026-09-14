@@ -56,6 +56,30 @@ export async function markAllNotificationsRead(): Promise<void> {
   await api("/notifications/read-all", { method: "PATCH" });
 }
 
+/**
+ * Éteint les notifications portant sur une conversation qu'on vient d'ouvrir.
+ *
+ * ⚠️ Personne ne lit ses messages depuis le centre de notifications : on ouvre
+ * l'app, on va dans le chat, on lit. Sans ça la pastille reste rouge pour un
+ * message déjà lu — et un compteur qui ment finit par ne plus être regardé.
+ *
+ * Jamais bloquant : c'est du confort d'affichage, pas une action de
+ * l'utilisateur. Un échec réseau ne doit pas remonter dans l'écran de chat.
+ */
+export async function markConversationNotifsRead(
+  kind: "dm" | "event",
+  id: string,
+): Promise<void> {
+  try {
+    await api("/notifications/read-conversation", {
+      method: "PATCH",
+      body: JSON.stringify({ kind, id }),
+    });
+  } catch {
+    /* silencieux */
+  }
+}
+
 export async function deleteNotification(id: string): Promise<void> {
   await api(`/notifications/${id}`, { method: "DELETE" });
 }
@@ -82,7 +106,9 @@ export function notifDisplay(n: AppNotification): {
       return {
         emoji: "🎂",
         text: d.name
-          ? `L'anniversaire de ${d.name} approche !`
+          ? d.daysLeft === 0
+            ? `C'est l'anniversaire de ${d.name} aujourd'hui !`
+            : `L'anniversaire de ${d.name} approche !`
           : "Un anniversaire approche !",
       };
     case "nameday_soon":

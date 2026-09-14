@@ -53,7 +53,11 @@ const timeAgo = (dateStr) => {
 const buildText = (type, data) => {
   switch (type) {
     case "birthday_soon":
-      return (
+      return data.daysLeft === 0 ? (
+        <>
+          C'est l'anniversaire de <strong>{data.name}</strong> aujourd'hui 🎂
+        </>
+      ) : (
         <>
           <strong>{data.name}</strong> fête son anniversaire dans{" "}
           {data.daysLeft} jour{data.daysLeft > 1 ? "s" : ""}

@@ -170,3 +170,30 @@
     position: static;
   }
 }
+
+/* Marqueur des litiges de cagnotte : seul type de ticket où de l'argent est
+   en jeu, donc le seul à repérer instantanément dans la liste. */
+.support-pool-tag {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 0.7rem;
+}
+
+.support-pool-link {
+  margin: 6px 0 0;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.support-pool-link a {
+  color: var(--primary);
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.support-pool-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+}

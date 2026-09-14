@@ -281,3 +281,40 @@
     padding: 0.85rem 0.4rem;
   }
 }
+
+/* Procédure en étapes : l'ordre compte, chaque marche suppose que la
+   précédente a échoué. D'où une liste numérotée plutôt qu'un pavé. */
+.helpcenter-steps {
+  margin: 12px 0 0;
+  padding-left: 20px;
+}
+
+.helpcenter-steps li {
+  margin-bottom: 10px;
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+.helpcenter-steps li:last-child {
+  margin-bottom: 0;
+}
+
+/* Sortie directe propre à une catégorie. */
+.helpcenter-section-action {
+  display: block;
+  width: 100%;
+  margin-top: 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--primary);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--primary);
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.helpcenter-section-action:hover {
+  background: color-mix(in srgb, var(--primary) 8%, transparent);
+}

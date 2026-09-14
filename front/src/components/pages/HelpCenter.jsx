@@ -37,7 +37,11 @@ const MAX_RESULTS = 6;
  * assez intuitive pour laisser sa chance au centre d'aide avant de proposer
  * d'écrire directement au support.
  */
-export default function HelpCenter({ onNeedHelp, hasActiveTicket = false }) {
+export default function HelpCenter({
+  onNeedHelp,
+  onPoolIssue,
+  hasActiveTicket = false,
+}) {
   const [query, setQuery] = useState("");
   const [activeSectionId, setActiveSectionId] = useState(null);
   const [activeItemIndex, setActiveItemIndex] = useState(null);
@@ -173,6 +177,32 @@ export default function HelpCenter({ onNeedHelp, hasActiveTicket = false }) {
             <div className="helpcenter-answer">
               <p className="helpcenter-answer-q">{activeItem.q}</p>
               <p className="helpcenter-answer-a">{activeItem.a}</p>
+              {/* Une procédure se lit en étapes numérotées, pas en pavé : ici
+                  l'ordre compte réellement — chaque marche suppose que la
+                  précédente a échoué. */}
+              {activeItem.steps?.length > 0 && (
+                <>
+                  <ol className="helpcenter-steps">
+                    {activeItem.steps.map((step, i) => (
+                      <li key={i}>{step}</li>
+                    ))}
+                  </ol>
+
+                  {/* Le bouton se place APRÈS la marche à suivre, pas avant :
+                      l'étape 1 dit de contacter l'organisateur d'abord, et la
+                      plupart des situations s'y règlent. Le proposer plus haut
+                      inviterait à sauter directement au support. */}
+                  {activeSection.action?.kind === "poolIssue" && onPoolIssue && (
+                    <button
+                      type="button"
+                      className="helpcenter-section-action"
+                      onClick={() => onPoolIssue()}
+                    >
+                      {activeSection.action.label}
+                    </button>
+                  )}
+                </>
+              )}
             </div>
           )}
 

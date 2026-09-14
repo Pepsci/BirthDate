@@ -19,7 +19,9 @@ const TYPE_CONFIG = {
 const buildToastText = (type, data) => {
   switch (type) {
     case "birthday_soon":
-      return `${data.name} — anniversaire dans ${data.daysLeft}j`;
+      return data.daysLeft === 0
+        ? `C'est l'anniversaire de ${data.name} aujourd'hui !`
+        : `${data.name} — anniversaire dans ${data.daysLeft}j`;
     case "friend_request":
       return `${data.name} t'a envoyé une demande d'ami`;
     case "friend_accepted":

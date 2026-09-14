@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import apiHandler from "../../api/apiHandler";
 import socketService from "../services/socket.service";
 import "./css/admin.css";
@@ -17,6 +18,33 @@ const STATUS_TAG_CLASS = {
 };
 
 const AdminSupport = () => {
+  const navigate = useNavigate();
+
+  /*
+   * Dossier de preuve, accessible directement depuis le ticket.
+   *
+   * Le moment où l'on en a besoin, c'est celui où la demande devient
+   * sérieuse — et c'est précisément là qu'on n'a pas envie de chercher dans
+   * trois écrans avec un identifiant en tête.
+   */
+  const downloadEvidence = async (event) => {
+    try {
+      const res = await apiHandler.get(`/admin/pools/${event._id}/evidence`, {
+        responseType: "blob",
+      });
+      const url = URL.createObjectURL(new Blob([res.data]));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `preuves-${event.shortId}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      alert("Téléchargement impossible.");
+    }
+  };
+
   const [data, setData] = useState({ tickets: [], total: 0, page: 1, pages: 1 });
   const [status, setStatus] = useState("");
   const [page, setPage] = useState(1);
@@ -169,7 +197,17 @@ const AdminSupport = () => {
                         : t.name || "Visiteur"}
                       <div className="admin-muted">{t.email}</div>
                     </td>
-                    <td>{t.subject}</td>
+                    <td>
+                      {t.subject}
+                      {/* Un litige de cagnotte se repère au premier coup
+                          d'œil : c'est le seul type de ticket où de l'argent
+                          est en jeu, donc le seul à traiter en priorité. */}
+                      {t.category === "pool" && (
+                        <div className="admin-tag admin-tag-warning support-pool-tag">
+                          💶 Cagnotte
+                        </div>
+                      )}
+                    </td>
                     <td>
                       <span className={`admin-tag ${STATUS_TAG_CLASS[t.status]}`}>
                         {STATUS_LABEL[t.status]}
@@ -212,6 +250,51 @@ const AdminSupport = () => {
                     {" · "}
                     {ticket.email}
                   </p>
+
+                  {/* Lien direct vers la cagnotte concernée : sans lui, il
+                      faut retrouver l'événement à partir d'un message en
+                      texte libre, alors que le ticket porte la référence. */}
+                  {ticket.relatedEvent && (
+                    <div className="support-pool-link">
+                      <p>
+                        💶 Cagnotte concernée :{" "}
+                        <strong>{ticket.relatedEvent.title}</strong>
+                      </p>
+                      {/* Trois actions au même endroit : voir ce que voit
+                          l'utilisateur, agir sur la cagnotte, et sortir le
+                          dossier si la demande devient sérieuse. Sans ça il
+                          faut ouvrir trois écrans en gardant l'identifiant
+                          en tête. */}
+                      <div className="support-pool-actions">
+                        <button
+                          type="button"
+                          className="admin-btn-small"
+                          onClick={() =>
+                            window.open(
+                              `/event/${ticket.relatedEvent.shortId}`,
+                              "_blank",
+                            )
+                          }
+                        >
+                          Voir l'événement
+                        </button>
+                        <button
+                          type="button"
+                          className="admin-btn-small"
+                          onClick={() => navigate("/admin/pools")}
+                        >
+                          Gérer la cagnotte
+                        </button>
+                        <button
+                          type="button"
+                          className="admin-btn-small"
+                          onClick={() => downloadEvidence(ticket.relatedEvent)}
+                        >
+                          ⬇️ Dossier de preuve
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <div className="support-detail-actions">
                   <span className={`admin-tag ${STATUS_TAG_CLASS[ticket.status]}`}>

@@ -68,6 +68,33 @@ function isNamedayInXDays(nameday, daysFromNow) {
 }
 
 // ========================================
+// HELPER: Réclamer un rappel (idempotence)
+// ========================================
+const ReminderClaim = require("../models/reminderClaim.model");
+
+/**
+ * Tente de "réclamer" l'envoi d'un rappel pour aujourd'hui. Retourne `true`
+ * la première fois (le rappel peut partir), `false` si déjà réclamé — que ce
+ * soit par ce même passage du cron ou un autre processus qui tournerait en
+ * parallèle (voir le commentaire dans reminderClaim.model.js). Un rappel non
+ * réclamé (erreur DB autre qu'un doublon) est traité comme "peut partir" :
+ * mieux vaut un doublon occasionnel qu'un rappel silencieusement perdu.
+ */
+async function claimReminder(subjectId, kind, daysLeft) {
+  const sentDate = new Date()
+    .toLocaleString("en-CA", { timeZone: "Europe/Paris" })
+    .slice(0, 10); // "YYYY-MM-DD"
+  try {
+    await ReminderClaim.create({ subjectId, kind, daysLeft, sentDate });
+    return true;
+  } catch (error) {
+    if (error?.code === 11000) return false; // déjà réclamé aujourd'hui
+    console.error("❌ Erreur claimReminder (on envoie quand même):", error);
+    return true;
+  }
+}
+
+// ========================================
 // HELPER: Prénom affichable d'une carte
 // ========================================
 /**
@@ -164,7 +191,10 @@ async function checkAndSendUserBirthdayReminders() {
     });
 
     for (const user of users) {
-      if (isBirthdayInXDays(user.birthDate, 0)) {
+      if (
+        isBirthdayInXDays(user.birthDate, 0) &&
+        (await claimReminder(user._id, "user_birthday", 0))
+      ) {
         console.log(`🎉 Anniversaire de ${user.email} aujourd'hui !`);
         await sendBirthdayReminderEmail(user, null, 0);
       }
@@ -209,7 +239,11 @@ async function checkAndSendCardBirthdayReminders() {
         owner.pushEnabled === true && owner.pushEvents?.birthdays !== false;
       const pushTimings = owner.pushBirthdayTimings || [1, 0];
 
-      if (notifyOnBirthday && isBirthdayInXDays(date.date, 0)) {
+      if (
+        notifyOnBirthday &&
+        isBirthdayInXDays(date.date, 0) &&
+        (await claimReminder(date._id, "birthday_card", 0))
+      ) {
         if (emailOk) await sendBirthdayReminderEmail(owner, date, 0);
 
         // ── Notif applicative J ──
@@ -228,7 +262,10 @@ async function checkAndSendCardBirthdayReminders() {
       }
 
       for (const days of timings) {
-        if (isBirthdayInXDays(date.date, days)) {
+        if (
+          isBirthdayInXDays(date.date, days) &&
+          (await claimReminder(date._id, "birthday_card", days))
+        ) {
           if (emailOk) await sendBirthdayReminderEmail(owner, date, days);
 
           // ── Notif applicative J-X ──
@@ -292,7 +329,11 @@ async function checkAndSendNamedayReminders() {
         owner.pushEnabled === true && owner.pushEvents?.namedays !== false;
       const pushTimings = owner.pushBirthdayTimings || [1, 0];
 
-      if (notifyOnNameday && isNamedayInXDays(date.nameday, 0)) {
+      if (
+        notifyOnNameday &&
+        isNamedayInXDays(date.nameday, 0) &&
+        (await claimReminder(date._id, "nameday_card", 0))
+      ) {
         console.log(`🎉 Fête de ${displayName(date)} aujourd'hui !`);
         if (emailOk) await sendNamedayReminderEmail(date, 0);
 
@@ -312,7 +353,10 @@ async function checkAndSendNamedayReminders() {
       }
 
       for (const days of timings) {
-        if (isNamedayInXDays(date.nameday, days)) {
+        if (
+          isNamedayInXDays(date.nameday, days) &&
+          (await claimReminder(date._id, "nameday_card", days))
+        ) {
           console.log(`📅 Rappel fête de ${displayName(date)} dans ${days} jour(s)`);
           if (emailOk) await sendNamedayReminderEmail(date, days);
 

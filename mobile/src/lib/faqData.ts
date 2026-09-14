@@ -7,6 +7,8 @@
 export interface QA {
   q: string;
   a: string;
+  /** Marche à suivre numérotée, quand la réponse est une procédure. */
+  steps?: string[];
 }
 
 export interface Section {
@@ -14,6 +16,12 @@ export interface Section {
   emoji: string;
   title: string;
   items: QA[];
+  /**
+   * Action propre à la catégorie. Un litige portant sur de l'argent mérite un
+   * chemin direct vers le support, pas la sortie générique « je n'ai pas
+   * trouvé ma réponse ».
+   */
+  action?: { kind: "poolIssue"; label: string };
 }
 
 export const FAQ_SECTIONS: Section[] = [
@@ -125,7 +133,22 @@ export const FAQ_SECTIONS: Section[] = [
     id: "cagnotte",
     emoji: "💶",
     title: "Cagnotte : ce qu'il faut savoir",
+    action: {
+      kind: "poolIssue",
+      label: "Un souci avec ta participation à une cagnotte ?",
+    },
     items: [
+      {
+        q: "J'ai un problème avec ma participation : que dois-je faire ?",
+        a: "BirthReminder ne détient jamais l'argent d'une cagnotte : il est encaissé directement par l'organisateur. Nous ne pouvons donc pas rembourser à sa place, ni trancher un désaccord — mais nous pouvons prouver que tu as payé, et relancer l'organisateur. Suis les étapes dans l'ordre, la plupart des situations se règlent à la première.",
+        steps: [
+          "Contacte l'organisateur. Il est le seul à détenir les fonds et le seul à pouvoir déclencher le remboursement. Donne-lui la référence de ta contribution : tu la trouves dans « Mes contributions », avec un bouton qui prépare le message pour toi.",
+          "Écris-nous si tu restes sans réponse. Nous confirmons le paiement, vérifions que le compte de l'organisateur existe toujours et le relançons.",
+          "Saisis un conciliateur de justice si le désaccord persiste. C'est gratuit, cela se demande auprès de ta mairie, et c'est un préalable obligatoire avant toute action en justice pour les litiges de moins de 5 000 €.",
+          "Conteste le paiement auprès de ta banque en dernier recours seulement : cette démarche fait supporter des frais à l'organisateur, en plus du montant repris.",
+          "Dépose plainte si tu penses avoir été victime d'une escroquerie — événement inventé, organisateur disparu avec les fonds. Signale-le-nous aussi : nous gelons la cagnotte concernée.",
+        ],
+      },
       {
         q: "Où va l'argent des contributions ?",
         a: "Directement sur le compte de l'organisateur, via notre prestataire Stripe. BirthReminder ne détient jamais les fonds et ne prélève aucune commission.",

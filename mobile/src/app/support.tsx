@@ -12,6 +12,10 @@ import {
 import { Stack, useRouter, useLocalSearchParams } from "expo-router";
 import { sendSupportMessage } from "../lib/support";
 import {
+  MyContribution,
+  fetchMyContributions,
+} from "../lib/events";
+import {
   useTheme,
   useThemedStyles,
   ThemeColors,
@@ -26,14 +30,58 @@ export default function SupportScreen() {
   // Contexte optionnel transmis par l'écran de recherche guidée (/contact) :
   // la question consultée qui n'a pas résolu le problème (voir ContactPage
   // côté web pour le même mécanisme).
-  const { context } = useLocalSearchParams<{ context?: string }>();
+  //
+  // `poolSubject` / `poolMessage` : gabarit préparé par « Mes contributions »
+  // pour un litige de cagnotte. Sans lui arrivaient des tickets « j'ai payé
+  // quelque part et je n'ai rien reçu », sans montant ni référence — deux
+  // allers-retours avant de pouvoir seulement identifier le paiement.
+  const { context, poolSubject, poolMessage, eventShortId, poolPicker } =
+    useLocalSearchParams<{
+      context?: string;
+      poolSubject?: string;
+      poolMessage?: string;
+      eventShortId?: string;
+      poolPicker?: string;
+    }>();
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
 
+  /*
+   * Sélection de la cagnotte concernée.
+   *
+   * ⚠️ Sans elle, un litige arrive en texte libre et il faut deviner
+   * l'événement pour retrouver le paiement. Avec elle, le ticket porte
+   * l'identifiant : l'admin ouvre directement les contributions. C'est aussi
+   * ce qui borne la dérogation à la règle du ticket unique — un ticket ouvert
+   * par cagnotte, donc au plus autant que de participations réelles.
+   */
+  const [pickedEvent, setPickedEvent] = useState<string | null>(null);
+  const [contributions, setContributions] = useState<MyContribution[] | null>(
+    null,
+  );
+  // ⚠️ `null` = pas encore choisi ; `""` = choisi mais sans événement
+  // identifiable (contribution sans compte, ou événement supprimé). Tester la
+  // seule vérité de `pickedEvent` laissait le sélecteur ouvert après un
+  // « Continuer sans sélection », puisque la chaîne vide est falsy.
+  const picking = poolPicker === "1" && pickedEvent === null;
+
   useEffect(() => {
+    if (poolPicker !== "1") return;
+    fetchMyContributions()
+      .then(setContributions)
+      .catch(() => setContributions([]));
+  }, [poolPicker]);
+
+  useEffect(() => {
+    if (poolSubject && !subject.trim()) {
+      setSubject(String(poolSubject).slice(0, SUBJECT_MAX));
+    }
+    if (poolMessage && !message.trim()) {
+      setMessage(String(poolMessage));
+    }
     if (context && !subject.trim()) {
       setSubject(
         `Question non résolue : ${context}`.slice(0, SUBJECT_MAX),
@@ -52,7 +100,13 @@ export default function SupportScreen() {
     setSending(true);
     setError(null);
     try {
-      await sendSupportMessage(subject.trim(), message.trim());
+      const isPool = poolPicker === "1" || Boolean(poolSubject) || Boolean(eventShortId);
+      await sendSupportMessage(
+        subject.trim(),
+        message.trim(),
+        pickedEvent || (eventShortId ? String(eventShortId) : undefined),
+        isPool ? "pool" : undefined,
+      );
       setSent(true);
     } catch (e: any) {
       setError(e?.message ?? "Erreur lors de l'envoi.");
@@ -74,6 +128,80 @@ export default function SupportScreen() {
           <Text style={styles.primaryBtnText}>Retour</Text>
         </Pressable>
       </View>
+    );
+  }
+
+  // Écran de sélection : on demande de quelle cagnotte il s'agit avant de
+  // laisser écrire. Le gabarit se remplit ensuite tout seul.
+  if (picking) {
+    return (
+      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+        <Stack.Screen options={{ title: "Problème de cagnotte" }} />
+        <Text style={styles.label}>De quelle cagnotte s'agit-il ?</Text>
+
+        {contributions === null ? (
+          <Text style={styles.intro}>Chargement…</Text>
+        ) : contributions.filter((c) => c.status !== "refunded").length === 0 ? (
+          <>
+            <Text style={styles.intro}>
+              Aucune contribution n'est enregistrée sur ton compte. Si tu as
+              participé sans être connecté, décris-nous la situation en
+              joignant le reçu reçu par email.
+            </Text>
+            <Pressable
+              style={styles.primaryBtn}
+              onPress={() => setPickedEvent("")}
+            >
+              <Text style={styles.primaryBtnText}>Continuer sans sélection</Text>
+            </Pressable>
+          </>
+        ) : (
+          contributions
+            .filter((c) => c.status !== "refunded")
+            .map((c) => (
+              <Pressable
+                key={c.id}
+                style={styles.poolOption}
+                onPress={() => {
+                  setPickedEvent(c.event?.shortId ?? "");
+                  setSubject(
+                    (c.event
+                      ? `Problème de cagnotte — ${c.event.title}`
+                      : "Problème avec une cagnotte"
+                    ).slice(0, SUBJECT_MAX),
+                  );
+                  setMessage(
+                    [
+                      "— Ma contribution —",
+                      `Montant : ${(c.amount / 100).toFixed(2)} €`,
+                      `Date : ${new Date(c.createdAt).toLocaleDateString("fr-FR")}`,
+                      c.event ? `Événement : ${c.event.title}` : "Événement : ",
+                      c.event?.organizer
+                        ? `Encaissé par : ${c.event.organizer}`
+                        : "Encaissé par : ",
+                      `Référence de paiement : ${c.reference}`,
+                      "",
+                      "— Ce qui se passe —",
+                      "",
+                      "",
+                      "— Ai-je déjà contacté l'organisateur ? —",
+                      "(oui, le … / pas encore)",
+                      "",
+                    ].join("\n"),
+                  );
+                }}
+              >
+                <Text style={styles.poolOptionTitle}>
+                  {c.event?.title || "Événement supprimé"}
+                </Text>
+                <Text style={styles.poolOptionMeta}>
+                  {(c.amount / 100).toFixed(2)} € ·{" "}
+                  {new Date(c.createdAt).toLocaleDateString("fr-FR")}
+                </Text>
+              </Pressable>
+            ))
+        )}
+      </ScrollView>
     );
   }
 
@@ -141,6 +269,16 @@ const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
   container: { flex: 1, backgroundColor: c.bg },
   content: { padding: 16, gap: 8 },
+  poolOption: {
+    borderWidth: 1,
+    borderColor: c.border,
+    borderRadius: 10,
+    padding: 14,
+    backgroundColor: c.bgSecondary,
+    marginTop: 8,
+  },
+  poolOptionTitle: { fontSize: 14.5, fontWeight: "700", color: c.text },
+  poolOptionMeta: { fontSize: 12.5, color: c.sub, marginTop: 2 },
   center: {
     flex: 1,
     backgroundColor: c.bg,

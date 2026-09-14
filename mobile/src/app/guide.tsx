@@ -32,8 +32,61 @@ export default function GuideScreen() {
             <View key={i} style={styles.item}>
               <Text style={styles.q}>{item.q}</Text>
               <Text style={styles.a}>{item.a}</Text>
+              {/* Une procédure se lit en étapes numérotées, pas en pavé :
+                  l'ordre compte réellement, chaque marche suppose que la
+                  précédente a échoué. */}
+              {item.steps?.map((step, j) => (
+                <View key={j} style={styles.step}>
+                  <Text style={styles.stepNum}>{j + 1}.</Text>
+                  <Text style={styles.stepText}>{step}</Text>
+                </View>
+              ))}
             </View>
           ))}
+
+          {/* Sortie directe propre à la catégorie : un litige qui porte sur de
+              l'argent ne doit pas se chercher au milieu des questions. */}
+          {section.action?.kind === "poolIssue" && (
+            <Pressable
+              style={styles.sectionAction}
+              /* Vers le support avec le gabarit prêt, et NON vers « Mes
+                 contributions » : une contribution faite sans compte, ou dont
+                 l'événement a disparu, n'y figure pas — l'utilisateur
+                 tomberait sur une liste vide au moment précis où il a besoin
+                 d'aide. L'étape 1 lui dit où trouver sa référence. */
+              onPress={() =>
+                router.push({
+                  pathname: "/support",
+                  params: {
+                    // Sélecteur de cagnotte : le ticket est rattaché à
+                    // l'événement, l'admin ouvre directement les
+                    // contributions au lieu de deviner.
+                    poolPicker: "1",
+                    poolSubject: "Problème avec une cagnotte",
+                    poolMessage: [
+                      "— Ma contribution —",
+                      "Montant : ",
+                      "Date : ",
+                      "Événement : ",
+                      "Encaissé par : ",
+                      "Référence de paiement : ",
+                      "",
+                      "— Ce qui se passe —",
+                      "",
+                      "",
+                      "— Ai-je déjà contacté l'organisateur ? —",
+                      "(oui, le … / pas encore)",
+                      "",
+                    ].join("\n"),
+                  },
+                })
+              }
+            >
+              <Text style={styles.sectionActionText}>
+                {section.action.label}
+              </Text>
+            </Pressable>
+          )}
         </View>
       ))}
 
@@ -75,6 +128,24 @@ const makeStyles = (c: ThemeColors) =>
     elevation: 1,
   },
   sectionTitle: { fontSize: 16, fontWeight: "800", color: c.text },
+  step: { flexDirection: "row", gap: 8, marginTop: 8, paddingRight: 4 },
+  stepNum: { fontSize: 13.5, fontWeight: "800", color: c.primary, minWidth: 18 },
+  stepText: { flex: 1, fontSize: 13.5, lineHeight: 20, color: c.sub },
+  sectionAction: {
+    marginTop: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: c.primary,
+    alignItems: "center",
+  },
+  sectionActionText: {
+    color: c.primary,
+    fontWeight: "700",
+    fontSize: 13.5,
+    textAlign: "center",
+  },
   item: {
     gap: 4,
     borderTopWidth: StyleSheet.hairlineWidth,

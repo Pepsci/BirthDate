@@ -5,6 +5,8 @@ const { ipKeyGenerator } = require("express-rate-limit");
 const User = require("../models/user.model");
 const Log = require("../models/log.model");
 const SupportMessage = require("../models/supportMessage.model");
+const Event = require("../models/event.model");
+const GiftPoolContribution = require("../models/giftPoolContribution.model");
 const { isAuthenticated } = require("../middleware/jwt.middleware");
 const { sendSupportEmail } = require("../services/emailTemplates/supportEmail");
 
@@ -84,27 +86,121 @@ const supportReplyLimiter = rateLimit({
 // plus de l'email de notification à l'équipe.
 router.post("/", isAuthenticated, supportLimiter, async (req, res) => {
   try {
-    const { subject, message } = req.body;
+    const { subject, message, eventShortId, category: askedCategory } = req.body;
     if (!subject || !subject.trim()) {
       return res.status(400).json({ message: "L'objet est requis" });
     }
     if (!message || !message.trim()) {
       return res.status(400).json({ message: "Le message est requis" });
     }
-    // Un seul ticket actif à la fois : ça garde une vraie conversation avec
-    // le support plutôt que plusieurs fils parallèles, et évite qu'un
-    // utilisateur en ouvre un nouveau sans avoir vu qu'il en a déjà un en
-    // cours. Le front redirige normalement vers ce fil avant d'arriver ici
-    // (voir ContactPage) ; ce garde-fou couvre juste la course possible.
-    const existing = await SupportMessage.findOne({
-      userId: req.payload._id,
-      status: { $ne: "closed" },
-    });
-    if (existing) {
-      return res.status(409).json({
-        message: "Tu as déjà une conversation en cours avec le support.",
-        ticket: existing,
+
+    // ── Litige de cagnotte : régime distinct ──────────────────────────────
+    //
+    // ⚠️ La règle « une seule conversation à la fois » ne peut pas s'appliquer
+    // ici. Elle sert à éviter des fils parallèles sur le même sujet ; appliquée
+    // aux cagnottes, elle empêche quelqu'un qui a une question en cours sur
+    // autre chose de signaler qu'il n'a pas été remboursé. C'est le seul cas
+    // où de l'argent est en jeu, et c'était précisément celui qu'on bloquait.
+    //
+    // Le plafond devient : un ticket ouvert PAR CAGNOTTE concernée. Leur
+    // nombre est donc borné par celui des cagnottes auxquelles la personne a
+    // réellement contribué — vérifié ci-dessous, pas déclaré par le client.
+    //
+    // ⚠️ C'est la CATÉGORIE qui décide de l'exemption, pas la présence d'un
+    // identifiant d'événement. La première version liait les deux, et ça
+    // cassait exactement dans le cas qui compte : une contribution dont
+    // l'événement a été supprimé n'a plus de `shortId`, la demande repartait
+    // en « général » et se faisait refuser au profit d'une conversation en
+    // cours sur un tout autre sujet. Quelqu'un qui n'a pas été remboursé se
+    // retrouvait sans aucun moyen de le signaler.
+    //
+    // L'événement reste une métadonnée précieuse quand on l'a — lien direct
+    // côté admin, plafond par cagnotte — mais son absence ne doit jamais
+    // empêcher un signalement.
+    const wantsPool = askedCategory === "pool" || Boolean(eventShortId);
+    let category = wantsPool ? "pool" : "general";
+    let relatedEvent = null;
+
+    if (wantsPool && eventShortId) {
+      const event = await Event.findOne({ shortId: String(eventShortId) })
+        .select("_id title shortId")
+        .lean();
+      if (!event) {
+        return res.status(404).json({ message: "Événement introuvable." });
+      }
+
+      // On n'ouvre un ticket de cagnotte que pour quelqu'un qui y a
+      // effectivement versé de l'argent : sans ce contrôle, la dérogation à la
+      // règle du ticket unique deviendrait un moyen d'en ouvrir autant qu'on
+      // veut en citant n'importe quel événement.
+      const hasContributed = await GiftPoolContribution.exists({
+        event: event._id,
+        contributor: req.payload._id,
+        status: { $in: ["succeeded", "refunded"] },
       });
+      if (!hasContributed) {
+        return res.status(403).json({
+          code: "NOT_A_CONTRIBUTOR",
+          message:
+            "Aucune contribution de votre part n'est enregistrée sur cette cagnotte.",
+        });
+      }
+
+      const openForEvent = await SupportMessage.findOne({
+        userId: req.payload._id,
+        relatedEvent: event._id,
+        status: { $ne: "closed" },
+      });
+      if (openForEvent) {
+        return res.status(409).json({
+          code: "POOL_TICKET_EXISTS",
+          message: `Vous avez déjà une conversation en cours au sujet de « ${event.title} ».`,
+          ticket: openForEvent,
+        });
+      }
+
+      relatedEvent = event._id;
+    } else if (wantsPool) {
+      // Litige de cagnotte sans événement identifiable : contribution faite
+      // sans compte, ou événement supprimé depuis. On l'accepte — c'est
+      // précisément la situation la plus difficile pour l'utilisateur — mais
+      // on plafonne à un seul fil ouvert de ce type, faute de cagnotte sur
+      // laquelle s'appuyer pour compter.
+      const orphan = await SupportMessage.findOne({
+        userId: req.payload._id,
+        category: "pool",
+        relatedEvent: null,
+        status: { $ne: "closed" },
+      });
+      if (orphan) {
+        return res.status(409).json({
+          code: "POOL_TICKET_EXISTS",
+          message:
+            "Vous avez déjà une conversation en cours au sujet d'une cagnotte. " +
+            "Poursuivez-la plutôt que d'en ouvrir une seconde.",
+          ticket: orphan,
+        });
+      }
+    } else {
+      // Cas général : un seul ticket actif à la fois. Ça garde une vraie
+      // conversation plutôt que plusieurs fils parallèles. Le front redirige
+      // normalement vers ce fil avant d'arriver ici (voir ContactPage) ; ce
+      // garde-fou couvre la course possible.
+      //
+      // ⚠️ Les tickets de cagnotte sont exclus du décompte : sinon un litige
+      // d'argent en cours interdirait toute autre question, ce qui ferait
+      // réapparaître le problème dans l'autre sens.
+      const existing = await SupportMessage.findOne({
+        userId: req.payload._id,
+        status: { $ne: "closed" },
+        category: { $ne: "pool" },
+      });
+      if (existing) {
+        return res.status(409).json({
+          message: "Tu as déjà une conversation en cours avec le support.",
+          ticket: existing,
+        });
+      }
     }
     const user = await User.findById(req.payload._id).select(
       "name surname email",
@@ -118,6 +214,8 @@ router.post("/", isAuthenticated, supportLimiter, async (req, res) => {
       name: fromName,
       email: user?.email,
       subject: subject.trim(),
+      category,
+      relatedEvent,
       status: "open",
       messages: [{ sender: "user", body: message.trim() }],
       lastMessageAt: new Date(),
