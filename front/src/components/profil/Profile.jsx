@@ -10,6 +10,7 @@ import DatePickerMobile from "../dashboard/DatePickerMobile";
 import GestionNotification from "./GestionNotifications";
 import Wishlist from "../wishlist/Wishlist";
 import SharedInvites from "./SharedInvites";
+import MyContributions from "./MyContributions";
 import E2ESettings from "./E2ESettings";
 import BlockedUsers from "./BlockedUsers";
 import FriendsMobileView from "../friends/FriendsMobileView";
@@ -78,6 +79,12 @@ const ProfilDetails = ({
     // terminé le rattachement, devenaient définitivement introuvables. Une
     // action en attente ne doit jamais dépendre d'un message éphémère.
     { id: "shared", title: "Listes communes", icon: "👨‍👩‍👧" },
+    // ⚠️ Trace des sommes versées par l'utilisateur. En charges directes,
+    // l'argent part chez l'organisateur et l'application n'en gardait aucune
+    // vue côté contributeur : montant, date et référence disparaissaient dès
+    // la page fermée. C'est pourtant ce qu'il faut produire pour réclamer un
+    // remboursement — à quelqu'un qui n'est pas nous.
+    { id: "contributions", title: "Mes contributions", icon: "💝" },
     {
       id: "e2e",
       title:
@@ -478,6 +485,8 @@ const ProfilDetails = ({
         return <Wishlist />;
       case "shared":
         return <SharedInvites embedded />;
+      case "contributions":
+        return <MyContributions />;
       case "e2e":
         return (
           <>

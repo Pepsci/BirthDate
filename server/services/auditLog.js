@@ -30,6 +30,7 @@ const PERMANENT_ACTIONS = new Set([
   "pool_disable",
   "pool_freeze",
   "pool_refund",
+  "pool_alert_reviewed",
   "bankinfo_set",
   "bankinfo_delete",
 ]);

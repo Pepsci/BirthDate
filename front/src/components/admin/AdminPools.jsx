@@ -31,20 +31,51 @@ const AdminPools = () => {
       .catch(() => {});
   };
 
-  const refund = (contributionId) => {
+  /*
+   * Remboursement administrateur.
+   *
+   * ⚠️ C'est une exception, pas un outil de service après-vente.
+   *
+   * En charges directes, rembourser prélève sur le solde de l'ORGANISATEUR.
+   * S'il a déjà viré sa collecte, son compte part en négatif et la perte finit
+   * à la charge de BirthReminder. Un remboursement déclenché ici est un acte
+   * volontaire : contrairement à une opposition bancaire, personne ne nous
+   * l'impose. Rembourser à la place d'un organisateur solvable mais lent,
+   * c'est payer la dette d'autrui sans y être tenu — et se placer, aux yeux
+   * des utilisateurs suivants, dans le rôle de celui qui rembourse.
+   *
+   * La règle : on relaie, l'organisateur rembourse. Ce bouton sert aux cas où
+   * il ne le fera jamais — fraude avérée, compte disparu — et de préférence
+   * tant que l'argent est encore là.
+   *
+   * Le serveur refuse (409) si le solde est insuffisant ; `force` permet
+   * d'assumer l'avance en connaissance du montant.
+   */
+  const refund = (contributionId, { force = false } = {}) => {
     if (
       !window.confirm(
-        "Rembourser cette contribution via Stripe ? Cette action est irréversible.",
+        force
+          ? "Forcer le remboursement malgré un solde insuffisant ? Le compte de l'organisateur passera en négatif et la perte peut finir à votre charge."
+          : "Rembourser cette contribution via Stripe ? Cette action est irréversible.",
       )
     )
       return;
     apiHandler
-      .post(`/admin/pools/contributions/${contributionId}/refund`)
+      .post(`/admin/pools/contributions/${contributionId}/refund`, { force })
       .then(() => {
         openContributions(expanded.event._id);
         load();
       })
-      .catch((err) => alert(err.response?.data?.message || "Erreur remboursement"));
+      .catch((err) => {
+        const d = err.response?.data;
+        if (d?.code === "INSUFFICIENT_CONNECTED_BALANCE") {
+          if (window.confirm(`${d.message}\n\nForcer quand même ?`)) {
+            refund(contributionId, { force: true });
+          }
+          return;
+        }
+        alert(d?.message || "Erreur remboursement");
+      });
   };
 
   if (error) return <p className="admin-error">{error}</p>;
@@ -140,6 +171,50 @@ const AdminPools = () => {
               {expanded.event.organizer?.surname || ""} (
               {expanded.event.organizer?.email})
             </p>
+
+            {/* État du compte qui détient réellement l'argent. Sans ça, on
+                clique « Rembourser » sans savoir s'il reste quelque chose. */}
+            {expanded.connectedAccount && (
+              <div
+                className={
+                  "admin-connect-balance" +
+                  (expanded.connectedAccount.availableCents <= 0
+                    ? " admin-connect-warn"
+                    : "")
+                }
+              >
+                <span>
+                  Solde disponible :{" "}
+                  <strong>
+                    {euros(expanded.connectedAccount.availableCents)}
+                  </strong>
+                </span>
+                <span>
+                  En attente :{" "}
+                  <strong>
+                    {euros(expanded.connectedAccount.pendingCents)}
+                  </strong>
+                </span>
+                <span>
+                  Virements :{" "}
+                  <strong>
+                    {expanded.connectedAccount.payoutsEnabled
+                      ? "activés"
+                      : "bloqués"}
+                  </strong>
+                </span>
+                <span>
+                  Perte en cas de négatif :{" "}
+                  <strong>
+                    {expanded.connectedAccount.lossesPayer === "application"
+                      ? "BirthReminder"
+                      : expanded.connectedAccount.lossesPayer === "stripe"
+                        ? "Stripe"
+                        : "inconnu"}
+                  </strong>
+                </span>
+              </div>
+            )}
 
             <table className="admin-table">
               <thead>

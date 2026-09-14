@@ -65,6 +65,10 @@ const logSchema = new Schema(
         "pool_disable",
         "pool_freeze",
         "pool_refund",
+        // Décision prise sur une alerte anti-fraude (écartée ou action prise).
+        // Conservée indéfiniment : c'est la preuve que l'alerte a été examinée,
+        // et elle n'a de valeur que si elle survit à la purge annuelle.
+        "pool_alert_reviewed",
         "bankinfo_set",
         "bankinfo_delete",
       ],

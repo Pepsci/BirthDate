@@ -12,6 +12,19 @@ const { audit } = require("../../services/auditLog");
 const MIN_AMOUNT = 100; // 1 €
 const MAX_AMOUNT = 1000000; // 10 000 €
 
+/**
+ * Seuil au-delà duquel le 3D Secure est IMPOSÉ (centimes).
+ *
+ * En dessous, Stripe décide seul — ce qui suffit dans l'immense majorité des
+ * cas puisque la SCA européenne impose déjà l'authentification très souvent.
+ * Au-dessus, on ne prend plus le risque : une authentification réussie fait
+ * basculer sur l'émetteur la responsabilité d'une opposition pour fraude.
+ *
+ * Réglable sans redéploiement pour pouvoir le descendre si de la fraude
+ * apparaît, ou le remonter si trop de paiements se perdent dans l'étape.
+ */
+const FORCE_3DS_ABOVE = parseInt(process.env.FORCE_3DS_ABOVE) || 15000; // 150 €
+
 // Frais Stripe France, carte européenne standard : 1,5 % + 0,25 € PAR
 // transaction. Le fixe s'applique à CHAQUE contribution, pas une fois sur le
 // total. Mêmes constantes que le calcul affiché côté front.
@@ -45,6 +58,82 @@ const refundFeeLoss = (contribution) =>
   typeof contribution.feeCents === "number"
     ? contribution.feeCents
     : estimatedFee(contribution.amount);
+
+/*
+ * GET /api/events/mine/contributions
+ * Historique des contributions de l'utilisateur connecté.
+ * DOIT ÊTRE AVANT /:shortId/pool.
+ *
+ * ⚠️ Pourquoi cet écran existe.
+ *
+ * En charges directes, une contribution disparaît de la vue de son auteur dès
+ * qu'il quitte la page : l'argent est parti chez l'organisateur, et rien dans
+ * l'application ne garde trace de ce qu'il a versé. Le jour où l'événement est
+ * annulé, il doit réclamer à quelqu'un une somme dont il n'a plus ni le
+ * montant exact, ni la date, ni la référence. Le reçu par email comble ce trou
+ * pour les invités sans compte ; pour un inscrit, l'application peut faire
+ * mieux et le lui montrer en permanence.
+ *
+ * C'est aussi ce qui rend la doctrine tenable : on peut dire « adressez-vous à
+ * l'organisateur » à quelqu'un qui a les éléments sous les yeux.
+ */
+router.get("/mine/contributions", isAuthenticated, async (req, res) => {
+  try {
+    const userId = req.payload._id;
+
+    const contributions = await GiftPoolContribution.find({
+      contributor: userId,
+      // Les tentatives échouées ou abandonnées n'ont aucun intérêt ici : elles
+      // ne prouvent rien et inquiètent pour rien.
+      status: { $in: ["succeeded", "refunded"] },
+    })
+      .sort({ createdAt: -1 })
+      .limit(200)
+      .lean();
+
+    const events = await Event.find({
+      _id: { $in: contributions.map((c) => c.event) },
+    })
+      .select("shortId title status organizer")
+      .populate("organizer", "name surname")
+      .lean();
+
+    const byId = {};
+    events.forEach((e) => (byId[String(e._id)] = e));
+
+    res.status(200).json({
+      contributions: contributions.map((c) => {
+        const ev = byId[String(c.event)];
+        return {
+          id: c._id,
+          amount: c.amount,
+          currency: c.currency || "eur",
+          status: c.status,
+          message: c.message || null,
+          anonymous: !!c.anonymous,
+          createdAt: c.createdAt,
+          refundedAt: c.refundedAt || null,
+          // La référence de paiement : c'est elle qu'on cite à l'organisateur
+          // ou au support pour identifier la contribution sans ambiguïté.
+          reference: c.stripePaymentIntentId,
+          event: ev
+            ? {
+                shortId: ev.shortId,
+                title: ev.title,
+                status: ev.status,
+                organizer: ev.organizer
+                  ? `${ev.organizer.name}${ev.organizer.surname ? " " + ev.organizer.surname : ""}`
+                  : null,
+              }
+            : null,
+        };
+      }),
+    });
+  } catch (error) {
+    console.error("❌ Error fetching my contributions:", error);
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+});
 
 /*
  * GET /api/events/mine/pools
@@ -556,6 +645,34 @@ router.post("/:shortId/pool/contribute", async (req, res) => {
           enabled: true,
           allow_redirects: "never",
         },
+        // ── 3D Secure ─────────────────────────────────────────────────────
+        //
+        // Le 3DS s'applique déjà automatiquement dès que l'émetteur l'exige
+        // (SCA européenne) : ce n'est pas ce bloc qui l'active. Il le FORCE
+        // au-delà d'un seuil, là où Stripe l'aurait peut-être jugé inutile.
+        //
+        // Pourquoi : une authentification 3DS réussie fait basculer sur la
+        // banque émettrice la responsabilité d'une opposition pour FRAUDE.
+        // Sans elle, une contribution payée avec une carte volée revient en
+        // opposition, le compte de l'organisateur part en négatif, et la
+        // perte remonte la cascade. C'est la seule protection réellement
+        // efficace contre ce scénario — une rétention des fonds ne sert à
+        // rien, l'opposition arrivant souvent 60 jours plus tard.
+        //
+        // Le seuil est un compromis : le 3DS ajoute une étape et fait perdre
+        // quelques paiements. On l'impose donc seulement là où le montant
+        // justifie la friction. À 20 € entre amis, on laisse Stripe décider.
+        //
+        // ⚠️ Le basculement ne couvre QUE les litiges pour fraude. Un « je
+        // n'ai jamais eu mon cadeau » reste un désaccord entre l'organisateur
+        // et son invité, 3DS ou pas.
+        ...(amountInt >= FORCE_3DS_ABOVE
+          ? {
+              payment_method_options: {
+                card: { request_three_d_secure: "any" },
+              },
+            }
+          : {}),
         ...(receiptEmail ? { receipt_email: receiptEmail } : {}),
         metadata: {
           eventShortId: event.shortId,
