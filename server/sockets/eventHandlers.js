@@ -234,11 +234,13 @@ module.exports = (io, socket, app) => {
       }
 
       const message = await EventMessage.findById(messageId).select(
-        "event reactions",
+        "event reactions sender",
       );
       if (!message) return;
 
-      const event = await Event.findOne({ shortId }).select("_id").lean();
+      const event = await Event.findOne({ shortId })
+        .select("_id title")
+        .lean();
       if (!event || String(message.event) !== String(event._id)) {
         return socket.emit("error", { message: "Non autorisé" });
       }
@@ -259,6 +261,35 @@ module.exports = (io, socket, app) => {
         });
       }
       await message.save();
+
+      /*
+       * Notifier l'auteur du message — même règle que la messagerie privée :
+       * à la pose seulement, jamais sur son propre message.
+       *
+       * ⚠️ Un message d'événement est lu par tout le monde, mais la réaction
+       * ne concerne que celui qui l'a écrit. Prévenir toute la room ferait de
+       * chaque pouce levé une notification pour douze personnes.
+       */
+      const authorId = String(message.sender);
+      if (!removing && authorId !== socket.userId) {
+        const reactor = await User.findById(socket.userId, "name surname");
+        const reactorName = reactor
+          ? `${reactor.name} ${reactor.surname || ""}`.trim()
+          : "Quelqu'un";
+
+        notify(app, {
+          userId: authorId,
+          type: "message_reaction",
+          data: {
+            reactorName,
+            reaction,
+            messageId: String(messageId),
+            eventShortId: shortId,
+            eventTitle: event.title,
+          },
+          link: `/event/${shortId}?tab=chat`,
+        }).catch((err) => console.error("❌ Notify reaction error:", err));
+      }
 
       io.to(`event:${shortId}`).emit("event:message_reacted", {
         messageId,

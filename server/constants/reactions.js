@@ -19,4 +19,25 @@
 
 const REACTIONS = ["like", "love", "laugh", "wow", "sad", "party"];
 
-module.exports = { REACTIONS };
+/*
+ * Rendu texte pour les notifications push UNIQUEMENT.
+ *
+ * ⚠️ Ce n'est pas une contradiction avec la règle ci-dessus : rien de tout
+ * ceci n'est stocké. Une push est du texte brut affiché par le système
+ * d'exploitation — on ne peut pas y glisser un SVG maison. L'emoji est donc le
+ * seul rendu possible à cet endroit, et il reste cantonné à la couche de
+ * présentation la plus externe qui soit.
+ *
+ * Dans l'application, le client reçoit la clé (`data.reaction`) et dessine sa
+ * propre icône : c'est là que le jeu maison s'affiche.
+ */
+const REACTION_PUSH_GLYPH = {
+  like: "👍",
+  love: "❤️",
+  laugh: "😂",
+  wow: "😮",
+  sad: "😢",
+  party: "🎉",
+};
+
+module.exports = { REACTIONS, REACTION_PUSH_GLYPH };

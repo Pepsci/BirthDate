@@ -64,11 +64,29 @@ router.patch("/read-conversation", isAuthenticated, async (req, res) => {
       return res.status(400).json({ message: "Identifiant manquant." });
     }
 
+    /*
+     * Les réactions s'éteignent avec le reste.
+     *
+     * ⚠️ Même raison que ci-dessus : ouvrir la discussion, c'est voir les
+     * réactions posées sur ses messages. Laisser « Pierre a réagi » en non lu
+     * après coup rallume la pastille pour un fait déjà consommé, et on
+     * réintroduit exactement le compteur auquel plus personne ne croit.
+     */
     let filter;
     if (kind === "dm") {
-      filter = { type: "new_message", "data.conversationId": id };
+      filter = {
+        $or: [
+          { type: "new_message", "data.conversationId": id },
+          { type: "message_reaction", "data.conversationId": id },
+        ],
+      };
     } else if (kind === "event") {
-      filter = { type: "event_chat_message", "data.eventShortId": id };
+      filter = {
+        $or: [
+          { type: "event_chat_message", "data.eventShortId": id },
+          { type: "message_reaction", "data.eventShortId": id },
+        ],
+      };
     } else {
       return res.status(400).json({ message: "Type de conversation inconnu." });
     }

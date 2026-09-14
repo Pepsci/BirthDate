@@ -12,6 +12,9 @@ import {
   encryptMessage,
   decryptMessage,
 } from "../../../utils/encryption";
+import ReactionPills from "../../UI/ReactionPills";
+import ReactionPicker from "../../UI/ReactionPicker";
+import ReportMessageModal from "../../UI/ReportMessageModal";
 import "./css/eventChat.css";
 
 const EventChat = ({ shortId, participants = {} }) => {
@@ -19,6 +22,8 @@ const EventChat = ({ shortId, participants = {} }) => {
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [typingUsers, setTypingUsers] = useState([]);
+  const [reactTarget, setReactTarget] = useState(null);
+  const [reportTarget, setReportTarget] = useState(null);
 
   const { currentUser } = useContext(AuthContext);
   const messagesContainerRef = useRef(null);
@@ -93,6 +98,13 @@ const EventChat = ({ shortId, participants = {} }) => {
       );
     };
 
+    const handleMessageReacted = ({ shortId: rShortId, messageId, reactions }) => {
+      if (rShortId && rShortId !== shortIdRef.current) return;
+      setMessages((prev) =>
+        prev.map((m) => (m._id === messageId ? { ...m, reactions } : m)),
+      );
+    };
+
     const handleTypingStart = ({ shortId: tShortId, userId, userName }) => {
       if (tShortId !== shortIdRef.current) return;
       if (userId === currentUserId) return;
@@ -109,12 +121,14 @@ const EventChat = ({ shortId, participants = {} }) => {
 
     socket.on("event:message_new", handleNewMessage);
     socket.on("event:message_error", handleMessageError);
+    socket.on("event:message_reacted", handleMessageReacted);
     socket.on("event:typing_start", handleTypingStart);
     socket.on("event:typing_stop", handleTypingStop);
 
     return () => {
       socket.off("event:message_new", handleNewMessage);
       socket.off("event:message_error", handleMessageError);
+      socket.off("event:message_reacted", handleMessageReacted);
       socket.off("event:typing_start", handleTypingStart);
       socket.off("event:typing_stop", handleTypingStop);
     };
@@ -246,6 +260,56 @@ const EventChat = ({ shortId, participants = {} }) => {
       socketService.emit("event:typing_stop", { shortId });
     }, 5000);
   };
+
+  /*
+   * Réactions.
+   *
+   * ⚠️ Gate sur `currentUserId` : le chat d'événement est ouvert aux invités
+   * non inscrits, et le serveur refuse une réaction sans utilisateur. Afficher
+   * le sélecteur à un invité lui promettrait une action qui échouerait en
+   * silence.
+   */
+  const canReact = Boolean(currentUserId);
+
+  const handleReact = (msg, reaction) => {
+    socketService.emit("event:message_react", {
+      shortId,
+      messageId: msg._id,
+      reaction,
+    });
+    setReactTarget(null);
+  };
+
+  const myReaction = (msg) =>
+    msg.reactions?.find((r) => String(r.user) === String(currentUserId))
+      ?.reaction || null;
+
+  // Un message encore en vol n'a pas d'_id serveur : réagir dessus viserait le
+  // tempId, que le serveur ne trouverait pas.
+  const openReactions = (msg) => {
+    if (!canReact || msg.tempId || msg.failed) return;
+    setReactTarget((prev) => (prev === msg._id ? null : msg._id));
+  };
+
+  /*
+   * Signalement — conformité stores (Apple 1.2 / Google Play UGC) : le chat
+   * d'événement affiche du contenu écrit par d'autres, il doit donc offrir la
+   * même issue que la messagerie privée. C'était déjà le cas sur mobile ; le
+   * web n'avait aucun menu jusqu'ici, donc aucun accès.
+   *
+   * ⚠️ Seulement sur le message d'autrui : on ne se signale pas soi-même.
+   */
+  const openReport = (msg) => {
+    setReactTarget(null);
+    setReportTarget(msg);
+  };
+
+  useEffect(() => {
+    if (!reactTarget) return;
+    const close = () => setReactTarget(null);
+    document.addEventListener("click", close);
+    return () => document.removeEventListener("click", close);
+  }, [reactTarget]);
 
   const scrollToBottom = () => {
     if (messagesContainerRef.current) {
@@ -379,21 +443,69 @@ const EventChat = ({ shortId, participants = {} }) => {
                   ) : (
                     <span className="event-chat-avatar-spacer" />
                   ))}
-                <div className={bubbleClasses}>
-                  {!isMe && isFirstOfRun && msg.sender?.name && (
-                    <div className="event-chat-sender">{msg.sender.name}</div>
-                  )}
-                  <div>{displayText}</div>
-                  <div className="event-chat-time">
-                    {msg.failed
-                      ? "Échec d'envoi"
-                      : isPending
-                        ? "Envoi..."
-                        : new Date(msg.createdAt).toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
+                <div className="event-chat-bubble-col">
+                  <div
+                    className={bubbleClasses}
+                    onContextMenu={(e) => {
+                      if (!canReact) return;
+                      e.preventDefault();
+                      e.stopPropagation();
+                      openReactions(msg);
+                    }}
+                    onDoubleClick={(e) => {
+                      e.stopPropagation();
+                      openReactions(msg);
+                    }}
+                  >
+                    {!isMe && isFirstOfRun && msg.sender?.name && (
+                      <div className="event-chat-sender">{msg.sender.name}</div>
+                    )}
+                    <div>{displayText}</div>
+                    <div className="event-chat-time">
+                      {msg.failed
+                        ? "Échec d'envoi"
+                        : isPending
+                          ? "Envoi..."
+                          : new Date(msg.createdAt).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                    </div>
                   </div>
+
+                  {reactTarget === msg._id && (
+                    <div
+                      /* Le premier message est collé au haut du conteneur
+                         défilant : un sélecteur ouvert au-dessus y serait
+                         rogné. Pour lui seul, on ouvre vers le bas. */
+                      className={`event-chat-reaction-menu ${i === 0 ? "below" : ""}`}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <ReactionPicker
+                        mine={myReaction(msg)}
+                        onPick={(reaction) => handleReact(msg, reaction)}
+                      />
+                      {!isMe && (
+                        <button
+                          type="button"
+                          className="event-chat-report-btn"
+                          onClick={() => openReport(msg)}
+                        >
+                          🚩 Signaler
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  <ReactionPills
+                    reactions={msg.reactions}
+                    myUserId={currentUserId}
+                    onToggle={
+                      canReact
+                        ? (reaction) => handleReact(msg, reaction)
+                        : undefined
+                    }
+                  />
                 </div>
               </div>
             );
@@ -415,6 +527,16 @@ const EventChat = ({ shortId, participants = {} }) => {
           </div>
         )}
       </div>
+
+      {reportTarget && (
+        <ReportMessageModal
+          contentType="eventMessage"
+          contentId={reportTarget._id}
+          targetUserId={reportTarget.sender?._id}
+          preview={resolveDisplayContent(reportTarget).text}
+          onClose={() => setReportTarget(null)}
+        />
+      )}
 
       <form onSubmit={handleSendMessage} className="event-chat-form">
         <input

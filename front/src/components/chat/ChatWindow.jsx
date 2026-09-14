@@ -16,6 +16,9 @@ import DateShareCard from "./DateShareCard";
 import Avatar from "../UI/Avatar";
 import MuteBell from "./MuteBell";
 import PersonPreviewCard from "./PersonPreviewCard";
+import ReactionPills from "../UI/ReactionPills";
+import ReactionPicker from "../UI/ReactionPicker";
+import ReportMessageModal from "../UI/ReportMessageModal";
 import "./css/chatWindow.css";
 
 function ChatWindow({ conversation, onBack, onRead }) {
@@ -134,6 +137,7 @@ function ChatWindow({ conversation, onBack, onRead }) {
     socket.on("message:new", handleNewMessage);
     socket.on("message:deleted", handleMessageDeleted);
     socket.on("message:edited", handleMessageEdited);
+    socket.on("message:reacted", handleMessageReacted);
     socket.on("typing:start", handleTypingStart);
     socket.on("typing:stop", handleTypingStop);
     socket.on("messages:read", handleMessagesRead);
@@ -142,6 +146,7 @@ function ChatWindow({ conversation, onBack, onRead }) {
       socket.off("message:new", handleNewMessage);
       socket.off("message:deleted", handleMessageDeleted);
       socket.off("message:edited", handleMessageEdited);
+      socket.off("message:reacted", handleMessageReacted);
       socket.off("typing:start", handleTypingStart);
       socket.off("typing:stop", handleTypingStop);
       socket.off("messages:read", handleMessagesRead);
@@ -462,6 +467,31 @@ function ChatWindow({ conversation, onBack, onRead }) {
     );
   };
 
+  const handleMessageReacted = ({ conversationId, messageId, reactions }) => {
+    if (conversationId && conversationId !== conversationIdRef.current) return;
+    setMessages((prev) =>
+      prev.map((msg) => (msg._id === messageId ? { ...msg, reactions } : msg)),
+    );
+  };
+
+  // Le serveur bascule tout seul : renvoyer la réaction déjà posée la retire.
+  const handleReact = (message, reaction) => {
+    // Un message encore en vol porte un tempId côté client : le serveur ne le
+    // trouverait pas, et la réaction disparaîtrait sans erreur visible.
+    if (message.status === "sending" || message.status === "failed") return;
+    socketService.emit("message:react", {
+      messageId: message._id,
+      conversationId: conversation._id,
+      reaction,
+    });
+    setContextMenu(null);
+    setLongPressMessageId(null);
+  };
+
+  const myReaction = (message) =>
+    message.reactions?.find((r) => String(r.user) === String(currentUserId))
+      ?.reaction || null;
+
   const handleMessagesRead = ({ conversationId, userId }) => {
     if (conversationId !== conversationIdRef.current) return;
     if (userId === currentUserId) return;
@@ -505,6 +535,11 @@ function ChatWindow({ conversation, onBack, onRead }) {
     e.preventDefault();
     // Pas de menu contextuel sur les cartes partagées
     if (message.type === "gift_share" || message.type === "date_share") return;
+    // Le listener `click` posé sur document ferme le menu ; sans ce stop, le
+    // double-clic l'ouvrirait et le refermerait dans la même foulée. Placé
+    // APRÈS le retour anticipé : sur une carte partagée, le clic doit garder
+    // son effet normal de fermeture.
+    e.stopPropagation();
     // Ses messages : modifier/supprimer — ceux des autres : signaler
     setContextMenu({ x: e.clientX, y: e.clientY, message });
   };
@@ -537,24 +572,6 @@ function ChatWindow({ conversation, onBack, onRead }) {
     setLongPressMessageId(null);
   };
 
-  const submitReport = async (reason) => {
-    const message = reportTarget;
-    setReportTarget(null);
-    if (!message) return;
-    try {
-      const { text } = resolveDisplayContent(message);
-      await apiHandler.reportContent({
-        contentType: "message",
-        contentId: message._id,
-        targetUserId: message.sender?._id,
-        reason,
-        contentPreview: typeof text === "string" ? text.slice(0, 500) : "",
-      });
-      alert("Merci, ton signalement a été envoyé. Il sera traité sous 24 h.");
-    } catch (e) {
-      alert(e?.message ?? "Signalement impossible.");
-    }
-  };
 
   const handleBlockUser = async () => {
     const other = getOtherParticipant();
@@ -759,6 +776,7 @@ function ChatWindow({ conversation, onBack, onRead }) {
                   longPressMessageId === message._id ? "show-delete" : ""
                 }`}
                 onContextMenu={(e) => handleContextMenu(e, message)}
+                onDoubleClick={(e) => handleContextMenu(e, message)}
                 onTouchStart={(e) => handleTouchStart(e, message)}
                 onTouchEnd={handleTouchEnd}
                 onTouchMove={handleTouchEnd}
@@ -811,8 +829,18 @@ function ChatWindow({ conversation, onBack, onRead }) {
                     {renderMessageStatus(message)}
                   </div>
 
+                  <ReactionPills
+                    reactions={message.reactions}
+                    myUserId={currentUserId}
+                    onToggle={(reaction) => handleReact(message, reaction)}
+                  />
+
                   {isOwn && longPressMessageId === message._id && (
                     <div className="mobile-actions">
+                      <ReactionPicker
+                        mine={myReaction(message)}
+                        onPick={(reaction) => handleReact(message, reaction)}
+                      />
                       {canEditMessage(message) && (
                         <button
                           className="edit-button-mobile"
@@ -831,6 +859,10 @@ function ChatWindow({ conversation, onBack, onRead }) {
                   )}
                   {!isOwn && longPressMessageId === message._id && (
                     <div className="mobile-actions">
+                      <ReactionPicker
+                        mine={myReaction(message)}
+                        onPick={(reaction) => handleReact(message, reaction)}
+                      />
                       <button
                         className="delete-button-mobile"
                         onClick={() => handleReportMessage(message)}
@@ -865,6 +897,10 @@ function ChatWindow({ conversation, onBack, onRead }) {
           className="context-menu"
           style={{ top: contextMenu.y, left: contextMenu.x }}
         >
+          <ReactionPicker
+            mine={myReaction(contextMenu.message)}
+            onPick={(reaction) => handleReact(contextMenu.message, reaction)}
+          />
           {contextMenu.message.sender._id === currentUserId ? (
             <>
               {canEditMessage(contextMenu.message) && (
@@ -894,29 +930,13 @@ function ChatWindow({ conversation, onBack, onRead }) {
       )}
 
       {reportTarget && (
-        <div className="report-modal-overlay" onClick={() => setReportTarget(null)}>
-          <div className="report-modal" onClick={(e) => e.stopPropagation()}>
-            <h4>Signaler ce message</h4>
-            <p>Pourquoi signales-tu ce contenu ?</p>
-            <button onClick={() => submitReport("spam")}>Spam</button>
-            <button onClick={() => submitReport("harassment")}>
-              Harcèlement
-            </button>
-            <button onClick={() => submitReport("inappropriate")}>
-              Contenu inapproprié
-            </button>
-            <button onClick={() => submitReport("scam")}>
-              Arnaque / fraude
-            </button>
-            <button onClick={() => submitReport("other")}>Autre</button>
-            <button
-              className="report-cancel"
-              onClick={() => setReportTarget(null)}
-            >
-              Annuler
-            </button>
-          </div>
-        </div>
+        <ReportMessageModal
+          contentType="message"
+          contentId={reportTarget._id}
+          targetUserId={reportTarget.sender?._id}
+          preview={resolveDisplayContent(reportTarget).text}
+          onClose={() => setReportTarget(null)}
+        />
       )}
 
       <MessageInput

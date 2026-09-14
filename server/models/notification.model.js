@@ -56,6 +56,10 @@ const notificationSchema = new mongoose.Schema(
         // Réponse de l'équipe support à un ticket ouvert par un utilisateur
         // connecté (formulaire de contact / centre d'aide).
         "support_reply",
+        // Réaction posée sur un message, en privé comme dans un événement. Un
+        // seul type pour les deux : c'est `data.eventShortId` qui distingue,
+        // et la déduplication (une notif non lue par message) est la même.
+        "message_reaction",
       ],
       required: true,
     },

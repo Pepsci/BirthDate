@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import useNotifications from "../../context/useNotifications";
 import "./css/NotificationItem.css";
+import ReactionIcon from "../UI/ReactionIcon";
 
 const TYPE_CONFIG = {
   birthday_soon: { icon: "🎂" },
@@ -34,6 +35,9 @@ const TYPE_CONFIG = {
   shared_gift_member_left: { icon: "👋" },
   shared_gift_shared: { icon: "🎁" },
   support_reply: { icon: "💬" },
+  // L'icône est remplacée à l'affichage par le dessin maison de la réaction
+  // reçue ; celle-ci ne sert que de repli si la clé manque.
+  message_reaction: { icon: "🙂" },
 };
 
 const timeAgo = (dateStr) => {
@@ -308,6 +312,14 @@ const buildText = (type, data) => {
           <strong>{data.subject}</strong> »
         </>
       );
+    case "message_reaction":
+      return (
+        <>
+          <strong>{data.reactorName || "Quelqu'un"}</strong> a réagi à votre
+          message
+          {data.eventTitle ? <> dans « {data.eventTitle} »</> : null}
+        </>
+      );
     default:
       return "Nouvelle notification";
   }
@@ -337,7 +349,11 @@ const NotificationItem = ({ notification, onClose }) => {
       onClick={handleClick}
     >
       <div className={`notif-item-icon notif-item-icon--${notification.type}`}>
-        {config.icon}
+        {notification.type === "message_reaction" && notification.data?.reaction ? (
+          <ReactionIcon name={notification.data.reaction} size={20} />
+        ) : (
+          config.icon
+        )}
       </div>
       <div className="notif-item-body">
         <p className="notif-item-text">

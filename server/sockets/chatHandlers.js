@@ -390,7 +390,7 @@ module.exports = (io, socket, connectedUsers, app) => {
       }
 
       const message = await Message.findById(messageId).select(
-        "conversation reactions",
+        "conversation reactions sender",
       );
       if (!message) {
         return socket.emit("error", { message: "Message introuvable" });
@@ -424,6 +424,40 @@ module.exports = (io, socket, connectedUsers, app) => {
         });
       }
       await message.save();
+
+      /*
+       * Notifier l'auteur du message.
+       *
+       * ⚠️ Seulement à la POSE, jamais au retrait : être prévenu qu'on vous
+       * a retiré un cœur est une information dont personne n'a besoin, et qui
+       * doublerait le volume.
+       *
+       * ⚠️ Jamais à soi-même : réagir à son propre message ne doit rien
+       * déclencher.
+       *
+       * Aucun extrait du message dans la notification : il est chiffré de bout
+       * en bout, le serveur ne peut pas le lire.
+       */
+      const authorId = String(message.sender);
+      if (!removing && authorId !== socket.userId) {
+        const reactor = await User.findById(socket.userId, "name surname");
+        const reactorName = reactor
+          ? `${reactor.name} ${reactor.surname || ""}`.trim()
+          : "Quelqu'un";
+        const convId = conversationId || String(message.conversation);
+
+        notify(app, {
+          userId: authorId,
+          type: "message_reaction",
+          data: {
+            reactorName,
+            reaction,
+            messageId: String(messageId),
+            conversationId: convId,
+          },
+          link: `/home?tab=chat&conversationId=${convId}`,
+        }).catch((err) => console.error("❌ Notify reaction error:", err));
+      }
 
       // Diffusion à toute la conversation, y compris à l'auteur de la
       // réaction : c'est ce qui garantit que tous les appareils d'une même

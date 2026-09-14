@@ -30,7 +30,8 @@ export type NotifType =
   | "shared_gift_updated"
   | "shared_gift_removed"
   | "shared_gift_member_left"
-  | "shared_gift_shared";
+  | "shared_gift_shared"
+  | "message_reaction";
 
 export interface AppNotification {
   _id: string;
@@ -88,13 +89,36 @@ export async function deleteAllNotifications(): Promise<void> {
   await api("/notifications", { method: "DELETE" });
 }
 
+/*
+ * Repli emoji pour la liste des notifications.
+ *
+ * ⚠️ Le centre de notifications est une liste de texte : chaque ligne porte un
+ * emoji, pas un composant. Y injecter le dessin maison demanderait de refaire
+ * le rendu de toute la liste pour un seul type — l'emoji reste ici, le dessin
+ * maison reste dans le fil de discussion, là où on le regarde.
+ */
+const REACTION_EMOJI: Record<string, string> = {
+  like: "👍",
+  love: "❤️",
+  laugh: "😂",
+  wow: "😮",
+  sad: "😢",
+  party: "🎉",
+};
+
 /** Emoji + texte lisible pour chaque type (mêmes données que le web) */
 export function notifDisplay(n: AppNotification): {
   emoji: string;
   text: string;
 } {
   const d = n.data ?? {};
-  const who = d.guestName ?? d.senderName ?? d.name ?? d.organizerName ?? "Quelqu'un";
+  const who =
+    d.guestName ??
+    d.senderName ??
+    d.reactorName ??
+    d.name ??
+    d.organizerName ??
+    "Quelqu'un";
   switch (n.type) {
     case "friend_request":
       return { emoji: "👥", text: `${who} t'a envoyé une demande d'ami` };
@@ -272,6 +296,13 @@ export function notifDisplay(n: AppNotification): {
       return {
         emoji: "👋",
         text: `${d.fromName ?? who} a quitté votre liste de cadeaux commune${d.listLabel ? ` — ${d.listLabel}` : ""}`,
+      };
+    case "message_reaction":
+      return {
+        emoji: REACTION_EMOJI[d.reaction as string] ?? "🙂",
+        text: d.eventTitle
+          ? `${who} a réagi à votre message dans « ${d.eventTitle} »`
+          : `${who} a réagi à votre message`,
       };
     default:
       return { emoji: "🔔", text: "Nouvelle notification" };

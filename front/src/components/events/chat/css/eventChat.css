@@ -106,8 +106,87 @@
   flex-shrink: 0;
 }
 
-.event-chat-bubble {
+/* La bulle est désormais enveloppée dans une colonne qui porte aussi les
+   pastilles de réaction : c'est la colonne qui tient la largeur maximale,
+   sinon une bulle courte avec quatre réactions verrait ses pastilles déborder
+   hors de sa propre largeur. */
+.event-chat-bubble-col {
+  display: flex;
+  flex-direction: column;
   max-width: 75%;
+  min-width: 0;
+  position: relative;
+}
+
+.event-chat-message-row.me .event-chat-bubble-col {
+  align-items: flex-end;
+}
+
+.event-chat-message-row.other .event-chat-bubble-col {
+  align-items: flex-start;
+}
+
+/* Le menu sort du flux : l'ouvrir ne doit pas pousser les messages voisins et
+   faire bouger ce qu'on visait. */
+.event-chat-reaction-menu {
+  position: absolute;
+  bottom: 100%;
+  z-index: 20;
+  margin-bottom: 4px;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+}
+
+.event-chat-report-btn {
+  /* Pas de bordure ici : c'est le sélecteur au-dessus qui la porte, sinon on
+     obtiendrait un double trait. */
+  border: none;
+  background: none;
+  color: var(--danger);
+  font-size: 14px;
+  text-align: left;
+  padding: 10px 14px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.event-chat-report-btn:hover {
+  background: var(--bg-tertiary);
+}
+
+.event-chat-reaction-menu.below {
+  bottom: auto;
+  top: 100%;
+  margin-bottom: 0;
+  margin-top: 4px;
+}
+
+.event-chat-message-row.me .event-chat-reaction-menu {
+  right: 0;
+}
+
+.event-chat-message-row.other .event-chat-reaction-menu {
+  left: 0;
+}
+
+/* La bordure basse du sélecteur ne sert que s'il y a quelque chose dessous :
+   sur son propre message il n'y a pas de bouton « Signaler ». */
+.event-chat-reaction-menu .reaction-picker {
+  padding: 4px 6px;
+  border-bottom: none;
+}
+
+.event-chat-reaction-menu .reaction-picker:not(:last-child) {
+  border-bottom: 1px solid var(--border-color);
+}
+
+.event-chat-bubble {
+  max-width: 100%;
   padding: 0.75rem 1rem;
   border-radius: 16px;
   line-height: 1.4;

@@ -1,12 +1,14 @@
 const Notification = require("../models/notification.model");
 const User = require("../models/user.model");
 const { sendPushToUser } = require("../services/pushService");
+const { REACTION_PUSH_GLYPH } = require("../constants/reactions");
 
 /**
  * Crée une notification en base et l'émet en temps réel via Socket.io.
  * Envoie également une push notification si l'utilisateur l'a activée.
  * - "new_message" : déduplique par conversationId
  * - "event_chat_message" : déduplique par eventShortId
+ * - "message_reaction" : déduplique par messageId
  *
  * @param {Express.Application} app
  * @param {Object} opts
@@ -43,6 +45,31 @@ const notify = async (app, { userId, type, data = {}, link = null }) => {
       type: "event_chat_message",
       read: false,
       "data.eventShortId": data.eventShortId,
+    });
+
+    if (existing) {
+      existing.data = data;
+      existing.link = link;
+      existing.createdAt = new Date();
+      await existing.save();
+      notif = existing;
+    }
+  }
+
+  /*
+   * Déduplication des réactions : une seule notif non lue par message.
+   *
+   * ⚠️ Sans ça, un message d'événement que douze personnes aiment produit
+   * douze lignes dans le centre de notifications — et douze pushes. La
+   * dernière réaction écrase la précédente : on garde « quelqu'un a réagi à ce
+   * message », qui est l'information utile, sans l'empilement.
+   */
+  if (type === "message_reaction" && data.messageId) {
+    const existing = await Notification.findOne({
+      userId,
+      type: "message_reaction",
+      read: false,
+      "data.messageId": data.messageId,
     });
 
     if (existing) {
@@ -107,6 +134,44 @@ const notify = async (app, { userId, type, data = {}, link = null }) => {
       }
     } catch (pushErr) {
       console.error("❌ Push event_pool_contribution failed:", pushErr);
+    }
+  }
+
+  /*
+   * Push réaction.
+   *
+   * ⚠️ Le tag est propre à la réaction (`reaction-<messageId>`) et non à la
+   * conversation : sinon une réaction remplacerait sur l'écran verrouillé la
+   * notification d'un message pas encore lu.
+   *
+   * Aucun extrait du message : les contenus sont chiffrés de bout en bout et
+   * le serveur ne peut pas les lire — il n'a d'ailleurs pas à le pouvoir.
+   * « Pierre a réagi ❤️ à votre message » dit tout ce qu'il faut.
+   *
+   * `sendPushToUser` applique seul `pushEnabled`, la catégorie et le mode
+   * silencieux de CETTE conversation : rien à revérifier ici.
+   */
+  if (type === "message_reaction") {
+    try {
+      const glyph = REACTION_PUSH_GLYPH[data.reaction] || "";
+      const isEvent = Boolean(data.eventShortId);
+
+      await sendPushToUser(userId, {
+        title: isEvent
+          ? `${glyph} ${data.eventTitle || "Événement"}`
+          : `${glyph} ${data.reactorName || "Quelqu'un"}`,
+        body: isEvent
+          ? `${data.reactorName || "Quelqu'un"} a réagi à votre message`
+          : "a réagi à votre message",
+        url: `${process.env.FRONTEND_URL}${link || "/"}`,
+        tag: `reaction-${data.messageId}`,
+        muteScope: isEvent
+          ? { kind: "event", id: data.eventShortId }
+          : { kind: "dm", id: data.conversationId },
+        type: isEvent ? "events" : "chat",
+      });
+    } catch (pushErr) {
+      console.error("❌ Push message_reaction failed:", pushErr);
     }
   }
 

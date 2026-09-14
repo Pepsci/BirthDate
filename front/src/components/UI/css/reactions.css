@@ -1,0 +1,103 @@
+/* Réactions aux messages — pastilles sous la bulle + sélecteur dans le menu.
+   Pendant web de mobile/src/components/ReactionPills.tsx et
+   MessageActionSheet.tsx. */
+
+/* ── Pastilles ─────────────────────────────────────────────────────────── */
+
+.reaction-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+/* La rangée suit l'alignement de la bulle : à droite pour ses propres
+   messages, sinon on lirait une réaction posée sous le mauvais message. */
+.message.own .reaction-pills {
+  justify-content: flex-end;
+}
+
+.reaction-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  line-height: 1;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.reaction-pill:hover {
+  border-color: var(--border-color-hover);
+}
+
+/* Sa propre réaction est cerclée d'accent : on doit repérer d'un coup d'œil
+   ce qu'on a soi-même posé. */
+.reaction-pill.mine {
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 12%, transparent);
+}
+
+.reaction-count {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+/* ── Sélecteur ─────────────────────────────────────────────────────────── */
+
+.reaction-picker {
+  display: flex;
+  gap: 2px;
+  padding: 6px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.reaction-choice {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  transition: transform 0.12s ease, background 0.12s ease;
+}
+
+.reaction-choice:hover {
+  background: var(--bg-tertiary);
+  transform: scale(1.12);
+}
+
+.reaction-choice.mine {
+  border-color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 12%, transparent);
+}
+
+/* Appui long sur mobile : le bloc d'actions est centré en absolu sur la bulle
+   et empilé en colonne. Le sélecteur y devient une carte autonome — sans fond
+   propre il flotterait au-dessus du texte du message, illisible.
+   `flex-wrap` parce que six pastilles de 34 px dépassent la largeur d'un
+   écran étroit une fois la bulle rétrécie. */
+.mobile-actions .reaction-picker {
+  border-bottom: none;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: min(260px, 80vw);
+  padding: 4px 6px;
+  border-radius: 999px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Chat d'événement : la colonne est alignée par ses parents, la rangée de
+   pastilles suit donc naturellement le bord de la bulle. */
+.event-chat-bubble-col .reaction-pills {
+  margin-top: 3px;
+}

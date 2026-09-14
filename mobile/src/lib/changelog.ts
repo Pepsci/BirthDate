@@ -17,6 +17,30 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.8.0",
+    date: "2026-09-14",
+    build: "40",
+    title:
+      "Réactions aux messages, comptes de paiement Stripe complets, cagnotte externe et parcours de litige",
+    note: "Merci de signaler tout ce qui bloque. Les points marqués ⚠️ nécessitent la nouvelle version du serveur.",
+    items: [
+      "😀 ⚠️ Réagir à un message, en privé comme dans un événement : appui long, puis l'une des six réactions. Elles s'affichent en pastilles sous la bulle, regroupées avec un compteur — appuie sur une pastille existante pour te joindre à la réaction, ou sur la tienne pour la retirer.",
+      "🔔 ⚠️ Quand quelqu'un réagit à ton message, tu es prévenu. Seul l'auteur du message reçoit la notification, et une seule par message : sur un événement à douze personnes, un pouce levé ne doit pas faire douze notifications à tout le monde.",
+      "💬 ⚠️ La notification d'un message d'événement ouvrait la page de l'événement au lieu de la discussion : il fallait retrouver l'onglet à la main pour lire le message qu'on venait d'être notifié.",
+      "✅ ⚠️ Lire un message directement dans la discussion éteint sa notification. Jusqu'ici la pastille rouge restait allumée pour un message déjà lu, tant qu'on n'était pas repassé par le centre de notifications.",
+      "🔓 Sur iPhone, les notifications de messages affichaient « Nouveau message chiffré » au lieu du texte. L'appareil ne retrouvait pas sa clé de déchiffrement : c'est corrigé, le contenu s'affiche à nouveau sur l'écran verrouillé (et ne quitte jamais ton téléphone).",
+      "🏦 ⚠️ Les comptes de paiement des cagnottes deviennent des comptes Stripe complets. L'organisateur dispose de son propre tableau de bord Stripe pour suivre ses virements, et en cas d'impayé impossible à récupérer, la perte est portée par Stripe et non par BirthReminder. L'inscription est aussi plus courte : les informations d'activité sont pré-remplies.",
+      "📊 ⚠️ Le solde de la cagnotte s'affiche dans la gestion de l'événement, avec un accès direct au tableau de bord Stripe et la possibilité de déconnecter son compte de paiement.",
+      "🔗 ⚠️ Un organisateur qui utilise déjà une cagnotte ailleurs (Leetchi, Le Pot Commun…) peut en donner le lien depuis l'événement, plutôt que d'en ouvrir une chez nous.",
+      "🧾 ⚠️ Un reçu est envoyé par email après chaque participation à une cagnotte, et « Mes contributions » dans le profil garde l'historique de tous tes versements, avec un récapitulatif copiable à joindre en cas de réclamation.",
+      "🛡️ ⚠️ Au-delà de 150 €, la validation par la banque (3-D Secure) est exigée : en cas de contestation pour fraude, la responsabilité bascule sur la banque de l'émetteur et non sur l'organisateur.",
+      "🆘 ⚠️ « Un problème avec cette contribution ? » depuis Mes contributions : la démarche est expliquée étape par étape avant le formulaire, qui arrive pré-rempli et te fait choisir la cagnotte concernée. Rappel de fond : BirthReminder ne détient jamais les fonds — l'argent arrive directement sur le compte Stripe de l'organisateur, c'est donc lui qui rembourse.",
+      "🎫 ⚠️ Les demandes liées à une cagnotte ne sont plus bloquées par la limite d'un ticket ouvert à la fois : tu peux en ouvrir autant que tu as de participations.",
+      "🍽️ Le type d'événement « Dîner » s'appelle maintenant « Repas » — il servait aussi bien pour un déjeuner ou un brunch.",
+      "📖 Conditions d'utilisation à jour : compte de paiement de l'organisateur, procédure en cas de problème sur une cagnotte, cagnotte externe, gratuité du service. Le contact y passe par le formulaire plutôt que par une adresse email à recopier.",
+    ],
+  },
+  {
     version: "1.7.0",
     date: "2026-09-09",
     build: "39",
