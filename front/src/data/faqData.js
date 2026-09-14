@@ -136,6 +136,18 @@ export const FAQ_SECTIONS = [
         a: "Oui, en partageant ton RIB avec les invités. Attention : ces virements se font de banque à banque, en dehors de l'application. Aucune trace n'est conservée et rien ne pourra être prouvé en cas de désaccord.",
       },
       {
+        q: "Puis-je utiliser une cagnotte que j'ai déjà ouverte ailleurs ?",
+        a: "Oui. Dans les réglages de la cagnotte, active « Cagnotte sur un autre service » et colle le lien (Leetchi, Lydia, Le Pot Commun…). Il s'affichera sur la page de l'événement, visible par tous les invités, y compris ceux qui arrivent plus tard — contrairement à un lien collé dans le chat, qui disparaît sous les messages.",
+      },
+      {
+        q: "Qu'est-ce que ça change de passer par une cagnotte externe ?",
+        a: "Tout se déroule sur le service que tu as choisi : BirthReminder n'en voit ni les montants, ni les participants. Nous ne pouvons rien confirmer en cas de désaccord, aucun reçu n'est envoyé, rien n'apparaît dans « Mes contributions », et aucun remboursement n'est possible depuis l'application. C'est un simple lien affiché — pratique, mais sans aucune des garanties de la cagnotte intégrée.",
+      },
+      {
+        q: "Comment savoir où m'envoie un lien de cagnotte externe ?",
+        a: "Le vrai domaine du site est affiché sous le bouton, en petit. Le nom de la cagnotte est choisi par l'organisateur et ne prouve rien : c'est le domaine qu'il faut regarder avant de cliquer. Dans le doute, demande à l'organisateur.",
+      },
+      {
         q: "Puis-je contribuer sans que mon nom apparaisse ?",
         a: "Oui, une contribution peut être anonyme ou faite sous un pseudonyme, y compris vis-à-vis de l'organisateur.",
       },

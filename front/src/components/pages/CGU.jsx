@@ -478,7 +478,42 @@ export default function CGU() {
             l'organisateur.
           </p>
 
-          <h3>5.7 Gratuité du service</h3>
+          <h3>5.7 Cagnotte ouverte sur un autre service</h3>
+          <p>
+            L'organisateur peut, plutôt que d'utiliser la cagnotte intégrée,
+            afficher sur la page de l'événement un lien vers une cagnotte
+            ouverte chez un tiers (Leetchi, Lydia, Le Pot Commun ou tout autre
+            service).
+          </p>
+          <p className="warning">
+            ⚠️ Dans ce cas, BirthReminder n'affiche qu'un lien.{" "}
+            <strong>
+              La collecte se déroule entièrement en dehors de nos services
+            </strong>{" "}
+            : nous n'en connaissons ni les montants, ni les participants, nous
+            n'envoyons aucun reçu, nous n'en conservons aucune trace et nous ne
+            pouvons produire aucune preuve de versement. Aucun remboursement
+            n'est possible depuis l'application, et ces contributions
+            n'apparaissent pas dans votre historique.
+          </p>
+          <p>
+            Votre participation est alors régie par les conditions du service
+            concerné, auquel il vous appartient de vous reporter. Tout
+            différend se règle avec l'organisateur ou avec ce service, et
+            l'article 5.5 ne s'y applique pas : nous ne pouvons pas confirmer
+            un paiement dont nous n'avons pas connaissance.
+          </p>
+          <p>
+            L'affichage d'un tel lien ne vaut ni recommandation, ni vérification
+            du service concerné, ni garantie quant à l'usage des sommes
+            collectées. Le nom donné à la cagnotte est choisi par
+            l'organisateur ; le domaine réel du lien est affiché à côté afin
+            que vous puissiez vérifier vers où il vous conduit avant de
+            cliquer. Nous retirons tout lien qui nous serait signalé comme
+            frauduleux ou trompeur.
+          </p>
+
+          <h3>5.8 Gratuité du service</h3>
           <p>
             L'ensemble des fonctionnalités de BirthReminder est aujourd'hui
             gratuit et sans publicité : dates illimitées, amis illimités, chat
@@ -633,7 +668,7 @@ export default function CGU() {
         </section>
 
         <p className="last-update">
-          <strong>Dernière mise à jour :</strong> 11 septembre 2026
+          <strong>Dernière mise à jour :</strong> 14 septembre 2026
         </p>
       </div>
     </div>
