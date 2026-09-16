@@ -50,7 +50,27 @@ self.addEventListener("push", (event) => {
     },
   };
 
-  event.waitUntil(self.registration.showNotification(data.title, options));
+  // Accusé « distribué » pour les messages de chat : la push est arrivée sur ce
+  // navigateur. Jeton HMAC propre au message (voir server/utils/messageReceipts.js).
+  const receipt =
+    data.receiptUrl && data.receiptToken && data.messageId && data.recipientId
+      ? fetch(data.receiptUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            messageId: data.messageId,
+            recipientId: data.recipientId,
+            receiptToken: data.receiptToken,
+          }),
+        }).catch(() => {})
+      : Promise.resolve();
+
+  event.waitUntil(
+    Promise.all([
+      self.registration.showNotification(data.title, options),
+      receipt,
+    ]),
+  );
 });
 
 // ── Clic sur la notification ou sur un bouton ─────────────────────────────────

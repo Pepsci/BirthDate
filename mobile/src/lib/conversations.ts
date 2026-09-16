@@ -52,6 +52,9 @@ export interface DMMessage {
   /** Empreinte laissée quand le compte de l'expéditeur a été purgé. */
   senderSnapshot?: { name?: string; publicKey?: string } | null;
   replyTo?: string | null;
+  /** Accusés : lu (inclut l'expéditeur lui-même) et distribué. Voir lib/receipts.ts */
+  readBy?: { user: string; readAt?: string }[];
+  deliveredTo?: { user: string; deliveredAt?: string }[];
   /**
    * Réactions posées sur ce message.
    *

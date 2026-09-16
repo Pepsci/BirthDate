@@ -21,6 +21,7 @@
 import * as Notifications from "expo-notifications";
 import * as TaskManager from "expo-task-manager";
 import { getPrivateKey, decryptMessage } from "./crypto";
+import { CHAT_CATEGORY, handleReplyResponse } from "./notif-reply";
 
 export const BACKGROUND_NOTIF_TASK = "birthreminder-background-notif";
 
@@ -36,6 +37,9 @@ interface EncryptedPushData {
   // Anti-doublon : identifiant stable du message côté serveur
   messageId?: string;
   tag?: string;
+  // Réponse depuis la notification (voir notif-reply.ts)
+  friendId?: string;
+  recipientId?: string;
 }
 
 /**
@@ -74,6 +78,50 @@ function extractEncryptedData(raw: unknown): EncryptedPushData | null {
     }
   }
   return null;
+}
+
+/**
+ * Accusé « distribué » : prévient le serveur que la push d'un message est
+ * arrivée sur l'appareil (app fermée, donc sans socket). Même contrat que la
+ * NSE iOS — jeton HMAC propre au message, voir server/utils/messageReceipts.js.
+ * Silencieux en cas d'échec : ne doit jamais empêcher l'affichage.
+ */
+export async function reportDeliveryFromPush(raw: unknown): Promise<void> {
+  if (!raw || typeof raw !== "object") return;
+  const stack: any[] = [raw];
+  const seen = new Set<any>();
+  while (stack.length) {
+    const node = stack.pop();
+    if (!node || typeof node !== "object" || seen.has(node)) continue;
+    seen.add(node);
+    if (node.receiptUrl && node.receiptToken && node.messageId && node.recipientId) {
+      try {
+        await fetch(node.receiptUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            messageId: node.messageId,
+            recipientId: node.recipientId,
+            receiptToken: node.receiptToken,
+          }),
+        });
+      } catch {
+        /* réseau indisponible : l'accusé partira à la prochaine connexion */
+      }
+      return;
+    }
+    for (const val of Object.values(node)) {
+      if (typeof val === "string" && val.startsWith("{")) {
+        try {
+          stack.push(JSON.parse(val));
+        } catch {
+          /* ignore */
+        }
+      } else if (val && typeof val === "object") {
+        stack.push(val);
+      }
+    }
+  }
 }
 
 let _presentedRecently = new Set<string>();
@@ -123,7 +171,15 @@ export async function decryptAndPresent(raw: unknown): Promise<boolean> {
         title: `💬 ${data.senderName || "Nouveau message"}`,
         body: plaintext,
         sound: "default",
+        // Bouton « Répondre » : la notif locale remplace la push, elle doit
+        // donc porter la catégorie et tout ce qu'il faut pour répondre.
+        categoryIdentifier: CHAT_CATEGORY,
         data: {
+          conversationId: data.conversationId ?? null,
+          friendId: data.friendId ?? null,
+          recipientId: data.recipientId ?? null,
+          senderPublicKey: data.senderPublicKey ?? null,
+          senderName: data.senderName ?? null,
           url:
             data.url ||
             (data.conversationId
@@ -157,7 +213,12 @@ export function defineBackgroundNotifTask() {
         console.warn("[notif-decrypt] tâche de fond erreur", error);
         return;
       }
-      await decryptAndPresent(data);
+      // Android : un appui sur « Répondre » app fermée arrive aussi ici.
+      if (data && typeof data === "object" && "actionIdentifier" in data) {
+        await handleReplyResponse(data);
+        return;
+      }
+      await Promise.all([decryptAndPresent(data), reportDeliveryFromPush(data)]);
     },
   );
 }

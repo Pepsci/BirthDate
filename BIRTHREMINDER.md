@@ -1,15 +1,66 @@
 # BIRTHREMINDER — Contexte projet complet
-*Généré : avril 2026 — À mettre à jour à chaque évolution majeure*
+*Mis à jour : 16 septembre 2026 — À mettre à jour à chaque évolution majeure*
+
+> **Lecture rapide pour reprendre le projet** : §0 (état actuel), §14 (ce qui
+> reste à faire), §15 (points de vigilance). Le reste est de la référence.
+
+---
+
+## 0. État au 16 septembre 2026
+
+Trois applications sur un seul backend :
+
+| Surface | Dossier | État |
+|---------|---------|------|
+| Web | `front/` | En production sur `birthreminder.com` |
+| Mobile iOS | `mobile/` | Bêta TestFlight — version affichée 1.0 (build 40 livré, 41 en préparation) |
+| Mobile Android | `mobile/` | Chantier non commencé (`ANDROID_APPLINKS_TODO.md`) |
+| API + temps réel | `server/` | AWS EC2 + nginx + PM2 |
+
+**Chantiers terminés depuis juin 2026** : application mobile React Native
+(Expo), cagnottes Stripe migrées d'Express vers Standard, cagnotte externe,
+listes de cadeaux communes, silencieux par conversation, tickets de support,
+panneau d'administration, réactions aux messages, conformité stores et DSA.
+
+**Chantier en cours** : rien de bloquant. Voir §14 pour la suite.
+
+### ⚠️ Deux numérotations de version qui ne se croisent pas
+
+- `mobile/app.json` → `"version": "1.0.0"` : c'est le `CFBundleShortVersionString`,
+  la version affichée par TestFlight et l'App Store. **Jamais incrémentée
+  depuis le début.**
+- `mobile/src/lib/changelog.ts` → `1.5.0`, `1.6.0`, `1.7.0`, `1.8.0` :
+  numérotation inventée pour les notes in-app, reliée à rien.
+- `mobile/app.json` → `"ios.buildNumber"` : le seul numéro réellement
+  incrémenté (40 livré, 41 à venir).
+
+Conséquence : `APP_VERSION` (`front`/`mobile` → `api.ts`) est envoyé au serveur
+à chaque appel et à chaque enregistrement de token push, et vaut toujours
+`1.0.0`. Les logs ne permettent pas de distinguer un appareil en build 35 d'un
+appareil en build 40. **À corriger en alignant `version` sur la numérotation du
+changelog.**
+
+⚠️ `npx expo prebuild --clean` a déjà écrasé `buildNumber` une fois
+(39 → 38, le 11/09). Revérifier `app.json` après chaque prebuild.
 
 ---
 
 ## 1. Description & Proposition de valeur
 
-**BirthReminder** est une application web full-stack de gestion d'anniversaires, de fêtes et d'événements entre amis.
+**BirthReminder** est une application de gestion d'anniversaires, de fêtes et
+d'événements entre amis, avec cagnotte commune.
 
-**Problème résolu :** Ne plus oublier les anniversaires et les fêtes de ses proches, centraliser l'organisation d'événements (soirées surprise, anniversaires, dîners), gérer les idées cadeaux et faciliter la coordination de groupe.
+**Problème résolu :** ne plus oublier les anniversaires et fêtes de ses
+proches, centraliser l'organisation d'événements, gérer les idées cadeaux,
+collecter une cagnotte et coordonner un groupe.
 
-**Public cible :** Particuliers souhaitant maintenir le lien avec leur entourage (famille, amis).
+**Public cible :** particuliers souhaitant maintenir le lien avec leur
+entourage.
+
+**Positionnement juridique :** BirthReminder est un **intermédiaire technique**.
+L'argent des cagnottes ne transite jamais par ses comptes (charges directes
+Stripe sur le compte de l'organisateur). Le service est **gratuit** : aucune
+commission n'est prélevée. Voir §13 pour la doctrine complète en cas de litige.
 
 **URL production :** `https://birthreminder.com`
 **URL dev :** `http://localhost:5173` (front) / `http://localhost:4000` (back)
@@ -18,764 +69,555 @@
 
 ## 2. Stack technique
 
+### Backend (`server/`)
 | Couche | Technologie | Version |
 |--------|-------------|---------|
-| **Frontend** | React | 18.3 |
-| **Routing** | React Router DOM | 6.2 |
-| **Animations** | motion (Framer Motion) | 12.38 |
-| **HTTP Client** | Axios | 1.7 |
-| **Build** | Vite | 5.4 |
-| **Backend** | Node.js + Express | 4.19 |
-| **Base de données** | MongoDB + Mongoose | 6.2 |
-| **Temps réel** | Socket.io | 4.8 |
-| **Auth** | JWT (httpOnly cookie) | jsonwebtoken 9.0 / express-jwt 7.7 |
-| **Emails** | AWS SES + Nodemailer | @aws-sdk/client-ses 3.x |
-| **Upload images** | Cloudinary + multer | cloudinary 1.28 / multer 1.4 |
-| **Push notifs** | Web Push (VAPID) | web-push 3.6 |
-| **Cron jobs** | node-cron | 4.2 |
-| **Sécurité** | Helmet | 8.0 |
-| **Rate limiting** | express-rate-limit | 8.3 |
-| **Chiffrement E2E** | TweetNaCl + BIP39 | tweetnacl 1.0 / bip39 3.1 |
-| **SEO** | react-helmet-async | 3.0 |
-| **Icônes** | lucide-react | 0.539 |
-| **Déploiement** | AWS EC2 | — |
-| **URL scraping** | open-graph-scraper + cheerio | — |
-| **Génération IDs** | nanoid | 3.3 |
+| Runtime | Node.js + Express | 4.19 |
+| Base de données | MongoDB + Mongoose | 6.13 |
+| Temps réel | Socket.io | 4.8 |
+| Auth | JWT (cookie httpOnly) | jsonwebtoken 9.0 / express-jwt 7.7 |
+| Paiement | **Stripe Connect Standard, charges directes** | stripe 22.2 |
+| Emails | AWS SES + Nodemailer | @aws-sdk/client-ses 3.x |
+| Images | multer memoryStorage → sharp (webp, EXIF strippé) → disque local | ⚠️ `config/cloudinary.js` est du code mort |
+| Push | Web Push (VAPID) + Expo Push | web-push 3.6 |
+| Cron | node-cron | 4.2 |
+| Sécurité | Helmet, express-rate-limit, geoip-country | — |
+| Chiffrement au repos (RIB) | crypto natif (AES-256-GCM) | — |
+| Scraping | open-graph-scraper + cheerio | — |
+| Déploiement | AWS EC2 + nginx + PM2 | — |
+
+### Web (`front/`)
+| Couche | Technologie | Version |
+|--------|-------------|---------|
+| Framework | React | 18.3 |
+| Routing | React Router DOM | 6.2 |
+| Build | Vite | 5.4 |
+| Animations | motion (Framer Motion) | 12.38 |
+| Paiement | @stripe/react-stripe-js 6.6 / @stripe/stripe-js 9.8 | — |
+| Chiffrement E2E | TweetNaCl + BIP39 + @noble/hashes | — |
+| Cartes | react-leaflet 4.x (OpenStreetMap) | ⚠️ v5 incompatible React 18 |
+| Analytics | posthog-js | 1.194 |
+| Icônes | lucide-react + Font Awesome | — |
+
+### Mobile (`mobile/`)
+| Couche | Technologie | Version |
+|--------|-------------|---------|
+| Framework | Expo SDK | 54.0 |
+| Runtime | React Native | 0.81.5 |
+| React | React | 19.1 |
+| Routing | expo-router | 6.0 |
+| Push | expo-notifications + NSE Swift | 0.32 |
+| Stockage sécurisé | expo-secure-store | 15.0 |
+| Paiement | @stripe/stripe-react-native | 0.50 |
+| Chiffrement E2E | TweetNaCl (JS) + swift-sodium (NSE) | — |
 
 ---
 
-## 3. Features existantes et état d'implémentation
+## 3. Features par domaine
 
-### ✅ Implémentées et stables
+### Authentification & compte
+Inscription + vérification email obligatoire, JWT en cookie httpOnly (avec repli
+sur l'en-tête `Authorization` pour le mobile), reset par token, profil (avatar,
+mot de passe, préférences), suppression de
+compte (soft delete → purge cron J+30), onboarding, export RGPD des données
+(`users.export.js`), blocage d'utilisateurs.
 
-#### Authentification & Compte
-- Inscription avec email, vérification email obligatoire
-- Connexion JWT stocké en cookie httpOnly
-- Réinitialisation de mot de passe par email (token expirant)
-- Mise à jour du profil (avatar Cloudinary, mot de passe, préférences)
-- Suppression de compte (soft delete → purge cron à J+30)
-- Onboarding (flag `onboardingDone`)
+### Dates & cadeaux
+Dates manuelles (anniversaire ou fête), lien optionnel vers un `User`
+(`linkedUser`), format nameday `MM-DD`, préférences de notification par date,
+cadeaux associés (URL, prix, image, statut d'achat).
 
-#### Gestion des dates
-- Création manuelle d'une date (anniversaire ou fête, famille/ami)
-- Lien optionnel vers un `User` inscrit (`linkedUser`)
-- Format nameday : `MM-DD` (ex: `"03-13"`)
-- Préférences de notification par date (timings, activer/désactiver)
-- Préférences spécifiques fête (nameday preferences)
-- Cadeaux associés à une date (add/update/delete, avec URL, prix, image, statut achat)
+### Amis
+Demandes d'amitié, invitations par email pour non-inscrits (token + expiration),
+lien automatique date ↔ ami (`linkedDate`), fusion de doublons.
 
-#### Système d'amis
-- Envoi/réception de demandes d'amitié
-- Invitations par email pour non-inscrits (token + expiration)
-- Acceptation/refus de demande
-- Lien automatique date ↔ ami (`linkedDate`)
-- Fusion de doublons (`/merge-duplicates`)
+### Chat (DM)
+Socket.io temps réel, accusés de lecture, indicateur de frappe, **chiffrement
+E2E** (BIP39 + TweetNaCl box X25519/XSalsa20-Poly1305), partage de cadeaux et de
+dates en message, notifications email groupées, silencieux par conversation,
+**réactions** (voir §13).
 
-#### Chat (Conversations DM)
-- Conversations temps réel via Socket.io
-- Accusés de lecture (read receipts)
-- Indicateur de frappe (typing indicators)
-- Chiffrement E2E optionnel (mode "full" — BIP39 + TweetNaCl)
-- Partage de cadeaux en message (type `gift_share`)
-- Notifications email groupées (fréquence configurable : instant / 2x/jour / quotidien / hebdo)
-- Désactivation par ami
+### Wishlist
+Liste par utilisateur, scraping OG de l'URL, partage entre amis, page publique
+via `publicSlug`, réservation/achat par un ami, liens affiliés Amazon
+(`birthreminder-21`).
 
-#### Wishlist
-- Liste de souhaits par utilisateur
-- Scraping automatique de l'URL (titre, image, prix via OG tags)
-- Partage avec amis (`isShared`)
-- Réservation et achat par un ami
+### Listes de cadeaux communes (`sharedGiftList`)
+Listes co-gérées, invitations, réservations depuis le lien public (avec email de
+confirmation), code d'accès qui garde la porte, filtres par occasion et par état,
+masquage d'une idée aux invités, libération d'une réservation par un gestionnaire.
 
-#### Notifications
-- In-app : centre de notifications paginé, marquage lu, suppression
-- Push (Web Push VAPID) : configurable par type (anniversaires, chat, amis, cadeaux)
-- Email AWS SES : rappels anniversaires, fêtes, invitations amis, reset mot de passe, récap mensuel, événements
+### Événements
+Stepper de création 6 étapes. Types : `birthday` / `party` / `dinner` (libellé
+**« Repas »**) / `other`. Date fixe ou vote, lieu fixe ou vote, cadeaux imposés /
+propositions / désactivés. Code d'accès 6 caractères, invités sans compte, RSVP,
+votes, chat de groupe, carte Leaflet, rappels J-7/J-1, annulation et
+rétablissement, **transfert d'organisation**, page publique `/event/:shortId`.
 
-#### Rappels automatiques (Cron)
-- Rappels anniversaires quotidiens (J-1, J-7, J-14, J-30 — configurable par date)
-- Rappels fêtes quotidiens
-- Récap mensuel (1er du mois)
-- Rappels événements (J-7, J-1)
-- Notifications chat groupées (4 fenêtres de fréquence)
-- Purge comptes supprimés
+`event:join` est émis au niveau d'`EventPage` dès l'accès complet → tout le
+temps réel (cagnotte, virements, votes, RSVP) fonctionne sans ouvrir le chat.
 
-#### Agenda
-- Vue Mois : grille 7 colonnes, offset lundi correct, pastilles colorées
-- Vue Semaine : layout vertical 7 lignes, max 3 items par jour
-- Modal jour (`AgendaDayModal`) : anniversaires, fêtes, événements
-- Navigation depuis le modal vers FriendProfile ou EventPage
-- Intégration des événements (`GET /events/mine`)
+### Cagnotte (Gift Pool)
+Voir §13 pour l'architecture Stripe complète. En résumé : charges directes sur
+le compte Standard de l'organisateur, PaymentElement inline, webhook signé comme
+seule source de vérité, reçu email, historique dans « Mes contributions »,
+3-D Secure forcé au-delà d'un seuil, cagnotte externe en alternative.
 
-#### Événements ⭐
-- Création via stepper 6 étapes (`EventForm`)
-- Types : birthday / party / dinner / other
-- Mode date : fixe ou vote (plusieurs options)
-- Mode lieu : fixe ou vote + Google Places Autocomplete
-- Mode cadeaux : imposé (liste) ou propositions par les invités
-- Code d'accès 6 caractères (join sans invitation)
-- Invités externes (sans compte BirthReminder)
-- RSVP : pending / accepted / declined / maybe
-- Votes date et lieu
-- Propositions cadeaux avec vote toggle
-- Chat de groupe temps réel Socket.io (room `event:${shortId}`)
-- Partage par URL + code d'accès
-- Rappels configurables (J-7, J-1)
-- Contrôle `allowGuestInvites` (les invités peuvent-ils inviter ?)
-- Page publique `/event/:shortId` (lecture seule sans auth)
-- Rejoindre via modal `JoinEventModal` (sans compte)
+### Virement direct (hors plateforme)
+RIB chiffré AES-256-GCM dans un modèle séparé avec index TTL (auto-suppression
+7/14/30/60/90 j), accès réservé aux comptes BirthReminder, lien PayPal.Me en
+clair, toggles indépendants.
 
-### 🚧 Placeholder (prévu, non implémenté)
+### Support & modération
+Tickets (`supportMessage`), catégories `general` / `pool`, réponses de l'équipe
+notifiées (`support_reply`), signalement de contenu et blocage d'utilisateurs
+(`moderation.js` — conformité Apple 1.2 / Google Play UGC), centre d'aide avec
+FAQ et procédures pas-à-pas.
 
-- **Cagnotte (`giftPoolEnabled`)** : champ présent dans le schéma, UI grisée "Bientôt disponible"
+### Administration (`/admin`)
+Utilisateurs, événements (avec agrégats cagnotte et tickets), cagnottes (gel,
+remboursement avec garde-fou de solde, dossier de preuves téléchargeable),
+tickets, logs (avec pays depuis l'IP), statistiques, registre de revue des
+alertes de fraude (`poolAlertReview` — diligence documentée au sens du DSA).
+
+### Notifications
+Centre in-app paginé, push Web Push (web) et Expo + NSE (iOS), emails SES.
+Silencieux par conversation et par événement. Types dans l'enum de
+`notification.model.js` — **tout nouveau type doit y être ajouté**, et à
+`notify.js` s'il déclenche une push.
+
+### Crons
+Rappels anniversaires (J-1/7/14/30 configurables), rappels fêtes, récap mensuel,
+rappels événements, notifications chat groupées (4 fenêtres), purge des comptes
+supprimés, rétention des logs.
 
 ---
-
 ## 4. Structure des dossiers
 
 ```
-BirthDate/
+birthreminder/
+├── BIRTHREMINDER.md          # ce document
+├── CLAUDE.md                 # instructions de travail pour l'assistant
+├── TESTFLIGHT_NOTES.md       # notes du build en cours (à réécrire à chaque build)
+├── ROADMAP_2026.md  A_TESTER.md  AUDIT_STORES_2026.md
+├── AUDIT_TEXTES_LEGAUX.md  SECURITE_A_FAIRE.md  ANDROID_APPLINKS_TODO.md
 ├── server/
-│   ├── app.js                    # Express app, CORS, montage routes, init crons
-│   ├── server.js                 # HTTP server + Socket.io setup
-│   ├── bin/www                   # Point d'entrée Node
-│   ├── config/
-│   │   ├── db.config.js          # Connexion MongoDB
-│   │   └── cloudinary.config.js  # Cloudinary setup
-│   ├── middleware/
-│   │   ├── jwt.middleware.js      # Vérification JWT (cookie + header)
-│   │   ├── socketAuth.js          # Auth Socket.io
-│   │   ├── checkEventAccess.js    # Middleware accès événement
-│   │   └── logger.middleware.js   # Audit logs
-│   ├── models/                    # 14 schémas Mongoose
-│   ├── routes/                    # ~15 fichiers de routes Express
-│   ├── sockets/
-│   │   ├── chatHandlers.js        # Handlers Socket.io DM
-│   │   └── eventHandlers.js       # Handlers Socket.io Events
-│   ├── jobs/
-│   │   ├── sendReminders.js       # Cron anniversaires/fêtes
-│   │   ├── eventReminders.js      # Cron rappels événements
-│   │   ├── chatNotificationCron.js# Cron notifs chat groupées
-│   │   └── purgeDeletedAccounts.js# Cron suppression comptes
-│   ├── services/
-│   │   └── emailTemplates/        # Templates AWS SES
-│   │       ├── emailHelpers.js    # header(), footer(), badge(), ctaButton()
-│   │       ├── birthdayReminder.js
-│   │       ├── namedayReminder.js
-│   │       ├── invitationEmail.js
-│   │       ├── friendRequestEmailService.js
-│   │       ├── passwordResetEmail.js
-│   │       ├── monthlyRecapEmail.js
-│   │       └── eventEmails.js     # invitation, J-7/J-1, vote requis, date confirmée
-│   └── utils/
-│       ├── nameday.js             # Helpers fêtes
-│       ├── friendDates.js         # Helpers dates amis
-│       └── notify.js              # Envoi notifications in-app
+│   ├── app.js                # ⚠️ webhook Stripe monté AVANT express.json()
+│   ├── bin/www               # app.set("io", io)
+│   ├── config/               # mongoDb, avatarStorage, cardPhotoStorage, stripe
+│   ├── constants/reactions.js
+│   ├── middleware/           # jwt, socketAuth, checkEventAccess, logger
+│   ├── models/               # 23 schémas Mongoose
+│   ├── routes/
+│   │   ├── admin/            # events, logs, pools, stats, support, users
+│   │   ├── events/           # core, invitations, votes, gifts, pool,
+│   │   │                     #   bankInfo, transfer, notifyOrganizer
+│   │   ├── stripe.connect.js  stripe.webhook.js
+│   │   ├── support.js  moderation.js  sharedGifts.js  chatMutes.js
+│   │   └── …
+│   ├── sockets/              # chatHandlers.js, eventHandlers.js
+│   ├── jobs/                 # crons
+│   ├── scripts/              # outils de diagnostic (voir §12)
+│   ├── services/             # pushService, poolFraudService, emailTemplates/
+│   └── utils/                # notify, bankCrypto, blocking, mobileLinks, urlGuard
 │
-└── front/src/
-    ├── App.jsx                    # Router principal
-    ├── main.jsx                   # Bootstrap + Context providers
-    ├── api/
-    │   └── apiHandler.jsx         # Instance Axios centralisée
-    ├── context/
-    │   ├── auth.context.jsx       # Authentification
-    │   ├── theme.context.jsx      # Thème light/dark/auto
-    │   ├── notification.context.jsx # Notifications + unreads
-    │   └── OnlineStatusContext.jsx  # Présence en ligne
-    ├── protectedRoutes/
-    │   └── PrivateRoute.jsx
-    ├── styles/
-    │   └── variables.css          # CSS variables globales dark/light
-    ├── utils/                     # Chiffrement, helpers
-    └── components/
-        ├── Accueil/               # LandingPage
-        ├── connect/               # AuthPage, VerifyEmail, ResetPassword
-        ├── dashboard/             # Home, DateList, BirthdayCard, Agenda, AgendaDayModal, UpdateDate...
-        ├── chat/                  # Chat, DirectChat, ChatModal, ChatWindow...
-        ├── events/                # EventPage, EventForm, EventsPanel, EventCard, JoinEventModal...
-        ├── friends/               # Friends, AddFriendModal, MergeDuplicates...
-        ├── layout/                # Footer, CookieBanner, ScrollToTop
-        ├── notifications/         # Toast composant
-        ├── pages/                 # CGU, Privacy, Cookies, Guide, MentionsLegales
-        ├── profil/                # Profile, FriendProfile, Wishlist, BirthdayView...
-        ├── services/
-        │   └── socket.service.js  # Singleton Socket.io client
-        └── UI/
-            ├── Logo.jsx
-            └── css/               # Styles partagés (carousel, gifts, modals, badges...)
+├── front/src/
+│   ├── api/apiHandler.jsx
+│   ├── context/              # auth, theme, notification, OnlineStatus
+│   ├── styles/variables.css
+│   └── components/
+│       ├── admin/            # AdminPools, AdminEvents, AdminSupport, AdminAlerts…
+│       ├── chat/             # ChatWindow, ConversationList, MuteBell…
+│       ├── events/
+│       │   ├── chat/EventChat.jsx
+│       │   └── stripe/       # GiftPoolManager, ContributeModal,
+│       │                     #   ExternalPoolManager, DirectTransferViewer…
+│       ├── notifications/    # NotificationItem
+│       ├── pages/            # CGU, HelpCenter, ContactPage…
+│       ├── profil/           # MyContributions…
+│       └── UI/               # ReactionIcon, ReactionPills, ReactionPicker,
+│                             #   ReportMessageModal, Avatar, ConfirmModal…
+│
+└── mobile/
+    ├── app.json              # ⚠️ plugins : withFmtConstevalFix EN DERNIER
+    ├── plugins/withFmtConstevalFix
+    ├── targets/BirthReminderNSE/NotificationService.swift
+    └── src/
+        ├── app/              # expo-router : (tabs), event/, chat/, profile/…
+        ├── components/       # ReactionPills, MessageActionSheet, icons/…
+        └── lib/              # api, socket, crypto, notifications, changelog,
+                              #   faqData, events, conversations, moderation…
 ```
 
 ---
 
-## 5. Routes API complètes
+## 5. Routes API
 
 **Préfixe global : `/api`**
 
-### Auth (`/api/auth`)
+Les routes historiques (auth, dates, users, friends, conversations, wishlist,
+notifications, events de base) sont stables — se reporter au code, elles n'ont
+pas bougé. Ci-dessous uniquement ce qui a changé ou été ajouté.
+
+### Events — cagnotte et virements
 | Méthode | Route | Description |
 |---------|-------|-------------|
-| POST | `/signup` | Inscription |
-| POST | `/login` | Connexion (cookie httpOnly) |
-| POST | `/logout` | Déconnexion |
-| GET | `/verify` | Vérification session + refresh token |
-| POST | `/forgot-password` | Demande reset mot de passe |
-| POST | `/reset/:token` | Réinitialisation mot de passe |
+| GET | `/:shortId/pool` | État cagnotte + total + contributions |
+| PUT | `/:shortId/pool` | Activer/configurer (organizer) |
+| POST | `/:shortId/pool/contribute` | PaymentIntent (charge directe). `guestEmail` **obligatoire** pour un invité (`EMAIL_REQUIRED`) ; 3-D Secure forcé au-delà de `FORCE_3DS_ABOVE` |
+| GET | `/pool/mine/contributions` | Historique des versements de l'utilisateur |
+| GET/PUT/DELETE | `/:shortId/bank-info` | RIB chiffré (compte requis) |
+| PUT | `/:shortId/direct-transfer/*` | Toggles IBAN / PayPal / cagnotte externe |
 
-### Dates (`/api/date`)
+### Stripe Connect (`/api/stripe/connect`)
 | Méthode | Route | Description |
 |---------|-------|-------------|
-| GET | `/` | Liste toutes les dates de l'user (enrichies conversationId) |
-| POST | `/` | Créer une date |
-| GET | `/:id` | Récupérer une date |
-| PATCH | `/:id` | Modifier une date |
-| DELETE | `/:id` | Supprimer une date |
-| PATCH | `/:id/gifts` | Ajouter un cadeau |
-| PATCH | `/:id/gifts/:giftId` | Modifier un cadeau |
-| DELETE | `/:id/gifts/:giftId` | Supprimer un cadeau |
-| PUT | `/:id/notifications` | Toggle notifications date |
-| PUT | `/:id/notification-preferences` | Préférences notification anniversaire |
-| PUT | `/:id/nameday-preferences` | Préférences notification fête |
+| POST | `/onboard` | Crée/réutilise un compte **Standard** + lien d'onboarding |
+| GET | `/status` | État du compte (`ready` si peut encaisser) |
+| POST | `/dashboard` | Lien vers le tableau de bord. Branche Express (login link) / Standard (`dashboard.stripe.com`), renvoie `kind` |
+| GET | `/balance` | Solde du compte connecté |
+| DELETE | `/account` | Déconnexion. Refusée s'il existe des contributions `succeeded` ; clôture les cagnottes actives ; journalise `bankinfo_delete` |
 
-### Users (`/api/users`)
+### Support (`/api/support`)
 | Méthode | Route | Description |
 |---------|-------|-------------|
-| GET | `/` ou `/me` | Infos user courant |
-| PATCH | `/me` | Modifier profil (avatar, mot de passe...) |
-| PUT | `/keys` | Stocker clés E2E |
-| GET | `/:userId/publicKey` | Clé publique d'un user (E2E) |
+| POST | `/` | Ouvre un ticket. `category: "pool"` échappe à la règle « un seul ticket ouvert » (plafonné au nombre de participations) |
+| GET | `/` `/:id` | Mes tickets |
 
-### Friends (`/api/friends`)
+### Admin (`/api/admin`)
 | Méthode | Route | Description |
 |---------|-------|-------------|
-| GET | `/` | Liste des amis |
-| GET | `/requests` | Demandes en attente reçues |
-| GET | `/sent` | Demandes envoyées + invitations externes |
-| POST | `/` | Envoyer une demande d'amitié ou invitation |
-| PATCH | `/:friendshipId/accept` | Accepter |
-| PATCH | `/:friendshipId/reject` | Refuser |
-| PATCH | `/:friendshipId/link-date` | Lier ami à une date |
-| DELETE | `/:friendshipId` | Supprimer ami |
+| PATCH | `/pools/:eventId/freeze` | Gèle une cagnotte |
+| GET | `/pools/:eventId/evidence` | Dossier de preuves (JSON téléchargeable) |
+| POST | `/pools/alerts/review` | Enregistre la revue d'une alerte |
+| GET | `/events` | Événements + `ticketsCount`, `openTicketsCount`, `collectedCents` |
 
-### Conversations (`/api/conversations`)
+### Notifications
 | Méthode | Route | Description |
 |---------|-------|-------------|
-| GET | `/` | Liste conversations avec unreads |
-| POST | `/start` | Démarrer une conversation |
-| GET | `/:conversationId` | Conversation + messages |
-| POST | `/:conversationId/messages` | Envoyer message (REST fallback) |
-| PATCH | `/:conversationId/read` | Marquer lu |
-
-### Events (`/api/events`)
-> ⚠️ `/mine` et `/check/:id` DOIVENT être déclarés avant `/:shortId`
-
-| Méthode | Route | Description |
-|---------|-------|-------------|
-| POST | `/` | Créer un événement (auth) |
-| GET | `/mine` | Mes événements organisés + invités → `{ organized[], invited[] }` |
-| GET | `/check/:id` | Vérifie si event existe pour un userId (forPerson) ou dateId (forDate) → `{ eventShortId }` ou `null` |
-| GET | `/:shortId` | Récupérer un event (public, accès partiel sans auth) |
-| PUT | `/:shortId` | Modifier (organizer only) |
-| DELETE | `/:shortId` | Supprimer + cascade (organizer only) |
-| POST | `/:shortId/invite` | Inviter des users inscrits + email |
-| POST | `/:shortId/join` | Rejoindre via accessCode. Body: `{ accessCode, guestName? }` |
-| PUT | `/:shortId/rsvp` | Répondre à l'invitation (auth + checkEventAccess) |
-| POST | `/:shortId/vote/date` | Voter pour une date |
-| POST | `/:shortId/vote/location` | Voter pour un lieu |
-| POST | `/:shortId/gifts` | Proposer un cadeau |
-| GET | `/:shortId/gifts` | Lister propositions |
-| POST | `/:shortId/gifts/:giftId/vote` | Voter pour un cadeau (toggle) |
-| PUT | `/:shortId/gifts/:giftId` | Modifier sa proposition |
-| GET | `/:shortId/messages` | Messages chat event (HTTP fallback) |
-| GET | `/:shortId/share` | `{ url, code }` pour partage |
-| GET | `/:shortId/invitations` | Liste invitations peuplées |
-| DELETE | `/:shortId/leave` | Quitter l'événement (invité) |
-
-### Wishlist (`/api/wishlist`)
-| Méthode | Route | Description |
-|---------|-------|-------------|
-| POST | `/fetch-url` | Scraper une URL (OG tags) |
-| GET | `/` | Ma wishlist |
-| POST | `/` | Ajouter un item |
-| GET | `/:id` | Récupérer un item |
-| PATCH | `/:id` | Modifier |
-| DELETE | `/:id` | Supprimer |
-| PATCH | `/:id/reserve` | Réserver |
-| PATCH | `/:id/purchase` | Marquer acheté |
-
-### Autres routes
-| Préfixe | Description |
-|---------|-------------|
-| `/api/notifications` | CRUD notifications in-app (GET paginé, PATCH read, DELETE) |
-| `/api/merge-dates` | POST `/suggest` + POST `/merge` |
-| `/api/verify-email` | POST `/` — vérification token email |
-| `/api/unsubscribe` | POST `/` — désabonnement emails |
-| `/api/push` | POST `/subscribe` + `/unsubscribe` — Web Push |
-| `/api/stats` | GET `/` — stats serveur (protégé par API key) |
+| PATCH | `/read-conversation` | Éteint les notifs d'une conversation. `kind` `"dm"` \| `"event"` — filtre **verrouillé côté serveur**, le client ne choisit pas quel type marquer lu. Couvre `new_message` / `event_chat_message` **et** `message_reaction` |
 
 ---
 
-## 6. Modèles de données (MongoDB / Mongoose)
+## 6. Modèles — ajouts et champs sensibles
 
-### User
+### Event (extraits)
 ```js
-{
-  name, surname, email, password,
-  avatar: String,                      // URL Cloudinary
-  birthDate: Date,
-  nameday: String,                     // Format MM-DD
-  resetToken, resetTokenExpires,
-  verificationToken, isVerified: Boolean,
-  lastVerificationEmailSent: Date,
-  deletedAt: Date,
-  onboardingDone: Boolean,
-
-  // Préférences emails
-  receiveBirthdayEmails: Boolean,
-  receiveFriendRequestEmails: Boolean,
-  receiveOwnBirthdayEmail: Boolean,
-  monthlyRecap: Boolean,
-  receiveChatEmails: Boolean,
-  chatEmailFrequency: Enum["instant","twice_daily","daily","weekly"],
-  chatEmailDisabledFriends: [ObjectId],
-  lastChatEmailSent: Date,
-
-  // Push
-  pushEnabled: Boolean,
-  pushEvents: { birthdays, chat, friends, gifts: Boolean },
-  pushBirthdayTimings: [Number],        // [1, 0] = J-1 + jour J
-
-  // E2E chiffrement
-  publicKey, encryptedPrivateKey,
-  oldPublicKey, oldEncryptedPrivateKey,
-  encryptedSeedPhrase,
-  e2eMode: Enum["standard","full"],
-  e2eActivatedAt: Date
-}
+giftMode: Enum["imposed","proposals","none"],
+imposedGifts: [{ name, url, price }],     // TOUJOURS un array
+giftPool: { active, mode: Enum["free","goal"], goal, currency, deadline },
+directTransfer: { ibanEnabled, paypalEnabled, paypalLink, externalPoolUrl },
+organizerNotificationPrefs: { rsvp, dateVote, locationVote, giftProposed,
+                              giftVote, chatMessage, poolContribution },
 ```
 
-### Date
+### StripeAccount
+`user` (unique), `stripeAccountId`, `chargesEnabled`, `payoutsEnabled`,
+`detailsSubmitted`, `onboardingCompletedAt`.
+
+### GiftPoolContribution
+`event`, `contributor` (null = invité), `guestName`, **`guestEmail`**, `amount`
+(centimes), `currency`, `message`, `anonymous`, `stripePaymentIntentId` (unique),
+`status` Enum`["pending","succeeded","failed","refunded"]`, **`feeCents`**,
+**`receiptSentAt`**, **`guestTermsAcceptedAt`**.
+
+### OrganizerBankInfo
+`ibanEncrypted` + `iv` + `authTag` (AES-256-GCM), `holderName`, `expiresAt`
+avec index TTL `expireAfterSeconds: 0`.
+
+### PoolAlertReview
+Revue d'une alerte de fraude, avec **`snapshot`** des chiffres au moment de la
+revue : une alerte écartée se rouvre si les montants changent.
+
+### SupportMessage
+`category` Enum`["general","pool"]`, `relatedEvent`.
+
+### Message / EventMessage
 ```js
-{
-  date: Date,                          // Anniversaire (récurrence mois+jour uniquement)
-  name, surname: String,
-  nameday: String,                     // Format MM-DD
-  owner: ref User,
-  family: Boolean,
-  receiveNotifications: Boolean,
-  notificationPreferences: {
-    timings: [Number],                 // [1, 7, 14, 30] jours avant
-    notifyOnBirthday: Boolean
-  },
-  namedayPreferences: {
-    timings: [Number],
-    notifyOnNameday: Boolean
-  },
-  comment: Array,
-  gifts: [{
-    giftName, purchased, occasion, year,
-    purchasedAt, url, price, image
-  }],
-  linkedUser: ref User                 // null = date manuelle
-}
+reactions: [{ user: ref User, reaction: Enum(REACTIONS), createdAt }]
+// une seule réaction par utilisateur et par message
 ```
 
-### Friend
-```js
-{
-  user: ref User,
-  friend: ref User,
-  status: Enum["pending","accepted","rejected","blocked"],
-  requestedBy: ref User,
-  requestedAt, acceptedAt: Date,
-  linkedDate: ref Date
-}
-// Index unique: { user, friend }
-```
-
-### Conversation + Message
-```js
-// Conversation
-{ participants: [ref User], lastMessage: ref Message, lastMessageAt: Date }
-
-// Message
-{
-  conversation: ref Conversation,
-  sender: ref User,
-  type: Enum["text","gift_share"],
-  content: String (max 50000),
-  metadata: Mixed,
-  isEncrypted: Boolean,
-  encryptedFor: Map<userId, ciphertext>,
-  readBy: [{ user: ref User, readAt: Date }],
-  edited: Boolean, editedAt: Date
-}
-```
-
-### Event
-```js
-{
-  shortId: String (5 chars, nanoid, unique),
-  title, description: String,
-  type: Enum["birthday","party","dinner","other"],
-  organizer: ref User,
-  forPerson: ref User,                 // ami inscrit
-  forDate: ref Date,                   // date manuelle
-  recurrence: { enabled, frequency, nextOccurrence },
-
-  dateMode: Enum["fixed","vote"],
-  fixedDate: Date,
-  dateOptions: [Date],
-  selectedDate: Date,
-
-  locationMode: Enum["fixed","vote"],
-  fixedLocation: { name, address, coordinates: { lat, lng } },
-  locationOptions: [{ name, address, coordinates }],
-  selectedLocation: { name, address, coordinates },
-
-  giftMode: Enum["imposed","proposals"],
-  imposedGifts: [{ name, url, price }],  // TOUJOURS un array
-  giftPoolEnabled: Boolean,             // false — placeholder Cagnotte
-
-  maxGuests: Number,                   // null = illimité
-  accessCode: String (6 chars),
-  allowExternalGuests: Boolean,
-  allowGuestInvites: Boolean,
-
-  reminders: [{ type, daysBeforeEvent, sent }],
-  status: Enum["draft","published","cancelled","done"]
-}
-// Virtual: invitations (depuis EventInvitation)
-```
-
-### EventInvitation
-```js
-{
-  event: ref Event,
-  user: ref User,                      // null = invité externe
-  externalEmail, guestName: String,
-  status: Enum["pending","accepted","declined","maybe"],
-  dateVote: [Date],
-  locationVote: ObjectId,
-  joinedViaCode: Boolean
-}
-```
-
-### EventGiftProposal
-```js
-{ event: ref Event, proposedBy: ref User, name, url, price, votes: [ref User] }
-```
-
-### EventMessage
-```js
-{
-  event: ref Event,
-  sender: ref User,
-  content: String (max 50000),
-  isEncrypted: Boolean,
-  encryptedFor: Map<userId, ciphertext>,
-  readBy: [{ user, readAt }]
-}
-// Index: { event, createdAt: -1 }
-```
-
-### Wishlist
-```js
-{
-  userId: ref User,
-  title (max 100), price, url, image, description (max 500),
-  isShared, isPurchased: Boolean,
-  purchasedBy: ref User, purchasedAt: Date,
-  reservedBy: ref User, reservedAt: Date
-}
-```
-
-### Notification
-```js
-{
-  userId: ref User,
-  type: Enum["friend_request","friend_accepted","new_message","birthday_soon","gift_reserved","event_reminder"],
-  data: Mixed, link: String,
-  read: Boolean
-}
-```
-
-### Invitation (amis)
-```js
-{ email, invitedBy: ref User, token (unique), status: Enum["pending","accepted"] }
-// TTL: 30 jours
-```
-
-### PushSubscription
-```js
-{ userId: ref User (unique), subscription: { endpoint, keys: { p256dh, auth } } }
-```
-
-### Log
-```js
-{
-  userId: ref User,
-  action: Enum["login","logout","signup","password_reset","account_update","account_delete","friend_add","message_send"],
-  ipAddress, userAgent, metadata
-}
-// TTL: 365 jours
-```
+### Notification — enum `type`
+Tous les types événement, `shared_gift_*`, `support_reply`, et
+**`message_reaction`** (un seul type pour le privé et l'événement ;
+`data.eventShortId` distingue les deux).
 
 ---
 
 ## 7. Variables d'environnement
 
 ```bash
-# Serveur
-PORT=
-NODE_ENV=                          # development | production
+# Base
+MONGO_URI=  TOKEN_SECRET=  FRONTEND_URL=  ORIGIN=
+# AWS SES, VAPID, Expo : inchangés
 
-# Base de données
-MONGO_URI=                         # MongoDB Atlas connection string
+# Stripe
+STRIPE_SECRET_KEY=            # sk_test_… / sk_live_…
+STRIPE_PUBLISHABLE_KEY=
+STRIPE_WEBHOOK_SECRET=        # whsec_… (CLI en local, dashboard en prod)
+STRIPE_CONNECT_RETURN_URL=
+STRIPE_CONNECT_REFRESH_URL=
+PUBLIC_SITE_URL=              # ⚠️ JAMAIS localhost — sert à business_profile.url,
+                              #    que Stripe refuse en local
+FORCE_3DS_ABOVE=15000         # centimes, défaut 150 €
 
-# Auth
-TOKEN_SECRET=                      # Secret JWT
-SESSION_SECRET=                    # Secret sessions Express
+# Chiffrement RIB — 64 caractères hex (32 octets)
+# ⚠️ NE JAMAIS CHANGER une fois des IBAN chiffrés. Distinct test/prod.
+BANK_ENCRYPTION_KEY=
 
-# Cloudinary (upload images)
-CLOUDINARY_NAME=
-CLOUDINARY_KEY=
-CLOUDINARY_SECRET=
-
-# AWS SES (emails)
-AWS_ACCESS_KEY_ID=
-AWS_SECRET_ACCESS_KEY=
-AWS_REGION=                        # ex: eu-west-3
-EMAIL_FROM=                        # ex: reset_password@birthreminder.com
-EMAIL_BRTHDAY=                     # ex: birthday@birthreminder.com
-
-# Web Push (VAPID)
-VAPID_PUBLIC_KEY=
-VAPID_PRIVATE_KEY=
-VAPID_MAILTO=                      # ex: mailto:admin@birthreminder.com
-
-# URLs
-FRONTEND_URL=                      # ex: http://localhost:5173
-BACKEND_URL=                       # ex: http://localhost:4000
-
-# Statistiques (API interne)
-STATS_API_KEY=
+# Front — ⚠️ le fichier doit s'appeler front/.env (avec le point).
+# Vite ne charge QUE les fichiers commençant par un point : un fichier
+# nommé "env" laisse VITE_STRIPE_PUBLISHABLE_KEY undefined, donc
+# loadStripe(undefined), donc une modale de paiement vide et sans erreur.
+VITE_STRIPE_PUBLISHABLE_KEY=
+VITE_GOOGLE_MAPS_API_KEY=     # à restreindre par référent HTTP (pas encore fait)
 ```
 
 ---
 
-## 8. Socket.io — Événements
-
-### Client singleton
-`front/src/components/services/socket.service.js`
-- `socketService.connect(userId)` — connexion avec auth
-- `socketService.emit(event, data)` — émettre
-- `socketService.on(event, cb)` / `socketService.off(event, cb)` — écouter / désabonner
+## 8. Socket.io
 
 ### Rooms
-- Chat DM : `conversation:${conversationId}`
+- DM : `conversation:${conversationId}`
 - Événement : `event:${shortId}`
+- Utilisateur : `user:${userId}` (notifications in-app)
 
-### Events Chat DM (existants, ne pas modifier)
+### Événements
 ```
-users:getOnline / users:online / user:online / user:offline
-conversation:join / conversation:leave / conversations:join
-message:send / message:new / message:error
-typing:start / typing:stop
-messages:read
-```
+# DM
+message:new  message:deleted  message:edited  messages:read
+typing:start  typing:stop  contact:keyUpdated
+message:react      → message:reacted        # bascule : renvoyer la même retire
 
-### Events Événements
-```
+# Événement
 event:join / event:leave
-event:message_send / event:message_new
+event:message_send      → event:message_new
+event:message_react     → event:message_reacted
 event:typing_start / event:typing_stop
-event:rsvp_updated / event:vote_updated / event:gift_proposed / event:guest_joined
-```
+event:rsvp_updated  event:vote_updated  event:gift_proposed  event:guest_joined
+event:pool_update       # émis par le webhook Stripe
+event:transfer_update   # émis par les routes bankInfo
 
-### Pattern anti-stale-closure
-Toujours re-enregistrer les handlers à chaque reconnexion. Exposer le state React via ref, ne pas le capturer directement dans les callbacks Socket. Voir `server/sockets/chatHandlers.js` comme référence.
+# Notifications
+new_notification
+```
 
 ---
 
-## 9. Frontend — Routing et composants clés
+## 9. Design system
 
-### Routes App.jsx
-```
-/ → LandingPage (public)
-/auth, /login, /signup, /forgot-password → AuthPage (public)
-/verify-email → VerifyEmail (public)
-/auth/reset/:token → ResetPassword (public)
-/event/:shortId → EventPage (public, lecture seule sans auth)
-/unsubscribe → Unsubscribe (public)
-/cookies, /privacy, /cgu, /guide, /mentions-legales → Pages statiques (public)
-/home → Home (privé)
-/profile → Profile (privé)
-/birthday/:id → BirthdayView (privé)
-/update-date/:id → UpdateDate (privé)
-/merge-duplicates → MergeDuplicates (privé)
-/events/mine → EventsPanel (privé)
-/events/new → EventForm (privé)
-```
-
-### Deep links depuis `/home`
-```
-/home?tab=date&dateId=xxx  → FriendProfile pour ce dateId
-/home?tab=agenda           → vue agenda
-/home?tab=events           → EventsPanel
-/home?tab=friends          → section amis du profil
-```
-
-### Context Providers (ordre dans main.jsx)
-```
-BrowserRouter > ThemeProvider > AuthProviderWrapper >
-NotificationProvider > OnlineStatusProvider > HelmetProvider > App
-```
-
-### Composants clés
-- **BirthdayCard** : carte cliquable entière → `onViewProfile(date, "info")`
-- **FriendProfile** : sidebar desktop / carousel mobile, sections Info/Notifs/Wishlist/Cadeaux/Messages/Modifier
-- **UpdateDate** : prop `compact=true` pour inline dans FriendProfile
-- **Agenda** : vue Mois + Semaine, toggle mobile-first, `WEEK_VIEW_MAX_ITEMS=3`
-- **AgendaDayModal** : bottom sheet mobile, navigation deep-link
-- **EventsPanel** : filtres (tous/mes/invités/à venir/en attente/passés), pagination
-- **EventPage** : tabs Info/Participants/Cadeaux/Chat/Votes, RSVP inline, JoinEventModal
-- **EventForm** : stepper 6 étapes, Google Places Autocomplete step 3
-- **EventCard** : carte résumé, actions organizer (edit/delete)
+- **Pas d'inline CSS.** Tout dans des fichiers `.css` dédiés, variables CSS.
+- La variable de couleur principale est **`--primary`** (définie dans
+  `front/src/styles/variables.css`). ⚠️ `--primary-color` **n'existe pas**.
+- Fichiers CSS : **première lettre minuscule**, reste en camelCase
+  (`eventPage.css`, `giftPool.css`, `reactions.css`).
+- Mode sombre : classe `.dark` sur la racine, variables redéfinies.
+- Mobile : `useThemedStyles(makeStyles)` avec `ThemeColors`, jamais de couleur
+  en dur — **sauf** les icônes de réaction, volontairement à couleurs fixes
+  (un cœur rouge reste rouge en clair comme en sombre).
 
 ---
 
-## 10. Design System CSS
+## 10. Réactions aux messages
 
-### Variables globales (`front/src/styles/variables.css`)
-```css
-/* Couleurs */
---primary: #3b82f6;       --primary-light: #60a5fa;    --primary-dark: #2563eb;
---success: #10b981;       --danger: #ef4444;            --warning: #f59e0b;
-
-/* Backgrounds */
---bg-primary: #ffffff;    --bg-secondary: #f9fafb;      --bg-tertiary: #f3f4f6;
-
-/* Texte */
---text-primary: #111827;  --text-secondary: #6b7280;    --text-tertiary: #9ca3af;
-
-/* Borders */
---border-color: #e5e7eb;  --border-color-hover: #d1d5db;
-
-/* Shadows */
---card-shadow: ...;       --card-shadow-hover: ...;
-```
-
-Dark mode : classe `.dark` sur `<html>` redéfinit toutes ces variables. Géré par `ThemeContext`.
-
-### Règles CSS
-- **Pas d'inline styles** — tout dans des fichiers `.css` dédiés
-- Toujours utiliser les variables CSS (`var(--primary)`, etc.)
-- Chaque composant a son fichier CSS dans son dossier (`css/nomComposant.css`)
-- Fichiers partagés dans `components/UI/css/` : `carousel-common.css`, `gifts-common.css`, `badge-notification.css`, `modals.css`, `containerInfo.css`
+- **Clé sémantique en base, jamais l'emoji.** `REACTIONS = ["like", "love",
+  "laugh", "wow", "sad", "party"]` dans `server/constants/reactions.js`. Un
+  emoji est une donnée de présentation : une base pleine de « ❤️ » imposerait
+  une migration le jour où le jeu est redessiné.
+- **Icônes dessinées maison**, en aplats colorés (et non en traits comme les
+  icônes d'interface) : une réaction est un tampon émotionnel lu à 14-16 px.
+  `mobile/src/components/icons/ReactionIcon.tsx` et
+  `front/src/components/UI/ReactionIcon.jsx` doivent rester identiques au tracé
+  près.
+- `REACTION_PUSH_GLYPH` (serveur) est la **seule** exception : une push est du
+  texte affiché par l'OS, on ne peut pas y mettre de SVG.
+- **Les réactions ne sont pas chiffrées** (arbitrage assumé).
+- Bascule côté serveur : renvoyer la réaction déjà posée la retire ; `null`
+  retire explicitement.
+- Notification : seul l'auteur, jamais soi-même, jamais au retrait, dédoublonnée
+  par `data.messageId`. Tag de push `reaction-<messageId>` — distinct du tag de
+  la conversation, sinon une réaction remplacerait sur l'écran verrouillé la
+  notification d'un message non lu.
 
 ---
 
-## 11. Cron Jobs
+## 11. Notes iOS / Expo
 
-| Fichier | Schedule | Timezone | Rôle |
-|---------|----------|----------|------|
-| `sendReminders.js` | Minuit quotidien | Europe/Paris | Rappels anniversaires, fêtes, récap mensuel |
-| `eventReminders.js` | 6h quotidien | Europe/Paris | Rappels événements J-7, J-1 |
-| `chatNotificationCron.js` | 5min / 9h+18h / 9h / Lun 9h | — | Notifications chat groupées |
-| `purgeDeletedAccounts.js` | 3h quotidien | — | Suppression comptes (deletedAt > 30j) |
-
----
-
-## 12. Emails AWS SES
-
-### Templates disponibles
-| Fichier | Déclencheur |
-|---------|-------------|
-| `birthdayReminder.js` | Cron anniversaire (J-N) |
-| `namedayReminder.js` | Cron fête (J-N) |
-| `invitationEmail.js` | Invitation ami (inscrit ou externe) |
-| `friendRequestEmailService.js` | Demande d'ami reçue |
-| `passwordResetEmail.js` | Forgot password |
-| `monthlyRecapEmail.js` | 1er du mois |
-| `eventEmails.js` | Invitation event, rappel J-7/J-1, vote requis, date confirmée |
-
-### Helpers partagés (`emailHelpers.js`)
-Fonctions `header()`, `footer()`, `badge()`, `ctaButton()` pour cohérence visuelle.
-
-> ⚠️ Ne jamais modifier les templates existants. Ajouter uniquement.
+- **NSE (Notification Service Extension)** : `NotificationService.swift`
+  déchiffre les messages E2E sur l'appareil. La clé privée est lue dans le
+  Keychain d'expo-secure-store, dont le format est piégeux :
+  `kSecAttrService` = `"app:no-auth"` (suffixe issu de `requireAuthentication`)
+  et `kSecAttrAccount` = **`Data(key.utf8)`, une Data brute et non une String**.
+  Une requête mal formée échoue en silence → « 🔒 Nouveau message chiffré ».
+- **`withFmtConstevalFix`** doit figurer **en dernier** dans `plugins` de
+  `app.json`, et un `npx expo prebuild --clean` est nécessaire pour qu'il prenne
+  effet. Ce prebuild peut écraser `buildNumber` : revérifier après.
+- Routage des push : `mobile/src/lib/push.ts` mappe l'`url` du payload vers une
+  route expo-router. `/event/<id>?tab=chat` → `/event/chat/<id>`,
+  `?tab=chat&conversationId=` → `/chat-open`.
 
 ---
 
-## 13. Décisions d'architecture importantes
+## 12. Scripts de diagnostic (`server/scripts/`)
 
-### Authentification
-- JWT stocké en **cookie httpOnly** (pas localStorage) pour sécurité XSS
-- `express-jwt` extrait le token depuis le cookie `authToken` en priorité
-- Token vérifié et rafraîchi à chaque `GET /auth/verify`
+| Script | Usage |
+|--------|-------|
+| `check-connect-liability.js` | Type de compte + qui porte les pertes |
+| `verify-connect-config.js` | Documente le refus Stripe sur Express + pertes |
+| `reset-connect-account.js` | Supprime/réinitialise un compte (`--payout`, `--local-only`) |
+| `diagnose-payouts.js` | État des virements d'un `acct_…` |
+| `check-last-contributions.js` | Dernières contributions + présence de `feeCents` |
+| `diagnose-push-duplicates.js` | Doublons de tokens push |
 
-### IDs événements
-- `shortId` : 5 caractères via `nanoid(5)` — URL-friendly, pas de collision en pratique
-- `accessCode` : 6 caractères alphanumériques upper-case via `Math.random().toString(36)`
-
-### Ordre des routes Express (critique)
-`/mine` et `/check/:id` DOIVENT être déclarés **avant** `/:shortId` dans `events.js`.
-
-### `checkEventAccess` middleware
-Injecte `req.event`, `req.userRole` ("organizer" | "guest"), `req.invitation`. Retourne 403 si non accès.
-
-### Dates et timezone
-- Anniversaires : comparaison **mois + jour uniquement** (récurrence annuelle, pas d'année)
-- Namedays : format string `"MM-DD"` (ex: `"03-13"`)
-- Événements : comparaison **année + mois + jour** (non récurrents)
-- Toujours parser avec `new Date(year, month, day)` pour éviter les problèmes UTC
-
-### Navigation profil
-- Pas de route `/dates/:id` — tout passe par **deep link** `/home?tab=date&dateId=...`
-- Retour depuis EventPage → `/home?tab=events` (connecté) ou `/` (non connecté)
-
-### `imposedGifts`
-Toujours un **array** `imposedGifts: []`, jamais un objet unique.
-
-### Guests externes
-1. Partage URL `/event/:shortId` + accessCode
-2. Lecture seule → `JoinEventModal` → `POST /:shortId/join` avec `{ accessCode, guestName? }`
-3. `EventInvitation` créée avec `user: null`, `guestName`, `joinedViaCode: true`
-4. Identité mémorisée via cookie ou `localStorage` (`guestToken`)
-5. Accès chat conditionné par `allowExternalGuests`
-
-### Chiffrement E2E (optionnel)
-- Clés asymétriques TweetNaCl, seed phrase BIP39
-- Mode "standard" (défaut) ou "full" (E2E activé)
-- Les clés publiques sont récupérables via `GET /users/:userId/publicKey`
-
-### Socket.io
-- Connexion automatique au login via `AuthContext`, déconnexion au logout
-- Pattern anti-stale-closure : re-enregistrer les handlers à chaque reconnexion, exposer state via ref
+⚠️ **Leçon apprise** : `check-last-contributions.js` a longtemps affiché un
+verdict ✅ alors que chaque contribution montrait `frais=❌ ABSENT` — il ne
+comptait que les `succeeded` et ignorait les `refunded`. Un script de
+vérification qui valide un échec est pire que pas de script. Toute modification
+d'un script de diagnostic doit être testée sur un cas connu comme mauvais.
 
 ---
 
-## 14. Roadmap et features planifiées
+## 13. Décisions d'architecture
+
+### Stripe Connect — charges directes, comptes Standard
+
+**Charges directes** : `stripeAccount` passé en 2ᵉ argument des appels Stripe.
+Le paiement s'effectue sur le compte de l'organisateur, qui est le marchand.
+BirthReminder n'est jamais dans le flux d'argent.
+
+**Standard et non Express** — arbitrage vérifié en production le 14/09/2026 :
+Stripe refuse `stripe_dashboard[type]=express` dès lors que la plateforme ne
+collecte pas les frais et ne prend pas en charge les soldes négatifs. Les deux
+ne se dissocient pas. En Standard, `controller.losses.payments = "stripe"` :
+c'est Stripe qui porte les pertes irrécouvrables. Le message d'erreur exact est
+recopié en commentaire dans `stripe.connect.js` — ne pas retenter Express.
+
+Conséquences :
+- L'organisateur a un tableau de bord Stripe complet.
+- `createLoginLink` est **réservé à Express** → le bouton renvoie vers
+  `dashboard.stripe.com`.
+- Un compte Express existant ne se convertit pas : déconnexion + réinscription.
+- `accounts.del` fonctionne toujours en test, **jamais** sur un compte Standard
+  en live.
+- `business_profile` est pré-rempli à la création (mcc `5947`, description de
+  collecte entre particuliers) pour raccourcir l'onboarding. `business_profile.url`
+  doit être `PUBLIC_SITE_URL`, jamais localhost.
+
+**Type de charge ≠ type de compte** : le passage Express → Standard ne change
+rien pour le participant, qui paie toujours dans l'application.
+
+### Webhook Stripe
+- Monté avec `express.raw({ type: "application/json" })` **AVANT**
+  `express.json()` dans `app.js`. Ordre critique : la signature est vérifiée sur
+  le corps brut.
+- Local : `stripe listen --forward-to localhost:4000/api/stripe/webhook
+  --forward-connect-to localhost:4000/api/stripe/webhook`.
+- Handlers idempotents → les retries Stripe sont sans risque.
+- **Le webhook est la seule source de vérité du paiement**, jamais le front.
+- ⚠️ La lecture des frais réels retombe sur le `StripeAccount` de l'organisateur
+  quand `event.account` est absent — sans ce repli, la lecture se faisait sur le
+  compte plateforme où la charge n'existe pas, le reçu partait quand même, et
+  `feeCents` restait vide **en silence**.
+
+### Doctrine litige — « on relaie, l'organisateur rembourse »
+BirthReminder est greffier et huissier, jamais juge. L'escalade est :
+organisateur → support BirthReminder (relais) → conciliateur de justice →
+banque → THESEE. La chaîne de preuves est le reçu email + l'historique in-app
++ le dossier de preuves téléchargeable côté admin. Le registre de revue des
+alertes (`poolAlertReview`) matérialise la diligence exigée par le DSA.
+
+Repères juridiques retenus : art. 750-1 CPC / décret 2023-357 (conciliation
+préalable obligatoire sous 5 000 €), injonction de payer exemptée (Cass.
+25 sept. 2025), THESEE pour l'e-escroquerie (paiement volontaire) contre
+PERCEVAL (usage frauduleux de carte), micro-entreprise exemptée des art. 15 et
+20-23 et 30-32 du DSA mais jamais des art. 11-14 et 16-17.
+
+### Chiffrement
+- **E2E du chat** : NaCl box (X25519 + XSalsa20-Poly1305), tweetnacl côté JS,
+  swift-sodium dans la NSE. Chiffre pour des destinataires précis.
+- **RIB au repos** : AES-256-GCM symétrique (`utils/bankCrypto.js`), le serveur
+  doit pouvoir déchiffrer pour afficher. L'`authTag` fait échouer le
+  déchiffrement si la donnée est altérée : on ne renvoie jamais un IBAN douteux.
+- Les deux sont distincts et ne doivent pas être confondus.
+
+---
+
+## 14. Ce qui reste à faire
+
+### Vérifications en attente
+- [ ] **`feeCents` se remplit-il enfin ?** Le repli du webhook a été écrit mais
+      jamais validé. Faire un paiement de 1 €, chercher
+      `[stripe.webhook] frais réels N centimes enregistrés`, puis
+      `node scripts/check-last-contributions.js`.
+- [ ] `check-connect-liability.js` voyait 2 comptes Express là où
+      `diagnose-payouts.js` en trouvait un troisième (`acct_1UFbtp3M8ANcH8o0`).
+      Incohérence jamais expliquée.
+
+### Avant le prochain build mobile
+- [ ] `withFmtConstevalFix` en dernier dans `plugins`, puis
+      `npx expo prebuild --clean`, puis **revérifier `buildNumber`**
+- [ ] Aligner `app.json` → `"version"` sur la numérotation du changelog (§0)
+- [ ] Recoller `TESTFLIGHT_NOTES.md` dans App Store Connect
 
 ### Court terme
-- [ ] Cagnotte (`giftPoolEnabled`) — intégration paiement (Stripe ou PayPal)
-- [ ] Récurrence événements (`recurrence.enabled` déjà dans le schéma)
+- [ ] Interrupteur dédié aux notifications de réaction (`pushEvents.reactions`
+      + `type: "reactions"` dans `pushService` + case dans les préférences web
+      et mobile). Aujourd'hui les couper impose de couper aussi les messages —
+      WhatsApp a un réglage séparé, et il a raison.
+- [ ] Clause de créance dans les CGU (l'organisateur rembourse BirthReminder des
+      sommes que Stripe débiterait) — rédigée, jamais appliquée
+- [ ] Restreindre la clé Google Maps par référent HTTP dans Google Cloud Console
+- [ ] Supprimer `_to_delete/` à la racine (le shell distant ne peut pas
+      supprimer de fichiers, il ne peut que les déplacer)
+- [ ] Réponse depuis la notification push (nécessite d'abord un endpoint REST
+      d'envoi — aujourd'hui l'envoi passe uniquement par Socket.io)
 
 ### Moyen terme
-- [ ] Notifications push pour les événements (invitations, RSVP, votes)
-- [ ] Mode hors-ligne (PWA + service worker)
-- [ ] Application mobile native (React Native)
-
-### Placeholder déjà codé
-- `giftPoolEnabled: false` dans Event schema → afficher section grisée "Bientôt disponible" dans EventPage et EventForm
+- [ ] Chantier Android (`ANDROID_APPLINKS_TODO.md`) ; ⚠️ `versionCode 1` est
+      encore en dur dans `android/app/build.gradle`
+- [ ] SEO / prerendering
+- [ ] Récurrence des événements
+- [ ] Mode hors-ligne (PWA + service worker) côté web
 
 ---
 
 ## 15. Points de vigilance
 
-- `imposedGifts` est un **array** — ne jamais traiter comme un objet
+### Données
+- `imposedGifts` est un **array**, jamais un objet
 - `forDate` (ref Date manuelle) ≠ `forPerson` (ref User inscrit)
-- `allowGuestInvites` contrôle la visibilité du bouton "Inviter" ET du lien de partage pour les invités
-- Ne jamais modifier les schémas `User`, `Friend`, `Date` existants (seulement ajouter des refs)
-- Ne jamais modifier les templates email existants (ajouter uniquement)
+- Ne jamais modifier les schémas `User`, `Friend`, `Date` existants — seulement
+  ajouter des refs
+- Ne jamais modifier un template email existant — seulement en ajouter
+- Tout nouveau type de notification : enum de `notification.model.js` **et**
+  `notify.js` si push, **et** `NotificationItem.jsx` (web) **et**
+  `lib/notifications.ts` (mobile), sinon il s'affiche « Nouvelle notification »
+
+### Infrastructure
 - Ne jamais toucher la config Nginx / PM2 / CORS existante
-- Ne jamais toucher le système de chat DM existant (s'en inspirer)
-- Les profils n'ont PAS de route dédiée — deep links via `/home?tab=date&dateId=...`
+- `express.raw()` **avant** `express.json()` pour le webhook Stripe
+- Le RIB ne doit **jamais** apparaître dans la réponse en accès partiel de
+  `GET /:shortId` — uniquement via sa route dédiée protégée
+- `BANK_ENCRYPTION_KEY` ne change jamais une fois des IBAN chiffrés
+
+### Frontend
+- `react-leaflet@4` uniquement (v5 incompatible React 18)
+- La variable de couleur est `--primary`, pas `--primary-color`
+- ⚠️ **`window.open` après un `await` est bloqué** par le navigateur : le
+  contexte de geste utilisateur est perdu, et le blocage est silencieux. Ouvrir
+  l'onglet de façon synchrone puis lui affecter `location.href`.
+- Les profils n'ont pas de route dédiée — deep links via
+  `/home?tab=date&dateId=…`
+
+### Messages d'erreur
+Deux fois de suite (onboarding Stripe, puis tableau de bord), un message
+générique a masqué la cause réelle et coûté une session de diagnostic. Les
+réponses d'erreur portent désormais un `detail`, que `front/apiHandler` **et**
+`mobile/src/lib/api.ts` doivent propager. Distinguer aussi les états normaux
+(`ONBOARDING_INCOMPLETE`) des vrais échecs.
+
+### Parité web / mobile
+Toute fonctionnalité de chat, de cagnotte ou de notification doit être portée
+sur les deux surfaces dans la même passe. Une réaction posée sur téléphone et
+invisible dans le navigateur est un bug, pas une fonctionnalité partielle.

@@ -8,6 +8,11 @@ const User = require("../models/user.model");
 const Friend = require("../models/friend.model");
 const Notification = require("../models/notification.model");
 const { isBlockedBetween } = require("../utils/blocking");
+const { emitRead } = require("../utils/messageReceipts");
+const {
+  sendDirectMessage,
+  SendMessageError,
+} = require("../services/sendDirectMessage");
 
 // Récupérer toutes les conversations de l'utilisateur
 router.get("/", isAuthenticated, async (req, res) => {
@@ -180,6 +185,72 @@ router.get("/:conversationId/messages", isAuthenticated, async (req, res) => {
   }
 });
 
+// Envoyer un message par REST — utilisé par la réponse depuis une notification
+// push (app fermée, pas de socket). Même logique que le socket `message:send`.
+// Body : { content, isEncrypted, encryptedForRecipient, encryptedForSender,
+//          replyTo, clientId, markRead }
+router.post(
+  "/:conversationId/messages",
+  isAuthenticated,
+  async (req, res) => {
+    const userId = req.payload._id;
+    const { conversationId } = req.params;
+    const io = req.app.get("io");
+
+    try {
+      const { message, duplicate } = await sendDirectMessage({
+        io,
+        app: req.app,
+        connectedUsers: req.app.get("connectedUsers") || new Map(),
+        senderId: userId,
+        data: { ...req.body, conversationId },
+      });
+
+      if (!duplicate) {
+        // Pas de socket émetteur : tout le monde dans la room le reçoit, y
+        // compris les autres appareils de l'expéditeur.
+        io?.to(`conversation:${conversationId}`).emit("message:new", {
+          conversationId,
+          message,
+        });
+      }
+
+      // Répondre depuis la notification vaut lecture, comme sur WhatsApp.
+      if (req.body?.markRead) {
+        const conversation = await Conversation.findById(conversationId).select(
+          "_id participants",
+        );
+        const result = await Message.updateMany(
+          {
+            conversation: conversationId,
+            sender: { $ne: userId },
+            "readBy.user": { $ne: userId },
+          },
+          { $push: { readBy: { user: userId, readAt: new Date() } } },
+        );
+        await Notification.updateMany(
+          {
+            userId,
+            type: "new_message",
+            read: false,
+            "data.conversationId": conversationId,
+          },
+          { $set: { read: true } },
+        );
+        if (result.modifiedCount > 0) emitRead(io, conversation, userId);
+      }
+
+      return res.status(duplicate ? 200 : 201).json(message);
+    } catch (error) {
+      if (error instanceof SendMessageError) {
+        return res.status(400).json({ message: error.message });
+      }
+      console.error("❌ Error sending message (REST):", error);
+      return res.status(500).json({ message: "Impossible d'envoyer le message" });
+    }
+  },
+);
+
 // Récupérer une conversation spécifique
 router.get("/:conversationId", isAuthenticated, async (req, res) => {
   try {
@@ -254,6 +325,12 @@ router.put("/:conversationId/read", isAuthenticated, async (req, res) => {
     });
 
     await Promise.all(updatePromises);
+
+    // ⚠️ Sans cet envoi, une lecture faite depuis le mobile (qui ne passe que
+    // par cette route) ne faisait jamais passer les coches en « lu » ailleurs.
+    if (unreadMessages.length > 0) {
+      emitRead(req.app.get("io"), conversation, userId);
+    }
 
     // Lire les messages ne marquait pas comme lue la notification "nouveau
     // message" correspondante (centre de notifs / badge de l'icône app) :

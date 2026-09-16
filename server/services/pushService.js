@@ -126,6 +126,11 @@ async function sendPushToUser(userId, payload) {
     tag: payload.tag || "birthreminder-default",
     type: payload.type || "default",
     friendId: payload.friendId || null,
+    // Accusé « distribué » (messages de chat) — voir utils/messageReceipts.js
+    messageId: payload.messageId || null,
+    recipientId: payload.recipientId || null,
+    receiptToken: payload.receiptToken || null,
+    receiptUrl: payload.receiptUrl || null,
   });
 
   const results = await Promise.allSettled(
@@ -213,8 +218,17 @@ async function sendExpoPushToUser(userId, payload) {
         conversationId: payload.conversationId || null,
         messageId: payload.messageId || null, // anti-doublon côté mobile
         tag: payload.tag || null,
+        // Accusé « distribué » : l'appareil POSTe ces champs à receiptUrl
+        recipientId: payload.recipientId || null,
+        receiptToken: payload.receiptToken || null,
+        receiptUrl: payload.receiptUrl || null,
       },
     };
+    // Catégorie « message » : ajoute l'action « Répondre » (champ texte) sur la
+    // notification. Doit correspondre à CHAT_CATEGORY dans mobile/src/lib/notif-reply.ts.
+    if (payload.type === "chat" && payload.conversationId) {
+      msg.categoryId = "chat_message";
+    }
     if (payload.dataOnly && !iosTokens.has(to)) {
       // Android : pas de title/body → rien affiché automatiquement, la tâche
       // de fond déchiffre et présente elle-même la notif lisible.
@@ -227,7 +241,9 @@ async function sendExpoPushToUser(userId, payload) {
       // remplacera ce texte par le message déchiffré, façon WhatsApp.
       msg.title = payload.title || "BirthReminder";
       msg.body = payload.body || "";
-      if (payload.dataOnly) msg.mutableContent = true;
+      // mutableContent réveille la NSE : nécessaire pour déchiffrer, mais aussi
+      // pour accuser « distribué » sur les messages en clair.
+      if (payload.dataOnly || payload.receiptToken) msg.mutableContent = true;
     }
     return msg;
   });

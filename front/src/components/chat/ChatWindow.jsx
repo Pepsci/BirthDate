@@ -19,6 +19,8 @@ import PersonPreviewCard from "./PersonPreviewCard";
 import ReactionPills from "../UI/ReactionPills";
 import ReactionPicker from "../UI/ReactionPicker";
 import ReportMessageModal from "../UI/ReportMessageModal";
+import MessageInfoModal from "./MessageInfoModal";
+import { getReceiptStatus, applyReceipt } from "./receipts";
 import "./css/chatWindow.css";
 
 function ChatWindow({ conversation, onBack, onRead }) {
@@ -31,6 +33,7 @@ function ChatWindow({ conversation, onBack, onRead }) {
   const [contextMenu, setContextMenu] = useState(null);
   const [longPressMessageId, setLongPressMessageId] = useState(null);
   const [reportTarget, setReportTarget] = useState(null);
+  const [infoTarget, setInfoTarget] = useState(null);
   const [showPersonPreview, setShowPersonPreview] = useState(false);
 
   const [firstUnreadId, setFirstUnreadId] = useState(null);
@@ -141,6 +144,7 @@ function ChatWindow({ conversation, onBack, onRead }) {
     socket.on("typing:start", handleTypingStart);
     socket.on("typing:stop", handleTypingStop);
     socket.on("messages:read", handleMessagesRead);
+    socket.on("messages:delivered", handleMessagesDelivered);
     socket.on("contact:keyUpdated", handleContactKeyUpdated);
     return () => {
       socket.off("message:new", handleNewMessage);
@@ -150,6 +154,7 @@ function ChatWindow({ conversation, onBack, onRead }) {
       socket.off("typing:start", handleTypingStart);
       socket.off("typing:stop", handleTypingStop);
       socket.off("messages:read", handleMessagesRead);
+      socket.off("messages:delivered", handleMessagesDelivered);
       socket.off("contact:keyUpdated", handleContactKeyUpdated);
     };
   }, [conversation]);
@@ -187,17 +192,9 @@ function ChatWindow({ conversation, onBack, onRead }) {
       );
       const data = response.data;
 
-      // sender peut etre null : compte purge, l'empreinte senderSnapshot prend
-      // le relais pour l'affichage et le dechiffrement.
-      const messagesWithStatus = data.map((msg) => {
-        if (msg.sender?._id !== currentUserId) return msg;
-        const readByOther = msg.readBy?.some(
-          (r) => r.user !== currentUserId && r.user !== msg.sender?._id,
-        );
-        return { ...msg, status: readByOther ? "read" : "sent" };
-      });
-
-      setMessages(messagesWithStatus);
+      // Le statut envoyé / distribué / lu se déduit de deliveredTo et readBy
+      // au rendu (voir receipts.js) : seuls "sending" et "failed" sont locaux.
+      setMessages(data);
 
       const firstUnread = data.find(
         (msg) =>
@@ -443,7 +440,7 @@ function ChatWindow({ conversation, onBack, onRead }) {
     setMessages((prev) => {
       if (message.tempId) {
         return prev.map((msg) =>
-          msg._id === message.tempId ? { ...message, status: "sent" } : msg,
+          msg._id === message.tempId ? { ...message, status: undefined } : msg,
         );
       }
       const exists = prev.find((m) => m._id === message._id);
@@ -492,16 +489,24 @@ function ChatWindow({ conversation, onBack, onRead }) {
     message.reactions?.find((r) => String(r.user) === String(currentUserId))
       ?.reaction || null;
 
-  const handleMessagesRead = ({ conversationId, userId }) => {
-    if (conversationId !== conversationIdRef.current) return;
-    if (userId === currentUserId) return;
+  const handleMessagesRead = (payload) => {
+    if (payload.conversationId !== conversationIdRef.current) return;
+    if (payload.userId === currentUserId) return;
+    setMessages((prev) => applyReceipt(prev, payload, "readBy", currentUserId));
+  };
+
+  const handleMessagesDelivered = (payload) => {
+    if (payload.conversationId !== conversationIdRef.current) return;
+    if (payload.userId === currentUserId) return;
     setMessages((prev) =>
-      prev.map((msg) => {
-        if (msg.sender._id !== currentUserId) return msg;
-        if (msg.status === "failed") return msg;
-        return { ...msg, status: "read" };
-      }),
+      applyReceipt(prev, payload, "deliveredTo", currentUserId),
     );
+  };
+
+  const handleShowInfo = (message) => {
+    setInfoTarget(message);
+    setContextMenu(null);
+    setLongPressMessageId(null);
   };
 
   const handleTypingStart = ({ conversationId, userId }) => {
@@ -640,8 +645,8 @@ function ChatWindow({ conversation, onBack, onRead }) {
     });
 
   const renderMessageStatus = (message) => {
-    if (message.sender._id !== currentUserId) return null;
-    const status = message.status;
+    if (message.sender?._id !== currentUserId) return null;
+    const status = getReceiptStatus(message, currentUserId);
     if (status === "sending")
       return <span className="msg-status sending">⏳</span>;
     if (status === "failed")
@@ -654,8 +659,23 @@ function ChatWindow({ conversation, onBack, onRead }) {
           ⚠️ Réessayer
         </span>
       );
-    if (status === "read") return <span className="msg-status read">✓✓</span>;
-    return <span className="msg-status sent">✓</span>;
+    if (status === "read")
+      return (
+        <span className="msg-status read" title="Lu">
+          ✓✓
+        </span>
+      );
+    if (status === "delivered")
+      return (
+        <span className="msg-status delivered" title="Distribué">
+          ✓✓
+        </span>
+      );
+    return (
+      <span className="msg-status sent" title="Envoyé">
+        ✓
+      </span>
+    );
   };
 
   const otherUser = getOtherParticipant();
@@ -850,6 +870,12 @@ function ChatWindow({ conversation, onBack, onRead }) {
                         </button>
                       )}
                       <button
+                        className="edit-button-mobile"
+                        onClick={() => handleShowInfo(message)}
+                      >
+                        ℹ️ Infos
+                      </button>
+                      <button
                         className="delete-button-mobile"
                         onClick={() => handleDeleteClick(message._id)}
                       >
@@ -912,6 +938,12 @@ function ChatWindow({ conversation, onBack, onRead }) {
                 </button>
               )}
               <button
+                onClick={() => handleShowInfo(contextMenu.message)}
+                className="context-menu-item edit"
+              >
+                ℹ️ Infos
+              </button>
+              <button
                 onClick={handleDeleteMessage}
                 className="context-menu-item delete"
               >
@@ -928,6 +960,17 @@ function ChatWindow({ conversation, onBack, onRead }) {
           )}
         </div>
       )}
+
+      <MessageInfoModal
+        message={
+          infoTarget
+            ? messages.find((m) => m._id === infoTarget._id) ?? infoTarget
+            : null
+        }
+        preview={infoTarget ? resolveDisplayContent(infoTarget).text : ""}
+        myUserId={currentUserId}
+        onClose={() => setInfoTarget(null)}
+      />
 
       {reportTarget && (
         <ReportMessageModal

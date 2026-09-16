@@ -107,9 +107,15 @@ const signupLimiter = rateLimit({
 
 // Anti-renvoi par compte : complète le limiteur par IP, qui ne protège pas
 // contre le mail-bombing d'une même adresse depuis plusieurs IP.
-// L'instant d'émission se déduit de resetTokenExpires (validité 1 h), donc
+// L'instant d'émission se déduit de resetTokenExpires (validité 30 min), donc
 // aucun champ supplémentaire n'est nécessaire sur le schéma User.
-const RESET_TOKEN_TTL_MS = 3600000;
+const RESET_TOKEN_TTL_MS = 30 * 60 * 1000;
+
+// Lien de vérification d'email : 24 h. Comme pour le reset, seul le hash est
+// stocké en base, le token en clair part uniquement par email.
+const VERIFICATION_TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
+const hashToken = (token) =>
+  crypto.createHash("sha256").update(String(token)).digest("hex");
 const RESET_RESEND_DELAY_MS = 2 * 60 * 1000;
 
 function resetRequestedTooRecently(user) {
@@ -203,7 +209,9 @@ router.post("/signup", signupLimiter, async (req, res) => {
       birthDate: parsedBirthDate,
       nameday,
       avatar: `https://api.dicebear.com/8.x/bottts/svg?seed=${surname}`,
-      verificationToken,
+      verificationToken: hashToken(verificationToken),
+      verificationTokenExpires: Date.now() + VERIFICATION_TOKEN_TTL_MS,
+      lastVerificationEmailSent: Date.now(),
       isVerified: false,
       ...(acceptedTerms ? { acceptedTermsAt: new Date() } : {}),
     });
@@ -258,7 +266,7 @@ router.post("/signup", signupLimiter, async (req, res) => {
       console.error("❌ Erreur traitement invitations:", invitationError);
     }
 
-    await sendVerificationEmail(newUser.email, newUser.verificationToken);
+    await sendVerificationEmail(newUser.email, verificationToken);
 
     return res
       .status(201)
@@ -296,6 +304,15 @@ router.post("/login", authLimiterByIp, authLimiter, async (req, res) => {
       return res.status(401).json({ message: "Ce compte a été supprimé." });
     }
 
+    // Mot de passe vérifié AVANT tout renvoi d'email de vérification :
+    // sinon n'importe qui peut déclencher un email vers un compte non vérifié.
+    const passwordCorrect = bcrypt.compareSync(password, foundUser.password);
+    if (!passwordCorrect) {
+      return res
+        .status(401)
+        .json({ message: "Email ou mot de passe incorrect." });
+    }
+
     if (!foundUser.isVerified) {
       const now = Date.now();
       const delay = 3600000;
@@ -312,7 +329,8 @@ router.post("/login", authLimiterByIp, authLimiter, async (req, res) => {
 
       const verificationToken = generateVerificationToken();
       await sendVerificationEmail(foundUser.email, verificationToken);
-      foundUser.verificationToken = verificationToken;
+      foundUser.verificationToken = hashToken(verificationToken);
+      foundUser.verificationTokenExpires = now + VERIFICATION_TOKEN_TTL_MS;
       foundUser.lastVerificationEmailSent = now;
       await foundUser.save();
 
@@ -322,12 +340,6 @@ router.post("/login", authLimiterByIp, authLimiter, async (req, res) => {
       });
     }
 
-    const passwordCorrect = bcrypt.compareSync(password, foundUser.password);
-    if (!passwordCorrect) {
-      return res
-        .status(401)
-        .json({ message: "Email ou mot de passe incorrect." });
-    }
 
     try {
       const ipAddress =
@@ -465,7 +477,7 @@ router.post("/forgot-password", passwordResetLimiterByIp, passwordResetLimiter, 
           .createHash("sha256")
           .update(resetToken)
           .digest("hex");
-        user.resetTokenExpires = Date.now() + 3600000;
+        user.resetTokenExpires = Date.now() + RESET_TOKEN_TTL_MS;
         await user.save();
         await sendPasswordResetEmail(email, resetToken);
       }

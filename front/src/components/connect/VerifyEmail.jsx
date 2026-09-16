@@ -26,7 +26,11 @@ function VerifyEmail() {
         setTimeout(() => navigate("/"), 3000);
       } catch (error) {
         console.error("Erreur lors de la vérification :", error);
-        setStatus("Échec de la vérification. Le lien est peut-être expiré.");
+        setStatus(
+          error?.code === "TOKEN_EXPIRED"
+            ? "Ce lien a expiré. Connecte-toi : un nouvel email de vérification te sera envoyé."
+            : "Échec de la vérification. Le lien est invalide ou a déjà été utilisé.",
+        );
         setIsSuccess(false);
       }
     };

@@ -74,6 +74,27 @@ const messageSchema = new mongoose.Schema(
         },
       },
     ],
+    // UUID généré par l'appareil : rend l'envoi idempotent (réponse depuis une
+    // notification, rejouée si iOS a coupé la requête). Voir sendDirectMessage.js
+    clientId: {
+      type: String,
+      default: undefined,
+    },
+    // Accusé « distribué » : le message a atteint un appareil du destinataire
+    // (socket ouvert à l'envoi, ou reconnexion ensuite). Voir utils/messageReceipts.js
+    deliveredTo: [
+      {
+        _id: false,
+        user: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+        },
+        deliveredAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
     // Réponse à un autre message — la citation est résolue côté client
     // (compatible E2E : le serveur ne connaît jamais le texte cité)
     replyTo: {
@@ -128,5 +149,11 @@ const messageSchema = new mongoose.Schema(
 );
 
 messageSchema.index({ conversation: 1, createdAt: -1 });
+// Anti-doublon des envois rejoués : partiel, les messages sans clientId
+// (tous les anciens) n'y entrent pas.
+messageSchema.index(
+  { conversation: 1, sender: 1, clientId: 1 },
+  { unique: true, partialFilterExpression: { clientId: { $type: "string" } } },
+);
 
 module.exports = mongoose.model("Message", messageSchema);

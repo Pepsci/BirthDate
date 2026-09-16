@@ -9,10 +9,16 @@ import {
 import * as Notifications from "expo-notifications";
 import { webLinkToMobileRoute } from "../lib/push";
 import {
+  flushPendingReplies,
+  handleReplyResponse,
+  registerChatReplyCategory,
+  REPLY_ACTION,
+} from "../lib/notif-reply";
+import {
   registerBackgroundNotifTask,
   subscribeForegroundDecrypt,
 } from "../lib/notif-decrypt";
-import { ActivityIndicator, View } from "react-native";
+import { ActivityIndicator, AppState, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { StatusBar } from "expo-status-bar";
 import HeaderBackButton from "../components/HeaderBackButton";
@@ -44,6 +50,11 @@ function RootNavigator() {
       response: Notifications.NotificationResponse | null,
     ) => {
       if (!response) return;
+      // Réponse tapée dans la notification : on envoie, sans naviguer.
+      if (response.actionIdentifier === REPLY_ACTION) {
+        handleReplyResponse(response);
+        return;
+      }
       // iOS déclenche le listener AU cold start en plus de
       // getLastNotificationResponseAsync → dédoublonnage par identifiant.
       const id = response.notification.request.identifier;
@@ -97,6 +108,17 @@ function RootNavigator() {
 
   // Notifs de message chiffrées → déchiffrement sur l'appareil (façon WhatsApp).
   // Tâche de fond (app tuée/arrière-plan) + listener premier plan.
+  // Réponse depuis la notification : catégorie « Répondre » + envoi des
+  // réponses restées en file (app suspendue par iOS avant la fin de l'envoi).
+  useEffect(() => {
+    registerChatReplyCategory();
+    flushPendingReplies();
+    const sub = AppState.addEventListener("change", (state) => {
+      if (state === "active") flushPendingReplies();
+    });
+    return () => sub.remove();
+  }, []);
+
   useEffect(() => {
     registerBackgroundNotifTask();
     const unsubscribe = subscribeForegroundDecrypt();

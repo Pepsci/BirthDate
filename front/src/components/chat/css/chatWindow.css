@@ -310,21 +310,27 @@
 }
 
 .msg-status.sending {
-    color: #9ca3af;
+    color: var(--text-tertiary);
 }
 
-.msg-status.sent {
-    color: #9ca3af;
+.msg-status.sent,
+.msg-status.delivered {
+    color: var(--text-tertiary);
+}
+
+.msg-status.delivered {
+    letter-spacing: -0.15em;
 }
 
 .msg-status.read {
-    color: #3b82f6;
+    color: var(--primary);
     /* bleu = lu */
     font-weight: 600;
+    letter-spacing: -0.15em;
 }
 
 .msg-status.failed {
-    color: #ef4444;
+    color: var(--danger);
     cursor: pointer;
     font-size: 0.7rem;
     text-decoration: underline;

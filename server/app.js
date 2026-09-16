@@ -167,6 +167,7 @@ app.use("/api/wishlist/public", wishlistPublicRouter);
 app.use("/api/wishlist", wishlistRouter);
 app.use("/api/friends", friendRouter);
 app.use("/api/conversations", conversationsRouter);
+app.use("/api/receipts", require("./routes/receipts"));
 app.use("/api/merge-dates", mergeDatesRouter);
 app.use("/api/push", pushRoutes);
 app.use("/api/events", eventsRouter);

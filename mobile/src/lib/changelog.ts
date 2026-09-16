@@ -19,7 +19,7 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     version: "1.8.0",
     date: "2026-09-14",
-    build: "40",
+    build: "41",
     title:
       "Réactions aux messages, comptes de paiement Stripe complets, cagnotte externe et parcours de litige",
     note: "Merci de signaler tout ce qui bloque. Les points marqués ⚠️ nécessitent la nouvelle version du serveur.",

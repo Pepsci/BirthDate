@@ -24,7 +24,8 @@ const userSchema = new Schema({
   },
   resetToken: String,
   resetTokenExpires: Date,
-  verificationToken: String,
+  verificationToken: String, // hash SHA-256 (anciens comptes : token en clair)
+  verificationTokenExpires: Date,
   isVerified: { type: Boolean, default: false },
   lastVerificationEmailSent: Date,
 

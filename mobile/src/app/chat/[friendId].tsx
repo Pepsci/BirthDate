@@ -18,6 +18,8 @@ import MessageActionSheet, {
   MessageAction,
 } from "../../components/MessageActionSheet";
 import ReactionPills from "../../components/ReactionPills";
+import MessageInfoSheet from "../../components/MessageInfoSheet";
+import { applyReceipt, getReceiptStatus } from "../../lib/receipts";
 import { ReactionName } from "../../components/icons/ReactionIcon";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
@@ -60,6 +62,9 @@ import {
 const ON_PRIMARY = "#ffffff";
 const ON_PRIMARY_SOFT = "#dbeafe";
 const ON_PRIMARY_QUOTE_BG = "rgba(255, 255, 255, 0.15)";
+/** Coches sur la bulle bleue : grisées tant que non lu, vert menthe une fois lu. */
+const ON_PRIMARY_TICK = "rgba(255, 255, 255, 0.7)";
+const ON_PRIMARY_TICK_READ = "#86efac";
 
 export default function DMChatScreen() {
   const { friendId, name, avatar } = useLocalSearchParams<{
@@ -102,6 +107,7 @@ export default function DMChatScreen() {
      actions, d'où un état unique plutôt qu'une alerte système. */
   const [menuTarget, setMenuTarget] = useState<DMMessage | null>(null);
   const [menuActions, setMenuActions] = useState<MessageAction[]>([]);
+  const [infoTarget, setInfoTarget] = useState<DMMessage | null>(null);
   const conversationIdRef = useRef<string | null>(null);
   /**
    * Silencieux de CETTE conversation. L'id n'est connu qu'après le premier
@@ -258,6 +264,22 @@ export default function DMChatScreen() {
         );
       };
 
+      // Accusés : `userId` = celui qui a reçu/lu. On ignore les nôtres (autre
+      // appareil du même compte).
+      const onReceipt =
+        (field: "readBy" | "deliveredTo") =>
+        (payload: { conversationId: string; userId: string; at?: string }) => {
+          if (payload.conversationId !== convId) return;
+          if (payload.userId === user?._id) return;
+          setMessages((prev) =>
+            applyReceipt(prev, payload, field, user?._id ?? null),
+          );
+        };
+      const onRead = onReceipt("readBy");
+      const onDelivered = onReceipt("deliveredTo");
+
+      socket.on("messages:read", onRead);
+      socket.on("messages:delivered", onDelivered);
       socket.on("message:reacted", onReacted);
       socket.on("message:new", onNew);
       socket.on("message:deleted", onDeleted);
@@ -270,6 +292,8 @@ export default function DMChatScreen() {
       if (socket.connected) register();
 
       cleanupRef.current = () => {
+        socket.off("messages:read", onRead);
+        socket.off("messages:delivered", onDelivered);
         socket.off("message:reacted", onReacted);
         socket.off("message:new", onNew);
         socket.off("message:deleted", onDeleted);
@@ -396,6 +420,13 @@ export default function DMChatScreen() {
           },
         });
       }
+      actions.push({
+        label: "ℹ️  Infos",
+        // ⚠️ Délai : la feuille d'actions (Modal) est encore en train de se
+        // fermer ; ouvrir une seconde Modal dans la même frame échoue sans
+        // bruit sur iOS.
+        onPress: () => setTimeout(() => setInfoTarget(message), 350),
+      });
       actions.push({
         label: "🗑️  Supprimer",
         destructive: true,
@@ -663,6 +694,21 @@ export default function DMChatScreen() {
         onClose={() => setMenuTarget(null)}
       />
 
+      <MessageInfoSheet
+        message={
+          infoTarget
+            ? (messages.find((m) => m._id === infoTarget._id) ?? infoTarget)
+            : null
+        }
+        preview={
+          infoTarget
+            ? displayContent(infoTarget, user?._id ?? null, privateKey)
+            : ""
+        }
+        myUserId={user?._id ?? null}
+        onClose={() => setInfoTarget(null)}
+      />
+
       <View style={[styles.inputRow, { paddingBottom: inputBottom }]}>
         <TextInput placeholderTextColor={colors.placeholder}
           style={styles.input}
@@ -737,6 +783,7 @@ function Bubble({
         <Text style={[styles.time, isMine && styles.timeMine]}>
           {time}
           {message.edited ? " · modifié" : ""}
+          {isMine && <ReceiptTicks message={message} myUserId={myUserId} />}
         </Text>
       </Pressable>
 
@@ -755,6 +802,27 @@ function Bubble({
         </View>
       )}
     </View>
+  );
+}
+
+function ReceiptTicks({
+  message,
+  myUserId,
+}: {
+  message: DMMessage;
+  myUserId: string | null;
+}) {
+  const styles = useThemedStyles(makeStyles);
+  const status = getReceiptStatus(message, myUserId);
+  const label =
+    status === "read" ? "Lu" : status === "delivered" ? "Distribué" : "Envoyé";
+  return (
+    <Text
+      accessibilityLabel={label}
+      style={[styles.ticks, status === "read" && styles.ticksRead]}
+    >
+      {status === "sent" ? "  ✓" : "  ✓✓"}
+    </Text>
   );
 }
 
@@ -833,6 +901,8 @@ const makeStyles = (c: ThemeColors) =>
       marginTop: 2,
     },
     timeMine: { color: ON_PRIMARY_SOFT },
+    ticks: { color: ON_PRIMARY_TICK, fontWeight: "700", letterSpacing: -1.5 },
+    ticksRead: { color: ON_PRIMARY_TICK_READ },
     typing: {
       color: c.faint,
       fontSize: 12,

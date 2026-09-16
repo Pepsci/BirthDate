@@ -122,6 +122,7 @@
         }
       ],
       "./plugins/withNsePod",
+      "./plugins/withNotifReplyKeepAlive",
       "./plugins/withFmtConstevalFix"
     ],
     "experiments": {

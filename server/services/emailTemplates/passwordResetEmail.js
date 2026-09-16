@@ -36,7 +36,7 @@ async function sendPasswordResetEmail(email, token) {
     ctaButton(resetUrl, "Réinitialiser mon mot de passe") +
     linkFallback(resetUrl) +
     warning(
-      "⏱ Ce lien expire dans <strong>1 heure</strong>. Si vous n'avez pas fait cette demande, ignorez cet email.",
+      "⏱ Ce lien expire dans <strong>30 minutes</strong>. Si vous n'avez pas fait cette demande, ignorez cet email.",
     ) +
     emailFooter();
 
@@ -45,7 +45,7 @@ async function sendPasswordResetEmail(email, token) {
       from: "reset_password@birthreminder.com",
       to: email,
       subject: "Réinitialisation de votre mot de passe BirthReminder",
-      text: `Réinitialisez votre mot de passe en cliquant sur ce lien (valide 1h) : ${resetUrl}`,
+      text: `Réinitialisez votre mot de passe en cliquant sur ce lien (valide 30 min) : ${resetUrl}`,
       html,
     });
     console.log("✅ Email de reset envoyé à", email);

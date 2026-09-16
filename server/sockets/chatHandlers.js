@@ -5,12 +5,26 @@ const { sendPushToUser } = require("../services/pushService");
 const { notify } = require("../utils/notify");
 const { isBlockedBetween } = require("../utils/blocking");
 const { REACTIONS } = require("../constants/reactions");
+const {
+  sendDirectMessage,
+  SendMessageError,
+} = require("../services/sendDirectMessage");
+const {
+  markDeliveredForUser,
+  deliveryReceiptFields,
+  emitRead,
+} = require("../utils/messageReceipts");
 
 module.exports = (io, socket, connectedUsers, app) => {
   console.log(`📱 User connected: ${socket.userId}`);
 
   connectedUsers.set(socket.userId, socket.id);
   socket.broadcast.emit("user:online", { userId: socket.userId });
+
+  // Connexion = l'appareil est joignable : tout ce qui attendait est distribué.
+  markDeliveredForUser(io, socket.userId).catch((err) =>
+    console.error("❌ Error marking messages delivered:", err),
+  );
 
   socket.on("users:getOnline", () => {
     const onlineUserIds = Array.from(connectedUsers.keys());
@@ -56,10 +70,7 @@ module.exports = (io, socket, connectedUsers, app) => {
           },
           { $push: { readBy: { user: socket.userId, readAt: new Date() } } },
         );
-        socket.to(`conversation:${conversationId}`).emit("messages:read", {
-          conversationId,
-          userId: socket.userId,
-        });
+        emitRead(io, conversation, socket.userId);
       }
     } catch (error) {
       console.error("❌ Error joining conversation:", error);
@@ -72,248 +83,34 @@ module.exports = (io, socket, connectedUsers, app) => {
   });
 
   socket.on("message:send", async (data) => {
-    const {
-      conversationId,
-      content,
-      type,
-      metadata,
-      isEncrypted,
-      encryptedForRecipient,
-      encryptedForSender,
-      replyTo,
-      tempId,
-    } = data;
-
+    const { conversationId, tempId } = data || {};
     try {
-      if (!content || content.trim().length === 0) {
-        return socket.emit("message:error", {
-          tempId,
-          error: "Le message ne peut pas être vide",
-        });
-      }
-
-      const maxLength = isEncrypted ? 50000 : 2000;
-      if (content.trim().length > maxLength) {
-        return socket.emit("message:error", {
-          tempId,
-          error: "Le message est trop long",
-        });
-      }
-
-      const conversation = await Conversation.findOne({
-        _id: conversationId,
-        participants: socket.userId,
+      const { message } = await sendDirectMessage({
+        io,
+        app,
+        connectedUsers,
+        senderId: socket.userId,
+        data,
       });
-      if (!conversation) {
-        return socket.emit("message:error", {
-          tempId,
-          error: "Conversation introuvable",
-        });
-      }
-
-      const recipientId = conversation.participants.find(
-        (p) => p.toString() !== socket.userId,
-      );
-
-      // Modération : aucun message ne passe si l'un des deux a bloqué l'autre.
-      // Jusqu'ici le blocage ne faisait que masquer le fil côté bloqueur — la
-      // personne bloquée pouvait continuer à écrire sans le savoir.
-      // Le message n'est ni stocké ni notifié ; l'émetteur reçoit une erreur
-      // générique, qui ne distingue pas « bloqué » de « conversation fermée ».
-      if (recipientId && (await isBlockedBetween(socket.userId, recipientId))) {
-        return socket.emit("message:error", {
-          tempId,
-          error: "Cette conversation n'est plus disponible",
-        });
-      }
-
-      // Types structurés : métadonnées de coordination, jamais chiffrées.
-      const STRUCTURED_TYPES = ["gift_share", "date_share"];
-      const messageType = STRUCTURED_TYPES.includes(type) ? type : "text";
-      const isStructured = STRUCTURED_TYPES.includes(messageType);
-
-      const messageData = {
-        conversation: conversationId,
-        sender: socket.userId,
-        content: content.trim(),
-        type: messageType,
-        readBy: [{ user: socket.userId }],
-        isEncrypted: isStructured ? false : !!isEncrypted,
-      };
-
-      if (isStructured && metadata) {
-        messageData.metadata = metadata;
-      }
-
-      // Réponse à un message : vérifier qu'il appartient bien à la conversation
-      if (replyTo) {
-        const repliedMessage = await Message.findById(replyTo).select(
-          "conversation",
-        );
-        if (
-          repliedMessage &&
-          repliedMessage.conversation.toString() === conversationId
-        ) {
-          messageData.replyTo = replyTo;
-        }
-      }
-
-      if (
-        messageType === "text" &&
-        isEncrypted &&
-        encryptedForRecipient &&
-        encryptedForSender
-      ) {
-        const encFor = {};
-        if (recipientId) encFor[recipientId.toString()] = encryptedForRecipient;
-        encFor[socket.userId] = encryptedForSender;
-        if (Object.keys(encFor).length > 0) messageData.encryptedFor = encFor;
-      }
-
-      const message = new Message(messageData);
-      await message.save();
-
-      conversation.lastMessage = message._id;
-      conversation.lastMessageAt = message.createdAt;
-      await conversation.save();
-
-      // ── Push notification pour le destinataire hors ligne ──────────────────
-      if (recipientId && !connectedUsers.has(recipientId.toString())) {
-        // publicKey nécessaire pour le déchiffrement sur l'appareil (façon WhatsApp)
-        const sender = await User.findById(
-          socket.userId,
-          "name surname publicKey",
-        );
-        const senderName = sender
-          ? `${sender.name} ${sender.surname || ""}`.trim()
-          : "Quelqu'un";
-
-        if (
-          messageType === "text" &&
-          isEncrypted &&
-          encryptedForRecipient &&
-          sender?.publicKey
-        ) {
-          // 🔓 Notif lisible côté appareil : on envoie le CHIFFRÉ, jamais le texte.
-          // Le mobile déchiffre localement avec sa clé privée (Keychain/Keystore).
-          sendPushToUser(recipientId, {
-            dataOnly: true,
-            type: "chat",
-            encrypted: true,
-            cipher: encryptedForRecipient,
-            senderPublicKey: sender.publicKey,
-            senderName,
-            conversationId,
-            messageId: message._id.toString(),
-            url: `/home?tab=chat&conversationId=${conversationId}`,
-            tag: `chat-${conversationId}`,
-            // Permet à ce destinataire d'avoir mis CETTE conversation en
-            // silencieux, sans couper toutes ses notifications de chat.
-            muteScope: { kind: "dm", id: conversationId },
-            friendId: socket.userId,
-            // Fallback affiché si déchiffrement impossible / iOS sans NSE :
-            title: `💬 ${senderName}`,
-            body: "🔒 Nouveau message chiffré",
-          }).catch((err) => console.error("❌ Push chat error:", err));
-        } else {
-          // Cas non chiffrés (gift_share, date_share, chat en clair).
-          let pushBody;
-          if (messageType === "gift_share") {
-            const personName = metadata?.personName || "quelqu'un";
-            pushBody = `🎁 Idées cadeaux pour ${personName}`;
-          } else if (messageType === "date_share") {
-            const personName = metadata?.personName || "quelqu'un";
-            pushBody = `🎂 Anniversaire de ${personName}`;
-          } else {
-            pushBody = content.trim().slice(0, 100);
-          }
-
-          sendPushToUser(recipientId, {
-            title: `💬 ${senderName}`,
-            body: pushBody,
-            url: `/home?tab=chat&conversationId=${conversationId}`,
-            tag: `chat-${conversationId}`,
-            // Permet à ce destinataire d'avoir mis CETTE conversation en
-            // silencieux, sans couper toutes ses notifications de chat.
-            muteScope: { kind: "dm", id: conversationId },
-            type: "chat",
-            friendId: socket.userId,
-          }).catch((err) => console.error("❌ Push chat error:", err));
-        }
-      }
-
-      // ── Notif applicative si le destinataire n'a pas la conversation ouverte ──
-      if (recipientId) {
-        const conversationRoom = io.sockets.adapter.rooms.get(
-          `conversation:${conversationId}`,
-        );
-        const recipientSocketId = connectedUsers.get(recipientId.toString());
-
-        // Le destinataire n'est pas dans la room de la conversation = messages non lus
-        const recipientInConversation =
-          recipientSocketId &&
-          conversationRoom &&
-          conversationRoom.has(recipientSocketId);
-
-        if (!recipientInConversation) {
-          const sender = await User.findById(socket.userId, "name surname");
-          const senderName = sender
-            ? `${sender.name} ${sender.surname || ""}`.trim()
-            : "Quelqu'un";
-
-          let preview;
-          if (messageType === "gift_share") {
-            preview = `🎁 Idées cadeaux pour ${metadata?.personName || "quelqu'un"}`;
-          } else if (messageType === "date_share") {
-            preview = `🎂 Anniversaire de ${metadata?.personName || "quelqu'un"}`;
-          } else if (isEncrypted) {
-            preview = "🔒 Message chiffré";
-          } else {
-            preview = content.trim().slice(0, 60);
-          }
-
-          console.log("🔔 app défini ?", !!app, "type:", typeof app);
-
-          notify(app, {
-            userId: recipientId,
-            type: "new_message",
-            data: {
-              senderName,
-              preview,
-              conversationId,
-            },
-            link: `/home?tab=chat&conversationId=${conversationId}`,
-          }).catch((err) => console.error("❌ Notify chat error:", err));
-        }
-      }
-
-      await message.populate("sender", "name surname email publicKey");
-
-      const toSerializable = (msgObj) => {
-        if (msgObj.encryptedFor instanceof Map) {
-          msgObj.encryptedFor = Object.fromEntries(msgObj.encryptedFor);
-        }
-        return msgObj;
-      };
 
       socket.emit("message:new", {
         conversationId,
-        message: toSerializable({ ...message.toObject(), tempId }),
+        message: { ...message, tempId },
       });
-
       socket.to(`conversation:${conversationId}`).emit("message:new", {
         conversationId,
-        message: toSerializable(message.toObject()),
+        message,
       });
-
-      console.log(
-        `💬 Message [${messageType}] sent in conversation ${conversationId}`,
-      );
     } catch (error) {
-      console.error("❌ Error sending message:", error);
+      if (!(error instanceof SendMessageError)) {
+        console.error("❌ Error sending message:", error);
+      }
       socket.emit("message:error", {
         tempId,
-        error: "Impossible d'envoyer le message",
+        error:
+          error instanceof SendMessageError
+            ? error.message
+            : "Impossible d'envoyer le message",
       });
     }
   });
@@ -356,11 +153,7 @@ module.exports = (io, socket, connectedUsers, app) => {
         { $push: { readBy: { user: socket.userId, readAt: new Date() } } },
       );
       if (result.modifiedCount > 0) {
-        socket.to(`conversation:${conversationId}`).emit("messages:read", {
-          conversationId,
-          userId: socket.userId,
-          count: result.modifiedCount,
-        });
+        emitRead(io, conv, socket.userId);
         console.log(
           `✅ ${result.modifiedCount} messages marked as read in conversation ${conversationId}`,
         );

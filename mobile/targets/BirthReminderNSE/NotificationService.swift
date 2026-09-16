@@ -49,30 +49,74 @@ class NotificationService: UNNotificationServiceExtension {
         // Les champs sont dans `body` (data-only Expo) ou à la racine selon l'envoi.
         let data = (userInfo["body"] as? [String: Any]) ?? userInfo
 
-        guard
+        if
             let cipherB64 = (data["cipher"] as? String),
-            let senderPkB64 = (data["senderPublicKey"] as? String)
-        else {
-            // Pas de données chiffrées → on laisse le fallback tel quel.
-            contentHandler(content)
-            return
-        }
-
-        if let plaintext = decrypt(cipherB64: cipherB64, senderPkB64: senderPkB64) {
+            let senderPkB64 = (data["senderPublicKey"] as? String),
+            let plaintext = decrypt(cipherB64: cipherB64, senderPkB64: senderPkB64)
+        {
             if let name = data["senderName"] as? String {
                 content.title = "💬 \(name)"
             }
             content.body = plaintext
         }
-        // Si échec : on garde le fallback "🔒 Nouveau message chiffré".
-        contentHandler(content)
+        // Si pas de chiffré ou échec : on garde le fallback "🔒 Nouveau message chiffré".
+
+        // ⚠️ L'accusé part AVANT contentHandler : iOS peut tuer l'extension dès
+        // que la notification est rendue, et la requête serait coupée net.
+        reportDelivery(data) { [weak self] in
+            self?.deliver(content)
+        }
+    }
+
+    // MARK: - Accusé « distribué »
+
+    /// Prévient le serveur que la push (donc le message) est arrivée sur
+    /// l'appareil : l'expéditeur voit alors ✓✓ au lieu de ✓, comme WhatsApp.
+    ///
+    /// Pas de JWT ici (l'extension n'y a pas accès) : la push embarque un jeton
+    /// HMAC valable uniquement pour ce message et ce destinataire.
+    /// Délai court et échec silencieux : l'affichage de la notification ne doit
+    /// jamais attendre le réseau plus de 4 s.
+    private func reportDelivery(_ data: [String: Any], completion: @escaping () -> Void) {
+        guard
+            let urlString = data["receiptUrl"] as? String,
+            let url = URL(string: urlString),
+            let messageId = data["messageId"] as? String,
+            let recipientId = data["recipientId"] as? String,
+            let token = data["receiptToken"] as? String,
+            let body = try? JSONSerialization.data(withJSONObject: [
+                "messageId": messageId,
+                "recipientId": recipientId,
+                "receiptToken": token,
+            ])
+        else {
+            completion()
+            return
+        }
+
+        var request = URLRequest(url: url, timeoutInterval: 4)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = body
+
+        URLSession.shared.dataTask(with: request) { _, _, _ in
+            completion()
+        }.resume()
     }
 
     override func serviceExtensionTimeWillExpire() {
         // Temps imparti dépassé → afficher ce qu'on a (fallback probable).
-        if let handler = contentHandler, let content = bestAttempt {
-            handler(content)
+        if let content = bestAttempt {
+            deliver(content)
         }
+    }
+
+    /// Rend la notification une seule fois : la fin de l'accusé réseau et
+    /// l'expiration du délai peuvent toutes deux arriver ici.
+    private func deliver(_ content: UNNotificationContent) {
+        guard let handler = contentHandler else { return }
+        contentHandler = nil
+        handler(content)
     }
 
     // MARK: - Déchiffrement
