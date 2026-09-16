@@ -24,7 +24,10 @@ class SocketService {
       // Auth via le cookie httpOnly (withCredentials). `token` reste optionnel
       // pour compat, mais n'est plus lu depuis localStorage côté web.
       withCredentials: true,
-      auth: token ? { token } : {},
+      // `client: "web"` : le serveur distingue l'onglet web de l'app mobile,
+      // pour qu'un onglet ouvert n'empêche pas les push sur le téléphone
+      // (server/utils/presence.js).
+      auth: token ? { token, client: "web" } : { client: "web" },
       transports: ["websocket", "polling"],
       reconnection: true,
       reconnectionDelay: 1000,

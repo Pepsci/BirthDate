@@ -106,12 +106,15 @@ async function sendPushToUser(userId, payload) {
   // Push natif mobile (Expo) — indépendant du web push, jamais bloquant
   // `webOnly: true` = uniquement web push (ex : récap "messages non lus" du cron,
   // redondant sur mobile où chaque message a déjà sa propre notification)
-  if (!payload.webOnly) {
+  // `skipExpo` / `skipWeb` : l'appelant sait que ce canal est déjà servi en
+  // temps réel (socket ouvert du même type) — voir sendDirectMessage.js.
+  if (!payload.webOnly && !payload.skipExpo) {
     sendExpoPushToUser(userId, payload).catch((err) =>
       console.error("[ExpoPush] error:", err.message),
     );
   }
 
+  if (payload.skipWeb) return;
   if (!initVapid()) return; // Skip silencieux si VAPID pas configuré
 
   const subs = await PushSubscription.find({ user: userId });

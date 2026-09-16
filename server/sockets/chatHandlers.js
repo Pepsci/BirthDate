@@ -14,12 +14,16 @@ const {
   deliveryReceiptFields,
   emitRead,
 } = require("../utils/messageReceipts");
+const { addSocket, removeSocket } = require("../utils/presence");
 
 module.exports = (io, socket, connectedUsers, app) => {
   console.log(`📱 User connected: ${socket.userId}`);
 
-  connectedUsers.set(socket.userId, socket.id);
-  socket.broadcast.emit("user:online", { userId: socket.userId });
+  // Plusieurs sockets par compte (web + iPhone + Android) : on ne signale
+  // « en ligne » qu'au premier, « hors ligne » qu'au dernier.
+  if (addSocket(connectedUsers, socket)) {
+    socket.broadcast.emit("user:online", { userId: socket.userId });
+  }
 
   // Connexion = l'appareil est joignable : tout ce qui attendait est distribué.
   markDeliveredForUser(io, socket.userId).catch((err) =>
@@ -406,7 +410,8 @@ module.exports = (io, socket, connectedUsers, app) => {
 
   socket.on("disconnect", () => {
     console.log(`👋 User disconnected: ${socket.userId}`);
-    connectedUsers.delete(socket.userId);
-    socket.broadcast.emit("user:offline", { userId: socket.userId });
+    if (removeSocket(connectedUsers, socket)) {
+      socket.broadcast.emit("user:offline", { userId: socket.userId });
+    }
   });
 };

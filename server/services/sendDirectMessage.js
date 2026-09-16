@@ -19,6 +19,7 @@ const { sendPushToUser } = require("./pushService");
 const { notify } = require("../utils/notify");
 const { isBlockedBetween } = require("../utils/blocking");
 const { deliveryReceiptFields } = require("../utils/messageReceipts");
+const { isOnline, hasClient, socketIdsOf } = require("../utils/presence");
 
 /** Erreur « métier » : son message peut être montré tel quel à l'utilisateur. */
 class SendMessageError extends Error {}
@@ -114,7 +115,7 @@ async function sendDirectMessage({ io, app, connectedUsers, senderId, data }) {
 
   // Destinataire connecté : le message lui parvient en temps réel à
   // l'instant, il est donc distribué dès l'enregistrement.
-  if (recipientId && connectedUsers.has(recipientId.toString())) {
+  if (recipientId && isOnline(connectedUsers, recipientId)) {
     messageData.deliveredTo = [
       { user: recipientId, deliveredAt: new Date() },
     ];
@@ -156,8 +157,21 @@ async function sendDirectMessage({ io, app, connectedUsers, senderId, data }) {
   conversation.lastMessageAt = message.createdAt;
   await conversation.save();
 
-  // ── Push notification pour le destinataire hors ligne ──────────────────
-  if (recipientId && !connectedUsers.has(recipientId.toString())) {
+  // ── Push notification ──────────────────────────────────────────────────
+  // Chaque canal est coupé seulement par un socket du MÊME type :
+  //   - app mobile au premier plan (socket "app") → pas de push Expo,
+  //     le message arrive en temps réel dans l'app ;
+  //   - onglet web ouvert (socket "web") → pas de web push.
+  // Un onglet web ouvert ne doit JAMAIS empêcher le téléphone de sonner.
+  const recipientAppOnline =
+    !!recipientId && hasClient(connectedUsers, recipientId, "app");
+  const recipientWebOnline =
+    !!recipientId && hasClient(connectedUsers, recipientId, "web");
+  const pushChannels = {
+    skipExpo: recipientAppOnline,
+    skipWeb: recipientWebOnline,
+  };
+  if (recipientId && !(recipientAppOnline && recipientWebOnline)) {
     // publicKey nécessaire pour le déchiffrement sur l'appareil (façon WhatsApp)
     const sender = await User.findById(
       senderId,
@@ -176,6 +190,7 @@ async function sendDirectMessage({ io, app, connectedUsers, senderId, data }) {
       // 🔓 Notif lisible côté appareil : on envoie le CHIFFRÉ, jamais le texte.
       // Le mobile déchiffre localement avec sa clé privée (Keychain/Keystore).
       sendPushToUser(recipientId, {
+        ...pushChannels,
         dataOnly: true,
         type: "chat",
         encrypted: true,
@@ -209,6 +224,7 @@ async function sendDirectMessage({ io, app, connectedUsers, senderId, data }) {
       }
 
       sendPushToUser(recipientId, {
+        ...pushChannels,
         title: `💬 ${senderName}`,
         body: pushBody,
         url: `/home?tab=chat&conversationId=${conversationId}`,
@@ -229,13 +245,13 @@ async function sendDirectMessage({ io, app, connectedUsers, senderId, data }) {
     const conversationRoom = io.sockets.adapter.rooms.get(
       `conversation:${conversationId}`,
     );
-    const recipientSocketId = connectedUsers.get(recipientId.toString());
-
-    // Le destinataire n'est pas dans la room de la conversation = messages non lus
+    // Le destinataire n'est dans la room depuis AUCUN de ses appareils
+    // = messages non lus
     const recipientInConversation =
-      recipientSocketId &&
-      conversationRoom &&
-      conversationRoom.has(recipientSocketId);
+      !!conversationRoom &&
+      socketIdsOf(connectedUsers, recipientId).some((id) =>
+        conversationRoom.has(id),
+      );
 
     if (!recipientInConversation) {
       const sender = await User.findById(senderId, "name surname");

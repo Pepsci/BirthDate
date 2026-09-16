@@ -71,6 +71,11 @@ export const LIGHT = {
   // Divers
   overlay: "rgba(0,0,0,0.45)",
   shadow: "#000000",
+  // Ombre des cartes : noire en clair, halo clair en sombre (une ombre noire
+  // est invisible sur un fond déjà presque noir).
+  cardShadow: "#000000",
+  cardShadowOpacity: 0.14,
+  cardShadowRadius: 12,
   tabBarBg: "#ffffff",
   headerBg: "#ffffff",
   white: "#ffffff",
@@ -109,6 +114,10 @@ export const DARK: ThemeColors = {
   placeholder: "#64748b",
   overlay: "rgba(0,0,0,0.6)",
   shadow: "#000000",
+  // Ombre claire mais légère et courte : plus diffuse, elle faisait « néon ».
+  cardShadow: "#94a3b8",
+  cardShadowOpacity: 0.12,
+  cardShadowRadius: 6,
   tabBarBg: "#0f172a",
   headerBg: "#0f172a",
   white: "#ffffff",

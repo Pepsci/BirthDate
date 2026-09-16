@@ -39,10 +39,8 @@ yarn-error.*
 example
 
 # generated native folders
-# /ios reste généré par prebuild ; /android est VERSIONNÉ (manifest et gradle
-# personnalisés) — on n'ignore que ses sorties de build :
+# ios/ ET android/ sont générés par `expo prebuild` à partir d'app.json
+# (vérifié le 16/09/2026 : android/ versionné = sortie de prebuild, octet pour octet).
+# Toute personnalisation native passe par app.json ou un plugin dans ./plugins.
 /ios
-/android/app/build/
-/android/build/
-/android/.gradle/
-/android/local.properties
+/android

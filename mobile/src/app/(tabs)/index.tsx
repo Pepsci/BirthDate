@@ -428,11 +428,13 @@ const makeStyles = (c: ThemeColors) =>
       gap: 4,
       borderWidth: 1,
       borderColor: c.border,
-      shadowColor: c.shadow,
-      shadowOpacity: 0.06,
-      shadowRadius: 6,
-      shadowOffset: { width: 0, height: 2 },
-      elevation: 2,
+      // Ombre portée : donne de la profondeur aux cartes sur le fond de la
+      // grille. En sombre : ombre claire légère (voir cardShadow dans le thème).
+      shadowColor: c.cardShadow,
+      shadowOpacity: c.cardShadowOpacity,
+      shadowRadius: c.cardShadowRadius,
+      shadowOffset: { width: 0, height: 6 },
+      elevation: 5,
     },
     cardToday: {
       borderWidth: 1.5,

@@ -463,13 +463,11 @@ router.put("/keys", isAuthenticated, async (req, res) => {
         friendships.forEach(({ user: fUser, friend }) => {
           const friendId =
             fUser.toString() === userId ? friend.toString() : fUser.toString();
-          const socketId = connectedUsers.get(friendId);
-          if (socketId) {
-            io.to(socketId).emit("contact:keyUpdated", {
-              userId,
-              newPublicKey: publicKey,
-            });
-          }
+          // Room user:<id> = tous les appareils connectés de l'ami
+          io.to(`user:${friendId}`).emit("contact:keyUpdated", {
+            userId,
+            newPublicKey: publicKey,
+          });
         });
       }
     } catch (notifyErr) {
