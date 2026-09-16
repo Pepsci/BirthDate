@@ -17,7 +17,13 @@ const {
 const { addSocket, removeSocket } = require("../utils/presence");
 
 module.exports = (io, socket, connectedUsers, app) => {
-  console.log(`📱 User connected: ${socket.userId}`);
+  // TEMP diagnostic push multi-appareils — à retirer une fois validé
+  const connectedAt = Date.now();
+  console.log(
+    `📱 User connected: ${socket.userId} socket=${socket.id} client=${
+      socket.handshake?.auth?.client || "app"
+    } ua="${(socket.handshake?.headers?.["user-agent"] || "").slice(0, 60)}"`,
+  );
 
   // Plusieurs sockets par compte (web + iPhone + Android) : on ne signale
   // « en ligne » qu'au premier, « hors ligne » qu'au dernier.
@@ -408,8 +414,12 @@ module.exports = (io, socket, connectedUsers, app) => {
     }
   });
 
-  socket.on("disconnect", () => {
-    console.log(`👋 User disconnected: ${socket.userId}`);
+  socket.on("disconnect", (reason) => {
+    console.log(
+      `👋 User disconnected: ${socket.userId} socket=${socket.id} reason=${reason} après ${Math.round(
+        (Date.now() - connectedAt) / 1000,
+      )}s`,
+    );
     if (removeSocket(connectedUsers, socket)) {
       socket.broadcast.emit("user:offline", { userId: socket.userId });
     }
