@@ -171,6 +171,14 @@ async function sendDirectMessage({ io, app, connectedUsers, senderId, data }) {
     skipExpo: recipientAppOnline,
     skipWeb: recipientWebOnline,
   };
+  // TEMP diagnostic push multi-appareils — à retirer une fois validé
+  if (recipientId) {
+    console.log(
+      `[push-presence] dest=${recipientId} sockets=${JSON.stringify(
+        Object.fromEntries(connectedUsers.get(String(recipientId)) || []),
+      )} skipExpo=${recipientAppOnline} skipWeb=${recipientWebOnline}`,
+    );
+  }
   if (recipientId && !(recipientAppOnline && recipientWebOnline)) {
     // publicKey nécessaire pour le déchiffrement sur l'appareil (façon WhatsApp)
     const sender = await User.findById(
