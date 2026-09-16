@@ -20,7 +20,7 @@
 
 import * as Notifications from "expo-notifications";
 import * as TaskManager from "expo-task-manager";
-import { Platform } from "react-native";
+import { AppState, Platform } from "react-native";
 import { getPrivateKey, decryptMessage } from "./crypto";
 import { CHAT_CATEGORY, handleReplyResponse } from "./notif-reply";
 
@@ -139,6 +139,34 @@ export async function decryptAndPresent(raw: unknown): Promise<boolean> {
       return false;
     }
 
+    // ⚠️ iOS : la Notification Service Extension déchiffre et affiche déjà le
+    // message, app ouverte, en arrière-plan ou tuée. Présenter une copie locale
+    // ici ne sert qu'en secours, si l'extension a échoué (corps resté sur
+    // « 🔒 ») ET que l'app est au premier plan. Dans tous les autres cas, c'est
+    // un doublon — c'est ce qui se produisait à l'ouverture depuis une
+    // notification, app fermée.
+    if (Platform.OS === "ios") {
+      const body = (raw as { body?: unknown } | null)?.body;
+      const nseAlreadyDecrypted =
+        typeof body !== "string" || !body.startsWith("🔒");
+      if (nseAlreadyDecrypted || AppState.currentState !== "active") {
+        return false;
+      }
+    }
+
+    // Anti-doublon persistant : une copie locale de CE message est-elle déjà
+    // affichée ? Le Set mémoire ci-dessous ne survit pas à un relancement.
+    if (data.messageId) {
+      const presented = await Notifications.getPresentedNotificationsAsync().catch(
+        () => [],
+      );
+      const alreadyShown = presented.some((n) => {
+        const d = n.request.content.data as Record<string, unknown> | undefined;
+        return d?.localCopy === true && d?.messageId === data.messageId;
+      });
+      if (alreadyShown) return true;
+    }
+
     // Anti-doublon (foreground + background peuvent tous deux se déclencher)
     const dedupeKey = data.messageId || data.tag || data.cipher.slice(0, 32);
     if (_presentedRecently.has(dedupeKey)) {
@@ -176,6 +204,9 @@ export async function decryptAndPresent(raw: unknown): Promise<boolean> {
         // donc porter la catégorie et tout ce qu'il faut pour répondre.
         categoryIdentifier: CHAT_CATEGORY,
         data: {
+          // Repère des copies locales, pour l'anti-doublon persistant.
+          localCopy: true,
+          messageId: data.messageId ?? null,
           conversationId: data.conversationId ?? null,
           friendId: data.friendId ?? null,
           recipientId: data.recipientId ?? null,
