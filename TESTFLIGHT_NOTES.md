@@ -25,9 +25,16 @@ Version 1.8.0, build 41.
 
 BirthReminder 1.8.0 (build 41)
 
-Nouveau : les réactions aux messages, et une refonte complète des comptes de paiement des cagnottes.
+Nouveau : réactions, accusés de lecture et réponse depuis la notification dans les messages, et une refonte complète des comptes de paiement des cagnottes.
 
 — À TESTER EN PRIORITÉ —
+
+MESSAGES — COCHES ET RÉPONSE RAPIDE
+- Envoie un message : 1 coche = envoyé, 2 coches grises = arrivé sur le téléphone de l'autre, 2 coches colorées = lu.
+- App de l'autre personne FERMÉE : dès que sa notification s'affiche, ton message doit passer à 2 coches grises.
+- Appui long sur un de tes messages > « Infos » : les heures d'envoi, de distribution et de lecture.
+- Sur la notification d'un message, fais « Répondre » et envoie sans ouvrir l'app. Teste app fermée ET en arrière-plan. La réponse doit apparaître dans la discussion, une seule fois.
+- App fermée, touche une notification de message : la conversation s'ouvre, SANS nouvelle notification.
 
 RÉACTIONS
 - Appui long sur un message, en privé comme dans une discussion d'événement, puis choisis une réaction.
@@ -90,6 +97,31 @@ n'affiche que du texte) ; dans l'application, c'est le dessin maison.
 Le silencieux d'une conversation (MuteBell) couvre les réactions d'office.
 Il n'y a PAS encore d'interrupteur dédié aux réactions, contrairement à
 WhatsApp : les couper impose aujourd'hui de couper aussi les messages.
+
+### Accusés de réception
+
+Trois états, calculés par l'expéditeur : envoyé (✓, le serveur a enregistré le
+message), distribué (✓✓ grises, le message a atteint un appareil du
+destinataire), lu (✓✓ colorées). « Distribué » est posé à l'envoi si le
+destinataire a l'app ouverte, à sa prochaine connexion sinon, et — app fermée —
+par l'extension de notification iOS au moment où la push arrive. L'extension
+n'a pas accès à la session : la push embarque un jeton propre au message, qui
+ne permet que de le marquer distribué.
+
+Correctif au passage : une lecture faite sur mobile ne prévenait jamais
+l'expéditeur, les coches restaient donc à « non lu » côté web.
+
+### Réponse depuis la notification
+
+Bouton « Répondre » sur les notifications de message, avec champ texte.
+Face ID / code exigé si le téléphone est verrouillé. La réponse est chiffrée
+sur l'appareil puis envoyée par une route REST (app fermée, pas de socket).
+
+Point à surveiller : iOS peut suspendre l'app avant la fin de l'envoi. Un
+sursis d'environ 25 s est demandé ; au-delà, la réponse reste en file et part
+à la prochaine ouverture. Le serveur déduplique : jamais de double envoi. Si
+une réponse n'arrive qu'à l'ouverture de l'app, signalez-le avec l'état du
+réseau à ce moment-là.
 
 ### Comptes de paiement — Express → Standard
 

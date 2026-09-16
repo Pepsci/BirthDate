@@ -20,6 +20,7 @@
 
 import * as Notifications from "expo-notifications";
 import * as TaskManager from "expo-task-manager";
+import { Platform } from "react-native";
 import { getPrivateKey, decryptMessage } from "./crypto";
 import { CHAT_CATEGORY, handleReplyResponse } from "./notif-reply";
 
@@ -218,6 +219,14 @@ export function defineBackgroundNotifTask() {
         await handleReplyResponse(data);
         return;
       }
+      // ⚠️ iOS : rien à présenter ici. La Notification Service Extension a déjà
+      // déchiffré et affiché la notif, et envoyé l'accusé « distribué ».
+      // Cette tâche s'exécute pourtant sur iOS : avec le mode d'arrière-plan
+      // `remote-notification`, un appui sur une notif app TUÉE lance l'app avec
+      // le motif « notification distante », et expo-task-manager rejoue alors
+      // la push dans la tâche. Présenter ici créait un doublon du message
+      // à chaque ouverture depuis une notification, app fermée uniquement.
+      if (Platform.OS === "ios") return;
       await Promise.all([decryptAndPresent(data), reportDeliveryFromPush(data)]);
     },
   );

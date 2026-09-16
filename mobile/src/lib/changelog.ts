@@ -18,12 +18,18 @@ export interface ChangelogEntry {
 export const CHANGELOG: ChangelogEntry[] = [
   {
     version: "1.8.0",
-    date: "2026-09-14",
+    date: "2026-09-16",
     build: "41",
     title:
-      "Réactions aux messages, comptes de paiement Stripe complets, cagnotte externe et parcours de litige",
+      "Réactions, accusés de lecture et réponse depuis la notification, comptes de paiement Stripe complets, cagnotte externe",
     note: "Merci de signaler tout ce qui bloque. Les points marqués ⚠️ nécessitent la nouvelle version du serveur.",
     items: [
+      "✓✓ ⚠️ Accusés de réception dans les discussions privées, comme sur WhatsApp : une coche quand ton message est envoyé, deux coches grises quand il est arrivé sur le téléphone de ton ami — même app fermée, dès que la notification lui parvient — et deux coches colorées quand il l'a lu.",
+      "ℹ️ ⚠️ Infos message : appui long sur un de tes messages, puis « Infos », pour voir à quelle heure il a été envoyé, distribué et lu.",
+      "↩️ ⚠️ Répondre directement depuis la notification d'un message, sans ouvrir l'application. Téléphone verrouillé, Face ID ou le code est demandé avant l'envoi. La réponse reste chiffrée, et si le réseau coupe, elle part à la prochaine ouverture de l'app — jamais en double.",
+      "👀 ⚠️ Lire une conversation sur le téléphone ne prévenait jamais l'expéditeur : de son côté, le message restait affiché comme non lu.",
+      "🔁 App fermée, toucher la notification d'un message ouvrait bien la conversation, mais faisait apparaître une seconde notification du même message.",
+      "🔑 ⚠️ Le lien de réinitialisation du mot de passe expire maintenant au bout de 30 minutes, et celui de confirmation de l'adresse email au bout de 24 heures. Ce dernier restait en réalité valable indéfiniment, contrairement à ce qu'annonçait l'email.",
       "😀 ⚠️ Réagir à un message, en privé comme dans un événement : appui long, puis l'une des six réactions. Elles s'affichent en pastilles sous la bulle, regroupées avec un compteur — appuie sur une pastille existante pour te joindre à la réaction, ou sur la tienne pour la retirer.",
       "🔔 ⚠️ Quand quelqu'un réagit à ton message, tu es prévenu. Seul l'auteur du message reçoit la notification, et une seule par message : sur un événement à douze personnes, un pouce levé ne doit pas faire douze notifications à tout le monde.",
       "💬 ⚠️ La notification d'un message d'événement ouvrait la page de l'événement au lieu de la discussion : il fallait retrouver l'onglet à la main pour lire le message qu'on venait d'être notifié.",
