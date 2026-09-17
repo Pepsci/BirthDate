@@ -3,6 +3,7 @@ import * as Device from "expo-device";
 import Constants from "expo-constants";
 import { Platform } from "react-native";
 import { api, APP_VERSION } from "./api";
+import { setPresencePushToken } from "./socket";
 
 /**
  * Push natif via Expo Push (roadmap priorité n°1).
@@ -73,6 +74,7 @@ export async function registerForPush(): Promise<string | null> {
       projectId,
     });
     currentToken = token;
+    setPresencePushToken(token);
 
     await api("/push/expo-token", {
       method: "POST",
@@ -105,6 +107,7 @@ export async function unregisterPush(): Promise<void> {
     // silencieux
   } finally {
     currentToken = null;
+    setPresencePushToken(null);
   }
 }
 

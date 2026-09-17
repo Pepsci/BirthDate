@@ -106,9 +106,9 @@ async function sendPushToUser(userId, payload) {
   // Push natif mobile (Expo) — indépendant du web push, jamais bloquant
   // `webOnly: true` = uniquement web push (ex : récap "messages non lus" du cron,
   // redondant sur mobile où chaque message a déjà sa propre notification)
-  // `skipExpo` / `skipWeb` : l'appelant sait que ce canal est déjà servi en
-  // temps réel (socket ouvert du même type) — voir sendDirectMessage.js.
-  if (!payload.webOnly && !payload.skipExpo) {
+  // `skipExpoTokens` / `skipWeb` : l'appelant sait que ces appareils affichent
+  // déjà le message en temps réel (socket ouvert) — voir sendDirectMessage.js.
+  if (!payload.webOnly) {
     sendExpoPushToUser(userId, payload).catch((err) =>
       console.error("[ExpoPush] error:", err.message),
     );
@@ -193,7 +193,9 @@ async function sendExpoPushToUser(userId, payload) {
   const user = await User.findById(userId).select(
     "expoPushTokens expoPushTokensIos pushEnabled pushEvents",
   );
-  const tokens = user?.expoPushTokens || [];
+  // Appareils au premier plan : le message y arrive déjà par le socket.
+  const skip = new Set(payload.skipExpoTokens || []);
+  const tokens = (user?.expoPushTokens || []).filter((t) => !skip.has(t));
   if (!tokens.length) return;
 
   if (user.pushEnabled !== true) return;

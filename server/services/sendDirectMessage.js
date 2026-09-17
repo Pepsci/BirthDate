@@ -19,7 +19,12 @@ const { sendPushToUser } = require("./pushService");
 const { notify } = require("../utils/notify");
 const { isBlockedBetween } = require("../utils/blocking");
 const { deliveryReceiptFields } = require("../utils/messageReceipts");
-const { isOnline, hasClient, socketIdsOf } = require("../utils/presence");
+const {
+  isOnline,
+  hasClient,
+  openAppPushTokens,
+  socketIdsOf,
+} = require("../utils/presence");
 
 /** Erreur « métier » : son message peut être montré tel quel à l'utilisateur. */
 class SendMessageError extends Error {}
@@ -158,28 +163,16 @@ async function sendDirectMessage({ io, app, connectedUsers, senderId, data }) {
   await conversation.save();
 
   // ── Push notification ──────────────────────────────────────────────────
-  // Chaque canal est coupé seulement par un socket du MÊME type :
-  //   - app mobile au premier plan (socket "app") → pas de push Expo,
-  //     le message arrive en temps réel dans l'app ;
-  //   - onglet web ouvert (socket "web") → pas de web push.
-  // Un onglet web ouvert ne doit JAMAIS empêcher le téléphone de sonner.
-  const recipientAppOnline =
-    !!recipientId && hasClient(connectedUsers, recipientId, "app");
-  const recipientWebOnline =
-    !!recipientId && hasClient(connectedUsers, recipientId, "web");
+  // Par appareil, pas par compte (voir utils/presence.js) :
+  //   - chaque app mobile au premier plan reçoit le message en temps réel →
+  //     on saute SON jeton Expo, les autres téléphones sonnent ;
+  //   - un onglet web ouvert → pas de web push (déjà affiché), mais il ne
+  //     coupe jamais les push mobiles.
   const pushChannels = {
-    skipExpo: recipientAppOnline,
-    skipWeb: recipientWebOnline,
+    skipExpoTokens: recipientId ? openAppPushTokens(connectedUsers, recipientId) : [],
+    skipWeb: !!recipientId && hasClient(connectedUsers, recipientId, "web"),
   };
-  // TEMP diagnostic push multi-appareils — à retirer une fois validé
   if (recipientId) {
-    console.log(
-      `[push-presence] dest=${recipientId} sockets=${JSON.stringify(
-        Object.fromEntries(connectedUsers.get(String(recipientId)) || []),
-      )} skipExpo=${recipientAppOnline} skipWeb=${recipientWebOnline}`,
-    );
-  }
-  if (recipientId && !(recipientAppOnline && recipientWebOnline)) {
     // publicKey nécessaire pour le déchiffrement sur l'appareil (façon WhatsApp)
     const sender = await User.findById(
       senderId,

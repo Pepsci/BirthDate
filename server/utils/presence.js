@@ -1,23 +1,37 @@
 /**
- * presence.js — Qui est connecté, et depuis quoi.
+ * presence.js — Qui est connecté, depuis quel client, et avec quel jeton push.
  *
  * `connectedUsers` (partagée via app.get("connectedUsers")) est une
- *   Map<userId, Map<socketId, "web" | "app">>
+ *   Map<userId, Map<socketId, { kind: "web" | "app", pushToken: string|null }>>
  *
  * ── Pourquoi pas simplement userId → socketId ───────────────────────────────
  * Un même compte a souvent plusieurs sockets : un onglet web + l'app iPhone +
- * l'app Android. Avec un seul socketId par utilisateur :
+ * l'app Android (+ un simulateur oublié…). Avec un seul socketId par compte :
  *   1. un onglet web ouvert faisait croire l'utilisateur « en ligne » et
  *      bloquait TOUTES les push mobiles de messages privés ;
  *   2. la déconnexion d'un appareil effaçait l'entrée alors qu'un autre
- *      restait connecté (et le dernier connecté écrasait les précédents).
+ *      restait connecté.
  *
- * ── Le type de client ───────────────────────────────────────────────────────
- * Le front web s'annonce avec `auth: { client: "web" }`. Tout le reste
- * (l'app mobile, y compris les anciens builds qui n'envoient rien) compte
- * comme "app". L'app mobile coupe son socket dès le passage en arrière-plan
+ * ── Raisonner par APPAREIL, pas par type ────────────────────────────────────
+ * Une app mobile ouverte ne doit couper la push que pour ELLE-MÊME. L'app
+ * envoie donc son jeton Expo dans le handshake (`auth.pushToken`, ou plus
+ * tard via l'événement `presence:pushToken`) et pushService saute uniquement
+ * ces jetons-là. Les autres téléphones du compte sonnent normalement.
+ *
+ * Un socket "app" SANS jeton (ancien build, ou jeton pas encore obtenu) ne
+ * coupe rien : mieux vaut une notification en double qu'un message perdu.
+ *
+ * L'app mobile coupe son socket dès le passage en arrière-plan
  * (mobile/src/lib/socket.ts) : un socket "app" = app au premier plan.
  */
+
+const MAX_TOKEN_LENGTH = 200;
+
+/** N'accepte qu'un jeton Expo plausible — la valeur vient du client. */
+function sanitizePushToken(value) {
+  if (typeof value !== "string" || value.length > MAX_TOKEN_LENGTH) return null;
+  return /^Expo(nent)?PushToken\[[^\]]+\]$/.test(value) ? value : null;
+}
 
 const clientKindOf = (socket) =>
   socket.handshake?.auth?.client === "web" ? "web" : "app";
@@ -31,8 +45,20 @@ function addSocket(connectedUsers, socket) {
     sockets = new Map();
     connectedUsers.set(userId, sockets);
   }
-  sockets.set(socket.id, clientKindOf(socket));
+  const kind = clientKindOf(socket);
+  sockets.set(socket.id, {
+    kind,
+    pushToken:
+      kind === "app" ? sanitizePushToken(socket.handshake?.auth?.pushToken) : null,
+  });
   return firstSocket;
+}
+
+/** Associe (ou met à jour) le jeton push d'un socket déjà enregistré. */
+function setSocketPushToken(connectedUsers, socket, value) {
+  const entry = connectedUsers.get(String(socket.userId))?.get(socket.id);
+  if (!entry || entry.kind !== "app") return;
+  entry.pushToken = sanitizePushToken(value);
 }
 
 /** Retire le socket. Retourne true si c'était le DERNIER socket du compte. */
@@ -57,8 +83,19 @@ function isOnline(connectedUsers, userId) {
 function hasClient(connectedUsers, userId, kind) {
   const sockets = connectedUsers.get(String(userId));
   if (!sockets) return false;
-  for (const k of sockets.values()) if (k === kind) return true;
+  for (const entry of sockets.values()) if (entry.kind === kind) return true;
   return false;
+}
+
+/** Jetons push des appareils mobiles actuellement au premier plan. */
+function openAppPushTokens(connectedUsers, userId) {
+  const tokens = [];
+  const sockets = connectedUsers.get(String(userId));
+  if (!sockets) return tokens;
+  for (const entry of sockets.values()) {
+    if (entry.kind === "app" && entry.pushToken) tokens.push(entry.pushToken);
+  }
+  return tokens;
 }
 
 /** Tous les socketIds du compte. */
@@ -66,4 +103,12 @@ function socketIdsOf(connectedUsers, userId) {
   return Array.from(connectedUsers.get(String(userId))?.keys() || []);
 }
 
-module.exports = { addSocket, removeSocket, isOnline, hasClient, socketIdsOf };
+module.exports = {
+  addSocket,
+  setSocketPushToken,
+  removeSocket,
+  isOnline,
+  hasClient,
+  openAppPushTokens,
+  socketIdsOf,
+};

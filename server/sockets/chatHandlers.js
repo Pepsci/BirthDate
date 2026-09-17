@@ -14,16 +14,14 @@ const {
   deliveryReceiptFields,
   emitRead,
 } = require("../utils/messageReceipts");
-const { addSocket, removeSocket } = require("../utils/presence");
+const {
+  addSocket,
+  setSocketPushToken,
+  removeSocket,
+} = require("../utils/presence");
 
 module.exports = (io, socket, connectedUsers, app) => {
-  // TEMP diagnostic push multi-appareils — à retirer une fois validé
-  const connectedAt = Date.now();
-  console.log(
-    `📱 User connected: ${socket.userId} socket=${socket.id} client=${
-      socket.handshake?.auth?.client || "app"
-    } ua="${(socket.handshake?.headers?.["user-agent"] || "").slice(0, 60)}"`,
-  );
+  console.log(`📱 User connected: ${socket.userId}`);
 
   // Plusieurs sockets par compte (web + iPhone + Android) : on ne signale
   // « en ligne » qu'au premier, « hors ligne » qu'au dernier.
@@ -414,12 +412,14 @@ module.exports = (io, socket, connectedUsers, app) => {
     }
   });
 
-  socket.on("disconnect", (reason) => {
-    console.log(
-      `👋 User disconnected: ${socket.userId} socket=${socket.id} reason=${reason} après ${Math.round(
-        (Date.now() - connectedAt) / 1000,
-      )}s`,
-    );
+  // L'app mobile obtient parfois son jeton push APRÈS l'ouverture du socket
+  // (premier lancement, permission en attente) : elle l'annonce ici.
+  socket.on("presence:pushToken", ({ pushToken } = {}) => {
+    setSocketPushToken(connectedUsers, socket, pushToken);
+  });
+
+  socket.on("disconnect", () => {
+    console.log(`👋 User disconnected: ${socket.userId}`);
     if (removeSocket(connectedUsers, socket)) {
       socket.broadcast.emit("user:offline", { userId: socket.userId });
     }

@@ -1,6 +1,6 @@
 {
   "name": "birthreminder-mobile",
-  "main": "expo-router/entry",
+  "main": "index.ts",
   "version": "1.0.0",
   "dependencies": {
     "@noble/hashes": "^2.2.0",
