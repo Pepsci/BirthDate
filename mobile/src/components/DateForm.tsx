@@ -214,7 +214,7 @@ export default function DateForm({ initial, submitLabel, onSubmit }: Props) {
           <DateTimePicker
             value={date}
             mode="date"
-            display={Platform.OS === "ios" ? "spinner" : "default"}
+            display="spinner"
             locale="fr-FR"
             maximumDate={new Date()}
             themeVariant={resolved}

@@ -258,17 +258,85 @@ const block = () => true;
  */
 export function TourOverlay() {
   const { activeTour, stepIndex, next, finish, targets } = useGuidedTour();
-  const { width: winW, height: winH } = useWindowDimensions();
+  const { width: screenW, height: screenH } = useWindowDimensions();
   const styles = useThemedStyles(makeStyles);
 
-  if (!activeTour) return null;
-  const step = activeTour.steps[stepIndex];
-  if (!step) return null;
-  const rect = targets[step.targetId];
-  if (!rect) return null; // cible pas encore mesurée
+  // ── Repère de l'overlay ────────────────────────────────────────────────
+  // Les cibles sont mesurées avec measureInWindow, mais l'overlay se
+  // positionne en `absolute` DANS son conteneur. Sur Android en edge-to-edge,
+  // l'origine de measureInWindow ne coïncide pas avec le haut du conteneur
+  // (décalage de la barre d'état) : le trou et l'anneau tombaient au-dessus
+  // de la cible, sur tout le tour.
+  // On mesure donc l'overlay LUI-MÊME avec la même méthode et on soustrait :
+  // l'éventuel décalage s'annule, quelle que soit la plateforme.
+  const rootRef = useRef<View>(null);
+  const [frame, setFrame] = useState<{
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  } | null>(null);
+  const measureRoot = useCallback(() => {
+    requestAnimationFrame(() => {
+      rootRef.current?.measureInWindow((x, y, width, height) => {
+        if (width > 0 && height > 0) setFrame({ x, y, width, height });
+      });
+    });
+  }, []);
 
-  const isLast = stepIndex === activeTour.steps.length - 1;
+  const step = activeTour?.steps[stepIndex];
+  const rect = step ? targets[step.targetId] : undefined;
 
+  // La vue racine reste montée en permanence (transparente aux touches) pour
+  // que son repère soit connu dès qu'un tour démarre.
+  return (
+    <View
+      ref={rootRef}
+      collapsable={false}
+      onLayout={measureRoot}
+      style={StyleSheet.absoluteFill}
+      pointerEvents="box-none"
+    >
+      {activeTour && step && rect && frame ? (
+        <TourStepView
+          rect={{
+            x: rect.x - frame.x,
+            y: rect.y - frame.y,
+            width: rect.width,
+            height: rect.height,
+          }}
+          winW={frame.width || screenW}
+          winH={frame.height || screenH}
+          step={step}
+          isLast={stepIndex === activeTour.steps.length - 1}
+          next={next}
+          finish={finish}
+          styles={styles}
+        />
+      ) : null}
+    </View>
+  );
+}
+
+function TourStepView({
+  rect,
+  winW,
+  winH,
+  step,
+  isLast,
+  next,
+  finish,
+  styles,
+}: {
+  rect: Rect;
+  winW: number;
+  winH: number;
+  step: TourStep;
+  isLast: boolean;
+  next: () => void;
+  finish: () => void;
+  styles: ReturnType<typeof makeStyles>;
+}) {
   const hole = {
     x: Math.max(0, rect.x - HOLE_PADDING),
     y: Math.max(0, rect.y - HOLE_PADDING),
@@ -284,7 +352,7 @@ export function TourOverlay() {
   const arrowLeft = Math.min(Math.max(hole.x + hole.w / 2 - 8, 24), winW - 40);
 
   return (
-    <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
+    <>
       {/* 4 bandes sombres autour du trou : tout est bloqué sauf la cible */}
       <View
         style={[styles.dim, { left: 0, top: 0, width: winW, height: hole.y }]}
@@ -362,7 +430,7 @@ export function TourOverlay() {
         </View>
         {!below && <View style={[styles.arrowDown, { left: arrowLeft }]} />}
       </View>
-    </View>
+    </>
   );
 }
 

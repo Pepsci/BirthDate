@@ -398,7 +398,7 @@ export default function PoolConfigScreen() {
                 value={deadline ?? new Date()}
                 mode="date"
                 minimumDate={new Date()}
-                display={Platform.OS === "ios" ? "spinner" : "default"}
+                display="spinner"
                 locale="fr-FR"
                 themeVariant={resolved}
                 onChange={(e, d) => {

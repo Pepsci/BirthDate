@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Keyboard, Platform } from "react-native";
+import { Dimensions, Keyboard, Platform } from "react-native";
 
 /**
  * Hauteur du clavier sur Android (0 sur iOS, où KeyboardAvoidingView gère).
@@ -10,9 +10,17 @@ export function useKeyboardPadding(): number {
 
   useEffect(() => {
     if (Platform.OS !== "android") return;
-    const show = Keyboard.addListener("keyboardDidShow", (e) =>
-      setHeight(e.endCoordinates.height),
-    );
+    // ⚠️ Pas `endCoordinates.height` : en edge-to-edge, cette hauteur exclut
+    // la barre de navigation système et, sur les claviers Samsung, la barre
+    // d'outils (emoji, GIF, micro) — le champ de saisie restait caché
+    // derrière. On prend donc la distance réelle entre le HAUT du clavier et
+    // le bas de l'écran. Le conteneur du chat descend jusqu'au bas de
+    // l'écran : c'est exactement la marge nécessaire.
+    const show = Keyboard.addListener("keyboardDidShow", (e) => {
+      const { screenY, height: kbHeight } = e.endCoordinates;
+      const fromTop = Dimensions.get("screen").height - screenY;
+      setHeight(screenY > 0 ? Math.max(fromTop, kbHeight) : kbHeight);
+    });
     const hide = Keyboard.addListener("keyboardDidHide", () => setHeight(0));
     return () => {
       show.remove();

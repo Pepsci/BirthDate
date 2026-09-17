@@ -1086,13 +1086,29 @@ export default function EventDetailScreen() {
               style={styles.orgBtn}
               onPress={() => router.push(`/event/edit/${event.shortId}`)}
             >
-              <Text style={styles.orgBtnText}>✏️ Modifier</Text>
+              <Text style={styles.orgBtnIcon}>✏️</Text>
+                <Text
+                  style={styles.orgBtnText}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.8}
+                >
+                  Modifier
+                </Text>
             </Pressable>
             <Pressable
               style={styles.orgBtn}
               onPress={() => router.push(`/event/pool-config/${event.shortId}`)}
             >
-              <Text style={styles.orgBtnText}>💳 Cagnotte</Text>
+              <Text style={styles.orgBtnIcon}>💳</Text>
+                <Text
+                  style={styles.orgBtnText}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.8}
+                >
+                  Cagnotte
+                </Text>
             </Pressable>
             {pendingTransferTo ? (
               <Pressable
@@ -1100,8 +1116,9 @@ export default function EventDetailScreen() {
                 disabled={transferBusy}
                 onPress={onWithdrawTransfer}
               >
-                <Text style={styles.orgBtnText}>
-                  ⏳ En attente de {pendingTransferTo.name} — retirer
+                <Text style={styles.orgBtnIcon}>⏳</Text>
+                <Text style={styles.orgBtnText} numberOfLines={2}>
+                  {pendingTransferTo.name} — retirer
                 </Text>
               </Pressable>
             ) : (
@@ -1110,7 +1127,15 @@ export default function EventDetailScreen() {
                   style={styles.orgBtn}
                   onPress={() => setTransferSheet(true)}
                 >
-                  <Text style={styles.orgBtnText}>🤝 Transférer</Text>
+                  <Text style={styles.orgBtnIcon}>🤝</Text>
+                <Text
+                  style={styles.orgBtnText}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.8}
+                >
+                  Transférer
+                </Text>
                 </Pressable>
               )
             )}
@@ -1120,15 +1145,31 @@ export default function EventDetailScreen() {
                 L'ordre des boutons reflète ce chemin. */}
             {event.status === "cancelled" ? (
               <Pressable style={styles.orgBtn} onPress={confirmUncancel}>
-                <Text style={styles.orgBtnText}>↩️ Rétablir</Text>
+                <Text style={styles.orgBtnIcon}>↩️</Text>
+                <Text
+                  style={styles.orgBtnText}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.8}
+                >
+                  Rétablir
+                </Text>
               </Pressable>
-            ) : (
+            ) : event.status === "draft" ? null : (
+              // Un brouillon n'a jamais été annoncé : le serveur refuse de
+              // l'annuler (DRAFT_NOT_CANCELLABLE). Seul « Supprimer » s'affiche.
               <Pressable
                 style={[styles.orgBtn, styles.orgBtnDanger]}
                 onPress={() => setCancelSheet(true)}
               >
-                <Text style={[styles.orgBtnText, { color: colors.danger }]}>
-                  ❌ Annuler
+                <Text style={styles.orgBtnIcon}>❌</Text>
+                <Text
+                  style={[styles.orgBtnText, { color: colors.danger }]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.8}
+                >
+                  Annuler
                 </Text>
               </Pressable>
             )}
@@ -1137,8 +1178,14 @@ export default function EventDetailScreen() {
                 style={[styles.orgBtn, styles.orgBtnDanger]}
                 onPress={confirmDelete}
               >
-                <Text style={[styles.orgBtnText, { color: colors.danger }]}>
-                  🗑️ Supprimer
+                <Text style={styles.orgBtnIcon}>🗑️</Text>
+                <Text
+                  style={[styles.orgBtnText, { color: colors.danger }]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.8}
+                >
+                  Supprimer
                 </Text>
               </Pressable>
             )}
@@ -2301,17 +2348,31 @@ const makeStyles = (c: ThemeColors) =>
   shareBtnText: { color: c.primary, fontWeight: "600" },
   shareCode: { fontWeight: "700", color: c.text, letterSpacing: 1 },
   orgRow: { flexDirection: "row", gap: 8 },
+  // Icône au-dessus du libellé, contenu centré dans les deux axes.
+  // ⚠️ Avant : « 🤝 Transférer » sur une seule ligne. Sur Android (police
+  // plus large, emoji plus larges, taille de texte système), le libellé
+  // passait à la ligne dans ce bouton seulement : il grandissait, la rangée
+  // étirait les trois autres, et leur texte restait collé en haut.
   orgBtn: {
     flex: 1,
     borderWidth: 1,
     borderColor: c.border,
     borderRadius: 10,
     paddingVertical: 10,
+    paddingHorizontal: 4,
     alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
     backgroundColor: c.cardSoft,
   },
+  orgBtnIcon: { fontSize: 18, lineHeight: 22, textAlign: "center" },
   orgBtnDanger: { borderColor: c.danger },
-  orgBtnText: { fontSize: 12, fontWeight: "600", color: c.text },
+  orgBtnText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: c.text,
+    textAlign: "center",
+  },
   poolTotal: { fontSize: 18, fontWeight: "700", color: c.text },
   poolBarBg: {
     height: 8,

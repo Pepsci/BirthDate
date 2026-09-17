@@ -342,7 +342,7 @@ export default function EventFormStepper({
                     value={fixedDate}
                     mode="date"
                     minimumDate={new Date()}
-                    display={Platform.OS === "ios" ? "spinner" : "default"}
+                    display="spinner"
                     locale="fr-FR"
                     themeVariant={resolved}
                     onChange={(e, d) => {
@@ -363,7 +363,7 @@ export default function EventFormStepper({
                   <DateTimePicker
                     value={fixedDate}
                     mode="time"
-                    display={Platform.OS === "ios" ? "spinner" : "default"}
+                    display="spinner"
                     locale="fr-FR"
                     themeVariant={resolved}
                     onChange={(e, d) => {
@@ -415,7 +415,7 @@ export default function EventFormStepper({
                     value={optionDraft}
                     mode="date"
                     minimumDate={new Date()}
-                    display={Platform.OS === "ios" ? "spinner" : "default"}
+                    display="spinner"
                     locale="fr-FR"
                     themeVariant={resolved}
                     onChange={(e, d) => {

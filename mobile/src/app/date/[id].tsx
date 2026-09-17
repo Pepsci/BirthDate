@@ -1486,50 +1486,71 @@ export default function DateDetailScreen() {
             <Text style={styles.muted}>Sa wishlist est vide.</Text>
           )}
           {(() => {
-            // On masque les cadeaux déjà réservés par quelqu'un d'autre ;
-            // on garde les disponibles + ceux qu'on a réservés soi-même.
-            const visibleWishlist = (wishlist ?? []).filter((item) => {
-              const reservedByMe = item.reservedBy?._id === user?._id;
-              const reservedByOther =
-                (!!item.reservedBy && !reservedByMe) || !!item.reservedByGuest;
-              return !reservedByOther;
-            });
-            if ((wishlist?.length ?? 0) > 0 && visibleWishlist.length === 0) {
-              return (
-                <Text style={styles.muted}>
-                  Tous les cadeaux disponibles ont été réservés 🎁
-                </Text>
-              );
-            }
-            return (
-              <View style={giftGridStyles.grid}>
-                {visibleWishlist.map((item) => {
-                  const reservedByMe = item.reservedBy?._id === user?._id;
-                  return (
-                    <GiftGridCard
-                      key={item._id}
-                      imageUri={item.image}
-                      placeholderEmoji="🎀"
-                      title={item.title}
-                      price={item.price ?? null}
-                      badge={
-                        reservedByMe
-                          ? {
-                              label: "Réservé par toi",
-                              color: colors.successStrong,
-                              bg: colors.successSoft,
-                            }
-                          : {
-                              label: "Disponible",
-                              color: colors.sub,
-                              bg: colors.bgSecondary,
-                            }
+            // On masque les cadeaux déjà réservés par quelqu'un d'autre.
+            // Ceux que J'AI réservés ne se mélangent plus aux disponibles :
+            // ils descendent dans « Mes réservations », sous un trait — même
+            // présentation que « Déjà offerts » de la liste commune. En haut
+            // il ne reste que ce qu'on peut encore choisir.
+            const isMine = (item: WishlistItem) =>
+              item.reservedBy?._id === user?._id;
+            const isTakenByOther = (item: WishlistItem) =>
+              (!!item.reservedBy && !isMine(item)) || !!item.reservedByGuest;
+
+            const available = (wishlist ?? []).filter(
+              (item) => !isMine(item) && !isTakenByOther(item),
+            );
+            const myReservations = (wishlist ?? []).filter(isMine);
+
+            const renderWish = (item: WishlistItem) => (
+              <GiftGridCard
+                key={item._id}
+                imageUri={item.image}
+                placeholderEmoji="🎀"
+                title={item.title}
+                price={item.price ?? null}
+                badge={
+                  isMine(item)
+                    ? {
+                        label: "Réservé par toi",
+                        color: colors.successStrong,
+                        bg: colors.successSoft,
                       }
-                      onPress={() => setSelectedWish(item)}
-                    />
-                  );
-                })}
-              </View>
+                    : {
+                        label: "Disponible",
+                        color: colors.sub,
+                        bg: colors.bgSecondary,
+                      }
+                }
+                onPress={() => setSelectedWish(item)}
+              />
+            );
+
+            if ((wishlist?.length ?? 0) === 0) return null;
+
+            return (
+              <>
+                {available.length > 0 ? (
+                  <View style={giftGridStyles.grid}>
+                    {available.map(renderWish)}
+                  </View>
+                ) : (
+                  <Text style={styles.muted}>
+                    Tous les cadeaux disponibles ont été réservés 🎁
+                  </Text>
+                )}
+
+                {myReservations.length > 0 && (
+                  <View style={styles.offeredSection}>
+                    <View style={styles.offeredDivider} />
+                    <Text style={styles.offeredTitle}>
+                      🎁 Mes réservations · {myReservations.length}
+                    </Text>
+                    <View style={giftGridStyles.grid}>
+                      {myReservations.map(renderWish)}
+                    </View>
+                  </View>
+                )}
+              </>
             );
           })()}
         </View>

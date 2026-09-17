@@ -7,6 +7,7 @@ import {
   RefreshControl,
   ActivityIndicator,
   Pressable,
+  Alert,
 } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
 import { useGuidedTour, TOURS } from "../../lib/guided-tour";
@@ -14,6 +15,7 @@ import OnboardingTip from "../../lib/tips";
 import {
   EventEntry,
   fetchMyEvents,
+  deleteEvent,
   eventDate,
   formatEventDate,
   EVENT_TYPE_LABELS,
@@ -169,7 +171,9 @@ export default function EventsScreen() {
             </Text>
           ) : null
         }
-        renderItem={({ item }) => <EventCard event={item} />}
+        renderItem={({ item }) => (
+          <EventCard event={item} onDeleted={load} />
+        )}
       />
     </View>
   );
@@ -248,7 +252,13 @@ function byDateDesc(a: EventEntry, b: EventEntry): number {
   return (db?.getTime() ?? 0) - (da?.getTime() ?? 0);
 }
 
-function EventCard({ event }: { event: EventEntry }) {
+function EventCard({
+  event,
+  onDeleted,
+}: {
+  event: EventEntry;
+  onDeleted: () => void;
+}) {
   const router = useRouter();
   const styles = useThemedStyles(makeStyles);
   const { colors } = useTheme();
@@ -262,6 +272,34 @@ function EventCard({ event }: { event: EventEntry }) {
   // on renvoie directement dans le formulaire pour le terminer.
   const isDraft = event.status === "draft";
   const isCancelled = event.status === "cancelled";
+
+  // ⚠️ Un brouillon ouvre directement le formulaire, jamais la page
+  // événement — or c'est là que se trouvaient Annuler et Supprimer. Un
+  // brouillon était donc impossible à supprimer. Le bouton vit sur la carte.
+  const confirmDeleteDraft = () => {
+    Alert.alert(
+      "Supprimer ce brouillon ?",
+      `« ${event.title || "Sans titre"} » sera supprimé définitivement.`,
+      [
+        { text: "Garder", style: "cancel" },
+        {
+          text: "Supprimer",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await deleteEvent(event.shortId);
+              onDeleted();
+            } catch (e: any) {
+              Alert.alert(
+                "Suppression impossible",
+                e?.message ?? "Réessaie dans un instant.",
+              );
+            }
+          },
+        },
+      ],
+    );
+  };
 
   return (
     <Pressable
@@ -309,7 +347,17 @@ function EventCard({ event }: { event: EventEntry }) {
           {STATUS_LABELS[event.status]}
         </Text>
         {isDraft ? (
-          <Text style={styles.draftHint}>Appuyer pour reprendre →</Text>
+          <View style={styles.draftActions}>
+            <Pressable
+              onPress={confirmDeleteDraft}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel="Supprimer ce brouillon"
+            >
+              <Text style={styles.draftDelete}>🗑️ Supprimer</Text>
+            </Pressable>
+            <Text style={styles.draftHint}>Reprendre →</Text>
+          </View>
         ) : (
           event.myRsvpStatus && (
             <Text style={styles.rsvp}>{RSVP_LABELS[event.myRsvpStatus]}</Text>
@@ -396,6 +444,8 @@ const makeStyles = (c: ThemeColors) =>
       backgroundColor: c.warningSoft,
     },
     draftHint: { fontSize: 12, color: c.warningStrong, fontWeight: "700" },
+    draftActions: { flexDirection: "row", alignItems: "center", gap: 16 },
+    draftDelete: { fontSize: 12, color: c.danger, fontWeight: "700" },
     cardHeader: {
       flexDirection: "row",
       justifyContent: "space-between",

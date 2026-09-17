@@ -614,7 +614,13 @@ const makeStyles = (c: ThemeColors) =>
     empty: {
       textAlign: "center",
       color: c.sub,
-      transform: [{ scaleY: -1 }],
+      // La liste est inversée : on retourne le texte pour le remettre à
+      // l'endroit. ⚠️ Pas la même transformation selon la plateforme :
+      // iOS inverse la liste en miroir vertical (scaleY -1), Android la fait
+      // pivoter à 180° (scale -1). Un scaleY seul sur Android laissait le
+      // texte écrit à l'envers, en miroir horizontal.
+      transform:
+        Platform.OS === "android" ? [{ scale: -1 }] : [{ scaleY: -1 }],
       marginTop: 40,
     },
     bubbleRow: { flexDirection: "row", alignItems: "flex-end", gap: 6 },

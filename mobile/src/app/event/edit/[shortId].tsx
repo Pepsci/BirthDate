@@ -1,8 +1,20 @@
 import { useEffect, useState } from "react";
-import { View, Text, ActivityIndicator, StyleSheet } from "react-native";
+import {
+  View,
+  Text,
+  ActivityIndicator,
+  StyleSheet,
+  Alert,
+} from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import EventFormStepper from "../../../components/EventFormStepper";
-import { EventDetail, fetchEvent, updateEvent } from "../../../lib/events";
+import {
+  EventDetail,
+  deleteEvent,
+  fetchEvent,
+  updateEvent,
+} from "../../../lib/events";
+import HeaderIconButton from "../../../components/HeaderIconButton";
 import {
   useTheme,
   useThemedStyles,
@@ -41,11 +53,45 @@ export default function EditEventScreen() {
   // invitations, comme à la fin d'une création normale.
   const isDraft = event.status === "draft";
 
+  const confirmDeleteDraft = () => {
+    Alert.alert(
+      "Supprimer ce brouillon ?",
+      "Il sera supprimé définitivement.",
+      [
+        { text: "Garder", style: "cancel" },
+        {
+          text: "Supprimer",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await deleteEvent(shortId!);
+              router.replace("/events");
+            } catch (e: any) {
+              Alert.alert(
+                "Suppression impossible",
+                e?.message ?? "Réessaie dans un instant.",
+              );
+            }
+          },
+        },
+      ],
+    );
+  };
+
   return (
     <>
       <Stack.Screen
         options={{
           title: isDraft ? `Brouillon ${event.title}` : `Modifier ${event.title}`,
+          headerRight: isDraft
+            ? () => (
+                <HeaderIconButton
+                  name="trash"
+                  onPress={confirmDeleteDraft}
+                  accessibilityLabel="Supprimer ce brouillon"
+                />
+              )
+            : undefined,
         }}
       />
       <EventFormStepper

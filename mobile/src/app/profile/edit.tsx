@@ -251,7 +251,7 @@ export default function ProfileEditScreen() {
         <DateTimePicker
           value={birthDate ?? new Date()}
           mode="date"
-          display={Platform.OS === "ios" ? "spinner" : "default"}
+          display="spinner"
           locale="fr-FR"
           maximumDate={new Date()}
           themeVariant={resolved}

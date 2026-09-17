@@ -169,7 +169,7 @@ export default function SignupPanel({
           <DateTimePicker
             value={birth ?? maxBirthDate}
             mode="date"
-            display={Platform.OS === "ios" ? "spinner" : "default"}
+            display="spinner"
             locale="fr-FR"
             maximumDate={maxBirthDate}
             themeVariant={resolved}
