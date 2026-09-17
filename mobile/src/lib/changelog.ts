@@ -17,6 +17,27 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "1.9.0",
+    date: "2026-09-17",
+    build: "43",
+    title:
+      "Arrivée sur Android, notifications fiables sur tous tes appareils, « Mes réservations » dans les wishlists",
+    note: "Merci de signaler tout ce qui bloque. Les points marqués ⚠️ nécessitent la nouvelle version du serveur.",
+    items: [
+      "🤖 BirthReminder arrive sur Android. Même application, même compte, mêmes discussions chiffrées : tout ce qui suit a été corrigé en l'y portant, et profite aussi à l'iPhone.",
+      "🔔 ⚠️ Un onglet BirthReminder ouvert sur ordinateur empêchait ton téléphone de sonner : le serveur te croyait déjà devant l'écran. Chaque appareil est maintenant traité séparément — seul celui où l'app est ouverte ne reçoit pas de notification, les autres sonnent.",
+      "📵 ⚠️ Après être passée en arrière-plan, l'application pouvait rester considérée comme ouverte et bloquer toutes tes notifications de messages, parfois plusieurs minutes.",
+      "🔓 Sur Android, les messages privés arrivent déchiffrés dans la notification, application en arrière-plan comme fermée — comme sur iPhone.",
+      "🎁 Dans la wishlist d'un ami, les cadeaux que tu as réservés descendent sous un trait, dans « Mes réservations ». En haut, il ne reste que ce qui est encore disponible.",
+      "🗑️ Un brouillon d'événement se supprime enfin : depuis sa carte dans l'onglet Événements, ou avec la corbeille en haut du formulaire. Il ouvrait directement le formulaire, où ces boutons n'existaient pas — impossible de s'en débarrasser.",
+      "⚙️ Les boutons d'organisation d'un événement (Modifier, Cagnotte, Transférer, Annuler) sont alignés, icône au-dessus du libellé. Sur Android, « Transférer » passait à la ligne et décalait les trois autres.",
+      "🎡 Choisir une date se fait avec la roue sur Android aussi (anniversaire, inscription, profil, événement, date limite de cagnotte), à la place du calendrier.",
+      "⌨️ Sur Android, le clavier recouvrait le champ de saisie des discussions.",
+      "🪞 Sur Android, « Aucun message. Dis bonjour… » s'affichait écrit à l'envers dans une conversation vide.",
+      "🧭 Sur Android, le guide de prise en main encadrait le mauvais endroit, un peu au-dessus de chaque bouton qu'il présentait.",
+    ],
+  },
+  {
     version: "1.8.0",
     date: "2026-09-16",
     build: "41",

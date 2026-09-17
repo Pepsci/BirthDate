@@ -10,10 +10,9 @@ import {
   Linking,
   Animated,
   PanResponder,
-  Dimensions,
+  useWindowDimensions,
 } from "react-native";
 
-const SCREEN_H = Dimensions.get("window").height;
 import { Gift } from "../lib/dates";
 import { occasionEmoji } from "../lib/occasions";
 import {
@@ -56,6 +55,12 @@ export default function GiftDetailModal({
   const translateY = useRef(new Animated.Value(0)).current;
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
+  // Hauteur lue à chaque rendu, pas une seule fois au chargement du fichier :
+  // sur iPad (rotation, Split View) ou un écran pliable, elle change en cours
+  // de route. Passée par une ref car le PanResponder n'est créé qu'une fois.
+  const { height: windowHeight } = useWindowDimensions();
+  const windowHeightRef = useRef(windowHeight);
+  windowHeightRef.current = windowHeight;
 
   // Réinitialise la position à chaque ouverture
   useEffect(() => {
@@ -73,7 +78,7 @@ export default function GiftDetailModal({
       onPanResponderRelease: (_, g) => {
         if (g.dy > 110 || g.vy > 0.7) {
           Animated.timing(translateY, {
-            toValue: SCREEN_H,
+            toValue: windowHeightRef.current,
             duration: 220,
             useNativeDriver: true,
           }).start(() => onCloseRef.current());
