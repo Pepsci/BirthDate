@@ -23,6 +23,7 @@ import {
   useThemedStyles,
   ThemeColors,
 } from "../../../lib/theme-context";
+import { readingPane } from "../../../lib/layout";
 
 /**
  * Gestion des accès d'une liste commune — membres uniquement.
@@ -260,7 +261,7 @@ export default function SharedListAccessScreen() {
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
     container: { flex: 1, backgroundColor: c.bg },
-    content: { padding: 12, gap: 10, paddingBottom: 40 },
+    content: { padding: 12, gap: 10, paddingBottom: 40, ...readingPane },
     center: {
       flex: 1,
       justifyContent: "center",

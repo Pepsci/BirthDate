@@ -14,6 +14,7 @@ import {
   useThemedStyles,
   ThemeColors,
 } from "../lib/theme-context";
+import { formPane } from "../lib/layout";
 
 // Retire les accents pour que "evenement" retrouve "événement" — même règle
 // que le centre d'aide web (front/src/components/pages/HelpCenter.jsx).
@@ -216,7 +217,7 @@ export default function ContactScreen() {
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
     container: { flex: 1, backgroundColor: c.bg },
-    content: { padding: 16, paddingBottom: 40, gap: 12 },
+    content: { padding: 16, paddingBottom: 40, gap: 12, ...formPane },
     intro: { color: c.sub, fontSize: 14, lineHeight: 20 },
     searchInput: {
       borderWidth: 1,

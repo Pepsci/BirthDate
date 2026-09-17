@@ -16,6 +16,7 @@ import {
   useThemedStyles,
   ThemeColors,
 } from "../../lib/theme-context";
+import { formPane } from "../../lib/layout";
 
 /**
  * Téléchargement des données personnelles (RGPD art. 15 et 20).
@@ -111,7 +112,7 @@ export default function DataExportScreen() {
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
     container: { flex: 1, backgroundColor: c.bg },
-    content: { padding: 16, gap: 12, paddingBottom: 40 },
+    content: { padding: 16, gap: 12, paddingBottom: 40, ...formPane },
     title: { fontSize: 20, fontWeight: "800", color: c.text },
     paragraph: { fontSize: 14, color: c.sub, lineHeight: 20 },
     button: {

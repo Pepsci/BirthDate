@@ -73,6 +73,12 @@ import GiftGridCard, { giftGridStyles } from "../../components/GiftGridCard";
 import BottomSheet from "../../components/BottomSheet";
 import HeaderIconButton from "../../components/HeaderIconButton";
 import { useScrollBoundsGuard } from "../../lib/use-scroll-bounds-guard";
+import { useSplitView } from "../../lib/use-split-view";
+import EventChat from "../../components/EventChat";
+import EventInviteFriends from "../../components/EventInviteFriends";
+import PoolConfig from "../../components/PoolConfig";
+import PoolContribute from "../../components/PoolContribute";
+import EventNotificationsSettings from "../../components/EventNotificationsSettings";
 import ImportGiftSheet, { ImportedGift } from "../../components/ImportGiftSheet";
 import DirectTransferViewer from "../../components/DirectTransferViewer";
 import EventLocationMap from "../../components/EventLocationMap";
@@ -145,6 +151,13 @@ export default function EventDetailScreen() {
   // Voir use-scroll-bounds-guard : les encarts repliables font rétrécir le
   // contenu, ce qui laissait la vue calée au-delà de sa propre hauteur.
   const scrollGuard = useScrollBoundsGuard();
+  // Paysage sur grand écran : l'événement (infos, participants, boutons) à
+  // gauche, ce que proposent les boutons à droite. En portrait, une seule
+  // colonne : les deux moitiés seraient trop étroites pour cette page.
+  const { isSplit: screenSplit } = useSplitView({ landscapeOnly: true });
+  const [rightPane, setRightPane] = useState<
+    "chat" | "gifts" | "notifications" | "invite" | "pool" | "poolConfig"
+  >("chat");
   const [giftName, setGiftName] = useState("");
   const [giftUrl, setGiftUrl] = useState("");
   const [giftPrice, setGiftPrice] = useState("");
@@ -914,44 +927,18 @@ export default function EventDetailScreen() {
     ? gifts.filter((g) => g._id !== pendingDelete._id)
     : gifts;
 
-  return (
-    <View style={{ flex: 1 }}>
-    <ScrollView
-      {...scrollGuard}
-      style={styles.container}
-      contentContainerStyle={[
-        styles.content,
-        { paddingBottom: 40 + insets.bottom },
-      ]}
-      keyboardShouldPersistTaps="handled"
-      keyboardDismissMode="on-drag"
-      automaticallyAdjustKeyboardInsets
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-      }
-    >
-      {/* Taille fixe + badge en absolu (cf. HeaderIconButton) : le bouton
-          apparaissait sinon étiré sur toute la largeur de la barre tant que sa
-          mesure n'était pas arrivée. */}
-      <Stack.Screen
-        options={{
-          title: event.title,
-          headerRight: () =>
-            event.hasFullAccess ? (
-              <HeaderIconButton
-                name="chat"
-                accessibilityLabel="Ouvrir le chat de l'événement"
-                badge={chatUnread}
-                onPress={() => {
-                  setChatUnread(0);
-                  router.push(`/event/chat/${event.shortId}`);
-                }}
-              />
-            ) : null,
-        }}
-      />
+  // Sans accès complet (vue publique), il n'y a ni chat, ni cadeaux, ni
+  // réglages : rien à mettre à droite.
+  const isSplit = screenSplit && event.hasFullAccess;
 
-      {error && <Text style={styles.error}>{error}</Text>}
+  // ── Rendu ────────────────────────────────────────────────────────────────
+  // Les morceaux de la page sont préparés une fois puis placés selon l'écran :
+  // une colonne (comme avant) ou deux panneaux en paysage. Les états restent
+  // ceux de cet écran : tourner l'appareil ne perd ni saisie ni onglet.
+
+  // En-tête (titre, type, date, calendrier) : visible dans toutes les vues
+  const headerContent = (
+    <>
 
       {/* En-tête */}
       <View style={styles.card}>
@@ -997,8 +984,12 @@ export default function EventDetailScreen() {
         )}
       </View>
 
-      {eventView === "info" && (
-        <>
+    </>
+  );
+
+  // Événement : lieu, infos, RSVP, votes, cagnotte, participants, boutons…
+  const infoContent = (
+    <>
       {/* Lieu + carte */}
       {event.hasFullAccess &&
         event.locationMode === "fixed" &&
@@ -1098,7 +1089,11 @@ export default function EventDetailScreen() {
             </Pressable>
             <Pressable
               style={styles.orgBtn}
-              onPress={() => router.push(`/event/pool-config/${event.shortId}`)}
+              onPress={() =>
+                isSplit
+                  ? setRightPane("poolConfig")
+                  : router.push(`/event/pool-config/${event.shortId}`)
+              }
             >
               <Text style={styles.orgBtnIcon}>💳</Text>
                 <Text
@@ -1331,14 +1326,298 @@ export default function EventDetailScreen() {
         </View>
       )}
 
-        </>
+      {/* Cagnotte */}
+      {pool?.active && (
+        <View style={styles.card}>
+          <SectionHeader
+            title={
+              showPool
+                ? "💝 Cagnotte"
+                : `💝 Cagnotte · ${((pool.totalCollected ?? 0) / 100)
+                    .toFixed(2)
+                    .replace(".", ",")} €${
+                    pool.mode === "goal" && pool.goal
+                      ? ` / ${(pool.goal / 100).toFixed(0)} €`
+                      : ""
+                  }`
+            }
+            open={showPool}
+            onToggle={() => setShowPool(!showPool)}
+          />
+          {showPool && (
+            <>
+              <Text style={styles.poolTotal}>
+                {((pool.totalCollected ?? 0) / 100)
+                  .toFixed(2)
+                  .replace(".", ",")}{" "}
+                €
+                {pool.mode === "goal" && pool.goal
+                  ? ` / ${(pool.goal / 100).toFixed(0)} €`
+                  : ""}
+                <Text style={styles.detail}>
+                  {"  ·  "}
+                  {pool.contributionsCount ?? 0} participation
+                  {(pool.contributionsCount ?? 0) > 1 ? "s" : ""}
+                </Text>
+              </Text>
+              {pool.mode === "goal" && pool.goal ? (
+                <View style={styles.poolBarBg}>
+                  <View
+                    style={[
+                      styles.poolBarFill,
+                      {
+                        width: `${Math.min(100, Math.round(((pool.totalCollected ?? 0) / pool.goal) * 100))}%`,
+                      },
+                    ]}
+                  />
+                </View>
+              ) : null}
+              {(pool.contributions ?? []).length > 0 && (
+                <View style={styles.contribList}>
+                  <Text style={styles.contribHeader}>
+                    Participants ({pool.contributions!.length})
+                  </Text>
+                  {pool.contributions!.map((c) => (
+                    <View key={c.id} style={styles.contribRow}>
+                      <View style={{ flex: 1, paddingRight: 8 }}>
+                        <Text style={styles.contribName} numberOfLines={1}>
+                          {c.contributor
+                            ? `${c.contributor.name}${
+                                c.contributor.surname
+                                  ? " " + c.contributor.surname
+                                  : ""
+                              }`
+                            : "🕶️ Anonyme"}
+                        </Text>
+                        {!!c.message && (
+                          <Text style={styles.contribMsg} numberOfLines={2}>
+                            « {c.message} »
+                          </Text>
+                        )}
+                      </View>
+                      <Text style={styles.contribAmount}>
+                        {(c.amount / 100).toFixed(2).replace(".", ",")} €
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              )}
+              {!isOrganizer && (
+                <Pressable
+                  style={styles.poolBtn}
+                  onPress={() =>
+                    isSplit
+                      ? setRightPane("pool")
+                      : router.push(`/event/pool/${event.shortId}`)
+                  }
+                >
+                  <Text style={styles.poolBtnText}>💝 Contribuer</Text>
+                </Pressable>
+              )}
+
+              <Pressable style={styles.poolShareBtn} onPress={onSharePool}>
+                <Text style={styles.poolShareText}>
+                  📤 Partager la cagnotte
+                </Text>
+              </Pressable>
+            </>
+          )}
+        </View>
       )}
 
-      {eventView === "gifts" && (
+      {/* Virement direct — section autonome (visible même sans cagnotte) */}
+      {event.hasFullAccess &&
+        (event.directTransfer?.ibanEnabled ||
+          event.directTransfer?.paypalEnabled ||
+          event.directTransfer?.externalPoolEnabled) && (
+          <View style={styles.card}>
+            <Text style={styles.sectionTitle}>💳 Virement direct</Text>
+            <DirectTransferViewer
+              shortId={event.shortId}
+              directTransfer={event.directTransfer}
+            />
+          </View>
+        )}
+
+      {/* Partage */}
+      {event.hasFullAccess && (isOrganizer || event.allowGuestInvites) && (
+        <View style={styles.card}>
+          <SectionHeader
+            title="🔗 Inviter du monde"
+            open={showInvite}
+            onToggle={() => setShowInvite(!showInvite)}
+          />
+          {showInvite && (
+            <>
+              {(isOrganizer || event.allowGuestInvites) && (
+                <Pressable
+                  style={styles.shareBtn}
+                  onPress={() =>
+                    // Paysage : la sélection d'amis s'ouvre à droite, sans
+                    // quitter l'événement.
+                    isSplit
+                      ? setRightPane("invite")
+                      : router.push(`/event/invite/${event.shortId}`)
+                  }
+                >
+                  <Text style={styles.shareBtnText}>👥 Inviter mes amis</Text>
+                </Pressable>
+              )}
+              <Pressable style={styles.shareBtn} onPress={onShare}>
+                <Text style={styles.shareBtnText}>Partager le lien + code</Text>
+              </Pressable>
+              {/* Copier le code seul : partager le lien complet ouvre la feuille
+                  de partage du système, alors qu'on veut souvent juste coller
+                  le code dans une conversation déjà ouverte ailleurs. */}
+              <Pressable style={styles.shareBtn} onPress={onCopyCode}>
+                <Text style={styles.shareBtnText}>
+                  {codeCopied ? "✓ Code copié" : "📋 Copier le code d'accès"}
+                </Text>
+              </Pressable>
+              {share && (
+                <Text style={styles.detail}>
+                  Code d'accès :{" "}
+                  <Text style={styles.shareCode}>{share.code}</Text>
+                </Text>
+              )}
+            </>
+          )}
+        </View>
+      )}
+
+      {/* Participants */}
+      {event.hasFullAccess && (
+        <View style={styles.card}>
+          <SectionHeader
+            title={`Participants (${acceptedCount} / ${invitations.length})`}
+            open={showParticipants}
+            onToggle={() => setShowParticipants(!showParticipants)}
+          />
+          {showParticipants && (
+            <>
+              {invitations.length === 0 && (
+                <Text style={styles.detail}>
+                  Personne d'invité pour l'instant.
+                </Text>
+              )}
+              {invitations.map((inv) => (
+                <View key={inv._id} style={styles.participantRow}>
+                  <Avatar
+                    uri={inv.user?.avatar}
+                    name={inv.user?.name || invitationName(inv)}
+                    surname={inv.user?.surname}
+                    size={36}
+                  />
+                  <Text style={styles.pName} numberOfLines={1}>
+                    {invitationName(inv)}
+                  </Text>
+                  <Text style={styles.pStatus}>{RSVP_LABELS[inv.status]}</Text>
+                </View>
+              ))}
+            </>
+          )}
+        </View>
+      )}
+
+      {/* Paysage : ces boutons pilotent le panneau de droite. Celui du
+          panneau affiché est plein — on voit d'un coup d'œil ce qui est
+          ouvert. Portrait : comportement d'origine (vue cadeaux, écran de
+          réglages). */}
+      {isSplit ? (
         <>
-      <Pressable style={styles.backBtn} onPress={() => setEventView("info")}>
-        <Text style={styles.backBtnText}>‹ Retour à l'événement</Text>
-      </Pressable>
+          <Pressable
+            style={[styles.giftsBtn, rightPane === "chat" && styles.splitBtnActive]}
+            onPress={() => {
+              setChatUnread(0);
+              setRightPane("chat");
+            }}
+          >
+            <Text
+              style={[
+                styles.giftsBtnText,
+                rightPane === "chat" && styles.splitBtnTextActive,
+              ]}
+              numberOfLines={1}
+            >
+              {chatUnread > 0 ? `💬 Chat (${chatUnread})` : "💬 Chat"}
+            </Text>
+          </Pressable>
+          {event.giftMode !== "none" && (
+            <Pressable
+              style={[styles.giftsBtn, rightPane === "gifts" && styles.splitBtnActive]}
+              onPress={() => {
+                setRightPane("gifts");
+              }}
+            >
+              <Text
+                style={[
+                  styles.giftsBtnText,
+                  rightPane === "gifts" && styles.splitBtnTextActive,
+                ]}
+                numberOfLines={1}
+              >
+                🎁 Voir les cadeaux
+              </Text>
+            </Pressable>
+          )}
+          <Pressable
+            style={[styles.giftsBtn, rightPane === "notifications" && styles.splitBtnActive]}
+            onPress={() => {
+              setRightPane("notifications");
+            }}
+          >
+            <Text
+              style={[
+                styles.giftsBtnText,
+                rightPane === "notifications" && styles.splitBtnTextActive,
+              ]}
+              numberOfLines={1}
+            >
+              🔔 Notifications de cet événement
+            </Text>
+          </Pressable>
+        </>
+      ) : (
+        <>
+          {event.hasFullAccess && event.giftMode !== "none" && (
+            <Pressable
+              style={styles.giftsBtn}
+              onPress={() => setEventView("gifts")}
+            >
+              <Text style={styles.giftsBtnText} numberOfLines={1}>
+                🎁 Voir les cadeaux
+              </Text>
+            </Pressable>
+          )}
+
+          {/* Réglages de notifications de CET événement. Ouvert à tous les
+              participants, pas seulement à l'organisateur : jusqu'ici, couper le
+              bruit d'un seul événement demandait de couper la catégorie
+              « Événements » en entier, donc tous les autres avec. */}
+          {event.hasFullAccess && (
+            <Pressable
+              style={styles.giftsBtn}
+              onPress={() => router.push(`/event/notifications/${shortId}`)}
+            >
+              <Text style={styles.giftsBtnText} numberOfLines={1}>
+                🔔 Notifications de cet événement
+              </Text>
+            </Pressable>
+          )}
+        </>
+      )}
+    </>
+  );
+
+  // Cadeaux imposés / propositions
+  const giftsContent = (
+    <>
+      {/* Inutile en paysage : l'événement reste affiché à gauche. */}
+      {!isSplit && (
+        <Pressable style={styles.backBtn} onPress={() => setEventView("info")}>
+          <Text style={styles.backBtnText}>‹ Retour à l'événement</Text>
+        </Pressable>
+      )}
 
       {/* Cadeaux imposés */}
       {event.hasFullAccess &&
@@ -1639,222 +1918,13 @@ export default function EventDetailScreen() {
           </BottomSheet>
         </View>
       )}
-        </>
-      )}
+    </>
+  );
 
-      {eventView === "info" && (
-        <>
-      {/* Cagnotte */}
-      {pool?.active && (
-        <View style={styles.card}>
-          <SectionHeader
-            title={
-              showPool
-                ? "💝 Cagnotte"
-                : `💝 Cagnotte · ${((pool.totalCollected ?? 0) / 100)
-                    .toFixed(2)
-                    .replace(".", ",")} €${
-                    pool.mode === "goal" && pool.goal
-                      ? ` / ${(pool.goal / 100).toFixed(0)} €`
-                      : ""
-                  }`
-            }
-            open={showPool}
-            onToggle={() => setShowPool(!showPool)}
-          />
-          {showPool && (
-            <>
-              <Text style={styles.poolTotal}>
-                {((pool.totalCollected ?? 0) / 100)
-                  .toFixed(2)
-                  .replace(".", ",")}{" "}
-                €
-                {pool.mode === "goal" && pool.goal
-                  ? ` / ${(pool.goal / 100).toFixed(0)} €`
-                  : ""}
-                <Text style={styles.detail}>
-                  {"  ·  "}
-                  {pool.contributionsCount ?? 0} participation
-                  {(pool.contributionsCount ?? 0) > 1 ? "s" : ""}
-                </Text>
-              </Text>
-              {pool.mode === "goal" && pool.goal ? (
-                <View style={styles.poolBarBg}>
-                  <View
-                    style={[
-                      styles.poolBarFill,
-                      {
-                        width: `${Math.min(100, Math.round(((pool.totalCollected ?? 0) / pool.goal) * 100))}%`,
-                      },
-                    ]}
-                  />
-                </View>
-              ) : null}
-              {(pool.contributions ?? []).length > 0 && (
-                <View style={styles.contribList}>
-                  <Text style={styles.contribHeader}>
-                    Participants ({pool.contributions!.length})
-                  </Text>
-                  {pool.contributions!.map((c) => (
-                    <View key={c.id} style={styles.contribRow}>
-                      <View style={{ flex: 1, paddingRight: 8 }}>
-                        <Text style={styles.contribName} numberOfLines={1}>
-                          {c.contributor
-                            ? `${c.contributor.name}${
-                                c.contributor.surname
-                                  ? " " + c.contributor.surname
-                                  : ""
-                              }`
-                            : "🕶️ Anonyme"}
-                        </Text>
-                        {!!c.message && (
-                          <Text style={styles.contribMsg} numberOfLines={2}>
-                            « {c.message} »
-                          </Text>
-                        )}
-                      </View>
-                      <Text style={styles.contribAmount}>
-                        {(c.amount / 100).toFixed(2).replace(".", ",")} €
-                      </Text>
-                    </View>
-                  ))}
-                </View>
-              )}
-              {!isOrganizer && (
-                <Pressable
-                  style={styles.poolBtn}
-                  onPress={() => router.push(`/event/pool/${event.shortId}`)}
-                >
-                  <Text style={styles.poolBtnText}>💝 Contribuer</Text>
-                </Pressable>
-              )}
-
-              <Pressable style={styles.poolShareBtn} onPress={onSharePool}>
-                <Text style={styles.poolShareText}>
-                  📤 Partager la cagnotte
-                </Text>
-              </Pressable>
-            </>
-          )}
-        </View>
-      )}
-
-      {/* Virement direct — section autonome (visible même sans cagnotte) */}
-      {event.hasFullAccess &&
-        (event.directTransfer?.ibanEnabled ||
-          event.directTransfer?.paypalEnabled ||
-          event.directTransfer?.externalPoolEnabled) && (
-          <View style={styles.card}>
-            <Text style={styles.sectionTitle}>💳 Virement direct</Text>
-            <DirectTransferViewer
-              shortId={event.shortId}
-              directTransfer={event.directTransfer}
-            />
-          </View>
-        )}
-
-      {/* Partage */}
-      {event.hasFullAccess && (isOrganizer || event.allowGuestInvites) && (
-        <View style={styles.card}>
-          <SectionHeader
-            title="🔗 Inviter du monde"
-            open={showInvite}
-            onToggle={() => setShowInvite(!showInvite)}
-          />
-          {showInvite && (
-            <>
-              {(isOrganizer || event.allowGuestInvites) && (
-                <Pressable
-                  style={styles.shareBtn}
-                  onPress={() => router.push(`/event/invite/${event.shortId}`)}
-                >
-                  <Text style={styles.shareBtnText}>👥 Inviter mes amis</Text>
-                </Pressable>
-              )}
-              <Pressable style={styles.shareBtn} onPress={onShare}>
-                <Text style={styles.shareBtnText}>Partager le lien + code</Text>
-              </Pressable>
-              {/* Copier le code seul : partager le lien complet ouvre la feuille
-                  de partage du système, alors qu'on veut souvent juste coller
-                  le code dans une conversation déjà ouverte ailleurs. */}
-              <Pressable style={styles.shareBtn} onPress={onCopyCode}>
-                <Text style={styles.shareBtnText}>
-                  {codeCopied ? "✓ Code copié" : "📋 Copier le code d'accès"}
-                </Text>
-              </Pressable>
-              {share && (
-                <Text style={styles.detail}>
-                  Code d'accès :{" "}
-                  <Text style={styles.shareCode}>{share.code}</Text>
-                </Text>
-              )}
-            </>
-          )}
-        </View>
-      )}
-
-      {/* Participants */}
-      {event.hasFullAccess && (
-        <View style={styles.card}>
-          <SectionHeader
-            title={`Participants (${acceptedCount} / ${invitations.length})`}
-            open={showParticipants}
-            onToggle={() => setShowParticipants(!showParticipants)}
-          />
-          {showParticipants && (
-            <>
-              {invitations.length === 0 && (
-                <Text style={styles.detail}>
-                  Personne d'invité pour l'instant.
-                </Text>
-              )}
-              {invitations.map((inv) => (
-                <View key={inv._id} style={styles.participantRow}>
-                  <Avatar
-                    uri={inv.user?.avatar}
-                    name={inv.user?.name || invitationName(inv)}
-                    surname={inv.user?.surname}
-                    size={36}
-                  />
-                  <Text style={styles.pName} numberOfLines={1}>
-                    {invitationName(inv)}
-                  </Text>
-                  <Text style={styles.pStatus}>{RSVP_LABELS[inv.status]}</Text>
-                </View>
-              ))}
-            </>
-          )}
-        </View>
-      )}
-
-      {event.hasFullAccess && event.giftMode !== "none" && (
-        <Pressable
-          style={styles.giftsBtn}
-          onPress={() => setEventView("gifts")}
-        >
-          <Text style={styles.giftsBtnText} numberOfLines={1}>
-            🎁 Voir les cadeaux
-          </Text>
-        </Pressable>
-      )}
-
-      {/* Réglages de notifications de CET événement. Ouvert à tous les
-          participants, pas seulement à l'organisateur : jusqu'ici, couper le
-          bruit d'un seul événement demandait de couper la catégorie
-          « Événements » en entier, donc tous les autres avec. */}
-      {event.hasFullAccess && (
-        <Pressable
-          style={styles.giftsBtn}
-          onPress={() => router.push(`/event/notifications/${shortId}`)}
-        >
-          <Text style={styles.giftsBtnText} numberOfLines={1}>
-            🔔 Notifications de cet événement
-          </Text>
-        </Pressable>
-      )}
-        </>
-      )}
-
+  // Vue publique + feuilles (des <Modal> : leur place dans l'arbre ne change
+  // rien à l'affichage, on les rend une seule fois).
+  const restContent = (
+    <>
       {!event.hasFullAccess && (
         <View style={styles.card}>
           <Text style={styles.detail}>
@@ -1969,7 +2039,142 @@ export default function EventDetailScreen() {
           </Text>
         </Pressable>
       </BottomSheet>
-    </ScrollView>
+    </>
+  );
+
+  const refreshControl = (
+    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+  );
+
+  return (
+    <View style={{ flex: 1 }}>
+      {/* Taille fixe + badge en absolu (cf. HeaderIconButton) : le bouton
+          apparaissait sinon étiré sur toute la largeur de la barre tant que sa
+          mesure n'était pas arrivée. */}
+      <Stack.Screen
+        options={{
+          title: event.title,
+          headerRight: () =>
+            event.hasFullAccess ? (
+              <HeaderIconButton
+                name="chat"
+                accessibilityLabel="Ouvrir le chat de l'événement"
+                badge={chatUnread}
+                onPress={() => {
+                  setChatUnread(0);
+                  if (isSplit) setRightPane("chat");
+                  else router.push(`/event/chat/${event.shortId}`);
+                }}
+              />
+            ) : null,
+        }}
+      />
+
+
+      {isSplit ? (
+        <View style={styles.splitRow}>
+          <ScrollView
+            style={[styles.container, styles.splitPane]}
+            contentContainerStyle={[
+              styles.content,
+              { paddingBottom: 40 + insets.bottom },
+            ]}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
+            automaticallyAdjustKeyboardInsets
+            refreshControl={refreshControl}
+          >
+            {error && <Text style={styles.error}>{error}</Text>}
+            {headerContent}
+            {infoContent}
+            {restContent}
+          </ScrollView>
+
+          {/* Chat et réglages gèrent leur propre défilement ; les cadeaux ont
+              le garde-fou, c'est ce panneau qui rétrécit. */}
+          <View
+            style={[styles.container, styles.splitPane, styles.splitPaneRight]}
+          >
+            {rightPane === "poolConfig" ? (
+              <PoolConfig
+                key={event.shortId}
+                embedded
+                shortId={event.shortId}
+                onDone={() => {
+                  // Réglages enregistrés : l'encart cagnotte à gauche doit
+                  // refléter le nouvel état.
+                  setRightPane("chat");
+                  load();
+                }}
+              />
+            ) : rightPane === "pool" ? (
+              <PoolContribute
+                key={event.shortId}
+                embedded
+                shortId={event.shortId}
+                onDone={() => {
+                  setRightPane("chat");
+                  load();
+                }}
+              />
+            ) : rightPane === "invite" ? (
+              <EventInviteFriends
+                key={event.shortId}
+                embedded
+                shortId={event.shortId}
+                onDone={() => {
+                  // Les invitations viennent de changer : on recharge
+                  // l'événement (participants, quota) et on rend la main au
+                  // chat.
+                  setRightPane("chat");
+                  load();
+                }}
+              />
+            ) : rightPane === "chat" ? (
+              <EventChat key={event.shortId} embedded shortId={event.shortId} />
+            ) : rightPane === "notifications" ? (
+              <EventNotificationsSettings
+                key={event.shortId}
+                embedded
+                shortId={event.shortId}
+              />
+            ) : (
+              <ScrollView
+                {...scrollGuard}
+                style={styles.container}
+                contentContainerStyle={[
+                  styles.content,
+                  { paddingBottom: 40 + insets.bottom },
+                ]}
+                keyboardShouldPersistTaps="handled"
+                keyboardDismissMode="on-drag"
+                automaticallyAdjustKeyboardInsets
+              >
+                {giftsContent}
+              </ScrollView>
+            )}
+          </View>
+        </View>
+      ) : (
+        <ScrollView
+          {...scrollGuard}
+          style={styles.container}
+          contentContainerStyle={[
+            styles.content,
+            { paddingBottom: 40 + insets.bottom },
+          ]}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          automaticallyAdjustKeyboardInsets
+          refreshControl={refreshControl}
+        >
+          {error && <Text style={styles.error}>{error}</Text>}
+          {headerContent}
+          {eventView === "info" && infoContent}
+          {eventView === "gifts" && giftsContent}
+          {restContent}
+        </ScrollView>
+      )}
 
       {pendingDelete && (
         <View style={styles.undoBar}>
@@ -2276,6 +2481,16 @@ const makeStyles = (c: ThemeColors) =>
     alignItems: "center",
   },
   giftsBtnText: { color: c.primary, fontWeight: "700", fontSize: 15 },
+  // Paysage grand écran : deux panneaux de même largeur
+  splitRow: { flex: 1, flexDirection: "row", backgroundColor: c.bg },
+  splitPane: { flex: 1 },
+  splitPaneRight: {
+    borderLeftWidth: StyleSheet.hairlineWidth,
+    borderLeftColor: c.border,
+  },
+  // Bouton du panneau affiché (même gabarit que giftsBtn, rempli)
+  splitBtnActive: { backgroundColor: c.primary },
+  splitBtnTextActive: { color: c.white },
   giftFormTitle: {
     fontSize: 13,
     fontWeight: "700",

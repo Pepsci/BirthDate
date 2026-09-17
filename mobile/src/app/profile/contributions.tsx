@@ -15,6 +15,7 @@ import {
   useThemedStyles,
   ThemeColors,
 } from "../../lib/theme-context";
+import { readingPane } from "../../lib/layout";
 
 /*
  * Historique des contributions.
@@ -244,7 +245,7 @@ export default function MyContributionsScreen() {
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
     container: { flex: 1, backgroundColor: c.bg },
-    content: { padding: 16, paddingBottom: 40, gap: 10 },
+    content: { padding: 16, paddingBottom: 40, gap: 10, ...readingPane },
     error: { color: c.danger, fontSize: 14, marginTop: 12 },
     empty: { color: c.sub, fontSize: 14, lineHeight: 21, marginTop: 12 },
     total: { color: c.sub, fontSize: 13, marginBottom: 4 },

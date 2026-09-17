@@ -1,0 +1,1044 @@
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  View,
+  Text,
+  FlatList,
+  TextInput,
+  Pressable,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+  ActivityIndicator,
+} from "react-native";
+import { Alert } from "react-native";
+import { Stack, useRouter } from "expo-router";
+import { promptReport, promptBlock } from "../lib/moderation";
+import { markConversationNotifsRead } from "../lib/notifications";
+import MessageActionSheet, {
+  MessageAction,
+} from "./MessageActionSheet";
+import ReactionPills from "./ReactionPills";
+import MessageInfoSheet from "./MessageInfoSheet";
+import { applyReceipt, getReceiptStatus } from "../lib/receipts";
+import { ReactionName } from "./icons/ReactionIcon";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import {
+  useKeyboardPadding,
+  useKeyboardVisible,
+} from "../lib/use-keyboard-padding";
+import type { Socket } from "socket.io-client";
+import GiftShareCard from "./GiftShareCard";
+import DateShareCard from "./DateShareCard";
+import Avatar from "./Avatar";
+import PersonPreviewCard from "./PersonPreviewCard";
+import { useAuth } from "../lib/auth-context";
+import { useUnread } from "../lib/unread-context";
+import { getSocket } from "../lib/socket";
+import HeaderIconButton from "./HeaderIconButton";
+import MuteSheet from "./MuteSheet";
+import { useMute } from "../lib/mutes";
+import {
+  DMMessage,
+  startConversation,
+  fetchDMMessages,
+  markConversationRead,
+  fetchUserPublicKey,
+} from "../lib/conversations";
+import {
+  getPrivateKey,
+  encryptMessage,
+  decryptMessage,
+} from "../lib/crypto";
+import {
+  useTheme,
+  useThemedStyles,
+  ThemeColors,
+} from "../lib/theme-context";
+
+/**
+ * La bulle « moi » reste bleue dans les deux thèmes : ce qui se pose dessus
+ * doit donc rester clair en permanence et ne passe pas par les tokens.
+ */
+const ON_PRIMARY = "#ffffff";
+const ON_PRIMARY_SOFT = "#dbeafe";
+const ON_PRIMARY_QUOTE_BG = "rgba(255, 255, 255, 0.15)";
+/** Coches sur la bulle bleue : grisées tant que non lu, vert menthe une fois lu. */
+const ON_PRIMARY_TICK = "rgba(255, 255, 255, 0.7)";
+const ON_PRIMARY_TICK_READ = "#86efac";
+
+/**
+ * Conversation privée entre amis (chiffrée de bout en bout).
+ *
+ * Deux usages :
+ * - `app/chat/[friendId].tsx` : écran plein, titre et actions dans l'en-tête
+ *   de la pile ;
+ * - `app/date/[id].tsx` en grand écran (`embedded`) : panneau de droite de la
+ *   carte. L'en-tête de la pile appartient alors à la CARTE — y écrire le
+ *   titre du chat l'écraserait — donc titre et actions passent dans une barre
+ *   interne au panneau.
+ */
+export default function DMChat({
+  friendId,
+  name,
+  avatar,
+  embedded = false,
+}: {
+  friendId: string;
+  name?: string;
+  avatar?: string;
+  embedded?: boolean;
+}) {
+  const styles = useThemedStyles(makeStyles);
+  const { colors } = useTheme();
+  const { user } = useAuth();
+  const router = useRouter();
+  const keyboardPadding = useKeyboardPadding();
+  const keyboardVisible = useKeyboardVisible();
+  const insets = useSafeAreaInsets();
+  const bottomPad = keyboardPadding;
+  const inputBottom = keyboardVisible ? 10 : insets.bottom + 12;
+  // Panneau (grand écran) : position du haut du chat dans la FENÊTRE.
+  // KeyboardAvoidingView mesure sa vue par rapport à son PARENT, et le clavier
+  // par rapport à la fenêtre. En écran plein, le parent démarre en haut de la
+  // fenêtre : les deux repères coïncident. Dans le panneau, le parent démarre
+  // SOUS l'en-tête de la carte : le calcul perdait la hauteur de cet en-tête
+  // et le champ restait caché derrière le clavier. On la lui rend via
+  // keyboardVerticalOffset.
+  const embeddedRootRef = useRef<View>(null);
+  const [embeddedTop, setEmbeddedTop] = useState(0);
+  const measureEmbeddedTop = useCallback(() => {
+    embeddedRootRef.current?.measureInWindow((_x, y) => setEmbeddedTop(y));
+  }, []);
+  const { refresh: refreshUnread, refreshNotifs } = useUnread();
+  // Marquer la conversation lue met aussi à jour, côté serveur, la
+  // notification "nouveau message" liée (centre de notifs) — il faut donc
+  // rafraîchir les deux compteurs pour que le badge de l'icône de l'app
+  // (total messages + notifCount) redescende immédiatement.
+  const markReadAndRefresh = useCallback(
+    (convId: string) =>
+      markConversationRead(convId)
+        .then(() => Promise.all([refreshUnread(), refreshNotifs()]))
+        .catch(() => {}),
+    [refreshUnread, refreshNotifs],
+  );
+  const [messages, setMessages] = useState<DMMessage[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [input, setInput] = useState("");
+  const [typing, setTyping] = useState(false);
+  const [replyTarget, setReplyTarget] = useState<DMMessage | null>(null);
+  const [editTarget, setEditTarget] = useState<DMMessage | null>(null);
+  const [showPersonPreview, setShowPersonPreview] = useState(false);
+
+  const socketRef = useRef<Socket | null>(null);
+  /* Message visé par l'appui long : porte à la fois les réactions et les
+     actions, d'où un état unique plutôt qu'une alerte système. */
+  const [menuTarget, setMenuTarget] = useState<DMMessage | null>(null);
+  const [menuActions, setMenuActions] = useState<MessageAction[]>([]);
+  const [infoTarget, setInfoTarget] = useState<DMMessage | null>(null);
+  const conversationIdRef = useRef<string | null>(null);
+  /**
+   * Silencieux de CETTE conversation. L'id n'est connu qu'après le premier
+   * chargement (l'écran est ouvert par `friendId`), d'où l'état qui suit la
+   * ref : le hook attend qu'il existe avant d'interroger le serveur.
+   */
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [muteSheet, setMuteSheet] = useState(false);
+  const mute = useMute("dm", conversationId);
+  // Ref (accès depuis les callbacks socket/menus) + state (le ref seul ne
+  // déclenche pas de re-render → messages affichés « chiffrés » si la clé
+  // arrive après le premier rendu, ex. ouverture via une notification).
+  const privateKeyRef = useRef<Uint8Array | null>(null);
+  const [privateKey, setPrivateKeyState] = useState<Uint8Array | null>(null);
+  const setPrivateKey = useCallback((k: Uint8Array | null) => {
+    privateKeyRef.current = k;
+    setPrivateKeyState(k);
+  }, []);
+  const friendPublicKeyRef = useRef<string | null>(null);
+  const myPublicKeyRef = useRef<string | null>(null);
+  const typingTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cleanupRef = useRef<(() => void) | null>(null);
+
+  useEffect(() => {
+    if (!friendId) return;
+    let mounted = true;
+
+    (async () => {
+      try {
+        // 1. Trouver/créer la conversation, puis charger le reste en parallèle
+        const conv = await startConversation(friendId);
+        conversationIdRef.current = conv._id;
+        setConversationId(conv._id);
+
+        // Ouvrir la conversation vaut lecture : sans ça, la pastille du centre
+        // de notifications reste rouge pour des messages qu'on vient de lire,
+        // et un compteur qui ment finit par ne plus être regardé du tout.
+        markConversationNotifsRead("dm", conv._id);
+
+        const [history, privKey, friendKey, myKey] = await Promise.all([
+          fetchDMMessages(conv._id),
+          getPrivateKey(),
+          fetchUserPublicKey(friendId),
+          user?._id ? fetchUserPublicKey(user._id) : Promise.resolve(null),
+        ]);
+        setPrivateKey(privKey);
+        friendPublicKeyRef.current = friendKey;
+        myPublicKeyRef.current = myKey;
+
+        // Clé absente ? Elle peut être brièvement indisponible (retour de
+        // veille, migration Keychain App Group) — on retente avant de
+        // laisser les messages affichés « chiffrés ».
+        if (!privKey) {
+          let attempts = 0;
+          const retry = async () => {
+            if (!mounted || privateKeyRef.current) return;
+            const k = await getPrivateKey();
+            if (!mounted) return;
+            if (k) setPrivateKey(k);
+            else if (++attempts < 3) setTimeout(retry, 800);
+          };
+          setTimeout(retry, 800);
+        }
+
+        if (mounted) setMessages(history);
+        markReadAndRefresh(conv._id);
+      } catch (e: any) {
+        if (mounted) setError(e?.message ?? "Erreur de chargement.");
+        return;
+      } finally {
+        if (mounted) setLoading(false);
+      }
+
+      const socket = await getSocket();
+      if (!mounted) return;
+      socketRef.current = socket;
+      const convId = conversationIdRef.current!;
+
+      const onNew = ({
+        conversationId,
+        message,
+      }: {
+        conversationId: string;
+        message: DMMessage;
+      }) => {
+        if (conversationId !== convId) return;
+        setMessages((prev) =>
+          prev.some((m) => m._id === message._id) ? prev : [...prev, message],
+        );
+        markReadAndRefresh(convId);
+      };
+
+      const onDeleted = ({
+        messageId,
+        conversationId,
+      }: {
+        messageId: string;
+        conversationId: string;
+      }) => {
+        if (conversationId !== convId) return;
+        setMessages((prev) => prev.filter((m) => m._id !== messageId));
+      };
+
+      const onEdited = (payload: {
+        messageId: string;
+        conversationId: string;
+        content: string;
+        encryptedFor?: Record<string, string>;
+        editedAt?: string;
+      }) => {
+        if (payload.conversationId !== convId) return;
+        setMessages((prev) =>
+          prev.map((m) =>
+            m._id === payload.messageId
+              ? {
+                  ...m,
+                  content: payload.content,
+                  encryptedFor: payload.encryptedFor ?? m.encryptedFor,
+                  edited: true,
+                  editedAt: payload.editedAt,
+                }
+              : m,
+          ),
+        );
+      };
+
+      const onTypingStart = ({ conversationId }: { conversationId: string }) => {
+        if (conversationId !== convId) return;
+        setTyping(true);
+        if (typingTimeout.current) clearTimeout(typingTimeout.current);
+        typingTimeout.current = setTimeout(() => setTyping(false), 3000);
+      };
+      const onTypingStop = () => setTyping(false);
+
+      const onMessageError = ({ error }: { error?: string }) =>
+        setError(error ?? "Erreur d'envoi du message.");
+      const onConnectError = (err: Error) =>
+        setError(`Connexion temps réel impossible : ${err.message}`);
+
+      // Ré-enregistrement à chaque (re)connexion — pattern anti-stale-closure
+      const register = () => {
+        socket.emit("conversation:join", { conversationId: convId });
+      };
+
+      const onReacted = ({
+        messageId,
+        reactions,
+      }: {
+        messageId: string;
+        reactions: { user: string; reaction: string }[];
+      }) => {
+        setMessages((prev) =>
+          prev.map((m) => (m._id === messageId ? { ...m, reactions } : m)),
+        );
+      };
+
+      // Accusés : `userId` = celui qui a reçu/lu. On ignore les nôtres (autre
+      // appareil du même compte).
+      const onReceipt =
+        (field: "readBy" | "deliveredTo") =>
+        (payload: { conversationId: string; userId: string; at?: string }) => {
+          if (payload.conversationId !== convId) return;
+          if (payload.userId === user?._id) return;
+          setMessages((prev) =>
+            applyReceipt(prev, payload, field, user?._id ?? null),
+          );
+        };
+      const onRead = onReceipt("readBy");
+      const onDelivered = onReceipt("deliveredTo");
+
+      socket.on("messages:read", onRead);
+      socket.on("messages:delivered", onDelivered);
+      socket.on("message:reacted", onReacted);
+      socket.on("message:new", onNew);
+      socket.on("message:deleted", onDeleted);
+      socket.on("message:edited", onEdited);
+      socket.on("typing:start", onTypingStart);
+      socket.on("typing:stop", onTypingStop);
+      socket.on("message:error", onMessageError);
+      socket.on("connect_error", onConnectError);
+      socket.on("connect", register);
+      if (socket.connected) register();
+
+      cleanupRef.current = () => {
+        socket.off("messages:read", onRead);
+        socket.off("messages:delivered", onDelivered);
+        socket.off("message:reacted", onReacted);
+        socket.off("message:new", onNew);
+        socket.off("message:deleted", onDeleted);
+        socket.off("message:edited", onEdited);
+        socket.off("typing:start", onTypingStart);
+        socket.off("typing:stop", onTypingStop);
+        socket.off("message:error", onMessageError);
+        socket.off("connect_error", onConnectError);
+        socket.off("connect", register);
+      };
+    })();
+
+    return () => {
+      mounted = false;
+      cleanupRef.current?.();
+    };
+  }, [friendId, user?._id]);
+
+  const send = useCallback(() => {
+    const content = input.trim();
+    const convId = conversationIdRef.current;
+    if (!content || !socketRef.current || !convId) return;
+    setError(null);
+
+    const myPrivateKey = privateKeyRef.current;
+    const friendKey = friendPublicKeyRef.current;
+    const myKey = myPublicKeyRef.current;
+    // Même règle que ChatWindow.jsx : chiffré seulement si tout le monde a ses clés
+    const canEncrypt = !!(myPrivateKey && friendKey && myKey);
+
+    if (editTarget) {
+      // ── Modification d'un message existant ──
+      if (editTarget.isEncrypted && canEncrypt) {
+        const encryptedForRecipient = encryptMessage(
+          content,
+          friendKey!,
+          myPrivateKey!,
+        );
+        const encryptedForSender = encryptMessage(
+          content,
+          myKey!,
+          myPrivateKey!,
+        );
+        socketRef.current.emit("message:edit", {
+          messageId: editTarget._id,
+          conversationId: convId,
+          content: encryptedForSender,
+          encryptedForRecipient,
+          encryptedForSender,
+        });
+      } else {
+        socketRef.current.emit("message:edit", {
+          messageId: editTarget._id,
+          conversationId: convId,
+          content,
+        });
+      }
+      setEditTarget(null);
+    } else if (canEncrypt) {
+      const encryptedForRecipient = encryptMessage(
+        content,
+        friendKey!,
+        myPrivateKey!,
+      );
+      const encryptedForSender = encryptMessage(content, myKey!, myPrivateKey!);
+      socketRef.current.emit("message:send", {
+        conversationId: convId,
+        content: encryptedForSender,
+        isEncrypted: true,
+        encryptedForRecipient,
+        encryptedForSender,
+        replyTo: replyTarget?._id ?? undefined,
+      });
+    } else {
+      socketRef.current.emit("message:send", {
+        conversationId: convId,
+        content,
+        replyTo: replyTarget?._id ?? undefined,
+      });
+    }
+
+    setReplyTarget(null);
+    socketRef.current.emit("typing:stop", { conversationId: convId });
+    setInput("");
+  }, [input, editTarget, replyTarget]);
+
+  // ── Menu contextuel d'un message (appui long) ─────────────────────────────
+  //
+  // ⚠️ Feuille maison et non `Alert.alert`, depuis l'ajout des réactions.
+  // Une réaction se pose d'un geste : on vise l'icône et on tape. Dans une
+  // alerte système il aurait fallu six lignes de texte à lire avant de
+  // choisir, pour une action qui doit être un réflexe.
+  const openMessageMenu = (message: DMMessage) => {
+    const isMine = message.sender?._id === user?._id;
+    const text = displayContent(
+      message,
+      user?._id ?? null,
+      privateKeyRef.current,
+    );
+    const locked = text.startsWith("🔒");
+
+    const actions: MessageAction[] = [
+      {
+        label: "↩️  Répondre",
+        onPress: () => {
+          setEditTarget(null);
+          setReplyTarget(message);
+        },
+      },
+    ];
+
+    if (isMine) {
+      const EDIT_TIME_LIMIT = 5 * 60 * 1000; // même règle que le web
+      const canEdit =
+        !locked &&
+        Date.now() - new Date(message.createdAt).getTime() < EDIT_TIME_LIMIT;
+      if (canEdit) {
+        actions.push({
+          label: "✏️  Modifier",
+          onPress: () => {
+            setReplyTarget(null);
+            setEditTarget(message);
+            setInput(text);
+          },
+        });
+      }
+      actions.push({
+        label: "ℹ️  Infos",
+        // ⚠️ Délai : la feuille d'actions (Modal) est encore en train de se
+        // fermer ; ouvrir une seconde Modal dans la même frame échoue sans
+        // bruit sur iOS.
+        onPress: () => setTimeout(() => setInfoTarget(message), 350),
+      });
+      actions.push({
+        label: "🗑️  Supprimer",
+        destructive: true,
+        onPress: () =>
+          Alert.alert(
+            "Supprimer ce message ?",
+            "Il sera supprimé pour tout le monde.",
+            [
+              { text: "Annuler", style: "cancel" },
+              {
+                text: "Supprimer",
+                style: "destructive",
+                onPress: () =>
+                  socketRef.current?.emit("message:delete", {
+                    messageId: message._id,
+                    conversationId: conversationIdRef.current,
+                  }),
+              },
+            ],
+          ),
+      });
+    } else {
+      actions.push({
+        label: "🚩  Signaler",
+        destructive: true,
+        onPress: () =>
+          promptReport({
+            contentType: "message",
+            contentId: message._id,
+            targetUserId: message.sender?._id,
+            contentPreview: locked ? "" : text,
+          }),
+      });
+    }
+
+    setMenuActions(actions);
+    setMenuTarget(message);
+  };
+
+  /*
+   * Pose ou retire une réaction.
+   *
+   * ⚠️ Aucune mise à jour optimiste : le serveur renvoie l'état complet des
+   * réactions du message à toute la conversation, y compris à nous. Anticiper
+   * localement ferait clignoter l'affichage quand les deux se croisent, pour
+   * un gain imperceptible sur une action aussi légère.
+   */
+  const react = (messageId: string, reaction: ReactionName | null) => {
+    socketRef.current?.emit("message:react", {
+      messageId,
+      conversationId: conversationIdRef.current,
+      reaction,
+    });
+  };
+
+  /** Réaction déjà posée par l'utilisateur sur ce message, s'il y en a une. */
+  const myReaction = (m: DMMessage | null): ReactionName | null => {
+    if (!m || !user?._id) return null;
+    const mine = m.reactions?.find((r) => r.user === user._id);
+    return (mine?.reaction as ReactionName) ?? null;
+  };
+
+  // Résout la citation d'une réponse depuis la liste locale (E2E safe)
+  const getQuote = (m: DMMessage) => {
+    if (!m.replyTo) return null;
+    const ref = messages.find((x) => x._id === m.replyTo);
+    if (!ref) return { author: "", text: "Message d'origine indisponible" };
+    return {
+      author: ref.sender?._id === user?._id ? "Toi" : (ref.sender?.name ?? ""),
+      text: displayContent(ref, user?._id ?? null, privateKey),
+    };
+  };
+
+  const onChangeInput = (text: string) => {
+    setInput(text);
+    const convId = conversationIdRef.current;
+    if (convId && socketRef.current?.connected) {
+      socketRef.current.emit("typing:start", { conversationId: convId });
+    }
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.center}>
+        {!embedded && <Stack.Screen options={{ title: name ?? "Chat" }} />}
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
+  // Titre (avatar + nom) et actions (silencieux, signaler/bloquer) : dans
+  // l'en-tête de la pile en écran plein, dans une barre du panneau sinon.
+  const headerTitle = () => (
+            <Pressable
+              style={styles.headerTitle}
+              onPress={() => setShowPersonPreview(true)}
+              hitSlop={8}
+            >
+              <Avatar uri={avatar} name={name} size={30} />
+              <Text style={styles.headerTitleText} numberOfLines={1}>
+                {name ?? "Chat"}
+              </Text>
+            </Pressable>
+  );
+
+  const headerRight = () => (
+            // ⚠️ C'était un simple <Text>⋯</Text> sans conteneur : pas de rond,
+            // pas de taille fixe. Sa boîte suivait donc les métriques du glyphe
+            // (chasse à gauche/droite, jambage descendant réservé sous la ligne
+            // de base), et iOS dessinait SON fond autour de cette boîte
+            // biscornue — d'où un bouton visiblement plus gros et plus décalé
+            // que les autres. Il utilise maintenant le même composant que les
+            // autres actions d'en-tête.
+            <View style={{ flexDirection: "row", gap: 8 }}>
+            <HeaderIconButton
+              name={mute.mute ? "bell-off" : "bell"}
+              accessibilityLabel={
+                mute.mute
+                  ? "Réactiver les notifications"
+                  : "Couper les notifications"
+              }
+              onPress={() => setMuteSheet(true)}
+            />
+            <HeaderIconButton
+              name="more"
+              accessibilityLabel="Options de la conversation"
+              onPress={() =>
+                Alert.alert(name ?? "Options", undefined, [
+                  {
+                    text: "Signaler l'utilisateur",
+                    onPress: () =>
+                      promptReport({
+                        contentType: "user",
+                        targetUserId: friendId,
+                      }),
+                  },
+                  {
+                    text: "Bloquer l'utilisateur",
+                    style: "destructive",
+                    onPress: () =>
+                      promptBlock(friendId, name ?? "cet utilisateur", () =>
+                        router.back(),
+                      ),
+                  },
+                  { text: "Annuler", style: "cancel" },
+                ])
+              }
+            />
+            </View>
+  );
+
+  const body = (
+    <KeyboardAvoidingView
+      style={[styles.container, { paddingBottom: bottomPad }]}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      // ⚠️ Décalage à 0, et pas la hauteur de l'en-tête.
+      //
+      // KeyboardAvoidingView en mode "padding" calcule sa marge basse ainsi :
+      //   marge = bas_de_la_vue − haut_du_clavier + keyboardVerticalOffset
+      // Comme cette vue descend jusqu'au bas de l'écran, le premier terme vaut
+      // déjà exactement la hauteur du clavier : tout décalage ajouté se
+      // retrouve en trou entre le champ de saisie et le clavier.
+      //
+      // La valeur précédente venait de l'en-tête natif. Depuis que la pile
+      // rend son en-tête en JS (AppStackHeader), celui-ci est au-dessus de
+      // cette vue dans l'arbre : sa hauteur est déjà exclue de la mesure, et
+      // la réintroduire ici la comptait deux fois.
+      //
+      // Exception : en panneau (`embedded`), la vue ne démarre pas en haut de
+      // la fenêtre — voir embeddedTop plus haut.
+      keyboardVerticalOffset={embedded ? embeddedTop : 0}
+    >
+      {embedded ? (
+        <View style={styles.embeddedHeader}>
+          {headerTitle()}
+          {headerRight()}
+        </View>
+      ) : (
+        <Stack.Screen options={{ headerTitle, headerRight }} />
+      )}
+
+      <MuteSheet
+        visible={muteSheet}
+        mute={mute.mute}
+        onClose={() => setMuteSheet(false)}
+        onSelect={(d) => mute.set(d)}
+        onClear={() => mute.clear()}
+      />
+
+      <PersonPreviewCard
+        friendId={friendId}
+        visible={showPersonPreview}
+        onClose={() => setShowPersonPreview(false)}
+      />
+
+      {error && <Text style={styles.error}>{error}</Text>}
+
+      <FlatList
+        data={[...messages].reverse()}
+        inverted
+        keyExtractor={(item) => item._id}
+        contentContainerStyle={styles.list}
+        renderItem={({ item }) =>
+          item.type === "gift_share" ? (
+            <GiftShareCard
+              message={item}
+              isMine={item.sender?._id === user?._id}
+            />
+          ) : item.type === "date_share" ? (
+            <DateShareCard
+              message={item}
+              isMine={item.sender?._id === user?._id}
+            />
+          ) : (
+            <Bubble
+              message={item}
+              isMine={item.sender?._id === user?._id}
+              myUserId={user?._id ?? null}
+              privateKey={privateKey}
+              quote={getQuote(item)}
+              onLongPress={() => openMessageMenu(item)}
+              myReaction={myReaction(item)}
+              onToggleReaction={(r) =>
+                react(item._id, myReaction(item) === r ? null : r)
+              }
+            />
+          )
+        }
+        ListEmptyComponent={
+          <Text style={styles.empty}>
+            Aucun message. Dis bonjour à {name ?? "ton ami·e"} !
+          </Text>
+        }
+      />
+
+      {typing && <Text style={styles.typing}>En train d'écrire…</Text>}
+
+      {(replyTarget || editTarget) && (
+        <View style={styles.composerBanner}>
+          <View style={styles.composerBannerBody}>
+            <Text style={styles.bannerTitle}>
+              {editTarget
+                ? "✏️ Modifier le message"
+                : `↩️ Répondre à ${
+                    replyTarget?.sender?._id === user?._id
+                      ? "toi-même"
+                      : (name ?? "…")
+                  }`}
+            </Text>
+            <Text numberOfLines={1} style={styles.bannerText}>
+              {displayContent(
+                (editTarget ?? replyTarget)!,
+                user?._id ?? null,
+                privateKey,
+              )}
+            </Text>
+          </View>
+          <Pressable
+            hitSlop={8}
+            onPress={() => {
+              setReplyTarget(null);
+              if (editTarget) setInput("");
+              setEditTarget(null);
+            }}
+          >
+            <Text style={styles.bannerClose}>✕</Text>
+          </Pressable>
+        </View>
+      )}
+
+      <MessageActionSheet
+        visible={!!menuTarget}
+        currentReaction={myReaction(menuTarget)}
+        onReact={(r) => menuTarget && react(menuTarget._id, r)}
+        actions={menuActions}
+        onClose={() => setMenuTarget(null)}
+      />
+
+      <MessageInfoSheet
+        message={
+          infoTarget
+            ? (messages.find((m) => m._id === infoTarget._id) ?? infoTarget)
+            : null
+        }
+        preview={
+          infoTarget
+            ? displayContent(infoTarget, user?._id ?? null, privateKey)
+            : ""
+        }
+        myUserId={user?._id ?? null}
+        onClose={() => setInfoTarget(null)}
+      />
+
+      <View style={[styles.inputRow, { paddingBottom: inputBottom }]}>
+        <TextInput placeholderTextColor={colors.placeholder}
+          style={styles.input}
+          placeholder="Ton message…"
+          value={input}
+          onChangeText={onChangeInput}
+          multiline
+          maxLength={2000}
+        />
+        <Pressable
+          onPress={send}
+          disabled={!input.trim()}
+          style={[styles.sendBtn, !input.trim() && { opacity: 0.4 }]}
+        >
+          <Text style={styles.sendText}>➤</Text>
+        </Pressable>
+      </View>
+    </KeyboardAvoidingView>
+  );
+
+  if (!embedded) return body;
+
+  // onLayout : remesure à la rotation ou au redimensionnement (Split View).
+  return (
+    <View
+      ref={embeddedRootRef}
+      collapsable={false}
+      style={styles.embeddedRoot}
+      onLayout={measureEmbeddedTop}
+    >
+      {body}
+    </View>
+  );
+}
+
+function Bubble({
+  message,
+  isMine,
+  myUserId,
+  privateKey,
+  quote,
+  onLongPress,
+  myReaction,
+  onToggleReaction,
+}: {
+  message: DMMessage;
+  isMine: boolean;
+  myUserId: string | null;
+  privateKey: Uint8Array | null;
+  quote?: { author: string; text: string } | null;
+  onLongPress?: () => void;
+  myReaction?: ReactionName | null;
+  onToggleReaction?: (reaction: ReactionName) => void;
+}) {
+  const styles = useThemedStyles(makeStyles);
+  const time = new Date(message.createdAt).toLocaleTimeString("fr-FR", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  return (
+    <View style={[styles.bubbleRow, isMine && styles.bubbleRowMine]}>
+      <Pressable
+        onLongPress={onLongPress}
+        delayLongPress={400}
+        style={[styles.bubble, isMine ? styles.bubbleMine : styles.bubbleOther]}
+      >
+        {quote && (
+          <View style={[styles.quote, isMine && styles.quoteMine]}>
+            {quote.author ? (
+              <Text style={[styles.quoteAuthor, isMine && styles.quoteTextMine]}>
+                {quote.author}
+              </Text>
+            ) : null}
+            <Text
+              numberOfLines={2}
+              style={[styles.quoteText, isMine && styles.quoteTextMine]}
+            >
+              {quote.text}
+            </Text>
+          </View>
+        )}
+        <Text style={[styles.msgText, isMine && styles.msgTextMine]}>
+          {displayContent(message, myUserId, privateKey)}
+        </Text>
+        <Text style={[styles.time, isMine && styles.timeMine]}>
+          {time}
+          {message.edited ? " · modifié" : ""}
+          {isMine && <ReceiptTicks message={message} myUserId={myUserId} />}
+        </Text>
+      </Pressable>
+
+      {/* Les pastilles sont HORS de la bulle, légèrement remontées : posées
+          dedans, elles feraient grandir le fond coloré à chaque réaction et
+          déformeraient le message. */}
+      {message.reactions && message.reactions.length > 0 && (
+        <View style={[styles.pillsWrap, isMine && styles.pillsWrapMine]}>
+          <ReactionPills
+            reactions={
+              message.reactions as { user: string; reaction: ReactionName }[]
+            }
+            myUserId={myUserId}
+            onToggle={onToggleReaction}
+          />
+        </View>
+      )}
+    </View>
+  );
+}
+
+function ReceiptTicks({
+  message,
+  myUserId,
+}: {
+  message: DMMessage;
+  myUserId: string | null;
+}) {
+  const styles = useThemedStyles(makeStyles);
+  const status = getReceiptStatus(message, myUserId);
+  const label =
+    status === "read" ? "Lu" : status === "delivered" ? "Distribué" : "Envoyé";
+  return (
+    <Text
+      accessibilityLabel={label}
+      style={[styles.ticks, status === "read" && styles.ticksRead]}
+    >
+      {status === "sent" ? "  ✓" : "  ✓✓"}
+    </Text>
+  );
+}
+
+function displayContent(
+  message: DMMessage,
+  myUserId: string | null,
+  privateKey: Uint8Array | null,
+): string {
+  if (!message.isEncrypted) return message.content;
+  // senderSnapshot : repli quand le compte de l'expéditeur a été purgé. Sans sa
+  // clé publique, les messages reçus resteraient définitivement illisibles.
+  const senderKey =
+    message.sender?.publicKey ?? message.senderSnapshot?.publicKey;
+  const myCopy = myUserId ? message.encryptedFor?.[myUserId] : null;
+  if (!privateKey) return "🔒 Chiffré — clé privée absente (reconnecte-toi)";
+  if (!senderKey) return "🔒 Chiffré — expéditeur sans clé publique";
+  if (!myCopy) return "🔒 Chiffré — pas de copie pour ce compte";
+  return (
+    decryptMessage(myCopy, senderKey, privateKey) ??
+    "🔒 Chiffré — déchiffrement impossible"
+  );
+}
+
+const makeStyles = (c: ThemeColors) =>
+  StyleSheet.create({
+    headerTitle: { flexDirection: "row", alignItems: "center", gap: 8 },
+    embeddedRoot: { flex: 1 },
+    // Barre titre + actions quand le chat est un panneau (grand écran)
+    embeddedHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 8,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: c.border,
+      backgroundColor: c.card,
+    },
+    headerTitleText: {
+      fontSize: 17,
+      fontWeight: "600",
+      color: c.text,
+      maxWidth: 200,
+    },
+    container: { flex: 1, backgroundColor: c.bg },
+    center: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      backgroundColor: c.bg,
+    },
+    error: { color: c.danger, textAlign: "center", padding: 6 },
+    list: { padding: 12, gap: 6 },
+    empty: {
+      textAlign: "center",
+      color: c.sub,
+      // La liste est inversée : on retourne le texte pour le remettre à
+      // l'endroit. ⚠️ Pas la même transformation selon la plateforme :
+      // iOS inverse la liste en miroir vertical (scaleY -1), Android la fait
+      // pivoter à 180° (scale -1). Un scaleY seul sur Android laissait le
+      // texte écrit à l'envers, en miroir horizontal.
+      transform:
+        Platform.OS === "android" ? [{ scale: -1 }] : [{ scaleY: -1 }],
+      marginTop: 40,
+    },
+    // La bulle et ses pastilles s'empilent : d'où une colonne, alignée à
+    // droite pour mes messages.
+    bubbleRow: { flexDirection: "column", alignItems: "flex-start" },
+    bubbleRowMine: { alignItems: "flex-end" },
+    pillsWrap: { marginLeft: 8, marginTop: 2 },
+    pillsWrapMine: { marginLeft: 0, marginRight: 8 },
+    bubble: {
+      maxWidth: "80%",
+      borderRadius: 14,
+      paddingVertical: 8,
+      paddingHorizontal: 12,
+    },
+    bubbleMine: { backgroundColor: c.primary, borderBottomRightRadius: 4 },
+    bubbleOther: {
+      backgroundColor: c.card,
+      borderBottomLeftRadius: 4,
+      shadowColor: c.shadow,
+      shadowOpacity: 0.05,
+      shadowRadius: 3,
+      shadowOffset: { width: 0, height: 1 },
+      elevation: 1,
+    },
+    msgText: { color: c.text, fontSize: 15, lineHeight: 20 },
+    msgTextMine: { color: ON_PRIMARY },
+    time: {
+      fontSize: 10,
+      color: c.faint,
+      alignSelf: "flex-end",
+      marginTop: 2,
+    },
+    timeMine: { color: ON_PRIMARY_SOFT },
+    ticks: { color: ON_PRIMARY_TICK, fontWeight: "700", letterSpacing: -1.5 },
+    ticksRead: { color: ON_PRIMARY_TICK_READ },
+    typing: {
+      color: c.faint,
+      fontSize: 12,
+      paddingHorizontal: 14,
+      paddingBottom: 2,
+    },
+    quote: {
+      borderLeftWidth: 3,
+      borderLeftColor: c.primary,
+      backgroundColor: c.primarySoft,
+      borderRadius: 6,
+      paddingVertical: 4,
+      paddingHorizontal: 8,
+      marginBottom: 6,
+    },
+    quoteMine: {
+      borderLeftColor: ON_PRIMARY_SOFT,
+      backgroundColor: ON_PRIMARY_QUOTE_BG,
+    },
+    quoteAuthor: { fontSize: 11, fontWeight: "700", color: c.primary },
+    quoteText: { fontSize: 12, color: c.sub },
+    quoteTextMine: { color: ON_PRIMARY_SOFT },
+    composerBanner: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+      backgroundColor: c.primarySoft,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: c.border,
+      paddingVertical: 8,
+      paddingHorizontal: 14,
+    },
+    composerBannerBody: { flex: 1 },
+    bannerTitle: { fontSize: 12, fontWeight: "700", color: c.primary },
+    bannerText: { fontSize: 13, color: c.sub, marginTop: 1 },
+    bannerClose: { fontSize: 16, color: c.faint, padding: 4 },
+    inputRow: {
+      flexDirection: "row",
+      alignItems: "flex-end",
+      gap: 8,
+      padding: 10,
+      backgroundColor: c.card,
+      borderTopWidth: StyleSheet.hairlineWidth,
+      borderTopColor: c.border,
+    },
+    input: {
+      flex: 1,
+      borderWidth: 1,
+      borderColor: c.inputBorder,
+      borderRadius: 18,
+      paddingHorizontal: 14,
+      paddingVertical: 8,
+      fontSize: 15,
+      maxHeight: 100,
+      backgroundColor: c.inputBg,
+      color: c.text,
+    },
+    sendBtn: {
+      backgroundColor: c.primary,
+      borderRadius: 18,
+      width: 38,
+      height: 38,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    sendText: { color: ON_PRIMARY, fontSize: 16 },
+  });

@@ -21,6 +21,7 @@ import {
   useThemedStyles,
   ThemeColors,
 } from "../../lib/theme-context";
+import { readingPane } from "../../lib/layout";
 
 export default function BlockedUsersScreen() {
   const styles = useThemedStyles(makeStyles);
@@ -125,7 +126,7 @@ const makeStyles = (c: ThemeColors) =>
       backgroundColor: c.bg,
     },
     error: { color: c.danger, textAlign: "center", padding: 8 },
-    list: { padding: 16, gap: 10 },
+    list: { padding: 16, gap: 10, ...readingPane },
     row: {
       flexDirection: "row",
       alignItems: "center",

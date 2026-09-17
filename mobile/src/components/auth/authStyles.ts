@@ -1,5 +1,6 @@
 import { StyleSheet } from "react-native";
 import { ThemeColors } from "../../lib/theme-context";
+import { authPane } from "../../lib/layout";
 
 /**
  * Styles partagés par les trois panneaux de l'écran /login
@@ -10,6 +11,7 @@ import { ThemeColors } from "../../lib/theme-context";
 export const makeAuthStyles = (c: ThemeColors) =>
   StyleSheet.create({
     page: {
+      ...authPane,
       flexGrow: 1,
       justifyContent: "center",
       paddingHorizontal: 24,

@@ -24,6 +24,7 @@ import {
   useCalendarPrefs,
   toggleCalendarPref,
 } from "../../lib/calendar-prefs";
+import { readingPane } from "../../lib/layout";
 
 /**
  * Réglages d'affichage. Écran destiné à accueillir au fil du temps les
@@ -233,7 +234,7 @@ function ReminderChip({
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
     container: { flex: 1, backgroundColor: c.bg },
-    content: { padding: 12, gap: 10 },
+    content: { padding: 12, gap: 10, ...readingPane },
     center: {
       flex: 1,
       justifyContent: "center",

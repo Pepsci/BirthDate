@@ -6,6 +6,7 @@ import {
   ThemeColors,
 } from "../../lib/theme-context";
 import { usePersistedCollapse } from "../../lib/collapse-prefs";
+import { readingPane } from "../../lib/layout";
 
 const COLLAPSE_SCOPE = "profile_changelog";
 
@@ -78,7 +79,7 @@ function ChangelogCard({
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
     container: { flex: 1, backgroundColor: c.bg },
-    content: { padding: 12, gap: 12, paddingBottom: 32 },
+    content: { padding: 12, gap: 12, paddingBottom: 32, ...readingPane },
     card: {
       backgroundColor: c.card,
       borderRadius: 14,

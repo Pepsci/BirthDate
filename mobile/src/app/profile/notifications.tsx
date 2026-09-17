@@ -19,6 +19,7 @@ import {
 } from "../../lib/theme-context";
 import { usePersistedCollapse } from "../../lib/collapse-prefs";
 import { useScrollBoundsGuard } from "../../lib/use-scroll-bounds-guard";
+import { readingPane } from "../../lib/layout";
 
 const COLLAPSE_SCOPE = "profile_notifications";
 
@@ -382,7 +383,7 @@ export default function NotificationsScreen() {
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
   container: { flex: 1, backgroundColor: c.bg },
-  content: { padding: 12, gap: 10 },
+  content: { padding: 12, gap: 10, ...readingPane },
   center: {
     flex: 1,
     justifyContent: "center",

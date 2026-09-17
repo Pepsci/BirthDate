@@ -6,6 +6,7 @@ import {
   ThemeColors,
 } from "../lib/theme-context";
 import { FAQ_SECTIONS as SECTIONS } from "../lib/faqData";
+import { readingPane } from "../lib/layout";
 
 export default function GuideScreen() {
   const styles = useThemedStyles(makeStyles);
@@ -106,7 +107,7 @@ export default function GuideScreen() {
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
   container: { flex: 1, backgroundColor: c.bg },
-  content: { padding: 16, paddingBottom: 40, gap: 14 },
+  content: { padding: 16, paddingBottom: 40, gap: 14, ...readingPane },
   hero: { alignItems: "center", gap: 6, paddingVertical: 8 },
   heroEmoji: { fontSize: 40 },
   heroTitle: { fontSize: 22, fontWeight: "800", color: c.text },

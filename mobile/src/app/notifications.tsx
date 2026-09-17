@@ -26,6 +26,7 @@ import {
   useThemedStyles,
   ThemeColors,
 } from "../lib/theme-context";
+import { readingPane } from "../lib/layout";
 
 export default function NotificationsScreen() {
   const router = useRouter();
@@ -246,7 +247,7 @@ const makeStyles = (c: ThemeColors) =>
     bulkBtn: { paddingVertical: 4 },
     readAll: { color: c.primary, fontWeight: "600", fontSize: 13 },
     deleteAll: { color: c.danger, fontWeight: "600", fontSize: 13 },
-    list: { padding: 12, gap: 8, paddingBottom: 8 },
+    list: { padding: 12, gap: 8, paddingBottom: 8, ...readingPane },
     empty: { textAlign: "center", color: c.sub, marginTop: 48 },
     row: {
       flexDirection: "row",

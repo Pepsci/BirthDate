@@ -28,6 +28,7 @@ import {
   useThemedStyles,
   ThemeColors,
 } from "../lib/theme-context";
+import { formPane } from "../lib/layout";
 
 interface Props {
   initial?: DateEntry;
@@ -267,7 +268,7 @@ export default function DateForm({ initial, submitLabel, onSubmit }: Props) {
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
     container: { flex: 1, backgroundColor: c.bg },
-    content: { padding: 16, gap: 6, paddingBottom: 40 },
+    content: { padding: 16, gap: 6, paddingBottom: 40, ...formPane },
     label: { fontSize: 13, fontWeight: "700", color: c.sub, marginTop: 10 },
     photoRow: {
       flexDirection: "row",

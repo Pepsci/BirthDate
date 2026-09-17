@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   Image,
   TextInput,
+  useWindowDimensions,
 } from "react-native";
 import { Image as ExpoImage } from "expo-image";
 import BirthdayCountdown from "../../components/BirthdayCountdown";
@@ -34,6 +35,12 @@ import { fetchMe } from "../../lib/users";
 export default function BirthdaysScreen() {
   const { colors } = useTheme();
   const styles = useThemedStyles(makeStyles);
+  // Nombre de colonnes selon la largeur : 2 sur téléphone, 3 puis 4 sur iPad
+  // ou pliable déplié. Seuils choisis pour garder une carte d'environ 200 à
+  // 280 pt — en dessous, le nom et la date passent à la ligne.
+  const { width: windowWidth } = useWindowDimensions();
+  const columns = windowWidth >= 1100 ? 4 : windowWidth >= 820 ? 3 : 2;
+  const wide = columns > 2;
   const { startTour } = useGuidedTour();
   const [dates, setDates] = useState<DateEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -194,7 +201,10 @@ export default function BirthdaysScreen() {
       <FlatList
         data={visible}
         keyExtractor={(item) => item._id}
-        numColumns={2}
+        // ⚠️ React Native refuse de changer numColumns en cours de route : la
+        // clé force une nouvelle liste à la rotation ou au dépliage.
+        key={`cols-${columns}`}
+        numColumns={columns}
         columnWrapperStyle={styles.column}
         contentContainerStyle={styles.list}
         refreshControl={
@@ -225,7 +235,7 @@ export default function BirthdaysScreen() {
           </Text>
         }
         renderItem={({ item }) => (
-          <BirthdayCard entry={item} hideNamedays={hideNamedays} />
+          <BirthdayCard entry={item} hideNamedays={hideNamedays} wide={wide} />
         )}
       />
     </View>
@@ -240,9 +250,12 @@ function birthISOOf(entry: DateEntry): string | null {
 function BirthdayCard({
   entry,
   hideNamedays = false,
+  wide = false,
 }: {
   entry: DateEntry;
   hideNamedays?: boolean;
+  /** Grille à 3 ou 4 colonnes : cartes un peu plus généreuses. */
+  wide?: boolean;
 }) {
   const router = useRouter();
   const styles = useThemedStyles(makeStyles);
@@ -269,6 +282,7 @@ function BirthdayCard({
     <Pressable
       style={({ pressed }) => [
         styles.card,
+        wide && styles.cardWide,
         isToday && styles.cardToday,
         pressed && { opacity: 0.85 },
       ]}
@@ -287,12 +301,15 @@ function BirthdayCard({
         </View>
       )}
 
-      <View style={styles.avatarFallback}>
+      <View style={[styles.avatarFallback, wide && styles.avatarWide]}>
         <Text style={styles.avatarInitials}>{initials}</Text>
         {!!avatar && avatar.trim().length > 0 && (
           <ExpoImage
             source={{ uri: avatar }}
-            style={[StyleSheet.absoluteFill as any, { borderRadius: 28 }]}
+            style={[
+              StyleSheet.absoluteFill as any,
+              { borderRadius: wide ? 34 : 28 },
+            ]}
             contentFit="cover"
           />
         )}
@@ -436,6 +453,9 @@ const makeStyles = (c: ThemeColors) =>
       shadowOffset: { width: 0, height: 6 },
       elevation: 5,
     },
+    // Grille large : plus d'air dans la carte, coins un peu plus doux.
+    cardWide: { borderRadius: 18, padding: 16, gap: 6 },
+    avatarWide: { width: 68, height: 68, borderRadius: 34 },
     cardToday: {
       borderWidth: 1.5,
       borderColor: c.primary,

@@ -26,6 +26,7 @@ import {
   useThemedStyles,
   ThemeColors,
 } from "../../lib/theme-context";
+import { readingPane } from "../../lib/layout";
 
 export default function ChatsScreen() {
   const router = useRouter();
@@ -350,7 +351,7 @@ const makeStyles = (c: ThemeColors) =>
       justifyContent: "center",
     },
     eventIconText: { fontSize: 22 },
-    list: { padding: 12, gap: 8 },
+    list: { padding: 12, gap: 8, ...readingPane },
     empty: {
       textAlign: "center",
       color: c.sub,

@@ -17,6 +17,7 @@ import {
   useThemedStyles,
   ThemeColors,
 } from "../../lib/theme-context";
+import { formPane } from "../../lib/layout";
 
 export default function PasswordScreen() {
   const styles = useThemedStyles(makeStyles);
@@ -145,7 +146,7 @@ export default function PasswordScreen() {
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
   container: { flex: 1, backgroundColor: c.bg },
-  content: { padding: 16, gap: 6 },
+  content: { padding: 16, gap: 6, ...formPane },
   label: { fontSize: 13, fontWeight: "700", color: c.sub, marginTop: 10 },
   labelRow: {
     flexDirection: "row",

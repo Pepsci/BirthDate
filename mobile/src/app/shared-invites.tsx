@@ -28,6 +28,7 @@ import {
   useThemedStyles,
   ThemeColors,
 } from "../lib/theme-context";
+import { readingPane } from "../lib/layout";
 
 export default function SharedInvitesScreen() {
   const styles = useThemedStyles(makeStyles);
@@ -376,7 +377,7 @@ const makeStyles = (c: ThemeColors) =>
     backgroundColor: c.bg,
   },
   error: { color: c.danger, textAlign: "center", padding: 8 },
-  list: { padding: 12, gap: 10 },
+  list: { padding: 12, gap: 10, ...readingPane },
   sectionTitle: {
     fontSize: 13,
     fontWeight: "700",

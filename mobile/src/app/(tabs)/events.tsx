@@ -28,6 +28,7 @@ import {
   ThemeColors,
 } from "../../lib/theme-context";
 import { usePersistedCollapse } from "../../lib/collapse-prefs";
+import { readingPane } from "../../lib/layout";
 
 export default function EventsScreen() {
   const { colors } = useTheme();
@@ -390,7 +391,7 @@ const makeStyles = (c: ThemeColors) =>
       alignItems: "center",
       backgroundColor: c.bg,
     },
-    list: { padding: 12, gap: 10 },
+    list: { padding: 12, gap: 10, ...readingPane },
     titleCancelled: { textDecorationLine: "line-through", color: c.sub },
     cancelBanner: {
       backgroundColor: c.dangerSoft ?? "rgba(239,68,68,0.12)",

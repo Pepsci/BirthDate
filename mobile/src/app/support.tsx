@@ -20,6 +20,7 @@ import {
   useThemedStyles,
   ThemeColors,
 } from "../lib/theme-context";
+import { formPane } from "../lib/layout";
 
 const SUBJECT_MAX = 120;
 
@@ -268,7 +269,7 @@ export default function SupportScreen() {
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
   container: { flex: 1, backgroundColor: c.bg },
-  content: { padding: 16, gap: 8 },
+  content: { padding: 16, gap: 8, ...formPane },
   poolOption: {
     borderWidth: 1,
     borderColor: c.border,

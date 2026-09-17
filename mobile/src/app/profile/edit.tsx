@@ -30,6 +30,7 @@ import {
   useThemedStyles,
   ThemeColors,
 } from "../../lib/theme-context";
+import { formPane } from "../../lib/layout";
 
 export default function ProfileEditScreen() {
   const router = useRouter();
@@ -292,7 +293,7 @@ export default function ProfileEditScreen() {
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
     container: { flex: 1, backgroundColor: c.bg },
-    content: { padding: 16, gap: 6, paddingBottom: 48 },
+    content: { padding: 16, gap: 6, paddingBottom: 48, ...formPane },
     center: {
       flex: 1,
       justifyContent: "center",

@@ -24,6 +24,7 @@ import {
   useThemedStyles,
   ThemeColors,
 } from "../lib/theme-context";
+import { formPane } from "../lib/layout";
 
 function initialLocation(ev?: EventDetail): LocationValue | null {
   if (!ev?.fixedLocation) return null;
@@ -800,7 +801,7 @@ function ModeSwitch({
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
     container: { flex: 1, backgroundColor: c.bg },
-    content: { padding: 12, paddingBottom: 48, gap: 10 },
+    content: { padding: 12, paddingBottom: 48, gap: 10, ...formPane },
     error: { color: c.danger, textAlign: "center", padding: 6 },
     progress: { flexDirection: "row", justifyContent: "space-between" },
     progressItem: { alignItems: "center", flex: 1, gap: 3 },

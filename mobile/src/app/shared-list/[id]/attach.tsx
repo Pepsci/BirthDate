@@ -21,6 +21,7 @@ import {
   useThemedStyles,
   ThemeColors,
 } from "../../../lib/theme-context";
+import { readingPane } from "../../../lib/layout";
 
 /**
  * Rattacher une liste commune reçue à une de mes cartes.
@@ -329,7 +330,7 @@ export default function AttachSharedListScreen() {
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
     container: { flex: 1, backgroundColor: c.bg },
-    content: { padding: 12, gap: 10, paddingBottom: 40 },
+    content: { padding: 12, gap: 10, paddingBottom: 40, ...readingPane },
     center: {
       flex: 1,
       justifyContent: "center",

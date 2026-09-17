@@ -31,6 +31,7 @@ import {
   useThemedStyles,
   ThemeColors,
 } from "../../lib/theme-context";
+import { formPane } from "../../lib/layout";
 
 // « E2EView » et non « View » pour ne pas masquer le composant View de react-native
 type E2EView =
@@ -645,7 +646,7 @@ export default function E2EScreen() {
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
   container: { flex: 1, backgroundColor: c.bg },
-  content: { padding: 16 },
+  content: { padding: 16, ...formPane },
   card: {
     backgroundColor: c.card,
     borderRadius: 14,

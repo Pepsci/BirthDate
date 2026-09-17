@@ -24,6 +24,7 @@ import {
   ThemeColors,
   ThemeMode,
 } from "../../lib/theme-context";
+import { readingPane } from "../../lib/layout";
 
 const SITE = "https://birthreminder.com";
 const LEGAL_LINKS: { emoji: string; label: string; url: string }[] = [
@@ -257,7 +258,7 @@ function MenuRow({
 const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
     container: { flex: 1, backgroundColor: c.bg },
-    content: { alignItems: "center", padding: 24, gap: 6, paddingBottom: 48 },
+    content: { alignItems: "center", padding: 24, gap: 6, paddingBottom: 48, ...readingPane },
     avatar: { width: 88, height: 88, borderRadius: 44 },
     avatarFallback: {
       width: 88,

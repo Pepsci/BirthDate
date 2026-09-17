@@ -52,8 +52,11 @@ import GiftGridCard, { giftGridStyles } from "../../components/GiftGridCard";
 import BottomSheet from "../../components/BottomSheet";
 import HeaderIconButton from "../../components/HeaderIconButton";
 import { useScrollBoundsGuard } from "../../lib/use-scroll-bounds-guard";
+import { useSplitView } from "../../lib/use-split-view";
 import BirthdayCountdown from "../../components/BirthdayCountdown";
 import ImportGiftSheet, { ImportedGift } from "../../components/ImportGiftSheet";
+import NewEventForm from "../../components/NewEventForm";
+import DMChat from "../../components/DMChat";
 import { FriendEntry, fetchFriends } from "../../lib/friends";
 import { getSocket } from "../../lib/socket";
 import { startConversation } from "../../lib/conversations";
@@ -116,6 +119,14 @@ export default function DateDetailScreen() {
   // commune) fait rétrécir le contenu, ce qui laissait la vue calée au-delà
   // de sa propre hauteur.
   const scrollGuard = useScrollBoundsGuard();
+  // Grand écran (iPad, Duo déplié) : fiche à gauche, cadeaux à droite, au lieu
+  // de basculer de l'une à l'autre. Voir lib/use-split-view.ts.
+  const { isSplit } = useSplitView();
+  // Contenu du panneau de droite en grand écran : les cadeaux (défaut), la
+  // discussion avec l'ami lié, ou la création d'un événement. Depuis l'onglet Événements, la création reste un
+  // écran plein (app/event/new.tsx) — seul le parcours « depuis une carte »
+  // garde la personne visible à côté.
+  const [rightPane, setRightPane] = useState<"gifts" | "chat" | "newEvent">("gifts");
   const { colors } = useTheme();
   const { user } = useAuth();
   const { byFriend } = useUnread();
@@ -920,9 +931,12 @@ export default function DateDetailScreen() {
             accessibilityLabel="Ouvrir la discussion"
             badge={chatUnreadCount}
             onPress={() =>
-              router.push(
-                `/chat/${linkedUserId}?name=${encodeURIComponent(entry?.name ?? "")}`,
-              )
+              // Grand écran : la discussion s'ouvre à droite, la carte reste.
+              isSplit
+                ? setRightPane("chat")
+                : router.push(
+                    `/chat/${linkedUserId}?name=${encodeURIComponent(entry?.name ?? "")}`,
+                  )
             }
           />
         ) : (
@@ -933,7 +947,7 @@ export default function DateDetailScreen() {
           />
         ),
     }),
-    [entry?._id, entry?.name, entry?.surname, linkedUserId, chatUnreadCount, router],
+    [entry?._id, entry?.name, entry?.surname, linkedUserId, chatUnreadCount, router, isSplit],
   );
 
   if (!entry) {
@@ -964,25 +978,15 @@ export default function DateDetailScreen() {
       : gifts.filter((g) => g.occasion === giftFilter);
   const nameday = entry.nameday ?? entry.linkedUser?.nameday;
 
-  return (
-    <View style={{ flex: 1 }}>
-    <ScrollView
-      {...scrollGuard}
-      style={styles.container}
-      contentContainerStyle={styles.content}
-      keyboardShouldPersistTaps="handled"
-      keyboardDismissMode="on-drag"
-      automaticallyAdjustKeyboardInsets
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-      }
-    >
-      <Stack.Screen options={headerOptions} />
+  // ── Rendu ────────────────────────────────────────────────────────────────
+  // Les deux vues de la carte sont préparées une fois, puis placées selon la
+  // taille d'écran : l'une OU l'autre sur téléphone (comme avant), les deux
+  // côte à côte en grand écran. Aucun état n'est dupliqué : plier ou déplier
+  // l'appareil garde l'onglet, les filtres et les feuilles ouvertes.
 
-      {error && <Text style={styles.error}>{error}</Text>}
-
-      {view === "info" && (
-        <>
+  // Fiche : infos, notifications, boutons
+  const infoContent = (
+    <>
       {/* Infos */}
       <View style={[styles.card, styles.infoCard]}>
         <View style={styles.avatarFallback}>
@@ -1160,58 +1164,135 @@ export default function DateDetailScreen() {
         )}
       </View>
 
-      {/* Boutons sous les infos */}
-      <Pressable
-        style={styles.eventBtn}
-        onPress={() =>
-          existingEventId
-            ? router.push(`/event/${existingEventId}`)
-            : router.push(
-                entry.linkedUser
-                  ? `/event/new?forPerson=${entry.linkedUser._id}&personName=${encodeURIComponent(entry.name)}`
-                  : `/event/new?forDate=${entry._id}&personName=${encodeURIComponent(entry.name)}`,
-              )
-        }
-      >
-        <Text style={styles.eventBtnText}>
-          {existingEventId
-            ? "🎉 Voir l'événement organisé"
-            : "🎉 Organiser un événement"}
-        </Text>
-      </Pressable>
+      {/* Boutons sous les infos.
+          Grand écran : ils pilotent le panneau de droite. « Voir les cadeaux »
+          passe en premier et le bouton du panneau affiché est plein — on voit
+          d'un coup d'œil ce qui est ouvert à droite. Plus de « Liste commune » :
+          c'est un onglet du panneau cadeaux. */}
+      {isSplit ? (
+        <>
+          <Pressable
+            style={[
+              styles.splitBtn,
+              rightPane === "gifts" && styles.splitBtnActive,
+            ]}
+            onPress={() => setRightPane("gifts")}
+          >
+            <Text
+              style={[
+                styles.splitBtnText,
+                rightPane === "gifts" && styles.splitBtnTextActive,
+              ]}
+            >
+              🎁 Voir les cadeaux
+            </Text>
+          </Pressable>
 
-      <Pressable
-        style={styles.giftsBtn}
-        onPress={() => {
-          setSharedOnly(false);
-          setGiftTab("ideas");
-          setView("gifts");
-        }}
-      >
-        <Text style={styles.giftsBtnText}>🎁 Voir les cadeaux</Text>
-      </Pressable>
+          {/* Discussion : seulement avec un ami inscrit (carte liée). */}
+          {entry.linkedUser && (
+            <Pressable
+              style={[
+                styles.splitBtn,
+                rightPane === "chat" && styles.splitBtnActive,
+              ]}
+              onPress={() => setRightPane("chat")}
+            >
+              <Text
+                style={[
+                  styles.splitBtnText,
+                  rightPane === "chat" && styles.splitBtnTextActive,
+                ]}
+              >
+                {chatUnreadCount > 0
+                  ? `💬 Discuter (${chatUnreadCount})`
+                  : "💬 Discuter"}
+              </Text>
+            </Pressable>
+          )}
 
-      <Pressable
-        style={styles.sharedBtn}
-        onPress={() => {
-          setSharedOnly(true);
-          setGiftTab("shared");
-          setView("gifts");
-        }}
-      >
-        <Text style={styles.sharedBtnText}>👥 Liste commune</Text>
-      </Pressable>
+          <Pressable
+            style={[
+              styles.splitBtn,
+              rightPane === "newEvent" && styles.splitBtnActive,
+            ]}
+            onPress={() =>
+              // Un événement existe déjà : sa page est riche (chat, cagnotte,
+              // votes…), elle garde son écran plein.
+              existingEventId
+                ? router.push(`/event/${existingEventId}`)
+                : setRightPane("newEvent")
+            }
+          >
+            <Text
+              style={[
+                styles.splitBtnText,
+                rightPane === "newEvent" && styles.splitBtnTextActive,
+              ]}
+            >
+              {existingEventId
+                ? "🎉 Voir l'événement organisé"
+                : "🎉 Organiser un événement"}
+            </Text>
+          </Pressable>
+        </>
+      ) : (
+        <>
+          <Pressable
+            style={styles.eventBtn}
+            onPress={() =>
+              existingEventId
+                ? router.push(`/event/${existingEventId}`)
+                : router.push(
+                    entry.linkedUser
+                      ? `/event/new?forPerson=${entry.linkedUser._id}&personName=${encodeURIComponent(entry.name)}`
+                      : `/event/new?forDate=${entry._id}&personName=${encodeURIComponent(entry.name)}`,
+                  )
+            }
+          >
+            <Text style={styles.eventBtnText}>
+              {existingEventId
+                ? "🎉 Voir l'événement organisé"
+                : "🎉 Organiser un événement"}
+            </Text>
+          </Pressable>
+
+          <Pressable
+            style={styles.giftsBtn}
+            onPress={() => {
+              setSharedOnly(false);
+              setGiftTab("ideas");
+              setView("gifts");
+            }}
+          >
+            <Text style={styles.giftsBtnText}>🎁 Voir les cadeaux</Text>
+          </Pressable>
+
+          <Pressable
+            style={styles.sharedBtn}
+            onPress={() => {
+              setSharedOnly(true);
+              setGiftTab("shared");
+              setView("gifts");
+            }}
+          >
+            <Text style={styles.sharedBtnText}>👥 Liste commune</Text>
+          </Pressable>
+        </>
+      )}
 
       {/* Partage de la carte elle-même (sans les cadeaux) */}
       <Pressable style={styles.shareCardBtn} onPress={openCardShare}>
         <Text style={styles.shareCardText}>📤 Partager cette carte</Text>
       </Pressable>
-        </>
-      )}
+    </>
+  );
 
-      {view === "gifts" && (
-        <>
-      {/* Retour à l'accueil de la carte */}
+  // Cadeaux : mes idées / sa wishlist / liste commune
+  const giftsContent = (
+    <>
+      {/* Retour à l'accueil de la carte — inutile en grand écran, la fiche
+          reste affichée à gauche. */}
+      {!isSplit && (
       <Pressable
         style={styles.backBtn}
         onPress={() => {
@@ -1221,8 +1302,11 @@ export default function DateDetailScreen() {
       >
         <Text style={styles.backBtnText}>‹ Retour à la carte</Text>
       </Pressable>
+      )}
 
-      {!sharedOnly && (
+      {/* En grand écran, les onglets restent visibles même ouverts via
+          « Liste commune » : c'est la seule façon d'en changer. */}
+      {(isSplit || !sharedOnly) && (
         <View style={styles.giftTabs}>
           <Pressable
             style={[styles.giftTab, giftTab === "ideas" && styles.giftTabActive]}
@@ -1252,6 +1336,23 @@ export default function DateDetailScreen() {
                 ]}
               >
                 🎀 Sa wishlist
+              </Text>
+            </Pressable>
+          )}
+          {/* Grand écran : la liste commune devient un onglet comme les autres,
+              puisque le bouton qui y basculait est dans l'autre panneau. */}
+          {isSplit && (
+            <Pressable
+              style={[styles.giftTab, giftTab === "shared" && styles.giftTabActive]}
+              onPress={() => setGiftTab("shared")}
+            >
+              <Text
+                style={[
+                  styles.giftTabText,
+                  giftTab === "shared" && styles.giftTabTextActive,
+                ]}
+              >
+                👥 Commune
               </Text>
             </Pressable>
           )}
@@ -1907,9 +2008,14 @@ export default function DateDetailScreen() {
           )}
         </View>
       )}
-        </>
-      )}
+    </>
+  );
 
+  // Feuilles et modales : toutes des <Modal>, leur place dans l'arbre ne change
+  // rien à l'affichage. Rendues une seule fois, hors des panneaux, pour ne pas
+  // les dupliquer en grand écran.
+  const sheets = (
+    <>
       <GiftDetailModal
         gift={selectedGift}
         busy={busy}
@@ -2499,7 +2605,99 @@ export default function DateDetailScreen() {
         excludeDateId={entry?._id}
         busy={busy}
       />
-    </ScrollView>
+    </>
+  );
+
+  const refreshControl = (
+    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+  );
+
+  return (
+    <View style={{ flex: 1 }}>
+      <Stack.Screen options={headerOptions} />
+
+      {isSplit ? (
+        <View style={styles.splitRow}>
+          <ScrollView
+            style={[styles.container, styles.splitPane]}
+            contentContainerStyle={styles.content}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
+            automaticallyAdjustKeyboardInsets
+            refreshControl={refreshControl}
+          >
+            {error && <Text style={styles.error}>{error}</Text>}
+            {infoContent}
+          </ScrollView>
+          {rightPane === "chat" && entry.linkedUser ? (
+            // Le chat gère son clavier et son défilement : pas de ScrollView
+            // autour. `key` : changer d'ami remonte une conversation neuve
+            // (socket, clés E2E, messages) plutôt que de recycler l'ancienne.
+            <View
+              style={[styles.container, styles.splitPane, styles.splitPaneRight]}
+            >
+              <DMChat
+                key={entry.linkedUser._id}
+                embedded
+                friendId={entry.linkedUser._id}
+                name={entry.name}
+                avatar={entry.linkedUser.avatar}
+              />
+            </View>
+          ) : rightPane === "newEvent" && !existingEventId ? (
+            // Le stepper a son propre défilement : pas de ScrollView autour.
+            // Changer de panneau (ou plier l'appareil) le démonte — un titre
+            // déjà saisi part alors en brouillon, comme sur l'écran plein.
+            <View
+              style={[styles.container, styles.splitPane, styles.splitPaneRight]}
+            >
+              <NewEventForm
+                key={entry._id}
+                forPerson={entry.linkedUser?._id ?? null}
+                forDate={entry.linkedUser ? null : entry._id}
+                personName={entry.name}
+                onCreated={(shortId) => {
+                  // La carte sait maintenant qu'un événement existe, et on
+                  // enchaîne sur les invitations comme sur téléphone.
+                  setExistingEventId(shortId);
+                  setRightPane("gifts");
+                  router.push(`/event/invite/${shortId}`);
+                }}
+              />
+            </View>
+          ) : (
+            // Le garde-fou de défilement suit le panneau des cadeaux : c'est
+            // lui qui rétrécit quand on change d'onglet.
+            <ScrollView
+              {...scrollGuard}
+              style={[styles.container, styles.splitPane, styles.splitPaneRight]}
+              contentContainerStyle={styles.content}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="on-drag"
+              automaticallyAdjustKeyboardInsets
+            >
+              {giftsContent}
+            </ScrollView>
+          )}
+        </View>
+      ) : (
+        <ScrollView
+          {...scrollGuard}
+          style={styles.container}
+          contentContainerStyle={styles.content}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+          automaticallyAdjustKeyboardInsets
+          refreshControl={refreshControl}
+        >
+          {error && <Text style={styles.error}>{error}</Text>}
+          {view === "info" && infoContent}
+          {view === "gifts" && giftsContent}
+        </ScrollView>
+      )}
+
+      {sheets}
+
 
       {pendingDelete && (
         <View style={styles.undoBar}>
@@ -2583,6 +2781,26 @@ const makeStyles = (c: ThemeColors) =>
   StyleSheet.create({
   container: { flex: 1, backgroundColor: c.bg },
   content: { padding: 12, gap: 10, paddingBottom: 40 },
+  // Grand écran : deux panneaux de même largeur, calés sur la charnière du Duo
+  splitRow: { flex: 1, flexDirection: "row", backgroundColor: c.bg },
+  splitPane: { flex: 1 },
+  splitPaneRight: {
+    borderLeftWidth: StyleSheet.hairlineWidth,
+    borderLeftColor: c.border,
+  },
+  // Boutons qui pilotent le panneau de droite : même gabarit actif ou non
+  // (bordure incluse), seul le remplissage change.
+  splitBtn: {
+    backgroundColor: c.card,
+    borderWidth: 1.5,
+    borderColor: c.primary,
+    borderRadius: 14,
+    padding: 14,
+    alignItems: "center",
+  },
+  splitBtnActive: { backgroundColor: c.primary },
+  splitBtnText: { color: c.primary, fontWeight: "700", fontSize: 15 },
+  splitBtnTextActive: { color: c.white },
   center: {
     flex: 1,
     justifyContent: "center",

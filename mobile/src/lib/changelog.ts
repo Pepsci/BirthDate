@@ -17,6 +17,27 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2.0.0",
+    date: "2026-09-18",
+    build: "44",
+    title:
+      "BirthReminder sur iPad : deux panneaux côte à côte, grille d'anniversaires et écrans à la bonne largeur",
+    note: "Sur iPhone, rien ne change à l'écran — mais beaucoup d'écrans ont été réorganisés pour rendre l'iPad possible : signale tout ce qui te semble bizarre.",
+    items: [
+      "📱 BirthReminder devient une vraie application iPad. Même compte, mêmes discussions chiffrées : elle s'installe en version native au lieu d'une version iPhone agrandie, et elle se sert enfin de la place disponible.",
+      "🗂️ Sur la fiche d'une personne, plus besoin d'aller-retour : la carte reste à gauche pendant que les cadeaux s'affichent à droite. Tes idées, sa wishlist et la liste commune deviennent trois onglets côte à côte.",
+      "💬 Discuter avec un ami depuis sa carte ouvre la conversation à droite, la fiche reste visible à gauche. Pratique pour parler d'un cadeau en l'ayant sous les yeux.",
+      "🎉 Organiser un événement depuis une carte se fait aussi à droite, sans quitter la personne concernée. Un brouillon est toujours enregistré si tu t'interromps en cours de route.",
+      "🎊 Sur la page d'un événement en mode paysage, l'événement reste à gauche et les boutons ouvrent leur contenu à droite : chat, cadeaux, invitations, cagnotte et réglages de notifications.",
+      "🎂 La grille des anniversaires passe à 3 colonnes sur iPad à la verticale et 4 à l'horizontale, au lieu de 2. Les cartes y sont un peu plus généreuses.",
+      "📏 Les formulaires et les listes ne s'étirent plus sur toute la largeur : ils sont centrés dans une colonne lisible. Fini le champ « Prénom » large de 30 centimètres.",
+      "🔄 Tourner l'iPad, replier l'écran ou passer en Split View ne fait plus rien perdre : l'onglet ouvert, un message en cours d'écriture ou un formulaire à moitié rempli restent en place.",
+      "⌨️ Dans une discussion affichée en panneau, le clavier recouvrait le champ de saisie.",
+      "🫧 Les fenêtres qui glissent depuis le bas (détail d'un cadeau, options) se fermaient de travers après une rotation d'écran.",
+      "📲 Tout ça prépare aussi les téléphones pliables : déplié, l'écran affiche les deux panneaux, replié il revient à l'affichage habituel.",
+    ],
+  },
+  {
     version: "1.9.0",
     date: "2026-09-17",
     build: "43",
