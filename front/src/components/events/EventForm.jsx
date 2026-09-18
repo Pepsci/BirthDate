@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from "motion/react";
 import apiHandler from "../../api/apiHandler";
 import { useLocation } from "react-router-dom";
 import "./css/eventForm.css";
+import useAuth from "../../context/useAuth";
+import PoolLockedNotice from "./stripe/PoolLockedNotice";
 
 const overlayVariants = {
   hidden: { opacity: 0 },
@@ -122,6 +124,9 @@ const EventForm = ({
 }) => {
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
+  const { currentUser } = useAuth();
+  // Cagnotte réservée aux 18 ans et plus (le serveur bloque aussi).
+  const poolLocked = currentUser?.canCreatePool === false;
 
   const [step, setStep] = useState(1);
   const [direction, setDirection] = useState(1);
@@ -292,7 +297,7 @@ const EventForm = ({
         // …puis on tente d'activer la cagnotte via /pool si demandé.
         // Si Stripe n'est pas connecté, la route renvoie une erreur qu'on
         // ignore : l'organisateur finalisera dans l'onglet Cagnotte.
-        if (formData.giftPoolEnabled) {
+        if (formData.giftPoolEnabled && !poolLocked) {
           try {
             await apiHandler.put(`/events/${shortId}/pool`, {
               active: true,
@@ -843,7 +848,15 @@ const EventForm = ({
                     )}
 
                     {/* ── Cagnotte ── */}
-                    {!editMode ? (
+                    {!editMode && poolLocked ? (
+                      <div className="cagnotte-activate">
+                        <PoolLockedNotice
+                          reason={currentUser?.poolBlockedReason}
+                          until={currentUser?.poolBlockedUntil}
+                          compact
+                        />
+                      </div>
+                    ) : !editMode ? (
                       <div className="cagnotte-activate">
                         <label className="cagnotte-toggle">
                           <input

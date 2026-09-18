@@ -60,51 +60,35 @@ export default function CGU() {
 
           <h3>2.3 Conditions d'âge</h3>
           <p>
-            Le service BirthReminder est conçu pour un usage familial et peut
-            être utilisé par tous les âges, sous conditions :
+            Le service BirthReminder est réservé aux personnes âgées d'au moins{" "}
+            <strong>15 ans</strong>, âge à partir duquel un mineur peut
+            consentir seul au traitement de ses données pour un service en
+            ligne en France.
           </p>
-
-          <h4>Utilisateurs de 15 ans et plus</h4>
-          <p>Peuvent créer un compte et utiliser le service librement.</p>
-
-          <h4>Utilisateurs de moins de 15 ans</h4>
-          <p>Un parent ou tuteur légal doit :</p>
-          <ul>
-            <li>
-              Créer le compte au nom du mineur <strong>OU</strong>
-            </li>
-            <li>
-              Donner son consentement explicite lors de la création du compte
-            </li>
-          </ul>
-
           <p>
-            En créant un compte pour un mineur ou en donnant votre consentement,
-            vous :
+            Aucun compte ne peut être créé pour une personne de moins de 15
+            ans, y compris par un parent ou un tuteur en son nom. Les
+            utilisateurs de 15 à 17 ans ont accès à l'ensemble du service, à
+            l'exception de l'ouverture de cagnottes (article 5.2).
           </p>
-          <ul>
-            <li>✓ Certifiez avoir l'autorité parentale ou tutélaire</li>
-            <li>
-              ✓ Acceptez d'être responsable de l'utilisation du service par le
-              mineur
-            </li>
-            <li>
-              ✓ Pouvez à tout moment demander la modification ou suppression du
-              compte
-            </li>
-          </ul>
-
-          <h4>Vérification du consentement parental</h4>
-          <p>
-            BirthReminder se réserve le droit de demander une preuve du
-            consentement parental à tout moment. Le compte peut être suspendu
-            jusqu'à réception de cette preuve.
-          </p>
-
           <p className="warning">
-            ⚠️ Les comptes créés par des mineurs de moins de 15 ans sans
-            consentement parental documenté seront suspendus, puis supprimés
-            sous 30 jours en l'absence de régularisation.
+            ⚠️ Un compte dont il apparaît qu'il appartient à une personne de
+            moins de 15 ans est supprimé.
+          </p>
+
+          <h4>Exactitude de la date de naissance</h4>
+          <p>
+            En créant votre compte, vous certifiez que la date de naissance que
+            vous indiquez est exacte. Elle conditionne l'accès à certaines
+            fonctionnalités, notamment les cagnottes, réservées aux personnes
+            majeures (article 5.2).
+          </p>
+          <p>
+            Toute modification ultérieure de la date de naissance est
+            enregistrée. Lorsqu'elle fait passer un compte de mineur à majeur,
+            l'ouverture d'une cagnotte n'est possible qu'après un délai de 30
+            jours. Une fausse déclaration peut entraîner la suspension de
+            l'accès aux cagnottes, voire du compte (article 7.2).
           </p>
         </section>
 
@@ -279,6 +263,15 @@ export default function CGU() {
           </p>
 
           <h3>5.2 Responsabilité de l'organisateur</h3>
+          <p className="warning">
+            ⚠️ Seule une personne majeure (18 ans révolus) peut ouvrir une
+            cagnotte ou proposer un moyen de paiement à ses invités (carte
+            bancaire, RIB, PayPal, lien vers une cagnotte tenue sur un autre
+            service). Un utilisateur de 15 à 17 ans peut utiliser toutes les
+            autres fonctionnalités et participer aux cagnottes des autres. S'il
+            apparaît qu'une cagnotte a été ouverte par un mineur, BirthReminder
+            la gèle et désactive l'accès de son auteur aux cagnottes.
+          </p>
           <p>
             L'organisateur qui ouvre une cagnotte est seul responsable :
           </p>
@@ -565,6 +558,10 @@ export default function CGU() {
             <li>Violation des présentes CGU</li>
             <li>Comportement inapproprié ou nuisible</li>
             <li>Utilisation frauduleuse du service</li>
+            <li>
+              Fausse déclaration de date de naissance, notamment pour accéder
+              aux cagnottes
+            </li>
             <li>Inactivité prolongée (plus de 2 ans)</li>
           </ul>
         </section>
@@ -675,7 +672,7 @@ export default function CGU() {
         </section>
 
         <p className="last-update">
-          <strong>Dernière mise à jour :</strong> 15 septembre 2026
+          <strong>Dernière mise à jour :</strong> 18 septembre 2026
         </p>
       </div>
     </div>

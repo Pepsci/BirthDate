@@ -10,7 +10,13 @@ import {
 } from "react-native";
 import { Stack, useFocusEffect } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { UserProfile, fetchMe, updateMe } from "../../lib/users";
+import {
+  UserProfile,
+  fetchMe,
+  updateMe,
+  setChatEmailForFriend,
+} from "../../lib/users";
+import { FriendEntry, fetchFriends } from "../../lib/friends";
 import { DateEntry, fetchDates, setDateNotifications } from "../../lib/dates";
 import {
   useTheme,
@@ -94,6 +100,37 @@ export default function NotificationsScreen() {
     false,
   );
 
+  // Email récap des messages non lus, ami par ami (User.chatEmailDisabledFriends).
+  // C'est ce que coupe le lien « Ne plus recevoir d'email pour les messages
+  // de X » des emails — ici on peut le réactiver.
+  const [friends, setFriends] = useState<FriendEntry[] | null>(null);
+  const [updatingFriendIds, setUpdatingFriendIds] = useState<Set<string>>(
+    new Set(),
+  );
+  const [isChatFriendsExpanded, setIsChatFriendsExpanded] =
+    usePersistedCollapse(COLLAPSE_SCOPE, "chatFriends", false);
+
+  const sortedFriends = useMemo(
+    () =>
+      friends
+        ? friends
+            .filter((f) => f.friendUser?._id)
+            .sort((a, b) =>
+              `${a.friendUser.name ?? ""} ${a.friendUser.surname ?? ""}`.localeCompare(
+                `${b.friendUser.name ?? ""} ${b.friendUser.surname ?? ""}`,
+                "fr",
+                { sensitivity: "base" },
+              ),
+            )
+        : null,
+    [friends],
+  );
+
+  const disabledChatFriends = useMemo(
+    () => new Set((me?.chatEmailDisabledFriends ?? []).map(String)),
+    [me?.chatEmailDisabledFriends],
+  );
+
   // Ordre alphabétique (nom, prénom) pour retrouver quelqu'un facilement.
   const sortedDates = useMemo(
     () =>
@@ -118,6 +155,14 @@ export default function NotificationsScreen() {
       fetchMe()
         .then(setMe)
         .catch((e) => setError(e?.message ?? "Erreur de chargement."));
+    }, []),
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchFriends()
+        .then(setFriends)
+        .catch(() => {});
     }, []),
   );
 
@@ -153,6 +198,32 @@ export default function NotificationsScreen() {
       setUpdatingDateIds((prev) => {
         const next = new Set(prev);
         next.delete(date._id);
+        return next;
+      });
+    }
+  };
+
+  const toggleChatFriend = async (friendId: string) => {
+    if (!me) return;
+    const enabled = !disabledChatFriends.has(friendId);
+    const previous = me.chatEmailDisabledFriends ?? [];
+    const optimistic = enabled
+      ? [...previous.map(String), friendId]
+      : previous.map(String).filter((id) => id !== friendId);
+    setUpdatingFriendIds((prev) => new Set(prev).add(friendId));
+    setMe({ ...me, chatEmailDisabledFriends: optimistic });
+    try {
+      const saved = await setChatEmailForFriend(friendId, !enabled);
+      setMe((cur) => (cur ? { ...cur, chatEmailDisabledFriends: saved } : cur));
+    } catch (e: any) {
+      setMe((cur) =>
+        cur ? { ...cur, chatEmailDisabledFriends: previous } : cur,
+      );
+      setError(e?.message ?? "Erreur d'enregistrement.");
+    } finally {
+      setUpdatingFriendIds((prev) => {
+        const next = new Set(prev);
+        next.delete(friendId);
         return next;
       });
     }
@@ -259,6 +330,58 @@ export default function NotificationsScreen() {
               />
             </View>
           ))}
+        </View>
+      )}
+
+      <Pressable
+        style={styles.sectionHeaderRow}
+        onPress={() => setIsChatFriendsExpanded(!isChatFriendsExpanded)}
+      >
+        <Text style={styles.sectionHeader}>💬 Emails de messages, par ami</Text>
+        <Text style={styles.sectionChevron}>
+          {isChatFriendsExpanded ? "▾" : "▸"}
+        </Text>
+      </Pressable>
+      {isChatFriendsExpanded && (
+        <View style={styles.card}>
+          <Text style={styles.sectionNote}>
+            {me.receiveChatEmails
+              ? "Choisis de qui les messages non lus déclenchent l'email récap. Couper quelqu'un ne le bloque pas : ses messages arrivent toujours dans le chat et en push."
+              : "L'email « Messages non lus » est coupé pour tout le monde. Réactive-le plus haut pour que ces réglages servent."}
+          </Text>
+          {!sortedFriends ? (
+            <ActivityIndicator color={colors.primary} style={styles.listLoader} />
+          ) : sortedFriends.length === 0 ? (
+            <Text style={[styles.hint, styles.emptyHint]}>Aucun ami pour l'instant.</Text>
+          ) : (
+            sortedFriends.map(({ friendUser }) => {
+              const id = String(friendUser._id);
+              const enabled = !disabledChatFriends.has(id);
+              const updating = updatingFriendIds.has(id);
+              return (
+                <View key={id} style={styles.row}>
+                  <View style={styles.rowText}>
+                    <Text style={styles.label}>
+                      {friendUser.name} {friendUser.surname ?? ""}
+                    </Text>
+                    <Text style={styles.hint}>
+                      {enabled ? "Email activé" : "Email coupé"}
+                    </Text>
+                  </View>
+                  {updating ? (
+                    <ActivityIndicator color={colors.primary} />
+                  ) : (
+                    <Switch
+                      value={enabled}
+                      disabled={!me.receiveChatEmails}
+                      onValueChange={() => toggleChatFriend(id)}
+                      trackColor={{ true: colors.primary }}
+                    />
+                  )}
+                </View>
+              );
+            })
+          )}
         </View>
       )}
 
@@ -402,6 +525,9 @@ const makeStyles = (c: ThemeColors) =>
   },
   label: { fontSize: 15, fontWeight: "600", color: c.text },
   hint: { fontSize: 12, color: c.sub, marginTop: 1 },
+  rowText: { flex: 1 },
+  emptyHint: { padding: 14 },
+  listLoader: { marginVertical: 10 },
   sectionNote: {
     fontSize: 12,
     color: c.sub,

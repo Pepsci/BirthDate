@@ -1,5 +1,6 @@
 require("dotenv").config();
 const express = require("express");
+const { getPoolEligibility } = require("../services/poolEligibility");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
@@ -438,7 +439,12 @@ router.get("/verify", isAuthenticated, async (req, res) => {
       maxAge: cookieMaxAge,
     });
 
-    res.status(200).json({ ...user.toObject(), authToken });
+    res.status(200).json({
+      ...user.toObject(),
+      // Droit d'ouvrir une cagnotte (âge, délai, blocage admin)
+      ...(await getPoolEligibility(user)),
+      authToken,
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Internal server error" });

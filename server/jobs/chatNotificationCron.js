@@ -5,7 +5,7 @@
  * Respecte les préférences de l'utilisateur :
  *   - receiveChatEmails (bool)          : activer/désactiver emails globalement
  *   - chatEmailFrequency                : "instant" | "twice_daily" | "daily" | "weekly"
- *   - chatEmailDisabledFriends          : [userId] — liste d'amis exclus emails
+ *   - chatEmailDisabledFriends          : [userId] — amis exclus de l'EMAIL uniquement (pas du push)
  *   - pushEnabled (bool)                : activer/désactiver push globalement
  *   - pushEvents.chat (bool)            : push pour les messages chat
  */
@@ -17,6 +17,10 @@ const userModel = require("../models/user.model");
 const Message = require("../models/message.model");
 const Conversation = require("../models/conversation.model");
 const { sendPushToUser } = require("../services/pushService");
+const {
+  buildUnsubscribeUrl,
+  listUnsubscribeHeaders,
+} = require("../utils/unsubscribeLinks");
 
 // ── Transport SES ─────────────────────────────────────────────────────────────
 const sesClient = new SESClient({
@@ -138,12 +142,14 @@ function buildChatEmailHtml({
   const total = unreadGroups.reduce((sum, g) => sum + g.count, 0);
   const frequencyLabel = frequencyLabels[frequency] || frequency;
 
+  // « Ne plus recevoir… de X » = coupe l'email récap pour cet ami seulement
+  // (User.chatEmailDisabledFriends). Pas un blocage : chat et push inchangés.
   const friendUnsubscribeLinks = unreadGroups
     .map(
       (g) =>
-        `<a href="${appUrl}/api/unsubscribe?email=${encodeURIComponent(userEmail)}&type=chat_friend&friendId=${g._id}"
+        `<a href="${buildUnsubscribeUrl(userEmail, "chat_friend", { friendId: g._id })}"
            style="display:block;color:#7c6ee6;text-decoration:none;margin-bottom:6px;">
-          Ne plus recevoir les messages de ${g.senderName}
+          Ne plus recevoir d'email pour les messages de ${g.senderName}
         </a>`,
     )
     .join("");
@@ -255,23 +261,30 @@ async function sendChatNotifications(frequency) {
       // ── Fenêtre temporelle pour cet user ──
       const since = windowStart(frequency);
 
-      // ── Anti-doublon email mode instant ──
-      const wantsEmail =
+      // ── Canaux : email et push sont décidés INDÉPENDAMMENT ──
+      // (règle projet : couper un canal ne doit jamais couper l'autre)
+      let wantsEmail =
         user.receiveChatEmails === true &&
         user.chatEmailFrequency === frequency;
 
+      // Anti-doublon email en mode instant. Avant, c'était un `continue` qui
+      // sautait aussi le push.
       if (wantsEmail && frequency === "instant" && user.lastChatEmailSent) {
-        const lastSent = new Date(user.lastChatEmailSent);
-        if (lastSent >= since) continue;
+        if (new Date(user.lastChatEmailSent) >= since) wantsEmail = false;
       }
 
-      const disabledFriends = user.chatEmailDisabledFriends || [];
-      const unreadGroups = await getUnreadMessages(
-        user._id,
-        since,
-        disabledFriends,
-      );
+      // Push web récap : uniquement sur le passage « instant » (toutes les
+      // 5 min). Sinon un utilisateur push recevait en plus un récap à chaque
+      // passage daily / twice_daily / weekly, avec une fenêtre plus large.
+      const wantsPush =
+        frequency === "instant" &&
+        user.pushEnabled === true &&
+        user.pushEvents?.chat !== false;
 
+      if (!wantsEmail && !wantsPush) continue;
+
+      // Tous les non-lus, sans filtre : le filtre par ami ne concerne que l'email.
+      const unreadGroups = await getUnreadMessages(user._id, since);
       if (unreadGroups.length === 0) continue;
 
       // ── Enrichir avec les noms des expéditeurs ──
@@ -293,16 +306,23 @@ async function sendChatNotifications(frequency) {
         };
       });
 
-      // ── Envoi email ──
-      if (wantsEmail) {
+      // ── Envoi email (sans les amis coupés via « Ne plus recevoir… ») ──
+      const disabledSet = new Set(
+        (user.chatEmailDisabledFriends || []).map(String),
+      );
+      const emailGroups = enrichedGroups.filter(
+        (g) => !disabledSet.has(g._id.toString()),
+      );
+
+      if (wantsEmail && emailGroups.length > 0) {
         const appUrl = process.env.FRONTEND_URL;
-        const unsubscribeUrl = `${appUrl}/api/unsubscribe?email=${encodeURIComponent(user.email)}&type=chat`;
-        const total = enrichedGroups.reduce((s, g) => s + g.count, 0);
+        const unsubscribeUrl = buildUnsubscribeUrl(user.email, "chat");
+        const total = emailGroups.reduce((s, g) => s + g.count, 0);
 
         const html = buildChatEmailHtml({
           userName: user.name,
           userEmail: user.email,
-          unreadGroups: enrichedGroups,
+          unreadGroups: emailGroups,
           appUrl,
           unsubscribeUrl,
           frequency,
@@ -314,7 +334,7 @@ async function sendChatNotifications(frequency) {
           ``,
           `Vous avez ${total} message(s) non lu(s) sur BirthReminder.`,
           ``,
-          `Voir : ${process.env.FRONTEND_URL}/home`,
+          `Voir : ${appUrl}/home`,
           ``,
           `Se désabonner : ${unsubscribeUrl}`,
         ].join("\n");
@@ -327,10 +347,7 @@ async function sendChatNotifications(frequency) {
               subject,
               html,
               text: textBody,
-              headers: {
-                "List-Unsubscribe": `<${unsubscribeUrl}>`,
-                "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
-              },
+              headers: listUnsubscribeHeaders(unsubscribeUrl),
             },
             (err, info) => (err ? reject(err) : resolve(info)),
           );
@@ -347,10 +364,7 @@ async function sendChatNotifications(frequency) {
         );
       }
 
-      // ── Envoi push ──
-      const wantsPush =
-        user.pushEnabled === true && user.pushEvents?.chat !== false;
-
+      // ── Envoi push (tous les expéditeurs, réglage email ignoré) ──
       if (wantsPush) {
         const total = enrichedGroups.reduce((s, g) => s + g.count, 0);
         const senderNames = enrichedGroups.map((g) => g.senderName).join(", ");

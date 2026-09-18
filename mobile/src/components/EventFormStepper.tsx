@@ -25,6 +25,15 @@ import {
   ThemeColors,
 } from "../lib/theme-context";
 import { formPane } from "../lib/layout";
+import { useAuth } from "../lib/auth-context";
+
+/** Pourquoi la cagnotte est indisponible (raison renvoyée par le serveur). */
+const POOL_LOCK_HINTS: Record<string, string> = {
+  minor: "🔒 La cagnotte est réservée aux majeurs : tu pourras en ouvrir une à partir de tes 18 ans.",
+  birthdate_missing: "🔒 Renseigne ta date de naissance dans ton profil pour ouvrir une cagnotte.",
+  birthdate_cooldown: "⏳ Ta date de naissance a été modifiée récemment : la cagnotte sera disponible dans quelques jours.",
+  admin_blocked: "🔒 L'ouverture de cagnottes est suspendue pour ton compte. Contacte le support.",
+};
 
 function initialLocation(ev?: EventDetail): LocationValue | null {
   if (!ev?.fixedLocation) return null;
@@ -139,6 +148,9 @@ export default function EventFormStepper({
   const [giftPrice, setGiftPrice] = useState("");
 
   // Étape 5 — cagnotte (finalisée après création)
+  // Cagnotte réservée aux 18 ans et plus (le serveur bloque aussi).
+  const { user } = useAuth();
+  const poolLocked = user?.canCreatePool === false;
   const [poolEnabled, setPoolEnabled] = useState(
     initial?.giftPoolEnabled ?? false,
   );
@@ -190,7 +202,7 @@ export default function EventFormStepper({
     giftMode,
     imposedGifts: giftMode === "imposed" ? imposedGifts : undefined,
     // Pas de cadeaux → pas de cagnotte.
-    giftPoolEnabled: giftMode === "none" ? false : poolEnabled,
+    giftPoolEnabled: giftMode === "none" || poolLocked ? false : poolEnabled,
     maxGuests: maxGuests ? parseInt(maxGuests, 10) : null,
     allowExternalGuests,
     allowGuestInvites,
@@ -636,17 +648,22 @@ export default function EventFormStepper({
             <View style={{ flex: 1 }}>
               <Text style={styles.switchLabel}>💳 Activer une cagnotte</Text>
               <Text style={styles.hint}>
-                Permets à tes invités de participer financièrement au cadeau.
+                {poolLocked
+                  ? POOL_LOCK_HINTS[String(user?.poolBlockedReason)] ??
+                    POOL_LOCK_HINTS.minor
+                  : "Permets à tes invités de participer financièrement au cadeau."}
               </Text>
             </View>
-            <Switch
-              value={poolEnabled}
-              onValueChange={setPoolEnabled}
-              trackColor={{ true: colors.primary }}
-            />
+            {!poolLocked && (
+              <Switch
+                value={poolEnabled}
+                onValueChange={setPoolEnabled}
+                trackColor={{ true: colors.primary }}
+              />
+            )}
           </View>
 
-          {poolEnabled && (
+          {poolEnabled && !poolLocked && (
             <>
               <Text style={styles.label}>Moyens de participation</Text>
               <Pressable

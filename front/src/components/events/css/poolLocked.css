@@ -1,0 +1,32 @@
+/* ── Cagnotte verrouillée (moins de 18 ans / date de naissance absente) ── */
+.pool-locked {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.pool-locked--compact {
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  background: var(--bg-secondary);
+}
+
+.pool-locked-icon {
+  color: var(--text-tertiary);
+  font-size: 1.1rem;
+  margin-top: 2px;
+}
+
+.pool-locked-title {
+  margin: 0 0 4px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.pool-locked-text {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}

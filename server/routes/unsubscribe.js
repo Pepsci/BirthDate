@@ -48,113 +48,127 @@ function errorPage(message, status = 404) {
     </html>`;
 }
 
-// ── Route GET /api/unsubscribe ─────────────────────────────────────────────────
-router.get("/", async (req, res) => {
-  try {
-    const { email, dateid, type, friendId } = req.query;
+// ── Où réactiver une notif coupée depuis un email ─────────────────────────────
+const REACTIVATE_HINT =
+  "Pour la réactiver : Profil → Notifications, sur le site ou dans l'app.";
 
-    if (!email) {
-      return res
-        .status(400)
-        .send(
-          errorPage("Email manquant. Impossible de traiter votre demande."),
-        );
-    }
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
 
-    console.log(
-      `🔕 [UNSUBSCRIBE] email=${email} | type=${type || "birthday"} | dateid=${dateid || "-"} | friendId=${friendId || "-"}`,
-    );
+/**
+ * Désabonnement identifié par l'email (liens des emails + one-click Gmail).
+ * Renvoie le message à afficher ; lève une erreur si rien n'a pu être coupé.
+ */
+async function unsubscribeByEmail({ email, dateid, type, friendId }) {
+  if (!email) throw new Error("Email manquant");
 
-    const emailFilter = {
-      email: email.toLowerCase().trim(),
-    };
+  console.log(
+    `🔕 [UNSUBSCRIBE] email=${email} | type=${type || "birthday"} | dateid=${dateid || "-"} | friendId=${friendId || "-"}`,
+  );
 
-    // ── 1. Demandes d'ami ──────────────────────────────────────────────────────
-    if (type === "friend_requests") {
-      const user = await userModel.findOneAndUpdate(
-        emailFilter,
-        { receiveFriendRequestEmails: false },
-        { new: true },
-      );
-      if (!user) throw new Error("Utilisateur non trouvé");
-      console.log(
-        `✅ [UNSUBSCRIBE] friend_requests désactivé pour ${user.email}`,
-      );
-      return res.send(
-        successPage(
-          "Vous ne recevrez plus d'emails pour les nouvelles demandes d'ami.",
-        ),
-      );
-    }
+  const emailFilter = { email: String(email).toLowerCase().trim() };
 
-    // ── 2. Messages chat — tous ────────────────────────────────────────────────
-    if (type === "chat") {
-      const user = await userModel.findOneAndUpdate(
-        emailFilter,
-        { receiveChatEmails: false },
-        { new: true },
-      );
-      if (!user) throw new Error("Utilisateur non trouvé");
-      console.log(`✅ [UNSUBSCRIBE] chat désactivé pour ${user.email}`);
-      return res.send(
-        successPage("Vous ne recevrez plus d'emails pour les messages chat."),
-      );
-    }
-
-    // ── 3. Messages chat — ami spécifique ──────────────────────────────────────
-    if (type === "chat_friend") {
-      if (!friendId) throw new Error("friendId manquant");
-
-      const user = await userModel.findOneAndUpdate(
-        emailFilter,
-        { $addToSet: { chatEmailDisabledFriends: friendId } },
-        { new: true },
-      );
-      if (!user) throw new Error("Utilisateur non trouvé");
-      console.log(
-        `✅ [UNSUBSCRIBE] chat_friend ${friendId} désactivé pour ${user.email}`,
-      );
-      return res.send(
-        successPage(
-          "Vous ne recevrez plus d'emails pour les messages de cet ami.",
-        ),
-      );
-    }
-
-    // ── 4. Anniversaire spécifique ─────────────────────────────────────────────
-    if (dateid) {
-      const date = await dateModel.findByIdAndUpdate(
-        dateid,
-        { receiveNotifications: false },
-        { new: true },
-      );
-      if (!date) throw new Error("Anniversaire non trouvé");
-      console.log(
-        `✅ [UNSUBSCRIBE] anniversaire ${date.name} ${date.surname} désactivé`,
-      );
-      return res.send(
-        successPage(
-          `Vous ne recevrez plus de notifications pour l'anniversaire de ${date.name} ${date.surname}.`,
-        ),
-      );
-    }
-
-    // ── 5. Tous les anniversaires (défaut) ────────────────────────────────────
+  // ── 1. Demandes d'ami ──────────────────────────────────────────────────────
+  if (type === "friend_requests") {
     const user = await userModel.findOneAndUpdate(
       emailFilter,
-      { receiveBirthdayEmails: false },
+      { receiveFriendRequestEmails: false },
       { new: true },
     );
     if (!user) throw new Error("Utilisateur non trouvé");
-    console.log(`✅ [UNSUBSCRIBE] birthday désactivé pour ${user.email}`);
+    console.log(`✅ [UNSUBSCRIBE] friend_requests désactivé pour ${user.email}`);
+    return "Vous ne recevrez plus d'emails pour les nouvelles demandes d'ami.";
+  }
+
+  // ── 2. Messages chat — tous ────────────────────────────────────────────────
+  if (type === "chat") {
+    const user = await userModel.findOneAndUpdate(
+      emailFilter,
+      { receiveChatEmails: false },
+      { new: true },
+    );
+    if (!user) throw new Error("Utilisateur non trouvé");
+    console.log(`✅ [UNSUBSCRIBE] chat désactivé pour ${user.email}`);
+    return "Vous ne recevrez plus d'emails récapitulant vos messages non lus. Le chat et les notifications push ne changent pas.";
+  }
+
+  // ── 3. Messages chat — ami spécifique ──────────────────────────────────────
+  // Coupe UNIQUEMENT l'email récap des messages non lus venant de cet ami.
+  // Ce n'est pas un blocage : il peut toujours écrire, le push et le chat
+  // fonctionnent. Réglage = User.chatEmailDisabledFriends, le même que
+  // l'interrupteur par ami de Profil → Notifications (web + mobile).
+  if (type === "chat_friend") {
+    if (!friendId) throw new Error("friendId manquant");
+
+    const user = await userModel.findOneAndUpdate(
+      emailFilter,
+      { $addToSet: { chatEmailDisabledFriends: friendId } },
+      { new: true },
+    );
+    if (!user) throw new Error("Utilisateur non trouvé");
+
+    const friend = await userModel
+      .findById(friendId, "name surname")
+      .lean()
+      .catch(() => null);
+    const friendName = friend
+      ? `${friend.name} ${friend.surname || ""}`.trim()
+      : "cet ami";
+
+    console.log(
+      `✅ [UNSUBSCRIBE] chat_friend ${friendId} désactivé pour ${user.email}`,
+    );
+    return `Vous ne recevrez plus d'email récapitulatif pour les messages non lus de ${friendName}. Ce n'est pas un blocage : ses messages arrivent toujours dans le chat et en notification push.`;
+  }
+
+  // ── 4. Anniversaire spécifique ─────────────────────────────────────────────
+  if (dateid) {
+    const date = await dateModel.findByIdAndUpdate(
+      dateid,
+      { receiveNotifications: false },
+      { new: true },
+    );
+    if (!date) throw new Error("Anniversaire non trouvé");
+    console.log(
+      `✅ [UNSUBSCRIBE] anniversaire ${date.name} ${date.surname} désactivé`,
+    );
+    return `Vous ne recevrez plus de notifications pour l'anniversaire de ${date.name} ${date.surname}.`;
+  }
+
+  // ── 5. Tous les anniversaires (défaut) ────────────────────────────────────
+  const user = await userModel.findOneAndUpdate(
+    emailFilter,
+    { receiveBirthdayEmails: false },
+    { new: true },
+  );
+  if (!user) throw new Error("Utilisateur non trouvé");
+  console.log(`✅ [UNSUBSCRIBE] birthday désactivé pour ${user.email}`);
+  return "Vous avez été désabonné des notifications d'anniversaire.";
+}
+
+// ── Route GET /api/unsubscribe ─────────────────────────────────────────────────
+// Clic sur un lien « Ne plus recevoir… » dans un email.
+router.get("/", async (req, res) => {
+  if (!req.query.email) {
+    return res
+      .status(400)
+      .send(errorPage("Email manquant. Impossible de traiter votre demande."));
+  }
+  try {
+    const message = await unsubscribeByEmail(req.query);
     return res.send(
-      successPage("Vous avez été désabonné des notifications d'anniversaire."),
+      successPage(`${escapeHtml(message)}<br><br>${escapeHtml(REACTIVATE_HINT)}`),
     );
   } catch (error) {
     console.error("❌ [UNSUBSCRIBE] Erreur:", error.message);
     return res
       .status(500)
-      .send(errorPage(`Une erreur est survenue : ${error.message}`));
+      .send(errorPage(`Une erreur est survenue : ${escapeHtml(error.message)}`));
   }
 });
 
@@ -177,6 +191,24 @@ router.get("/", async (req, res) => {
  * couper des envois), donc sans risque d'usage abusif.
  */
 router.post("/", async (req, res) => {
+  // ── One-click (RFC 8058) : bouton « Se désabonner » de Gmail / Apple Mail ──
+  // Le webmail POSTe sur l'URL de l'en-tête List-Unsubscribe, avec le corps
+  // `List-Unsubscribe=One-Click` (form-urlencoded). Les paramètres utiles sont
+  // donc dans la query string, pas dans le corps. Le webmail n'affiche pas la
+  // réponse : un 200 vide suffit.
+  const isOneClick =
+    (req.body && req.body["List-Unsubscribe"] === "One-Click") ||
+    (!req.body?.userId && req.query.email);
+  if (isOneClick) {
+    try {
+      await unsubscribeByEmail(req.query);
+      return res.status(200).send("OK");
+    } catch (error) {
+      console.error("❌ [UNSUBSCRIBE ONE-CLICK] Erreur:", error.message);
+      return res.status(400).send("Désabonnement impossible");
+    }
+  }
+
   try {
     const { userId, dateId, type } = req.body || {};
 

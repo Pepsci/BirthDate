@@ -397,14 +397,22 @@ export default function PrivacyPolicy() {
         <section>
           <h2>9. Mineurs</h2>
           <p>
-            BirthReminder est destiné aux personnes majeures (18 ans et plus).
-            Si vous avez moins de 18 ans, vous devez obtenir l'autorisation de
-            vos parents avant de créer un compte.
+            Un compte BirthReminder peut être créé dès 15 ans, âge à partir
+            duquel un mineur peut consentir seul au traitement de ses données
+            pour un service en ligne en France (article 45 de la loi
+            Informatique et Libertés). Aucun compte ne peut être créé pour une
+            personne de moins de 15 ans, y compris par un parent en son nom
+            (article 2.3 des CGU).
           </p>
           <p>
-            Si nous apprenons qu'un mineur de moins de 15 ans a créé un compte
-            sans autorisation parentale, nous supprimerons immédiatement ce
-            compte.
+            Votre date de naissance sert à vérifier ces conditions d'âge et à
+            réserver les cagnottes aux personnes majeures. Ses modifications
+            sont conservées dans notre journal d'audit, afin de pouvoir
+            détecter et traiter une fausse déclaration.
+          </p>
+          <p>
+            Si nous apprenons qu'une personne de moins de 15 ans a créé un
+            compte, nous le supprimons, ainsi que les données associées.
           </p>
         </section>
 
@@ -442,7 +450,7 @@ export default function PrivacyPolicy() {
         </section>
 
         <p className="last-update">
-          <strong>Dernière mise à jour :</strong> 24 mars 2026
+          <strong>Dernière mise à jour :</strong> 18 septembre 2026
         </p>
       </div>
     </div>

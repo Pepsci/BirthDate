@@ -22,6 +22,7 @@ import GiftPoolWidget from "./stripe/GiftPoolWidget";
 import BankInfoManager from "./stripe/BankInfoManager";
 import PaypalManager from "./stripe/PaypalManager";
 import ExternalPoolManager from "./stripe/ExternalPoolManager";
+import PoolLockedNotice from "./stripe/PoolLockedNotice";
 import DirectTransferViewer from "./stripe/DirectTransferViewer";
 import "./css/eventPage.css";
 
@@ -596,6 +597,17 @@ const EventPage = () => {
   const statusColor = getStatusColor(event.status, isPast);
   const statusLabel = getStatusLabel(event.status, isPast);
   const isOrganizer = event.organizer._id === currentUser?._id;
+  // Cagnotte réservée aux 18 ans et plus. On garde les outils visibles si
+  // une collecte est déjà ouverte (compte antérieur à la règle) : il faut
+  // toujours pouvoir la fermer.
+  const hasOpenCollect = !!(
+    event.giftPool?.active ||
+    event.directTransfer?.ibanEnabled ||
+    event.directTransfer?.paypalEnabled ||
+    event.directTransfer?.externalPoolEnabled
+  );
+  const poolLocked =
+    isOrganizer && currentUser?.canCreatePool === false && !hasOpenCollect;
   const hasLocation =
     event.locationMode === "fixed" && event.fixedLocation?.name;
   const storedCoords =
@@ -1296,7 +1308,14 @@ const EventPage = () => {
                       cagnotte
                     </button>
                   )}
-                  {isOrganizer ? (
+                  {poolLocked ? (
+                    <GlassCard className="ep-card">
+                      <PoolLockedNotice
+                        reason={currentUser?.poolBlockedReason}
+                        until={currentUser?.poolBlockedUntil}
+                      />
+                    </GlassCard>
+                  ) : isOrganizer ? (
                     <>
                       <GlassCard className="ep-card">
                         <div className="ep-card-header">

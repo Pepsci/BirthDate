@@ -6,6 +6,7 @@ const Event = require("../models/event.model");
 const GiftPoolContribution = require("../models/giftPoolContribution.model");
 const { audit } = require("../services/auditLog");
 const { isAuthenticated } = require("../middleware/jwt.middleware");
+const { requireAdultForPool } = require("../middleware/requireAdultForPool");
 
 const FALLBACK = process.env.FRONTEND_URL || "https://birthreminder.com";
 
@@ -65,7 +66,8 @@ async function registerApplePayDomain(stripeAccountId) {
  * un lien d'onboarding Stripe hébergé. Le compte est unique par user et
  * réutilisé sur tous ses événements.
  */
-router.post("/onboard", isAuthenticated, async (req, res) => {
+// Ouvrir un compte de paiement = collecter de l'argent : 18 ans minimum.
+router.post("/onboard", isAuthenticated, requireAdultForPool(), async (req, res) => {
   try {
     const userId = req.payload._id;
     let account = await StripeAccount.findOne({ user: userId });

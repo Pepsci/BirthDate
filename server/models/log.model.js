@@ -71,6 +71,12 @@ const logSchema = new Schema(
         "pool_alert_reviewed",
         "bankinfo_set",
         "bankinfo_delete",
+        // Âge et cagnottes : la date de naissance conditionne l'accès aux
+        // cagnottes (18 ans). On garde la trace de chaque changement et de
+        // chaque blocage décidé par un admin.
+        "birthdate_change",
+        "pool_user_block",
+        "pool_user_unblock",
       ],
     },
     // Absente pour les écritures qui ne viennent pas d'une requête utilisateur

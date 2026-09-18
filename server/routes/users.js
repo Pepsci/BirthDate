@@ -1,9 +1,14 @@
 const express = require("express");
 const router = express.Router();
+const {
+  getPoolEligibility,
+  onBirthDateChange,
+} = require("../services/poolEligibility");
 const userModel = require("../models/user.model");
 const Friend = require("../models/friend.model");
 const DateModel = require("../models/date.model");
 const Conversation = require("../models/conversation.model");
+const { deleteLinkedCards } = require("../services/deleteLinkedCards");
 const { isAuthenticated } = require("../middleware/jwt.middleware");
 const { logAction } = require("../middleware/logger.middleware");
 const rateLimit = require("express-rate-limit");
@@ -204,7 +209,8 @@ router.get("/", isAuthenticated, async (req, res, next) => {
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-    res.status(200).json(formatUser(user));
+    // Droit d'ouvrir une cagnotte : calculé à la demande, jamais mis dans le JWT
+    res.status(200).json({ ...formatUser(user), ...(await getPoolEligibility(user)) });
   } catch (error) {
     next(error);
   }
@@ -218,7 +224,8 @@ router.get("/me", isAuthenticated, async (req, res, next) => {
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-    res.status(200).json(formatUser(user));
+    // Droit d'ouvrir une cagnotte : calculé à la demande, jamais mis dans le JWT
+    res.status(200).json({ ...formatUser(user), ...(await getPoolEligibility(user)) });
   } catch (error) {
     next(error);
   }
@@ -306,6 +313,8 @@ router.patch(
       const updatedUser = await user.save();
 
       await syncFriendDates(updatedUser, oldName, oldSurname, oldBirthDate);
+      // Trace + délai de 30 j avant cagnotte si passage mineur → majeur
+      await onBirthDateChange(req, updatedUser, oldBirthDate);
 
       console.log("🔍 [DEBUG] updatedUser APRES save():", {
         showTodayNamedayOnHome: updatedUser.showTodayNamedayOnHome,
@@ -324,7 +333,12 @@ router.patch(
         expiresIn: tokenDurationFrom(req.payload),
       });
 
-      res.status(200).json({ payload, authToken });
+      // L'éligibilité cagnotte accompagne la réponse mais reste hors du JWT :
+      // elle dépend du temps (délai de 30 j) et de décisions admin.
+      res.status(200).json({
+        payload: { ...payload, ...(await getPoolEligibility(updatedUser)) },
+        authToken,
+      });
     } catch (error) {
       next(error);
     }
@@ -587,6 +601,8 @@ router.patch(
       const updatedUser = await user.save();
 
       await syncFriendDates(updatedUser, oldName, oldSurname, oldBirthDate);
+      // Trace + délai de 30 j avant cagnotte si passage mineur → majeur
+      await onBirthDateChange(req, updatedUser, oldBirthDate);
 
       const payload = formatUser(updatedUser);
       const authToken = jwt.sign(payload, process.env.TOKEN_SECRET, {
@@ -596,7 +612,12 @@ router.patch(
         expiresIn: tokenDurationFrom(req.payload),
       });
 
-      res.status(200).json({ payload, authToken });
+      // L'éligibilité cagnotte accompagne la réponse mais reste hors du JWT :
+      // elle dépend du temps (délai de 30 j) et de décisions admin.
+      res.status(200).json({
+        payload: { ...payload, ...(await getPoolEligibility(updatedUser)) },
+        authToken,
+      });
     } catch (error) {
       next(error);
     }
@@ -647,7 +668,11 @@ router.delete(
         receiveChatEmails: false,
       });
 
+      // Même règle que « retirer un ami » : le compte disparaît des deux
+      // côtés. Ses cartes à lui, puis les cartes que les autres avaient de
+      // lui — avant de supprimer les amitiés, dont on lit les linkedDate.
       await DateModel.deleteMany({ owner: req.params.id });
+      await deleteLinkedCards(req.params.id);
       await Friend.deleteMany({
         $or: [{ user: req.params.id }, { friend: req.params.id }],
       });

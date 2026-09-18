@@ -63,6 +63,53 @@ const AdminUsers = () => {
       .catch((err) => alert(err.response?.data?.message || "Erreur"));
   };
 
+  // ── Cagnottes : blocage d'un utilisateur (ex. mineur signalé) ──────────
+  const blockPools = async (id) => {
+    const reason = window.prompt(
+      "Motif du blocage des cagnottes (10 caractères min.) :\n" +
+        "Ses cagnottes ouvertes seront gelées, RIB / PayPal / cagnotte externe désactivés.",
+    );
+    if (reason === null) return;
+    try {
+      const res = await apiHandler.post(`/admin/users/${id}/pool-block`, { reason });
+      alert(res.data.message);
+      openDetail(id);
+    } catch (err) {
+      alert(err.response?.data?.message || "Erreur");
+    }
+  };
+
+  const unblockPools = async (id) => {
+    if (
+      !window.confirm(
+        "Lever la restriction ? L'utilisateur pourra de nouveau ouvrir une cagnotte (aucune cagnotte n'est rouverte automatiquement).",
+      )
+    )
+      return;
+    try {
+      await apiHandler.delete(`/admin/users/${id}/pool-block`);
+      openDetail(id);
+    } catch (err) {
+      alert(err.response?.data?.message || "Erreur");
+    }
+  };
+
+  const POOL_STATUS_LABELS = {
+    minor: "🔒 bloquée (mineur)",
+    birthdate_missing: "🔒 bloquée (date de naissance absente)",
+    admin_blocked: "⛔ bloquée par un admin",
+    birthdate_cooldown: "⏳ délai après changement de date de naissance",
+  };
+
+  const poolStatusLabel = (pool) => {
+    if (!pool) return "inconnu";
+    if (pool.canCreatePool) return "✅ autorisée";
+    const label = POOL_STATUS_LABELS[pool.poolBlockedReason] || "bloquée";
+    return pool.poolBlockedUntil
+      ? `${label} jusqu'au ${new Date(pool.poolBlockedUntil).toLocaleDateString("fr-FR")}`
+      : label;
+  };
+
   if (error) return <p className="admin-error">{error}</p>;
 
   return (
@@ -209,6 +256,20 @@ const AdminUsers = () => {
                 : "inconnue"}
             </p>
             <p>
+              Âge :{" "}
+              {detail.user.birthDate
+                ? `${detail.age} ans (né·e le ${new Date(detail.user.birthDate).toLocaleDateString("fr-FR")})`
+                : "date de naissance absente"}
+            </p>
+            <p>Cagnotte : {poolStatusLabel(detail.pool)}</p>
+            {detail.pool?.restrictions
+              ?.filter((r) => r.kind === "admin_block" && r.reason)
+              .map((r) => (
+                <p key={r._id} className="admin-muted">
+                  Motif : {r.reason}
+                </p>
+              ))}
+            <p>
               Stripe :{" "}
               {detail.stripeAccount
                 ? detail.stripeAccount.chargesEnabled
@@ -225,6 +286,18 @@ const AdminUsers = () => {
               ) : (
                 <button onClick={() => setRole(detail.user._id, "admin")}>
                   Promouvoir admin
+                </button>
+              )}
+              {detail.pool?.restrictions?.length > 0 ? (
+                <button onClick={() => unblockPools(detail.user._id)}>
+                  Lever la restriction cagnotte
+                </button>
+              ) : (
+                <button
+                  className="admin-btn-danger"
+                  onClick={() => blockPools(detail.user._id)}
+                >
+                  Bloquer les cagnottes
                 </button>
               )}
               {detail.user.deletedAt ? (

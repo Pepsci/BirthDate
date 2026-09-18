@@ -473,6 +473,20 @@ Catégories `user.pushEvents` : `birthdays`, `namedays`, `chat`, `friends`,
 > enregistré. L'écrire à chaque lancement réactivait le push d'un utilisateur
 > qui venait de le couper.
 
+### Désabonnement depuis un email
+
+- Liens construits par `utils/unsubscribeLinks.js` sur **`BACKEND_URL`**
+  (jamais `FRONTEND_URL` : en dev, Vite n'a pas de proxy `/api`).
+- « Ne plus recevoir d'email pour les messages de X » (email récap chat) =
+  ajout à `User.chatEmailDisabledFriends`. **Coupe l'email seulement** — pas le
+  push, pas le chat, ce n'est pas un blocage. Réactivation : Profil →
+  Notifications (web : onglet Chat ; mobile : « Emails de messages, par ami »).
+- Bouton « Se désabonner » de Gmail : en-têtes `List-Unsubscribe` +
+  `List-Unsubscribe-Post`, Gmail POSTe en one-click sur la même URL →
+  géré en tête de `POST /api/unsubscribe` (paramètres lus dans la query).
+  Seul l'email chat les envoie : `SendEmailCommand` (SES v1 simple) ne permet
+  pas d'en-têtes custom, il faut passer par nodemailer + `SendRawEmailCommand`.
+
 ### Types de notification
 
 `friend_request`, `friend_accepted`, `new_message`, `birthday_soon`,
@@ -583,6 +597,31 @@ passer en charge destination changerait ce statut.
 
 Le champ `giftPool.ibanEnabled` active un second mode : partage du RIB de
 l'organisateur, virements de banque à banque, **aucune trace côté serveur**.
+
+### Âge minimum : 18 ans pour collecter de l'argent
+
+Compte dès 15 ans, mais **toute ouverture d'un moyen de collecte exige 18 ans** :
+middleware `requireAdultForPool` (`middleware/requireAdultForPool.js`, calcul
+dans `utils/age.js`) sur `POST /stripe/connect/onboard`, `PUT /:shortId/pool`
+(si `active`), `PUT /:shortId/bank-info`, et `iban-toggle` / `paypal` /
+`external-pool` (si `enabled`). Fermer reste toujours permis. Codes :
+`MINOR_NOT_ALLOWED`, `BIRTHDATE_REQUIRED` (date absente),
+`BIRTHDATE_COOLDOWN`, `POOL_BLOCKED`. Décision centralisée dans
+`services/poolEligibility.js` (`getPoolEligibility`).
+
+- **Délai de 30 j** : un changement de date de naissance qui fait passer de
+  mineur (ou sans date) à majeur crée une `PoolRestriction`
+  (`birthdate_cooldown`). Tout changement est tracé (`birthdate_change`,
+  journal permanent). Hook : `onBirthDateChange()` dans les deux PATCH de
+  `routes/users.js`.
+- **Blocage admin** : `POST /api/admin/users/:id/pool-block` { reason } gèle
+  ses cagnottes, coupe RIB/PayPal/externe, supprime les RIB ;
+  `DELETE …/pool-block` lève toutes les restrictions (y compris le délai).
+  Bouton dans la fiche utilisateur de l'admin.
+- `/auth/verify`, `GET /users/me` et la réponse des PATCH exposent
+  `canCreatePool`, `poolBlockedReason`, `poolBlockedUntil` — **jamais dans le
+  JWT** (dépend du temps et de décisions admin). Web (`PoolLockedNotice`) et
+  mobile (`PoolConfig`, `EventFormStepper`) masquent l'activation.
 
 > Source de vérité : `giftPool.active`. `giftPoolEnabled` n'est conservé que
 > pour compatibilité avec l'ancienne UI.

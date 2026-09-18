@@ -33,6 +33,9 @@ const PERMANENT_ACTIONS = new Set([
   "pool_alert_reviewed",
   "bankinfo_set",
   "bankinfo_delete",
+  "birthdate_change",
+  "pool_user_block",
+  "pool_user_unblock",
 ]);
 
 /** IP réelle derrière un proxy / load balancer. */

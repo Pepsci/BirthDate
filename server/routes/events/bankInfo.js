@@ -3,6 +3,7 @@ const router = express.Router();
 const Event = require("../../models/event.model");
 const OrganizerBankInfo = require("../../models/organizerBankInfo.model");
 const { isAuthenticated } = require("../../middleware/jwt.middleware");
+const { requireAdultForPool } = require("../../middleware/requireAdultForPool");
 const { encrypt, decrypt } = require("../../utils/bankCrypto");
 const { audit } = require("../../services/auditLog");
 
@@ -59,7 +60,11 @@ router.get("/:shortId/bank-info/exists", isAuthenticated, async (req, res) => {
  * Organizer only.
  * Body: { iban, holderName, durationDays }
  */
-router.put("/:shortId/bank-info", isAuthenticated, async (req, res) => {
+router.put(
+  "/:shortId/bank-info",
+  isAuthenticated,
+  requireAdultForPool(),
+  async (req, res) => {
   try {
     const event = await Event.findOne({ shortId: req.params.shortId });
     if (!event)
@@ -173,7 +178,8 @@ router.get("/:shortId/bank-info", isAuthenticated, async (req, res) => {
     console.error("❌ Error fetching bank info:", error);
     res.status(500).json({ message: "Erreur lors de la récupération du RIB" });
   }
-});
+  },
+);
 
 /*
  * DELETE /api/events/:shortId/bank-info
@@ -213,6 +219,7 @@ router.delete("/:shortId/bank-info", isAuthenticated, async (req, res) => {
 router.put(
   "/:shortId/direct-transfer/iban-toggle",
   isAuthenticated,
+  requireAdultForPool((req) => req.body?.enabled === true),
   async (req, res) => {
     try {
       const event = await Event.findOne({ shortId: req.params.shortId });
@@ -252,6 +259,7 @@ router.put(
 router.put(
   "/:shortId/direct-transfer/paypal",
   isAuthenticated,
+  requireAdultForPool((req) => req.body?.enabled === true),
   async (req, res) => {
     try {
       const event = await Event.findOne({ shortId: req.params.shortId });
@@ -318,6 +326,7 @@ router.put(
 router.put(
   "/:shortId/direct-transfer/external-pool",
   isAuthenticated,
+  requireAdultForPool((req) => req.body?.enabled === true),
   async (req, res) => {
     try {
       const event = await Event.findOne({ shortId: req.params.shortId });

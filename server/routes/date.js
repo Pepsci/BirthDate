@@ -432,7 +432,17 @@ router.delete("/:id", isAuthenticated, async (req, res, next) => {
         .json({ message: "Date not found or unauthorized" });
     }
 
-    if (existingDate.linkedUser) {
+    // Carte liée : on ne bloque que si le compte lié existe encore. S'il a
+    // été supprimé (ou purgé), il n'y a plus d'ami à retirer — sans cette
+    // exception la carte resterait impossible à supprimer.
+    const linkedStillActive =
+      existingDate.linkedUser &&
+      (await userModel.exists({
+        _id: existingDate.linkedUser,
+        deletedAt: null,
+      }));
+
+    if (linkedStillActive) {
       return res.status(403).json({
         message:
           "Impossible de supprimer une date liée à un ami. Supprimez l'ami de votre liste d'amis pour retirer sa date.",

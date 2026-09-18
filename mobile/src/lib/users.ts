@@ -14,6 +14,9 @@ export interface UserProfile extends AuthUser {
   showTodayNamedayOnHome?: boolean;
   receiveEventEmails?: boolean;
   receiveChatEmails?: boolean;
+  /** Amis dont les messages non lus ne déclenchent PAS l'email récap
+   *  (lien « Ne plus recevoir… » des emails). N'affecte ni le push ni le chat. */
+  chatEmailDisabledFriends?: string[];
   pushEnabled?: boolean;
   pushEvents?: {
     birthdays?: boolean;
@@ -30,6 +33,18 @@ export interface UserProfile extends AuthUser {
 
 export async function fetchMe(): Promise<UserProfile> {
   return api<UserProfile>("/users/me");
+}
+
+/** Active / coupe l'email récap des messages non lus d'un ami précis. */
+export async function setChatEmailForFriend(
+  friendId: string,
+  enabled: boolean,
+): Promise<string[]> {
+  const res = await api<{ chatEmailDisabledFriends: string[] }>(
+    "/users/me/chat-email-prefs",
+    { method: "PATCH", body: JSON.stringify({ friendId, enabled }) },
+  );
+  return (res.chatEmailDisabledFriends ?? []).map(String);
 }
 
 /**

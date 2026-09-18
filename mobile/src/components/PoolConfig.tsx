@@ -41,8 +41,34 @@ import {
   ThemeColors,
 } from "../lib/theme-context";
 import { formPane } from "../lib/layout";
+import { useAuth } from "../lib/auth-context";
 
 const IBAN_DURATIONS = [7, 14, 30, 60, 90];
+
+/** Cagnotte : messages selon la raison du refus renvoyée par le serveur. */
+function poolLockMessages(
+  until?: unknown,
+): Record<string, { title: string; text: string }> {
+  const date = until ? new Date(String(until)).toLocaleDateString("fr-FR") : "";
+  return {
+    minor: {
+      title: "Cagnotte réservée aux majeurs",
+      text: "Tu pourras ouvrir une cagnotte ou partager un moyen de paiement à partir de tes 18 ans. Tout le reste de l'événement reste accessible.",
+    },
+    birthdate_missing: {
+      title: "Date de naissance manquante",
+      text: "Renseigne ta date de naissance dans ton profil pour pouvoir ouvrir une cagnotte.",
+    },
+    birthdate_cooldown: {
+      title: "Cagnotte disponible bientôt",
+      text: `Ta date de naissance a été modifiée récemment. Par sécurité, tu pourras ouvrir une cagnotte à partir du ${date}.`,
+    },
+    admin_blocked: {
+      title: "Cagnottes suspendues",
+      text: "L'ouverture de cagnottes est suspendue pour ton compte. Contacte le support pour en savoir plus.",
+    },
+  };
+}
 
 /** Violet de marque Stripe — volontairement hors thème. */
 const STRIPE_PURPLE = "#635bff";
@@ -66,6 +92,23 @@ export default function PoolConfig({
 }) {
   const router = useRouter();
   const styles = useThemedStyles(makeStyles);
+  const { user } = useAuth();
+  // Le serveur bloque aussi (requireAdultForPool) : ici on évite de proposer
+  // une activation qui échouerait. Désactiver reste toujours possible.
+  const poolLocked = user?.canCreatePool === false;
+  const lockMessages = poolLockMessages(user?.poolBlockedUntil);
+  const lockMessage =
+    lockMessages[String(user?.poolBlockedReason ?? "minor")] ??
+    lockMessages.minor;
+  const guardEnable =
+    (setter: (v: boolean) => void) =>
+    (value: boolean) => {
+      if (value && poolLocked) {
+        Alert.alert(lockMessage.title, lockMessage.text);
+        return;
+      }
+      setter(value);
+    };
   const { colors, resolved } = useTheme();
   const [loaded, setLoaded] = useState(false);
   const [active, setActive] = useState(false);
@@ -192,6 +235,10 @@ export default function PoolConfig({
 
   const connectStripe = async () => {
     if (onboarding) return;
+    if (poolLocked) {
+      Alert.alert(lockMessage.title, lockMessage.text);
+      return;
+    }
     setOnboarding(true);
     setError(null);
     try {
@@ -301,6 +348,13 @@ export default function PoolConfig({
         <Stack.Screen options={{ title: "Configurer la cagnotte" }} />
       )}
 
+      {poolLocked && (
+        <View style={styles.lockedCard}>
+          <Text style={styles.lockedTitle}>🔒 {lockMessage.title}</Text>
+          <Text style={styles.lockedText}>{lockMessage.text}</Text>
+        </View>
+      )}
+
       <View style={styles.switchRow}>
         <View style={{ flex: 1 }}>
           <Text style={styles.switchLabel}>Cagnotte activée</Text>
@@ -310,7 +364,7 @@ export default function PoolConfig({
         </View>
         <Switch
           value={active}
-          onValueChange={setActive}
+          onValueChange={guardEnable(setActive)}
           trackColor={{ true: colors.success }}
         />
       </View>
@@ -499,7 +553,7 @@ export default function PoolConfig({
         </View>
         <Switch
           value={ibanEnabled}
-          onValueChange={setIbanEnabled}
+          onValueChange={guardEnable(setIbanEnabled)}
           trackColor={{ true: colors.success }}
         />
       </View>
@@ -554,7 +608,7 @@ export default function PoolConfig({
         </View>
         <Switch
           value={paypalEnabled}
-          onValueChange={setPaypalEnabled}
+          onValueChange={guardEnable(setPaypalEnabled)}
           trackColor={{ true: colors.success }}
         />
       </View>
@@ -579,7 +633,7 @@ export default function PoolConfig({
         </View>
         <Switch
           value={externalEnabled}
-          onValueChange={setExternalEnabled}
+          onValueChange={guardEnable(setExternalEnabled)}
           trackColor={{ true: colors.success }}
         />
       </View>
@@ -883,6 +937,15 @@ const makeStyles = (c: ThemeColors) =>
     inputText: { fontSize: 15, color: c.text },
     clearDeadline: { color: c.danger, fontSize: 12, textAlign: "center" },
     warn: { backgroundColor: c.warningSoft, borderRadius: 10, padding: 12 },
+    lockedCard: {
+      backgroundColor: c.card,
+      borderRadius: 12,
+      padding: 14,
+      borderWidth: StyleSheet.hairlineWidth,
+      borderColor: c.border,
+    },
+    lockedTitle: { color: c.text, fontSize: 15, fontWeight: "700" },
+    lockedText: { color: c.sub, fontSize: 13, lineHeight: 18, marginTop: 4 },
     warnText: { color: c.warningStrong, fontSize: 13, lineHeight: 18 },
     stripeBtn: {
       backgroundColor: STRIPE_PURPLE,

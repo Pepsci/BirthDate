@@ -5,6 +5,7 @@ const DateModel = require("../models/date.model");
 const Friend = require("../models/friend.model");
 const Message = require("../models/message.model");
 const { removeAvatarFiles } = require("../config/avatarStorage");
+const { deleteLinkedCards } = require("../services/deleteLinkedCards");
 
 // Tourne tous les jours à 3h du matin
 const purgeDeletedAccounts = cron.schedule(
@@ -33,6 +34,11 @@ const purgeDeletedAccounts = cron.schedule(
 
         // Supprimer les dates d'anniversaire
         await DateModel.deleteMany({ owner: user._id });
+
+        // Filet de sécurité : cartes que les autres avaient de ce compte.
+        // DELETE /users/:id le fait déjà, mais pas pour les comptes supprimés
+        // avant ce correctif.
+        await deleteLinkedCards(user._id);
 
         // Supprimer les relations d'amitié
         await Friend.deleteMany({

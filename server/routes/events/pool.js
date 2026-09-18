@@ -6,6 +6,7 @@ const User = require("../../models/user.model");
 const StripeAccount = require("../../models/stripeAccount.model");
 const GiftPoolContribution = require("../../models/giftPoolContribution.model");
 const { isAuthenticated } = require("../../middleware/jwt.middleware");
+const { requireAdultForPool } = require("../../middleware/requireAdultForPool");
 const { audit } = require("../../services/auditLog");
 
 // Montant min/max d'une contribution (centimes) — garde-fous
@@ -467,7 +468,13 @@ router.get("/:shortId/pool", async (req, res) => {
  * Activer / configurer / désactiver la cagnotte (organizer only).
  * Body: { active, mode, goal, deadline }
  */
-router.put("/:shortId/pool", isAuthenticated, async (req, res) => {
+// Toute requête qui laisse la cagnotte ouverte (active: true) exige 18 ans ;
+// la fermer reste toujours permis.
+router.put(
+  "/:shortId/pool",
+  isAuthenticated,
+  requireAdultForPool((req) => !!req.body?.active),
+  async (req, res) => {
   try {
     const event = await Event.findOne({ shortId: req.params.shortId });
     if (!event)
@@ -527,7 +534,8 @@ router.put("/:shortId/pool", isAuthenticated, async (req, res) => {
     console.error("❌ Error updating gift pool:", error);
     res.status(500).json({ message: "Erreur serveur" });
   }
-});
+  },
+);
 
 /*
  * POST /api/events/:shortId/pool/contribute
