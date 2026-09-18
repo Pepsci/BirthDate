@@ -17,6 +17,25 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2.0.1",
+    date: "2026-09-18",
+    build: "45",
+    title:
+      "Désinscription des emails en un clic, cagnottes réservées aux majeurs, comptes supprimés qui disparaissent partout",
+    note: "Les points marqués ⚠️ nécessitent la nouvelle version du serveur.",
+    items: [
+      "🗑️ ⚠️ Quand quelqu'un supprime son compte, il disparaît aussi chez ses amis : sa carte anniversaire est supprimée des deux côtés, comme quand on retire un ami.",
+      "🧹 ⚠️ Les cartes bloquées par « Impossible de supprimer une date liée à un ami » se suppriment enfin. Elles appartenaient à des comptes déjà supprimés : il n'y avait plus d'ami à retirer pour les débloquer.",
+      "📧 ⚠️ Le bouton « Se désabonner » de Gmail marche sur l'email des messages non lus : un seul clic, sans ouvrir de page.",
+      "🔕 ⚠️ Dans l'email des messages non lus, « Ne plus recevoir d'email pour les messages de… » coupe l'email pour cet ami seulement. Ce n'est pas un blocage : ses messages arrivent toujours dans le chat et en notification. Réactivation : Profil → Notifications → « Emails de messages, par ami ».",
+      "🔔 ⚠️ Couper l'email des messages ne coupe plus les notifications, et inversement. Avant, un réglage pouvait faire sauter l'autre.",
+      "🔁 ⚠️ Si tu reçois les notifications de messages, plus de récap en double au moment de l'email quotidien ou hebdomadaire.",
+      "💰 ⚠️ Ouvrir une cagnotte ou proposer un moyen de paiement (carte, RIB, PayPal, lien externe) est réservé aux majeurs. De 15 à 17 ans, tout le reste reste accessible, y compris participer aux cagnottes des autres.",
+      "🎂 ⚠️ Si tu changes ta date de naissance et passes de mineur à majeur, l'ouverture d'une cagnotte est possible 30 jours après.",
+      "📜 CGU et politique de confidentialité mises à jour : compte dès 15 ans, cagnottes à 18 ans.",
+    ],
+  },
+  {
     version: "2.0.0",
     date: "2026-09-18",
     build: "44",

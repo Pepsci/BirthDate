@@ -132,6 +132,18 @@ killall Xcode && rm -rf ~/Library/Developer/Xcode/DerivedData
 
 ---
 
+## 🔒 Git bloqué : « index.lock: File exists »
+
+```bash
+cd ~/Dev/birthreminder
+rm -f .git/index.lock
+```
+- Symptôme : `fatal: Unable to create '.git/index.lock': File exists` sur un commit, un merge ou un checkout.
+- Cause : un process git s'est arrêté avant d'effacer son verrou (crash, Ctrl+C, ou un outil qui n'avait pas le droit de supprimer le fichier).
+- ⚠️ Vérifier d'abord qu'aucun git ne tourne (VS Code, autre terminal) — sinon on casse une opération en cours.
+
+---
+
 ## 🩺 Maintenance serveur
 
 ```bash
