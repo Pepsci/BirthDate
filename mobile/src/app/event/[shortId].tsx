@@ -62,6 +62,7 @@ import {
   STATUS_LABELS,
   RSVP_LABELS,
 } from "../../lib/events";
+import OfflineBanner from "../../components/OfflineBanner";
 import {
   addToDeviceCalendar,
   getLinkedEventId,
@@ -2069,6 +2070,7 @@ export default function EventDetailScreen() {
             ) : null,
         }}
       />
+      <OfflineBanner />
 
 
       {isSplit ? (

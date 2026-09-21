@@ -678,6 +678,48 @@ dans `utils/age.js`) sur `POST /stripe/connect/onboard`, `PUT /:shortId/pool`
   `.env.production`. Sans `.env.local`, `api.ts` retombe sur une IP codée en
   dur et plus rien ne répond. Après changement : `npx expo start -c`.
 
+- **Bouton retour toujours affiché** (`HeaderBackButton`) : une page ouverte
+  depuis un lien (email, invitation, notif au démarrage) n'a pas d'écran
+  précédent ; le bouton fait alors `router.replace(fallbackFor(pathname))`
+  (événement → onglet Événements, chat → Chats, profil → Profil, sinon accueil).
+- **Vue scindée (iPad)** : sur une carte, le crayon ouvre `DateEditPane` dans le
+  panneau de droite (`rightPane === "edit"`) ; l'écran plein `date/edit/[id]`
+  reste utilisé sur téléphone. Suppression partagée : `confirmDeleteDate()`.
+
+### Mobile — cache hors ligne
+- `lib/offline-cache.ts` : un JSON par clé dans `documentDirectory/offline-cache/`
+  (expo-file-system, pas de module natif ajouté). Chaque entrée porte son
+  `userId` ; `setCacheOwner()` est piloté par `auth-context`, `signOut()` vide tout.
+- `api.ts` lève **`NetworkError`** quand aucune réponse n'arrive (réseau,
+  délai de 30 s) — à distinguer d'`ApiError`. **Seule** une `NetworkError`
+  autorise le repli sur le cache : jamais après un 401/403.
+- `fetchDates()` / `fetchDate()` écrivent le cache à chaque succès et s'y
+  rabattent hors ligne. L'accueil affiche `getCachedDates()` avant la réponse.
+- `auth-context` : au démarrage hors ligne (ou serveur en 5xx), la session
+  n'est plus détruite — profil relu depuis le cache (sans token ni clés E2E),
+  revalidé au retour du réseau ou au retour au premier plan.
+- `OfflineBanner` (accueil, agenda, carte, onglet Événements, page événement)
+  lit `lib/offline-status.ts` et la file ; il liste ce qui reste possible et
+  ce qui ne l'est pas hors ligne — **à tenir à jour** si le périmètre change.
+- **Événements en lecture seule** : `fetchMyEvents`, `fetchEvent`, `fetchGifts`
+  passent par `withOfflineCache()` (`lib/offline-fetch.ts`, repli sur
+  `NetworkError` seulement). Répondre, voter, proposer : en ligne uniquement.
+  `fetchMyEvents()` précharge en arrière-plan le détail (et les cadeaux) des
+  événements à venir — max 30, une fois par 10 min — pour qu'ils s'ouvrent
+  hors ligne sans avoir été consultés avant.
+- **Modifs hors ligne** (`lib/offline-queue.ts`) : `createDate` / `updateDate`
+  / `deleteDate` déposent l'opération dans une file (fichier `queue-dates`)
+  sur `NetworkError`. Les opérations sont **fusionnées** à l'ajout (modif d'une
+  carte `tmp-…` → modifie la création ; suppression d'une `tmp-…` → retirée),
+  donc aucun id provisoire n'est jamais envoyé au serveur. `applyQueue()` est
+  superposé à tout résultat de `fetchDates`/`fetchDate` (`pending: true`).
+  Envoi dans l'ordre au retour réseau et au premier plan (`flushQueue`) :
+  4xx → abandon + message dans `OfflineBanner` ; 5xx → 3 essais. Périmètre :
+  cartes manuelles seulement (pas photo, cadeaux, famille, amis, events).
+  ⚠️ Pas d'idempotence : si la réponse d'un POST se perd après réception par
+  le serveur, la carte peut être créée deux fois (fusion des doublons côté web).
+- Pas de rappels locaux (doublon avec le push serveur).
+
 ### Navigation profil
 - Les profils n'ont PAS de route dédiée `/dates/:id` — tout passe par `/home?tab=date&dateId=...`
 - Le retour depuis EventPage va vers `/home?tab=events`

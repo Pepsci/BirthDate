@@ -1,23 +1,37 @@
 import { useEffect, useState } from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { timeUntilNext } from "../lib/dates";
+import { timeUntil, timeUntilNext } from "../lib/dates";
 import { useThemedStyles, ThemeColors } from "../lib/theme-context";
 
 /**
  * Compte à rebours J/H/M/S en cases dégradées, avec trait de séparation
- * au-dessus. Partagé entre la carte d'accueil et la carte détail.
+ * au-dessus. Partagé entre les cartes d'anniversaire (accueil, détail) et les cartes
+ * d'événement.
  *
  * Les couleurs suivent le dégradé du B du logo (haut → bas) :
  * bleu → violet → rose → orange.
+ *
+ * Deux modes :
+ *   - `iso`   : anniversaire, prochaine occurrence (récurrence annuelle) ;
+ *   - `until` : date unique (événement), s'arrête à zéro.
  */
-export default function BirthdayCountdown({ iso }: { iso: string }) {
+export default function BirthdayCountdown(
+  props: { iso: string; until?: never } | { until: Date; iso?: never },
+) {
   const styles = useThemedStyles(makeStyles);
-  const [left, setLeft] = useState(() => timeUntilNext(iso));
+  const untilMs = props.until?.getTime();
+  const compute = () =>
+    untilMs != null
+      ? timeUntil(new Date(untilMs))
+      : timeUntilNext(props.iso as string);
+  const [left, setLeft] = useState(compute);
   useEffect(() => {
-    const t = setInterval(() => setLeft(timeUntilNext(iso)), 1000);
+    setLeft(compute());
+    const t = setInterval(() => setLeft(compute()), 1000);
     return () => clearInterval(t);
-  }, [iso]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.iso, untilMs]);
 
   // Progression sur le dégradé du logo : J bleu → H violet → M rose → S orange
   const cells: [number, string, [string, string]][] = [

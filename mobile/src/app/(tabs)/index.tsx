@@ -15,6 +15,8 @@ import {
 import { Image as ExpoImage } from "expo-image";
 import BirthdayCountdown from "../../components/BirthdayCountdown";
 import MyCagnottesStrip from "../../components/MyCagnottesStrip";
+import OfflineBanner from "../../components/OfflineBanner";
+import { onQueueFlushed } from "../../lib/offline-queue";
 import { useGuidedTour, TOURS } from "../../lib/guided-tour";
 import {
   useTheme,
@@ -24,6 +26,7 @@ import {
 import {
   DateEntry,
   fetchDates,
+  getCachedDates,
   daysUntil,
   currentAge,
   formatAge,
@@ -68,8 +71,25 @@ export default function BirthdaysScreen() {
   }, []);
 
   useEffect(() => {
-    load().finally(() => setLoading(false));
+    // Cache du téléphone d'abord : la liste s'affiche tout de suite, même
+    // sans réseau, puis load() la remplace par la version du serveur.
+    let serverAnswered = false;
+    getCachedDates().then((cached) => {
+      // Si le serveur a déjà répondu, sa version gagne (même une liste vide)
+      if (!serverAnswered && cached && cached.dates.length > 0) {
+        setDates(cached.dates);
+        setLoading(false);
+      }
+    });
+    load().finally(() => {
+      serverAnswered = true;
+      setLoading(false);
+    });
   }, [load]);
+
+  // Modifications faites hors ligne envoyées : on recharge pour remplacer les
+  // cartes provisoires par la version du serveur.
+  useEffect(() => onQueueFlushed(() => load()), [load]);
 
   // Tour guidé de première utilisation (agenda → ＋) — ne se lance qu'une fois
   useEffect(() => {
@@ -140,6 +160,7 @@ export default function BirthdaysScreen() {
 
   return (
     <View style={styles.container}>
+      <OfflineBanner />
       {error && (
         <Pressable style={styles.errorBanner} onPress={onRefresh}>
           <Text style={styles.errorText}>{error} — appuyer pour réessayer</Text>
@@ -288,6 +309,11 @@ function BirthdayCard({
       ]}
       onPress={() => router.push(`/date/${entry._id}`)}
     >
+      {entry.pending && (
+        <View style={styles.pendingBadge}>
+          <Text style={styles.pendingBadgeText}>⏳ En attente</Text>
+        </View>
+      )}
       {soon && (
         <View
           style={[
@@ -497,6 +523,18 @@ const makeStyles = (c: ThemeColors) =>
     soonBadgeNormal: { backgroundColor: c.primary },
     soonBadgeUrgent: { backgroundColor: c.warning },
     soonBadgeText: { color: c.white, fontSize: 11, fontWeight: "800" },
+    // Carte ajoutée/modifiée hors ligne, pas encore envoyée
+    pendingBadge: {
+      position: "absolute",
+      top: 8,
+      left: 8,
+      zIndex: 2,
+      borderRadius: 8,
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+      backgroundColor: c.warningSoft,
+    },
+    pendingBadgeText: { color: c.warningStrong, fontSize: 11, fontWeight: "800" },
     countdownToday: {
       alignSelf: "stretch",
       alignItems: "center",

@@ -1,0 +1,20 @@
+{
+  "actions": {
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "confirm": "Confirmer",
+    "delete": "Supprimer",
+    "close": "Fermer",
+    "back": "Retour",
+    "retry": "Réessayer"
+  },
+  "status": {
+    "loading": "Chargement…",
+    "error": "Une erreur est survenue"
+  },
+  "language": {
+    "label": "Langue",
+    "fr": "Français",
+    "en": "English"
+  }
+}

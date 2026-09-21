@@ -1,4 +1,5 @@
-import { api } from "./api";
+import { api, NetworkError } from "./api";
+import { withOfflineCache } from "./offline-fetch";
 
 export type EventType = "birthday" | "party" | "dinner" | "other";
 export type EventStatus = "draft" | "published" | "cancelled" | "done";
@@ -36,8 +37,64 @@ export interface MyEvents {
   invited: EventEntry[];
 }
 
+// Lecture seule hors ligne : liste, page d'un événement déjà ouvert et ses
+// propositions de cadeaux. Répondre, voter, proposer restent en ligne :
+// ces données sont partagées avec les autres invités.
 export async function fetchMyEvents(): Promise<MyEvents> {
-  return api<MyEvents>("/events/mine");
+  return withOfflineCache("events-mine", async () => {
+    const mine = await api<MyEvents>("/events/mine");
+    prefetchEventDetails(mine); // en ligne uniquement, sans attendre
+    return mine;
+  });
+}
+
+/**
+ * Pré-enregistre le contenu des événements à venir pour qu'ils s'ouvrent
+ * hors ligne même sans avoir été consultés avant.
+ *
+ * ⚠️ Sans ça, seule la LISTE était disponible hors ligne : ouvrir un
+ * événement jamais visité sur ce téléphone échouait, alors que c'est
+ * justement le jour J, sans réseau, qu'on cherche l'adresse.
+ *
+ * Garde-fous : au plus toutes les 10 min (la liste est rechargée à chaque
+ * retour sur l'onglet), événements passés et annulés ignorés, plafond de 30,
+ * requêtes une par une pour ne pas saturer le réseau.
+ */
+const PREFETCH_EVERY_MS = 10 * 60 * 1000;
+const PREFETCH_MAX = 30;
+let lastPrefetch = 0;
+let prefetching = false;
+
+function prefetchEventDetails(mine: MyEvents) {
+  const now = Date.now();
+  if (prefetching || now - lastPrefetch < PREFETCH_EVERY_MS) return;
+  lastPrefetch = now;
+  prefetching = true;
+
+  const yesterday = now - 24 * 3600 * 1000;
+  const targets = [...mine.organized, ...mine.invited]
+    .filter((e) => e.status !== "cancelled" && e.status !== "done")
+    .filter((e) => {
+      const d = eventDate(e);
+      return !d || d.getTime() >= yesterday; // date au vote : on garde
+    })
+    .slice(0, PREFETCH_MAX);
+
+  (async () => {
+    for (const e of targets) {
+      try {
+        const detail = await fetchEvent(e.shortId);
+        if (detail.hasFullAccess && detail.giftMode === "proposals") {
+          await fetchGifts(e.shortId);
+        }
+      } catch (err) {
+        if (err instanceof NetworkError) break; // réseau coupé : on arrête
+        // événement supprimé ou inaccessible : on passe au suivant
+      }
+    }
+  })().finally(() => {
+    prefetching = false;
+  });
 }
 
 /** Date effective d'un event : selectedDate > fixedDate > null (vote en cours) */
@@ -290,7 +347,9 @@ export async function fetchMyContributions(): Promise<MyContribution[]> {
 }
 
 export async function fetchEvent(shortId: string): Promise<EventDetail> {
-  return api<EventDetail>(`/events/${shortId}`);
+  return withOfflineCache(`event-${shortId}`, () =>
+    api<EventDetail>(`/events/${shortId}`),
+  );
 }
 
 export async function sendRsvp(
@@ -373,7 +432,9 @@ export interface GiftProposal {
 }
 
 export async function fetchGifts(shortId: string): Promise<GiftProposal[]> {
-  return api<GiftProposal[]>(`/events/${shortId}/gifts`);
+  return withOfflineCache(`event-gifts-${shortId}`, () =>
+    api<GiftProposal[]>(`/events/${shortId}/gifts`),
+  );
 }
 
 export async function proposeGift(

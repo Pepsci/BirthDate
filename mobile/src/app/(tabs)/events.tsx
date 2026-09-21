@@ -22,6 +22,8 @@ import {
   STATUS_LABELS,
   RSVP_LABELS,
 } from "../../lib/events";
+import OfflineBanner from "../../components/OfflineBanner";
+import BirthdayCountdown from "../../components/BirthdayCountdown";
 import {
   useTheme,
   useThemedStyles,
@@ -125,6 +127,7 @@ export default function EventsScreen() {
 
   return (
     <View style={styles.container}>
+      <OfflineBanner />
       {error && (
         <Pressable style={styles.errorBanner} onPress={onRefresh}>
           <Text style={styles.errorText}>{error} — appuyer pour réessayer</Text>
@@ -253,6 +256,25 @@ function byDateDesc(a: EventEntry, b: EventEntry): number {
   return (db?.getTime() ?? 0) - (da?.getTime() ?? 0);
 }
 
+/** Emoji et couleur d'accent par type d'événement. */
+const TYPE_VISUAL: Record<
+  EventEntry["type"],
+  { emoji: string; color: keyof ThemeColors; soft: keyof ThemeColors }
+> = {
+  birthday: { emoji: "🎂", color: "primary", soft: "primarySoft" },
+  party: { emoji: "🎉", color: "accent", soft: "accentSoft" },
+  dinner: { emoji: "🍽️", color: "warning", soft: "warningSoft" },
+  other: { emoji: "📌", color: "success", soft: "successSoft" },
+};
+
+/** Jours calendaires restants avant `d` (0 = aujourd'hui, négatif = passé). */
+function daysUntilDate(d: Date): number {
+  const today = new Date();
+  const a = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const b = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  return Math.round((b.getTime() - a.getTime()) / 86_400_000);
+}
+
 function EventCard({
   event,
   onDeleted,
@@ -302,11 +324,29 @@ function EventCard({
     );
   };
 
+  const visual = TYPE_VISUAL[event.type] ?? TYPE_VISUAL.other;
+  const accent = colors[visual.color] as string;
+  const accentSoft = colors[visual.soft] as string;
+  const days = d ? daysUntilDate(d) : null;
+  const isLive = !isDraft && !isCancelled && event.status !== "done";
+  // Compte à rebours : date fixée, à venir, événement actif
+  const showCountdown = isLive && !!d && d.getTime() > Date.now();
+  // Badge d'urgence, comme sur les cartes d'anniversaire
+  const soonLabel =
+    isLive && days !== null && days >= 0 && days <= 7
+      ? days === 0
+        ? "Aujourd'hui"
+        : days === 1
+          ? "Demain"
+          : `J-${days}`
+      : null;
+
   return (
     <Pressable
       style={({ pressed }) => [
         styles.card,
         isDraft && styles.cardDraft,
+        isCancelled && styles.cardCancelled,
         pressed && { opacity: 0.85 },
       ]}
       onPress={() =>
@@ -315,55 +355,88 @@ function EventCard({
         )
       }
     >
-      <View style={styles.cardHeader}>
-        <Text
-          style={[styles.title, isCancelled && styles.titleCancelled]}
-          numberOfLines={1}
-        >
-          {event.title}
-        </Text>
-        <Text style={styles.type}>{EVENT_TYPE_LABELS[event.type]}</Text>
-      </View>
+      {/* Liseré de couleur du type d'événement */}
+      <View style={[styles.accentBar, { backgroundColor: accent }]} />
 
-      {isCancelled && (
-        <View style={styles.cancelBanner}>
-          <Text style={styles.cancelBannerText} numberOfLines={2}>
-            ❌ Annulé
-            {event.cancellationReason ? ` — ${event.cancellationReason}` : ""}
-          </Text>
-        </View>
-      )}
-
-      <Text style={styles.detail}>
-        📅 {d ? formatEventDate(d) : "Date au vote"}
-      </Text>
-      {location ? (
-        <Text style={styles.detail}>📍 {location}</Text>
-      ) : event.locationMode === "vote" ? (
-        <Text style={styles.detail}>📍 Lieu au vote</Text>
-      ) : null}
-
-      <View style={styles.footer}>
-        <Text style={[styles.status, statusStyle(event.status, colors)]}>
-          {STATUS_LABELS[event.status]}
-        </Text>
-        {isDraft ? (
-          <View style={styles.draftActions}>
-            <Pressable
-              onPress={confirmDeleteDraft}
-              hitSlop={8}
-              accessibilityRole="button"
-              accessibilityLabel="Supprimer ce brouillon"
-            >
-              <Text style={styles.draftDelete}>🗑️ Supprimer</Text>
-            </Pressable>
-            <Text style={styles.draftHint}>Reprendre →</Text>
+      <View style={styles.cardBody}>
+        <View style={styles.cardHeader}>
+          <View style={[styles.emojiBubble, { backgroundColor: accentSoft }]}>
+            <Text style={styles.emoji}>{visual.emoji}</Text>
           </View>
-        ) : (
-          event.myRsvpStatus && (
-            <Text style={styles.rsvp}>{RSVP_LABELS[event.myRsvpStatus]}</Text>
-          )
+          <View style={styles.headerText}>
+            <Text
+              style={[styles.title, isCancelled && styles.titleCancelled]}
+              numberOfLines={2}
+            >
+              {event.title || "Sans titre"}
+            </Text>
+            <Text style={[styles.type, { color: accent }]}>
+              {EVENT_TYPE_LABELS[event.type].replace(/^\S+\s/, "")}
+              {typeof event.forPerson === "object" && event.forPerson?.name
+                ? ` · pour ${event.forPerson.name}`
+                : ""}
+            </Text>
+          </View>
+          {soonLabel && (
+            <View
+              style={[
+                styles.soonBadge,
+                days! <= 2 ? styles.soonBadgeUrgent : styles.soonBadgeNormal,
+              ]}
+            >
+              <Text style={styles.soonBadgeText}>{soonLabel}</Text>
+            </View>
+          )}
+        </View>
+
+        {isCancelled && (
+          <View style={styles.cancelBanner}>
+            <Text style={styles.cancelBannerText} numberOfLines={2}>
+              ❌ Annulé
+              {event.cancellationReason ? ` — ${event.cancellationReason}` : ""}
+            </Text>
+          </View>
         )}
+
+        <View style={styles.infoBlock}>
+          <Text style={styles.detail}>
+            📅 {d ? formatEventDate(d) : "Date au vote"}
+          </Text>
+          {location ? (
+            <Text style={styles.detail} numberOfLines={1}>
+              📍 {location}
+            </Text>
+          ) : event.locationMode === "vote" ? (
+            <Text style={styles.detail}>📍 Lieu au vote</Text>
+          ) : null}
+        </View>
+
+        {showCountdown && <BirthdayCountdown until={d!} />}
+
+        <View style={styles.footer}>
+          <Text style={[styles.status, statusStyle(event.status, colors)]}>
+            {STATUS_LABELS[event.status]}
+          </Text>
+          {isDraft ? (
+            <View style={styles.draftActions}>
+              <Pressable
+                onPress={confirmDeleteDraft}
+                hitSlop={8}
+                accessibilityRole="button"
+                accessibilityLabel="Supprimer ce brouillon"
+              >
+                <Text style={styles.draftDelete}>🗑️ Supprimer</Text>
+              </Pressable>
+              <Text style={styles.draftHint}>Reprendre →</Text>
+            </View>
+          ) : (
+            event.myRsvpStatus && (
+              <View style={styles.rsvpPill}>
+                <Text style={styles.rsvp}>{RSVP_LABELS[event.myRsvpStatus]}</Text>
+              </View>
+            )
+          )}
+        </View>
       </View>
     </Pressable>
   );
@@ -425,18 +498,22 @@ const makeStyles = (c: ThemeColors) =>
     errorBanner: { backgroundColor: "rgba(239,68,68,0.15)", padding: 10 },
     errorText: { color: c.danger, textAlign: "center", fontSize: 13 },
     card: {
+      flexDirection: "row",
       backgroundColor: c.card,
-      borderRadius: 14,
-      padding: 14,
-      gap: 4,
-      borderWidth: 1,
+      borderRadius: 16,
+      overflow: "hidden",
+      borderWidth: StyleSheet.hairlineWidth,
       borderColor: c.border,
-      shadowColor: c.shadow,
-      shadowOpacity: 0.06,
-      shadowRadius: 6,
-      shadowOffset: { width: 0, height: 2 },
-      elevation: 2,
+      // Même ombre que les cartes d'anniversaire (halo clair en thème sombre)
+      shadowColor: c.cardShadow,
+      shadowOpacity: c.cardShadowOpacity,
+      shadowRadius: c.cardShadowRadius,
+      shadowOffset: { width: 0, height: 3 },
+      elevation: 3,
     },
+    accentBar: { width: 5 },
+    cardBody: { flex: 1, padding: 14, gap: 8 },
+    cardCancelled: { opacity: 0.75 },
     // Brouillon : liseré ambré + fond légèrement teinté, pour qu'on voie d'un
     // coup d'œil que la carte est une création inachevée.
     cardDraft: {
@@ -449,18 +526,43 @@ const makeStyles = (c: ThemeColors) =>
     draftDelete: { fontSize: 12, color: c.danger, fontWeight: "700" },
     cardHeader: {
       flexDirection: "row",
-      justifyContent: "space-between",
       alignItems: "center",
-      gap: 8,
+      gap: 12,
     },
-    title: { fontSize: 16, fontWeight: "600", color: c.text, flexShrink: 1 },
-    type: { fontSize: 12, color: c.sub },
+    emojiBubble: {
+      width: 46,
+      height: 46,
+      borderRadius: 23,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    emoji: { fontSize: 24 },
+    headerText: { flex: 1, gap: 2 },
+    title: { fontSize: 17, fontWeight: "700", color: c.text },
+    type: { fontSize: 12, fontWeight: "700" },
+    soonBadge: {
+      alignSelf: "flex-start",
+      borderRadius: 8,
+      paddingHorizontal: 8,
+      paddingVertical: 3,
+    },
+    soonBadgeNormal: { backgroundColor: c.primary },
+    soonBadgeUrgent: { backgroundColor: c.warning },
+    soonBadgeText: { color: c.white, fontSize: 11, fontWeight: "800" },
+    infoBlock: { gap: 3 },
     detail: { color: c.sub, fontSize: 13 },
     footer: {
       flexDirection: "row",
       justifyContent: "space-between",
-      marginTop: 6,
+      alignItems: "center",
+      marginTop: 2,
     },
     status: { fontSize: 12, fontWeight: "700" },
-    rsvp: { fontSize: 12, color: c.sub, fontWeight: "600" },
+    rsvpPill: {
+      backgroundColor: c.primarySoft,
+      borderRadius: 999,
+      paddingHorizontal: 10,
+      paddingVertical: 3,
+    },
+    rsvp: { fontSize: 12, color: c.primaryStrong, fontWeight: "700" },
   });

@@ -12,6 +12,7 @@ import {
 import { Image as ExpoImage } from "expo-image";
 import { useRouter } from "expo-router";
 import { useAuth } from "../../lib/auth-context";
+import { pendingCount } from "../../lib/offline-queue";
 import { deleteAccount } from "../../lib/users";
 import {
   useGuidedTour,
@@ -52,6 +53,24 @@ export default function ProfileScreen() {
   useEffect(() => {
     startTour(TOURS.profile);
   }, [startTour]);
+
+  // Modifications faites hors ligne pas encore envoyées : elles seraient
+  // perdues à la déconnexion (le cache du téléphone est vidé).
+  const confirmSignOut = () => {
+    const pending = pendingCount();
+    if (pending === 0) {
+      signOut();
+      return;
+    }
+    Alert.alert(
+      "Modifications non envoyées",
+      `${pending} modification${pending > 1 ? "s" : ""} faite${pending > 1 ? "s" : ""} hors ligne n'${pending > 1 ? "ont" : "a"} pas encore été envoyée${pending > 1 ? "s" : ""}. Si tu te déconnectes maintenant, ${pending > 1 ? "elles seront perdues" : "elle sera perdue"}.`,
+      [
+        { text: "Annuler", style: "cancel" },
+        { text: "Se déconnecter", style: "destructive", onPress: () => signOut() },
+      ],
+    );
+  };
 
   const confirmDelete = () => {
     Alert.alert(
@@ -215,7 +234,7 @@ export default function ProfileScreen() {
         ))}
       </View>
 
-      <Pressable style={styles.logout} onPress={signOut}>
+      <Pressable style={styles.logout} onPress={confirmSignOut}>
         <Text style={styles.logoutText}>Se déconnecter</Text>
       </Pressable>
 

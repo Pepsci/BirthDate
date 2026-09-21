@@ -1,3 +1,5 @@
+// i18n en tout premier : les traductions doivent être prêtes avant tout rendu
+import "../i18n";
 import { useEffect, useRef, useState } from "react";
 import {
   Stack,
@@ -156,7 +158,7 @@ function RootNavigator() {
 
   return (
     <Stack
-      screenOptions={({ navigation }) => ({
+      screenOptions={() => ({
         // En-tête rendu en JS, comme celui des onglets (AppHeader). L'en-tête
         // natif d'iOS enveloppe chaque bouton dans un UIBarButtonItem et dessine
         // derrière lui une capsule qu'il ne centre pas exactement sur notre vue
@@ -164,11 +166,10 @@ function RootNavigator() {
         header: (props) => <AppStackHeader {...props} />,
         contentStyle: { backgroundColor: colors.bg },
         // Bouton retour custom (piloté en JS) : le bouton natif iOS devient
-        // parfois inopérant sur les écrans empilés (cartes, profil…). On ne
-        // l'affiche que s'il y a un écran précédent.
-        headerLeft: navigation.canGoBack()
-          ? () => <HeaderBackButton />
-          : undefined,
+        // parfois inopérant sur les écrans empilés (cartes, profil…).
+        // Toujours affiché : une page ouverte depuis un lien n'a pas d'écran
+        // précédent, le bouton ramène alors à l'onglet parent.
+        headerLeft: () => <HeaderBackButton />,
       })}
     >
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />

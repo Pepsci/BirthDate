@@ -47,6 +47,9 @@ import {
   unreserveItem,
 } from "../../lib/wishlist";
 import GiftIdeaForm from "../../components/GiftIdeaForm";
+import OfflineBanner from "../../components/OfflineBanner";
+import DateEditPane from "../../components/DateEditPane";
+import { onQueueFlushed } from "../../lib/offline-queue";
 import GiftDetailModal from "../../components/GiftDetailModal";
 import GiftGridCard, { giftGridStyles } from "../../components/GiftGridCard";
 import BottomSheet from "../../components/BottomSheet";
@@ -126,7 +129,9 @@ export default function DateDetailScreen() {
   // discussion avec l'ami lié, ou la création d'un événement. Depuis l'onglet Événements, la création reste un
   // écran plein (app/event/new.tsx) — seul le parcours « depuis une carte »
   // garde la personne visible à côté.
-  const [rightPane, setRightPane] = useState<"gifts" | "chat" | "newEvent">("gifts");
+  const [rightPane, setRightPane] = useState<
+    "gifts" | "chat" | "newEvent" | "edit"
+  >("gifts");
   const { colors } = useTheme();
   const { user } = useAuth();
   const { byFriend } = useUnread();
@@ -257,6 +262,9 @@ export default function DateDetailScreen() {
       load();
     }, [load]),
   );
+
+  // Carte créée hors ligne puis envoyée : on recharge la vraie version
+  useEffect(() => onQueueFlushed(() => load()), [load]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -943,7 +951,12 @@ export default function DateDetailScreen() {
           <HeaderIconButton
             name="pencil"
             accessibilityLabel="Modifier la carte"
-            onPress={() => router.push(`/date/edit/${entry?._id}`)}
+            onPress={() =>
+              // Grand écran : le formulaire s'ouvre à droite, la fiche reste.
+              isSplit
+                ? setRightPane("edit")
+                : router.push(`/date/edit/${entry?._id}`)
+            }
           />
         ),
     }),
@@ -987,6 +1000,15 @@ export default function DateDetailScreen() {
   // Fiche : infos, notifications, boutons
   const infoContent = (
     <>
+      <OfflineBanner />
+      {entry.pending && (
+        <View style={styles.pendingNote}>
+          <Text style={styles.pendingNoteText}>
+            ⏳ Modifiée hors ligne, pas encore envoyée. Cadeaux, photo et
+            partage seront disponibles une fois la carte envoyée.
+          </Text>
+        </View>
+      )}
       {/* Infos */}
       <View style={[styles.card, styles.infoCard]}>
         <View style={styles.avatarFallback}>
@@ -2644,6 +2666,24 @@ export default function DateDetailScreen() {
                 avatar={entry.linkedUser.avatar}
               />
             </View>
+          ) : rightPane === "edit" && !entry.linkedUser ? (
+            <View
+              style={[styles.container, styles.splitPane, styles.splitPaneRight]}
+            >
+              <DateEditPane
+                entry={entry}
+                onSaved={() => {
+                  setRightPane("gifts");
+                  load();
+                }}
+                onDeleted={() => {
+                  // Même sortie que l'écran plein : retour à la liste
+                  if (router.canDismiss()) router.dismissAll();
+                  else router.replace("/(tabs)");
+                }}
+                onClose={() => setRightPane("gifts")}
+              />
+            </View>
           ) : rightPane === "newEvent" && !existingEventId ? (
             // Le stepper a son propre défilement : pas de ScrollView autour.
             // Changer de panneau (ou plier l'appareil) le démonte — un titre
@@ -2808,6 +2848,15 @@ const makeStyles = (c: ThemeColors) =>
     backgroundColor: c.bg,
   },
   error: { color: c.danger, textAlign: "center", padding: 8 },
+  pendingNote: {
+    backgroundColor: c.warningSoft,
+    borderRadius: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    marginHorizontal: 12,
+    marginBottom: 8,
+  },
+  pendingNoteText: { color: c.warningStrong, fontSize: 12, lineHeight: 16 },
   card: {
     backgroundColor: c.card,
     borderRadius: 14,

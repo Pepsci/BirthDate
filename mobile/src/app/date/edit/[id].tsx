@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { View, Text, StyleSheet, Alert, ActivityIndicator } from "react-native";
+import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import DateForm from "../../../components/DateForm";
 import HeaderIconButton from "../../../components/HeaderIconButton";
-import { DateEntry, fetchDate, updateDate, deleteDate } from "../../../lib/dates";
+import { DateEntry, fetchDate, updateDate } from "../../../lib/dates";
+import { confirmDeleteDate } from "../../../components/DateEditPane";
 import {
   useTheme,
   useThemedStyles,
@@ -26,29 +27,18 @@ export default function EditDateScreen() {
   }, [id]);
 
   const confirmDelete = () => {
-    Alert.alert(
-      "Supprimer cette date ?",
-      `${entry?.name} ${entry?.surname ?? ""} sera retiré·e de ta liste.`,
-      [
-        { text: "Annuler", style: "cancel" },
-        {
-          text: "Supprimer",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await deleteDate(id!);
-              // On saute la carte détail (désormais supprimée → 404 « date
-              // introuvable ») et on revient directement à la liste. La
-              // transition native de la stack fait l'animation de sortie ;
-              // useFocusEffect de la liste recharge → la carte disparaît.
-              if (router.canDismiss()) router.dismissAll();
-              else router.replace("/(tabs)");
-            } catch (e: any) {
-              setError(e?.message ?? "Erreur lors de la suppression.");
-            }
-          },
-        },
-      ],
+    if (!entry) return;
+    confirmDeleteDate(
+      entry,
+      () => {
+        // On saute la carte détail (désormais supprimée → 404 « date
+        // introuvable ») et on revient directement à la liste. La
+        // transition native de la stack fait l'animation de sortie ;
+        // useFocusEffect de la liste recharge → la carte disparaît.
+        if (router.canDismiss()) router.dismissAll();
+        else router.replace("/(tabs)");
+      },
+      setError,
     );
   };
 

@@ -17,6 +17,24 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2.1.0",
+    date: "2026-09-21",
+    build: "46",
+    title:
+      "BirthReminder marche hors ligne, nouvelles cartes d'événement, import depuis ta liste d'envies",
+    note: "Tout se passe dans l'application : pas besoin de la nouvelle version du serveur. Signale tout ce qui te semble bizarre hors ligne.",
+    items: [
+      "📡 Sans réseau, l'app reste utilisable : tes anniversaires, l'agenda et tes événements à venir s'affichent avec les dernières données enregistrées sur ton téléphone. Un bandeau « Hors ligne » indique de quand elles datent, et ce qui est possible ou non.",
+      "✍️ Hors ligne, tu peux ajouter, modifier ou supprimer une date d'anniversaire. La carte porte un badge « ⏳ En attente », et tout part tout seul au retour de la connexion. Si une modification ne peut pas être appliquée (carte supprimée entre-temps depuis le site, par exemple), l'app te dit laquelle.",
+      "🎉 Les événements à venir s'ouvrent hors ligne même si tu ne les as jamais consultés : date, adresse, participants et cadeaux proposés. Pratique le jour J quand le réseau ne passe pas.",
+      "🔐 Ouvrir l'app sans réseau ne te déconnecte plus.",
+      "🎨 Nouvelles cartes dans l'onglet Événements : couleur et emoji selon le type (anniversaire, fête, repas…), badge « Aujourd'hui », « Demain » ou « J-3 », et le même compte à rebours que les cartes d'anniversaire.",
+      "⭐ « Importer depuis une liste » propose maintenant ta propre liste d'envies, en plus des idées notées sur tes autres cartes. Ça marche pour les idées d'une carte, la liste commune et les propositions de cadeaux d'un événement.",
+      "↩️ Un événement ouvert depuis un lien d'invitation (ou depuis un email ou une notification) a enfin un bouton retour : il ramène à l'onglet Événements au lieu de te laisser coincé sur la page.",
+      "🗂️ Sur iPad, modifier une carte se fait dans le panneau de droite : la fiche reste visible à gauche au lieu d'ouvrir une nouvelle page.",
+    ],
+  },
+  {
     version: "2.0.1",
     date: "2026-09-18",
     build: "45",

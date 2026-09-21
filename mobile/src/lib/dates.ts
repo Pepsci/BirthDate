@@ -1,4 +1,22 @@
-import { api, API_URL, getToken, setToken } from "./api";
+import {
+  api,
+  API_URL,
+  ApiError,
+  getToken,
+  setToken,
+  NetworkError,
+} from "./api";
+import { readCache, writeCache } from "./offline-cache";
+import { noteCacheServed } from "./offline-status";
+import {
+  applyQueue,
+  applyQueueToEntry,
+  isTempId,
+  queueCreate,
+  queueDelete,
+  queueUpdate,
+  resolveId,
+} from "./offline-queue";
 import { uploadAsync, FileSystemUploadType } from "expo-file-system/legacy";
 import { GiftStatus } from "./giftStatus";
 
@@ -27,10 +45,46 @@ export interface DateEntry {
   receiveNotifications?: boolean;
   notificationPreferences?: { timings: number[]; notifyOnBirthday: boolean };
   namedayPreferences?: { timings: number[]; notifyOnNameday: boolean };
+  /** Ajoutée ou modifiée hors ligne, pas encore envoyée au serveur. */
+  pending?: boolean;
 }
 
+// ---- Cache hors ligne ----
+// Chaque lecture réussie met le cache à jour ; sans réseau (NetworkError
+// uniquement), on renvoie la dernière version enregistrée. Une erreur HTTP
+// (401, 500…) n'est jamais masquée par le cache.
+const DATES_CACHE_KEY = "dates";
+const dateCacheKey = (id: string) => `date-${id}`;
+
+/** Dernière liste enregistrée sur le téléphone, pour un affichage immédiat. */
+export async function getCachedDates(): Promise<{
+  dates: DateEntry[];
+  savedAt: number;
+} | null> {
+  const cached = await readCache<DateEntry[]>(DATES_CACHE_KEY);
+  return cached
+    ? { dates: applyQueue(cached.data), savedAt: cached.savedAt }
+    : null;
+}
+
+// La file d'attente hors ligne est toujours superposée au résultat : même en
+// ligne, une modification pas encore envoyée ne doit pas disparaître de l'écran.
+// Le cache, lui, ne stocke que la version serveur.
 export async function fetchDates(): Promise<DateEntry[]> {
-  return api<DateEntry[]>("/date");
+  try {
+    const dates = await api<DateEntry[]>("/date");
+    writeCache(DATES_CACHE_KEY, dates); // sans attendre : n'allonge pas l'affichage
+    return applyQueue(dates);
+  } catch (e) {
+    if (e instanceof NetworkError) {
+      const cached = await readCache<DateEntry[]>(DATES_CACHE_KEY);
+      if (cached) {
+        noteCacheServed(cached.savedAt);
+        return applyQueue(cached.data);
+      }
+    }
+    throw e;
+  }
 }
 
 // ---- Helpers dates ----
@@ -91,7 +145,12 @@ export function timeUntilNext(iso: string, from = new Date()): TimeLeft {
   if (next.getTime() <= from.getTime()) {
     next = new Date(from.getFullYear() + 1, birth.getMonth(), birth.getDate());
   }
-  const total = Math.max(0, next.getTime() - from.getTime());
+  return timeUntil(next, from);
+}
+
+/** Temps restant avant une date précise, sans récurrence (événements). */
+export function timeUntil(target: Date, from = new Date()): TimeLeft {
+  const total = Math.max(0, target.getTime() - from.getTime());
   return {
     days: Math.floor(total / 86_400_000),
     hours: Math.floor((total % 86_400_000) / 3_600_000),
@@ -149,25 +208,70 @@ export interface DatePayload {
   nameday?: string | null; // "MM-DD" — auto-détecté côté serveur si absent
 }
 
+// Sans réseau, ces trois fonctions déposent l'opération dans la file
+// d'attente (lib/offline-queue.ts) au lieu d'échouer : l'écran se comporte
+// comme en ligne, et l'envoi se fait au retour de la connexion.
+
 export async function createDate(payload: DatePayload): Promise<DateEntry> {
-  return api<DateEntry>("/date", {
-    method: "POST",
-    body: JSON.stringify(payload),
-  });
+  try {
+    return await api<DateEntry>("/date", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+  } catch (e) {
+    if (e instanceof NetworkError) return queueCreate(payload);
+    throw e;
+  }
 }
 
 export async function updateDate(
   id: string,
   payload: Partial<DatePayload>,
 ): Promise<DateEntry> {
-  return api<DateEntry>(`/date/${id}`, {
-    method: "PATCH",
-    body: JSON.stringify(payload),
-  });
+  const realId = resolveId(id);
+  const queueIt = async () => {
+    await queueUpdate(realId, payload);
+    const base = await cachedEntry(realId);
+    return (
+      applyQueueToEntry(realId, base) ?? ({ _id: realId, ...payload } as DateEntry)
+    );
+  };
+  // Carte créée hors ligne et pas encore envoyée : on complète la création
+  if (isTempId(realId)) return queueIt();
+  try {
+    return await api<DateEntry>(`/date/${realId}`, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    });
+  } catch (e) {
+    if (e instanceof NetworkError) return queueIt();
+    throw e;
+  }
 }
 
 export async function deleteDate(id: string): Promise<void> {
-  await api(`/date/${id}`, { method: "DELETE" });
+  const realId = resolveId(id);
+  const queueIt = async () => {
+    const entry = await cachedEntry(realId);
+    const label =
+      `${entry?.name ?? ""} ${entry?.surname ?? ""}`.trim() || "une carte";
+    await queueDelete(realId, label);
+  };
+  if (isTempId(realId)) return queueIt();
+  try {
+    await api(`/date/${realId}`, { method: "DELETE" });
+  } catch (e) {
+    if (e instanceof NetworkError) return queueIt();
+    throw e;
+  }
+}
+
+/** Version en cache d'une carte (détail si déjà ouverte, sinon celle de la liste). */
+async function cachedEntry(id: string): Promise<DateEntry | null> {
+  const detail = await readCache<DateEntry>(dateCacheKey(id));
+  if (detail) return detail.data;
+  const list = await readCache<DateEntry[]>(DATES_CACHE_KEY);
+  return list?.data.find((d) => d._id === id) ?? null;
 }
 
 /** (Dé)marque une date comme "famille" — fonctionne aussi pour un ami lié. */
@@ -182,7 +286,41 @@ export async function setDateFamily(
 }
 
 export async function fetchDate(id: string): Promise<DateEntry> {
-  return api<DateEntry>(`/date/${id}`);
+  const realId = resolveId(id);
+  const notFound = () => new ApiError(404, "Cette carte n'existe plus.");
+
+  // Carte créée hors ligne, pas encore envoyée : elle n'existe que dans la file
+  if (isTempId(realId)) {
+    const pending = applyQueueToEntry(realId, null);
+    if (pending) return pending;
+    throw notFound();
+  }
+
+  try {
+    const date = await api<DateEntry>(`/date/${realId}`);
+    writeCache(dateCacheKey(realId), date);
+    const withQueue = applyQueueToEntry(realId, date);
+    if (!withQueue) throw notFound(); // suppression en attente
+    return withQueue;
+  } catch (e) {
+    if (e instanceof NetworkError) {
+      // D'abord la carte détaillée si elle a déjà été ouverte, sinon la
+      // version de la liste (moins complète, mais mieux que rien).
+      const detail = await readCache<DateEntry>(dateCacheKey(realId));
+      const list = detail
+        ? null
+        : await readCache<DateEntry[]>(DATES_CACHE_KEY);
+      const base = detail?.data ?? list?.data.find((d) => d._id === realId);
+      const savedAt = detail?.savedAt ?? list?.savedAt;
+      if (base && savedAt) {
+        noteCacheServed(savedAt);
+        const withQueue = applyQueueToEntry(realId, base);
+        if (!withQueue) throw notFound();
+        return withQueue;
+      }
+    }
+    throw e;
+  }
 }
 
 /**

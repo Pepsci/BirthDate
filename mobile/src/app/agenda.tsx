@@ -11,6 +11,8 @@ import {
 import { Stack, useRouter, useFocusEffect } from "expo-router";
 import BottomNav from "../components/BottomNav";
 import { DateEntry, fetchDates } from "../lib/dates";
+import { NetworkError } from "../lib/api";
+import OfflineBanner from "../components/OfflineBanner";
 import {
   EventEntry,
   fetchMyEvents,
@@ -61,7 +63,15 @@ export default function AgendaScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      Promise.all([fetchDates(), fetchMyEvents()])
+      // Hors ligne, les deux se rabattent sur le cache. Des événements jamais
+      // chargés sur ce téléphone restent vides plutôt que de tout bloquer.
+      Promise.all([
+        fetchDates(),
+        fetchMyEvents().catch((e) => {
+          if (e instanceof NetworkError) return { organized: [], invited: [] };
+          throw e;
+        }),
+      ])
         .then(([d, ev]) => {
           setDates(d);
           setEvents([...ev.organized, ...ev.invited]);
@@ -210,6 +220,7 @@ export default function AgendaScreen() {
     <View style={styles.screen}>
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Stack.Screen options={{ title: "Agenda" }} />
+      <OfflineBanner />
       {error && <Text style={styles.error}>{error}</Text>}
 
       {/* Toggle Mois / Semaine */}

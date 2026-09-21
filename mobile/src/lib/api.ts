@@ -1,6 +1,7 @@
 import * as SecureStore from "expo-secure-store";
 import Constants from "expo-constants";
 import { Platform } from "react-native";
+import { markOffline, markOnline } from "./offline-status";
 
 // URL de l'API — définie dans .env (EXPO_PUBLIC_API_URL)
 // En dev : l'IP locale de ton PC sur le réseau (pas "localhost", qui pointerait vers le téléphone)
@@ -51,6 +52,23 @@ export class ApiError extends Error {
 }
 
 /**
+ * Le serveur n'a pas répondu du tout : pas de réseau, délai dépassé, serveur
+ * éteint. À distinguer d'une ApiError (le serveur a répondu, avec un refus).
+ *
+ * C'est ce qui autorise le repli sur le cache hors ligne : on ne doit JAMAIS
+ * se rabattre sur le cache après un 401 (session expirée) ou un 403.
+ */
+export class NetworkError extends Error {
+  constructor() {
+    super("Pas de connexion au serveur. Réessaie une fois en ligne.");
+    this.name = "NetworkError";
+  }
+}
+
+/** Au-delà, une requête est considérée perdue (réseau très dégradé). */
+const REQUEST_TIMEOUT_MS = 30_000;
+
+/**
  * Client API générique : ajoute automatiquement le header Authorization: Bearer.
  * Le middleware backend (jwt.middleware.js) accepte déjà ce mode.
  */
@@ -65,8 +83,30 @@ export async function api<T = unknown>(
   };
   if (token) headers.Authorization = `Bearer ${token}`;
 
+  // Délai maximal, sauf si l'appelant gère déjà son propre signal
+  const controller = options.signal ? null : new AbortController();
+  const timer = controller
+    ? setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
+    : null;
+
   // Toutes les routes du backend sont préfixées par /api (cf. server/app.js)
-  const res = await fetch(`${API_URL}/api${path}`, { ...options, headers });
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}/api${path}`, {
+      ...options,
+      headers,
+      ...(controller ? { signal: controller.signal } : {}),
+    });
+  } catch (err) {
+    // Annulation voulue par l'appelant (écran quitté) : ce n'est pas une panne
+    if (options.signal?.aborted) throw err;
+    // Sinon fetch ne rejette que si aucune réponse n'est arrivée (réseau, délai)
+    markOffline();
+    throw new NetworkError();
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+  markOnline();
 
   let data: any = null;
   try {
