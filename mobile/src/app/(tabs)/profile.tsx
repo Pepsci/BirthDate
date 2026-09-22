@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -10,7 +10,9 @@ import {
   Linking,
 } from "react-native";
 import { Image as ExpoImage } from "expo-image";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
+import { countLocalDates } from "../../lib/local-store";
+import { hasLocalDataToImport } from "../../lib/local-migration";
 import { useAuth } from "../../lib/auth-context";
 import { pendingCount } from "../../lib/offline-queue";
 import { deleteAccount } from "../../lib/users";
@@ -41,8 +43,185 @@ const THEME_OPTIONS: { v: ThemeMode; l: string }[] = [
   { v: "dark", l: "🌙 Sombre" },
 ];
 
+/**
+ * Deux profils distincts : compte ou mode local. Composants séparés plutôt
+ * qu'un `return` anticipé : le profil compte lance des hooks (tour guidé…)
+ * qu'on ne peut pas sauter conditionnellement sans faire planter React au
+ * changement de mode.
+ */
 export default function ProfileScreen() {
+  const { mode } = useAuth();
+  return mode === "local" ? <LocalProfile /> : <AccountProfile />;
+}
+
+/**
+ * Profil du mode local (docs/MODE_LOCAL.md § 3.2) : ni identité, ni amis,
+ * ni sécurité de compte. Rappels (étape 4) et Mes données (étape 5) viendront
+ * s'ajouter au menu.
+ */
+function LocalProfile() {
+  const { leaveLocalMode } = useAuth();
+  const { mode: themeMode, setMode } = useTheme();
+  const styles = useThemedStyles(makeStyles);
+  const router = useRouter();
+  const [count, setCount] = useState<number | null>(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      countLocalDates()
+        .then(setCount)
+        .catch(() => setCount(null));
+    }, []),
+  );
+
+  // Double confirmation : c'est la seule copie des données, sans serveur
+  // pour la rattraper. On propose d'abord de faire une sauvegarde.
+  const confirmErase = () => {
+    Alert.alert(
+      "Effacer toutes tes données ?",
+      "Tes cartes, idées de cadeaux, photos et ta liste d'envies seront " +
+        "supprimées de ce téléphone. Fais une sauvegarde avant si tu veux " +
+        "pouvoir les retrouver.",
+      [
+        { text: "Annuler", style: "cancel" },
+        { text: "Sauvegarder d'abord", onPress: () => router.push("/profile/local-data") },
+        {
+          text: "Continuer",
+          style: "destructive",
+          onPress: () =>
+            Alert.alert(
+              "Vraiment tout effacer ?",
+              "C'est définitif : sans compte, rien n'est sauvegardé ailleurs.",
+              [
+                { text: "Annuler", style: "cancel" },
+                {
+                  text: "Tout effacer",
+                  style: "destructive",
+                  onPress: async () => {
+                    try {
+                      await leaveLocalMode();
+                      router.replace("/welcome");
+                    } catch (e: any) {
+                      Alert.alert("Erreur", e?.message ?? "Effacement impossible.");
+                    }
+                  },
+                },
+              ],
+            ),
+        },
+      ],
+    );
+  };
+
+  return (
+    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <View style={styles.localCard}>
+        <Text style={styles.localTitle}>📱 Sur ce téléphone</Text>
+        <Text style={styles.localCount}>
+          {count === null
+            ? "Sans compte"
+            : `Sans compte · ${count} carte${count > 1 ? "s" : ""}`}
+        </Text>
+        <Text style={styles.localText}>
+          Tes données restent sur ce téléphone, rien n'est envoyé. Pas de chat,
+          d'amis ni d'événements.
+        </Text>
+      </View>
+
+      <View style={styles.menu}>
+        <MenuRow
+          emoji="🎀"
+          label="Ma liste d'envies"
+          onPress={() => router.push("/profile/wishlist")}
+        />
+        <MenuRow
+          emoji="💾"
+          label="Mes données (sauvegarde)"
+          onPress={() => router.push("/profile/local-data")}
+        />
+        <MenuRow
+          emoji="🔔"
+          label="Rappels"
+          onPress={() => router.push("/profile/reminders")}
+        />
+        <MenuRow
+          emoji="⚙️"
+          label="Réglages"
+          onPress={() => router.push("/profile/settings")}
+        />
+      </View>
+
+      <Text style={styles.sectionLabel}>Apparence</Text>
+      <View style={styles.themeRow}>
+        {THEME_OPTIONS.map(({ v, l }) => (
+          <Pressable
+            key={v}
+            style={[styles.themeChip, themeMode === v && styles.themeChipActive]}
+            onPress={() => setMode(v)}
+          >
+            <Text
+              style={[
+                styles.themeChipText,
+                themeMode === v && styles.themeChipTextActive,
+              ]}
+            >
+              {l}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+
+      <Text style={styles.sectionLabel}>Légal & aide</Text>
+      <View style={styles.menu}>
+        <MenuRow
+          emoji="📖"
+          label="Guide d'utilisation"
+          onPress={() => router.push("/guide")}
+        />
+        <MenuRow
+          emoji="📝"
+          label="Notes de mise à jour"
+          onPress={() => router.push("/profile/changelog")}
+        />
+        {LEGAL_LINKS.map((l) => (
+          <MenuRow
+            key={l.url}
+            emoji={l.emoji}
+            label={l.label}
+            onPress={() => Linking.openURL(l.url)}
+          />
+        ))}
+      </View>
+
+      {/* ⚠️ Étape 6 : proposer ici l'import des cartes locales dans le compte
+          créé. D'ici là, le mode local reste réservé au dev (LOCAL_MODE_READY). */}
+      <Pressable
+        style={styles.accountBtn}
+        onPress={() => router.push("/login?panel=signup")}
+      >
+        <Text style={styles.accountBtnText}>Créer un compte</Text>
+      </Pressable>
+      <Pressable onPress={() => router.push("/login")}>
+        <Text style={styles.loginLink}>J'ai déjà un compte</Text>
+      </Pressable>
+
+      <Pressable onPress={confirmErase}>
+        <Text style={styles.deleteText}>Effacer toutes mes données</Text>
+      </Pressable>
+    </ScrollView>
+  );
+}
+
+function AccountProfile() {
   const { user, signOut } = useAuth();
+  // Cartes du mode sans compte pas encore importées (« Plus tard ») : accès
+  // permanent à l'import, pour qu'elles ne restent pas oubliées sur le disque.
+  const [hasLocal, setHasLocal] = useState(false);
+  useFocusEffect(
+    useCallback(() => {
+      hasLocalDataToImport().then(setHasLocal).catch(() => setHasLocal(false));
+    }, []),
+  );
   const { mode, setMode } = useTheme();
   const styles = useThemedStyles(makeStyles);
   const router = useRouter();
@@ -116,6 +295,13 @@ export default function ProfileScreen() {
       <Text style={styles.email}>{user?.email}</Text>
 
       <View style={styles.menu}>
+        {hasLocal && (
+          <MenuRow
+            emoji="📱"
+            label="Importer mes cartes du mode sans compte"
+            onPress={() => router.push("/local-import")}
+          />
+        )}
         <TourTarget id="tourFriends">
           <MenuRow
             emoji="👥"
@@ -361,4 +547,25 @@ const makeStyles = (c: ThemeColors) =>
       paddingHorizontal: 24,
     },
     contactBtnText: { color: c.primary, fontWeight: "600" },
+    // Mode local
+    localCard: {
+      alignSelf: "stretch",
+      backgroundColor: c.primarySoft,
+      borderRadius: 14,
+      padding: 16,
+      gap: 4,
+    },
+    localTitle: { fontSize: 18, fontWeight: "700", color: c.text },
+    localCount: { fontSize: 14, fontWeight: "600", color: c.primaryStrong },
+    localText: { fontSize: 13.5, color: c.sub, lineHeight: 19, marginTop: 4 },
+    accountBtn: {
+      alignSelf: "stretch",
+      marginTop: 28,
+      backgroundColor: c.primary,
+      borderRadius: 10,
+      paddingVertical: 13,
+      alignItems: "center",
+    },
+    accountBtnText: { color: c.white, fontWeight: "700", fontSize: 15 },
+    loginLink: { color: c.primary, fontSize: 14, marginTop: 14 },
   });

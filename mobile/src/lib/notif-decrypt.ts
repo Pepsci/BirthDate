@@ -284,6 +284,8 @@ export async function registerBackgroundNotifTask() {
 export function subscribeForegroundDecrypt(): () => void {
   const sub = Notifications.addNotificationReceivedListener((notification) => {
     const content = notification.request.content;
+    // Rappel du mode local (lib/local-reminders.ts) : rien à déchiffrer
+    if (content.data?.localReminder) return;
     // On ne traite que les messages chiffrés ; le reste suit le flux normal.
     const raw = {
       ...(content.data ?? {}),

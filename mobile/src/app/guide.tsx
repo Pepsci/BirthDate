@@ -1,4 +1,4 @@
-import { ScrollView, View, Text, Pressable, StyleSheet } from "react-native";
+import { ScrollView, View, Text, Pressable, StyleSheet, Linking } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import {
   useTheme,
@@ -7,11 +7,13 @@ import {
 } from "../lib/theme-context";
 import { FAQ_SECTIONS as SECTIONS } from "../lib/faqData";
 import { readingPane } from "../lib/layout";
+import { useAuth } from "../lib/auth-context";
 
 export default function GuideScreen() {
   const styles = useThemedStyles(makeStyles);
   const { colors } = useTheme();
   const router = useRouter();
+  const { mode } = useAuth();
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Stack.Screen options={{ title: "Guide d'utilisation" }} />
@@ -93,9 +95,15 @@ export default function GuideScreen() {
 
       <View style={styles.footer}>
         <Text style={styles.footerText}>Une question sans réponse ?</Text>
+        {/* Sans compte, le formulaire de support (serveur) est indisponible :
+            on passe par un email, envoyé par l'utilisateur lui-même. */}
         <Pressable
           style={styles.supportBtn}
-          onPress={() => router.push("/contact")}
+          onPress={() =>
+            mode === "local"
+              ? Linking.openURL("mailto:contact@birthreminder.com?subject=BirthReminder%20(sans%20compte)")
+              : router.push("/contact")
+          }
         >
           <Text style={styles.supportBtnText}>✉️ Contacter le support</Text>
         </Pressable>

@@ -1,4 +1,10 @@
 import { api, API_URL, getToken, setToken, AuthUser } from "./api";
+import {
+  assertAccountMode,
+  isLocalMode,
+  LocalModeUnavailableError,
+} from "./app-mode";
+import { readLocal, updateLocal, LocalPrefs } from "./local-store";
 import { uploadAsync, FileSystemUploadType } from "expo-file-system/legacy";
 
 export interface UserProfile extends AuthUser {
@@ -32,7 +38,42 @@ export interface UserProfile extends AuthUser {
 }
 
 export async function fetchMe(): Promise<UserProfile> {
+  if (isLocalMode()) return localProfile();
   return api<UserProfile>("/users/me");
+}
+
+// ---- Mode local : profil minimal ----
+// Pas de compte, donc pas d'identité : seuls les réglages d'affichage
+// existent. Les écrans qui lisent `me.hideNamedaysOnCards` etc. (accueil,
+// réglages) marchent ainsi sans savoir dans quel mode ils sont.
+
+/** Réglages modifiables sans compte. Tout autre champ exige le serveur. */
+const LOCAL_PREF_KEYS = ["hideNamedaysOnCards", "showTodayNamedayOnHome"] as const;
+
+async function localProfile(): Promise<UserProfile> {
+  const prefs = (await readLocal("prefs"))[0];
+  return {
+    _id: "local",
+    email: "",
+    name: "",
+    surname: "",
+    hideNamedaysOnCards: !!prefs?.hideNamedaysOnCards,
+    showTodayNamedayOnHome: prefs?.showTodayNamedayOnHome !== false,
+  };
+}
+
+async function localUpdateMe(fields: Record<string, unknown>): Promise<UserProfile> {
+  const other = Object.keys(fields).filter(
+    (k) => !(LOCAL_PREF_KEYS as readonly string[]).includes(k),
+  );
+  if (other.length > 0) {
+    throw new LocalModeUnavailableError(`profil : ${other.join(", ")}`);
+  }
+  await updateLocal("prefs", (items) => {
+    const current: LocalPrefs = items[0] ?? { _id: "prefs" };
+    return [{ ...current, ...(fields as Partial<LocalPrefs>), _id: "prefs" }];
+  });
+  return localProfile();
 }
 
 /** Active / coupe l'email récap des messages non lus d'un ami précis. */
@@ -54,6 +95,7 @@ export async function setChatEmailForFriend(
 export async function updateMe(
   fields: Record<string, unknown>,
 ): Promise<UserProfile> {
+  if (isLocalMode()) return localUpdateMe(fields);
   const { payload, authToken } = await api<{
     payload: UserProfile;
     authToken: string;
@@ -71,6 +113,7 @@ export async function updateMe(
  * et construit un multipart standard que multer parse correctement.
  */
 export async function updateAvatar(imageUri: string): Promise<UserProfile> {
+  assertAccountMode("upload avatar");
   const token = await getToken();
 
   const res = await uploadAsync(`${API_URL}/api/users/me`, imageUri, {

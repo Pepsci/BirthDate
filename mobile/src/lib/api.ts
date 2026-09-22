@@ -2,6 +2,7 @@ import * as SecureStore from "expo-secure-store";
 import Constants from "expo-constants";
 import { Platform } from "react-native";
 import { markOffline, markOnline } from "./offline-status";
+import { assertAccountMode } from "./app-mode";
 
 // URL de l'API — définie dans .env (EXPO_PUBLIC_API_URL)
 // En dev : l'IP locale de ton PC sur le réseau (pas "localhost", qui pointerait vers le téléphone)
@@ -76,6 +77,9 @@ export async function api<T = unknown>(
   path: string,
   options: RequestInit = {},
 ): Promise<T> {
+  // Mode local : aucune requête ne part vers le serveur (docs/MODE_LOCAL.md).
+  // Lève AVANT tout accès réseau — un oubli d'aiguillage se voit tout de suite.
+  assertAccountMode(`api ${options.method ?? "GET"} ${path}`);
   const token = await getToken();
   const headers: Record<string, string> = {
     "Content-Type": "application/json",

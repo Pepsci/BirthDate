@@ -1,5 +1,6 @@
 import { api, NetworkError } from "./api";
 import { withOfflineCache } from "./offline-fetch";
+import { isLocalMode } from "./app-mode";
 
 export type EventType = "birthday" | "party" | "dinner" | "other";
 export type EventStatus = "draft" | "published" | "cancelled" | "done";
@@ -41,6 +42,9 @@ export interface MyEvents {
 // propositions de cadeaux. Répondre, voter, proposer restent en ligne :
 // ces données sont partagées avec les autres invités.
 export async function fetchMyEvents(): Promise<MyEvents> {
+  // Mode local : pas d'événements sans compte. Liste vide plutôt qu'une
+  // erreur, pour que l'agenda et les cartes s'affichent normalement.
+  if (isLocalMode()) return { organized: [], invited: [] };
   return withOfflineCache("events-mine", async () => {
     const mine = await api<MyEvents>("/events/mine");
     prefetchEventDetails(mine); // en ligne uniquement, sans attendre

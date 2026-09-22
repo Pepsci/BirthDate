@@ -8,10 +8,12 @@ import {
   ScrollView,
   StyleSheet,
 } from "react-native";
+import { router } from "expo-router";
 import { useAuth } from "../../lib/auth-context";
 import { useTheme, useThemedStyles } from "../../lib/theme-context";
 import PasswordField from "../PasswordField";
 import { makeAuthStyles, PanelName } from "./authStyles";
+import { LOCAL_MODE_READY } from "../../lib/app-mode";
 
 /**
  * Panneau « Connexion » du pager /login.
@@ -22,7 +24,7 @@ export default function LoginPanel({
 }: {
   onGoTo: (panel: PanelName) => void;
 }) {
-  const { signIn } = useAuth();
+  const { signIn, mode, enterLocalMode } = useAuth();
   const { colors } = useTheme();
   const s = useThemedStyles(makeAuthStyles);
   const [email, setEmail] = useState("");
@@ -105,6 +107,19 @@ export default function LoginPanel({
           Créer un compte
         </Text>
       </Pressable>
+
+      {/* Point d'entrée discret vers le mode local (MODE_LOCAL.md § 3.1 bis).
+          Masqué si on y est déjà : on vient alors du profil pour se connecter. */}
+      {LOCAL_MODE_READY && mode !== "local" && (
+        <Pressable
+          onPress={async () => {
+            await enterLocalMode();
+            router.replace("/");
+          }}
+        >
+          <Text style={s.link}>Continuer sans compte</Text>
+        </Pressable>
+      )}
     </ScrollView>
   );
 }

@@ -17,6 +17,21 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2.2.0",
+    date: "2026-09-22",
+    build: "47",
+    title: "BirthReminder sans compte : tout reste sur ton téléphone",
+    note: "Tout se passe dans l'application : pas besoin de la nouvelle version du serveur.",
+    items: [
+      "📱 Nouveau : utilise BirthReminder sans créer de compte. Tes cartes, idées de cadeaux, photos et ta liste d'envies restent sur ton téléphone, rien n'est envoyé. Choisis « Utiliser sans compte » à l'accueil.",
+      "🧒 Avant 15 ans, l'inscription reste impossible, mais l'app propose directement le mode sans compte. La date de naissance est maintenant demandée en premier : plus besoin de tout remplir pour l'apprendre.",
+      "🔔 Sans compte, les rappels d'anniversaires et de fêtes sont programmés par ton téléphone, à minuit, même en mode avion. Profil → Rappels pour les vérifier et envoyer un rappel de test.",
+      "💾 Sauvegarde et restauration : exporte toutes tes cartes (photos comprises) dans un fichier, et réimporte-le sur un nouveau téléphone ou après avoir réinstallé l'app. Profil → Mes données.",
+      "☁️ Tu crées un compte plus tard ? L'app te propose d'y importer tes cartes, sans doublon, même si l'import est interrompu en cours de route.",
+      "📤 Sans compte, « Partager » envoie une carte, tes idées de cadeaux ou ta liste d'envies en texte, par message, WhatsApp ou mail.",
+    ],
+  },
+  {
     version: "2.1.0",
     date: "2026-09-21",
     build: "46",

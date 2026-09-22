@@ -37,6 +37,7 @@ import {
   daysUntil,
   currentAge,
   formatAge,
+  formatBirthday,
   formatFullDate,
   formatNameday,
 } from "../../lib/dates";
@@ -133,7 +134,10 @@ export default function DateDetailScreen() {
     "gifts" | "chat" | "newEvent" | "edit"
   >("gifts");
   const { colors } = useTheme();
-  const { user } = useAuth();
+  const { user, mode } = useAuth();
+  // Mode local : ni événements ni listes communes (il faut un serveur pour
+  // relier plusieurs personnes). Les boutons correspondants sont masqués.
+  const isLocal = mode === "local";
   const { byFriend } = useUnread();
   const [entry, setEntry] = useState<DateEntry | null>(null);
   const [wishlist, setWishlist] = useState<WishlistItem[] | null>(null);
@@ -226,9 +230,11 @@ export default function DateDetailScreen() {
       setError(null);
       const d = await fetchDate(id);
       setEntry(d);
-      checkExistingEvent(d.linkedUser?._id ?? d._id)
-        .then(setExistingEventId)
-        .catch(() => {});
+      if (!isLocal) {
+        checkExistingEvent(d.linkedUser?._id ?? d._id)
+          .then(setExistingEventId)
+          .catch(() => {});
+      }
       if (d.linkedUser?._id) {
         try {
           const wl = await fetchUserWishlist(d.linkedUser._id);
@@ -255,7 +261,7 @@ export default function DateDetailScreen() {
     } catch (e: any) {
       setError(e?.message ?? "Erreur de chargement.");
     }
-  }, [id]);
+  }, [id, isLocal]);
 
   useFocusEffect(
     useCallback(() => {
@@ -740,7 +746,30 @@ export default function DateDetailScreen() {
   };
 
   // ── Partage d'idées cadeaux dans le chat ────────────────────────────────────
+  // Mode local : pas de chat. Les idées sont partagées en texte via la
+  // feuille de partage native (même principe que « Partager cette carte »).
+  const shareIdeasAsText = async () => {
+    const gifts = (entry?.gifts ?? []).filter((g) => g.status !== "offered");
+    if (!entry || gifts.length === 0) return;
+    const who = `${entry.name}${entry.surname ? " " + entry.surname : ""}`.trim();
+    const lines = gifts.map((g) => {
+      const price = g.price != null ? ` (${g.price} €)` : "";
+      return `• ${g.giftName}${price}${g.url ? `\n  ${g.url}` : ""}`;
+    });
+    try {
+      await Share.share({
+        message: `🎁 Idées cadeaux pour ${who}\n\n${lines.join("\n")}\n\nEnvoyé depuis BirthReminder`,
+      });
+    } catch {
+      // partage annulé
+    }
+  };
+
   const openShare = () => {
+    if (isLocal) {
+      shareIdeasAsText();
+      return;
+    }
     setShareStep(1);
     setShareSel(new Set());
     setShareSent(false);
@@ -769,6 +798,22 @@ export default function DateDetailScreen() {
   // Volontairement séparé du partage d'idées : aucun cadeau n'est transmis,
   // le destinataire reçoit juste de quoi recréer la carte chez lui.
   const openCardShare = async () => {
+    // Mode local : pas d'amis ni de chat. On partage la carte en texte via la
+    // feuille de partage native (SMS, WhatsApp, notes…) — rien ne passe par
+    // le serveur, et c'est l'utilisateur qui choisit le destinataire.
+    if (isLocal) {
+      if (!entry) return;
+      const who = `${entry.name}${entry.surname ? " " + entry.surname : ""}`.trim();
+      const lines = [`🎂 Anniversaire de ${who} : ${formatBirthday(entry.date)}`];
+      if (entry.nameday) lines.push(`🎉 Fête : ${formatNameday(entry.nameday)}`);
+      lines.push("", "Envoyé depuis BirthReminder");
+      try {
+        await Share.share({ message: lines.join("\n") });
+      } catch {
+        // partage annulé ou indisponible : rien à faire
+      }
+      return;
+    }
     setCardShareSent(false);
     setCardShareTarget(null);
     setCardShareOpen(true);
@@ -1232,51 +1277,55 @@ export default function DateDetailScreen() {
             </Pressable>
           )}
 
-          <Pressable
-            style={[
-              styles.splitBtn,
-              rightPane === "newEvent" && styles.splitBtnActive,
-            ]}
-            onPress={() =>
-              // Un événement existe déjà : sa page est riche (chat, cagnotte,
-              // votes…), elle garde son écran plein.
-              existingEventId
-                ? router.push(`/event/${existingEventId}`)
-                : setRightPane("newEvent")
-            }
-          >
-            <Text
+          {!isLocal && (
+            <Pressable
               style={[
-                styles.splitBtnText,
-                rightPane === "newEvent" && styles.splitBtnTextActive,
+                styles.splitBtn,
+                rightPane === "newEvent" && styles.splitBtnActive,
               ]}
+              onPress={() =>
+                // Un événement existe déjà : sa page est riche (chat, cagnotte,
+                // votes…), elle garde son écran plein.
+                existingEventId
+                  ? router.push(`/event/${existingEventId}`)
+                  : setRightPane("newEvent")
+              }
             >
-              {existingEventId
-                ? "🎉 Voir l'événement organisé"
-                : "🎉 Organiser un événement"}
-            </Text>
-          </Pressable>
+              <Text
+                style={[
+                  styles.splitBtnText,
+                  rightPane === "newEvent" && styles.splitBtnTextActive,
+                ]}
+              >
+                {existingEventId
+                  ? "🎉 Voir l'événement organisé"
+                  : "🎉 Organiser un événement"}
+              </Text>
+            </Pressable>
+          )}
         </>
       ) : (
         <>
-          <Pressable
-            style={styles.eventBtn}
-            onPress={() =>
-              existingEventId
-                ? router.push(`/event/${existingEventId}`)
-                : router.push(
-                    entry.linkedUser
-                      ? `/event/new?forPerson=${entry.linkedUser._id}&personName=${encodeURIComponent(entry.name)}`
-                      : `/event/new?forDate=${entry._id}&personName=${encodeURIComponent(entry.name)}`,
-                  )
-            }
-          >
-            <Text style={styles.eventBtnText}>
-              {existingEventId
-                ? "🎉 Voir l'événement organisé"
-                : "🎉 Organiser un événement"}
-            </Text>
-          </Pressable>
+          {!isLocal && (
+            <Pressable
+              style={styles.eventBtn}
+              onPress={() =>
+                existingEventId
+                  ? router.push(`/event/${existingEventId}`)
+                  : router.push(
+                      entry.linkedUser
+                        ? `/event/new?forPerson=${entry.linkedUser._id}&personName=${encodeURIComponent(entry.name)}`
+                        : `/event/new?forDate=${entry._id}&personName=${encodeURIComponent(entry.name)}`,
+                    )
+              }
+            >
+              <Text style={styles.eventBtnText}>
+                {existingEventId
+                  ? "🎉 Voir l'événement organisé"
+                  : "🎉 Organiser un événement"}
+              </Text>
+            </Pressable>
+          )}
 
           <Pressable
             style={styles.giftsBtn}
@@ -1289,16 +1338,18 @@ export default function DateDetailScreen() {
             <Text style={styles.giftsBtnText}>🎁 Voir les cadeaux</Text>
           </Pressable>
 
-          <Pressable
-            style={styles.sharedBtn}
-            onPress={() => {
-              setSharedOnly(true);
-              setGiftTab("shared");
-              setView("gifts");
-            }}
-          >
-            <Text style={styles.sharedBtnText}>👥 Liste commune</Text>
-          </Pressable>
+          {!isLocal && (
+            <Pressable
+              style={styles.sharedBtn}
+              onPress={() => {
+                setSharedOnly(true);
+                setGiftTab("shared");
+                setView("gifts");
+              }}
+            >
+              <Text style={styles.sharedBtnText}>👥 Liste commune</Text>
+            </Pressable>
+          )}
         </>
       )}
 
@@ -1363,7 +1414,7 @@ export default function DateDetailScreen() {
           )}
           {/* Grand écran : la liste commune devient un onglet comme les autres,
               puisque le bouton qui y basculait est dans l'autre panneau. */}
-          {isSplit && (
+          {isSplit && !isLocal && (
             <Pressable
               style={[styles.giftTab, giftTab === "shared" && styles.giftTabActive]}
               onPress={() => setGiftTab("shared")}
@@ -1408,7 +1459,7 @@ export default function DateDetailScreen() {
         {((entry as DateEntry & { gifts?: Gift[] }).gifts?.length ?? 0) > 0 && (
           <Pressable style={styles.shareChatBtn} onPress={openShare}>
             <Text style={styles.shareChatText}>
-              📤 Partager ces idées dans le chat
+              {isLocal ? "📤 Partager ces idées" : "📤 Partager ces idées dans le chat"}
             </Text>
           </Pressable>
         )}

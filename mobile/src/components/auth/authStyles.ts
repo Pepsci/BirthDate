@@ -91,6 +91,17 @@ export const makeAuthStyles = (c: ThemeColors) =>
     checkmark: { color: c.white, fontSize: 14, fontWeight: "700" },
     termsText: { flex: 1, color: c.sub, fontSize: 13, lineHeight: 18 },
     termsLink: { color: c.primary, textDecorationLine: "underline" },
+    // Moins de 15 ans : proposition du mode sans compte (inscription)
+    localBox: {
+      backgroundColor: c.primarySoft,
+      borderRadius: 12,
+      padding: 16,
+      gap: 8,
+      marginTop: 4,
+    },
+    localTitle: { color: c.text, fontSize: 15, fontWeight: "700" },
+    localText: { color: c.sub, fontSize: 13.5, lineHeight: 19 },
+    buttonBusy: { opacity: 0.6 },
   });
 
 /** Index des panneaux dans le pager de /login. */

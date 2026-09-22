@@ -44,3 +44,8 @@ example
 # Toute personnalisation native passe par app.json ou un plugin dans ./plugins.
 /ios
 /android
+
+# Builds natifs (trop lourds pour GitHub)
+*.apk
+*.aab
+*.ipa

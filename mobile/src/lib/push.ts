@@ -151,6 +151,9 @@ export function webLinkToMobileRoute(url: string | null | undefined): string {
   if (attach) return `/shared-list/${attach[1]}/attach`;
   if (url.includes("tab=events")) return "/events";
   if (url.includes("tab=agenda")) return "/agenda";
+  // Rappels locaux (mode sans compte) : route mobile directe, car les ids
+  // locaux (`local-…`) ne passent pas le filtre `[a-f0-9]+` ci-dessous.
+  if (url.startsWith("/date/")) return url;
   if (url.includes("tab=date") && url.includes("dateId=")) {
     const m = url.match(/dateId=([a-f0-9]+)/i);
     if (m) return `/date/${m[1]}`;

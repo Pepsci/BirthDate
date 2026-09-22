@@ -1,8 +1,9 @@
 import { Tabs, useRouter } from "expo-router";
 import { useUnread } from "../../lib/unread-context";
-import { Text, Pressable, View, StyleSheet } from "react-native";
+import { Text, Pressable, View, StyleSheet, Alert } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import LogoBanner from "../../components/LogoBanner";
+import { useAuth } from "../../lib/auth-context";
 import {
   useTheme,
   useThemedStyles,
@@ -79,7 +80,45 @@ const makeHeaderStyles = (c: ThemeColors) =>
     },
   });
 
+/**
+ * Mode local : à la place de la cloche (les notifications viennent du
+ * serveur), un indicateur « 📱 » qui rappelle où sont les données.
+ * Toujours visible, pour qu'on sache à tout moment dans quel mode on est.
+ */
+function LocalModeBadge() {
+  const styles = useThemedStyles(makeLocalBadgeStyles);
+  return (
+    <Pressable
+      hitSlop={10}
+      accessibilityRole="button"
+      accessibilityLabel="Sur ce téléphone, sans compte"
+      onPress={() =>
+        Alert.alert(
+          "📱 Sur ce téléphone",
+          "Tu utilises BirthReminder sans compte : tes cartes restent sur ce " +
+            "téléphone, rien n'est envoyé. Pense à faire des sauvegardes.",
+        )
+      }
+    >
+      <Text style={styles.icon}>📱</Text>
+    </Pressable>
+  );
+}
+
+const makeLocalBadgeStyles = (_c: ThemeColors) =>
+  StyleSheet.create({ icon: { fontSize: 20 } });
+
+/**
+ * Cloche en mode compte, indicateur 📱 en mode local. Deux composants
+ * distincts : un `return` anticipé AVANT les hooks de la cloche ferait
+ * planter React dès que le mode change écran ouvert (connexion).
+ */
 function HeaderBell() {
+  const { mode } = useAuth();
+  return mode === "local" ? <LocalModeBadge /> : <ServerBell />;
+}
+
+function ServerBell() {
   const router = useRouter();
   const bellStyles = useThemedStyles(makeBellStyles);
   const { notifCount } = useUnread();
@@ -164,6 +203,10 @@ export default function TabsLayout() {
 
 function TabsInner() {
   const router = useRouter();
+  // Mode local : pas d'événements ni de chat sans serveur → onglets masqués
+  // (`href: null` les retire de la barre sans supprimer les routes).
+  const { mode } = useAuth();
+  const hiddenInLocal = mode === "local" ? null : undefined;
   const { total } = useUnread();
   const { colors } = useTheme();
   const tour = useGuidedTour();
@@ -235,6 +278,7 @@ function TabsInner() {
       <Tabs.Screen
         name="events"
         options={{
+          href: hiddenInLocal,
           title: "Événements",
           tabBarIcon: ({ focused }) => <TabIcon emoji="🎉" focused={focused} />,
           headerRight: () => (
@@ -258,6 +302,7 @@ function TabsInner() {
       <Tabs.Screen
         name="chats"
         options={{
+          href: hiddenInLocal,
           title: "Chats",
           tabBarIcon: ({ focused }) => <TabIcon emoji="💬" focused={focused} />,
           tabBarBadge: total > 0 ? total : undefined,

@@ -31,7 +31,7 @@ import { ThemeProvider, useTheme } from "../lib/theme-context";
 import { hasSeenWelcome, markWelcomeSeen } from "../lib/welcome-gate";
 
 function RootNavigator() {
-  const { user, isLoading } = useAuth();
+  const { user, mode, isLoading, localImportPending } = useAuth();
   const { colors } = useTheme();
   const pathname = usePathname();
   const router = useRouter();
@@ -144,7 +144,10 @@ function RootNavigator() {
 
   // Écran de bienvenue : affiché à chaque lancement (flag en mémoire),
   // sauf si l'app est ouverte via une notification (deep link).
-  if (!hasSeenWelcome() && pathname !== "/welcome")
+  // Écrans de test (app/dev/*) : jamais redirigés, et inexistants en prod.
+  const isDevTool = __DEV__ && pathname.startsWith("/dev/");
+
+  if (!hasSeenWelcome() && pathname !== "/welcome" && !isDevTool)
     return <Redirect href="/welcome" />;
 
   // Garde d'auth : non connecté → /login (sauf welcome / inscription / mdp oublié)
@@ -152,8 +155,16 @@ function RootNavigator() {
   const publicRoutes = ["/welcome", "/login", "/signup", "/forgot-password"];
   const authRoutes = ["/login", "/signup", "/forgot-password"];
   const isPublic =
-    publicRoutes.includes(pathname) || pathname.startsWith("/auth/reset");
-  if (!user && !isPublic) return <Redirect href="/login" />;
+    publicRoutes.includes(pathname) ||
+    pathname.startsWith("/auth/reset") ||
+    isDevTool;
+  // Mode local = « sans compte mais autorisé » : pas de redirection vers
+  // /login (étape 3 : onglets masqués, écran de choix, profil adapté).
+  if (!user && mode !== "local" && !isPublic) return <Redirect href="/login" />;
+  // Connexion depuis le mode local, cartes encore sur le téléphone : on
+  // propose l'import avant tout (MODE_LOCAL.md § 3.3).
+  if (user && localImportPending && pathname !== "/local-import")
+    return <Redirect href="/local-import" />;
   if (user && authRoutes.includes(pathname)) return <Redirect href="/" />;
 
   return (

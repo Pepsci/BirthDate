@@ -25,6 +25,7 @@ import {
   toggleCalendarPref,
 } from "../../lib/calendar-prefs";
 import { readingPane } from "../../lib/layout";
+import { useAuth } from "../../lib/auth-context";
 
 /**
  * Réglages d'affichage. Écran destiné à accueillir au fil du temps les
@@ -38,6 +39,10 @@ export default function SettingsScreen() {
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const statsScope = useStatsScope();
+  // Mode local : les stats affichées sont toujours les siennes (les stats
+  // communauté viennent du serveur) — le choix n'a pas lieu d'être.
+  const { mode } = useAuth();
+  const isLocal = mode === "local";
   const calendarPrefs = useCalendarPrefs();
   // Le module natif expo-calendar n'existe que dans un binaire reconstruit
   // après son ajout : sur un client plus ancien, la section n'aurait aucun
@@ -115,21 +120,23 @@ export default function SettingsScreen() {
 
       <Text style={styles.sectionHeader}>🏠 Affichage accueil</Text>
       <View style={styles.card}>
-        <View style={styles.row}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.label}>Afficher mes statistiques</Text>
-            <Text style={styles.hint}>
-              L'encart de l'accueil montre vos propres chiffres au lieu de ceux
-              de toute la communauté. Réglage propre à cet appareil.
-            </Text>
+        {!isLocal && (
+          <View style={styles.row}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.label}>Afficher mes statistiques</Text>
+              <Text style={styles.hint}>
+                L'encart de l'accueil montre vos propres chiffres au lieu de ceux
+                de toute la communauté. Réglage propre à cet appareil.
+              </Text>
+            </View>
+            <Switch
+              value={statsScope === "personal"}
+              onValueChange={(v) => setStatsScope(v ? "personal" : "community")}
+              trackColor={{ true: colors.primary }}
+            />
           </View>
-          <Switch
-            value={statsScope === "personal"}
-            onValueChange={(v) => setStatsScope(v ? "personal" : "community")}
-            trackColor={{ true: colors.primary }}
-          />
-        </View>
-        <View style={[styles.row, styles.rowSeparator]}>
+        )}
+        <View style={[styles.row, !isLocal && styles.rowSeparator]}>
           <View style={{ flex: 1 }}>
             <Text style={styles.label}>Afficher la fête du jour</Text>
             <Text style={styles.hint}>

@@ -11,7 +11,8 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useAuth } from "../lib/auth-context";
 import { useKeyboardPadding } from "../lib/use-keyboard-padding";
 import {
   useTheme,
@@ -61,6 +62,12 @@ export default function AuthScreen() {
   const { width } = useWindowDimensions();
   const keyboardPadding = useKeyboardPadding();
   const params = useLocalSearchParams<{ panel?: string }>();
+  // Mode local : on arrive ici depuis le profil (« Créer un compte »,
+  // « J'ai déjà un compte ») → il faut pouvoir revenir à ses cartes.
+  const { mode } = useAuth();
+  const router = useRouter();
+  const goBack = () =>
+    router.canGoBack() ? router.back() : router.replace("/");
 
   const initialIndex = useMemo<number>(() => {
     const p = params.panel as PanelName | undefined;
@@ -128,6 +135,16 @@ export default function AuthScreen() {
     >
       <SafeAreaView style={styles.flex} edges={["top"]}>
         <View style={styles.brand}>
+          {mode === "local" && (
+            <Pressable
+              style={styles.back}
+              onPress={goBack}
+              hitSlop={10}
+              accessibilityRole="button"
+            >
+              <Text style={styles.backText}>‹ Retour</Text>
+            </Pressable>
+          )}
           <Image
             source={resolved === "dark" ? LOGO_DARK : LOGO_LIGHT}
             style={styles.logo}
@@ -242,6 +259,8 @@ const makeStyles = (c: ThemeColors) =>
     // Fond opaque obligatoire : la parallaxe fait chevaucher deux panneaux.
     page: { backgroundColor: c.bg },
     brand: { alignItems: "center", paddingTop: 18, paddingBottom: 14 },
+    back: { position: "absolute", left: 20, top: 26, zIndex: 1 },
+    backText: { color: c.primary, fontSize: 16, fontWeight: "600" },
     // Ratio du wordmark 560×180 ≈ 3.11
     logo: { height: 40, aspectRatio: 560 / 180 },
     segWrap: { paddingHorizontal: 24, paddingBottom: 6 },

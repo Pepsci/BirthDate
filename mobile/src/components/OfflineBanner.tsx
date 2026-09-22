@@ -3,6 +3,7 @@ import { View, Text, Pressable, StyleSheet } from "react-native";
 import { useOfflineStatus } from "../lib/offline-status";
 import { useQueueStatus, clearFailures } from "../lib/offline-queue";
 import { useThemedStyles, ThemeColors } from "../lib/theme-context";
+import { useAuth } from "../lib/auth-context";
 
 /**
  * Bandeau d'état hors ligne, en trois cas (du plus important au moins) :
@@ -26,6 +27,11 @@ export default function OfflineBanner() {
   const { offline, lastSync } = useOfflineStatus();
   const { ops, failures, syncing } = useQueueStatus();
   const pending = ops.length;
+  // Mode local : il n'y a pas de serveur à attendre, donc rien à signaler.
+  // (Après les hooks : un return anticipé avant eux ferait planter React
+  // au changement de mode.)
+  const { mode } = useAuth();
+  if (mode === "local") return null;
 
   if (failures.length > 0) {
     return (

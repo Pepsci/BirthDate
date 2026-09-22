@@ -36,6 +36,7 @@ import {
   useThemedStyles,
   ThemeColors,
 } from "../../lib/theme-context";
+import { isLocalMode } from "../../lib/app-mode";
 
 export default function MyWishlistScreen() {
   const styles = useThemedStyles(makeStyles);
@@ -89,7 +90,8 @@ export default function MyWishlistScreen() {
       setError(null);
       const [list, s] = await Promise.all([
         fetchMyWishlist(),
-        fetchWishlistSettings().catch(() => null),
+        // Partage public : serveur uniquement
+        isLocalMode() ? null : fetchWishlistSettings().catch(() => null),
       ]);
       setItems(list);
       if (s) setSettings(s);
@@ -121,6 +123,22 @@ export default function MyWishlistScreen() {
     } finally {
       setShareBusy(false);
     }
+  };
+
+  /**
+   * Mode local : pas de lien public (il faut un serveur pour l'héberger).
+   * On partage la liste en texte via la feuille de partage native.
+   */
+  const shareAsText = () => {
+    const wanted = (items ?? []).filter((i) => !i.isPurchased);
+    if (wanted.length === 0) return;
+    const lines = wanted.map((i) => {
+      const price = i.price != null ? ` (${i.price} €)` : "";
+      return `• ${i.title}${price}${i.url ? `\n  ${i.url}` : ""}`;
+    });
+    Share.share({
+      message: `🎀 Ma liste d'envies\n\n${lines.join("\n")}\n\nEnvoyé depuis BirthReminder`,
+    }).catch(() => {});
   };
 
   const shareLink = () => {
@@ -266,86 +284,96 @@ export default function MyWishlistScreen() {
         }
         ListHeaderComponent={
           <View>
-          <View style={styles.shareCard}>
+          {isLocalMode() ? (
             <Pressable
-              style={styles.shareHeader}
-              onPress={() => setShowShare((v) => !v)}
+              style={[styles.shareCard, styles.shareHeader]}
+              onPress={shareAsText}
             >
-              <Text style={styles.shareTitle}>
-                🔗 Partage public{settings?.isPublic ? "  · Actif" : ""}
-              </Text>
-              <Text style={styles.shareChevron}>{showShare ? "▾" : "▸"}</Text>
+              <Text style={styles.shareTitle}>📤 Partager ma liste</Text>
+              <Text style={styles.shareChevron}>›</Text>
             </Pressable>
+          ) : (
+            <View style={styles.shareCard}>
+              <Pressable
+                style={styles.shareHeader}
+                onPress={() => setShowShare((v) => !v)}
+              >
+                <Text style={styles.shareTitle}>
+                  🔗 Partage public{settings?.isPublic ? "  · Actif" : ""}
+                </Text>
+                <Text style={styles.shareChevron}>{showShare ? "▾" : "▸"}</Text>
+              </Pressable>
 
-            {showShare && settings && (
-              <>
-                <View style={styles.shareRow}>
-                  <View style={{ flex: 1, paddingRight: 10 }}>
-                    <Text style={styles.shareRowTitle}>
-                      Rendre ma wishlist publique
-                    </Text>
-                    <Text style={styles.shareRowSub}>
-                      Accessible via un lien, sans compte. Aucun nom affiché.
-                    </Text>
-                  </View>
-                  <Switch
-                    value={settings.isPublic}
-                    onValueChange={onTogglePublic}
-                    disabled={shareBusy}
-                    trackColor={{ true: colors.primary }}
-                  />
-                </View>
-
-                {settings.isPublic && !!settings.publicUrl && (
-                  <Pressable style={styles.shareBtn} onPress={shareLink}>
-                    <Text style={styles.shareBtnText}>📤 Partager le lien</Text>
-                  </Pressable>
-                )}
-
-                {settings.isPublic && (
+              {showShare && settings && (
+                <>
                   <View style={styles.shareRow}>
                     <View style={{ flex: 1, paddingRight: 10 }}>
                       <Text style={styles.shareRowTitle}>
-                        Code de réservation
+                        Rendre ma wishlist publique
                       </Text>
                       <Text style={styles.shareRowSub}>
-                        Permet à tes amis de réserver un cadeau
+                        Accessible via un lien, sans compte. Aucun nom affiché.
                       </Text>
                     </View>
-                    {settings.friendCode ? (
-                      <View style={styles.codeRow}>
-                        <Text style={styles.friendCode}>
-                          {settings.friendCode}
+                    <Switch
+                      value={settings.isPublic}
+                      onValueChange={onTogglePublic}
+                      disabled={shareBusy}
+                      trackColor={{ true: colors.primary }}
+                    />
+                  </View>
+
+                  {settings.isPublic && !!settings.publicUrl && (
+                    <Pressable style={styles.shareBtn} onPress={shareLink}>
+                      <Text style={styles.shareBtnText}>📤 Partager le lien</Text>
+                    </Pressable>
+                  )}
+
+                  {settings.isPublic && (
+                    <View style={styles.shareRow}>
+                      <View style={{ flex: 1, paddingRight: 10 }}>
+                        <Text style={styles.shareRowTitle}>
+                          Code de réservation
                         </Text>
+                        <Text style={styles.shareRowSub}>
+                          Permet à tes amis de réserver un cadeau
+                        </Text>
+                      </View>
+                      {settings.friendCode ? (
+                        <View style={styles.codeRow}>
+                          <Text style={styles.friendCode}>
+                            {settings.friendCode}
+                          </Text>
+                          <Pressable
+                            hitSlop={8}
+                            disabled={shareBusy}
+                            onPress={() => onFriendCode("generate")}
+                          >
+                            <Text style={styles.codeAction}>↻</Text>
+                          </Pressable>
+                          <Pressable
+                            hitSlop={8}
+                            disabled={shareBusy}
+                            onPress={() => onFriendCode("remove")}
+                          >
+                            <Text style={styles.codeRemove}>✕</Text>
+                          </Pressable>
+                        </View>
+                      ) : (
                         <Pressable
-                          hitSlop={8}
+                          style={styles.codeGenBtn}
                           disabled={shareBusy}
                           onPress={() => onFriendCode("generate")}
                         >
-                          <Text style={styles.codeAction}>↻</Text>
+                          <Text style={styles.codeGenText}>Générer</Text>
                         </Pressable>
-                        <Pressable
-                          hitSlop={8}
-                          disabled={shareBusy}
-                          onPress={() => onFriendCode("remove")}
-                        >
-                          <Text style={styles.codeRemove}>✕</Text>
-                        </Pressable>
-                      </View>
-                    ) : (
-                      <Pressable
-                        style={styles.codeGenBtn}
-                        disabled={shareBusy}
-                        onPress={() => onFriendCode("generate")}
-                      >
-                        <Text style={styles.codeGenText}>Générer</Text>
-                      </Pressable>
-                    )}
-                  </View>
-                )}
-              </>
-            )}
-          </View>
+                      )}
+                    </View>
+                  )}
+                </>
+              )}
+            </View>
+          )}
 
           {/* Ajout / modification d'une idée — en haut, comme les autres listes */}
           <View style={styles.topFormCard}>
@@ -373,18 +401,21 @@ export default function MyWishlistScreen() {
                     value={url}
                     onChangeText={setUrl}
                   />
-                  <Pressable
-                    style={[
-                      styles.fetchBtn,
-                      (!url.trim() || fetching) && { opacity: 0.5 },
-                    ]}
-                    disabled={!url.trim() || fetching}
-                    onPress={fetchInfos}
-                  >
-                    <Text style={styles.fetchBtnText}>
-                      {fetching ? "…" : "🔍 Remplir"}
-                    </Text>
-                  </Pressable>
+                  {/* Mode local : lecture de la page par le serveur → masqué */}
+                  {!isLocalMode() && (
+                    <Pressable
+                      style={[
+                        styles.fetchBtn,
+                        (!url.trim() || fetching) && styles.fetchBtnDisabled,
+                      ]}
+                      disabled={!url.trim() || fetching}
+                      onPress={fetchInfos}
+                    >
+                      <Text style={styles.fetchBtnText}>
+                        {fetching ? "…" : "🔍 Remplir"}
+                      </Text>
+                    </Pressable>
+                  )}
                 </View>
                 {fetchMsg && <Text style={styles.fetchMsg}>{fetchMsg}</Text>}
                 {image && (
@@ -528,27 +559,29 @@ export default function MyWishlistScreen() {
                 </Pressable>
               </>
             )}
-            {/* Visibilité pour les amis inscrits */}
-            <View style={styles.sheetShareRow}>
-              <View style={{ flex: 1, paddingRight: 10 }}>
-                <Text style={styles.sheetShareTitle}>Visible par mes amis</Text>
-                <Text style={styles.sheetShareSub}>
-                  {selected.isShared === false
-                    ? "Masqué : personne ne peut le voir ni le réserver"
-                    : "Tes amis peuvent le voir et le réserver"}
-                </Text>
+            {/* Visibilité pour les amis inscrits — sans objet en mode local */}
+            {!isLocalMode() && (
+              <View style={styles.sheetShareRow}>
+                <View style={{ flex: 1, paddingRight: 10 }}>
+                  <Text style={styles.sheetShareTitle}>Visible par mes amis</Text>
+                  <Text style={styles.sheetShareSub}>
+                    {selected.isShared === false
+                      ? "Masqué : personne ne peut le voir ni le réserver"
+                      : "Tes amis peuvent le voir et le réserver"}
+                  </Text>
+                </View>
+                <Switch
+                  value={selected.isShared !== false}
+                  disabled={busy}
+                  trackColor={{ true: colors.primary }}
+                  onValueChange={() => {
+                    const item = selected;
+                    setSelected(null);
+                    onToggleShare(item);
+                  }}
+                />
               </View>
-              <Switch
-                value={selected.isShared !== false}
-                disabled={busy}
-                trackColor={{ true: colors.primary }}
-                onValueChange={() => {
-                  const item = selected;
-                  setSelected(null);
-                  onToggleShare(item);
-                }}
-              />
-            </View>
+            )}
 
             <Pressable
               style={styles.sheetEditBtn}
@@ -663,6 +696,7 @@ const makeStyles = (c: ThemeColors) =>
       paddingHorizontal: 12,
       justifyContent: "center",
     },
+    fetchBtnDisabled: { opacity: 0.5 },
     fetchBtnText: { color: c.primary, fontWeight: "600", fontSize: 13 },
     fetchMsg: { color: c.sub, fontSize: 12, textAlign: "center" },
     preview: {

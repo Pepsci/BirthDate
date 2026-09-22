@@ -108,6 +108,29 @@ export default function PrivacyPolicy() {
               passé, fonctionnalités utilisées
             </li>
           </ul>
+
+          <h3>2.3 Utilisation sans compte (application mobile)</h3>
+          <p>
+            Lorsque vous utilisez l'application mobile sans compte,{" "}
+            <strong>BirthReminder ne collecte aucune donnée</strong> : les
+            dates, idées de cadeaux, photos et votre liste de souhaits sont
+            enregistrées uniquement sur votre appareil. L'application n'envoie
+            aucune requête à nos serveurs, n'enregistre aucun jeton de
+            notification, et les rappels sont programmés localement par
+            l'appareil.
+          </p>
+          <p>
+            Ces données peuvent être incluses dans la sauvegarde de votre
+            appareil (iCloud, Google), selon vos propres réglages et sous la
+            responsabilité de ces services. Le fichier d'export que vous
+            créez reste sous votre seul contrôle : vous choisissez où
+            l'enregistrer et avec qui le partager.
+          </p>
+          <p>
+            Si vous créez ensuite un compte et choisissez d'y importer vos
+            cartes, elles sont alors transmises à nos serveurs et traitées
+            selon la présente politique.
+          </p>
         </section>
 
         <section>
@@ -414,6 +437,11 @@ export default function PrivacyPolicy() {
             Si nous apprenons qu'une personne de moins de 15 ans a créé un
             compte, nous le supprimons, ainsi que les données associées.
           </p>
+          <p>
+            Une personne de moins de 15 ans peut utiliser l'application mobile
+            sans compte (section 2.3 ci-dessus) : ses données restent sur son
+            appareil et BirthReminder n'en traite aucune.
+          </p>
         </section>
 
         <section>
@@ -450,7 +478,7 @@ export default function PrivacyPolicy() {
         </section>
 
         <p className="last-update">
-          <strong>Dernière mise à jour :</strong> 18 septembre 2026
+          <strong>Dernière mise à jour :</strong> 22 septembre 2026
         </p>
       </div>
     </div>

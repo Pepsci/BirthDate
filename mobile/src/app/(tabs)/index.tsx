@@ -16,6 +16,7 @@ import { Image as ExpoImage } from "expo-image";
 import BirthdayCountdown from "../../components/BirthdayCountdown";
 import MyCagnottesStrip from "../../components/MyCagnottesStrip";
 import OfflineBanner from "../../components/OfflineBanner";
+import BackupReminder from "../../components/BackupReminder";
 import { onQueueFlushed } from "../../lib/offline-queue";
 import { useGuidedTour, TOURS } from "../../lib/guided-tour";
 import {
@@ -34,10 +35,13 @@ import {
   formatNameday,
 } from "../../lib/dates";
 import { fetchMe } from "../../lib/users";
+import { useAuth } from "../../lib/auth-context";
 
 export default function BirthdaysScreen() {
   const { colors } = useTheme();
   const styles = useThemedStyles(makeStyles);
+  // Mode local : pas de cagnottes sans compte → bandeau masqué
+  const { mode } = useAuth();
   // Nombre de colonnes selon la largeur : 2 sur téléphone, 3 puis 4 sur iPad
   // ou pliable déplié. Seuils choisis pour garder une carte d'environ 200 à
   // 280 pt — en dessous, le nom et la date passent à la ligne.
@@ -61,7 +65,7 @@ export default function BirthdaysScreen() {
       setError(null);
       const [list, me] = await Promise.all([
         fetchDates(),
-        fetchMe().catch(() => null),
+        fetchMe().catch(() => null), // mode local : réglages du téléphone
       ]);
       setDates(list);
       if (me) setHideNamedays(!!me.hideNamedaysOnCards);
@@ -161,13 +165,14 @@ export default function BirthdaysScreen() {
   return (
     <View style={styles.container}>
       <OfflineBanner />
+      <BackupReminder />
       {error && (
         <Pressable style={styles.errorBanner} onPress={onRefresh}>
           <Text style={styles.errorText}>{error} — appuyer pour réessayer</Text>
         </Pressable>
       )}
 
-      <MyCagnottesStrip />
+      {mode !== "local" && <MyCagnottesStrip />}
 
       <View style={styles.searchBar}>
         <TextInput

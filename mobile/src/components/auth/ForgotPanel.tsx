@@ -7,6 +7,7 @@ import {
   ScrollView,
 } from "react-native";
 import { api } from "../../lib/api";
+import { withServerAccess } from "../../lib/app-mode";
 import { useTheme, useThemedStyles } from "../../lib/theme-context";
 import { makeAuthStyles, PanelName } from "./authStyles";
 
@@ -28,10 +29,13 @@ export default function ForgotPanel({
     setError(null);
     setLoading(true);
     try {
-      await api("/auth/forgot-password", {
-        method: "POST",
-        body: JSON.stringify({ email: email.trim().toLowerCase() }),
-      });
+      // Possible depuis le mode local (compte existant, mot de passe oublié)
+      await withServerAccess(() =>
+        api("/auth/forgot-password", {
+          method: "POST",
+          body: JSON.stringify({ email: email.trim().toLowerCase() }),
+        }),
+      );
       setDone(true);
     } catch (e: any) {
       setError(e?.message ?? "Erreur lors de l'envoi.");

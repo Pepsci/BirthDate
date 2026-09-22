@@ -1,4 +1,15 @@
 import { api } from "./api";
+import { isLocalMode } from "./app-mode";
+// Mode local : aiguillage vers le stockage du téléphone (local-dates.ts).
+// Les fonctions sans équivalent local (wishlist d'un ami, réservation,
+// partage public, fetchUrlInfo) restent bloquées par la garde de api().
+import {
+  localAddWishlistItem,
+  localDeleteWishlistItem,
+  localFetchMyWishlist,
+  localToggleWishlistItemSharing,
+  localUpdateWishlistItem,
+} from "./local-dates";
 
 export interface WishlistItem {
   _id: string;
@@ -59,6 +70,7 @@ export async function setWishlistFriendCode(
 // ---- Ma wishlist ----
 
 export async function fetchMyWishlist(): Promise<WishlistItem[]> {
+  if (isLocalMode()) return localFetchMyWishlist();
   const { data } = await api<{ data: WishlistItem[] }>("/wishlist");
   return data;
 }
@@ -71,6 +83,7 @@ export async function addWishlistItem(item: {
   image?: string;
   isShared?: boolean;
 }): Promise<void> {
+  if (isLocalMode()) return localAddWishlistItem(item);
   // isShared par défaut à true : sinon l'item est invisible pour les amis
   // (le back a un défaut à false) et personne ne peut le réserver.
   await api("/wishlist", {
@@ -91,6 +104,7 @@ export async function updateWishlistItem(
     isShared?: boolean;
   },
 ): Promise<void> {
+  if (isLocalMode()) return localUpdateWishlistItem(id, fields);
   await api(`/wishlist/${id}`, {
     method: "PATCH",
     body: JSON.stringify(fields),
@@ -101,6 +115,7 @@ export async function updateWishlistItem(
 export async function toggleWishlistItemSharing(
   id: string,
 ): Promise<WishlistItem> {
+  if (isLocalMode()) return localToggleWishlistItemSharing(id);
   const { data } = await api<{ data: WishlistItem }>(
     `/wishlist/${id}/toggle-sharing`,
     { method: "POST" },
@@ -137,5 +152,6 @@ export async function fetchUrlInfo(url: string): Promise<UrlInfo> {
 }
 
 export async function deleteWishlistItem(id: string): Promise<void> {
+  if (isLocalMode()) return localDeleteWishlistItem(id);
   await api(`/wishlist/${id}`, { method: "DELETE" });
 }

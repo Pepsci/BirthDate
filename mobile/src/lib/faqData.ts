@@ -26,6 +26,39 @@ export interface Section {
 
 export const FAQ_SECTIONS: Section[] = [
   {
+    id: "local",
+    emoji: "📱",
+    title: "Utiliser sans compte",
+    items: [
+      {
+        q: "Peut-on utiliser BirthReminder sans compte ?",
+        a: "Oui, sur l'application mobile. Choisis « Utiliser sans compte » à l'accueil (ou « Continuer sans compte » sur l'écran de connexion). Tes cartes, idées de cadeaux, photos et ta liste d'envies restent sur ton téléphone : rien n'est envoyé à nos serveurs. C'est aussi possible avant 15 ans, puisqu'aucune donnée n'est collectée.",
+      },
+      {
+        q: "Qu'est-ce qui ne marche pas sans compte ?",
+        a: "Tout ce qui relie plusieurs personnes : amis, chat, événements, listes communes, cagnottes, wishlist publique et réservation de cadeaux. Pas d'accès depuis le site web ni de synchronisation entre plusieurs appareils non plus.",
+      },
+      {
+        q: "Comment fonctionnent les rappels sans compte ?",
+        a: "C'est ton téléphone qui les programme, à minuit, selon les réglages de chaque carte. Il les prévoit sur les 60 jours qui viennent : ouvre l'app de temps en temps pour qu'il programme la suite. Si elle reste fermée trop longtemps, une notification te le rappelle. Profil → Rappels pour vérifier et envoyer un rappel de test.",
+      },
+      {
+        q: "Comment sauvegarder mes cartes ?",
+        a: "Sans compte, tes données n'existent que sur ce téléphone : si tu le perds ou supprimes l'app, elles disparaissent. Fais des sauvegardes régulières.",
+        steps: [
+          "Profil → Mes données (sauvegarde)",
+          "« Exporter une sauvegarde »",
+          "Enregistre le fichier dans Fichiers, iCloud Drive, ou envoie-le-toi par mail",
+          "Pour restaurer : même écran → « Importer une sauvegarde » (photos comprises)",
+        ],
+      },
+      {
+        q: "Et si je crée un compte plus tard ?",
+        a: "Après ta connexion, l'app te propose d'importer tes cartes dans ton compte, avec leurs idées de cadeaux, leurs photos et leurs rappels. Une carte déjà présente dans ton compte n'est pas recréée. Tes cartes ne sont retirées du téléphone qu'une fois toutes bien arrivées.",
+      },
+    ],
+  },
+  {
     id: "dates",
     emoji: "🎂",
     title: "Ajouter une date",

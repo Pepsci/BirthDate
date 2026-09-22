@@ -19,6 +19,25 @@ import {
 } from "./offline-queue";
 import { uploadAsync, FileSystemUploadType } from "expo-file-system/legacy";
 import { GiftStatus } from "./giftStatus";
+import { assertAccountMode, isLocalMode } from "./app-mode";
+// Mode local (sans compte) : chaque fonction ci-dessous commence par un
+// aiguillage vers local-dates.ts. Même signature, les écrans ne voient rien.
+import {
+  localAddGift,
+  localCreateDate,
+  localDeleteDate,
+  localDeleteGift,
+  localFetchDate,
+  localFetchDates,
+  localRemoveDatePhoto,
+  localSetBirthdayPrefs,
+  localSetDateFamily,
+  localSetDateNotifications,
+  localSetNamedayPrefs,
+  localUpdateDate,
+  localUpdateDatePhoto,
+  localUpdateGift,
+} from "./local-dates";
 
 export interface LinkedUser {
   _id: string;
@@ -61,6 +80,8 @@ export async function getCachedDates(): Promise<{
   dates: DateEntry[];
   savedAt: number;
 } | null> {
+  // Mode local : les données du téléphone SONT la source, pas un cache
+  if (isLocalMode()) return { dates: await localFetchDates(), savedAt: Date.now() };
   const cached = await readCache<DateEntry[]>(DATES_CACHE_KEY);
   return cached
     ? { dates: applyQueue(cached.data), savedAt: cached.savedAt }
@@ -71,6 +92,7 @@ export async function getCachedDates(): Promise<{
 // ligne, une modification pas encore envoyée ne doit pas disparaître de l'écran.
 // Le cache, lui, ne stocke que la version serveur.
 export async function fetchDates(): Promise<DateEntry[]> {
+  if (isLocalMode()) return localFetchDates();
   try {
     const dates = await api<DateEntry[]>("/date");
     writeCache(DATES_CACHE_KEY, dates); // sans attendre : n'allonge pas l'affichage
@@ -213,6 +235,7 @@ export interface DatePayload {
 // comme en ligne, et l'envoi se fait au retour de la connexion.
 
 export async function createDate(payload: DatePayload): Promise<DateEntry> {
+  if (isLocalMode()) return localCreateDate(payload);
   try {
     return await api<DateEntry>("/date", {
       method: "POST",
@@ -228,6 +251,7 @@ export async function updateDate(
   id: string,
   payload: Partial<DatePayload>,
 ): Promise<DateEntry> {
+  if (isLocalMode()) return localUpdateDate(id, payload);
   const realId = resolveId(id);
   const queueIt = async () => {
     await queueUpdate(realId, payload);
@@ -250,6 +274,7 @@ export async function updateDate(
 }
 
 export async function deleteDate(id: string): Promise<void> {
+  if (isLocalMode()) return localDeleteDate(id);
   const realId = resolveId(id);
   const queueIt = async () => {
     const entry = await cachedEntry(realId);
@@ -279,6 +304,7 @@ export async function setDateFamily(
   id: string,
   family: boolean,
 ): Promise<DateEntry> {
+  if (isLocalMode()) return localSetDateFamily(id, family);
   return api<DateEntry>(`/date/${id}/family`, {
     method: "PATCH",
     body: JSON.stringify({ family }),
@@ -286,6 +312,7 @@ export async function setDateFamily(
 }
 
 export async function fetchDate(id: string): Promise<DateEntry> {
+  if (isLocalMode()) return localFetchDate(id);
   const realId = resolveId(id);
   const notFound = () => new ApiError(404, "Cette carte n'existe plus.");
 
@@ -332,6 +359,8 @@ export async function updateDatePhoto(
   id: string,
   imageUri: string,
 ): Promise<DateEntry> {
+  if (isLocalMode()) return localUpdateDatePhoto(id, imageUri);
+  assertAccountMode("upload photo de carte");
   const token = await getToken();
   const res = await uploadAsync(`${API_URL}/api/date/${id}/photo`, imageUri, {
     httpMethod: "PATCH",
@@ -349,6 +378,8 @@ export async function updateDatePhoto(
 }
 
 export async function removeDatePhoto(id: string): Promise<DateEntry> {
+  if (isLocalMode()) return localRemoveDatePhoto(id);
+  assertAccountMode("suppression photo de carte");
   const token = await getToken();
   const res = await fetch(`${API_URL}/api/date/${id}/photo`, {
     method: "PATCH",
@@ -393,6 +424,7 @@ export async function addGift(
     image?: string;
   },
 ): Promise<DateEntry> {
+  if (isLocalMode()) return localAddGift(dateId, gift);
   return api<DateEntry>(`/date/${dateId}/gifts`, {
     method: "PATCH",
     body: JSON.stringify({
@@ -413,6 +445,7 @@ export async function updateGift(
   dateId: string,
   gift: Gift,
 ): Promise<DateEntry> {
+  if (isLocalMode()) return localUpdateGift(dateId, gift);
   const { _id, ...fields } = gift;
   return api<DateEntry>(`/date/${dateId}/gifts/${_id}`, {
     method: "PATCH",
@@ -424,6 +457,7 @@ export async function deleteGift(
   dateId: string,
   giftId: string,
 ): Promise<void> {
+  if (isLocalMode()) return localDeleteGift(dateId, giftId);
   await api(`/date/${dateId}/gifts/${giftId}`, { method: "DELETE" });
 }
 
@@ -443,6 +477,7 @@ export async function setDateNotifications(
   id: string,
   receiveNotifications: boolean,
 ): Promise<void> {
+  if (isLocalMode()) return localSetDateNotifications(id, receiveNotifications);
   await api(`/date/${id}/notifications`, {
     method: "PUT",
     body: JSON.stringify({ receiveNotifications }),
@@ -453,6 +488,7 @@ export async function setBirthdayPrefs(
   id: string,
   prefs: NotificationPrefs,
 ): Promise<void> {
+  if (isLocalMode()) return localSetBirthdayPrefs(id, prefs);
   await api(`/date/${id}/notification-preferences`, {
     method: "PUT",
     body: JSON.stringify(prefs),
@@ -463,6 +499,7 @@ export async function setNamedayPrefs(
   id: string,
   prefs: NamedayPrefs,
 ): Promise<void> {
+  if (isLocalMode()) return localSetNamedayPrefs(id, prefs);
   await api(`/date/${id}/nameday-preferences`, {
     method: "PUT",
     body: JSON.stringify(prefs),

@@ -22,6 +22,7 @@ import { useStatsScope } from "../lib/stats-scope";
 import { fetchDates, daysUntil } from "../lib/dates";
 import { fetchMe } from "../lib/users";
 import { hasSeenWelcome, markWelcomeSeen } from "../lib/welcome-gate";
+import { LOCAL_MODE_READY } from "../lib/app-mode";
 
 const LOGO_MARK = require("../../assets/images/logo-mark.png"); // B bougie — lisible sur les deux thèmes
 // Calques du logo pour l'animation d'ouverture (découpés du SVG)
@@ -350,7 +351,8 @@ const styles_todayHalo = {
 // ─── Écran ──────────────────────────────────────────────────────────────────
 export default function WelcomeScreen() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, mode: appMode, enterLocalMode } = useAuth();
+  const isLocal = appMode === "local";
   const { resolved, setMode } = useTheme();
   const { width } = useWindowDimensions();
   // Splash animé uniquement au lancement de l'app — pas quand on revient
@@ -360,7 +362,10 @@ export default function WelcomeScreen() {
   const [statsError, setStatsError] = useState(false);
   // Portée des stats (réglages) — "personal" n'a de sens que connecté.
   const statsPref = useStatsScope();
-  const statsScope = user && statsPref === "personal" ? "personal" : "community";
+  // Mode local : toujours les stats perso — les stats communauté viennent du
+  // serveur, et rien ne doit partir en mode local.
+  const statsScope =
+    isLocal || (user && statsPref === "personal") ? "personal" : "community";
   const isPersonalStats = statsScope === "personal";
   // Anniversaires / fêtes du jour parmi les proches de l'utilisateur connecté.
   const [todayBirthdayNames, setTodayBirthdayNames] = useState<string[]>([]);
@@ -401,13 +406,13 @@ export default function WelcomeScreen() {
   // chaque retour sur l'accueil, pas seulement au premier montage.
   useFocusEffect(
     useCallback(() => {
-      if (!user) {
+      if (!user && !isLocal) {
         setTodayBirthdayNames([]);
         setTodayFetesRaw([]);
         return;
       }
       let cancelled = false;
-      fetchMe()
+      fetchMe() // mode local : réglage lu sur le téléphone (lib/users.ts)
         .then((me) => {
           if (!cancelled)
             setShowTodayNameday(me.showTodayNamedayOnHome !== false);
@@ -442,7 +447,7 @@ export default function WelcomeScreen() {
       return () => {
         cancelled = true;
       };
-    }, [user]),
+    }, [user, isLocal]),
   );
 
   const go = (path: string) => {
@@ -450,13 +455,45 @@ export default function WelcomeScreen() {
     router.replace(path as never);
   };
 
-  const Cta = user ? (
+  const startLocal = async () => {
+    try {
+      await enterLocalMode();
+      go("/");
+    } catch {
+      // enterLocalMode ne refuse que si un compte est connecté : impossible ici
+    }
+  };
+
+  // Mode local : même bouton « Commencer » qu'un compte connecté — sinon
+  // l'écran proposait seulement de se connecter, sans chemin vers l'accueil.
+  const Cta = user || isLocal ? (
     <>
-      <Text style={s.hello}>Bienvenue {user.name} 👋</Text>
+      <Text style={s.hello}>
+        {user ? `Bienvenue ${user.name} 👋` : "📱 Tes cartes sont sur ce téléphone"}
+      </Text>
       <Pressable onPress={() => go("/")} style={({ pressed }) => pressed && { opacity: 0.8 }}>
         <LinearGradient colors={GRADIENT} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.primaryBtn}>
           <Text style={s.primaryText}>Commencer 🎉</Text>
         </LinearGradient>
+      </Pressable>
+    </>
+  ) : LOCAL_MODE_READY ? (
+    // Premier choix (MODE_LOCAL.md § 3.1 bis) : compte ou sans compte, puis
+    // un lien discret pour qui a déjà un compte.
+    <>
+      <Pressable onPress={() => go("/login?panel=signup")} style={({ pressed }) => pressed && s.pressed}>
+        <LinearGradient colors={GRADIENT} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.primaryBtn}>
+          <Text style={s.primaryText}>Créer un compte gratuitement</Text>
+        </LinearGradient>
+      </Pressable>
+      <Pressable style={({ pressed }) => [s.secondaryBtn, pressed && s.pressedSoft]} onPress={startLocal}>
+        <Text style={s.secondaryText}>Utiliser sans compte</Text>
+      </Pressable>
+      <Text style={s.localHint}>
+        Sans compte, tes cartes restent sur ce téléphone.
+      </Text>
+      <Pressable onPress={() => go("/login")}>
+        <Text style={s.loginLink}>J'ai déjà un compte · Se connecter</Text>
       </Pressable>
     </>
   ) : (
@@ -857,6 +894,16 @@ const makeStyles = (t: Theme) =>
       backgroundColor: t.card,
     },
     secondaryText: { color: t.secondaryText, fontWeight: "600", fontSize: 15 },
+    pressed: { opacity: 0.8 },
+    pressedSoft: { opacity: 0.7 },
+    localHint: { fontSize: 12.5, color: t.sub, textAlign: "center", marginTop: 8 },
+    loginLink: {
+      fontSize: 14,
+      color: t.secondaryText,
+      fontWeight: "600",
+      textAlign: "center",
+      marginTop: 14,
+    },
 
     // Sections
     sectionTitle: { fontSize: 19, fontWeight: "800", color: t.text, textAlign: "center", marginTop: 40, marginBottom: 16 },

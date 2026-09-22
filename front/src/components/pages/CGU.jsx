@@ -32,6 +32,10 @@ export default function CGU() {
             <li>La gestion de listes de souhaits</li>
             <li>Un organisateur d'événements (fonctionnalité à venir)</li>
           </ul>
+          <p>
+            Sur l'application mobile, une partie du service est également
+            utilisable sans compte (article 2.4).
+          </p>
         </section>
 
         <section>
@@ -39,8 +43,8 @@ export default function CGU() {
 
           <h3>2.1 Création de compte</h3>
           <p>
-            Pour utiliser BirthReminder, vous devez créer un compte en
-            fournissant :
+            Pour utiliser l'ensemble du service BirthReminder, vous devez créer
+            un compte en fournissant :
           </p>
           <ul>
             <li>Une adresse email valide</li>
@@ -89,6 +93,34 @@ export default function CGU() {
             l'ouverture d'une cagnotte n'est possible qu'après un délai de 30
             jours. Une fausse déclaration peut entraîner la suspension de
             l'accès aux cagnottes, voire du compte (article 7.2).
+          </p>
+
+          <h3>2.4 Utilisation sans compte (application mobile)</h3>
+          <p>
+            L'application mobile peut être utilisée sans créer de compte. Dans
+            ce mode, les dates d'anniversaire, idées de cadeaux, photos et la
+            liste de souhaits sont enregistrées <strong>uniquement sur
+            l'appareil</strong> de l'utilisateur. Elles ne sont ni transmises
+            à BirthReminder, ni hébergées sur ses serveurs.
+          </p>
+          <p>
+            Ce mode ne comporte aucune condition d'âge, aucune donnée n'étant
+            collectée. Les fonctionnalités qui supposent de relier plusieurs
+            personnes (amis, chat, événements, listes communes, cagnottes,
+            partage public, réservation de cadeaux) n'y sont pas disponibles,
+            pas plus que l'accès depuis le site web ou la synchronisation
+            entre appareils.
+          </p>
+          <p className="warning">
+            ⚠️ BirthReminder n'ayant aucune copie de ces données, il ne peut
+            pas les récupérer en cas de perte, de vol ou de réinitialisation
+            de l'appareil, ou de suppression de l'application. Il appartient à
+            l'utilisateur d'en faire des sauvegardes, à l'aide de la fonction
+            d'export prévue à cet effet.
+          </p>
+          <p>
+            L'utilisateur peut à tout moment créer un compte et y importer ses
+            données ; les conditions de l'article 2.3 s'appliquent alors.
           </p>
         </section>
 
@@ -622,6 +654,12 @@ export default function CGU() {
             garantir la réception des emails à 100%. Nous vous encourageons à
             vérifier régulièrement vos dates importantes.
           </p>
+          <p>
+            En utilisation sans compte (article 2.4), les rappels sont
+            programmés par l'appareil lui-même, pour une période limitée : ils
+            dépendent de ses réglages de notification et supposent d'ouvrir
+            l'application régulièrement.
+          </p>
         </section>
 
         <section>
@@ -672,7 +710,7 @@ export default function CGU() {
         </section>
 
         <p className="last-update">
-          <strong>Dernière mise à jour :</strong> 18 septembre 2026
+          <strong>Dernière mise à jour :</strong> 22 septembre 2026
         </p>
       </div>
     </div>

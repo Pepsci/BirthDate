@@ -1,6 +1,7 @@
 import { io, Socket } from "socket.io-client";
 import { AppState } from "react-native";
 import { API_URL, getToken } from "./api";
+import { assertAccountMode } from "./app-mode";
 
 // Service socket singleton — même pattern que le web (socket.service.js) :
 // auth par token dans le handshake (auth: { token }), pas par cookie.
@@ -65,6 +66,8 @@ function attachLogs(s: Socket) {
 }
 
 export async function getSocket(): Promise<Socket> {
+  // Mode local : pas de chat ni d'événements, donc jamais de socket
+  assertAccountMode("socket");
   if (socket?.connected) return socket;
 
   // Socket déjà créé mais déconnecté : on ne reconnecte QUE si l'app est au

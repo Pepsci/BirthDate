@@ -14,6 +14,7 @@ import {
   useThemedStyles,
   ThemeColors,
 } from "../lib/theme-context";
+import { isLocalMode } from "../lib/app-mode";
 
 export interface GiftIdeaPayload {
   giftName: string;
@@ -111,15 +112,19 @@ export default function GiftIdeaForm({
         value={url}
         onChangeText={setUrl}
       />
-      <Pressable
-        style={[styles.fetchBtn, (!url.trim() || fetching) && { opacity: 0.5 }]}
-        disabled={!url.trim() || fetching}
-        onPress={fetchInfos}
-      >
-        <Text style={styles.fetchBtnText}>
-          {fetching ? "Récupération…" : "🔍 Récupérer les infos avec le lien"}
-        </Text>
-      </Pressable>
+      {/* Mode local : c'est le serveur qui lit la page produit → masqué.
+          Le lien reste enregistré, les infos se saisissent à la main. */}
+      {!isLocalMode() && (
+        <Pressable
+          style={[styles.fetchBtn, (!url.trim() || fetching) && styles.fetchBtnDisabled]}
+          disabled={!url.trim() || fetching}
+          onPress={fetchInfos}
+        >
+          <Text style={styles.fetchBtnText}>
+            {fetching ? "Récupération…" : "🔍 Récupérer les infos avec le lien"}
+          </Text>
+        </Pressable>
+      )}
       {msg && <Text style={styles.msg}>{msg}</Text>}
 
       {image ? (
@@ -233,6 +238,7 @@ const makeStyles = (c: ThemeColors) =>
       padding: 11,
       alignItems: "center",
     },
+    fetchBtnDisabled: { opacity: 0.5 },
     fetchBtnText: { color: c.white, fontWeight: "600", fontSize: 13 },
     msg: { color: c.sub, fontSize: 12, textAlign: "center" },
     preview: {

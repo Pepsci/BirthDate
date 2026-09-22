@@ -1,5 +1,5 @@
 # BirthReminder — CLAUDE.md
-*Mis à jour : 19 août 2026*
+*Mis à jour : 22 septembre 2026*
 
 > **⚠️ Ce fichier couvre désormais le serveur, le front web ET le mobile.**
 > Le mobile (`mobile/`, Expo + expo-router) n'est plus hors périmètre : il
@@ -719,6 +719,48 @@ dans `utils/age.js`) sur `POST /stripe/connect/onboard`, `PUT /:shortId/pool`
   ⚠️ Pas d'idempotence : si la réponse d'un POST se perd après réception par
   le serveur, la carte peut être créée deux fois (fusion des doublons côté web).
 - Pas de rappels locaux (doublon avec le push serveur).
+
+### Mobile — mode sans compte (« mode local »)
+
+Cahier des charges et avancement : **`mobile/docs/MODE_LOCAL.md`**. L'app
+mobile s'utilise sans compte : tout reste sur le téléphone, **rien ne part au
+serveur**. Ouvert à tous, y compris avant 15 ans (inscription refusée → l'app
+le propose).
+
+- **Mode** : `lib/app-mode.ts` (`"account" | "local" | null`, SecureStore),
+  lisible hors React ; `auth-context` expose `mode`, `enterLocalMode`,
+  `leaveLocalMode`. En local, `user` reste `null`.
+- **Garde réseau** : `assertAccountMode()` en tête de `api()`, du socket et
+  des uploads bruts. Un `[app-mode] appel serveur bloqué` dans Metro = un
+  écran à masquer ou un oubli d'aiguillage. Connexion / inscription depuis le
+  local : `withServerAccess()` (le mode ne passe à « compte » qu'après succès).
+- **Aiguillage, pas d'écrans dédiés** : `dates.ts`, `wishlist.ts`, `stats.ts`,
+  `users.ts` (`fetchMe`/`updateMe`), `events.ts` (`fetchMyEvents` → vide)
+  commencent par `if (isLocalMode()) return local…()`. Code local :
+  `lib/local-dates.ts`, qui reproduit les routes serveur (valeurs par défaut,
+  fête auto `lib/nameday.ts` = copie de `namedayHelper.js`).
+- **Stockage** : `lib/local-store.ts` — `Documents/local-data/`, SEULE copie :
+  écriture atomique (.tmp → .bak), écritures en file, fichier illisible mis
+  de côté. **Jamais vidé par `signOut`/`clearCache`.** Photos : on stocke le
+  NOM du fichier (`photoFile`), jamais le chemin (il change à chaque mise à
+  jour iOS). `onLocalChange()` notifie les modifications.
+- **Rappels** : `lib/local-reminders.ts` — notifications locales à minuit,
+  60 jours d'avance, 60 max (limite iOS 64). Jamais en mode compte
+  (`stopLocalReminders` au démarrage). Préfixe `br-local-` : on n'annule que
+  les nôtres.
+- **Sauvegarde** : `lib/local-backup.ts` (JSON, photos en base64) ;
+  `expo-document-picker` chargé paresseusement.
+- **Passage à un compte** : `lib/local-migration.ts` + `app/local-import.tsx`,
+  rejouable sans doublon (marques `importedAs`…), appelle `api()` directement
+  (pas `createDate` et sa file hors ligne). Effacement local après succès total.
+- **Masqué en local** : onglets Événements/Chats, cloche (→ 📱), bandeaux
+  cagnottes et hors ligne, liste commune, événement, « récupérer les infos »
+  d'un lien, partage chat (→ partage texte natif).
+- ⚠️ `LOCAL_MODE_READY` (`app-mode.ts`) pilote l'affichage des points
+  d'entrée : `__DEV__` tant que l'étape 6 n'est pas validée, puis `true`.
+- **Tout nouvel écran ou appel serveur** doit prévoir le cas `mode === "local"`
+  (masquer, ou aiguiller), et tout composant qui choisit selon le mode le fait
+  AVANT ses hooks via deux sous-composants (pas de `return` anticipé).
 
 ### Navigation profil
 - Les profils n'ont PAS de route dédiée `/dates/:id` — tout passe par `/home?tab=date&dateId=...`
