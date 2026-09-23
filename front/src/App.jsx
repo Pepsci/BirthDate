@@ -19,6 +19,7 @@ import CookieBanner from "./components/layout/CookieBanner";
 import CookiesPolicy from "./components/pages/CookiesPolicy";
 import MentionsLegales from "./components/pages/MentionsLegales";
 import PrivacyPolicy from "./components/pages/PrivacyPolicy";
+import AccountDeletion from "./components/pages/AccountDeletion";
 import CGU from "./components/pages/CGU";
 import Footer from "./components/layout/Footer";
 import GuidePage from "./components/pages/GuidePage";
@@ -73,6 +74,8 @@ function App() {
           <Route path="/cookies" element={<CookiesPolicy />} />
           <Route path="/mentions-legales" element={<MentionsLegales />} />
           <Route path="/privacy" element={<PrivacyPolicy />} />
+          {/* Page exigée par Google Play : accessible sans compte. */}
+          <Route path="/suppression-compte" element={<AccountDeletion />} />
           <Route path="/cgu" element={<CGU />} />
           <Route path="/guide" element={<GuidePage />} />
           <Route path="/contact" element={<ContactPage />} />

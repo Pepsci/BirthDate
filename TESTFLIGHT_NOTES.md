@@ -1,111 +1,60 @@
 # Notes TestFlight — à tester
 
-Version 2.0.0, build 44.
+Version 2.2.0, build 47.
 
-Les testeurs viennent du build 43 : le bloc court ne couvre donc que 2.0.0.
+Les testeurs viennent du build 45 : ce bloc couvre donc **deux** mises à jour,
+2.1.0 (hors ligne, build 46, jamais distribué) et 2.2.0 (mode sans compte).
 
 <!--
   Le champ "What to Test" de TestFlight est limité à 4 000 caractères.
-  Le bloc ci-dessous tient dans cette limite : c'est celui à coller.
+  Le bloc ci-dessous en fait ~2 650 : c'est celui à coller.
 
   ⚠️ Ces notes sont attachées à UN build : elles ne remontent pas toutes
   seules sur le suivant. Réécrire ce fichier à chaque build, et recoller.
 
-  ⚠️ Ce build est le premier à s'installer nativement sur iPad
-  (ios.supportsTablet = true). Les testeurs qui n'ont pas d'iPad ne verront
-  aucune différence à l'écran — mais beaucoup d'écrans ont été réorganisés
-  en interne, d'où la liste « à vérifier sur iPhone » plus bas.
+  ⚠️ Build obligatoire (pas de mise à jour à chaud) : ajout du module natif
+  expo-document-picker, utilisé par l'import de sauvegarde.
 
-  Volontairement absent du bloc court : le détail technique (composants
-  extraits, calcul du décalage clavier, seuils de largeur). Voir la section
-  de référence.
+  ⚠️ Avant de distribuer : LOCAL_MODE_READY = true dans src/lib/app-mode.ts,
+  sinon le mode sans compte reste invisible. Et déployer le front : les CGU
+  (art. 2.4) et la politique de confidentialité (§ 2.3) parlent du mode sans
+  compte.
+
+  Volontairement absent du bloc court : le détail technique du stockage
+  local, la limite iOS des 64 notifications, le format de sauvegarde.
+  Voir mobile/docs/MODE_LOCAL.md.
 -->
 
 ## Version courte — à coller dans TestFlight
 
-BirthReminder 2.0.0 (build 44)
+BirthReminder 2.2.0 (build 47)
 
-Ce build fait entrer BirthReminder sur iPad. Sur iPhone, rien ne change à l'écran — mais beaucoup d'écrans ont été retouchés en interne : si quelque chose te semble bizarre, même sans rapport avec l'iPad, signale-le.
+Deux mises à jour d'un coup : vous venez du build 45, ce build contient donc aussi le mode hors ligne (2.1.0), que personne n'a encore testé.
 
-— SI TU AS UN IPAD —
-- L'app s'installe maintenant en version iPad, plus en version iPhone agrandie.
-- Fiche d'une personne : la carte reste à gauche, les cadeaux s'affichent à droite. Tes idées, sa wishlist et la liste commune sont trois onglets.
-- « Discuter » et « Organiser un événement » s'ouvrent aussi à droite, sans quitter la fiche.
-- Page d'un événement à l'horizontale : l'événement à gauche, et à droite le chat, les cadeaux, les invitations, la cagnotte ou les réglages de notifications selon le bouton.
-- Accueil : 3 colonnes d'anniversaires à la verticale, 4 à l'horizontale.
-- Les formulaires ne s'étirent plus sur toute la largeur.
-- À vérifier surtout : tourner l'iPad en pleine saisie, ouvrir le clavier dans une discussion affichée à droite, et le Split View avec une autre app (l'app doit revenir à une seule colonne sans rien perdre).
+— NOUVEAU : UTILISER SANS COMPTE —
+L'app s'utilise maintenant sans créer de compte : tout reste sur le téléphone, rien n'est envoyé. Pour l'essayer, déconnectez-vous, puis « Continuer sans compte » sur l'écran de connexion (ou « Utiliser sans compte » sur l'accueil).
+⚠️ Utilisez de préférence un compte de test : en vous déconnectant, vous perdez les modifications faites hors ligne pas encore envoyées.
 
-— SUR IPHONE : RIEN NE DOIT AVOIR CHANGÉ —
-Merci de refaire un tour rapide sur :
-- une discussion privée (envoi, réactions, appui long, clavier) ;
-- le chat d'un événement ;
-- la création d'un événement, puis l'écran d'invitation qui suit ;
-- les réglages de notifications d'un événement ;
-- une cagnotte : configuration côté organisateur, participation côté invité ;
-- l'invitation d'amis à un événement ;
-- l'ouverture d'un cadeau et la fenêtre qui glisse depuis le bas.
-Si l'un de ces écrans s'ouvre vide, affiche un mauvais titre ou revient au mauvais endroit, c'est exactement ce qu'on cherche.
+À tester :
+- Créer des cartes, des idées de cadeaux, ajouter une photo, la liste d'envies, l'agenda. Le prénom doit détecter la fête tout seul (Julie → 8 avril).
+- Profil → Rappels : « Envoyer un rappel de test », puis fermez l'app. La notification doit arriver 5 secondes plus tard.
+- Profil → Mes données : « Exporter une sauvegarde », enregistrez le fichier, puis « Effacer toutes mes données », et réimportez-le. Tout doit revenir, photos comprises.
+- Inscription avant 15 ans : mettez une date de naissance de 2015. Le formulaire doit se replier et proposer « Utiliser sans compte ».
+- Reconnectez-vous ensuite à votre compte : l'app doit proposer d'importer vos cartes locales. Vérifiez qu'il n'y a pas de doublon, y compris si vous relancez l'import.
+- Sans compte, il ne doit y avoir QUE deux onglets (Anniversaires, Profil), et une icône 📱 à la place de la cloche. Si vous tombez sur un écran d'erreur « Indisponible sans compte », dites-moi lequel.
 
-— CORRECTIONS —
-- Les fenêtres qui glissent depuis le bas se fermaient de travers après une rotation d'écran.
-- Dans une discussion en panneau, le clavier recouvrait le champ de saisie.
+— MODE HORS LIGNE (build 46, jamais testé) —
+Mettez le téléphone en mode avion :
+- Vos anniversaires, l'agenda et vos événements à venir restent consultables. Un bandeau indique de quand datent les données.
+- Vous pouvez ajouter, modifier ou supprimer une carte : elle porte un badge « ⏳ En attente » et part toute seule au retour du réseau.
+- Ouvrir l'app sans réseau ne doit plus vous déconnecter.
+- Un événement jamais ouvert avant doit quand même s'afficher hors ligne.
 
-## Référence — détail technique (ne pas coller)
+— AUTRES NOUVEAUTÉS —
+- Cartes d'événement : couleur et emoji selon le type, badge « Aujourd'hui » ou « J-3 », compte à rebours.
+- « Importer depuis une liste » propose aussi votre propre liste d'envies.
+- Un événement ouvert depuis un lien ou une notification a enfin un bouton retour.
+- Sur iPad, modifier une carte se fait dans le panneau de droite.
 
-### Ce que contient le build
-
-- `ios.supportsTablet: true`. Expo autorise alors les 4 orientations sur iPad
-  et le multitâche (`UISupportedInterfaceOrientations~ipad`). L'iPhone reste
-  verrouillé en portrait : aucune dépendance native ajoutée.
-- `lib/use-split-view.ts` : deux panneaux si largeur ≥ 600 **et** hauteur ≥ 600
-  (la condition de hauteur évite un iPhone Pro Max à l'horizontale), plus une
-  option `landscapeOnly` utilisée par la page d'un événement. Réglage
-  utilisateur prévu, stocké en SecureStore, pas encore exposé dans le Profil.
-- `lib/layout.ts` : largeurs maximales centrées — 480 (authentification),
-  560 (formulaires), 760 (listes et textes). Appliquées à une trentaine
-  d'écrans via `contentContainerStyle`.
-- Grille d'accueil : 2 / 3 / 4 colonnes selon la largeur (seuils 820 et 1100).
-  La `FlatList` est recréée via sa `key` au changement de colonnes — React
-  Native refuse de changer `numColumns` à chaud, d'où un retour en haut de
-  liste à la rotation.
-
-### Écrans extraits en composants réutilisables
-
-Le contenu n'a pas changé ; seule leur enveloppe est devenue un composant, pour
-servir à la fois d'écran plein et de panneau. C'est ici que peuvent se cacher
-des régressions iPhone :
-
-| Composant | Route qui l'utilise encore en plein écran |
-|---|---|
-| `components/DMChat.tsx` | `app/chat/[friendId].tsx` |
-| `components/EventChat.tsx` | `app/event/chat/[shortId].tsx` |
-| `components/NewEventForm.tsx` | `app/event/new.tsx` |
-| `components/EventInviteFriends.tsx` | `app/event/invite/[shortId].tsx` |
-| `components/EventNotificationsSettings.tsx` | `app/event/notifications/[shortId].tsx` |
-| `components/PoolConfig.tsx` | `app/event/pool-config/[shortId].tsx` |
-| `components/PoolContribute.tsx` | `app/event/pool/[shortId].tsx` |
-
-En mode panneau (`embedded`), ces composants n'écrivent pas dans l'en-tête de
-la pile — il appartient à l'écran hôte — et affichent leur titre et leurs
-actions dans une barre interne.
-
-### Le piège du clavier (corrigé)
-
-`KeyboardAvoidingView` mesure sa vue par rapport à son parent et le clavier par
-rapport à la fenêtre. En plein écran les deux repères coïncident ; dans un
-panneau, le parent commence sous l'en-tête de l'écran hôte, et le champ de
-saisie restait caché derrière le clavier. `DMChat` et `EventChat` mesurent
-donc leur position dans la fenêtre (`measureInWindow`) et la passent en
-`keyboardVerticalOffset`. Si un trou apparaît au-dessus du clavier, c'est cette
-mesure qu'il faut regarder en premier.
-
-### Reste à faire
-
-- Interrupteur « Affichage deux panneaux » dans le Profil (le mécanisme existe).
-- Les onglets Accueil, Événements et Messages ne se divisent pas encore
-  (liste à gauche / détail à droite).
-- La page d'un événement déjà créé reste en plein écran quand on l'ouvre
-  depuis une carte.
-- Numérotation : `app.json` reste en `version: "1.0.0"` alors que le changelog
-  interne annonce 2.0.0. Seul `buildNumber` est incrémenté (44).
+— CE QUI M'INTÉRESSE LE PLUS —
+Tout ce qui ressemble à une perte de données : une carte qui disparaît, une photo qui ne revient pas après un import, un doublon après l'import vers un compte. Précisez ce que vous faisiez juste avant, et si vous étiez avec ou sans compte.

@@ -127,3 +127,15 @@
   color: var(--text-secondary);
   opacity: 0.6;
 }
+
+/* Date retenue, affichée sous les rouleaux */
+.dpm-selected {
+  margin: 0;
+  padding: 8px 12px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  border-top: 1px solid var(--border-color);
+  background: var(--bg-primary);
+}

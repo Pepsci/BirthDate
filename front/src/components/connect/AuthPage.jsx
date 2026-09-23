@@ -160,6 +160,25 @@ const AuthPage = () => {
   };
 
   // ─── SIGNUP ──────────────────────────────────────────
+  // RGPD France : 15 ans minimum (aligné avec server/routes/auth.js et
+  // l'app mobile). Contrôlé ici pour prévenir avant l'envoi du formulaire :
+  // sans ce garde-fou, le refus n'arrivait qu'après coup, par le serveur.
+  const MIN_AGE = 15;
+
+  /** Âge révolu à partir d'une date "AAAA-MM-JJ". null si vide ou invalide. */
+  const ageFromBirthDate = (value) => {
+    if (!value) return null;
+    const [y, m, d] = value.split("-").map(Number);
+    if (!y || !m || !d) return null;
+    const today = new Date();
+    let age = today.getFullYear() - y;
+    const beforeBirthday =
+      today.getMonth() + 1 < m ||
+      (today.getMonth() + 1 === m && today.getDate() < d);
+    if (beforeBirthday) age -= 1;
+    return age;
+  };
+
   const [signupData, setSignupData] = useState({
     name: "",
     surname: "",
@@ -171,6 +190,7 @@ const AuthPage = () => {
   const [signupError, setSignupError] = useState("");
   const [signupSuccess, setSignupSuccess] = useState("");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const signupAge = ageFromBirthDate(signupData.birthDate);
 
   const handleSignup = async (e) => {
     e.preventDefault();
@@ -188,6 +208,12 @@ const AuthPage = () => {
     }
     if (!signupData.birthDate) {
       setSignupError("Veuillez renseigner votre date de naissance.");
+      return;
+    }
+    if (signupAge !== null && signupAge < MIN_AGE) {
+      setSignupError(
+        `Il faut avoir au moins ${MIN_AGE} ans pour créer un compte BirthReminder.`,
+      );
       return;
     }
     if (!acceptedTerms) {
@@ -413,6 +439,11 @@ const AuthPage = () => {
                     setSignupData({ ...signupData, birthDate: val })
                   }
                 />
+                {signupAge !== null && signupAge < MIN_AGE && (
+                  <p className="auth-msg auth-msg--error">
+                    Il faut avoir au moins {MIN_AGE} ans pour créer un compte.
+                  </p>
+                )}
               </div>
 
               <div className="auth-field">

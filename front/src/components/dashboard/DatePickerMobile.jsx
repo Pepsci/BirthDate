@@ -64,6 +64,17 @@ const WheelColumn = ({ items, selectedIndex, onChange }) => {
     [items.length],
   );
 
+  /**
+   * Fin du geste : on cale la roue sur l'élément le plus proche.
+   *
+   * ⚠️ La valeur retenue est celle de la position d'ARRIVÉE (`snapped`),
+   * calculée ici et transmise tout de suite. La version précédente relisait
+   * `scrollTop` 200 ms plus tard, en plein défilement animé : sur mobile
+   * l'animation dure souvent plus longtemps, et c'est l'élément survolé qui
+   * était enregistré. On voyait « 2008 » à l'écran et l'état gardait une
+   * autre année — d'où des inscriptions refusées pour l'âge avec une date
+   * pourtant correcte à l'affichage.
+   */
   const snapToNearest = useCallback(() => {
     if (!listRef.current || isSnapping.current) return;
     isSnapping.current = true;
@@ -71,15 +82,14 @@ const WheelColumn = ({ items, selectedIndex, onChange }) => {
     const scrollTop = listRef.current.scrollTop;
     const snapped = Math.round(scrollTop / ITEM_HEIGHT) * ITEM_HEIGHT;
 
+    onChange(getIndexFromScroll(snapped));
     listRef.current.scrollTo({ top: snapped, behavior: "smooth" });
 
+    // Laisse l'animation se terminer avant d'autoriser un nouveau calage
     setTimeout(() => {
-      if (!listRef.current) return;
-      const index = getIndexFromScroll(listRef.current.scrollTop);
-      onChange(index);
       isSnapping.current = false;
-    }, 200);
-  }, [items.length, getIndexFromScroll, onChange]);
+    }, 250);
+  }, [getIndexFromScroll, onChange]);
 
   const applyMomentum = useCallback(() => {
     if (!listRef.current) return;
@@ -220,6 +230,8 @@ const DatePickerMobile = ({ value, onChange, max }) => {
     if (day > maxDay) setDay(maxDay);
   }, [month, year]);
 
+  const formattedLabel = `${String(day).padStart(2, "0")} ${MONTHS[month - 1].toLowerCase()} ${year}`;
+
   useEffect(() => {
     const mm = String(month).padStart(2, "0");
     const dd = String(day).padStart(2, "0");
@@ -248,6 +260,9 @@ const DatePickerMobile = ({ value, onChange, max }) => {
           onChange={(i) => setYear(years[i])}
         />
       </div>
+      {/* Date retenue, en toutes lettres : un décalage entre ce qu'on voit
+          sur la roue et la valeur enregistrée devient visible tout de suite. */}
+      <p className="dpm-selected">{formattedLabel}</p>
     </div>
   );
 };
