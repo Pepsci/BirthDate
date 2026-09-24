@@ -32,7 +32,12 @@ async function sharedListLinkFor(userId, listId) {
       owner: userId,
       sharedGiftList: listId,
     }).select("_id");
-    if (myCard) return `/home?tab=date&dateId=${myCard._id}`;
+    // `focus=shared` : ouvrir la carte SUR la liste commune, pas sur l'onglet
+    // « Idées » par défaut. Une notification qui parle d'un cadeau de la liste
+    // commune et qui dépose sur un autre onglet oblige à chercher.
+    // Les anciennes versions mobiles ignorent le paramètre et retombent sur la
+    // carte, comme avant : le lien reste rétrocompatible.
+    if (myCard) return `/home?tab=date&dateId=${myCard._id}&focus=shared`;
   } catch {
     // Résolution impossible : on retombe sur le rattachement, jamais sur une
     // notification sans lien.

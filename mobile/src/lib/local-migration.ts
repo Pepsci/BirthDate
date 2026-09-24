@@ -75,15 +75,15 @@ async function markDate(id: string, patch: Partial<LocalDate>): Promise<void> {
   );
 }
 
-function dayKey(d: { name: string; surname?: string; date: string }): string {
+export function dayKey(d: { name: string; surname?: string; date: string }): string {
   const b = new Date(d.date);
   return `${d.name.trim().toLowerCase()}|${(d.surname ?? "").trim().toLowerCase()}|${b.getFullYear()}-${b.getMonth()}-${b.getDate()}`;
 }
 
-const giftKey = (g: { giftName: string; year?: number }) =>
+export const giftKey = (g: { giftName: string; year?: number }) =>
   `${g.giftName.trim().toLowerCase()}|${g.year ?? ""}`;
 
-const wishKey = (w: { title: string; url?: string | null }) =>
+export const wishKey = (w: { title: string; url?: string | null }) =>
   `${w.title.trim().toLowerCase()}|${(w.url ?? "").trim()}`;
 
 /** Importe UNE carte. Lève en cas d'échec (la carte reste à refaire). */

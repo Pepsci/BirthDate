@@ -17,6 +17,18 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2.3.0",
+    date: "2026-09-24",
+    build: "48",
+    title: "Sauvegarde de tes données avec un compte, et notifications de liste commune",
+    note: "Les notifications de liste commune nécessitent la nouvelle version du serveur.",
+    items: [
+      "💾 Sauvegarde et restauration pour les comptes aussi : Profil → Sauvegarde. Le fichier contient tes cartes d'anniversaire, leurs idées de cadeaux, leurs photos et ta liste d'envies. Tu peux le remettre dans ton compte à tout moment, sans jamais créer de doublon — une carte déjà présente est complétée, pas recréée.",
+      "🔁 Le même fichier marche dans les deux sens : une sauvegarde faite sans compte se restaure dans un compte, et l'inverse.",
+      "🎁 Les notifications d'une liste de cadeaux commune ouvrent enfin la liste elle-même. Elles déposaient sur la carte de la personne, onglet « Idées », et il fallait retrouver l'onglet à la main.",
+    ],
+  },
+  {
     version: "2.2.0",
     date: "2026-09-22",
     build: "47",

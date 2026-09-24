@@ -156,7 +156,11 @@ export function webLinkToMobileRoute(url: string | null | undefined): string {
   if (url.startsWith("/date/")) return url;
   if (url.includes("tab=date") && url.includes("dateId=")) {
     const m = url.match(/dateId=([a-f0-9]+)/i);
-    if (m) return `/date/${m[1]}`;
+    // `focus=shared` (notifications de liste commune) ouvre la carte
+    // directement sur l'onglet « Liste commune » — voir app/date/[id].tsx.
+    if (m) return /[?&]focus=shared\b/.test(url)
+      ? `/date/${m[1]}?focus=shared`
+      : `/date/${m[1]}`;
   }
   // Notif de message DM → écran relais qui résout la bonne conversation.
   // Le lien peut porter un friendId (id de l'expéditeur) ou un conversationId.

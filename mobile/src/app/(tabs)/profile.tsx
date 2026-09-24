@@ -371,6 +371,11 @@ function AccountProfile() {
           onPress={() => router.push("/profile/settings")}
         />
         <MenuRow
+          emoji="💾"
+          label="Sauvegarde"
+          onPress={() => router.push("/profile/backup")}
+        />
+        <MenuRow
           emoji="📄"
           label="Télécharger mes données"
           onPress={() => router.push("/profile/data-export")}

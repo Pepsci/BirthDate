@@ -17,12 +17,17 @@ export type AppMode = "account" | "local" | null;
 
 /**
  * Le mode local est-il proposé dans l'interface ?
- * Dev uniquement jusqu'à l'étape 6 (import des cartes locales dans un
- * compte) : sans elle, un utilisateur local qui crée un compte bascule sur
- * un compte vide, et ses cartes restent sur le disque sans être affichées.
- * ⚠️ Passer à `true` à la fin de l'étape 6.
+ *
+ * Activé le 24/09/2026 : l'étape 6 (import des cartes locales dans un compte,
+ * app/local-import.tsx) est terminée et testée. Un utilisateur local qui crée
+ * un compte retrouve donc ses cartes.
+ *
+ * ⚠️ C'était `__DEV__`, donc vrai sous Metro et FAUX dans tout build de
+ * release : le bouton « Utiliser sans compte » et la proposition faite aux
+ * moins de 15 ans n'existaient ni sur TestFlight ni sur le Play Store, alors
+ * que le parcours fonctionnait parfaitement en développement.
  */
-export const LOCAL_MODE_READY = __DEV__;
+export const LOCAL_MODE_READY = true;
 
 const MODE_KEY = "appMode";
 
