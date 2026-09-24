@@ -132,6 +132,81 @@ killall Xcode && rm -rf ~/Library/Developer/Xcode/DerivedData
 
 ---
 
+## 🤖 Build MOBILE → Google Play (Android)
+
+> Circuit différent d'iOS : **EAS** construit et signe, Play Console distribue.
+> Pas de Xcode, pas de `.env.local` à neutraliser — le profil `production` de
+> `eas.json` impose `EXPO_PUBLIC_API_URL=https://birthreminder.com`.
+
+```bash
+cd ~/Dev/birthreminder/mobile
+
+# 1. Construire l'AAB (cloud : ~20-30 min, 1 crédit sur 30)
+eas build -p android --profile production
+
+# En local (gratuit, sans file d'attente) — demande ≥ 40 Go de disque libre
+# et 16 Go de RAM. Avec 8 Go, ça meurt en cours de compilation C++ :
+# eas build -p android --profile production --local
+```
+
+- Le **`versionCode` s'incrémente tout seul** (`appVersionSource: "remote"`
+  dans `eas.json`). Rien à toucher dans `app.json` — contrairement à iOS, où
+  `buildNumber` est à la main.
+- À la fin, EAS affiche un lien `https://expo.dev/artifacts/…aab`.
+
+```bash
+# 2. Récupérer le fichier
+cd ~/Downloads && curl -L -o birthreminder.aab "<lien affiché par EAS>"
+```
+
+**Dans Play Console** (play.google.com/console → BirthReminder) :
+
+1. **Tester et publier** → la piste voulue (**Test interne** pour vérifier,
+   **Test fermé** pour les testeurs, **Production** ensuite)
+2. **Créer une release** → déposer le `.aab`
+3. **Notes de version** : 500 caractères max par langue
+4. **Enregistrer** → **Vérifier la release** → **Déployer**
+
+> Une release de test interne est disponible en quelques minutes, sans examen.
+> Les autres pistes passent par un examen Google (quelques heures à 3 jours).
+> Promouvoir une release déjà envoyée (test interne → test fermé → production)
+> évite de reconstruire : **Releases → ⋮ → Promouvoir**.
+
+**Une fois envoyé une première fois**, les suivants peuvent partir sans passer
+par le navigateur :
+
+```bash
+eas submit -p android --latest
+```
+(demande une clé de compte de service Google Play : `eas credentials` →
+Android → *Google Service Account for Play Store submissions*)
+
+### Pièges Android
+
+- **Signature** : ce sont deux clés différentes. Celle d'EAS signe l'envoi,
+  Google re-signe pour les utilisateurs. Les **deux** empreintes SHA-256 sont
+  dans `front/public/.well-known/assetlinks.json` — sans quoi les liens
+  `birthreminder.com` n'ouvrent pas l'app.
+- **Impossible d'installer par-dessus** un APK signé autrement (dev ou EAS
+  preview) : `adb uninstall com.birthreminder.app` d'abord.
+- **Push** : la clé FCM V1 vit chez Expo (`eas credentials` → Android →
+  Google Service Account), pas dans le build.
+- **Vérifier les App Links** après installation depuis le Play Store :
+  ```bash
+  adb shell pm get-app-links com.birthreminder.app   # → verified
+  ```
+- **Changements JS/TS uniquement** : inutile de rebuilder pour tester en dev
+  (`npx expo start` + reload). Le rebuild ne sert qu'à publier.
+
+### APK de test rapide (hors Play Store)
+
+```bash
+eas build -p android --profile preview --local   # APK installable direct
+adb install build-<horodatage>.apk
+```
+
+---
+
 ## 🔒 Git bloqué : « index.lock: File exists »
 
 ```bash
