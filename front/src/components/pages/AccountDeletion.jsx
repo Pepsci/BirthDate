@@ -43,7 +43,13 @@ export default function AccountDeletion() {
           </ol>
           <p>
             La procédure est identique sur l'application Android, sur
-            l'application iPhone et sur le site <strong>birthreminder.com</strong>.
+            l'application iPhone et sur le site{" "}
+            <strong>birthreminder.com</strong>.
+          </p>
+          <p className="warning">
+            ⚠️ La suppression est <strong>immédiate et définitive</strong> :
+            votre compte est anonymisé dès la confirmation et il n'est plus
+            possible de vous y reconnecter, ni d'annuler la demande.
           </p>
         </section>
 
@@ -73,9 +79,8 @@ export default function AccountDeletion() {
               d'amitié et vos wishlists
             </li>
             <li>
-              <strong>Sous 30 jours :</strong> suppression définitive du compte
-              et de vos messages. Ce délai permet de revenir en arrière en cas
-              de suppression accidentelle
+              <strong>Sous 30 jours :</strong> suppression définitive du
+              compte et de vos messages dans nos bases de données
             </li>
           </ul>
           <p>

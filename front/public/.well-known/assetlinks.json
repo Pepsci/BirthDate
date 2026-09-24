@@ -5,7 +5,8 @@
       "namespace": "android_app",
       "package_name": "com.birthreminder.app",
       "sha256_cert_fingerprints": [
-        "REMPLACER_PAR_EMPREINTE_SHA256_DU_CERTIFICAT_DE_SIGNATURE"
+        "3A:C3:94:53:B8:D4:50:88:B4:E9:6B:58:31:37:7A:F2:96:CE:F0:2E:57:0C:58:28:60:96:8F:C0:44:7D:E1:AD",
+        "52:34:3E:E4:71:BB:25:24:E5:D6:1C:44:CE:34:A1:19:C0:8B:5D:03:02:8C:15:30:E0:50:5D:16:BF:1F:79:56"
       ]
     }
   }

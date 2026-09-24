@@ -138,38 +138,24 @@ router.get("/mine/contributions", isAuthenticated, async (req, res) => {
 
 /*
  * GET /api/events/mine/pools
- * Cagnottes actives des événements de l'utilisateur (organisés OU où il est
- * invité), avec le total collecté par cagnotte — pour l'affichage sur
- * l'accueil ("Mes cagnottes"). DOIT ÊTRE AVANT /:shortId/pool.
+ * Cagnottes actives des événements que l'utilisateur ORGANISE, avec le total
+ * collecté — pour le bandeau "Mes cagnottes" de l'accueil.
+ * DOIT ÊTRE AVANT /:shortId/pool.
+ *
+ * ⚠️ 23/09/26 : les événements où l'on est seulement invité ont été retirés.
+ * Un invité voyait sur son accueil le montant collecté et le nombre de
+ * contributions d'une cagnotte qu'il ne gère pas — un suivi qui regarde
+ * l'organisateur. Côté invité, ce qu'il a versé reste dans Profil →
+ * Mes contributions.
  */
 router.get("/mine/pools", isAuthenticated, async (req, res) => {
   try {
     const userId = req.payload._id;
-    const EventInvitation = require("../../models/eventInvitation.model");
 
-    const [organizedEvents, invitations] = await Promise.all([
-      Event.find({ organizer: userId, "giftPool.active": true }).populate(
-        "forPerson",
-        "name surname",
-      ),
-      EventInvitation.find({ user: userId }).populate({
-        path: "event",
-        match: { "giftPool.active": true },
-        populate: { path: "forPerson", select: "name surname" },
-      }),
-    ]);
-
-    const invitedEvents = invitations
-      .map((inv) => inv.event)
-      .filter(Boolean);
-
-    // Dédoublonne au cas où l'utilisateur serait à la fois organisateur et
-    // invité (ne devrait pas arriver, mais on reste défensif).
-    const byId = new Map();
-    [...organizedEvents, ...invitedEvents].forEach((e) => {
-      byId.set(String(e._id), e);
-    });
-    const events = [...byId.values()];
+    const events = await Event.find({
+      organizer: userId,
+      "giftPool.active": true,
+    }).populate("forPerson", "name surname");
 
     const eventIds = events.map((e) => e._id);
     const totals = await GiftPoolContribution.aggregate([

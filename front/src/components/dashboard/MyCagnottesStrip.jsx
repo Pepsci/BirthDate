@@ -20,7 +20,11 @@ const MyCagnottesStrip = () => {
     apiHandler
       .get("/events/mine/pools")
       .then((res) => {
-        if (!cancelled) setPools(res.data.pools || []);
+        // Garde-fou : uniquement les cagnottes qu'on gère (le serveur filtre
+        // déjà depuis le 23/09/26 ; une version plus ancienne renvoyait aussi
+        // les événements où l'on est invité).
+        if (!cancelled)
+          setPools((res.data.pools || []).filter((p) => p.isOrganizer));
       })
       .catch((err) => {
         console.error("Failed to load my cagnottes", err);

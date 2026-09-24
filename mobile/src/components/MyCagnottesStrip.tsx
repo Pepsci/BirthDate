@@ -27,8 +27,13 @@ export default function MyCagnottesStrip() {
     useCallback(() => {
       let cancelled = false;
       fetchMyPools()
-        .then((list) => {
+        .then((all) => {
           if (cancelled) return;
+          // Garde-fou : le bandeau ne montre QUE les cagnottes qu'on gère.
+          // Le serveur filtre déjà (routes/events/pool.js), mais une app
+          // installée avant ce déploiement ne doit pas afficher celles des
+          // événements où l'on est simplement invité.
+          const list = all.filter((p) => p.isOrganizer);
           setPools(list);
           // L'en-tête n'a aucun moyen de savoir s'il y a des cagnottes : c'est
           // ce bandeau qui le lui dit, pour que son bouton n'apparaisse que

@@ -5,6 +5,7 @@ import {
   Pressable,
   StyleSheet,
   ActivityIndicator,
+  Platform,
 } from "react-native";
 import { WebView } from "react-native-webview";
 import {
@@ -38,6 +39,12 @@ export default function EventLocationMap({
   );
   const [loading, setLoading] = useState(!hasCoords);
   const [failed, setFailed] = useState(false);
+  /**
+   * Android tue parfois le processus de rendu de la WebView quand la mémoire
+   * manque (onRenderProcessGone) : la carte devient alors un rectangle vide,
+   * sans erreur. Changer cette clé remonte la WebView et la recharge.
+   */
+  const [webviewKey, setWebviewKey] = useState(0);
 
   useEffect(() => {
     if (coords) return;
@@ -95,6 +102,7 @@ export default function EventLocationMap({
       ) : coords && !failed ? (
         <View style={styles.frame}>
           <WebView
+            key={webviewKey}
             originWhitelist={["*"]}
             source={{ html }}
             style={styles.web}
@@ -102,13 +110,26 @@ export default function EventLocationMap({
             nestedScrollEnabled
             javaScriptEnabled
             domStorageEnabled
-            onError={() => setFailed(true)}
+            // ⚠️ Ne PAS masquer la carte sur onError : sur Android, l'événement
+            // se déclenche aussi pour une simple tuile qui n'arrive pas, et la
+            // carte disparaissait alors qu'elle s'affichait très bien.
+            onError={(e) =>
+              console.warn("[map] chargement partiel", e.nativeEvent.description)
+            }
+            onRenderProcessGone={() => setWebviewKey((k) => k + 1)}
           />
         </View>
       ) : null}
 
       <Pressable style={styles.mapsBtn} onPress={onOpenMaps}>
-        <Text style={styles.mapsBtnText}>🧭 Ouvrir dans Maps</Text>
+        <Text style={styles.mapsBtnText}>
+          {/* Android ouvre un lien geo: — Google Maps dans la quasi-totalité
+              des cas, avec un choix si plusieurs apps de cartes sont
+              installées. iOS ouvre Plans (nom français d'Apple Maps). */}
+          {Platform.OS === "android"
+            ? "🧭 Ouvrir dans Google Maps"
+            : "🧭 Ouvrir dans Plans"}
+        </Text>
       </Pressable>
     </View>
   );
