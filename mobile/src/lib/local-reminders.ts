@@ -48,6 +48,9 @@ export interface PlannedReminder {
 
 // ---- Calcul (fonctions pures, testables sans téléphone) ----
 
+/** Heure d'envoi des rappels de fête (même règle que le cron serveur, 9h). */
+const NAMEDAY_HOUR = 9;
+
 /** Minuit (heure du téléphone) du jour `today + offset`. */
 function midnight(from: Date, offset: number): Date {
   return new Date(from.getFullYear(), from.getMonth(), from.getDate() + offset, 0, 0, 0, 0);
@@ -86,7 +89,7 @@ export function planReminders(dates: DateEntry[], now = new Date()): PlannedRemi
 
   for (const d of dates) {
     if (d.receiveNotifications === false) continue;
-    const name = d.name || "Quelqu'un";
+    const name = (d.name || "").trim() || "Quelqu'un";
 
     const bPrefs = d.notificationPreferences ?? { timings: [1], notifyOnBirthday: true };
     const bOffsets = [
@@ -132,7 +135,12 @@ export function planReminders(dates: DateEntry[], now = new Date()): PlannedRemi
         if (target.getMonth() + 1 !== ndMonth || target.getDate() !== ndDay) continue;
         out.push({
           id: `nameday-${d._id}-${offset}-${fireAt.getTime()}`,
-          at: fireAt,
+          at: new Date(
+            fireAt.getFullYear(),
+            fireAt.getMonth(),
+            fireAt.getDate(),
+            NAMEDAY_HOUR,
+          ),
           title:
             offset === 0
               ? `🌸 C'est la fête de ${name} !`

@@ -517,7 +517,7 @@ possible, puisque `/auth/verify` se base ensuite sur la durée courante.
 
 | Fichier | Schedule | Rôle |
 |---------|----------|------|
-| `jobs/sendReminders.js` | Minuit quotidien | Rappels anniversaires et fêtes |
+| `jobs/sendReminders.js` | Minuit (anniversaires) / 9h (fêtes) | Rappels anniversaires et fêtes |
 | `jobs/eventReminders.js` | 6h quotidien | Rappels événements (J-7, J-1, configurable) |
 | `jobs/chatNotificationCron.js` | 5min / 9h / Lun 9h | Notifications chat groupées |
 | `jobs/purgeDeletedAccounts.js` | 3h quotidien | Suppression comptes inactifs |
@@ -643,6 +643,16 @@ dans `utils/age.js`) sur `POST /stripe/connect/onboard`, `PUT /:shortId/pool`
 ### Dates
 - Les anniversaires (`date.date`) sont comparés **mois + jour uniquement** (récurrence annuelle)
 - Les namedays (`date.nameday || date.linkedUser?.nameday`) sont au format `"MM-DD"` (ex: `"03-13"`)
+- **Calendrier des fêtes = fichier maison** `server/data/namedays/fr.json` (`days` : date → prénoms,
+  `aliases` : variante → prénom). Un prénom = une seule date. Après modification :
+  `node scripts/build-namedays.js` (régénère les index serveur + la copie mobile) puis
+  `node scripts/test-namedays.js`. Ne jamais éditer les `namedays-fr-by-*.json` à la main.
+- **Pas de repli sur un autre pays** : prénom absent du calendrier FR = pas de fête
+  (l'ancien repli US fêtait « Mia » le 29/09). Matching à l'identique après normalisation
+  (`utils/namedayNormalize.js`) ; composé → prénom entier puis premier prénom.
+- La fête est **figée** dans `nameday` à la création : après un changement de calendrier,
+  lancer `node scripts/recompute-namedays.js` (simulation) puis `--apply`. Les fêtes
+  saisies à la main ne sont jamais écrasées.
 - Les dates d'événements comparent **année + mois + jour** (pas récurrentes)
 - Toujours parser les dates avec `new Date(year, month, day)` pour éviter les problèmes de timezone
 

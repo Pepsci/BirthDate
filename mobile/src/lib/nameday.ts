@@ -1,45 +1,46 @@
 import FR from "../data/namedays-fr-by-name.json";
-import US from "../data/namedays-us-by-name.json";
 
 /**
  * Fête d'un prénom, calculée sur le téléphone — utilisée en mode local.
  *
- * ⚠️ Copie conforme de server/utils/namedayHelper.js (même normalisation,
- * même ordre de recherche FR → US) : une carte doit avoir la même fête
+ * ⚠️ Copie conforme de server/utils/namedayHelper.js + namedayNormalize.js
+ * (même normalisation, même règle) : une carte doit avoir la même fête
  * qu'elle soit créée avec ou sans compte, sinon l'import vers un compte
- * (étape 6) ferait apparaître des différences.
- * Les deux JSON sont copiés depuis server/data/ : à resynchroniser si le
- * dictionnaire serveur change.
+ * ferait apparaître des différences.
+ *
+ * L'index est généré par server/scripts/build-namedays.js (qui écrit aussi
+ * cette copie) : ne pas l'éditer à la main, éditer server/data/namedays/fr.json.
+ *
+ * Plus de repli sur le calendrier US : un prénom absent du calendrier
+ * français n'a pas de fête (l'ancien repli fêtait « Mia » le 29/09).
  */
 
 type Index = Record<string, string>;
 
-/**
- * "Jean-Marie" → ["jean-marie", "jean"] ; "José" → ["josé", "jose"]
- */
-function normalizeFirstName(firstName: string): string[] {
-  const lower = firstName.toLowerCase().trim();
-  const norm = lower
+/** "  Raphaël " → "raphael" ; "Gabriel-Henri" → "gabriel-henri" */
+function stripName(name: string): string {
+  return name
+    .trim()
+    .toLowerCase()
     .normalize("NFD")
     .replace(/[̀-ͯ]/g, "")
+    .replace(/\s*-\s*/g, "-")
     .replace(/[^a-z-]/g, "");
-
-  const candidates = new Set([lower, norm]);
-  if (lower.includes("-")) {
-    candidates.add(lower.split("-")[0]);
-    candidates.add(norm.split("-")[0]);
-  }
-  return [...candidates].filter(Boolean);
 }
 
-function lookup(index: Index, candidates: string[]): string | null {
-  for (const c of candidates) if (index[c]) return index[c];
-  return null;
+/** "Gabriel-Henri" → ["gabriel-henri", "gabriel"] — comparés à l'identique. */
+function searchCandidates(firstName: string): string[] {
+  const full = stripName(firstName);
+  if (!full) return [];
+  const candidates = [full];
+  if (full.includes("-")) candidates.push(full.split("-")[0]);
+  return candidates.filter(Boolean);
 }
 
-/** Fête au format "MM-DD", ou null si le prénom est inconnu. */
+/** Fête au format "MM-DD", ou null si le prénom n'est pas fêté. */
 export function findNameDay(firstName: string | null | undefined): string | null {
   if (!firstName) return null;
-  const candidates = normalizeFirstName(firstName);
-  return lookup(FR as Index, candidates) ?? lookup(US as Index, candidates);
+  const index = FR as Index;
+  for (const c of searchCandidates(firstName)) if (index[c]) return index[c];
+  return null;
 }

@@ -1,13 +1,6 @@
 {
-  "01-01": [
-    "Jour de l'An",
-    "Marie",
-    "Marion",
-    "Manon",
-    "Marianne"
-  ],
   "01-02": [
-    "Basile Pleine"
+    "Basile"
   ],
   "01-03": [
     "Geneviève"
@@ -16,10 +9,13 @@
     "Odilon"
   ],
   "01-05": [
-    "Edouard"
+    "Édouard"
   ],
   "01-06": [
-    "Epiphanie"
+    "Mélaine",
+    "Gaspard",
+    "Melchior",
+    "Balthazar"
   ],
   "01-07": [
     "Raymond",
@@ -43,7 +39,8 @@
     "Tatiana"
   ],
   "01-13": [
-    "Yvette"
+    "Yvette",
+    "Hilaire"
   ],
   "01-14": [
     "Nina"
@@ -64,7 +61,8 @@
     "Marius"
   ],
   "01-20": [
-    "Sébastien"
+    "Sébastien",
+    "Fabien"
   ],
   "01-21": [
     "Agnès"
@@ -75,22 +73,13 @@
   "01-23": [
     "Barnard"
   ],
-  "01-24": [
-    "Fr. de Sales"
-  ],
-  "01-25": [
-    "Conv. S. Paul"
-  ],
   "01-26": [
-    "Paul",
-    "Mélanie",
-    "Stéphanie"
+    "Paule",
+    "Timothée",
+    "Mélanie"
   ],
   "01-27": [
     "Angèle"
-  ],
-  "01-28": [
-    "Th. d'Aquin"
   ],
   "01-29": [
     "Gildas"
@@ -104,15 +93,11 @@
   "02-01": [
     "Ella"
   ],
-  "02-02": [
-    "Présentation"
-  ],
   "02-03": [
     "Blaise"
   ],
   "02-04": [
-    "Véronique",
-    "Veronique"
+    "Véronique"
   ],
   "02-05": [
     "Agathe"
@@ -127,22 +112,15 @@
     "Jacqueline"
   ],
   "02-09": [
-    "Appoline"
+    "Apolline"
   ],
   "02-10": [
     "Arnaud"
   ],
-  "02-11": [
-    "N.-D. Lourdes"
-  ],
   "02-12": [
     "Félix"
   ],
-  "02-13": [
-    "Mardi gras"
-  ],
   "02-14": [
-    "Cendres",
     "Valentin"
   ],
   "02-15": [
@@ -162,9 +140,6 @@
   ],
   "02-20": [
     "Aimée"
-  ],
-  "02-21": [
-    "P. Damien"
   ],
   "02-22": [
     "Isabelle"
@@ -191,9 +166,6 @@
   "03-01": [
     "Aubin"
   ],
-  "03-02": [
-    "Charles le B."
-  ],
   "03-03": [
     "Guénolé"
   ],
@@ -203,17 +175,13 @@
   "03-05": [
     "Olive",
     "Chloé",
-    "Maëva",
-    "Maeva"
+    "Maëva"
   ],
   "03-06": [
     "Colette"
   ],
   "03-07": [
     "Félicité"
-  ],
-  "03-08": [
-    "Jean de Dieu"
   ],
   "03-09": [
     "Françoise"
@@ -249,7 +217,6 @@
     "Joseph"
   ],
   "03-20": [
-    "PRINTEMPS",
     "Axel",
     "Dylan"
   ],
@@ -261,12 +228,6 @@
   ],
   "03-23": [
     "Victorien"
-  ],
-  "03-24": [
-    "Cath. de Suè."
-  ],
-  "03-25": [
-    "Rameaux +1h"
   ],
   "03-26": [
     "Larissa"
@@ -280,18 +241,11 @@
   "03-29": [
     "Gwladys"
   ],
-  "03-30": [
-    "Vendredi Saint"
-  ],
   "03-31": [
     "Benjamin"
   ],
   "04-01": [
-    "Pâques",
     "Cédric"
-  ],
-  "04-02": [
-    "L. de Pâques"
   ],
   "04-03": [
     "Richard"
@@ -305,13 +259,8 @@
   "04-06": [
     "Marcellin"
   ],
-  "04-07": [
-    "J.-B. de la S."
-  ],
   "04-08": [
-    "Julie",
-    "Julia",
-    "Juliette"
+    "Julie"
   ],
   "04-09": [
     "Gauthier"
@@ -333,9 +282,6 @@
   ],
   "04-15": [
     "Paterne"
-  ],
-  "04-16": [
-    "Benoît"
   ],
   "04-17": [
     "Anicet"
@@ -373,21 +319,17 @@
   "04-28": [
     "Valérie"
   ],
-  "04-29": [
-    "Jour du souvenir"
-  ],
   "04-30": [
     "Robert"
   ],
   "05-01": [
-    "Fête du travail"
+    "Jérémie"
   ],
   "05-02": [
     "Boris"
   ],
   "05-03": [
-    "Phil.",
-    "Jacq."
+    "Philippe"
   ],
   "05-04": [
     "Sylvain",
@@ -401,8 +343,7 @@
   ],
   "05-07": [
     "Gisèle",
-    "Noé",
-    "Noah"
+    "Noé"
   ],
   "05-08": [
     "Victoire"
@@ -411,13 +352,13 @@
     "Pacôme"
   ],
   "05-10": [
-    "Ascension"
+    "Solange"
   ],
   "05-11": [
     "Estelle"
   ],
   "05-12": [
-    "Jean.-d'Arc"
+    "Achille"
   ],
   "05-13": [
     "Rolande"
@@ -435,19 +376,19 @@
     "Pascal"
   ],
   "05-18": [
-    "Eric"
+    "Éric"
   ],
   "05-19": [
     "Yves"
   ],
   "05-20": [
-    "Pentecôte"
+    "Bernardin"
   ],
   "05-21": [
-    "L. de Pentecôte"
+    "Constantin"
   ],
   "05-22": [
-    "Emile"
+    "Émile"
   ],
   "05-23": [
     "Didier"
@@ -461,9 +402,6 @@
   "05-26": [
     "Bérenger"
   ],
-  "05-27": [
-    "F. des Mères"
-  ],
   "05-28": [
     "Germain"
   ],
@@ -475,7 +413,7 @@
     "Jeanne"
   ],
   "05-31": [
-    "Visitation"
+    "Perrine"
   ],
   "06-01": [
     "Justin"
@@ -517,20 +455,19 @@
     "Guy"
   ],
   "06-13": [
-    "Antoine",
-    "Baptiste"
+    "Antoine"
   ],
   "06-14": [
-    "Elisée"
+    "Élisée"
   ],
   "06-15": [
     "Germaine"
   ],
   "06-16": [
-    "J.-Fr. Régis"
+    "Régis"
   ],
   "06-17": [
-    "F. des Pères"
+    "Hervé"
   ],
   "06-18": [
     "Léonce"
@@ -543,7 +480,7 @@
     "Léo"
   ],
   "06-21": [
-    "ÉTÉ"
+    "Rodolphe"
   ],
   "06-22": [
     "Alban"
@@ -552,9 +489,8 @@
     "Audrey"
   ],
   "06-24": [
-    "Jean-Bapt.",
     "Jean-Baptiste",
-    "Yohan",
+    "Baptiste",
     "Johan"
   ],
   "06-25": [
@@ -592,7 +528,6 @@
     "Florent"
   ],
   "07-05": [
-    "Antoine",
     "Enzo"
   ],
   "07-06": [
@@ -621,20 +556,19 @@
     "Henri"
   ],
   "07-14": [
-    "Fête Nationale"
+    "Camille"
   ],
   "07-15": [
     "Donald"
   ],
   "07-16": [
-    "N-D Mt-Carmel"
+    "Carmen"
   ],
   "07-17": [
     "Charlotte"
   ],
   "07-18": [
-    "Frédéric",
-    "Camille"
+    "Frédéric"
   ],
   "07-19": [
     "Arsène"
@@ -646,7 +580,7 @@
     "Victor"
   ],
   "07-22": [
-    "Marie-Mad."
+    "Madeleine"
   ],
   "07-23": [
     "Brigitte"
@@ -659,7 +593,7 @@
   ],
   "07-26": [
     "Anne",
-    "Joach."
+    "Joachim"
   ],
   "07-27": [
     "Nathalie"
@@ -674,35 +608,26 @@
     "Juliette"
   ],
   "07-31": [
-    "Ignace de L."
+    "Ignace"
   ],
   "08-01": [
     "Alphonse",
     "Alma"
   ],
-  "08-02": [
-    "Julien-Eym."
-  ],
   "08-03": [
     "Lydie"
   ],
   "08-04": [
-    "J.-M. Vianney"
+    "Vianney"
   ],
   "08-05": [
     "Abel"
-  ],
-  "08-06": [
-    "Transfiguration"
   ],
   "08-07": [
     "Gaétan"
   ],
   "08-08": [
     "Dominique"
-  ],
-  "08-09": [
-    "Amour"
   ],
   "08-10": [
     "Laurent"
@@ -712,17 +637,19 @@
   ],
   "08-12": [
     "Clarisse",
-    "Aurélie",
-    "Aurelie"
+    "Aurélie"
   ],
   "08-13": [
     "Hippolyte"
   ],
   "08-14": [
-    "Evrard"
+    "Évrard"
   ],
   "08-15": [
-    "Assomption"
+    "Marie",
+    "Marion",
+    "Manon",
+    "Marianne"
   ],
   "08-16": [
     "Armel"
@@ -745,18 +672,16 @@
   ],
   "08-22": [
     "Fabrice",
-    "Margaux",
-    "Margot"
+    "Margaux"
   ],
   "08-23": [
-    "Rose de L."
+    "Rose"
   ],
   "08-24": [
     "Barthélemy"
   ],
   "08-25": [
-    "Louis",
-    "Louise"
+    "Louis"
   ],
   "08-26": [
     "Natacha"
@@ -797,9 +722,6 @@
   "09-07": [
     "Reine"
   ],
-  "09-08": [
-    "Nativité N.-D."
-  ],
   "09-09": [
     "Alain"
   ],
@@ -815,24 +737,20 @@
   "09-13": [
     "Aimé"
   ],
-  "09-14": [
-    "La Ste Croix"
-  ],
   "09-15": [
     "Roland"
   ],
   "09-16": [
-    "Edith"
+    "Édith"
   ],
   "09-17": [
-    "Renaud",
-    "Stéphane"
+    "Renaud"
   ],
   "09-18": [
     "Nadège"
   ],
   "09-19": [
-    "Emilie",
+    "Émilie",
     "Morgan"
   ],
   "09-20": [
@@ -845,8 +763,10 @@
     "Maurice"
   ],
   "09-23": [
-    "AUTOMNE",
-    "Nadine"
+    "Constant",
+    "Nadine",
+    "Lin",
+    "Lina"
   ],
   "09-24": [
     "Thècle"
@@ -856,25 +776,21 @@
   ],
   "09-26": [
     "Côme",
-    "Dam."
-  ],
-  "09-27": [
-    "Vinc. de P."
+    "Damien"
   ],
   "09-28": [
     "Venceslas"
   ],
   "09-29": [
     "Michel",
-    "Raphaël",
     "Gabriel",
-    "Michaël"
+    "Raphaël"
   ],
   "09-30": [
     "Jérôme"
   ],
   "10-01": [
-    "Thér. de l'E."
+    "Thérèse"
   ],
   "10-02": [
     "Léger"
@@ -883,7 +799,7 @@
     "Gérard"
   ],
   "10-04": [
-    "Fr. d'Assise"
+    "François"
   ],
   "10-05": [
     "Fleur"
@@ -915,14 +831,11 @@
   "10-14": [
     "Juste"
   ],
-  "10-15": [
-    "Thér. d'Avila"
-  ],
   "10-16": [
     "Edwige"
   ],
   "10-17": [
-    "Baudoin"
+    "Baudouin"
   ],
   "10-18": [
     "Luc"
@@ -937,10 +850,7 @@
     "Céline"
   ],
   "10-22": [
-    "Elodie"
-  ],
-  "10-23": [
-    "Jean de C."
+    "Élodie"
   ],
   "10-24": [
     "Florentin"
@@ -952,12 +862,12 @@
     "Dimitri"
   ],
   "10-27": [
-    "Emeline",
+    "Émeline",
     "Isaac"
   ],
   "10-28": [
     "Simon",
-    "Jude -1h"
+    "Jude"
   ],
   "10-29": [
     "Narcisse"
@@ -967,12 +877,6 @@
   ],
   "10-31": [
     "Quentin"
-  ],
-  "11-01": [
-    "Toussaint"
-  ],
-  "11-02": [
-    "Défunt"
   ],
   "11-03": [
     "Hubert"
@@ -999,7 +903,7 @@
     "Léon"
   ],
   "11-11": [
-    "Armistice 1918"
+    "Martin"
   ],
   "11-12": [
     "Christian"
@@ -1012,15 +916,15 @@
     "Sidoine"
   ],
   "11-15": [
-    "Albert"
+    "Albert",
+    "Arthur"
   ],
   "11-16": [
     "Marguerite"
   ],
   "11-17": [
-    "Elisabeth",
-    "Élise",
-    "Elise"
+    "Élisabeth",
+    "Élise"
   ],
   "11-18": [
     "Aude"
@@ -1032,7 +936,6 @@
     "Edmond"
   ],
   "11-21": [
-    "Prés. Marie",
     "Marine"
   ],
   "11-22": [
@@ -1045,16 +948,13 @@
     "Flora"
   ],
   "11-25": [
-    "Christ Roi"
+    "Catherine"
   ],
   "11-26": [
     "Delphine"
   ],
   "11-27": [
     "Séverin"
-  ],
-  "11-28": [
-    "Jacq. de la M."
   ],
   "11-29": [
     "Saturnin"
@@ -1066,7 +966,7 @@
     "Florence"
   ],
   "12-02": [
-    "Avent"
+    "Viviane"
   ],
   "12-03": [
     "Xavier"
@@ -1084,12 +984,6 @@
     "Ambroise",
     "Ambre"
   ],
-  "12-08": [
-    "Im. Concept."
-  ],
-  "12-09": [
-    "Pierre Fourier"
-  ],
   "12-10": [
     "Romaric"
   ],
@@ -1097,12 +991,11 @@
     "Daniel"
   ],
   "12-12": [
-    "Jean. Fr.-Ch."
+    "Chantal"
   ],
   "12-13": [
     "Lucie",
-    "Josse",
-    "Joss"
+    "Josse"
   ],
   "12-14": [
     "Odile"
@@ -1111,8 +1004,7 @@
     "Ninon"
   ],
   "12-16": [
-    "Alice",
-    "Alicia"
+    "Alice"
   ],
   "12-17": [
     "Gaël"
@@ -1126,9 +1018,6 @@
   "12-20": [
     "Abraham"
   ],
-  "12-21": [
-    "HIVER"
-  ],
   "12-22": [
     "Xavière"
   ],
@@ -1136,21 +1025,21 @@
     "Armand"
   ],
   "12-24": [
-    "Adèle"
+    "Adèle",
+    "Adam",
+    "Ève"
   ],
   "12-25": [
-    "Noël"
+    "Noël",
+    "Emmanuel"
   ],
   "12-26": [
-    "Etienne",
-    "Zoé",
-    "Steven"
+    "Étienne",
+    "Stéphane",
+    "Zoé"
   ],
   "12-27": [
     "Jean"
-  ],
-  "12-28": [
-    "Innocents"
   ],
   "12-29": [
     "David"

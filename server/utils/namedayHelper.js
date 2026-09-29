@@ -1,132 +1,72 @@
 /**
  * namedayHelper.js
  *
- * Lookup des fêtes par prénom, multi-langue.
- * Priorité : FR → US (fallback) → null
+ * Lookup des fêtes par prénom.
  *
- * Format des fichiers : { "julie": "04-08", "sophie": "05-25", ... }
+ * Source : data/namedays/<pays>.json (fichier maison), compilé en index par
+ * scripts/build-namedays.js → data/namedays-<pays>-by-name.json / -by-date.json.
+ *
+ * Règle : un prénom absent du calendrier du pays n'a PAS de fête.
+ * Plus de repli sur un autre pays (l'ancien repli US donnait par exemple
+ * « Mia » fêtée le 29/09 à des utilisateurs français).
  */
 
-const path = require('path');
-const fs   = require('fs');
+const path = require("path");
+const fs = require("fs");
+const { searchCandidates } = require("./namedayNormalize");
 
-// Cache en mémoire : on charge chaque langue une seule fois
+// Cache en mémoire : chaque index n'est lu qu'une fois
 const cache = {};
 
-function getIndex(lang) {
-  if (!cache[lang]) {
-    const filePath = path.join(__dirname, `../data/namedays-${lang}-by-name.json`);
-    if (!fs.existsSync(filePath)) {
-      console.warn(`⚠️  Fichier namedays manquant pour la langue : ${lang}`);
-      cache[lang] = {};
-    } else {
-      cache[lang] = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-    }
-  }
-  return cache[lang];
-}
-
-function getDateIndex(lang) {
-  const key = `date_${lang}`;
+function loadIndex(country, kind) {
+  const key = `${country}_${kind}`;
   if (!cache[key]) {
-    const filePath = path.join(__dirname, `../data/namedays-${lang}-by-date.json`);
+    const filePath = path.join(
+      __dirname,
+      `../data/namedays-${country}-by-${kind}.json`,
+    );
     if (!fs.existsSync(filePath)) {
+      console.warn(`⚠️  Index de fêtes manquant : ${path.basename(filePath)}`);
       cache[key] = {};
     } else {
-      cache[key] = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+      cache[key] = JSON.parse(fs.readFileSync(filePath, "utf8"));
     }
   }
   return cache[key];
 }
 
 /**
- * Normalise un prénom pour la recherche
- * "Jean-Marie" → ["jean-marie", "jean"]
- * "José" → ["jose", "josé"]
+ * Date de fête d'un prénom.
+ * @param {string} firstName - "Gabriel-Henri", "  Raphaël ", "Mickaël"…
+ * @param {string} country   - code pays du calendrier (défaut : 'fr')
+ * @returns {string|null}    - "MM-DD" ou null si le prénom n'est pas fêté
  */
-function normalizeFirstName(firstName) {
-  if (!firstName) return [];
-
-  const lower = firstName.toLowerCase().trim();
-
-  // Version sans accents
-  const norm = lower
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z-]/g, '');
-
-  const candidates = new Set([lower, norm]);
-
-  // Si prénom composé (Jean-Marie), ajouter le premier prénom seul
-  if (lower.includes('-')) {
-    const first = lower.split('-')[0];
-    const firstNorm = norm.split('-')[0];
-    candidates.add(first);
-    candidates.add(firstNorm);
+function findNameDay(firstName, country = "fr") {
+  const index = loadIndex(country, "name");
+  for (const candidate of searchCandidates(firstName)) {
+    if (index[candidate]) return index[candidate];
   }
-
-  return [...candidates].filter(Boolean);
-}
-
-/**
- * Trouve la date de fête d'un prénom
- * Priorité : lang (fr par défaut) → us (fallback) → null
- *
- * @param {string} firstName - Le prénom à chercher
- * @param {string} lang      - Code langue (défaut: 'fr')
- * @returns {string|null}    - Date au format "MM-DD" ou null
- */
-function findNameDay(firstName, lang = 'fr') {
-  if (!firstName) return null;
-
-  const candidates = normalizeFirstName(firstName);
-
-  // 1. Cherche dans la langue demandée (fr par défaut)
-  const primaryIndex = getIndex(lang);
-  for (const candidate of candidates) {
-    if (primaryIndex[candidate]) {
-      return primaryIndex[candidate];
-    }
-  }
-
-  // 2. Fallback sur US si lang !== 'us' et rien trouvé
-  if (lang !== 'us') {
-    const usIndex = getIndex('us');
-    for (const candidate of candidates) {
-      if (usIndex[candidate]) {
-        return usIndex[candidate];
-      }
-    }
-  }
-
   return null;
 }
 
 /**
- * Récupère tous les prénoms fêtés à une date donnée
- * @param {string} date - Format "MM-DD"
- * @param {string} lang - Code langue (défaut: 'fr')
- * @returns {string[]}  - Liste des prénoms
+ * Prénoms fêtés à une date.
+ * @param {string} date    - "MM-DD"
+ * @param {string} country - défaut : 'fr'
+ * @returns {string[]}
  */
-function getNamesForDate(date, lang = 'fr') {
-  const index = getDateIndex(lang);
-  return index[date] || [];
+function getNamesForDate(date, country = "fr") {
+  return loadIndex(country, "date")[date] || [];
 }
 
-/**
- * Vérifie si aujourd'hui est la fête d'un prénom
- * @param {string} firstName
- * @param {string} lang
- * @returns {boolean}
- */
-function isNameDayToday(firstName, lang = 'fr') {
-  const today = new Date();
-  const mm = String(today.getMonth() + 1).padStart(2, '0');
-  const dd = String(today.getDate()).padStart(2, '0');
-  const todayKey = `${mm}-${dd}`;
-
-  const nameday = findNameDay(firstName, lang);
-  return nameday === todayKey;
+/** La fête de ce prénom tombe-t-elle aujourd'hui (heure de Paris) ? */
+function isNameDayToday(firstName, country = "fr") {
+  const today = new Date(
+    new Date().toLocaleString("en-US", { timeZone: "Europe/Paris" }),
+  );
+  const mm = String(today.getMonth() + 1).padStart(2, "0");
+  const dd = String(today.getDate()).padStart(2, "0");
+  return findNameDay(firstName, country) === `${mm}-${dd}`;
 }
 
 module.exports = {

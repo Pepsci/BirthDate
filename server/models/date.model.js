@@ -2,8 +2,8 @@ const { Schema, model } = require("mongoose");
 
 const dateSchema = Schema({
   date: { type: Date, required: true },
-  name: String,
-  surname: String,
+  name: { type: String, trim: true },
+  surname: { type: String, trim: true },
   nameday: {
     type: String,
     required: false,

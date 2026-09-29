@@ -103,7 +103,9 @@ async function claimReminder(subjectId, kind, daysLeft) {
  * (ou "undefined" là où l'interpolation n'était pas protégée).
  */
 function displayName(date) {
-  return date.name || date.linkedUser?.name || "Quelqu'un";
+  // trim : un prénom saisi « Raphaël  » donnait « C'est la fête de Raphaël  ! »
+  const name = (date.name || date.linkedUser?.name || "").trim();
+  return name || "Quelqu'un";
 }
 
 // ========================================
@@ -419,7 +421,6 @@ async function checkAndSendAllReminders() {
   console.log("\n📧 [CRON] Démarrage de la vérification des rappels...");
   await checkAndSendUserBirthdayReminders();
   await checkAndSendCardBirthdayReminders();
-  await checkAndSendNamedayReminders();
   console.log("✅ [CRON] Vérification terminée\n");
 }
 
@@ -430,6 +431,19 @@ const cronJob = cron.schedule(
   "0 0 * * *",
   async () => {
     await checkAndSendAllReminders();
+  },
+  { scheduled: false, timezone: "Europe/Paris" },
+);
+
+// ========================================
+// PLANIFICATION : Fêtes — tous les jours à 9h
+// ========================================
+// Séparé des anniversaires : un « Pensez à lui souhaiter une bonne fête » reçu
+// à minuit tombe en pleine nuit et se perd dans les notifs du matin.
+const namedayCronJob = cron.schedule(
+  "0 9 * * *",
+  async () => {
+    await checkAndSendNamedayReminders();
   },
   { scheduled: false, timezone: "Europe/Paris" },
 );
@@ -452,10 +466,13 @@ module.exports = {
   initApp,
   start: () => {
     cronJob.start();
+    namedayCronJob.start();
     monthlyRecapJob.start();
-    console.log("✅ Rappels quotidiens planifiés (minuit)");
+    console.log("✅ Rappels d'anniversaire planifiés (minuit)");
+    console.log("✅ Rappels de fête planifiés (9h)");
     console.log("✅ Récap mensuel planifié (1er du mois à 8h)");
   },
   checkAndSendAllReminders,
+  checkAndSendNamedayReminders,
   checkAndSendMonthlyRecap,
 };
