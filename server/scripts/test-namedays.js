@@ -44,6 +44,10 @@ const cases = [
   ["", null],
   [null, null],
   ["Joss", "12-13"],
+  ["Joan", "05-30"],             // forme de Jeanne
+  ["Fanny", "03-09"],             // forme de Françoise
+  ["Jordan", "02-13"],            // bx Jourdain de Saxe
+  ["Kelly", null],               // pas de saint (Nominis)
 ];
 for (const [name, expected] of cases) {
   test(`findNameDay(${JSON.stringify(name)}) = ${expected}`, () =>
