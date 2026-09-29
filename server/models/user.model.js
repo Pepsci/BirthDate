@@ -22,6 +22,9 @@ const userSchema = new Schema({
       message: "Nameday must be in MM-DD format",
     },
   },
+  // "auto" = calculée depuis le calendrier (suit ses corrections),
+  // "manual" = choisie par l'utilisateur (jamais recalculée). Voir resolveNameday().
+  namedaySource: { type: String, enum: ["auto", "manual"], default: "auto" },
   resetToken: String,
   resetTokenExpires: Date,
   verificationToken: String, // hash SHA-256 (anciens comptes : token en clair)

@@ -15,6 +15,9 @@ const dateSchema = Schema({
       message: "Nameday must be in MM-DD format",
     },
   },
+  // "auto" = calculée depuis le calendrier (suit ses corrections),
+  // "manual" = choisie par l'utilisateur (jamais recalculée). Voir resolveNameday().
+  namedaySource: { type: String, enum: ["auto", "manual"], default: "auto" },
   owner: { type: Schema.Types.ObjectId, ref: "User" },
   family: { type: Boolean, default: false },
 

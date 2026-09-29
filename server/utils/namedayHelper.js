@@ -69,7 +69,55 @@ function isNameDayToday(firstName, country = "fr") {
   return findNameDay(firstName, country) === `${mm}-${dd}`;
 }
 
+/**
+ * Décide de la fête à enregistrer et de sa source, à la création ou à la
+ * modification d'une carte ou d'un compte.
+ *
+ * Le web et le mobile renvoient la fête même quand l'utilisateur n'y a pas
+ * touché : on ne peut donc pas se fier à « le champ est présent ». On compare
+ * la valeur reçue au calendrier :
+ *   - identique au calendrier → "auto"   (suivra les corrections du calendrier)
+ *   - différente / vidée      → "manual" (on n'y touchera plus jamais)
+ *
+ * @param {object}  p
+ * @param {string}  p.name      - prénom après modification
+ * @param {string|null|undefined} p.incoming - fête reçue (undefined = non envoyée)
+ * @param {object}  [p.existing] - document actuel { name, nameday, namedaySource }
+ * @returns {{ nameday: string|null, namedaySource: "auto"|"manual" }}
+ */
+function resolveNameday({ name, incoming, existing }) {
+  const auto = findNameDay(name);
+  const current = existing ? existing.nameday || null : null;
+  const wasManual = existing?.namedaySource === "manual";
+  const nameChanged =
+    !!existing && (existing.name || "").trim() !== (name || "").trim();
+
+  // Fête non envoyée : on garde l'existant, sauf renommage d'une fête auto
+  if (incoming === undefined) {
+    if (existing && (wasManual || !nameChanged)) {
+      return { nameday: current, namedaySource: wasManual ? "manual" : "auto" };
+    }
+    return { nameday: auto, namedaySource: "auto" };
+  }
+
+  const value = incoming || null;
+
+  // Renommage (Pauline → Paul) : le formulaire renvoie l'ancienne fête telle
+  // quelle. Si elle était automatique, elle suit le nouveau prénom.
+  if (existing && !wasManual && nameChanged && value === current) {
+    return { nameday: auto, namedaySource: "auto" };
+  }
+
+  // Même valeur qu'avant sur une fête manuelle : elle reste manuelle
+  if (wasManual && value === current) {
+    return { nameday: value, namedaySource: "manual" };
+  }
+
+  return { nameday: value, namedaySource: value === auto ? "auto" : "manual" };
+}
+
 module.exports = {
+  resolveNameday,
   findNameDay,
   getNamesForDate,
   isNameDayToday,

@@ -9,7 +9,11 @@
 const assert = require("assert/strict");
 const fs = require("fs");
 const path = require("path");
-const { findNameDay, getNamesForDate } = require("../utils/namedayHelper");
+const {
+  findNameDay,
+  getNamesForDate,
+  resolveNameday,
+} = require("../utils/namedayHelper");
 
 let passed = 0;
 const failures = [];
@@ -48,6 +52,26 @@ for (const [name, expected] of cases) {
 
 test("29/09 : Michel, Gabriel, Raphaël", () =>
   assert.deepEqual(getNamesForDate("09-29"), ["Michel", "Gabriel", "Raphaël"]));
+
+// ── Fête choisie à la main : jamais écrasée ──
+const auto = (name, nameday) => ({ name, nameday, namedaySource: "auto" });
+const manual = (name, nameday) => ({ name, nameday, namedaySource: "manual" });
+const resolveCases = [
+  ["création, rien envoyé", { name: "Pauline" }, ["01-11", "auto"]],
+  ["création, formulaire pré-rempli", { name: "Pauline", incoming: "01-11" }, ["01-11", "auto"]],
+  ["création, autre date choisie", { name: "Pauline", incoming: "01-26" }, ["01-26", "manual"]],
+  ["édition sans toucher (auto)", { name: "Pauline", incoming: "01-11", existing: auto("Pauline", "01-11") }, ["01-11", "auto"]],
+  ["édition sans toucher (manuelle)", { name: "Pauline", incoming: "01-26", existing: manual("Pauline", "01-26") }, ["01-26", "manual"]],
+  ["fête non envoyée (manuelle)", { name: "Pauline", existing: manual("Pauline", "01-26") }, ["01-26", "manual"]],
+  ["renommage, fête auto suit", { name: "Paul", incoming: "01-11", existing: auto("Pauline", "01-11") }, ["06-29", "auto"]],
+  ["renommage, fête manuelle reste", { name: "Paul", incoming: "01-26", existing: manual("Pauline", "01-26") }, ["01-26", "manual"]],
+  ["fête vidée volontairement", { name: "Pauline", incoming: null, existing: auto("Pauline", "01-11") }, [null, "manual"]],
+  ["retour à la date du calendrier", { name: "Pauline", incoming: "01-11", existing: manual("Pauline", "01-26") }, ["01-11", "auto"]],
+];
+for (const [label, input, [nameday, namedaySource]] of resolveCases) {
+  test(`resolveNameday : ${label}`, () =>
+    assert.deepEqual(resolveNameday(input), { nameday, namedaySource }));
+}
 
 // ── Intégrité de l'index généré ──
 const byName = require("../data/namedays-fr-by-name.json");

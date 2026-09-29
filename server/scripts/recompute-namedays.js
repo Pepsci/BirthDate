@@ -9,10 +9,14 @@
  * les cartes existantes tant qu'on ne les recalcule pas.
  *
  * Règle de sécurité — on ne touche JAMAIS une fête choisie à la main :
- *   - fête vide                          → on calcule avec le nouveau calendrier
- *   - fête = ce que l'ANCIEN calcul      → c'était automatique, on recalcule
- *     aurait donné (FR puis repli US)      (y compris vers « pas de fête » : Mia)
- *   - fête différente de l'ancien calcul → saisie manuelle, on laisse et on liste
+ *   - namedaySource = "manual"           → on laisse
+ *   - namedaySource = "auto"             → on recalcule
+ *   - pas encore de namedaySource (documents d'avant ce champ), on devine UNE fois :
+ *       · fête vide                          → auto, on calcule
+ *       · fête = ce que l'ANCIEN calcul      → auto, on recalcule
+ *         aurait donné (FR puis repli US)      (Mia 29/09 → 15/08)
+ *       · fête différente de l'ancien calcul → manuelle, on laisse
+ *     et on enregistre la source trouvée, pour ne plus jamais deviner.
  *
  * Nettoie aussi les espaces autour de name / surname (cartes uniquement).
  *
@@ -55,14 +59,21 @@ function legacyFindNameDay(firstName) {
 }
 
 // ── Décision pour un document ──
-function decide(name, stored) {
+function decide(name, stored, source) {
   const current = stored || null;
   const next = findNameDay(name);
-  if (current === next) return { action: "same" };
-  if (!current || current === legacyFindNameDay(name)) {
-    return { action: "update", from: current, to: next };
+
+  let resolvedSource = source;
+  if (!resolvedSource) {
+    resolvedSource =
+      !current || current === legacyFindNameDay(name) ? "auto" : "manual";
   }
-  return { action: "manual", from: current, suggested: next };
+
+  if (resolvedSource === "manual") {
+    return { action: "manual", from: current, suggested: next, source: "manual" };
+  }
+  if (current === next) return { action: "same", source: "auto" };
+  return { action: "update", from: current, to: next, source: "auto" };
 }
 
 async function run() {
@@ -73,7 +84,10 @@ async function run() {
   const manual = [];
 
   // 1. Cartes (dates)
-  const dates = await DateModel.find({}, "name surname nameday linkedUser").lean();
+  const dates = await DateModel.find(
+    {},
+    "name surname nameday namedaySource linkedUser",
+  ).lean();
   for (const d of dates) {
     const set = {};
     const unset = {};
@@ -85,12 +99,13 @@ async function run() {
 
     // Carte liée sans prénom propre : la fête vient du compte lié, on n'y touche pas
     if (name) {
-      const r = decide(name, d.nameday);
+      const r = decide(name, d.nameday, d.namedaySource);
+      if (d.namedaySource !== r.source) set.namedaySource = r.source;
       if (r.action === "update") {
         if (r.to) { set.nameday = r.to; stats.updated++; }
         else { unset.nameday = ""; stats.cleared++; }
         console.log(`  carte  ${name.padEnd(18)} ${r.from || "—"} → ${r.to || "pas de fête"}`);
-      } else if (r.action === "manual") {
+      } else if (r.action === "manual" && r.from !== r.suggested) {
         stats.manual++;
         manual.push(`carte  ${name} : garde ${r.from} (le calendrier dirait ${r.suggested || "pas de fête"})`);
       }
@@ -105,21 +120,25 @@ async function run() {
   }
 
   // 2. Comptes utilisateurs (leur propre fête)
-  const users = await User.find({ deletedAt: { $exists: false } }, "name nameday").lean();
+  const users = await User.find(
+    { deletedAt: { $exists: false } },
+    "name nameday namedaySource",
+  ).lean();
   for (const u of users) {
     const name = (u.name || "").trim();
     if (!name) continue;
-    const r = decide(name, u.nameday);
+    const r = decide(name, u.nameday, u.namedaySource);
+    const set = {};
+    if (u.namedaySource !== r.source) set.namedaySource = r.source;
     if (r.action === "update") {
       console.log(`  compte ${name.padEnd(18)} ${r.from || "—"} → ${r.to || "pas de fête"}`);
       r.to ? stats.updated++ : stats.cleared++;
-      if (APPLY) {
-        await User.updateOne(
-          { _id: u._id },
-          r.to ? { $set: { nameday: r.to } } : { $set: { nameday: null } },
-        );
-      }
-    } else if (r.action === "manual") {
+      set.nameday = r.to || null;
+    }
+    if (APPLY && Object.keys(set).length) {
+      await User.updateOne({ _id: u._id }, { $set: set });
+    }
+    if (r.action === "manual" && r.from !== r.suggested) {
       stats.manual++;
       manual.push(`compte ${name} : garde ${r.from} (le calendrier dirait ${r.suggested || "pas de fête"})`);
     }

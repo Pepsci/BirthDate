@@ -45,7 +45,7 @@ const avatarUploadLimiter = rateLimit({
 });
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
-const { findNameDay } = require("../utils/namedayHelper");
+const { resolveNameday } = require("../utils/namedayHelper");
 
 /**
  * Durée à donner au token réémis après une mise à jour de profil.
@@ -280,6 +280,11 @@ router.patch(
         }
       }
 
+      const previous = {
+        name: user.name,
+        nameday: user.nameday,
+        namedaySource: user.namedaySource,
+      };
       user.username = req.body.username || user.username;
       user.name = req.body.name || user.name;
       user.surname =
@@ -287,9 +292,14 @@ router.patch(
       user.email = req.body.email || user.email;
       user.birthDate = req.body.birthDate || user.birthDate;
 
-      if (req.body.nameday !== undefined) {
-        user.nameday = req.body.nameday || null;
-      }
+      // Fête du calendrier ou choisie à la main (voir resolveNameday)
+      const resolved = resolveNameday({
+        name: user.name,
+        incoming: req.body.nameday,
+        existing: previous,
+      });
+      user.nameday = resolved.nameday;
+      user.namedaySource = resolved.namedaySource;
 
       if (avatar) {
         user.avatar = avatar;
@@ -366,10 +376,23 @@ router.patch("/me/nameday", isAuthenticated, async (req, res) => {
       }
     }
 
+    const me = await userModel.findById(
+      req.payload._id,
+      "name nameday namedaySource",
+    );
+    if (!me) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    const resolved = resolveNameday({
+      name: me.name,
+      incoming: nameday || null,
+      existing: me,
+    });
+
     const updatedUser = await userModel
       .findByIdAndUpdate(
         req.payload._id,
-        { nameday: nameday || null },
+        { nameday: resolved.nameday, namedaySource: resolved.namedaySource },
         { new: true, runValidators: true },
       )
       .select("-password");
@@ -574,6 +597,11 @@ router.patch(
         }
       }
 
+      const previous = {
+        name: user.name,
+        nameday: user.nameday,
+        namedaySource: user.namedaySource,
+      };
       user.username = req.body.username || user.username;
       user.name = req.body.name || user.name;
       user.surname =
@@ -581,9 +609,14 @@ router.patch(
       user.email = req.body.email || user.email;
       user.birthDate = req.body.birthDate || user.birthDate;
 
-      if (req.body.nameday !== undefined) {
-        user.nameday = req.body.nameday || null;
-      }
+      // Fête du calendrier ou choisie à la main (voir resolveNameday)
+      const resolved = resolveNameday({
+        name: user.name,
+        incoming: req.body.nameday,
+        existing: previous,
+      });
+      user.nameday = resolved.nameday;
+      user.namedaySource = resolved.namedaySource;
 
       if (avatar) {
         user.avatar = avatar;

@@ -653,6 +653,10 @@ dans `utils/age.js`) sur `POST /stripe/connect/onboard`, `PUT /:shortId/pool`
 - La fête est **figée** dans `nameday` à la création : après un changement de calendrier,
   lancer `node scripts/recompute-namedays.js` (simulation) puis `--apply`. Les fêtes
   saisies à la main ne sont jamais écrasées.
+- **`namedaySource`** (`auto` | `manual`, sur `Date` et `User`) : toute écriture de fête passe par
+  `resolveNameday()` (`utils/namedayHelper.js`). Les clients renvoient la fête même inchangée, donc
+  on compare au calendrier : identique → `auto`, différente ou vidée → `manual`. Une fête `manual`
+  n'est JAMAIS recalculée (script, futur bouton admin) ; une fête `auto` suit un changement de prénom.
 - Les dates d'événements comparent **année + mois + jour** (pas récurrentes)
 - Toujours parser les dates avec `new Date(year, month, day)` pour éviter les problèmes de timezone
 

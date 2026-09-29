@@ -4,7 +4,7 @@ const dateModel = require("./../models/date.model");
 const Conversation = require("./../models/conversation.model");
 const mongoose = require("mongoose");
 const userModel = require("../models/user.model");
-const { findNameDay } = require("../utils/namedayHelper");
+const { resolveNameday } = require("../utils/namedayHelper");
 
 const { isAuthenticated } = require("../middleware/jwt.middleware");
 const {
@@ -74,8 +74,8 @@ router.post("/", isAuthenticated, async (req, res, next) => {
   const { date, name, surname, family, linkedUser, nameday } = req.body;
 
   try {
-    // Auto-détection de la fête si non fournie manuellement
-    const resolvedNameday = nameday || (name ? findNameDay(name) : null);
+    // Fête du calendrier, ou fête choisie à la main (voir resolveNameday)
+    const resolved = resolveNameday({ name, incoming: nameday || undefined });
 
     const newDate = await dateModel.create({
       date,
@@ -84,7 +84,8 @@ router.post("/", isAuthenticated, async (req, res, next) => {
       surname,
       family,
       linkedUser,
-      nameday: resolvedNameday,
+      nameday: resolved.nameday,
+      namedaySource: resolved.namedaySource,
     });
 
     res.status(201).json(newDate);
@@ -159,20 +160,21 @@ router.patch("/:id", isAuthenticated, async (req, res, next) => {
       });
     }
 
-    // Si le nom change et pas de nameday explicite, recalculer
-    const resolvedNameday =
-      nameday !== undefined
-        ? nameday || null
-        : name && name !== existingDate.name
-          ? findNameDay(name)
-          : existingDate.nameday;
+    // Fête du calendrier ou choisie à la main — une fête manuelle n'est
+    // jamais écrasée, une fête auto suit un changement de prénom.
+    const resolved = resolveNameday({
+      name: name !== undefined ? name : existingDate.name,
+      incoming: nameday,
+      existing: existingDate,
+    });
 
     const updateFields = {
       date,
       name,
       surname,
       family,
-      nameday: resolvedNameday,
+      nameday: resolved.nameday,
+      namedaySource: resolved.namedaySource,
     };
 
     if (giftName && purchased !== undefined) {

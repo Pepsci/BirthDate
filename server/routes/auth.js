@@ -209,6 +209,7 @@ router.post("/signup", signupLimiter, async (req, res) => {
       surname,
       birthDate: parsedBirthDate,
       nameday,
+      namedaySource: "auto",
       avatar: `https://api.dicebear.com/8.x/bottts/svg?seed=${surname}`,
       verificationToken: hashToken(verificationToken),
       verificationTokenExpires: Date.now() + VERIFICATION_TOKEN_TTL_MS,
