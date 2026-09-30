@@ -657,10 +657,16 @@ dans `utils/age.js`) sur `POST /stripe/connect/onboard`, `PUT /:shortId/pool`
 - Modifier le calendrier ne change pas les contacts existants : l'admin propose ensuite
   « Appliquer » (`POST /api/admin/namedays/apply`, simulation par défaut), qui ne touche que les
   fêtes `auto`. Chaque modif est tracée (`nameday_edit` dans les logs).
-- Admin Fêtes, 4 onglets paginés (30 lignes) : Par date, Liste complète (principaux + variantes
+- Admin Fêtes, 5 onglets paginés (30 lignes) : Par date, Liste complète (principaux + variantes
   A→Z), Composés (prénoms composés des répertoires + date donnée par la règle, via
-  `explainNameDay()` — les exceptions reçoivent leur propre ligne), Sans fête. `?q=` pré-remplit
-  la recherche.
+  `explainNameDay()` — les exceptions reçoivent leur propre ligne), Sans fête, **À appliquer**.
+  `?q=` pré-remplit la recherche.
+- **À appliquer** (`GET /api/admin/namedays/pending`, `POST …/pending/apply`) : calculé en direct,
+  toutes les fêtes `auto` qui ne correspondent plus au calendrier (modif laissée « Plus tard »,
+  nouvelle règle après un déploiement). Tout appliquer ou ligne par ligne ; l'écriture revérifie la
+  fête lue, une carte modifiée entre-temps est ignorée. **Remplace `recompute-namedays.js` au
+  quotidien** : après un déploiement qui touche la normalisation ou la règle des composés, il suffit
+  d'ouvrir cet onglet. Le script ne sert plus que pour des documents sans `namedaySource`.
 - **Signaler une fête incorrecte** : ticket support `category: "nameday"` + `namedayReport`
   (`name`, `key`, `currentDate` calculée par le serveur, `expectedDate` proposée). Échappe à la
   règle du ticket unique ; plafond : un signalement ouvert par prénom et par utilisateur. Entrées :

@@ -10,12 +10,16 @@ import "./css/adminNamedays.css";
 /**
  * Calendrier des fêtes (collection Nameday).
  *
- * Quatre onglets :
+ * Cinq onglets :
  *  - Par date        : prénoms principaux et leurs variantes, dans l'ordre de l'année ;
  *  - Liste complète  : tous les prénoms (principaux + variantes) de A à Z ;
  *  - Composés        : prénoms composés des répertoires, avec la date que leur
  *                      donne la règle (Jean-Luc → Luc) — à vérifier une fois ;
- *  - Sans fête       : prénoms des répertoires qui ne matchent rien.
+ *  - Sans fête       : prénoms des répertoires qui ne matchent rien ;
+ *  - À appliquer     : cartes dont la fête automatique ne correspond plus au
+ *                      calendrier (modif laissée « Plus tard », ou nouvelle
+ *                      règle après un déploiement). Remplace le script
+ *                      recompute-namedays.js au quotidien.
  *
  * Après chaque modification, on demande au serveur quels contacts existants
  * changeraient (POST /apply en simulation) et on propose de l'appliquer.
@@ -279,6 +283,8 @@ const AdminNamedays = () => {
   const [total, setTotal] = useState(0);
   const [missing, setMissing] = useState([]);
   const [compounds, setCompounds] = useState([]);
+  const [pending, setPending] = useState([]);
+  const [applyingPending, setApplyingPending] = useState(false);
   const [search, setSearch] = useState(params.get("q") || "");
   const [month, setMonth] = useState("");
   const [page, setPage] = useState(1);
@@ -303,7 +309,26 @@ const AdminNamedays = () => {
       .get("/admin/namedays/compounds")
       .then((res) => setCompounds(res.data.compounds))
       .catch(() => {});
+    apiHandler
+      .get("/admin/namedays/pending")
+      .then((res) => setPending(res.data.changes))
+      .catch(() => {});
   }, []);
+
+  // ids absent = tout appliquer
+  const applyPending = async (ids) => {
+    if (!ids && !window.confirm(`Mettre à jour la fête de ${pending.length} contact(s) ?`)) return;
+    setApplyingPending(true);
+    try {
+      const res = await apiHandler.post("/admin/namedays/pending/apply", ids ? { ids } : {});
+      setNotice(`${res.data.count} contact(s) mis à jour.`);
+      load();
+    } catch (err) {
+      setNotice(errorOf(err));
+    } finally {
+      setApplyingPending(false);
+    }
+  };
 
   useEffect(load, [load]);
 
@@ -390,6 +415,11 @@ const AdminNamedays = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [compounds, q],
   );
+  const pendingFiltered = useMemo(
+    () => pending.filter((c) => matchesQ(c.name)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [pending, q],
+  );
   const missingFiltered = useMemo(
     () => missing.filter((m) => matchesQ(m.name)),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -432,6 +462,7 @@ const AdminNamedays = () => {
     { id: "all", label: "Liste complète" },
     { id: "compounds", label: "Composés", badge: toReview },
     { id: "missing", label: "Sans fête", badge: missing.length },
+    { id: "pending", label: "À appliquer", badge: pending.length },
   ];
 
   return (
@@ -764,6 +795,71 @@ const AdminNamedays = () => {
         </>
       )}
 
+      {/* ── À appliquer ── */}
+      {tab === "pending" && (
+        <>
+          <div className="nd-pending-head">
+            <p className="admin-muted">
+              Cartes et comptes dont la fête automatique ne correspond plus au
+              calendrier : modifications laissées « Plus tard », ou nouvelle règle
+              après un déploiement. Les fêtes choisies à la main n'apparaissent
+              jamais ici.
+            </p>
+            {pending.length > 0 && (
+              <button
+                className="admin-btn-small admin-btn-success"
+                onClick={() => applyPending()}
+                disabled={applyingPending}
+              >
+                {applyingPending ? "Application…" : `Tout appliquer (${pending.length})`}
+              </button>
+            )}
+          </div>
+          <div className="admin-table-wrapper">
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>Type</th>
+                  <th>Prénom</th>
+                  <th>Fête actuelle</th>
+                  <th>Nouvelle fête</th>
+                  <th />
+                </tr>
+              </thead>
+              <tbody>
+                {paginate(pendingFiltered, page).map((c) => (
+                  <tr key={c.id}>
+                    <td>
+                      <span className="admin-tag">{c.type}</span>
+                    </td>
+                    <td>
+                      <strong>{c.name}</strong>
+                    </td>
+                    <td className="admin-muted">{c.from ? formatDate(c.from) : "pas de fête"}</td>
+                    <td>{c.to ? formatDate(c.to) : "pas de fête"}</td>
+                    <td className="nd-actions">
+                      <button
+                        className="admin-btn-small"
+                        onClick={() => applyPending([c.id])}
+                        disabled={applyingPending}
+                      >
+                        Appliquer
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {pendingFiltered.length === 0 && (
+              <p className="admin-muted nd-empty">
+                Tout est à jour : chaque fête automatique correspond au calendrier.
+              </p>
+            )}
+          </div>
+          <Pager page={page} total={pendingFiltered.length} onChange={setPage} />
+        </>
+      )}
+
       {modal && (
         <EntryModal
           modal={modal}
@@ -776,7 +872,11 @@ const AdminNamedays = () => {
       {impact && (
         <ImpactModal
           impact={impact}
-          onClose={() => setImpact(null)}
+          onClose={() => {
+            setImpact(null);
+            setNotice("Pas appliqué pour l'instant : retrouvez ces contacts dans l'onglet « À appliquer ».");
+            load();
+          }}
           onApplied={(count) => {
             setImpact(null);
             setNotice(`${count} contact(s) mis à jour.`);

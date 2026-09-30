@@ -332,10 +332,69 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
-// ── POST /apply — reporter le calendrier sur les contacts existants ────────
+/**
+ * Cartes et comptes dont la fête AUTOMATIQUE ne correspond plus au calendrier.
+ *
+ * Une fête choisie à la main (namedaySource = "manual") n'est jamais listée.
+ * @param {(name: string) => boolean} [match] filtre sur le prénom (null = tous)
+ * @returns {Promise<Array<{ id, model, type, name, from, to }>>}
+ */
+async function computeChanges(match = null) {
+  const changes = [];
+  const sources = [
+    [DateModel, "carte", {}],
+    [User, "compte", { deletedAt: { $exists: false } }],
+  ];
+  for (const [Model, type, filter] of sources) {
+    const docs = await Model.find(
+      { ...filter, name: { $nin: [null, ""] }, namedaySource: { $ne: "manual" } },
+      "name nameday",
+    ).lean();
+    for (const d of docs) {
+      if (match && !match(d.name)) continue;
+      const from = d.nameday || null;
+      const to = findNameDay(d.name);
+      if (from === to) continue;
+      changes.push({ id: String(d._id), model: Model, type, name: d.name.trim(), from, to });
+    }
+  }
+  return changes;
+}
+
+/**
+ * Écrit les changements. Le filtre reprend la fête lue (`from`) : si elle a
+ * bougé entre la simulation et l'application (l'utilisateur l'a modifiée,
+ * elle est devenue manuelle), la ligne est ignorée au lieu d'être écrasée.
+ */
+async function writeChanges(changes) {
+  let written = 0;
+  for (const Model of [DateModel, User]) {
+    const ops = changes
+      .filter((c) => c.model === Model)
+      .map((c) => ({
+        updateOne: {
+          filter: {
+            _id: c.id,
+            namedaySource: { $ne: "manual" },
+            // $in [null, ""] couvre aussi le champ absent
+            nameday: c.from === null ? { $in: [null, ""] } : c.from,
+          },
+          update: { $set: { nameday: c.to, namedaySource: "auto" } },
+        },
+      }));
+    if (ops.length) {
+      const r = await Model.bulkWrite(ops);
+      written += r.modifiedCount ?? r.nModified ?? 0;
+    }
+  }
+  return written;
+}
+
+const publicChange = ({ model, ...c }) => c;
+
+// ── POST /apply — reporter une modification sur les contacts existants ─────
 // body : { names: ["Pauline", ...], dryRun: true|false }
-// Ne touche QUE les fêtes automatiques. Une fête choisie à la main
-// (namedaySource = "manual") n'est jamais modifiée.
+// Appelé juste après une modif (fenêtre « Contacts existants concernés »).
 
 router.post("/apply", async (req, res) => {
   try {
@@ -344,45 +403,54 @@ router.post("/apply", async (req, res) => {
     if (!keys.size) return res.status(400).json({ message: "Aucun prénom indiqué." });
     const dryRun = req.body.dryRun !== false;
 
-    const matches = (name) => searchCandidates(name).some((c) => keys.has(c));
-    const changes = [];
+    const changes = await computeChanges((name) =>
+      searchCandidates(name).some((c) => keys.has(c)),
+    );
+    const count = dryRun ? changes.length : await writeChanges(changes);
 
-    const scan = async (Model, label, filter) => {
-      const docs = await Model.find(
-        { ...filter, name: { $nin: [null, ""] }, namedaySource: { $ne: "manual" } },
-        "name nameday",
-      ).lean();
-      const ops = [];
-      for (const d of docs) {
-        if (!matches(d.name)) continue;
-        const current = d.nameday || null;
-        const next = findNameDay(d.name);
-        if (current === next) continue;
-        changes.push({ type: label, name: d.name.trim(), from: current, to: next });
-        ops.push({
-          updateOne: {
-            filter: { _id: d._id, namedaySource: { $ne: "manual" } },
-            update: { $set: { nameday: next, namedaySource: "auto" } },
-          },
-        });
-      }
-      if (!dryRun && ops.length) await Model.bulkWrite(ops);
-    };
-
-    await scan(DateModel, "carte", {});
-    await scan(User, "compte", { deletedAt: { $exists: false } });
-
-    if (!dryRun && changes.length) {
-      trace(req, { op: "apply", names: [...keys], count: changes.length });
+    if (!dryRun && count) {
+      trace(req, { op: "apply", names: [...keys], count });
     }
-
-    res.json({
-      dryRun,
-      count: changes.length,
-      changes: changes.slice(0, 100),
-    });
+    res.json({ dryRun, count, changes: changes.slice(0, 100).map(publicChange) });
   } catch (error) {
     console.error("❌ admin namedays apply:", error);
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+});
+
+// ── GET /pending — tout ce qui reste à appliquer ───────────────────────────
+// Toutes les fêtes automatiques qui ne correspondent plus au calendrier :
+// modifs laissées « Plus tard », ou changement de règle après un déploiement
+// (normalisation, prénoms composés). Remplace scripts/recompute-namedays.js
+// au quotidien — le script reste pour les documents sans namedaySource.
+
+router.get("/pending", async (req, res) => {
+  try {
+    const changes = await computeChanges();
+    changes.sort(
+      (a, b) => a.name.localeCompare(b.name, "fr") || a.type.localeCompare(b.type),
+    );
+    res.json({ count: changes.length, changes: changes.map(publicChange) });
+  } catch (error) {
+    console.error("❌ admin namedays pending:", error);
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+});
+
+// ── POST /pending/apply — appliquer tout, ou une sélection ─────────────────
+// body : { ids?: ["<id carte ou compte>", ...] } — sans ids : tout appliquer.
+// Recalcule au moment d'écrire : on n'applique jamais une liste périmée.
+
+router.post("/pending/apply", async (req, res) => {
+  try {
+    const ids = Array.isArray(req.body.ids) ? new Set(req.body.ids.map(String)) : null;
+    let changes = await computeChanges();
+    if (ids) changes = changes.filter((c) => ids.has(c.id));
+    const count = await writeChanges(changes);
+    if (count) trace(req, { op: "apply_pending", count, all: !ids });
+    res.json({ count });
+  } catch (error) {
+    console.error("❌ admin namedays pending apply:", error);
     res.status(500).json({ message: "Erreur serveur" });
   }
 });
