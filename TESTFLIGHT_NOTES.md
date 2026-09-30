@@ -27,6 +27,7 @@ Nouveau calendrier des fêtes, plus complet et vérifié. Certains prénoms éta
 À tester :
 - Créez une carte « Mia » : fête le 15 août (avant : 29 septembre). « Arthur » : 15 novembre.
 - « Jean marc » avec un espace : fête le 25 avril, comme « Jean-Marc ».
+- « Jean-Luc » : 18 octobre (Saint-Luc), plus le 27 décembre.
 - Choisissez vous-même une autre date de fête sur une carte : elle ne doit plus jamais changer toute seule.
 - Sans compte : Profil → Rappels, le texte doit annoncer les fêtes à 9h. Une fête programmée doit sonner à 9h, un anniversaire toujours à minuit.
 — SUPPORT DANS L'APP —
