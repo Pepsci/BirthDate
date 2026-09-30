@@ -9,6 +9,66 @@ const Event = require("../models/event.model");
 const GiftPoolContribution = require("../models/giftPoolContribution.model");
 const { isAuthenticated } = require("../middleware/jwt.middleware");
 const { sendSupportEmail } = require("../services/emailTemplates/supportEmail");
+const { findNameDay } = require("../utils/namedayHelper");
+const { stripName } = require("../utils/namedayNormalize");
+
+const frDate = (mmdd) => {
+  if (!mmdd) return "pas de fête";
+  const [m, d] = mmdd.split("-");
+  return new Date(2000, m - 1, d).toLocaleDateString("fr-FR", {
+    day: "numeric",
+    month: "long",
+  });
+};
+
+function isValidNamedayDate(date) {
+  const m = typeof date === "string" && date.match(/^(\d{2})-(\d{2})$/);
+  if (!m) return false;
+  const d = new Date(2024, +m[1] - 1, +m[2]);
+  return d.getMonth() + 1 === +m[1] && d.getDate() === +m[2];
+}
+
+/**
+ * Signalement « fête incorrecte » → ticket de catégorie "nameday".
+ *
+ * Le client envoie { namedayReport: { name, expectedDate? }, message? } ; le
+ * serveur construit l'objet et le corps du ticket lui-même, avec la date que
+ * donne le calendrier AU MOMENT du signalement. L'admin voit donc tout de suite
+ * « Mia : 29 septembre → proposé 15 août », sans avoir à deviner.
+ *
+ * @returns {object|null} les champs du ticket, ou null si la demande est invalide
+ *                        (la réponse d'erreur a alors déjà été envoyée).
+ */
+function buildNamedayTicket(req, res) {
+  const report = req.body.namedayReport || {};
+  const name = String(report.name || "").trim().slice(0, 60);
+  const key = stripName(name);
+  if (!key) {
+    res.status(400).json({ message: "Indique le prénom concerné." });
+    return null;
+  }
+  const expectedDate = report.expectedDate || null;
+  if (expectedDate && !isValidNamedayDate(expectedDate)) {
+    res.status(400).json({ message: "La date proposée est invalide." });
+    return null;
+  }
+  const currentDate = findNameDay(name);
+  const comment = String(req.body.message || "").trim().slice(0, 2000);
+
+  const lines = [
+    `Prénom : ${name}`,
+    `Fête actuelle dans BirthReminder : ${frDate(currentDate)}`,
+    `Fête attendue : ${expectedDate ? frDate(expectedDate) : "non précisée"}`,
+  ];
+  if (comment) lines.push("", comment);
+
+  return {
+    subject: `Fête incorrecte : ${name}`.slice(0, 150),
+    body: lines.join("\n"),
+    category: "nameday",
+    namedayReport: { name, key, currentDate, expectedDate },
+  };
+}
 
 function getIp(req) {
   return (
@@ -86,6 +146,51 @@ const supportReplyLimiter = rateLimit({
 // plus de l'email de notification à l'équipe.
 router.post("/", isAuthenticated, supportLimiter, async (req, res) => {
   try {
+    // ── Fête incorrecte : régime distinct, comme les cagnottes ────────────
+    // Pas bloqué par une conversation en cours sur autre chose ; plafond d'un
+    // signalement ouvert par prénom.
+    if (req.body.category === "nameday") {
+      const built = buildNamedayTicket(req, res);
+      if (!built) return;
+
+      const already = await SupportMessage.findOne({
+        userId: req.payload._id,
+        category: "nameday",
+        "namedayReport.key": built.namedayReport.key,
+        status: { $ne: "closed" },
+      });
+      if (already) {
+        return res.status(409).json({
+          message: `Tu as déjà signalé la fête de ${built.namedayReport.name}. On te répond dans la conversation en cours.`,
+          ticket: already,
+        });
+      }
+
+      const user = await User.findById(req.payload._id).select("name surname email");
+      const fromName = user ? `${user.name} ${user.surname || ""}`.trim() : undefined;
+      const ticket = await SupportMessage.create({
+        userId: req.payload._id,
+        name: fromName,
+        email: user?.email,
+        subject: built.subject,
+        category: "nameday",
+        namedayReport: built.namedayReport,
+        status: "open",
+        messages: [{ sender: "user", body: built.body }],
+        lastMessageAt: new Date(),
+        unreadAdmin: true,
+      });
+      await sendSupportEmail({
+        fromEmail: user?.email,
+        fromName,
+        subject: built.subject,
+        message: built.body,
+      });
+      req.app.get("io")?.to("admin").emit("admin:support:message", { ticket });
+      await logSupportMessage(req, req.payload._id, { category: "nameday" });
+      return res.status(200).json({ success: true, ticket });
+    }
+
     const { subject, message, eventShortId, category: askedCategory } = req.body;
     if (!subject || !subject.trim()) {
       return res.status(400).json({ message: "L'objet est requis" });
@@ -244,10 +349,19 @@ router.post("/", isAuthenticated, supportLimiter, async (req, res) => {
 // POST /api/support/public -> formulaire de contact public (sans compte)
 router.post("/public", supportPublicLimiterByIp, supportPublicLimiter, async (req, res) => {
   try {
-    const { email, name, subject, message } = req.body;
+    const { email, name } = req.body;
+    let { subject, message } = req.body;
     const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email || "");
     if (!emailOk) {
       return res.status(400).json({ message: "Email invalide" });
+    }
+    // Fête incorrecte signalée sans compte : objet et corps construits ici
+    let nameday = null;
+    if (req.body.category === "nameday") {
+      nameday = buildNamedayTicket(req, res);
+      if (!nameday) return;
+      subject = nameday.subject;
+      message = nameday.body;
     }
     if (!subject || !subject.trim()) {
       return res.status(400).json({ message: "L'objet est requis" });
@@ -265,6 +379,7 @@ router.post("/public", supportPublicLimiterByIp, supportPublicLimiter, async (re
       messages: [{ sender: "user", body: message.trim() }],
       lastMessageAt: new Date(),
       unreadAdmin: true,
+      ...(nameday ? { category: "nameday", namedayReport: nameday.namedayReport } : {}),
     });
 
     await sendSupportEmail({

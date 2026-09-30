@@ -123,7 +123,8 @@ export default function SupportScreen() {
         <Text style={styles.doneEmoji}>✅</Text>
         <Text style={styles.doneTitle}>Message envoyé</Text>
         <Text style={styles.doneDesc}>
-          Merci ! Notre équipe te répondra par email dès que possible.
+          Merci ! Tu retrouveras la réponse de l'équipe dans Messages → Support,
+          et une notification te préviendra.
         </Text>
         <Pressable style={styles.primaryBtn} onPress={() => router.back()}>
           <Text style={styles.primaryBtnText}>Retour</Text>

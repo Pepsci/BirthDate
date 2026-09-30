@@ -11,6 +11,15 @@ const STATUS_LABEL = {
   closed: "Fermé",
 };
 
+const formatNameday = (mmdd) => {
+  if (!mmdd) return "pas de fête";
+  const [m, d] = mmdd.split("-");
+  return new Date(2000, m - 1, d).toLocaleDateString("fr-FR", {
+    day: "numeric",
+    month: "long",
+  });
+};
+
 const STATUS_TAG_CLASS = {
   open: "admin-tag-warning",
   answered: "admin-tag-success",
@@ -207,6 +216,11 @@ const AdminSupport = () => {
                           💶 Cagnotte
                         </div>
                       )}
+                      {t.category === "nameday" && (
+                        <div className="admin-tag admin-tag-primary support-pool-tag">
+                          🌸 Fête
+                        </div>
+                      )}
                     </td>
                     <td>
                       <span className={`admin-tag ${STATUS_TAG_CLASS[t.status]}`}>
@@ -254,6 +268,38 @@ const AdminSupport = () => {
                   {/* Lien direct vers la cagnotte concernée : sans lui, il
                       faut retrouver l'événement à partir d'un message en
                       texte libre, alors que le ticket porte la référence. */}
+                  {/* Fête incorrecte : ce que le calendrier donnait au
+                      moment du signalement, ce que l'utilisateur propose, et
+                      un lien direct vers le prénom dans l'onglet Fêtes. */}
+                  {ticket.category === "nameday" && ticket.namedayReport && (
+                    <div className="support-pool-link">
+                      <p>
+                        🌸 <strong>{ticket.namedayReport.name}</strong> — fête
+                        actuelle :{" "}
+                        <strong>{formatNameday(ticket.namedayReport.currentDate)}</strong>
+                        {" · "}proposée :{" "}
+                        <strong>
+                          {ticket.namedayReport.expectedDate
+                            ? formatNameday(ticket.namedayReport.expectedDate)
+                            : "non précisée"}
+                        </strong>
+                      </p>
+                      <div className="support-pool-actions">
+                        <button
+                          type="button"
+                          className="admin-btn-small"
+                          onClick={() =>
+                            navigate(
+                              `/admin/namedays?q=${encodeURIComponent(ticket.namedayReport.name)}`,
+                            )
+                          }
+                        >
+                          Ouvrir dans Fêtes
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
                   {ticket.relatedEvent && (
                     <div className="support-pool-link">
                       <p>

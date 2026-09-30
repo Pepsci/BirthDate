@@ -77,6 +77,11 @@ const logSchema = new Schema(
         "birthdate_change",
         "pool_user_block",
         "pool_user_unblock",
+
+        // ── Calendrier des fêtes ─────────────────────────────────────────
+        // Modification du calendrier depuis l'admin (ajout, date, variante,
+        // suppression, report sur les contacts). metadata.op dit laquelle.
+        "nameday_edit",
       ],
     },
     // Absente pour les écritures qui ne viennent pas d'une requête utilisateur

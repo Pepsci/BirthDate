@@ -643,13 +643,41 @@ dans `utils/age.js`) sur `POST /stripe/connect/onboard`, `PUT /:shortId/pool`
 ### Dates
 - Les anniversaires (`date.date`) sont comparés **mois + jour uniquement** (récurrence annuelle)
 - Les namedays (`date.nameday || date.linkedUser?.nameday`) sont au format `"MM-DD"` (ex: `"03-13"`)
-- **Calendrier des fêtes = fichier maison** `server/data/namedays/fr.json` (`days` : date → prénoms,
-  `aliases` : variante → prénom). Un prénom = une seule date. Après modification :
-  `node scripts/build-namedays.js` (régénère les index serveur + la copie mobile) puis
-  `node scripts/test-namedays.js`. Ne jamais éditer les `namedays-fr-by-*.json` à la main.
+- **Calendrier des fêtes = collection `Nameday`** (`models/nameday.model.js`), éditée depuis
+  l'admin (`/admin/namedays`, routes `routes/admin/namedays.js`). Une ligne par prénom ; une
+  variante (`aliasOf: "Michel"`) recopie la date de son prénom principal et la suit. Chargée en
+  mémoire au démarrage (`initNamedays()` dans `app.js`), rechargée après chaque écriture admin :
+  `findNameDay()` reste synchrone. Au premier démarrage, base vide → remplie depuis
+  `server/data/namedays/fr.json` ; ensuite c'est la base qui fait foi.
+- Le JSON sert encore de **repli** (base injoignable, tests) et de **copie embarquée du mobile**
+  (mode local = aucune requête réseau, donc pas de synchro). Avant une build mobile :
+  admin → « Exporter JSON » → remplacer `server/data/namedays/fr.json` →
+  `node scripts/build-namedays.js` (index serveur + copie mobile) → `node scripts/test-namedays.js`.
+  Ne jamais éditer les `namedays-fr-by-*.json` à la main.
+- Modifier le calendrier ne change pas les contacts existants : l'admin propose ensuite
+  « Appliquer » (`POST /api/admin/namedays/apply`, simulation par défaut), qui ne touche que les
+  fêtes `auto`. Chaque modif est tracée (`nameday_edit` dans les logs).
+- Admin Fêtes, 4 onglets paginés (30 lignes) : Par date, Liste complète (principaux + variantes
+  A→Z), Composés (prénoms composés des répertoires + date donnée par la règle, via
+  `explainNameDay()` — les exceptions reçoivent leur propre ligne), Sans fête. `?q=` pré-remplit
+  la recherche.
+- **Signaler une fête incorrecte** : ticket support `category: "nameday"` + `namedayReport`
+  (`name`, `key`, `currentDate` calculée par le serveur, `expectedDate` proposée). Échappe à la
+  règle du ticket unique ; plafond : un signalement ouvert par prénom et par utilisateur. Entrées :
+  web Contact (`NamedayReportForm.jsx`, aussi sans compte via `/support/public`), mobile Contact
+  et lien sous la fête d'une carte (`app/nameday-report.tsx`, compte uniquement). Admin Support :
+  tag 🌸 + « Ouvrir dans Fêtes ».
+- **Support sur mobile** : onglet « Support » dans Messages (`app/(tabs)/chats.tsx`, visible dès
+  qu'il existe un ticket) + fil `app/support-ticket/[id].tsx` (lecture = marque lu, réponse,
+  ticket fermé → « Nouveau sujet »), mêmes routes que le web (`/support/mine…`), socket
+  `support:message`. La réponse admin (`support_reply`) pousse maintenant une notif
+  (`utils/notify.js`, sans catégorie : seul `pushEnabled` s'applique) ; deep link
+  `tab=support&ticketId=` → `/support-ticket/:id` (`lib/push.ts`).
 - **Pas de repli sur un autre pays** : prénom absent du calendrier FR = pas de fête
   (l'ancien repli US fêtait « Mia » le 29/09). Matching à l'identique après normalisation
-  (`utils/namedayNormalize.js`) ; composé → prénom entier puis premier prénom.
+  (`utils/namedayNormalize.js`, espace = tiret). Composés : prénom entier d'abord (une ligne
+  « Jean-Marc » gagne), puis pour « Jean-… » le deuxième prénom (Jean-Luc → Luc, 18/10),
+  puis le premier (Gabriel-Henri → Gabriel). Jean-Baptiste et Jean-Marie ont leur propre ligne.
 - La fête est **figée** dans `nameday` à la création : après un changement de calendrier,
   lancer `node scripts/recompute-namedays.js` (simulation) puis `--apply`. Les fêtes
   saisies à la main ne sont jamais écrasées.

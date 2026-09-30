@@ -31,7 +31,8 @@ export type NotifType =
   | "shared_gift_removed"
   | "shared_gift_member_left"
   | "shared_gift_shared"
-  | "message_reaction";
+  | "message_reaction"
+  | "support_reply";
 
 export interface AppNotification {
   _id: string;
@@ -303,6 +304,13 @@ export function notifDisplay(n: AppNotification): {
         text: d.eventTitle
           ? `${who} a réagi à votre message dans « ${d.eventTitle} »`
           : `${who} a réagi à votre message`,
+      };
+    case "support_reply":
+      return {
+        emoji: "💬",
+        text: d.subject
+          ? `Le support t'a répondu : « ${d.subject} »`
+          : "Le support t'a répondu",
       };
     default:
       return { emoji: "🔔", text: "Nouvelle notification" };

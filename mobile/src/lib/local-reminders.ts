@@ -7,8 +7,8 @@ import { onLocalChange, readLocal } from "./local-store";
 /**
  * Rappels du mode local — docs/MODE_LOCAL.md § 5.4.
  *
- * En mode compte, le serveur envoie des push chaque nuit à minuit
- * (jobs/sendReminders.js). Sans compte, pas de serveur : le téléphone
+ * En mode compte, le serveur envoie des push : anniversaires à minuit, fêtes
+ * à 9h (jobs/sendReminders.js). Sans compte, pas de serveur : le téléphone
  * programme lui-même ses notifications à l'avance, et iOS les affiche à
  * l'heure dite, app fermée, même en mode avion.
  *
@@ -311,7 +311,7 @@ export async function sendTestReminder(): Promise<boolean> {
     identifier: `${ID_PREFIX}test-${Date.now()}`,
     content: {
       title: "🎂 Rappel de test",
-      body: "Tes rappels fonctionnent : tu seras prévenu à minuit le jour venu.",
+      body: "Tes rappels fonctionnent : tu seras prévenu le jour venu (minuit pour un anniversaire, 9h pour une fête).",
       sound: "default",
       data: { url: "/", localReminder: true },
     },

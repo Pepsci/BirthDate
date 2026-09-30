@@ -40,7 +40,7 @@ export const FAQ_SECTIONS: Section[] = [
       },
       {
         q: "Comment fonctionnent les rappels sans compte ?",
-        a: "C'est ton téléphone qui les programme, à minuit, selon les réglages de chaque carte. Il les prévoit sur les 60 jours qui viennent : ouvre l'app de temps en temps pour qu'il programme la suite. Si elle reste fermée trop longtemps, une notification te le rappelle. Profil → Rappels pour vérifier et envoyer un rappel de test.",
+        a: "C'est ton téléphone qui les programme : à minuit pour les anniversaires, à 9h pour les fêtes, selon les réglages de chaque carte. Il les prévoit sur les 60 jours qui viennent : ouvre l'app de temps en temps pour qu'il programme la suite. Si elle reste fermée trop longtemps, une notification te le rappelle. Profil → Rappels pour vérifier et envoyer un rappel de test.",
       },
       {
         q: "Comment sauvegarder mes cartes ?",

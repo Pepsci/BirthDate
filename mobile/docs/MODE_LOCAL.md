@@ -239,7 +239,8 @@ Stratégie proposée :
    + fêtes, selon les préférences de chaque carte).
 2. Trier par date, garder les **60 premières** (marge de 4 sous la limite).
 3. Tout annuler (`cancelAllScheduledNotificationsAsync`) puis
-   reprogrammer. Heure d'envoi : minuit (heure du téléphone), comme le cron serveur.
+   reprogrammer. Heure d'envoi (heure du téléphone), comme le cron serveur :
+   minuit pour les anniversaires, 9h pour les fêtes.
 4. Reprogrammer : à l'ouverture de l'app, au retour au premier plan, et
    après toute modification d'une carte ou d'une préférence.
 5. Si l'app n'est pas ouverte pendant plus de 60 jours, les rappels

@@ -13,6 +13,7 @@ const {
   findNameDay,
   getNamesForDate,
   resolveNameday,
+  explainNameDay,
 } = require("../utils/namedayHelper");
 
 let passed = 0;
@@ -33,6 +34,18 @@ const cases = [
   ["Mickaël", "09-29"],          // alias
   ["Gabriel-Henri", "09-29"],    // composé → premier prénom
   ["Gabriel - Henri", "09-29"],  // composé mal espacé
+  ["Jean-Marc", "04-25"],        // composé présent en entier (saint Marc)
+  ["Jean marc", "04-25"],        // espace au lieu du tiret
+  ["jean  marc ", "04-25"],
+  ["Jean-Luc", "10-18"],         // « Jean-… » absent → deuxième prénom (Luc)
+  ["Jean luc", "10-18"],
+  ["Jean-Pierre", "06-29"],
+  ["Jean-Michel", "09-29"],
+  ["Jean-Marie", "08-04"],       // ligne propre (Vianney), pas Marie
+  ["Jean-Kevin", "06-03"],
+  ["Jean-Zorglub", "12-27"],     // deuxième prénom inconnu → Jean
+  ["Marie-Claire", "08-15"],     // hors « Jean- » : premier prénom
+  ["Jean Baptiste", "06-24"],    // composé avec espace, présent en entier
   ["Jean-Baptiste", "06-24"],    // composé présent en entier
   ["Marie-Ange", "08-15"],
   ["Mia", "08-15"],              // forme de Marie (le repli US donnait 09-29)
@@ -56,6 +69,18 @@ for (const [name, expected] of cases) {
 
 test("29/09 : Michel, Gabriel, Raphaël", () =>
   assert.deepEqual(getNamesForDate("09-29"), ["Michel", "Gabriel", "Raphaël"]));
+
+// ── D'où vient la date (onglet Composés de l'admin) ──
+const explainCases = [
+  ["Jean-Marc", { date: "04-25", via: "jean-marc", exact: true }],
+  ["Jean-Luc", { date: "10-18", via: "luc", exact: false }],
+  ["Paul-Henri", { date: "06-29", via: "paul", exact: false }],
+  ["Jean-Zorglub", { date: "12-27", via: "jean", exact: false }],
+  ["Kelly", { date: null, via: null, exact: false }],
+];
+for (const [name, expected] of explainCases) {
+  test(`explainNameDay(${name})`, () => assert.deepEqual(explainNameDay(name), expected));
+}
 
 // ── Fête choisie à la main : jamais écrasée ──
 const auto = (name, nameday) => ({ name, nameday, namedaySource: "auto" });

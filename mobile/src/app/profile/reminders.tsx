@@ -106,7 +106,7 @@ export default function LocalRemindersScreen() {
           <View style={styles.rowText}>
             <Text style={styles.label}>Recevoir les rappels</Text>
             <Text style={styles.hint}>
-              Anniversaires et fêtes, à minuit, selon les réglages de chaque
+              Anniversaires à minuit, fêtes à 9h, selon les réglages de chaque
               carte.
             </Text>
           </View>

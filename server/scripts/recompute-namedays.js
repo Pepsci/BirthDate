@@ -28,7 +28,7 @@ require("dotenv").config();
 const mongoose = require("mongoose");
 const DateModel = require("../models/date.model");
 const User = require("../models/user.model");
-const { findNameDay } = require("../utils/namedayHelper");
+const { findNameDay, initNamedays } = require("../utils/namedayHelper");
 
 const APPLY = process.argv.includes("--apply");
 
@@ -78,6 +78,8 @@ function decide(name, stored, source) {
 
 async function run() {
   await mongoose.connect(process.env.MONGO_URI);
+  // Calendrier de la base (celui de l'admin), pas le JSON du repo
+  await initNamedays();
   console.log(`✅ Connecté — mode ${APPLY ? "ÉCRITURE" : "SIMULATION (--apply pour écrire)"}\n`);
 
   const stats = { updated: 0, cleared: 0, manual: 0, trimmed: 0 };

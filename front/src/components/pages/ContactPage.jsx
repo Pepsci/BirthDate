@@ -5,6 +5,7 @@ import apiHandler from "../../api/apiHandler";
 import useAuth from "../../context/useAuth";
 import Logo from "../UI/Logo";
 import HelpCenter from "./HelpCenter";
+import NamedayReportForm from "./NamedayReportForm";
 import "./css/contactPage.css";
 
 const SUBJECT_MAX = 120;
@@ -72,6 +73,22 @@ export default function ContactPage() {
   // ticket fermé (résolu) ne compte pas — il peut repartir sur un nouveau
   // sujet normalement.
   const [activeTicket, setActiveTicket] = useState(null);
+
+  // Signalement d'une fête incorrecte : formulaire dédié (NamedayReportForm).
+  // `namedayName` pré-remplit le prénom quand on arrive depuis une carte.
+  const [namedayMode, setNamedayMode] = useState(false);
+  const [namedayName, setNamedayName] = useState("");
+  const namedayRef = useRef(null);
+
+  const openNamedayReport = (prefill = "") => {
+    setNamedayName(prefill);
+    setNamedayMode(true);
+    setFormOpen(false);
+    setPoolMode(false);
+    setTimeout(() => {
+      namedayRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
+  };
 
   /*
    * Litige de cagnotte : on demande DE QUELLE cagnotte il s'agit.
@@ -197,6 +214,15 @@ export default function ContactPage() {
    * de navigation, jamais dans l'URL — une référence de paiement n'a rien à
    * faire dans une barre d'adresse, ni dans un historique de navigateur.
    */
+  // Arrivée depuis une carte (« Fête incorrecte ? ») : prénom pré-rempli
+  useEffect(() => {
+    const n = location.state?.namedayReport;
+    if (n === undefined) return;
+    openNamedayReport(n || "");
+    navigate(location.pathname, { replace: true, state: null });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.state]);
+
   useEffect(() => {
     const c = location.state?.poolIssue;
     if (!c) return;
@@ -342,6 +368,46 @@ export default function ContactPage() {
                 </small>
               </span>
             </button>
+
+            {/* Fête fausse ou manquante : formulaire court et structuré,
+                pour que l'admin corrige le calendrier sans deviner. */}
+            <button
+              type="button"
+              className="contact-pool-issue"
+              onClick={() => openNamedayReport()}
+            >
+              <span className="contact-pool-issue-emoji">🌸</span>
+              <span>
+                <strong>Une fête incorrecte ?</strong>
+                <small>
+                  Un prénom fêté à la mauvaise date, ou pas fêté du tout :
+                  signale-le, on corrige le calendrier.
+                </small>
+              </span>
+            </button>
+
+            {namedayMode && (
+              <div ref={namedayRef}>
+                <NamedayReportForm
+                  key={namedayName}
+                  loggedIn={loggedIn}
+                  currentUser={currentUser}
+                  initialName={namedayName}
+                  onCancel={() => setNamedayMode(false)}
+                  onSent={(wasLoggedIn) => {
+                    setNamedayMode(false);
+                    if (wasLoggedIn) setSentLoggedIn(true);
+                    else setSent(true);
+                  }}
+                  onExisting={(ticket) =>
+                    setTimeout(
+                      () => navigate(`/home?tab=support&ticketId=${ticket._id}`),
+                      2500,
+                    )
+                  }
+                />
+              </div>
+            )}
 
             <HelpCenter
               onNeedHelp={handleNeedHelp}

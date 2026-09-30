@@ -1,5 +1,8 @@
 require("dotenv").config();
 require("./config/mongoDb");
+// Calendrier des fêtes : chargé depuis la base dès que Mongo est connecté
+// (repli sur les JSON de data/ tant que ce n'est pas fait, ou si ça échoue)
+require("./utils/namedayHelper").initNamedays();
 
 const express = require("express");
 const path = require("path");

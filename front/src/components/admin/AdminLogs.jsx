@@ -13,6 +13,7 @@ const ACTIONS = [
   "friend_add",
   "message_send",
   "support_message",
+  "nameday_edit",
 ];
 
 const AdminLogs = () => {

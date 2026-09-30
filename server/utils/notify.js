@@ -175,6 +175,28 @@ const notify = async (app, { userId, type, data = {}, link = null }) => {
     }
   }
 
+  /*
+   * Push réponse du support.
+   *
+   * Sans elle, un utilisateur mobile ne savait pas qu'on lui avait répondu :
+   * la notification restait dans le centre in-app. Pas de catégorie
+   * `pushEvents` : on ne coupe pas la réponse à une demande qu'on a soi-même
+   * faite. Seul `pushEnabled` s'applique (dans sendPushToUser).
+   */
+  if (type === "support_reply") {
+    try {
+      await sendPushToUser(userId, {
+        title: "💬 Le support t'a répondu",
+        body: data.subject || "",
+        url: `${process.env.FRONTEND_URL}${link || "/home?tab=support"}`,
+        tag: `support-${data.ticketId}`,
+        type: "support",
+      });
+    } catch (pushErr) {
+      console.error("❌ Push support_reply failed:", pushErr);
+    }
+  }
+
   return notif;
 };
 

@@ -10,6 +10,7 @@ import {
   Flag,
   ArrowLeft,
   Inbox,
+  Flower2,
 } from "lucide-react";
 import apiHandler from "../../api/apiHandler";
 import "./css/admin.css";
@@ -72,6 +73,9 @@ const AdminLayout = () => {
             {supportUnread > 0 && (
               <span className="admin-nav-badge">{supportUnread}</span>
             )}
+          </NavLink>
+          <NavLink to="/admin/namedays">
+            <Flower2 size={18} /> Fêtes
           </NavLink>
           <NavLink to="/admin/logs">
             <ScrollText size={18} /> Logs

@@ -15,5 +15,6 @@ router.use("/pools", require("./pools"));
 router.use("/events", require("./events"));
 router.use("/logs", require("./logs"));
 router.use("/support", require("./support"));
+router.use("/namedays", require("./namedays"));
 
 module.exports = router;

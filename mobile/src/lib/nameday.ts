@@ -17,23 +17,33 @@ import FR from "../data/namedays-fr-by-name.json";
 
 type Index = Record<string, string>;
 
-/** "  Raphaël " → "raphael" ; "Gabriel-Henri" → "gabriel-henri" */
+/** "  Raphaël " → "raphael" ; "Jean marc" → "jean-marc" (espace = tiret) */
 function stripName(name: string): string {
   return name
     .trim()
     .toLowerCase()
     .normalize("NFD")
     .replace(/[̀-ͯ]/g, "")
-    .replace(/\s*-\s*/g, "-")
-    .replace(/[^a-z-]/g, "");
+    .replace(/\s*-\s*|\s+/g, "-")
+    .replace(/[^a-z-]/g, "")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
 }
 
-/** "Gabriel-Henri" → ["gabriel-henri", "gabriel"] — comparés à l'identique. */
+/**
+ * Ordre d'essai (copie de server/utils/namedayNormalize.js) :
+ * prénom entier ("jean-marc") → pour « Jean-… », le deuxième prénom ("luc")
+ * → le premier prénom ("gabriel" pour Gabriel-Henri). Comparés à l'identique.
+ */
 function searchCandidates(firstName: string): string[] {
   const full = stripName(firstName);
   if (!full) return [];
   const candidates = [full];
-  if (full.includes("-")) candidates.push(full.split("-")[0]);
+  if (full.includes("-")) {
+    const [first, second] = full.split("-");
+    if (first === "jean" && second) candidates.push(second);
+    candidates.push(first);
+  }
   return candidates.filter(Boolean);
 }
 

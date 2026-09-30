@@ -47,8 +47,32 @@ const supportMessageSchema = new Schema(
      */
     category: {
       type: String,
-      enum: ["general", "pool"],
+      enum: ["general", "pool", "nameday"],
       default: "general",
+    },
+
+    /**
+     * Signalement d'une fête incorrecte (category "nameday").
+     *
+     * Échappe aussi à la règle du ticket unique : signaler « la fête de Mia
+     * est fausse » ne doit pas être bloqué par une question en cours sur autre
+     * chose. Plafond : un signalement ouvert par prénom et par utilisateur.
+     *
+     * `currentDate` est calculée par le serveur au moment du signalement (ce
+     * que le calendrier donnait), `expectedDate` est proposée par l'utilisateur.
+     * Côté admin, le ticket ouvre directement le prénom dans l'onglet Fêtes.
+     */
+    namedayReport: {
+      type: new Schema(
+        {
+          name: { type: String, trim: true, maxlength: 60 },
+          key: String,
+          currentDate: { type: String, default: null },
+          expectedDate: { type: String, default: null },
+        },
+        { _id: false },
+      ),
+      default: undefined,
     },
 
     /**

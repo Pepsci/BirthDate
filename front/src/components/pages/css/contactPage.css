@@ -296,3 +296,10 @@
   font-size: 0.8rem;
   color: var(--text-secondary);
 }
+
+/* Signalement d'une fête incorrecte (NamedayReportForm) */
+.contact-nameday-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}

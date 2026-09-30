@@ -15,6 +15,7 @@ import {
   ThemeColors,
 } from "../lib/theme-context";
 import { formPane } from "../lib/layout";
+import { isLocalMode } from "../lib/app-mode";
 
 // Retire les accents pour que "evenement" retrouve "événement" — même règle
 // que le centre d'aide web (front/src/components/pages/HelpCenter.jsx).
@@ -106,6 +107,24 @@ export default function ContactScreen() {
           Cherche ta réponse ci-dessous — la plupart des questions trouvent
           une réponse immédiate.
         </Text>
+
+        {/* Fête fausse ou manquante : formulaire court et structuré, pour
+            que l'admin corrige le calendrier sans deviner. */}
+        {!isLocalMode() && (
+        <Pressable
+          style={styles.namedayTile}
+          onPress={() => router.push("/nameday-report")}
+        >
+          <Text style={styles.namedayTileEmoji}>🌸</Text>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.namedayTileTitle}>Une fête incorrecte ?</Text>
+            <Text style={styles.namedayTileText}>
+              Un prénom fêté à la mauvaise date, ou pas fêté du tout :
+              signale-le, on corrige le calendrier.
+            </Text>
+          </View>
+        </Pressable>
+        )}
 
         <TextInput
           placeholderTextColor={colors.placeholder}
@@ -219,6 +238,19 @@ const makeStyles = (c: ThemeColors) =>
     container: { flex: 1, backgroundColor: c.bg },
     content: { padding: 16, paddingBottom: 40, gap: 12, ...formPane },
     intro: { color: c.sub, fontSize: 14, lineHeight: 20 },
+    namedayTile: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      gap: 12,
+      borderWidth: 1,
+      borderColor: c.border,
+      backgroundColor: c.card,
+      borderRadius: 12,
+      padding: 14,
+    },
+    namedayTileEmoji: { fontSize: 22 },
+    namedayTileTitle: { fontSize: 14, fontWeight: "700", color: c.text },
+    namedayTileText: { fontSize: 12.5, color: c.sub, lineHeight: 18, marginTop: 2 },
     searchInput: {
       borderWidth: 1,
       borderColor: c.inputBorder,

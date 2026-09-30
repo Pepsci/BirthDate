@@ -9,7 +9,7 @@ import {
   ActivityIndicator,
   Alert,
 } from "react-native";
-import { useRouter, useFocusEffect } from "expo-router";
+import { useRouter, useFocusEffect, useLocalSearchParams } from "expo-router";
 import { useAuth } from "../../lib/auth-context";
 import OnboardingTip from "../../lib/tips";
 import { useUnread } from "../../lib/unread-context";
@@ -19,6 +19,7 @@ import {
   deleteConversation,
 } from "../../lib/conversations";
 import { EventChatSummary, fetchEventChats } from "../../lib/events";
+import { SupportTicket, fetchMyTickets } from "../../lib/support";
 import { timeAgo } from "../../lib/notifications";
 import Avatar from "../../components/Avatar";
 import {
@@ -49,19 +50,32 @@ export default function ChatsScreen() {
    * ambigu.
    */
   const [eventChats, setEventChats] = useState<EventChatSummary[]>([]);
-  const [tab, setTab] = useState<"dm" | "events">("dm");
+  /**
+   * Conversations avec le support. Le web les montre dans un onglet Support
+   * du dashboard ; sur mobile il n'y avait aucun moyen de lire une réponse
+   * ni d'y répondre. Même logique que les événements : l'onglet n'apparaît
+   * que s'il y a au moins un ticket.
+   */
+  const [tickets, setTickets] = useState<SupportTicket[]>([]);
+  // ?tab=support : arrivée depuis une notification sans ticket précis
+  const { tab: initialTab } = useLocalSearchParams<{ tab?: string }>();
+  const [tab, setTab] = useState<"dm" | "events" | "support">(
+    initialTab === "support" ? "support" : "dm",
+  );
 
   const load = useCallback(async () => {
     try {
       setError(null);
-      const [dm, evts] = await Promise.all([
+      const [dm, evts, tks] = await Promise.all([
         fetchConversations(),
         // Une erreur ici ne doit pas vider la liste des conversations
-        // privées : les deux sources sont indépendantes.
+        // privées : les sources sont indépendantes.
         fetchEventChats().catch(() => []),
+        fetchMyTickets().catch(() => []),
       ]);
       setConvs(dm);
       setEventChats(evts);
+      setTickets(tks);
     } catch (e: any) {
       setError(e?.message ?? "Erreur de chargement.");
     }
@@ -74,6 +88,7 @@ export default function ChatsScreen() {
   );
 
   const eventUnread = eventChats.reduce((n, c) => n + (c.unreadCount || 0), 0);
+  const supportUnread = tickets.filter((t) => t.unreadUser).length;
 
   // Appui long sur une conversation → suppression. La confirmation insiste sur
   // le fait que c'est définitif et que ça vaut pour les deux participants :
@@ -136,9 +151,10 @@ export default function ChatsScreen() {
       />
       {error && <Text style={styles.error}>{error}</Text>}
 
-      {/* L'onglet n'apparaît que s'il y a quelque chose derrière : sur un
-          compte sans événement, il n'ajouterait qu'une décision à prendre. */}
-      {eventChats.length > 0 && (
+      {/* Un onglet n'apparaît que s'il y a quelque chose derrière : sur un
+          compte sans événement ni ticket, il n'ajouterait qu'une décision à
+          prendre. */}
+      {(eventChats.length > 0 || tickets.length > 0) && (
         <View style={styles.tabs}>
           <Pressable
             style={[styles.tab, tab === "dm" && styles.tabActive]}
@@ -150,6 +166,7 @@ export default function ChatsScreen() {
               Amis
             </Text>
           </Pressable>
+          {eventChats.length > 0 && (
           <Pressable
             style={[styles.tab, tab === "events" && styles.tabActive]}
             onPress={() => setTab("events")}
@@ -165,10 +182,88 @@ export default function ChatsScreen() {
               </View>
             )}
           </Pressable>
+          )}
+          {tickets.length > 0 && (
+            <Pressable
+              style={[styles.tab, tab === "support" && styles.tabActive]}
+              onPress={() => setTab("support")}
+            >
+              <Text
+                style={[styles.tabText, tab === "support" && styles.tabTextActive]}
+              >
+                Support
+              </Text>
+              {supportUnread > 0 && (
+                <View style={styles.tabBadge}>
+                  <Text style={styles.tabBadgeText}>{supportUnread}</Text>
+                </View>
+              )}
+            </Pressable>
+          )}
         </View>
       )}
 
-      {tab === "events" ? (
+      {tab === "support" ? (
+        <FlatList
+          data={tickets}
+          keyExtractor={(t) => t._id}
+          contentContainerStyle={styles.list}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+          ListEmptyComponent={
+            <Text style={styles.empty}>Aucune conversation avec le support.</Text>
+          }
+          ListFooterComponent={
+            <Pressable onPress={() => router.push("/contact")}>
+              <Text style={styles.supportNew}>✉️ Nouvelle demande au support</Text>
+            </Pressable>
+          }
+          renderItem={({ item }) => {
+            const last = item.messages[item.messages.length - 1];
+            const preview = last
+              ? `${last.sender === "admin" ? "Support : " : "Toi : "}${last.body}`
+              : "";
+            const statusLabel =
+              item.status === "closed"
+                ? "Fermé"
+                : item.status === "answered"
+                  ? "Répondu"
+                  : "En attente";
+            return (
+              <Pressable
+                style={({ pressed }) => [styles.row, pressed && { opacity: 0.8 }]}
+                onPress={() => router.push(`/support-ticket/${item._id}`)}
+              >
+                <View style={styles.eventIcon}>
+                  <Text style={styles.eventIconText}>
+                    {item.category === "pool" ? "💶" : item.category === "nameday" ? "🌸" : "✉️"}
+                  </Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <View style={styles.topLine}>
+                    <Text style={styles.name} numberOfLines={1}>
+                      {item.subject}
+                    </Text>
+                    <Text style={styles.time}>{timeAgo(item.lastMessageAt)}</Text>
+                  </View>
+                  <Text
+                    style={[styles.preview, item.unreadUser && styles.previewUnread]}
+                    numberOfLines={1}
+                  >
+                    {statusLabel} · {preview}
+                  </Text>
+                </View>
+                {item.unreadUser && (
+                  <View style={styles.badge}>
+                    <Text style={styles.badgeText}>1</Text>
+                  </View>
+                )}
+              </Pressable>
+            );
+          }}
+        />
+      ) : tab === "events" ? (
         <FlatList
           data={eventChats}
           keyExtractor={(c) => c._id}
@@ -352,6 +447,13 @@ const makeStyles = (c: ThemeColors) =>
     },
     eventIconText: { fontSize: 22 },
     list: { padding: 12, gap: 8, ...readingPane },
+    supportNew: {
+      textAlign: "center",
+      color: c.primary,
+      fontWeight: "600",
+      fontSize: 14,
+      paddingVertical: 16,
+    },
     empty: {
       textAlign: "center",
       color: c.sub,

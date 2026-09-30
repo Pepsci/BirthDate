@@ -149,6 +149,12 @@ export function webLinkToMobileRoute(url: string | null | undefined): string {
   // quel — sans cette règle il retombait sur "/" (accueil).
   const attach = url.match(/\/shared-list\/([a-f0-9]+)\/attach/i);
   if (attach) return `/shared-list/${attach[1]}/attach`;
+  // Réponse du support : le web l'ouvre dans l'onglet Support du dashboard,
+  // le mobile a un écran de conversation dédié.
+  if (url.includes("tab=support")) {
+    const t = url.match(/ticketId=([a-f0-9]+)/i);
+    return t ? `/support-ticket/${t[1]}` : "/chats?tab=support";
+  }
   if (url.includes("tab=events")) return "/events";
   if (url.includes("tab=agenda")) return "/agenda";
   // Rappels locaux (mode sans compte) : route mobile directe, car les ids

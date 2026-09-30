@@ -17,6 +17,21 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2.3.1",
+    date: "2026-09-30",
+    build: "49",
+    title: "Des fêtes plus justes, et des rappels de fête à 9h",
+    note: "Avec un compte, les fêtes sont calculées par le serveur : les corrections s'appliquent déjà à tes cartes.",
+    items: [
+      "🌸 Nouveau calendrier des fêtes, plus complet et vérifié : certains prénoms étaient fêtés à la mauvaise date (Mia le 29 septembre au lieu du 15 août, Arthur en décembre au lieu du 15 novembre), d'autres n'avaient pas de fête du tout.",
+      "✏️ Si tu as choisi toi-même la date de fête d'une carte, elle n'est plus jamais modifiée par une mise à jour du calendrier.",
+      "👥 Les prénoms composés écrits avec un espace (« Jean marc ») sont reconnus comme avec un tiret.",
+      "⏰ Sans compte, les rappels de fête arrivent à 9h au lieu de minuit. Les anniversaires restent à minuit.",
+      "🙋 Une fête te semble fausse ? Signale-la depuis Contacter le support, ou avec le lien « Fête incorrecte ? » sous la fête d'une carte : on corrige le calendrier pour tout le monde.",
+      "💬 Nouvel onglet Support dans Messages : lis les réponses de l'équipe et réponds-y directement dans l'app. Une notification te prévient quand on t'a répondu.",
+    ],
+  },
+  {
     version: "2.3.0",
     date: "2026-09-24",
     build: "48",

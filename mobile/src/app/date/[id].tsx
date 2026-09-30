@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { isLocalMode } from "../../lib/app-mode";
 import {
   View,
   Text,
@@ -1082,6 +1083,23 @@ export default function DateDetailScreen() {
         )}
         {nameday && (
           <Text style={styles.detail}>🎉 Fête : {formatNameday(nameday)}</Text>
+        )}
+        {/* Signaler une fête fausse ou manquante — compte uniquement : le
+            mode local n'envoie rien au serveur (docs/MODE_LOCAL.md). */}
+        {!isLocalMode() && !!entry.name?.trim() && (
+          <Pressable
+            onPress={() =>
+              router.push({
+                pathname: "/nameday-report",
+                params: { name: entry.name!.trim() },
+              })
+            }
+            hitSlop={8}
+          >
+            <Text style={styles.namedayReportLink}>
+              {nameday ? "Fête incorrecte ?" : "Pas de fête ? Signale-le"}
+            </Text>
+          </Pressable>
         )}
         {birthISO &&
           (days === 0 ? (
@@ -2934,6 +2952,11 @@ const makeStyles = (c: ThemeColors) =>
   badge: { borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2 },
   badgeText: { color: c.white, fontSize: 10, fontWeight: "700" },
   detail: { color: c.text, fontSize: 14 },
+  namedayReportLink: {
+    color: c.sub,
+    fontSize: 12,
+    textDecorationLine: "underline",
+  },
   countdown: {
     backgroundColor: c.primarySoft,
     borderRadius: 10,
