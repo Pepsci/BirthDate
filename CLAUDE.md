@@ -26,6 +26,14 @@
 
 ## 🔴 En cours / à vérifier
 
+- **Recherche cadeau IA** — branche `feature/ai-gift-finder`, en pause depuis
+  juillet 2026, **jamais fusionnée ni déployée** (37 commits). Suggestions de
+  cadeaux par Claude Haiku sur une carte, cache à deux niveaux, worker séparé,
+  liens affiliés Amazon/Awin. Fonctionne en local ; bloquée par le déploiement
+  et les Advertiser ID Awin.
+  → Tout est documenté dans **`docs/AI_GIFT_FINDER.md`, sur la branche**.
+  ⚠️ À la fusion, **garder la `CLAUDE.md` de `master`** : celle de la branche
+  date du 20 juillet et écraserait tout ce qui suit.
 - **Garde-fou de défilement** (`mobile/src/lib/use-scroll-bounds-guard.ts`) :
   correctif posé sur un raisonnement, jamais reproduit en conditions réelles.
   Appliqué à Profil→Notifications, page événement et carte d'une personne.
