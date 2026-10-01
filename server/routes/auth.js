@@ -325,7 +325,7 @@ router.post("/login", authLimiterByIp, authLimiter, async (req, res) => {
       ) {
         return res.status(401).json({
           message:
-            "Un email de vérification vous a été envoyé afin de pouvoir vous connecter.",
+            "Un email de vérification vous a été envoyé afin de pouvoir vous connecter. Pensez à regarder dans vos spams.",
         });
       }
 
@@ -338,7 +338,7 @@ router.post("/login", authLimiterByIp, authLimiter, async (req, res) => {
 
       return res.status(401).json({
         message:
-          "Veuillez vérifier vos emails avant de vous connecter. Un nouvel email de vérification a été envoyé.",
+          "Veuillez vérifier vos emails avant de vous connecter. Un nouvel email de vérification a été envoyé — pensez à regarder dans vos spams.",
       });
     }
 

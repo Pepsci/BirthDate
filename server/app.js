@@ -185,6 +185,7 @@ app.use("/api/moderation", require("./routes/moderation"));
 app.use("/api/shared-gifts/public", require("./routes/sharedGifts.public"));
 app.use("/api/shared-gifts", require("./routes/sharedGifts"));
 app.use("/api/admin", require("./routes/admin/index"));
+app.use("/api/app-version", require("./routes/appVersion"));
 
 // ── Tâches planifiées ───────────────────────────────────────────────────────
 //

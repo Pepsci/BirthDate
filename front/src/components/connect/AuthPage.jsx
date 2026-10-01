@@ -228,7 +228,7 @@ const AuthPage = () => {
         acceptedTerms: true,
       });
       setSignupSuccess(
-        "Compte créé ! Vérifiez votre boîte mail avant de vous connecter. 📧",
+        "Compte créé ! Vérifiez votre boîte mail avant de vous connecter. 📧 Pas reçu ? Regardez dans vos spams (courrier indésirable).",
       );
       setTimeout(() => navigate("/auth"), 4000);
     } catch (err) {
@@ -248,7 +248,7 @@ const AuthPage = () => {
     try {
       await apiHandler.requestPasswordReset(forgotEmail);
       setForgotMsg(
-        "Email de réinitialisation envoyé ! Vérifiez votre boîte mail.",
+        "Email de réinitialisation envoyé ! Vérifiez votre boîte mail. Pas reçu d'ici quelques minutes ? Regardez dans vos spams (courrier indésirable).",
       );
     } catch (err) {
       setForgotError("Une erreur s'est produite. Vérifiez l'adresse email.");

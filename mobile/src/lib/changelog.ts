@@ -17,6 +17,16 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2.3.2",
+    date: "2026-10-01",
+    build: "50",
+    title: "Prévenu des nouvelles versions",
+    items: [
+      "✨ Quand une nouvelle version de BirthReminder est disponible, un bandeau sur l'accueil te le dit : un appui ouvre directement la page de mise à jour.",
+      "📬 Inscription, mot de passe oublié : l'app te rappelle de regarder dans tes spams si l'email n'arrive pas.",
+    ],
+  },
+  {
     version: "2.3.1",
     date: "2026-09-30",
     build: "49",

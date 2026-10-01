@@ -132,6 +132,8 @@ export default function SignupPanel({
         <Text style={s.doneText}>
           Un email de vérification a été envoyé à {email.trim()}. Clique sur le
           lien qu'il contient, puis reviens te connecter ici.
+          {"\n\n"}Pas reçu ? Regarde dans tes spams (courrier indésirable) :
+          l'email vient de BirthReminder.
         </Text>
         <Pressable style={s.button} onPress={() => onGoTo("login")}>
           <Text style={s.buttonText}>Retour à la connexion</Text>

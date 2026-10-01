@@ -1,5 +1,6 @@
 import * as SecureStore from "expo-secure-store";
 import Constants from "expo-constants";
+import { CHANGELOG } from "./changelog";
 import { Platform } from "react-native";
 import { markOffline, markOnline } from "./offline-status";
 import { assertAccountMode } from "./app-mode";
@@ -145,7 +146,11 @@ export interface AuthUser {
 }
 
 /** Version affichée à l'admin (support & débogage) — celle d'app.json. */
-export const APP_VERSION = Constants.expoConfig?.version ?? null;
+// Version lisible de l'app (celle des notes de mise à jour), envoyée à la
+// connexion et à l'enregistrement push (User.lastAppVersion). `expo.version`
+// reste figée à 1.0.0 dans app.json : elle ne disait rien de la version installée.
+export const APP_VERSION =
+  CHANGELOG[0]?.version ?? Constants.expoConfig?.version ?? null;
 
 export async function login(
   email: string,

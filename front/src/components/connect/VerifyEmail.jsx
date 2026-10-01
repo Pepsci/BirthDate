@@ -28,7 +28,7 @@ function VerifyEmail() {
         console.error("Erreur lors de la vérification :", error);
         setStatus(
           error?.code === "TOKEN_EXPIRED"
-            ? "Ce lien a expiré. Connecte-toi : un nouvel email de vérification te sera envoyé."
+            ? "Ce lien a expiré. Connecte-toi : un nouvel email de vérification te sera envoyé (pense à regarder dans tes spams)."
             : "Échec de la vérification. Le lien est invalide ou a déjà été utilisé.",
         );
         setIsSuccess(false);

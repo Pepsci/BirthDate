@@ -679,6 +679,11 @@ dans `utils/age.js`) sur `POST /stripe/connect/onboard`, `PUT /:shortId/pool`
   `support:message`. La réponse admin (`support_reply`) pousse maintenant une notif
   (`utils/notify.js`, sans catégorie : seul `pushEnabled` s'applique) ; deep link
   `tab=support&ticketId=` → `/support-ticket/:id` (`lib/push.ts`).
+- **Bandeau « Nouvelle version disponible »** (mobile, mode compte) : `components/UpdateBanner.tsx`
+  sur l'accueil, compare `CHANGELOG[0].version` (embarquée — `expo.version` reste figée à 1.0.0)
+  à `GET /api/app-version` (`server/config/mobileRelease.json`, relu à chaque requête). Mettre à
+  jour ce JSON seulement quand le build est téléchargeable. `APP_VERSION` (→ `User.lastAppVersion`)
+  vaut maintenant aussi `CHANGELOG[0].version`.
 - **Pas de repli sur un autre pays** : prénom absent du calendrier FR = pas de fête
   (l'ancien repli US fêtait « Mia » le 29/09). Matching à l'identique après normalisation
   (`utils/namedayNormalize.js`, espace = tiret). Composés : prénom entier d'abord (une ligne

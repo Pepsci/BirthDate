@@ -313,7 +313,10 @@ export default function ContactPage() {
           <div className="contact-done">
             <div className="contact-done-emoji">✅</div>
             <h1>Message envoyé</h1>
-            <p>Merci ! Notre équipe te répondra par email dès que possible.</p>
+            <p>
+              Merci ! Notre équipe te répondra par email dès que possible.
+              Pense à regarder dans tes spams si tu ne vois rien arriver.
+            </p>
             <Link to="/" className="contact-btn">
               Retour à l'accueil
             </Link>

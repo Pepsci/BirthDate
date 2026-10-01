@@ -56,6 +56,8 @@ export default function ForgotPanel({
             Si un compte existe pour {email.trim()}, tu recevras un lien de
             réinitialisation. Suis-le depuis ton téléphone ou ton ordinateur,
             puis reviens te connecter.
+            {"\n\n"}Pas reçu d'ici quelques minutes ? Regarde dans tes spams
+            (courrier indésirable) : l'email vient de BirthReminder.
           </Text>
           <Pressable style={s.button} onPress={() => onGoTo("login")}>
             <Text style={s.buttonText}>Retour à la connexion</Text>

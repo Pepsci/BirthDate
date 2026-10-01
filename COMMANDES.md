@@ -181,6 +181,20 @@ eas submit -p android --latest
 (demande une clé de compte de service Google Play : `eas credentials` →
 Android → *Google Service Account for Play Store submissions*)
 
+### Annoncer la version dans l'app (bandeau « Nouvelle version disponible »)
+
+**Une fois le build réellement téléchargeable** (Play Console publiée,
+TestFlight traité), et pas avant — sinon le bandeau pousse vers une mise à
+jour qui n'existe pas encore :
+
+1. Dans `server/config/mobileRelease.json`, mettre `android.version` (et/ou
+   `ios.version`) à la version des notes (`CHANGELOG[0].version`, ex. `2.3.2`)
+2. Commit + push, puis sur l'EC2 : `git pull` — **pas besoin de redémarrer**,
+   le fichier est relu à chaque requête
+
+Les apps plus anciennes affichent alors le bandeau sur l'accueil ; un appui
+ouvre le Play Store (ou TestFlight sur iOS). `version: null` = pas de bandeau.
+
 ### Pièges Android
 
 - **Signature** : ce sont deux clés différentes. Celle d'EAS signe l'envoi,
