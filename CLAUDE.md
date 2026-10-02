@@ -687,11 +687,14 @@ dans `utils/age.js`) sur `POST /stripe/connect/onboard`, `PUT /:shortId/pool`
   `support:message`. La réponse admin (`support_reply`) pousse maintenant une notif
   (`utils/notify.js`, sans catégorie : seul `pushEnabled` s'applique) ; deep link
   `tab=support&ticketId=` → `/support-ticket/:id` (`lib/push.ts`).
-- **Bandeau « Nouvelle version disponible »** (mobile, mode compte) : `components/UpdateBanner.tsx`
-  sur l'accueil, compare `CHANGELOG[0].version` (embarquée — `expo.version` reste figée à 1.0.0)
-  à `GET /api/app-version` (`server/config/mobileRelease.json`, relu à chaque requête). Mettre à
-  jour ce JSON seulement quand le build est téléchargeable. `APP_VERSION` (→ `User.lastAppVersion`)
-  vaut maintenant aussi `CHANGELOG[0].version`.
+- **Bandeaux de l'accueil mobile** (mode compte, à partir de la 2.3.2) : `components/HomeBanners.tsx`
+  + `lib/app-update.ts`, données `GET /api/app-version` (public) depuis la collection `AppBanner`
+  (document unique), éditée dans l'admin **Bandeaux app** (`routes/admin/appBanners.js`).
+  « Nouvelle version » : compare `CHANGELOG[0].version` (embarquée — `expo.version` reste figée à
+  1.0.0) à la version saisie par plateforme ; à renseigner seulement quand le build est
+  téléchargeable ; masquable par session. Annonce : nouvel `id` à chaque publication, une annonce
+  fermée ne revient jamais (ids en SecureStore), plateformes + date de fin. Trace `app_banner_edit`.
+  `APP_VERSION` (→ `User.lastAppVersion`) vaut aussi `CHANGELOG[0].version`.
 - **Pas de repli sur un autre pays** : prénom absent du calendrier FR = pas de fête
   (l'ancien repli US fêtait « Mia » le 29/09). Matching à l'identique après normalisation
   (`utils/namedayNormalize.js`, espace = tiret). Composés : prénom entier d'abord (une ligne

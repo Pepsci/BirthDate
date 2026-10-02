@@ -14,6 +14,7 @@ const ACTIONS = [
   "message_send",
   "support_message",
   "nameday_edit",
+  "app_banner_edit",
 ];
 
 const AdminLogs = () => {

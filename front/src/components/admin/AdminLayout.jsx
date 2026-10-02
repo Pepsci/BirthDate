@@ -11,6 +11,7 @@ import {
   ArrowLeft,
   Inbox,
   Flower2,
+  Megaphone,
 } from "lucide-react";
 import apiHandler from "../../api/apiHandler";
 import "./css/admin.css";
@@ -76,6 +77,9 @@ const AdminLayout = () => {
           </NavLink>
           <NavLink to="/admin/namedays">
             <Flower2 size={18} /> Fêtes
+          </NavLink>
+          <NavLink to="/admin/app-banners">
+            <Megaphone size={18} /> Bandeaux app
           </NavLink>
           <NavLink to="/admin/logs">
             <ScrollText size={18} /> Logs

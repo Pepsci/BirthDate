@@ -17,7 +17,7 @@ import BirthdayCountdown from "../../components/BirthdayCountdown";
 import MyCagnottesStrip from "../../components/MyCagnottesStrip";
 import OfflineBanner from "../../components/OfflineBanner";
 import BackupReminder from "../../components/BackupReminder";
-import UpdateBanner from "../../components/UpdateBanner";
+import HomeBanners from "../../components/HomeBanners";
 import { onQueueFlushed } from "../../lib/offline-queue";
 import { useGuidedTour, TOURS } from "../../lib/guided-tour";
 import {
@@ -167,7 +167,7 @@ export default function BirthdaysScreen() {
     <View style={styles.container}>
       <OfflineBanner />
       <BackupReminder />
-      <UpdateBanner />
+      <HomeBanners />
       {error && (
         <Pressable style={styles.errorBanner} onPress={onRefresh}>
           <Text style={styles.errorText}>{error} — appuyer pour réessayer</Text>

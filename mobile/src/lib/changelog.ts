@@ -23,6 +23,7 @@ export const CHANGELOG: ChangelogEntry[] = [
     title: "Prévenu des nouvelles versions",
     items: [
       "✨ Quand une nouvelle version de BirthReminder est disponible, un bandeau sur l'accueil te le dit : un appui ouvre directement la page de mise à jour.",
+      "📣 Les nouveautés et infos importantes s'affichent aussi en bandeau sur l'accueil. Une croix pour le fermer, il ne revient plus.",
       "📬 Inscription, mot de passe oublié : l'app te rappelle de regarder dans tes spams si l'email n'arrive pas.",
     ],
   },

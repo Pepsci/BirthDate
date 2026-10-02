@@ -1,22 +1,48 @@
 import { Platform } from "react-native";
+import * as SecureStore from "expo-secure-store";
 import { api } from "./api";
 import { CHANGELOG } from "./changelog";
 
 /**
- * « Une nouvelle version est disponible » — comparaison de versions.
+ * Bandeaux de l'accueil : « Nouvelle version disponible » et annonce libre.
+ *
+ * Source : GET /api/app-version, édité depuis l'admin web (« Bandeaux app ») —
+ * version publiée, textes, annonce. En ligne immédiatement, sans nouveau
+ * build de l'app.
  *
  * Version installée : CHANGELOG[0].version, embarquée dans le bundle JS.
- * On ne lit PAS `expo.version` (app.json) : elle reste figée à 1.0.0, seuls
- * les numéros de build bougent.
- *
- * Dernière version : GET /api/app-version (server/config/mobileRelease.json),
- * renseignée à la main une fois le build réellement disponible en store.
+ * On ne lit PAS `expo.version` (app.json) : elle reste figée à 1.0.0.
  */
 export const INSTALLED_VERSION = CHANGELOG[0]?.version ?? "0.0.0";
+
+const PLATFORM = Platform.OS === "ios" ? "ios" : "android";
 
 export interface AvailableUpdate {
   version: string;
   url: string;
+  title: string | null;
+  message: string | null;
+}
+
+export interface Announcement {
+  id: string;
+  title: string | null;
+  message: string | null;
+  /** https://… (navigateur) ou /écran-de-l-app */
+  url: string | null;
+}
+
+interface ApiRelease {
+  version: string | null;
+  url: string | null;
+  title?: string | null;
+  message?: string | null;
+}
+
+interface ApiResponse {
+  android: ApiRelease | null;
+  ios: ApiRelease | null;
+  announcement: (Announcement & { platforms: string[] }) | null;
 }
 
 /** "2.10.0" > "2.9.3" : comparaison numérique, segment par segment. */
@@ -29,20 +55,64 @@ export function isNewer(latest: string, installed: string): boolean {
   return false;
 }
 
+// ── Annonces déjà fermées (mémorisées sur le téléphone) ────────────────────
+const DISMISSED_KEY = "br-dismissed-announcements";
+const DISMISSED_MAX = 20;
+
+async function getDismissed(): Promise<string[]> {
+  try {
+    return JSON.parse((await SecureStore.getItemAsync(DISMISSED_KEY)) || "[]");
+  } catch {
+    return [];
+  }
+}
+
+/** Une annonce fermée ne revient jamais (sauf nouvel id côté serveur). */
+export async function dismissAnnouncement(id: string): Promise<void> {
+  const ids = (await getDismissed()).filter((x) => x !== id);
+  ids.push(id);
+  await SecureStore.setItemAsync(
+    DISMISSED_KEY,
+    JSON.stringify(ids.slice(-DISMISSED_MAX)),
+  ).catch(() => {});
+}
+
 /**
- * La mise à jour à proposer, ou null (à jour, plateforme non renseignée,
- * serveur injoignable). Jamais d'erreur : un bandeau absent ne gêne personne.
+ * Ce qu'il faut afficher. Jamais d'erreur : un bandeau absent ne gêne
+ * personne (serveur injoignable, plateforme non renseignée…).
  *
  * ⚠️ Mode compte uniquement : en mode local, aucune requête ne part
  * (docs/MODE_LOCAL.md) — l'appelant vérifie le mode avant.
  */
-export async function checkForUpdate(): Promise<AvailableUpdate | null> {
+export async function fetchHomeBanners(): Promise<{
+  update: AvailableUpdate | null;
+  announcement: Announcement | null;
+}> {
   try {
-    const res = await api<Record<string, AvailableUpdate | null>>("/app-version");
-    const latest = res[Platform.OS === "ios" ? "ios" : "android"];
-    if (!latest?.version || !latest.url) return null;
-    return isNewer(latest.version, INSTALLED_VERSION) ? latest : null;
+    const res = await api<ApiResponse>("/app-version");
+
+    const rel = res[PLATFORM];
+    const update =
+      rel?.version && rel.url && isNewer(rel.version, INSTALLED_VERSION)
+        ? {
+            version: rel.version,
+            url: rel.url,
+            title: rel.title ?? null,
+            message: rel.message ?? null,
+          }
+        : null;
+
+    let announcement: Announcement | null = null;
+    const a = res.announcement;
+    if (a && a.platforms.includes(PLATFORM)) {
+      const dismissed = await getDismissed();
+      if (!dismissed.includes(a.id)) {
+        announcement = { id: a.id, title: a.title, message: a.message, url: a.url };
+      }
+    }
+
+    return { update, announcement };
   } catch {
-    return null;
+    return { update: null, announcement: null };
   }
 }

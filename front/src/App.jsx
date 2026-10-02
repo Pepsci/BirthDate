@@ -45,6 +45,7 @@ import AdminSupport from "./components/admin/AdminSupport";
 import AdminAlerts from "./components/admin/AdminAlerts";
 import AdminReports from "./components/admin/AdminReports";
 import AdminNamedays from "./components/admin/AdminNamedays";
+import AdminAppBanners from "./components/admin/AdminAppBanners";
 import AnalyticsTracker from "./analytics/AnalyticsTracker";
 
 // Pages sans footer
@@ -148,6 +149,7 @@ function App() {
               <Route path="logs" element={<AdminLogs />} />
               <Route path="support" element={<AdminSupport />} />
               <Route path="namedays" element={<AdminNamedays />} />
+              <Route path="app-banners" element={<AdminAppBanners />} />
             </Route>
           </Route>
         </Routes>

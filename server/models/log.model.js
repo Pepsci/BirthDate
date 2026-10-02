@@ -82,6 +82,10 @@ const logSchema = new Schema(
         // Modification du calendrier depuis l'admin (ajout, date, variante,
         // suppression, report sur les contacts). metadata.op dit laquelle.
         "nameday_edit",
+
+        // ── Bandeaux de l'app mobile ─────────────────────────────────────
+        // Version annoncée ou annonce publiée/retirée depuis l'admin.
+        "app_banner_edit",
       ],
     },
     // Absente pour les écritures qui ne viennent pas d'une requête utilisateur
