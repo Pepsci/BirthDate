@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { router } from "expo-router";
-import { api } from "../../lib/api";
+import { api, APP_VERSION } from "../../lib/api";
 import { useAuth } from "../../lib/auth-context";
 import { LOCAL_MODE_READY, withServerAccess } from "../../lib/app-mode";
 import { formatBirthday } from "../../lib/dates";
@@ -112,6 +112,9 @@ export default function SignupPanel({
             Date.UTC(birth.getFullYear(), birth.getMonth(), birth.getDate(), 12),
           ).toISOString(),
           acceptedTerms: true,
+          // Provenance de l'inscription, affichée dans l'admin (journal).
+          platform: Platform.OS,
+          appVersion: APP_VERSION,
         }),
       }));
       setDone(true);

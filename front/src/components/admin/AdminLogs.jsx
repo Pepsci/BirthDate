@@ -17,6 +17,39 @@ const ACTIONS = [
   "app_banner_edit",
 ];
 
+const PLATFORM_LABELS = {
+  web: "Site web",
+  ios: "App iOS",
+  android: "App Android",
+};
+
+// Provenance d'une inscription (calculée par routes/admin/logs.js).
+// Les inscriptions antérieures à la collecte n'ont que la plateforme et le
+// navigateur, déduits du User-Agent ; les suivantes ont aussi le site
+// d'origine, la page d'arrivée, la campagne et le parrain.
+const SignupOrigin = ({ origin }) => {
+  if (!origin) return <span className="admin-muted">—</span>;
+  const details = [
+    origin.appVersion && `v${origin.appVersion}`,
+    origin.platform === "web" && origin.browser,
+    origin.referrer && `depuis ${origin.referrer}`,
+    origin.utm?.source && `campagne ${origin.utm.source}`,
+    origin.landingPath && `arrivée sur ${origin.landingPath}`,
+    origin.invitedBy?.length > 0 && `invité·e par ${origin.invitedBy.join(", ")}`,
+  ].filter(Boolean);
+
+  return (
+    <>
+      <span className="admin-tag admin-tag-primary">
+        {PLATFORM_LABELS[origin.platform] || "Inconnue"}
+      </span>
+      {details.length > 0 && (
+        <span className="admin-muted"> {details.join(" · ")}</span>
+      )}
+    </>
+  );
+};
+
 const AdminLogs = () => {
   const [data, setData] = useState({ logs: [], total: 0, page: 1, pages: 1 });
   const [action, setAction] = useState("");
@@ -65,6 +98,7 @@ const AdminLogs = () => {
               <th>Utilisateur</th>
               <th>Action</th>
               <th>IP</th>
+              <th>Origine</th>
             </tr>
           </thead>
           <tbody>
@@ -98,6 +132,13 @@ const AdminLogs = () => {
                   {log.ipAddress}
                   {log.country && (
                     <span title={log.country.name}> {log.country.flag}</span>
+                  )}
+                </td>
+                <td>
+                  {log.action === "signup" ? (
+                    <SignupOrigin origin={log.origin} />
+                  ) : (
+                    <span className="admin-muted">—</span>
                   )}
                 </td>
               </tr>

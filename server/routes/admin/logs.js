@@ -6,6 +6,11 @@ const router = express.Router();
 const geoip = require("geoip-country");
 
 const Log = require("../../models/log.model");
+const User = require("../../models/user.model");
+const {
+  platformFromUserAgent,
+  browserFromUserAgent,
+} = require("../../utils/signupSource");
 
 // Nom de pays en français ("États-Unis") — Intl.DisplayNames est natif à
 // Node, donc pas de dépendance supplémentaire pour ça. geoip-country ne
@@ -34,6 +39,26 @@ function countryFromIp(ip) {
   }
 }
 
+// Provenance d'une inscription, prête à afficher.
+// `metadata` n'existe que sur les inscriptions récentes (utils/signupSource.js) ;
+// pour les anciennes, la plateforme est déduite du User-Agent, qui a toujours
+// été enregistré — c'est ce qui rend la colonne utile rétroactivement.
+function signupOrigin(log, inviterNames) {
+  const meta = log.metadata || {};
+  const invitedBy = (meta.invitedBy || [])
+    .map((id) => inviterNames.get(String(id)))
+    .filter(Boolean);
+  return {
+    platform: meta.platform || platformFromUserAgent(log.userAgent),
+    appVersion: meta.appVersion || null,
+    browser: browserFromUserAgent(log.userAgent),
+    referrer: meta.referrer || null,
+    landingPath: meta.landingPath || null,
+    utm: meta.utm || null,
+    invitedBy,
+  };
+}
+
 /*
  * GET /api/admin/logs?action=&userId=&page=&limit=
  */
@@ -56,9 +81,23 @@ router.get("/", async (req, res) => {
       Log.countDocuments(query),
     ]);
 
+    // Noms des parrains, en une seule requête pour toute la page.
+    const inviterIds = logs.flatMap((log) =>
+      log.action === "signup" ? log.metadata?.invitedBy || [] : [],
+    );
+    const inviters = inviterIds.length
+      ? await User.find({ _id: { $in: inviterIds } }).select("name surname")
+      : [];
+    const inviterNames = new Map(
+      inviters.map((u) => [String(u._id), `${u.name} ${u.surname || ""}`.trim()]),
+    );
+
     const logsWithCountry = logs.map((log) => ({
       ...log.toObject(),
       country: countryFromIp(log.ipAddress),
+      ...(log.action === "signup"
+        ? { origin: signupOrigin(log, inviterNames) }
+        : {}),
     }));
 
     res.json({ logs: logsWithCountry, total, page, pages: Math.ceil(total / limit) });

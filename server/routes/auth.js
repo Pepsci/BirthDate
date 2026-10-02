@@ -18,6 +18,7 @@ const {
 } = require("../services/verififcation");
 const { createFriendDates } = require("../utils/friendDates");
 const { findNameDay } = require("../utils/namedayHelper");
+const { buildSignupSource } = require("../utils/signupSource");
 const {
   sendPasswordResetEmail,
 } = require("../services/emailTemplates/passwordResetEmail");
@@ -224,19 +225,9 @@ router.post("/signup", signupLimiter, async (req, res) => {
       console.log(`ℹ️ Aucune fête trouvée pour ${name}`);
     }
 
-    try {
-      const ipAddress =
-        req.headers["x-forwarded-for"]?.split(",")[0].trim() ||
-        req.connection.remoteAddress;
-      await Log.create({
-        userId: newUser._id,
-        action: "signup",
-        ipAddress,
-        userAgent: req.headers["user-agent"],
-      });
-    } catch (logError) {
-      console.error("❌ Erreur logging:", logError);
-    }
+    // Parrains : les personnes dont l'invitation par email a mené à ce compte.
+    // Rempli plus bas, puis rangé dans le journal avec le reste de la provenance.
+    const invitedBy = [];
 
     try {
       const pendingInvitations = await Invitation.find({
@@ -254,6 +245,7 @@ router.post("/signup", signupLimiter, async (req, res) => {
 
         invitation.status = "accepted";
         await invitation.save();
+        invitedBy.push(invitation.invitedBy);
 
         const inviter = await userModel.findById(invitation.invitedBy);
         if (inviter) {
@@ -266,6 +258,27 @@ router.post("/signup", signupLimiter, async (req, res) => {
       }
     } catch (invitationError) {
       console.error("❌ Erreur traitement invitations:", invitationError);
+    }
+
+    // Journal d'audit — écrit APRÈS le traitement des invitations pour pouvoir
+    // y noter le parrain. La provenance (plateforme, site d'origine, page
+    // d'arrivée, campagne) est construite par utils/signupSource.js.
+    try {
+      const ipAddress =
+        req.headers["x-forwarded-for"]?.split(",")[0].trim() ||
+        req.connection.remoteAddress;
+      await Log.create({
+        userId: newUser._id,
+        action: "signup",
+        ipAddress,
+        userAgent: req.headers["user-agent"],
+        metadata: {
+          ...buildSignupSource(req),
+          ...(invitedBy.length ? { invitedBy } : {}),
+        },
+      });
+    } catch (logError) {
+      console.error("❌ Erreur logging:", logError);
     }
 
     await sendVerificationEmail(newUser.email, verificationToken);

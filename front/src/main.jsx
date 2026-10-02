@@ -2,6 +2,8 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import "./index.css";
 import "./i18n";
+// Importé tôt : relève la page d'arrivée avant toute redirection du routeur.
+import "./analytics/acquisition";
 import App from "./App";
 import { BrowserRouter } from "react-router-dom";
 import { AuthProviderWrapper } from "./context/auth.context";

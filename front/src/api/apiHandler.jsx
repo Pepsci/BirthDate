@@ -1,5 +1,6 @@
 import axios from "axios";
 import { trackEvent } from "../analytics/analytics";
+import { getSignupSource } from "../analytics/acquisition";
 
 const isLocal = window.location.hostname === "localhost";
 
@@ -54,8 +55,14 @@ const apiHandler = {
   ...service,
 
   signup(userInfo) {
+    // Provenance jointe à l'inscription (voir analytics/acquisition.js) :
+    // enregistrée côté serveur dans le journal d'audit, visible dans l'admin.
     return service
-      .post("/auth/signup", userInfo)
+      .post("/auth/signup", {
+        ...userInfo,
+        platform: "web",
+        source: getSignupSource(),
+      })
       .then((res) => res.data)
       .catch(errorHandler);
   },
