@@ -122,6 +122,8 @@ const ContributeModal = ({ shortId, onClose, onSuccess }) => {
   const [customAmount, setCustomAmount] = useState("");
   const [message, setMessage] = useState("");
   const [anonymous, setAnonymous] = useState(false);
+  // Garder son nom visible mais masquer le montant aux autres participants
+  const [hideAmount, setHideAmount] = useState(false);
   const [guestName, setGuestName] = useState("");
   /**
    * Acceptation des conditions, demandée aux SEULS contributeurs sans compte.
@@ -180,6 +182,7 @@ const ContributeModal = ({ shortId, onClose, onSuccess }) => {
         amount: effectiveAmount,
         message: message || undefined,
         anonymous,
+        hideAmount,
         guestName: guestName || undefined,
         acceptTerms: isSignedIn ? undefined : acceptTerms,
         guestEmail: isSignedIn ? undefined : guestEmail.trim(),
@@ -302,6 +305,23 @@ const ContributeModal = ({ shortId, onClose, onSuccess }) => {
                 onChange={(e) => setAnonymous(e.target.checked)}
               />
             </label>
+
+            <label className="gp-toggle-row">
+              <span>Masquer le montant</span>
+              <input
+                type="checkbox"
+                checked={hideAmount}
+                onChange={(e) => setHideAmount(e.target.checked)}
+              />
+            </label>
+
+            {hideAmount && (
+              <p className="gp-help gp-help-notice">
+                ℹ️ Les autres participants verront votre nom, pas le montant.
+                L'organisateur le voit, et il compte dans le total de la
+                cagnotte.
+              </p>
+            )}
 
             {anonymous && (
               <p className="gp-help gp-help-notice">

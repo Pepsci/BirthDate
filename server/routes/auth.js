@@ -12,6 +12,7 @@ const Log = require("../models/log.model");
 const Invitation = require("../models/invitation.model");
 const Friend = require("../models/friend.model");
 const { isAuthenticated } = require("../middleware/jwt.middleware");
+const { sessionCutoff } = require("../utils/session");
 const {
   generateVerificationToken,
   sendVerificationEmail,
@@ -563,6 +564,8 @@ router.post("/reset/:token", async (req, res) => {
     );
     user.resetToken = null;
     user.resetTokenExpires = null;
+    // Un mot de passe réinitialisé ferme toutes les sessions encore ouvertes
+    user.passwordChangedAt = sessionCutoff();
 
     // ── Gestion des clés E2E après reset ─────────────────────────────────────
     if (publicKey && encryptedPrivateKey) {

@@ -14,11 +14,19 @@ const Log = require("../../models/log.model");
 const PoolRestriction = require("../../models/poolRestriction.model");
 const OrganizerBankInfo = require("../../models/organizerBankInfo.model");
 const { audit } = require("../../services/auditLog");
+const { disconnectUserSockets } = require("../../utils/session");
 const { ageFrom } = require("../../utils/age");
 const {
   getPoolEligibility,
   activeRestrictionQuery,
 } = require("../../services/poolEligibility");
+const {
+  eventQuotaOf,
+  countActiveEvents,
+  eventCreationsLast24h,
+  externalInvitesLast24h,
+  INVITE_PER_DAY,
+} = require("../../services/quotas");
 
 // Champs sensibles jamais renvoyés à l'admin (minimisation des données)
 const SAFE_FIELDS =
@@ -76,6 +84,9 @@ router.get("/:id", async (req, res) => {
       lastLogin,
       poolEligibility,
       poolRestrictions,
+      activeEvents,
+      creations24h,
+      invites24h,
     ] =
       await Promise.all([
         DateModel.countDocuments({ owner: user._id }),
@@ -91,6 +102,9 @@ router.get("/:id", async (req, res) => {
         Log.findOne({ userId: user._id, action: "login" }).sort({ createdAt: -1 }).select("createdAt"),
         getPoolEligibility(user),
         PoolRestriction.find(activeRestrictionQuery(user._id)).lean(),
+        countActiveEvents(user._id),
+        eventCreationsLast24h(user._id),
+        externalInvitesLast24h(user._id),
       ]);
 
     res.json({
@@ -100,9 +114,64 @@ router.get("/:id", async (req, res) => {
       lastLoginAt: lastLogin?.createdAt || null,
       age: ageFrom(user.birthDate),
       pool: { ...poolEligibility, restrictions: poolRestrictions },
+      eventQuota: {
+        ...eventQuotaOf(user),
+        activeCount: activeEvents,
+        createdLast24h: creations24h.length,
+        invitesLast24h: invites24h.sent,
+        invitesPerDay: INVITE_PER_DAY,
+      },
     });
   } catch (error) {
     console.error("❌ Admin user detail error:", error);
+    res.status(500).json({ message: "Erreur serveur" });
+  }
+});
+
+/*
+ * PATCH /api/admin/users/:id/event-quota — { daily, active }
+ * Chaque valeur : entier de 0 à 500, ou null pour revenir à la valeur par
+ * défaut (services/quotas.js). Tracé dans les logs (event_quota_edit).
+ */
+router.patch("/:id/event-quota", async (req, res) => {
+  try {
+    const parse = (value) => {
+      if (value === null || value === undefined || value === "") return null;
+      const n = Number(value);
+      return Number.isInteger(n) && n >= 0 && n <= 500 ? n : undefined;
+    };
+    const daily = parse(req.body.daily);
+    const active = parse(req.body.active);
+    if (daily === undefined || active === undefined)
+      return res
+        .status(400)
+        .json({ message: "Quota invalide : entier de 0 à 500, ou vide." });
+
+    const before = await User.findById(req.params.id).select("eventQuota");
+    if (!before) return res.status(404).json({ message: "Utilisateur introuvable" });
+
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      { eventQuota: { daily, active } },
+      { new: true },
+    ).select(SAFE_FIELDS);
+
+    await audit(req, {
+      action: "event_quota_edit",
+      userId: req.payload._id,
+      metadata: {
+        targetUserId: String(user._id),
+        before: {
+          daily: before.eventQuota?.daily ?? null,
+          active: before.eventQuota?.active ?? null,
+        },
+        after: { daily, active },
+      },
+    });
+
+    res.json({ message: "Quota mis à jour", eventQuota: eventQuotaOf(user) });
+  } catch (error) {
+    console.error("❌ Admin event quota error:", error);
     res.status(500).json({ message: "Erreur serveur" });
   }
 });
@@ -148,6 +217,10 @@ router.delete("/:id", async (req, res) => {
       { new: true },
     ).select(SAFE_FIELDS);
     if (!user) return res.status(404).json({ message: "Utilisateur introuvable" });
+
+    // L'accès est coupé dès maintenant : toute requête d'un compte supprimé
+    // est refusée (utils/session.js), et ses connexions temps réel sont fermées.
+    disconnectUserSockets(req.app, req.params.id);
 
     res.json({ message: "Compte marqué pour suppression", user });
   } catch (error) {

@@ -7,6 +7,7 @@ import {
   Announcement,
   fetchHomeBanners,
   dismissAnnouncement,
+  dismissUpdate,
 } from "../lib/app-update";
 import { useThemedStyles, ThemeColors } from "../lib/theme-context";
 
@@ -14,16 +15,14 @@ import { useThemedStyles, ThemeColors } from "../lib/theme-context";
  * Bandeaux de l'accueil pilotés depuis l'admin web (« Bandeaux app ») :
  *
  *  - « Nouvelle version disponible » : un appui ouvre le Play Store / TestFlight.
- *    Masquable jusqu'au prochain lancement : il revient tant que l'app n'est
- *    pas à jour.
+ *    Une fois fermé, il ne revient plus pour cette version (mémorisée sur le
+ *    téléphone) ; il réapparaît quand une version plus récente est publiée.
  *  - Annonce : titre, message, lien facultatif. Une fois fermée, elle ne
  *    revient plus (id mémorisé sur le téléphone).
  *
  * Vérifiés à chaque retour sur l'accueil (réponse serveur en cache 5 min).
  * Mode compte uniquement : en mode local, aucune requête ne part.
  */
-let updateDismissedThisSession = false;
-
 export default function HomeBanners() {
   const { mode } = useAuth();
   const router = useRouter();
@@ -41,7 +40,7 @@ export default function HomeBanners() {
       let cancelled = false;
       fetchHomeBanners().then((b) => {
         if (cancelled) return;
-        setUpdate(updateDismissedThisSession ? null : b.update);
+        setUpdate(b.update);
         setAnnouncement(b.announcement);
       });
       return () => {
@@ -78,7 +77,7 @@ export default function HomeBanners() {
             hitSlop={10}
             accessibilityLabel="Masquer"
             onPress={() => {
-              updateDismissedThisSession = true;
+              dismissUpdate(update.version);
               setUpdate(null);
             }}
           >

@@ -15,6 +15,9 @@ const ACTIONS = [
   "support_message",
   "nameday_edit",
   "app_banner_edit",
+  "event_invite_external",
+  "quota_refused",
+  "event_quota_edit",
 ];
 
 const PLATFORM_LABELS = {

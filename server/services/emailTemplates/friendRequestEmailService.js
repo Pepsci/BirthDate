@@ -8,6 +8,7 @@ const {
   ctaButton,
   note,
 } = require("./emailHelpers");
+const { unsubscribeSignature } = require("../../utils/unsubscribeLinks");
 
 const sesClient = new SESClient({
   region: process.env.AWS_REGION,
@@ -24,7 +25,7 @@ const sendFriendRequestNotification = async (
 ) => {
   const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
   const friendsLink = `${frontendUrl}/home?tab=friends&section=received`;
-  const unsubscribeLink = `${frontendUrl}/api/unsubscribe?email=${encodeURIComponent(recipientEmail)}&type=friend_requests`;
+  const unsubscribeLink = `${frontendUrl}/api/unsubscribe?email=${encodeURIComponent(recipientEmail)}&type=friend_requests&sig=${unsubscribeSignature(recipientEmail, "friend_requests")}`;
 
   const html =
     emailHeader() +

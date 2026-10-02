@@ -90,6 +90,8 @@ function ContributeForm({
   const [message, setMessage] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [anonymous, setAnonymous] = useState(false);
+  // Garder son nom visible mais masquer le montant aux autres participants
+  const [hideAmount, setHideAmount] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [paying, setPaying] = useState(false);
 
@@ -107,6 +109,7 @@ function ContributeForm({
           amount: amountCents,
           message: message.trim() || undefined,
           anonymous,
+          hideAmount,
           guestName: displayName.trim() || undefined,
         });
       onIntentCreated(cs, acc);
@@ -216,6 +219,24 @@ function ContributeForm({
           trackColor={{ true: colors.primary }}
         />
       </View>
+
+      <View style={styles.switchRow}>
+        <Text style={styles.switchLabel}>Masquer le montant</Text>
+        <Switch
+          value={hideAmount}
+          onValueChange={setHideAmount}
+          trackColor={{ true: colors.primary }}
+        />
+      </View>
+
+      {hideAmount && (
+        <View style={styles.noticeBox}>
+          <Text style={styles.noticeText}>
+            ℹ️ Les autres participants verront ton nom, pas le montant.
+            L'organisateur le voit, et il compte dans le total de la cagnotte.
+          </Text>
+        </View>
+      )}
 
       {anonymous && (
         <View style={styles.noticeBox}>

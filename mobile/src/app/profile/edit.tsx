@@ -126,8 +126,8 @@ export default function ProfileEditScreen() {
   };
 
   const save = async () => {
-    if (!name.trim() || !email.trim()) {
-      setError("Prénom et email sont obligatoires.");
+    if (!name.trim()) {
+      setError("Le prénom est obligatoire.");
       return;
     }
     if (nameday && !/^\d{2}-\d{2}$/.test(nameday)) {
@@ -140,7 +140,6 @@ export default function ProfileEditScreen() {
       await updateMe({
         name: name.trim(),
         surname: surname.trim(),
-        email: email.trim(),
         nameday: nameday || null,
         ...(birthDate
           ? {
@@ -231,14 +230,18 @@ export default function ProfileEditScreen() {
       <Text style={styles.label}>Nom</Text>
       <TextInput placeholderTextColor={colors.placeholder} style={styles.input} value={surname} onChangeText={setSurname} />
 
-      <Text style={styles.label}>Email *</Text>
-      <TextInput placeholderTextColor={colors.placeholder}
-        style={styles.input}
+      {/* L'adresse email identifie le compte : elle ne se modifie pas ici
+          (le serveur refuse tout changement, voir routes/users.js). */}
+      <Text style={styles.label}>Email</Text>
+      <TextInput
+        style={[styles.input, styles.inputLocked]}
         value={email}
-        onChangeText={setEmail}
-        autoCapitalize="none"
-        keyboardType="email-address"
+        editable={false}
+        selectTextOnFocus={false}
       />
+      <Text style={styles.hint}>
+        L'adresse email ne peut pas être modifiée.
+      </Text>
 
       <Text style={styles.label}>Date de naissance</Text>
       <Pressable style={styles.input} onPress={() => setShowPicker(true)}>
@@ -333,6 +336,8 @@ const makeStyles = (c: ThemeColors) =>
       color: c.text,
     },
     inputText: { fontSize: 16, color: c.text },
+    inputLocked: { opacity: 0.6 },
+    hint: { fontSize: 12, color: c.sub, marginTop: 4 },
     error: { color: c.danger, textAlign: "center", marginTop: 8 },
     submit: {
       backgroundColor: c.primary,

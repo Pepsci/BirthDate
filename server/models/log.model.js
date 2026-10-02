@@ -86,6 +86,10 @@ const logSchema = new Schema(
         // ── Bandeaux de l'app mobile ─────────────────────────────────────
         // Version annoncée ou annonce publiée/retirée depuis l'admin.
         "app_banner_edit",
+        // Quotas anti-abus (services/quotas.js)
+        "event_invite_external", // metadata.count = emails réellement envoyés
+        "quota_refused", // metadata.kind = event_daily | event_active | invite_event | invite_daily
+        "event_quota_edit", // un admin a modifié le quota d'un compte
       ],
     },
     // Absente pour les écritures qui ne viennent pas d'une requête utilisateur

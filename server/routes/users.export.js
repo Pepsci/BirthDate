@@ -56,7 +56,7 @@ router.get("/me/export", isAuthenticated, exportLimiter, async (req, res) => {
           .populate("user", "name surname")
           .populate("friend", "name surname")
           .lean(),
-        Wishlist.find({ owner: userId }).lean(),
+        Wishlist.find({ userId }).lean(),
         Conversation.find({ participants: userId })
           .populate("participants", "name surname")
           .lean(),

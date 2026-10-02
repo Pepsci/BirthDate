@@ -1,31 +1,31 @@
 // middleware/jwt.middleware.js
+//
+// Protège une route : exige une session ACTIVE et pose `req.payload`
+// (`req.payload._id` = identifiant de l'utilisateur connecté).
+//
+// La validation complète (signature, compte existant et non supprimé, token
+// postérieur au dernier changement de mot de passe) est dans utils/session.js.
+// Le token est lu dans l'en-tête `Authorization: Bearer` (app mobile) ou dans
+// le cookie httpOnly `authToken` (site web).
 
-// const jwt = require("express-jwt");
-const { expressjwt } = require("express-jwt");
+const { resolveSession } = require("../utils/session");
 
-// Instantiate the JWT token validation middleware
-const isAuthenticated = expressjwt({
-  secret: process.env.TOKEN_SECRET,
-  algorithms: ["HS256"],
-  requestProperty: "payload",
-  getToken: getTokenFromHeaders,
-});
-
-// Function used to extracts the JWT token from Authorization header or httpOnly cookie
-function getTokenFromHeaders(req) {
-  if (
-    req.headers.authorization &&
-    req.headers.authorization.split(" ")[0] === "Bearer"
-  ) {
-    return req.headers.authorization.split(" ")[1];
+const isAuthenticated = async (req, res, next) => {
+  try {
+    const payload = await resolveSession(req);
+    if (!payload) {
+      return res.status(401).json({
+        code: "UNAUTHENTICATED",
+        message: "Session expirée. Reconnectez-vous.",
+      });
+    }
+    req.payload = payload;
+    next();
+  } catch (error) {
+    next(error);
   }
-  if (req.cookies && req.cookies.authToken) {
-    return req.cookies.authToken;
-  }
-  return null;
-}
+};
 
-// Export the middleware so that we can use it to create a protected routes
 module.exports = {
   isAuthenticated,
 };

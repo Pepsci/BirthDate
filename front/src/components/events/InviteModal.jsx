@@ -30,6 +30,9 @@ const InviteModal = ({ shortId, onClose }) => {
   const [selectedFriends, setSelectedFriends] = useState([]);
   const [externalEmails, setExternalEmails] = useState("");
   const [loading, setLoading] = useState(false);
+  // Message du serveur en cas de refus (quota d'invitations atteint, etc.).
+  // Sans lui, le bouton cessait simplement de tourner, sans explication.
+  const [submitError, setSubmitError] = useState(null);
 
   useEffect(() => {
     apiHandler
@@ -45,6 +48,7 @@ const InviteModal = ({ shortId, onClose }) => {
   };
 
   const handleInvite = async () => {
+    setSubmitError(null);
     setLoading(true);
     try {
       const emails = externalEmails
@@ -58,6 +62,10 @@ const InviteModal = ({ shortId, onClose }) => {
       onClose(true);
     } catch (err) {
       console.error("Error sending invites", err);
+      setSubmitError(
+        err.response?.data?.message ||
+          "Les invitations n'ont pas pu être envoyées. Réessayez.",
+      );
       setLoading(false);
     }
   };
@@ -127,6 +135,12 @@ const InviteModal = ({ shortId, onClose }) => {
             />
           </div>
         </motion.div>
+
+        {submitError && (
+          <p className="invite-modal-error" role="alert">
+            {submitError}
+          </p>
+        )}
 
         <div className="invite-modal-footer">
           <motion.button

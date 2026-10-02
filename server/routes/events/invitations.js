@@ -10,6 +10,11 @@ const { notify } = require("../../utils/notify");
 const { sendPushToUser } = require("../../services/pushService");
 const { sendEventInvitationEmail } = require("../../services/emailTemplates/eventEmails");
 const { filterBlockedIds } = require("../../utils/blocking");
+const { publicInvitation } = require("../../utils/eventAccess");
+const { audit } = require("../../services/auditLog");
+const { resolveSession } = require("../../utils/session");
+const { friendIdsOf } = require("../../utils/friendIds");
+const { checkExternalInvites, cleanEmails } = require("../../services/quotas");
 
 /*
  * POST /api/events/:shortId/invite -> inviter des utilisateurs inscrits
@@ -40,7 +45,41 @@ router.post("/:shortId/invite", isAuthenticated, async (req, res) => {
         return res.status(403).json({ message: "Non autorisé" });
     }
 
-    const { userIds, externalEmails } = req.body;
+    const { userIds } = req.body;
+
+    // ── Invitations par email : nettoyage + plafonds, AVANT tout envoi ──────
+    // Sans plafond, cette route servait de relais d'emails vers n'importe
+    // quelle adresse, aux frais de la réputation d'envoi du domaine. On valide
+    // donc ici — avant d'avoir invité qui que ce soit — pour qu'un refus ne
+    // laisse pas une demande à moitié traitée.
+    const externalEmails = cleanEmails(req.body.externalEmails);
+    let newExternalEmails = [];
+    if (externalEmails.length > 0) {
+      const alreadyInvited = await EventInvitation.find({
+        event: event._id,
+        externalEmail: { $in: externalEmails },
+      }).select("externalEmail");
+      const known = new Set(alreadyInvited.map((i) => i.externalEmail));
+      newExternalEmails = externalEmails.filter((e) => !known.has(e));
+
+      const inviter = await User.findById(req.payload._id).select(
+        "name surname email role",
+      );
+      if (!inviter)
+        return res.status(401).json({ message: "Utilisateur introuvable" });
+      const refusal = await checkExternalInvites(
+        req,
+        inviter,
+        event,
+        externalEmails.length,
+        newExternalEmails.length,
+      );
+      if (refusal)
+        return res
+          .status(refusal.status)
+          .json({ code: refusal.code, message: refusal.message });
+    }
+
     const baseUrl = process.env.FRONTEND_URL || "https://birthreminder.com";
     const eventUrl = `${baseUrl}/event/${event.shortId}`;
     const organizerName = `${event.organizer.name} ${event.organizer.surname || ""}`.trim();
@@ -51,9 +90,14 @@ router.post("/:shortId/invite", isAuthenticated, async (req, res) => {
       // groupé ne doit pas devenir un moyen de contourner un blocage.
       // Silencieusement : la réponse ne dit pas qui a été écarté.
       const blocked = await filterBlockedIds(req.payload._id, userIds);
+      // On n'invite que ses AMIS : sans ce contrôle, n'importe quel
+      // identifiant de compte recevait notification, push et email. Les
+      // autres sont écartés en silence, comme les personnes bloquées.
+      const myFriends = new Set(await friendIdsOf(req.payload._id));
 
       for (const uid of userIds) {
         if (blocked.has(String(uid))) continue;
+        if (!myFriends.has(String(uid))) continue;
         const existing = await EventInvitation.findOne({ event: event._id, user: uid });
         if (!existing) {
           await EventInvitation.create({ event: event._id, user: uid });
@@ -76,14 +120,19 @@ router.post("/:shortId/invite", isAuthenticated, async (req, res) => {
       }
     }
 
-    if (externalEmails?.length > 0) {
-      for (const email of externalEmails) {
-        const existing = await EventInvitation.findOne({ event: event._id, externalEmail: email });
-        if (!existing) {
-          await EventInvitation.create({ event: event._id, externalEmail: email });
-          await sendEventInvitationEmail(email, event, event.organizer.name, eventUrl);
-        }
-      }
+    let externalSent = 0;
+    for (const email of newExternalEmails) {
+      await EventInvitation.create({ event: event._id, externalEmail: email });
+      await sendEventInvitationEmail(email, event, event.organizer.name, eventUrl);
+      externalSent += 1;
+    }
+    // Sert de compteur au quota journalier (services/quotas.js)
+    if (externalSent > 0) {
+      await audit(req, {
+        action: "event_invite_external",
+        userId: req.payload._id,
+        metadata: { eventShortId: event.shortId, count: externalSent },
+      });
     }
 
     res.status(200).json({ message: "Invitations envoyées" });
@@ -109,11 +158,8 @@ router.post("/:shortId/join", async (req, res) => {
       });
     if (event.accessCode !== code) return res.status(403).json({ message: "Code d'accès invalide" });
 
-    let tokenPayload = null;
-    const cookieToken = req.cookies?.authToken;
-    if (cookieToken) {
-      try { tokenPayload = require("jsonwebtoken").verify(cookieToken, process.env.TOKEN_SECRET); } catch (_) {}
-    }
+    // Compte connecté (session active) ou invité sans compte
+    const tokenPayload = await resolveSession(req);
 
     if (event.maxGuests !== null) {
       // `$nin: [event.organizer]` : l'organisateur compte désormais parmi les
@@ -449,7 +495,11 @@ router.get("/:shortId/invitations", checkGuestOrAuth, async (req, res) => {
     const invitations = await EventInvitation.find({ event: req.event._id })
       .populate("user", "name surname avatar publicKey")
       .sort({ createdAt: 1 });
-    res.status(200).json(invitations);
+    // Jamais de guestToken dans une liste ; emails externes : organisateur seul
+    const viewerIsOrganizer = req.userRole === "organizer";
+    res
+      .status(200)
+      .json(invitations.map((inv) => publicInvitation(inv, viewerIsOrganizer)));
   } catch (error) {
     console.error("❌ Error fetching invitations:", error);
     res.status(500).json({ message: "Erreur serveur" });

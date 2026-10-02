@@ -74,6 +74,9 @@ const userSchema = new Schema({
 
   // ── Compte ────────────────────────────────────────────────────────────────
   deletedAt: Date,
+  // Tout token émis AVANT cette date est refusé (utils/session.js) : changer
+  // ou réinitialiser son mot de passe déconnecte donc les autres appareils.
+  passwordChangedAt: { type: Date, default: null },
 
   // ── Modération (conformité stores : Apple 1.2 / Google UGC) ───────────────
   blockedUsers: {
@@ -87,6 +90,15 @@ const userSchema = new Schema({
     type: String,
     enum: ["user", "admin"],
     default: "user",
+  },
+
+  // ── Quota d'événements (réglé par un admin) ────────────────────────────────
+  // null = valeur par défaut de services/quotas.js (5 créations par 24 h,
+  // 15 événements en cours). Renseigné depuis la fiche utilisateur de l'admin
+  // quand quelqu'un demande au support à en créer davantage.
+  eventQuota: {
+    daily: { type: Number, default: null },
+    active: { type: Number, default: null },
   },
 
   // ── Onboarding ─────────────────────────────────────────────────────────────

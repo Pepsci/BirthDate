@@ -94,6 +94,29 @@ const AdminUsers = () => {
     }
   };
 
+  // ── Quota d'événements : à augmenter quand quelqu'un le demande au support ──
+  const askQuota = (label, current) => {
+    const answer = window.prompt(
+      `${label}\n(nombre entier — laisser vide pour revenir à la valeur par défaut)`,
+      String(current),
+    );
+    if (answer === null) return undefined; // annulé
+    return answer.trim() === "" ? null : Number(answer);
+  };
+
+  const editEventQuota = async (id, quota) => {
+    const active = askQuota("Événements en cours autorisés en même temps :", quota.active);
+    if (active === undefined) return;
+    const daily = askQuota("Créations d'événement autorisées par 24 h :", quota.daily);
+    if (daily === undefined) return;
+    try {
+      await apiHandler.patch(`/admin/users/${id}/event-quota`, { active, daily });
+      openDetail(id);
+    } catch (err) {
+      alert(err.response?.data?.message || "Erreur");
+    }
+  };
+
   const POOL_STATUS_LABELS = {
     minor: "🔒 bloquée (mineur)",
     birthdate_missing: "🔒 bloquée (date de naissance absente)",
@@ -269,6 +292,19 @@ const AdminUsers = () => {
                   Motif : {r.reason}
                 </p>
               ))}
+            {detail.eventQuota && (
+              <p>
+                Événements : {detail.eventQuota.activeCount} en cours sur{" "}
+                {detail.eventQuota.active} · {detail.eventQuota.createdLast24h}{" "}
+                créés sur 24 h (max {detail.eventQuota.daily})
+                {detail.eventQuota.custom ? " — quota personnalisé" : ""}
+                <br />
+                <span className="admin-muted">
+                  Invitations par email sur 24 h : {detail.eventQuota.invitesLast24h}{" "}
+                  / {detail.eventQuota.invitesPerDay}
+                </span>
+              </p>
+            )}
             <p>
               Stripe :{" "}
               {detail.stripeAccount
@@ -286,6 +322,13 @@ const AdminUsers = () => {
               ) : (
                 <button onClick={() => setRole(detail.user._id, "admin")}>
                   Promouvoir admin
+                </button>
+              )}
+              {detail.eventQuota && (
+                <button
+                  onClick={() => editEventQuota(detail.user._id, detail.eventQuota)}
+                >
+                  Quota d'événements
                 </button>
               )}
               {detail.pool?.restrictions?.length > 0 ? (

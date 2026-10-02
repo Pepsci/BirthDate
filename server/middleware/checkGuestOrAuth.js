@@ -1,4 +1,4 @@
-const jwt = require("jsonwebtoken");
+const { resolveSession } = require("../utils/session");
 const Event = require("../models/event.model");
 const EventInvitation = require("../models/eventInvitation.model");
 
@@ -12,17 +12,9 @@ const checkGuestOrAuth = async (req, res, next) => {
     req.event = event;
 
     // --- Tentative 1 : JWT ---
-    let userId = null;
-    const cookieToken = req.cookies?.authToken;
-    const bearerToken = req.headers.authorization?.split(" ")[1];
-    const rawToken = cookieToken || bearerToken;
-
-    if (rawToken) {
-      try {
-        const payload = jwt.verify(rawToken, process.env.TOKEN_SECRET);
-        userId = payload._id;
-      } catch (_) {}
-    }
+    // Session active uniquement (compte non supprimé, token non révoqué)
+    const session = await resolveSession(req);
+    const userId = session?._id || null;
 
     if (userId) {
       req.payload = { _id: userId }; // ← permet req.payload._id dans les routes

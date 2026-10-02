@@ -1,5 +1,5 @@
 # BirthReminder — CLAUDE.md
-*Mis à jour : 22 septembre 2026*
+*Mis à jour : 2 octobre 2026*
 
 > **⚠️ Ce fichier couvre désormais le serveur, le front web ET le mobile.**
 > Le mobile (`mobile/`, Expo + expo-router) n'est plus hors périmètre : il
@@ -44,8 +44,9 @@
   (`aws-sdk` v2 = reliquat, seul `@aws-sdk` v3 est utilisé). Des paquets de
   front (`react-dom`, `@remix-run`, `core-js`) traînent aussi côté serveur.
 - **Volume EBS de 6,8 Go trop juste** sur l'EC2 de prod (saturé le 19/08/26).
-- **Logs de debug** : `routes/users.js` contient des `console.log("🔍 [DEBUG]…")`
-  exécutés à chaque modification de profil. À retirer.
+- **Revue de sécurité d'octobre 2026** : corrections posées mais pas encore
+  éprouvées en production — voir la section « 🛡️ Sécurité » plus bas.
+  Non relus : front web, `sharedGifts.js`, support, routes admin, crons, nginx.
 
 ---
 
@@ -266,7 +267,7 @@ GET    /:shortId/gifts            Lister les propositions (auth + checkEventAcce
 POST   /:shortId/gifts/:giftId/vote  Voter pour un cadeau (toggle)
 PUT    /:shortId/gifts/:giftId    Modifier sa propre proposition (proposer only)
 GET    /:shortId/messages         Messages du chat event (auth + checkEventAccess)
-GET    /:shortId/share            { url, code } pour partage
+GET    /:shortId/share            { url, code } pour partage (auth + participant ; code = organisateur, ou invité si allowGuestInvites)
 GET    /:shortId/invitations      Liste invitations peuplées (auth + checkEventAccess)
 ```
 
@@ -519,6 +520,64 @@ un token doit reconduire cette durée** via `tokenDurationFrom(req.payload)`
 (`routes/users.js`) — un `expiresIn` en dur rétrograde la session sans retour
 possible, puisque `/auth/verify` se base ensuite sur la durée courante.
 
+### Révocation des sessions
+
+Un JWT valide ne suffit pas : **`utils/session.js`** vérifie en base, à chaque
+requête, que le compte existe, n'est pas supprimé (`deletedAt` — c'est aussi
+le bannissement admin) et que le token est postérieur à
+`User.passwordChangedAt`. Tout passe par là : `isAuthenticated`
+(`middleware/jwt.middleware.js`, qui n'utilise plus `express-jwt`),
+`middleware/socketAuth.js`, et les routes à authentification facultative
+(`checkGuestOrAuth`, page événement, cagnotte, `/join`) via `resolveSession(req)`.
+**Ne jamais appeler `jwt.verify` directement dans une route.**
+
+- Changer ou réinitialiser le mot de passe pose `passwordChangedAt =
+  sessionCutoff()` : les autres appareils sont déconnectés. L'appareil courant
+  reçoit un nouveau token dans la réponse, et le cookie du site est remplacé
+  (`refreshAuthCookie`).
+- Suppression de compte (utilisateur ou admin) : accès refusé immédiatement,
+  sockets fermés (`disconnectUserSockets`).
+- Le token ne porte que `_id`, `email`, `name`, `surname` — jamais le profil.
+
+---
+
+## 🛡️ Sécurité — règles posées en octobre 2026
+
+- **Accès à un événement** : `utils/eventAccess.js`. `userCanAccessEvent()`
+  (organisateur ou invité) garde `event:join` et `event:message_send` côté
+  socket. `publicInvitation()` est la seule façon de renvoyer une invitation à
+  un client : jamais de `guestToken`, `externalEmail` pour l'organisateur seul.
+- **Profils** : `GET /users/:id` ne renvoie que son propre profil. Une carte
+  (`POST /date`) ne peut être liée (`linkedUser`) qu'à un ami.
+- **Email du compte** : non modifiable (`routes/users.js`, champ en lecture
+  seule sur mobile). Mot de passe : même règle qu'à l'inscription. Date de
+  naissance : un changement ne peut pas descendre sous 15 ans.
+- **Quotas** : `services/quotas.js` — événements (5 créations / 24 h, 15 en
+  cours, réglable par compte : `User.eventQuota`, bouton « Quota d'événements »
+  de la fiche admin) et invitations par email (20 / envoi, 50 / événement,
+  100 / compte / 24 h). Refus journalisé (`quota_refused`) + email au support
+  une fois par 24 h. Les admins sont exemptés. Les invitations de comptes
+  inscrits sont limitées aux amis de l'invitant.
+- **Demandes d'ami** : 30 par compte et par 24 h (`friendRequestLimiter`).
+- **Cagnotte** : `POST /pool/contribute` limité à 15 tentatives / 15 min / IP.
+- **Présence en ligne** : annoncée aux amis seulement (`emitPresenceToFriends`,
+  `sockets/chatHandlers.js`) ; `users:getOnline` ne renvoie que les amis connectés.
+- **Cagnotte — montant masqué** : `GiftPoolContribution.hideAmount`, choisi par
+  le contributeur (indépendant de `anonymous`). `GET /pool` renvoie alors
+  `amount: null` + `amountHidden: true`, sauf à l'organisateur.
+- **Numéro de version mobile** : à chaque nouvelle entrée de
+  `mobile/src/lib/changelog.ts`, monter AUSSI `expo.version` (`app.json`),
+  `ios-nse/Info.plist` et, tant que `ios/` n'est pas régénéré,
+  `MARKETING_VERSION` (pbxproj) + `ios/BirthReminder/Info.plist`. C'est ce
+  numéro qu'affichent l'App Store et TestFlight.
+- **Suppression de conversation** : REST et socket (`conversation:delete`)
+  effacent pour la SEULE personne qui supprime (`clears`), sans prévenir l'autre.
+- **Désabonnement par email** : liens signés (`sig`, `utils/unsubscribeLinks.js`).
+  Les liens sans signature des emails déjà partis sont acceptés jusqu'au
+  15/01/2027 (`UNSIGNED_LINKS_ACCEPTED_UNTIL`, `routes/unsubscribe.js`), puis
+  refusés automatiquement. Les liens par `userId` (page front `/unsubscribe`)
+  ne sont pas signés — choix assumé, voir le commentaire de la route.
+
 ---
 
 ## ⏰ Cron Jobs
@@ -575,7 +634,7 @@ Dark mode : classe `.dark` sur le body redéfinit toutes ces variables.
 - `shortId` : 5 caractères, généré avec `nanoid(5)`
 - `accessCode` : 6 caractères alphanumériques (`Math.random().toString(36).substring(2,8).toUpperCase()`)
 - URL publique : `birthreminder.com/event/:shortId`
-- API share : `GET /api/events/:shortId/share` → `{ url, code }`
+- API share : `GET /api/events/:shortId/share` → `{ url, code }` — **compte participant exigé**. Le code vaut `null` pour un invité quand `allowGuestInvites` est désactivé. Cette route était publique : le lien seul donnait le code.
 
 ---
 
@@ -690,9 +749,11 @@ dans `utils/age.js`) sur `POST /stripe/connect/onboard`, `PUT /:shortId/pool`
 - **Bandeaux de l'accueil mobile** (mode compte, à partir de la 2.3.2) : `components/HomeBanners.tsx`
   + `lib/app-update.ts`, données `GET /api/app-version` (public) depuis la collection `AppBanner`
   (document unique), éditée dans l'admin **Bandeaux app** (`routes/admin/appBanners.js`).
-  « Nouvelle version » : compare `CHANGELOG[0].version` (embarquée — `expo.version` reste figée à
-  1.0.0) à la version saisie par plateforme ; à renseigner seulement quand le build est
-  téléchargeable ; masquable par session. Annonce : nouvel `id` à chaque publication, une annonce
+  « Nouvelle version » : compare `CHANGELOG[0].version` (embarquée — `expo.version` est alignée
+  dessus depuis la 2.3.2, voir ci-dessous) à la version saisie par plateforme ; à renseigner seulement quand le build est
+  téléchargeable — et avec le VRAI numéro : une valeur de test (« 9.9.9 ») affiche le bandeau à
+  tout le monde, en permanence. Une fois fermé, il ne revient plus pour cette version
+  (`dismissUpdate`, SecureStore). Annonce : nouvel `id` à chaque publication, une annonce
   fermée ne revient jamais (ids en SecureStore), plateformes + date de fin. Trace `app_banner_edit`.
   `APP_VERSION` (→ `User.lastAppVersion`) vaut aussi `CHANGELOG[0].version`.
 - **Pas de repli sur un autre pays** : prénom absent du calendrier FR = pas de fête

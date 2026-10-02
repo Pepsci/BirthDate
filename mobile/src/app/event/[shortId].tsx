@@ -1397,7 +1397,9 @@ export default function EventDetailScreen() {
                         )}
                       </View>
                       <Text style={styles.contribAmount}>
-                        {(c.amount / 100).toFixed(2).replace(".", ",")} €
+                        {c.amountHidden || c.amount == null
+                          ? "Montant masqué"
+                          : `${(c.amount / 100).toFixed(2).replace(".", ",")} €`}
                       </Text>
                     </View>
                   ))}

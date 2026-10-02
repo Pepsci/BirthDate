@@ -8,6 +8,24 @@ const GiftPoolContribution = require("../../models/giftPoolContribution.model");
 const { isAuthenticated } = require("../../middleware/jwt.middleware");
 const { requireAdultForPool } = require("../../middleware/requireAdultForPool");
 const { audit } = require("../../services/auditLog");
+const rateLimit = require("express-rate-limit");
+const { resolveSession } = require("../../utils/session");
+
+// La contribution est ouverte sans compte (invités externes). Sans plafond,
+// la route permet de créer des paiements en rafale — c'est le schéma classique
+// du test de cartes volées, qui retomberait sur le compte Stripe de
+// l'organisateur. 15 tentatives par quart d'heure et par adresse IP laissent
+// largement la place à une famille derrière la même box.
+const contributeLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 15,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    message:
+      "Trop de tentatives de paiement depuis cette adresse. Réessayez dans quelques minutes.",
+  },
+});
 
 // Montant min/max d'une contribution (centimes) — garde-fous
 const MIN_AMOUNT = 100; // 1 €
@@ -375,15 +393,7 @@ router.get("/:shortId/pool", async (req, res) => {
 
     // Auth optionnelle : on cherche à savoir si le demandeur est l'organisateur.
     // (endpoint public, mais l'organisateur voit plus de détails — façon Leetchi)
-    let requesterId = null;
-    const jwt = require("jsonwebtoken");
-    const token =
-      req.headers.authorization?.split(" ")[1] || req.cookies?.authToken;
-    if (token) {
-      try {
-        requesterId = jwt.verify(token, process.env.TOKEN_SECRET)._id;
-      } catch (_) {}
-    }
+    const requesterId = (await resolveSession(req))?._id || null;
     const isOrganizer =
       requesterId && event.organizer.toString() === String(requesterId);
 
@@ -434,14 +444,19 @@ router.get("/:shortId/pool", async (req, res) => {
       deadline: pool.deadline,
       totalCollected,
       contributionsCount: contributions.length,
-      contributions: contributions.map((c) => ({
-        id: c._id,
-        amount: c.amount,
-        message: c.message,
-        createdAt: c.createdAt,
-        anonymous: !!c.anonymous,
-        contributor: display(c),
-      })),
+      contributions: contributions.map((c) => {
+        // Montant masqué à la demande du contributeur — sauf pour l'organisateur
+        const amountHidden = !!c.hideAmount && !isOrganizer;
+        return {
+          id: c._id,
+          amount: amountHidden ? null : c.amount,
+          amountHidden,
+          message: c.message,
+          createdAt: c.createdAt,
+          anonymous: !!c.anonymous,
+          contributor: display(c),
+        };
+      }),
     });
   } catch (error) {
     console.error("❌ Error fetching gift pool:", error);
@@ -528,9 +543,9 @@ router.put(
  * Crée un PaymentIntent en CHARGE DIRECTE sur le compte de l'organisateur.
  * Renvoie le client_secret pour Stripe Elements côté front.
  * Accessible sans auth (les invités externes peuvent contribuer).
- * Body: { amount (centimes), message?, anonymous?, guestName? }
+ * Body: { amount (centimes), message?, anonymous?, hideAmount?, guestName? }
  */
-router.post("/:shortId/pool/contribute", async (req, res) => {
+router.post("/:shortId/pool/contribute", contributeLimiter, async (req, res) => {
   try {
     const event = await Event.findOne({ shortId: req.params.shortId });
     if (!event)
@@ -554,7 +569,8 @@ router.post("/:shortId/pool/contribute", async (req, res) => {
         .json({ message: "La cagnotte n'est pas active pour cet événement." });
     }
 
-    const { amount, message, anonymous, guestName, guestEmail } = req.body;
+    const { amount, message, anonymous, hideAmount, guestName, guestEmail } =
+      req.body;
     const amountInt = Number(amount);
 
     if (
@@ -577,15 +593,7 @@ router.post("/:shortId/pool/contribute", async (req, res) => {
     }
 
     // Identifier le contributeur connecté si présent (cookie/header), sinon invité
-    let contributorId = null;
-    const jwt = require("jsonwebtoken");
-    const token =
-      req.headers.authorization?.split(" ")[1] || req.cookies?.authToken;
-    if (token) {
-      try {
-        contributorId = jwt.verify(token, process.env.TOKEN_SECRET)._id;
-      } catch (_) {}
-    }
+    const contributorId = (await resolveSession(req))?._id || null;
 
     // ── Acceptation des conditions, pour les contributeurs SANS COMPTE ────
     // Un contributeur inscrit les a acceptées à l'inscription (case obligatoire
@@ -695,6 +703,7 @@ router.post("/:shortId/pool/contribute", async (req, res) => {
       currency: pool.currency || "eur",
       message: message ? String(message).trim().slice(0, 500) : undefined,
       anonymous: anonymous === true,
+      hideAmount: hideAmount === true,
       stripePaymentIntentId: paymentIntent.id,
       status: "pending",
     });

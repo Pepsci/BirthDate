@@ -113,7 +113,9 @@ const GiftPoolWidget = ({ shortId, isOrganizer = false }) => {
                   ? `${c.contributor.name} ${c.contributor.surname || ""}`.trim()
                   : "Anonyme"}
               </span>
-              <span className="gp-contrib-amount">{euro(c.amount)}</span>
+              <span className="gp-contrib-amount">
+                {c.amountHidden ? "Montant masqué" : euro(c.amount)}
+              </span>
               {c.message && (
                 <span className="gp-contrib-msg">"{c.message}"</span>
               )}

@@ -20,13 +20,30 @@ const {
   removeSocket,
 } = require("../utils/presence");
 
+const { friendIdsOf } = require("../utils/friendIds");
+
+// La présence (« en ligne » / « hors ligne ») n'est annoncée qu'aux AMIS.
+// Elle partait auparavant vers tous les comptes connectés, ce qui donnait à
+// n'importe qui la liste des identifiants de tous les utilisateurs en ligne.
+// La room `user:<id>` regroupe tous les appareils d'un compte (bin/www).
+async function emitPresenceToFriends(io, userId, event) {
+  try {
+    const friendIds = await friendIdsOf(userId);
+    for (const friendId of friendIds) {
+      io.to(`user:${friendId}`).emit(event, { userId });
+    }
+  } catch (error) {
+    console.error(`❌ Error emitting ${event}:`, error);
+  }
+}
+
 module.exports = (io, socket, connectedUsers, app) => {
   console.log(`📱 User connected: ${socket.userId}`);
 
   // Plusieurs sockets par compte (web + iPhone + Android) : on ne signale
   // « en ligne » qu'au premier, « hors ligne » qu'au dernier.
   if (addSocket(connectedUsers, socket)) {
-    socket.broadcast.emit("user:online", { userId: socket.userId });
+    emitPresenceToFriends(io, socket.userId, "user:online");
   }
 
   // Connexion = l'appareil est joignable : tout ce qui attendait est distribué.
@@ -34,13 +51,16 @@ module.exports = (io, socket, connectedUsers, app) => {
     console.error("❌ Error marking messages delivered:", err),
   );
 
-  socket.on("users:getOnline", () => {
-    const onlineUserIds = Array.from(connectedUsers.keys());
-    socket.emit("users:online", { userIds: onlineUserIds });
-    console.log(
-      `📋 Sent online users list to ${socket.userId}:`,
-      onlineUserIds,
-    );
+  socket.on("users:getOnline", async () => {
+    try {
+      // Uniquement mes amis actuellement connectés
+      const friendIds = await friendIdsOf(socket.userId);
+      const onlineUserIds = friendIds.filter((id) => connectedUsers.has(id));
+      socket.emit("users:online", { userIds: onlineUserIds });
+    } catch (error) {
+      console.error("❌ Error listing online friends:", error);
+      socket.emit("users:online", { userIds: [] });
+    }
   });
 
   socket.on("conversations:join", async () => {
@@ -398,14 +418,24 @@ module.exports = (io, socket, connectedUsers, app) => {
       });
       if (!conversation)
         return socket.emit("error", { message: "Conversation not found" });
-      await Message.deleteMany({ conversation: conversationId });
-      await Conversation.findByIdAndDelete(conversationId);
-      io.to(`conversation:${conversationId}`).emit("conversation:deleted", {
+      // Même règle que DELETE /api/conversations/:id : on efface pour la
+      // SEULE personne qui le demande. L'autre garde son historique et n'est
+      // pas prévenue ; les messages restent disponibles en cas de signalement
+      // (purge différée : jobs/purgeClearedConversations.js).
+      const now = new Date();
+      const existing = (conversation.clears || []).find(
+        (c) => String(c.user) === String(socket.userId),
+      );
+      if (existing) {
+        existing.at = now;
+      } else {
+        conversation.clears.push({ user: socket.userId, at: now });
+      }
+      await conversation.save();
+      // Uniquement vers les appareils de la personne qui supprime
+      io.to(`user:${socket.userId}`).emit("conversation:deleted", {
         conversationId,
       });
-      console.log(
-        `🗑️ Conversation ${conversationId} deleted by ${socket.userId}`,
-      );
     } catch (error) {
       console.error("❌ Error deleting conversation:", error);
       socket.emit("error", { message: "Failed to delete conversation" });
@@ -421,7 +451,7 @@ module.exports = (io, socket, connectedUsers, app) => {
   socket.on("disconnect", () => {
     console.log(`👋 User disconnected: ${socket.userId}`);
     if (removeSocket(connectedUsers, socket)) {
-      socket.broadcast.emit("user:offline", { userId: socket.userId });
+      emitPresenceToFriends(io, socket.userId, "user:offline");
     }
   });
 };

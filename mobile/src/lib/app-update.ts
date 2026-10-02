@@ -11,7 +11,8 @@ import { CHANGELOG } from "./changelog";
  * build de l'app.
  *
  * Version installée : CHANGELOG[0].version, embarquée dans le bundle JS.
- * On ne lit PAS `expo.version` (app.json) : elle reste figée à 1.0.0.
+ * On ne lit PAS `expo.version` (app.json) : elle est restée longtemps figée à
+ * 1.0.0 et n'est alignée sur le changelog que depuis la 2.3.2.
  */
 export const INSTALLED_VERSION = CHANGELOG[0]?.version ?? "0.0.0";
 
@@ -77,6 +78,26 @@ export async function dismissAnnouncement(id: string): Promise<void> {
   ).catch(() => {});
 }
 
+// ── Bandeau « nouvelle version » déjà fermé ────────────────────────────────
+// On mémorise la VERSION annoncée au moment de la fermeture : le bandeau ne
+// revient plus pour cette version-là, ni au prochain lancement ni après. Il
+// réapparaît dès que l'admin annonce un AUTRE numéro, plus récent que la
+// version installée. (Il n'était mémorisé que le temps d'une session : il revenait donc
+// à chaque ouverture de l'app, même fermé à la main.)
+const DISMISSED_UPDATE_KEY = "br-dismissed-update-version";
+
+export async function dismissUpdate(version: string): Promise<void> {
+  await SecureStore.setItemAsync(DISMISSED_UPDATE_KEY, version).catch(() => {});
+}
+
+async function getDismissedUpdate(): Promise<string | null> {
+  try {
+    return await SecureStore.getItemAsync(DISMISSED_UPDATE_KEY);
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Ce qu'il faut afficher. Jamais d'erreur : un bandeau absent ne gêne
  * personne (serveur injoignable, plateforme non renseignée…).
@@ -92,8 +113,16 @@ export async function fetchHomeBanners(): Promise<{
     const res = await api<ApiResponse>("/app-version");
 
     const rel = res[PLATFORM];
+    const dismissedUpdate = await getDismissedUpdate();
     const update =
-      rel?.version && rel.url && isNewer(rel.version, INSTALLED_VERSION)
+      rel?.version &&
+      rel.url &&
+      isNewer(rel.version, INSTALLED_VERSION) &&
+      // Fermé pour CETTE version précise : on ne le remontre pas. Comparaison
+      // à l'identique, pas « plus récente que » : si un numéro trop grand a
+      // été saisi par erreur dans l'admin puis corrigé à la baisse, le bandeau
+      // doit revenir pour la vraie version suivante.
+      rel.version !== dismissedUpdate
         ? {
             version: rel.version,
             url: rel.url,

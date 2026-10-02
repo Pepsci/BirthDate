@@ -14,6 +14,10 @@ const giftPoolContributionSchema = new Schema(
     currency: { type: String, default: "eur" },
     message: { type: String, maxlength: 280, trim: true },
     anonymous: { type: Boolean, default: false },
+    // Le contributeur apparaît sous son nom, mais son MONTANT est masqué pour
+    // les autres participants. L'organisateur le voit toujours, et le total de
+    // la cagnotte l'inclut. Indépendant de `anonymous`.
+    hideAmount: { type: Boolean, default: false },
     stripePaymentIntentId: { type: String, required: true, unique: true },
 
     /**

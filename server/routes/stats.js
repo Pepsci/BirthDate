@@ -7,7 +7,10 @@ const API_KEY = process.env.STATS_API_KEY;
 
 router.get("/", async (req, res) => {
   const key = req.headers["x-api-key"];
-  if (key !== API_KEY) return res.status(403).json({ error: "Forbidden" });
+  // Sans clé configurée, `undefined !== undefined` est faux : la route
+  // s'ouvrait à tout le monde. On refuse donc aussi quand la clé est absente.
+  if (!API_KEY || key !== API_KEY)
+    return res.status(403).json({ error: "Forbidden" });
 
   const today = new Date(new Date().setHours(0, 0, 0, 0));
   const last24h = new Date(Date.now() - 24 * 60 * 60 * 1000);

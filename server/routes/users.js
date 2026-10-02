@@ -46,6 +46,65 @@ const avatarUploadLimiter = rateLimit({
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const { resolveNameday } = require("../utils/namedayHelper");
+const { ageFrom } = require("../utils/age");
+const {
+  sessionCutoff,
+  refreshAuthCookie,
+  disconnectUserSockets,
+} = require("../utils/session");
+
+// Même règle qu'à l'inscription (routes/auth.js) : un changement de mot de
+// passe ne doit pas permettre un mot de passe plus faible que la création.
+const isStrongPassword = (password) =>
+  typeof password === "string" &&
+  /(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}/.test(password);
+const WEAK_PASSWORD_MESSAGE =
+  "Le mot de passe doit contenir au moins 8 caractères, dont une majuscule, une minuscule et un chiffre.";
+
+// Âge minimum du compte — garder aligné sur MIN_AGE de routes/auth.js.
+const MIN_ACCOUNT_AGE = 15;
+
+/**
+ * L'adresse email ne se modifie pas depuis le profil : il n'existe pas de
+ * parcours de vérification de la nouvelle adresse, et l'accepter telle quelle
+ * permettait de s'attribuer l'adresse de quelqu'un d'autre — ou, avec une
+ * session volée, de s'approprier le compte. Les clients renvoient l'adresse
+ * actuelle avec le reste du formulaire : identique, elle est ignorée.
+ */
+function emailChangeRequested(user, incoming) {
+  if (typeof incoming !== "string" || !incoming.trim()) return false;
+  return (
+    incoming.trim().toLowerCase() !== String(user.email).trim().toLowerCase()
+  );
+}
+const EMAIL_LOCKED_MESSAGE =
+  "L'adresse email ne peut pas être modifiée. Contactez le support si vous devez la changer.";
+
+/**
+ * Valide une date de naissance reçue dans une mise à jour de profil.
+ * Renvoie un message d'erreur, ou null si elle est acceptable.
+ *
+ * Les clients renvoient la date même inchangée : une date identique (même
+ * jour) passe toujours, pour ne jamais bloquer l'enregistrement du profil d'un
+ * compte existant. Seul un CHANGEMENT est contrôlé — sans quoi il suffisait de
+ * modifier sa date après l'inscription pour contourner la limite d'âge.
+ */
+function birthDateChangeError(current, incoming) {
+  const next = new Date(incoming);
+  if (isNaN(next.getTime()) || next > new Date()) {
+    return "Date de naissance invalide.";
+  }
+  const sameDay =
+    current &&
+    new Date(current).toISOString().slice(0, 10) ===
+      next.toISOString().slice(0, 10);
+  if (sameDay) return null;
+  const age = ageFrom(next);
+  if (age === null || age < MIN_ACCOUNT_AGE) {
+    return `Tu dois avoir au moins ${MIN_ACCOUNT_AGE} ans pour utiliser un compte BirthReminder.`;
+  }
+  return null;
+}
 
 /**
  * Durée à donner au token réémis après une mise à jour de profil.
@@ -243,7 +302,6 @@ router.patch(
 
     try {
       console.log("PATCH /users/me - User ID:", req.payload._id);
-      console.log("🔍 [DEBUG] req.body complet:", req.body);
 
       // Avatar : re-encodé en WebP 256×256 puis écrit sur le disque.
       // saveAvatar() supprime l'avatar précédent → un seul fichier par user.
@@ -273,8 +331,14 @@ router.patch(
             .status(400)
             .json({ message: "Current password is incorrect" });
         }
+        if (!isStrongPassword(newPassword)) {
+          return res.status(400).json({ message: WEAK_PASSWORD_MESSAGE });
+        }
         const salt = bcrypt.genSaltSync(10);
         user.password = bcrypt.hashSync(newPassword, salt);
+        // Révoque toutes les sessions ouvertes avant cet instant. Cet
+        // appareil-ci reçoit un nouveau token dans la réponse.
+        user.passwordChangedAt = sessionCutoff();
         if (req.body.encryptedPrivateKey) {
           user.encryptedPrivateKey = req.body.encryptedPrivateKey;
         }
@@ -289,8 +353,22 @@ router.patch(
       user.name = req.body.name || user.name;
       user.surname =
         req.body.surname !== undefined ? req.body.surname : user.surname;
-      user.email = req.body.email || user.email;
-      user.birthDate = req.body.birthDate || user.birthDate;
+      if (emailChangeRequested(user, req.body.email)) {
+        return res.status(400).json({ message: EMAIL_LOCKED_MESSAGE });
+      }
+      const incomingBirthDate = req.body.birthDate;
+      if (
+        incomingBirthDate &&
+        incomingBirthDate !== "null" &&
+        incomingBirthDate !== "undefined"
+      ) {
+        const birthError = birthDateChangeError(
+          user.birthDate,
+          incomingBirthDate,
+        );
+        if (birthError) return res.status(400).json({ message: birthError });
+        user.birthDate = incomingBirthDate;
+      }
 
       // Fête du calendrier ou choisie à la main (voir resolveNameday)
       const resolved = resolveNameday({
@@ -315,33 +393,35 @@ router.patch(
       // Toutes les préférences
       applyPreferences(user, req.body);
 
-      console.log("🔍 [DEBUG] user AVANT save():", {
-        showTodayNamedayOnHome: user.showTodayNamedayOnHome,
-        receiveNamedayEmails: user.receiveNamedayEmails,
-        modifiedPaths: user.modifiedPaths(),
-      });
       const updatedUser = await user.save();
 
       await syncFriendDates(updatedUser, oldName, oldSurname, oldBirthDate);
       // Trace + délai de 30 j avant cagnotte si passage mineur → majeur
       await onBirthDateChange(req, updatedUser, oldBirthDate);
 
-      console.log("🔍 [DEBUG] updatedUser APRES save():", {
-        showTodayNamedayOnHome: updatedUser.showTodayNamedayOnHome,
-        receiveNamedayEmails: updatedUser.receiveNamedayEmails,
-      });
-      const rereadDebugUser = await userModel.findById(updatedUser._id);
-      console.log("🔍 [DEBUG] relu depuis Mongo juste apres:", {
-        showTodayNamedayOnHome: rereadDebugUser.showTodayNamedayOnHome,
-        receiveNamedayEmails: rereadDebugUser.receiveNamedayEmails,
-      });
       const payload = formatUser(updatedUser);
-      const authToken = jwt.sign(payload, process.env.TOKEN_SECRET, {
-        algorithm: "HS256",
-        // Reconduit la durée du token courant (cf. tokenDurationFrom) au lieu
-        // de rétrograder silencieusement la session à 6 heures.
-        expiresIn: tokenDurationFrom(req.payload),
-      });
+      // Le token ne porte que l'identité, comme à la connexion (routes/auth.js).
+      // Il embarquait tout le profil — clé privée chiffrée comprise — alors
+      // qu'un JWT est signé, pas chiffré : son contenu se lit en clair.
+      const tokenDuration = tokenDurationFrom(req.payload);
+      const authToken = jwt.sign(
+        {
+          _id: updatedUser._id,
+          email: updatedUser.email,
+          name: updatedUser.name,
+          surname: updatedUser.surname,
+        },
+        process.env.TOKEN_SECRET,
+        {
+          algorithm: "HS256",
+          // Reconduit la durée du token courant (cf. tokenDurationFrom) au lieu
+          // de rétrograder silencieusement la session à 6 heures.
+          expiresIn: tokenDuration,
+        },
+      );
+      // Le site web s'authentifie par cookie : on le remplace, sinon un
+      // changement de mot de passe déconnecterait aussi l'appareil courant.
+      refreshAuthCookie(req, res, authToken, tokenDuration);
 
       // L'éligibilité cagnotte accompagne la réponse mais reste hors du JWT :
       // elle dépend du temps (délai de 30 j) et de décisions admin.
@@ -535,7 +615,13 @@ router.get("/:id/publicKey", isAuthenticated, async (req, res) => {
 /* GET user by ID */
 router.get("/:id", isAuthenticated, async (req, res, next) => {
   try {
-    console.log("Request received for user ID:", req.params.id);
+    // ⚠️ Cette route renvoyait le profil COMPLET (email, date de naissance,
+    // clé privée chiffrée) de n'importe quel identifiant à tout compte
+    // connecté. Les clients ne l'appellent que pour leur propre compte ; la
+    // clé publique d'un contact passe par GET /:id/publicKey, juste au-dessus.
+    if (req.payload._id.toString() !== req.params.id) {
+      return res.status(403).json({ message: "Accès non autorisé" });
+    }
     const user = await userModel.findById(req.params.id);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
@@ -590,8 +676,14 @@ router.patch(
             .status(400)
             .json({ message: "Current password is incorrect" });
         }
+        if (!isStrongPassword(newPassword)) {
+          return res.status(400).json({ message: WEAK_PASSWORD_MESSAGE });
+        }
         const salt = bcrypt.genSaltSync(10);
         user.password = bcrypt.hashSync(newPassword, salt);
+        // Révoque toutes les sessions ouvertes avant cet instant. Cet
+        // appareil-ci reçoit un nouveau token dans la réponse.
+        user.passwordChangedAt = sessionCutoff();
         if (req.body.encryptedPrivateKey) {
           user.encryptedPrivateKey = req.body.encryptedPrivateKey;
         }
@@ -606,8 +698,22 @@ router.patch(
       user.name = req.body.name || user.name;
       user.surname =
         req.body.surname !== undefined ? req.body.surname : user.surname;
-      user.email = req.body.email || user.email;
-      user.birthDate = req.body.birthDate || user.birthDate;
+      if (emailChangeRequested(user, req.body.email)) {
+        return res.status(400).json({ message: EMAIL_LOCKED_MESSAGE });
+      }
+      const incomingBirthDate = req.body.birthDate;
+      if (
+        incomingBirthDate &&
+        incomingBirthDate !== "null" &&
+        incomingBirthDate !== "undefined"
+      ) {
+        const birthError = birthDateChangeError(
+          user.birthDate,
+          incomingBirthDate,
+        );
+        if (birthError) return res.status(400).json({ message: birthError });
+        user.birthDate = incomingBirthDate;
+      }
 
       // Fête du calendrier ou choisie à la main (voir resolveNameday)
       const resolved = resolveNameday({
@@ -638,12 +744,28 @@ router.patch(
       await onBirthDateChange(req, updatedUser, oldBirthDate);
 
       const payload = formatUser(updatedUser);
-      const authToken = jwt.sign(payload, process.env.TOKEN_SECRET, {
-        algorithm: "HS256",
-        // Reconduit la durée du token courant (cf. tokenDurationFrom) au lieu
-        // de rétrograder silencieusement la session à 6 heures.
-        expiresIn: tokenDurationFrom(req.payload),
-      });
+      // Le token ne porte que l'identité, comme à la connexion (routes/auth.js).
+      // Il embarquait tout le profil — clé privée chiffrée comprise — alors
+      // qu'un JWT est signé, pas chiffré : son contenu se lit en clair.
+      const tokenDuration = tokenDurationFrom(req.payload);
+      const authToken = jwt.sign(
+        {
+          _id: updatedUser._id,
+          email: updatedUser.email,
+          name: updatedUser.name,
+          surname: updatedUser.surname,
+        },
+        process.env.TOKEN_SECRET,
+        {
+          algorithm: "HS256",
+          // Reconduit la durée du token courant (cf. tokenDurationFrom) au lieu
+          // de rétrograder silencieusement la session à 6 heures.
+          expiresIn: tokenDuration,
+        },
+      );
+      // Le site web s'authentifie par cookie : on le remplace, sinon un
+      // changement de mot de passe déconnecterait aussi l'appareil courant.
+      refreshAuthCookie(req, res, authToken, tokenDuration);
 
       // L'éligibilité cagnotte accompagne la réponse mais reste hors du JWT :
       // elle dépend du temps (délai de 30 j) et de décisions admin.
@@ -704,6 +826,10 @@ router.delete(
       // Même règle que « retirer un ami » : le compte disparaît des deux
       // côtés. Ses cartes à lui, puis les cartes que les autres avaient de
       // lui — avant de supprimer les amitiés, dont on lit les linkedDate.
+      // Le compte n'a plus accès à rien (utils/session.js refuse un compte
+      // supprimé) ; on coupe aussi ses connexions temps réel déjà ouvertes.
+      disconnectUserSockets(req.app, req.params.id);
+
       await DateModel.deleteMany({ owner: req.params.id });
       await deleteLinkedCards(req.params.id);
       await Friend.deleteMany({

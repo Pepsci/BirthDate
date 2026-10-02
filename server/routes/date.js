@@ -4,6 +4,7 @@ const dateModel = require("./../models/date.model");
 const Conversation = require("./../models/conversation.model");
 const mongoose = require("mongoose");
 const userModel = require("../models/user.model");
+const Friend = require("../models/friend.model");
 const { resolveNameday } = require("../utils/namedayHelper");
 
 const { isAuthenticated } = require("../middleware/jwt.middleware");
@@ -77,13 +78,25 @@ router.post("/", isAuthenticated, async (req, res, next) => {
     // Fête du calendrier, ou fête choisie à la main (voir resolveNameday)
     const resolved = resolveNameday({ name, incoming: nameday || undefined });
 
+    // Une carte ne peut être liée qu'à un AMI. Sans ce contrôle, lier une
+    // carte à un identifiant quelconque renvoyait ensuite l'email et la date
+    // de naissance de cette personne (populate de GET /).
+    if (linkedUser) {
+      const allowed =
+        mongoose.isValidObjectId(linkedUser) &&
+        (await Friend.areFriends(req.payload._id, linkedUser));
+      if (!allowed) {
+        return res.status(403).json({ message: "Accès non autorisé" });
+      }
+    }
+
     const newDate = await dateModel.create({
       date,
       owner: req.payload._id,
       name,
       surname,
       family,
-      linkedUser,
+      linkedUser: linkedUser || null,
       nameday: resolved.nameday,
       namedaySource: resolved.namedaySource,
     });

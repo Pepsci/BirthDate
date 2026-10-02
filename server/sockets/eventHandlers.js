@@ -4,12 +4,15 @@ const EventInvitation = require("../models/eventInvitation.model");
 const User = require("../models/user.model");
 const { notify } = require("../utils/notify");
 const { REACTIONS } = require("../constants/reactions");
+const { userCanAccessEvent } = require("../utils/eventAccess");
 
 module.exports = (io, socket, app) => {
   socket.on("event:join", async ({ shortId }) => {
     try {
       const event = await Event.findOne({ shortId });
-      if (event) {
+      // Organisateur ou invité uniquement : sans ce contrôle, tout compte
+      // connaissant le lien recevait le chat de l'événement en direct.
+      if (event && (await userCanAccessEvent(event, socket.userId))) {
         socket.join(`event:${shortId}`);
         console.log(`✅ User ${socket.userId} joined event ${shortId}`);
         if (socket.userId) {
@@ -65,6 +68,12 @@ module.exports = (io, socket, app) => {
           error: "Événement introuvable",
         });
       if (!socket.userId)
+        return socket.emit("event:message_error", {
+          tempId,
+          error: "Non autorisé",
+        });
+      // Écrire dans le chat exige d'être organisateur ou invité.
+      if (!(await userCanAccessEvent(event, socket.userId)))
         return socket.emit("event:message_error", {
           tempId,
           error: "Non autorisé",

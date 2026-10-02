@@ -16,6 +16,12 @@ const {
 } = require("../../services/emailTemplates/eventEmails");
 const User = require("../../models/user.model");
 const { audit } = require("../../services/auditLog");
+const {
+  userCanAccessEvent,
+  publicInvitation,
+} = require("../../utils/eventAccess");
+const { checkEventCreation } = require("../../services/quotas");
+const { resolveSession } = require("../../utils/session");
 
 // Code d'accès cryptographiquement sûr (8 caractères hex majuscules)
 const generateAccessCode = () =>
@@ -39,6 +45,19 @@ function eventEffectiveDate(event) {
  */
 router.post("/", isAuthenticated, async (req, res) => {
   try {
+    // Quota de création (5 par 24 h, 15 en cours — réglable par compte dans
+    // l'admin). Vérifié avant toute écriture.
+    const creator = await User.findById(req.payload._id).select(
+      "name surname email role eventQuota",
+    );
+    if (!creator)
+      return res.status(401).json({ message: "Utilisateur introuvable" });
+    const refusal = await checkEventCreation(req, creator);
+    if (refusal)
+      return res
+        .status(refusal.status)
+        .json({ code: refusal.code, message: refusal.message });
+
     const {
       title,
       description,
@@ -132,7 +151,7 @@ router.post("/", isAuthenticated, async (req, res) => {
     console.error("❌ Error creating event:", error);
     res
       .status(500)
-      .json({ message: "Erreur lors de la création de l'événement", error });
+      .json({ message: "Erreur lors de la création de l'événement" });
   }
 });
 
@@ -294,24 +313,9 @@ router.get("/:shortId", async (req, res) => {
     if (!event)
       return res.status(404).json({ message: "Événement introuvable" });
 
-    let userId = null;
-    if (req.headers.authorization?.split(" ")[0] === "Bearer") {
-      try {
-        const p = require("jsonwebtoken").verify(
-          req.headers.authorization.split(" ")[1],
-          process.env.TOKEN_SECRET,
-        );
-        userId = p._id;
-      } catch (_) {}
-    } else if (req.cookies?.authToken) {
-      try {
-        const p = require("jsonwebtoken").verify(
-          req.cookies.authToken,
-          process.env.TOKEN_SECRET,
-        );
-        userId = p._id;
-      } catch (_) {}
-    }
+    // Authentification facultative, mais session ACTIVE (utils/session.js)
+    const session = await resolveSession(req);
+    const userId = session?._id || null;
 
     let hasFullAccess = false;
     let myRsvpStatus = null;
@@ -349,9 +353,19 @@ router.get("/:shortId", async (req, res) => {
       hasFullAccess = true;
 
     if (hasFullAccess) {
+      // Les jetons des invités sans compte ne sortent jamais d'ici, et leurs
+      // emails ne sont visibles que par l'organisateur (utils/eventAccess.js).
+      const viewerIsOrganizer =
+        !!userId && event.organizer._id.toString() === userId;
+      const payload = event.toObject();
+      if (Array.isArray(payload.invitations)) {
+        payload.invitations = payload.invitations.map((inv) =>
+          publicInvitation(inv, viewerIsOrganizer),
+        );
+      }
       return res
         .status(200)
-        .json({ ...event.toObject(), hasFullAccess, myRsvpStatus });
+        .json({ ...payload, hasFullAccess, myRsvpStatus });
     }
 
     return res.status(200).json({
@@ -936,15 +950,24 @@ router.post("/:shortId/uncancel", isAuthenticated, async (req, res) => {
 /*
  * GET /api/events/:shortId/share
  */
-router.get("/:shortId/share", async (req, res) => {
+// ⚠️ Cette route était publique : le lien seul suffisait à obtenir le code
+// d'accès, ce qui vidait le code de son sens. Elle exige maintenant un compte
+// qui participe à l'événement. Le code n'est remis qu'à l'organisateur, ou aux
+// invités quand `allowGuestInvites` est activé. Les invités sans compte ne
+// passent pas par ici : ils reçoivent lien + code de la personne qui invite.
+router.get("/:shortId/share", isAuthenticated, async (req, res) => {
   try {
     const event = await Event.findOne({ shortId: req.params.shortId });
     if (!event)
       return res.status(404).json({ message: "Événement introuvable" });
+    const isOrganizer = event.organizer.toString() === req.payload._id;
+    if (!isOrganizer && !(await userCanAccessEvent(event, req.payload._id)))
+      return res.status(403).json({ message: "Non autorisé" });
+    const canShareCode = isOrganizer || event.allowGuestInvites === true;
     const baseUrl = process.env.FRONTEND_URL || "https://birthreminder.com";
     res.status(200).json({
       url: `${baseUrl}/event/${event.shortId}`,
-      code: event.accessCode,
+      code: canShareCode ? event.accessCode : null,
     });
   } catch (error) {
     console.error("❌ Error getting share link:", error);

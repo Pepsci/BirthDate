@@ -781,7 +781,9 @@ export async function leaveEvent(shortId: string): Promise<void> {
 
 export interface PoolContribution {
   id: string;
-  amount: number; // centimes
+  /** Centimes. `null` quand le contributeur a masqué son montant. */
+  amount: number | null;
+  amountHidden?: boolean;
   message?: string | null;
   createdAt: string;
   contributor: { name: string; surname?: string; avatar?: string | null } | null;
@@ -846,6 +848,7 @@ export async function contributeToPool(
     amount: number;
     message?: string;
     anonymous?: boolean;
+    hideAmount?: boolean;
     guestName?: string;
   },
 ): Promise<{ clientSecret: string; stripeAccountId: string }> {

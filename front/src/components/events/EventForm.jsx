@@ -131,6 +131,8 @@ const EventForm = ({
   const [step, setStep] = useState(1);
   const [direction, setDirection] = useState(1);
   const [loading, setLoading] = useState(false);
+  // Message du serveur en cas de refus (quota d'événements atteint, etc.).
+  const [submitError, setSubmitError] = useState(null);
   const dateOptionInputRef = useRef(null);
 
   const [formData, setFormData] = useState(() => {
@@ -262,6 +264,7 @@ const EventForm = ({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setSubmitError(null);
     setLoading(true);
     try {
       const payload = { ...formData };
@@ -322,6 +325,10 @@ const EventForm = ({
       }
     } catch (err) {
       console.error("Error submitting event", err);
+      setSubmitError(
+        err.response?.data?.message ||
+          "L'événement n'a pas pu être enregistré. Réessayez.",
+      );
       setLoading(false);
     }
   };
@@ -1165,6 +1172,12 @@ const EventForm = ({
             </AnimatePresence>
           </div>
         </div>
+
+        {submitError && (
+          <p className="event-modal-error" role="alert">
+            {submitError}
+          </p>
+        )}
 
         <div className="event-modal-footer">
           {step > 1 && (

@@ -8,8 +8,21 @@ const userModel = require("../models/user.model");
 // GET /stats - Stats publiques (landing page)
 // 🌍 PUBLIC : aucune donnée personnelle
 // ========================================
+// Ces compteurs s'affichent sur la page d'accueil publique. Les recalculer
+// relit TOUTES les cartes de la base : on garde le résultat 10 minutes, pour
+// qu'un pic de visites (ou un robot) ne déclenche pas ce parcours en boucle.
+const PUBLIC_STATS_TTL_MS = 10 * 60 * 1000;
+let publicStatsCache = null; // { at, data }
+
 router.get("/stats", async (req, res) => {
   try {
+    if (
+      publicStatsCache &&
+      Date.now() - publicStatsCache.at < PUBLIC_STATS_TTL_MS
+    ) {
+      return res.status(200).json(publicStatsCache.data);
+    }
+
     const now = new Date();
     const todayMonth = now.getMonth() + 1;
     const todayDay = now.getDate();
@@ -38,9 +51,15 @@ router.get("/stats", async (req, res) => {
       deletedAt: null,
     });
 
-    res
-      .status(200)
-      .json({ today, thisMonth, thisYear, total: allDates.length, totalUsers });
+    const data = {
+      today,
+      thisMonth,
+      thisYear,
+      total: allDates.length,
+      totalUsers,
+    };
+    publicStatsCache = { at: Date.now(), data };
+    res.status(200).json(data);
   } catch (error) {
     console.error("Error fetching public stats:", error);
     res.status(500).json({ message: "Internal Server Error" });

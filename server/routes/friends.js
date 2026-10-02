@@ -18,6 +18,25 @@ const { createFriendDates } = require("../utils/friendDates");
 const { isBlockedBetween } = require("../utils/blocking");
 const WishlistModel = require("../models/wishlist.model");
 const SharedGiftList = require("../models/sharedGiftList.model");
+const rateLimit = require("express-rate-limit");
+
+// Demandes d'ami : 30 par compte et par 24 h, tous modes confondus (par email
+// ou par identifiant). Chaque demande envoie un email — à un inscrit ou, pour
+// une adresse inconnue, une invitation à rejoindre l'app : sans plafond, la
+// route servait de relais d'emails et permettait de tester en masse quelles
+// adresses ont un compte. Compté par compte, donc monté APRÈS isAuthenticated.
+const friendRequestLimiter = rateLimit({
+  windowMs: 24 * 60 * 60 * 1000,
+  max: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => String(req.payload._id),
+  message: {
+    code: "FRIEND_QUOTA_DAILY",
+    message:
+      "Vous avez atteint votre quota journalier de demandes d'ami (30 sur 24 h). Vous pourrez en envoyer de nouvelles demain.",
+  },
+});
 
 // ========================================
 // GET - Obtenir tous les amis
@@ -72,7 +91,9 @@ router.get("/sent", isAuthenticated, async (req, res) => {
       user: userId,
       status: "pending",
     })
-      .populate("friend", "name email avatar birthDate")
+      // Pas de date de naissance tant que la demande n'est pas acceptée :
+      // sinon il suffisait d'envoyer une demande à une adresse pour l'obtenir.
+      .populate("friend", "name email avatar")
       .populate("requestedBy", "name email avatar");
 
     const sentInvitations = await Invitation.find({
@@ -93,7 +114,7 @@ router.get("/sent", isAuthenticated, async (req, res) => {
 // ========================================
 // POST - Envoyer une demande d'amitié ou une invitation
 // ========================================
-router.post("/", isAuthenticated, async (req, res, next) => {
+router.post("/", isAuthenticated, friendRequestLimiter, async (req, res, next) => {
   try {
     const { email } = req.body;
     const currentUserId = req.payload._id;
@@ -202,7 +223,7 @@ router.post("/", isAuthenticated, async (req, res, next) => {
 // À l'acceptation, createFriendDates() crée les cartes liées des deux côtés —
 // inutile donc de créer une carte manuelle en parallèle.
 // ========================================
-router.post("/request-by-id", isAuthenticated, async (req, res, next) => {
+router.post("/request-by-id", isAuthenticated, friendRequestLimiter, async (req, res, next) => {
   try {
     const { userId } = req.body;
     const currentUserId = req.payload._id;

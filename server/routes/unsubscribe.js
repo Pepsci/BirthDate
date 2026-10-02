@@ -4,6 +4,30 @@ const express = require("express");
 const router = express.Router();
 const userModel = require("../models/user.model");
 const dateModel = require("../models/date.model");
+const { isValidUnsubscribeSignature } = require("../utils/unsubscribeLinks");
+
+// ── Liens par email : signature exigée ──────────────────────────────────────
+// Les liens construits depuis octobre 2026 portent un paramètre `sig`
+// (utils/unsubscribeLinks.js). Un lien signé est vérifié ; un lien dont la
+// signature est fausse est refusé.
+//
+// Les emails déjà partis n'ont pas de signature, et un lien de désabonnement
+// doit continuer de fonctionner : on les accepte encore jusqu'à la date
+// ci-dessous. PASSÉ CETTE DATE, un lien sans signature est refusé — il n'y a
+// rien à modifier ici, la bascule est automatique.
+const UNSIGNED_LINKS_ACCEPTED_UNTIL = new Date("2027-01-15T00:00:00Z");
+
+function linkIsTrusted(query) {
+  if (query?.sig) return isValidUnsubscribeSignature(query);
+  return Date.now() < UNSIGNED_LINKS_ACCEPTED_UNTIL.getTime();
+}
+
+// Adresse ou carte inconnue. Traité comme un succès côté réponse : répondre
+// « utilisateur non trouvé » permettait de tester quelles adresses ont un compte.
+class UnknownTargetError extends Error {}
+const NEUTRAL_MESSAGE = "Votre demande a bien été prise en compte.";
+const INVALID_LINK_MESSAGE =
+  "Ce lien de désabonnement n'est plus valide. Connectez-vous pour gérer vos préférences : Profil → Notifications.";
 
 // ── Helpers HTML ──────────────────────────────────────────────────────────────
 
@@ -80,7 +104,7 @@ async function unsubscribeByEmail({ email, dateid, type, friendId }) {
       { receiveFriendRequestEmails: false },
       { new: true },
     );
-    if (!user) throw new Error("Utilisateur non trouvé");
+    if (!user) throw new UnknownTargetError();
     console.log(`✅ [UNSUBSCRIBE] friend_requests désactivé pour ${user.email}`);
     return "Vous ne recevrez plus d'emails pour les nouvelles demandes d'ami.";
   }
@@ -92,7 +116,7 @@ async function unsubscribeByEmail({ email, dateid, type, friendId }) {
       { receiveChatEmails: false },
       { new: true },
     );
-    if (!user) throw new Error("Utilisateur non trouvé");
+    if (!user) throw new UnknownTargetError();
     console.log(`✅ [UNSUBSCRIBE] chat désactivé pour ${user.email}`);
     return "Vous ne recevrez plus d'emails récapitulant vos messages non lus. Le chat et les notifications push ne changent pas.";
   }
@@ -110,7 +134,7 @@ async function unsubscribeByEmail({ email, dateid, type, friendId }) {
       { $addToSet: { chatEmailDisabledFriends: friendId } },
       { new: true },
     );
-    if (!user) throw new Error("Utilisateur non trouvé");
+    if (!user) throw new UnknownTargetError();
 
     const friend = await userModel
       .findById(friendId, "name surname")
@@ -128,12 +152,16 @@ async function unsubscribeByEmail({ email, dateid, type, friendId }) {
 
   // ── 4. Anniversaire spécifique ─────────────────────────────────────────────
   if (dateid) {
-    const date = await dateModel.findByIdAndUpdate(
-      dateid,
-      { receiveNotifications: false },
-      { new: true },
-    );
-    if (!date) throw new Error("Anniversaire non trouvé");
+    // La carte doit appartenir au compte de cette adresse
+    const owner = await userModel.findOne(emailFilter).select("_id");
+    const date = owner
+      ? await dateModel.findOneAndUpdate(
+          { _id: dateid, owner: owner._id },
+          { receiveNotifications: false },
+          { new: true },
+        )
+      : null;
+    if (!date) throw new UnknownTargetError();
     console.log(
       `✅ [UNSUBSCRIBE] anniversaire ${date.name} ${date.surname} désactivé`,
     );
@@ -146,7 +174,7 @@ async function unsubscribeByEmail({ email, dateid, type, friendId }) {
     { receiveBirthdayEmails: false },
     { new: true },
   );
-  if (!user) throw new Error("Utilisateur non trouvé");
+  if (!user) throw new UnknownTargetError();
   console.log(`✅ [UNSUBSCRIBE] birthday désactivé pour ${user.email}`);
   return "Vous avez été désabonné des notifications d'anniversaire.";
 }
@@ -159,16 +187,22 @@ router.get("/", async (req, res) => {
       .status(400)
       .send(errorPage("Email manquant. Impossible de traiter votre demande."));
   }
+  if (!linkIsTrusted(req.query)) {
+    return res.status(403).send(errorPage(INVALID_LINK_MESSAGE, 403));
+  }
   try {
     const message = await unsubscribeByEmail(req.query);
     return res.send(
       successPage(`${escapeHtml(message)}<br><br>${escapeHtml(REACTIVATE_HINT)}`),
     );
   } catch (error) {
+    if (error instanceof UnknownTargetError) {
+      return res.send(successPage(escapeHtml(NEUTRAL_MESSAGE)));
+    }
     console.error("❌ [UNSUBSCRIBE] Erreur:", error.message);
     return res
       .status(500)
-      .send(errorPage(`Une erreur est survenue : ${escapeHtml(error.message)}`));
+      .send(errorPage("Une erreur est survenue. Réessayez plus tard."));
   }
 });
 
@@ -200,10 +234,16 @@ router.post("/", async (req, res) => {
     (req.body && req.body["List-Unsubscribe"] === "One-Click") ||
     (!req.body?.userId && req.query.email);
   if (isOneClick) {
+    if (!linkIsTrusted(req.query)) {
+      return res.status(403).send("Lien invalide");
+    }
     try {
       await unsubscribeByEmail(req.query);
       return res.status(200).send("OK");
     } catch (error) {
+      if (error instanceof UnknownTargetError) {
+        return res.status(200).send("OK");
+      }
       console.error("❌ [UNSUBSCRIBE ONE-CLICK] Erreur:", error.message);
       return res.status(400).send("Désabonnement impossible");
     }

@@ -148,7 +148,8 @@ export interface AuthUser {
 /** Version affichée à l'admin (support & débogage) — celle d'app.json. */
 // Version lisible de l'app (celle des notes de mise à jour), envoyée à la
 // connexion et à l'enregistrement push (User.lastAppVersion). `expo.version`
-// reste figée à 1.0.0 dans app.json : elle ne disait rien de la version installée.
+// (app.json) est alignée dessus depuis la 2.3.2 — c'est elle que montrent
+// l'App Store et TestFlight : la monter EN MÊME TEMPS que le changelog.
 export const APP_VERSION =
   CHANGELOG[0]?.version ?? Constants.expoConfig?.version ?? null;
 

@@ -1,34 +1,39 @@
-const jwt = require("jsonwebtoken");
+// middleware/socketAuth.js
+//
+// Authentification d'une connexion Socket.io. Même règle que les routes HTTP :
+// la session doit être active (utils/session.js), pas seulement signée.
 
-module.exports = (socket, next) => {
+const cookie = require("cookie");
+const { verifySessionToken } = require("../utils/session");
+
+module.exports = async (socket, next) => {
   try {
-    // Le token peut être envoyé soit dans auth.token, handshake.headers.authorization, ou dans les cookies
-    let token =
-      socket.handshake.auth.token ||
-      (socket.handshake.headers.authorization &&
-        socket.handshake.headers.authorization.split(" ")[1]);
-
-    if (!token && socket.handshake.headers.cookie) {
-      const cookie = require("cookie");
+    // Le token peut arriver par auth.token, par l'en-tête Authorization ou
+    // par le cookie. On les essaie dans cet ordre et on garde le premier
+    // valable : le site web garde en mémoire le token reçu au chargement de
+    // la page, qui devient périmé après un changement de mot de passe, alors
+    // que son cookie, lui, a été renouvelé.
+    const candidates = [];
+    if (socket.handshake.auth?.token) candidates.push(socket.handshake.auth.token);
+    const header = socket.handshake.headers.authorization;
+    if (header && header.split(" ")[1]) candidates.push(header.split(" ")[1]);
+    if (socket.handshake.headers.cookie) {
       const cookies = cookie.parse(socket.handshake.headers.cookie);
-      token = cookies.authToken;
+      if (cookies.authToken) candidates.push(cookies.authToken);
     }
 
-    if (!token) {
-      console.warn("⚠️ Socket.io: Aucun token fourni");
+    if (candidates.length === 0) {
       return next(new Error("Authentication error: No token provided"));
     }
 
-    // Vérifier et décoder le token (algorithme explicite pour éviter toute confusion d'algo)
-    const decoded = jwt.verify(token, process.env.TOKEN_SECRET, {
-      algorithms: ["HS256"],
-    });
-
-    // Attacher l'userId au socket pour l'utiliser dans les handlers
-    socket.userId = decoded._id; // Adapte selon la structure de ton token
-
-    console.log(`✅ Socket.io: User ${socket.userId} authenticated`);
-    next();
+    for (const token of candidates) {
+      const payload = await verifySessionToken(token);
+      if (payload) {
+        socket.userId = payload._id;
+        return next();
+      }
+    }
+    return next(new Error("Authentication error: Invalid token"));
   } catch (error) {
     console.error("❌ Socket.io Authentication error:", error.message);
     next(new Error("Authentication error: Invalid token"));

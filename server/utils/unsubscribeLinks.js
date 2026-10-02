@@ -11,6 +11,42 @@
 // « Se désabonner » de Gmail) : Gmail y envoie un POST « one-click », géré par
 // POST /api/unsubscribe (routes/unsubscribe.js).
 
+const crypto = require("crypto");
+
+/**
+ * Signature d'un lien de désabonnement par email.
+ *
+ * Sans elle, connaître l'adresse de quelqu'un suffisait à couper ses emails.
+ * La signature lie l'adresse, le type et la cible : un lien ne peut être ni
+ * fabriqué ni détourné vers une autre adresse.
+ */
+function unsubscribeSignature(email, type, extra = {}) {
+  const canonical = [
+    String(email || "").trim().toLowerCase(),
+    type || "",
+    extra.friendId || "",
+    extra.dateid || "",
+  ].join("\n");
+  return crypto
+    .createHmac("sha256", `unsubscribe:${process.env.TOKEN_SECRET}`)
+    .update(canonical)
+    .digest("hex")
+    .slice(0, 32);
+}
+
+/** Vérifie le paramètre `sig` d'une requête de désabonnement (query string). */
+function isValidUnsubscribeSignature(query) {
+  const given = String(query?.sig || "");
+  const expected = unsubscribeSignature(query?.email, query?.type, {
+    friendId: query?.friendId,
+    dateid: query?.dateid,
+  });
+  return (
+    given.length === expected.length &&
+    crypto.timingSafeEqual(Buffer.from(given), Buffer.from(expected))
+  );
+}
+
 function apiBaseUrl() {
   return (process.env.BACKEND_URL || "http://localhost:4000").replace(/\/+$/, "");
 }
@@ -26,6 +62,7 @@ function buildUnsubscribeUrl(email, type, extra = {}) {
   for (const [key, value] of Object.entries(extra)) {
     if (value !== undefined && value !== null) params.set(key, String(value));
   }
+  params.set("sig", unsubscribeSignature(email, type, extra));
   return `${apiBaseUrl()}/api/unsubscribe?${params.toString()}`;
 }
 
@@ -41,4 +78,9 @@ function listUnsubscribeHeaders(url) {
   };
 }
 
-module.exports = { buildUnsubscribeUrl, listUnsubscribeHeaders };
+module.exports = {
+  buildUnsubscribeUrl,
+  listUnsubscribeHeaders,
+  unsubscribeSignature,
+  isValidUnsubscribeSignature,
+};
