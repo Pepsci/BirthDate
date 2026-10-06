@@ -1,3 +1,4 @@
+import { getLocaleTag, t } from "@/i18n";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   View,
@@ -189,7 +190,7 @@ export default function EventChat({
 
         if (mounted) setMessages(history);
       } catch (e: any) {
-        if (mounted) setError(e?.message ?? "Erreur de chargement.");
+        if (mounted) setError(e?.message ?? t("common:errors.loading"));
       } finally {
         if (mounted) setLoading(false);
       }
@@ -215,7 +216,7 @@ export default function EventChat({
       };
 
       const onTypingStart = ({ userName }: { userName?: string }) => {
-        setTypingName(userName ?? "Quelqu'un");
+        setTypingName(userName ?? t("welcome:someone"));
         if (typingTimeout.current) clearTimeout(typingTimeout.current);
         typingTimeout.current = setTimeout(() => setTypingName(null), 3000);
       };
@@ -228,10 +229,10 @@ export default function EventChat({
       };
 
       const onConnectError = (err: Error) => {
-        setError(`Connexion temps réel impossible : ${err.message}`);
+        setError(t("chat:errors.realtime", { message: err.message }));
       };
       const onMessageError = ({ error }: { error?: string }) => {
-        setError(error ?? "Erreur d'envoi du message.");
+        setError(error ?? t("chat:errors.sendMessage"));
       };
 
       socket.on("connect_error", onConnectError);
@@ -353,7 +354,7 @@ export default function EventChat({
     const actions: MessageAction[] = [];
     if (message.sender?._id !== user?._id) {
       actions.push({
-        label: "🚩  Signaler",
+        label: t("chat:menu.report"),
         destructive: true,
         onPress: () =>
           promptReport({
@@ -378,7 +379,7 @@ export default function EventChat({
     <HeaderIconButton
       name={mute.mute ? "bell-off" : "bell"}
       accessibilityLabel={
-        mute.mute ? "Réactiver les notifications" : "Couper les notifications"
+        mute.mute ? t("chat:mute.unmuteLabel") : t("chat:mute.muteLabel")
       }
       onPress={() => setMuteSheet(true)}
     />
@@ -407,13 +408,13 @@ export default function EventChat({
     >
       {embedded ? (
         <View style={styles.embeddedHeader}>
-          <Text style={styles.embeddedTitle}>💬 Chat de l'événement</Text>
+          <Text style={styles.embeddedTitle}>{t("chat:event.embedded")}</Text>
           {muteButton()}
         </View>
       ) : (
         <Stack.Screen
           options={{
-            title: eventTitle ?? "Chat de l'événement",
+            title: eventTitle ?? t("chat:event.title"),
             headerRight: muteButton,
           }}
         />
@@ -439,9 +440,9 @@ export default function EventChat({
         onPress={() => router.push(`/event/${shortId}`)}
       >
         <Text style={styles.eventLinkText} numberOfLines={1}>
-          🎉 {eventTitle ?? "Voir l'événement"}
+          🎉 {eventTitle ?? t("chat:event.view")}
         </Text>
-        <Text style={styles.eventLinkGo}>Ouvrir ›</Text>
+        <Text style={styles.eventLinkGo}>{t("chat:event.open")}</Text>
       </Pressable>
         </>
       )}
@@ -449,8 +450,7 @@ export default function EventChat({
       {error && <Text style={styles.error}>{error}</Text>}
       {e2eReady === false && (
         <Text style={styles.e2eWarn}>
-          ⚠️ Clé privée absente sur cet appareil — déconnecte-toi puis
-          reconnecte-toi pour activer le chiffrement.
+          {t("chat:e2eMissing")}
         </Text>
       )}
 
@@ -483,7 +483,7 @@ export default function EventChat({
           );
         }}
         ListEmptyComponent={
-          <Text style={styles.empty}>Aucun message. Lance la discussion !</Text>
+          <Text style={styles.empty}>{t("chat:event.empty")}</Text>
         }
       />
 
@@ -496,13 +496,13 @@ export default function EventChat({
       />
 
       {typingName && (
-        <Text style={styles.typing}>{typingName} est en train d'écrire…</Text>
+        <Text style={styles.typing}>{t("chat:typingName", { name: typingName })}</Text>
       )}
 
       <View style={[styles.inputRow, { paddingBottom: inputBottom }]}>
         <TextInput placeholderTextColor={colors.placeholder}
           style={styles.input}
-          placeholder="Ton message…"
+          placeholder={t("chat:input")}
           value={input}
           onChangeText={onChangeInput}
           multiline
@@ -556,7 +556,7 @@ function MessageBubble({
   onToggleReaction?: (reaction: ReactionName) => void;
 }) {
   const styles = useThemedStyles(makeStyles);
-  const time = new Date(message.createdAt).toLocaleTimeString("fr-FR", {
+  const time = new Date(message.createdAt).toLocaleTimeString(getLocaleTag(), {
     hour: "2-digit",
     minute: "2-digit",
   });
@@ -582,7 +582,7 @@ function MessageBubble({
       >
         {!isMine && showName && (
           <Text style={styles.senderName}>
-            {message.sender?.name ?? "Invité"}
+            {message.sender?.name ?? t("chat:event.guest")}
           </Text>
         )}
         <Text style={[styles.msgText, isMine && styles.msgTextMine]}>
@@ -617,12 +617,12 @@ function displayContent(
   if (!message.isEncrypted) return message.content;
   const senderKey = message.sender?.publicKey;
   const myCopy = myUserId ? message.encryptedFor?.[myUserId] : null;
-  if (!privateKey) return "🔒 Chiffré — clé privée absente (reconnecte-toi)";
-  if (!senderKey) return "🔒 Chiffré — expéditeur sans clé publique";
-  if (!myCopy) return "🔒 Chiffré — pas de copie pour ce compte";
+  if (!privateKey) return t("chat:enc.noPrivateKey");
+  if (!senderKey) return t("chat:enc.noSenderKey");
+  if (!myCopy) return t("chat:enc.noCopy");
   return (
     decryptMessage(myCopy, senderKey, privateKey) ??
-    "🔒 Message chiffré (déchiffrement impossible)"
+    t("chat:encryptedEvent")
   );
 }
 

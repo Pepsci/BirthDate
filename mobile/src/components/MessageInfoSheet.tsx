@@ -1,3 +1,4 @@
+import { t } from "@/i18n";
 import { StyleSheet, Text, View } from "react-native";
 import BottomSheet from "./BottomSheet";
 import type { DMMessage } from "../lib/conversations";
@@ -24,14 +25,14 @@ export default function MessageInfoSheet({
 
   const { sentAt, deliveredAt, readAt } = getReceiptTimes(message, myUserId);
   const rows = [
-    { key: "read", ticks: "✓✓", label: "Lu", date: readAt },
-    { key: "delivered", ticks: "✓✓", label: "Distribué", date: deliveredAt },
-    { key: "sent", ticks: "✓", label: "Envoyé", date: sentAt },
+    { key: "read", ticks: "✓✓", label: t("chat:receipt.read"), date: readAt },
+    { key: "delivered", ticks: "✓✓", label: t("chat:receipt.delivered"), date: deliveredAt },
+    { key: "sent", ticks: "✓", label: t("chat:receipt.sent"), date: sentAt },
   ];
 
   return (
     <BottomSheet visible={!!message} onClose={onClose}>
-      <Text style={styles.title}>Infos message</Text>
+      <Text style={styles.title}>{t("chat:info.title")}</Text>
       {preview ? (
         <Text style={styles.preview} numberOfLines={3}>
           {preview}

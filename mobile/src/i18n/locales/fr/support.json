@@ -1,0 +1,49 @@
+{
+  "unresolved": "Question non résolue : {{context}}",
+  "title": "Support",
+  "sent": {
+    "title": "Message envoyé",
+    "text": "Merci ! Tu retrouveras la réponse de l'équipe dans Messages → Support, et une notification te préviendra."
+  },
+  "pool": {
+    "title": "Problème de cagnotte",
+    "which": "De quelle cagnotte s'agit-il ?",
+    "none": "Aucune contribution n'est enregistrée sur ton compte. Si tu as participé sans être connecté, décris-nous la situation en joignant le reçu reçu par email.",
+    "skip": "Continuer sans sélection"
+  },
+  "form": {
+    "title": "Écris-nous",
+    "intro": "Une question, un bug, une suggestion ? Écris-nous, on te répond par email.",
+    "subject": "Objet *",
+    "subjectPlaceholder": "Objet de ta demande",
+    "message": "Message *",
+    "messagePlaceholder": "Décris ta demande…"
+  },
+  "status": {
+    "open": "En attente de réponse"
+  },
+  "ticket": {
+    "notFound": "Conversation introuvable.",
+    "sendError": "Envoi impossible.",
+    "team": "Équipe BirthReminder",
+    "hint": "L'équipe te répond ici, en général sous 48 h.",
+    "closed": "Cette conversation est fermée. Pour une nouvelle demande, ouvre un nouveau sujet.",
+    "newTopic": "Nouveau sujet",
+    "placeholder": "Ta réponse…"
+  },
+  "contact": {
+    "title": "Contacter le support",
+    "intro": "Cherche ta réponse ci-dessous — la plupart des questions trouvent une réponse immédiate.",
+    "namedayTitle": "Une fête incorrecte ?",
+    "namedayText": "Un prénom fêté à la mauvaise date, ou pas fêté du tout : signale-le, on corrige le calendrier.",
+    "search": "Cherche une réponse (ex : annuler un événement, wishlist…)",
+    "change": "Changer ↺",
+    "allQuestions": "← Toutes les questions",
+    "notSolved": "Cette réponse ne résout pas ton problème ?",
+    "noResult": "Aucune réponse trouvée pour « {{query}} »."
+  },
+  "guide": {
+    "subtitle": "Tout ce qu'il faut pour ne plus jamais rater un anniversaire.",
+    "noAnswer": "Une question sans réponse ?"
+  }
+}

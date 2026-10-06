@@ -1,3 +1,4 @@
+import { t } from "@/i18n";
 import { useState } from "react";
 import {
   Text,
@@ -38,7 +39,7 @@ export default function ForgotPanel({
       );
       setDone(true);
     } catch (e: any) {
-      setError(e?.message ?? "Erreur lors de l'envoi.");
+      setError(e?.message ?? t("auth:forgot.error"));
       setLoading(false);
     }
   };
@@ -51,28 +52,24 @@ export default function ForgotPanel({
     >
       {done ? (
         <>
-          <Text style={s.title}>📬 Email envoyé !</Text>
+          <Text style={s.title}>{t("auth:forgot.doneTitle")}</Text>
           <Text style={s.doneText}>
-            Si un compte existe pour {email.trim()}, tu recevras un lien de
-            réinitialisation. Suis-le depuis ton téléphone ou ton ordinateur,
-            puis reviens te connecter.
-            {"\n\n"}Pas reçu d'ici quelques minutes ? Regarde dans tes spams
-            (courrier indésirable) : l'email vient de BirthReminder.
+            {t("auth:forgot.doneText", { email: email.trim() })}
           </Text>
           <Pressable style={s.button} onPress={() => onGoTo("login")}>
-            <Text style={s.buttonText}>Retour à la connexion</Text>
+            <Text style={s.buttonText}>{t("auth:backToLogin")}</Text>
           </Pressable>
         </>
       ) : (
         <>
-          <Text style={s.title}>Mot de passe oublié</Text>
+          <Text style={s.title}>{t("auth:forgot.title")}</Text>
           <Text style={s.subtitle}>
-            Entre ton email — on t'envoie un lien de réinitialisation.
+            {t("auth:forgot.subtitle")}
           </Text>
           <TextInput
             placeholderTextColor={colors.placeholder}
             style={s.input}
-            placeholder="Email"
+            placeholder={t("auth:email")}
             autoCapitalize="none"
             autoCorrect={false}
             keyboardType="email-address"
@@ -88,15 +85,14 @@ export default function ForgotPanel({
             {loading ? (
               <ActivityIndicator color={colors.white} />
             ) : (
-              <Text style={s.buttonText}>Envoyer le lien</Text>
+              <Text style={s.buttonText}>{t("auth:forgot.submit")}</Text>
             )}
           </Pressable>
           <Text style={s.warn}>
-            ⚠️ Réinitialiser ton mot de passe régénérera ta clé de chiffrement :
-            les anciens messages chiffrés deviendront illisibles.
+            {t("auth:reset.warn")}
           </Text>
           <Pressable onPress={() => onGoTo("login")}>
-            <Text style={s.link}>← Retour à la connexion</Text>
+            <Text style={s.link}>← {t("auth:backToLogin")}</Text>
           </Pressable>
         </>
       )}

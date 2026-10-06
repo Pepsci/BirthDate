@@ -6,15 +6,75 @@
     "delete": "Supprimer",
     "close": "Fermer",
     "back": "Retour",
-    "retry": "Réessayer"
+    "retry": "Réessayer",
+    "hide": "Masquer",
+    "show": "Afficher",
+    "validate": "Valider",
+    "remove": "Retirer",
+    "edit": "Modifier",
+    "choose": "Choisir",
+    "add": "Ajouter",
+    "report": "Signaler",
+    "generate": "Générer",
+    "decline": "Refuser",
+    "accept": "Accepter",
+    "later": "Plus tard",
+    "next": "Suivant",
+    "openSettings": "Ouvrir les réglages",
+    "continue": "Continuer"
   },
   "status": {
     "loading": "Chargement…",
-    "error": "Une erreur est survenue"
+    "error": "Une erreur est survenue",
+    "sending": "Envoi…"
   },
   "language": {
     "label": "Langue",
     "fr": "Français",
     "en": "English"
+  },
+  "tabs": {
+    "birthdays": "Anniversaires",
+    "events": "Événements",
+    "chats": "Chats",
+    "profile": "Profil"
+  },
+  "password": {
+    "hideLabel": "Masquer le mot de passe",
+    "showLabel": "Afficher le mot de passe"
+  },
+  "countdown": {
+    "d": "J",
+    "h": "H",
+    "m": "M",
+    "s": "S"
+  },
+  "logoLabel": "Accueil BirthReminder",
+  "errors": {
+    "loading": "Erreur de chargement.",
+    "status": "Erreur {{status}}",
+    "delete": "Erreur lors de la suppression.",
+    "save": "Erreur lors de l'enregistrement.",
+    "send": "Erreur lors de l'envoi.",
+    "generic": "Erreur.",
+    "retrySoon": "Réessaie dans un instant.",
+    "network": "Pas de connexion au serveur. Réessaie une fois en ligne.",
+    "title": "Erreur",
+    "occurred": "Une erreur est survenue."
+  },
+  "tomorrow": "Demain",
+  "inDays": "J-{{count}}",
+  "todayCake": "Aujourd'hui 🎂",
+  "age": {
+    "one": "{{count}} an",
+    "other": "{{count}} ans"
+  },
+  "sendCount": "Envoyer ({{count}})",
+  "today": "Aujourd'hui",
+  "backArrow": "← Retour",
+  "notFound": {
+    "title": "Cette page n'existe pas",
+    "text": "Le lien est peut-être incomplet, ou la page a été déplacée.",
+    "home": "Retour à l'accueil"
   }
 }

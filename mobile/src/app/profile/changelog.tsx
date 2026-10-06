@@ -1,6 +1,7 @@
+import { getLocaleTag, t } from "@/i18n";
 import { View, Text, Pressable, StyleSheet, ScrollView } from "react-native";
 import { Stack } from "expo-router";
-import { CHANGELOG, ChangelogEntry } from "../../lib/changelog";
+import { getChangelog, ChangelogEntry } from "../../lib/changelog";
 import {
   useThemedStyles,
   ThemeColors,
@@ -12,7 +13,7 @@ const COLLAPSE_SCOPE = "profile_changelog";
 
 /** "8 août 2026" */
 function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("fr-FR", {
+  return new Date(iso).toLocaleDateString(getLocaleTag(), {
     day: "numeric",
     month: "long",
     year: "numeric",
@@ -24,9 +25,9 @@ export default function ChangelogScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Stack.Screen options={{ title: "Notes de mise à jour" }} />
+      <Stack.Screen options={{ title: t("profile:menu.changelog") }} />
 
-      {CHANGELOG.map((entry, i) => (
+      {getChangelog().map((entry, i) => (
         // Repliée par défaut sauf la plus récente, mais l'état choisi par
         // l'utilisateur est mémorisé (même mécanisme que les événements).
         <ChangelogCard key={entry.version} entry={entry} defaultOpen={i === 0} />

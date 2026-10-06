@@ -1,3 +1,4 @@
+import { t } from "@/i18n";
 import { useCallback, useEffect, useState } from "react";
 import { View, Text, Switch, StyleSheet, ActivityIndicator } from "react-native";
 import { Stack } from "expo-router";
@@ -29,33 +30,33 @@ interface Prefs {
 
 const LABELS: Record<string, { title: string; hint: string }> = {
   chatMessage: {
-    title: "Messages du chat",
-    hint: "Chaque message envoyé dans la discussion.",
+    get title() { return t("events:notifs.chatMessage.title"); },
+    get hint() { return t("events:notifs.chatMessage.hint"); },
   },
   eventUpdates: {
-    title: "Mises à jour de l'événement",
-    hint: "Lieu retenu, informations modifiées.",
+    get title() { return t("events:notifs.eventUpdates.title"); },
+    get hint() { return t("events:notifs.eventUpdates.hint"); },
   },
   rsvp: {
-    title: "Réponses aux invitations",
-    hint: "Quand quelqu'un accepte ou décline.",
+    get title() { return t("events:notifs.rsvp.title"); },
+    get hint() { return t("events:notifs.rsvp.hint"); },
   },
-  dateVote: { title: "Votes pour la date", hint: "À chaque vote enregistré." },
+  dateVote: { get title() { return t("events:notifs.dateVote.title"); }, get hint() { return t("events:notifs.dateVote.hint"); } },
   locationVote: {
-    title: "Votes pour le lieu",
-    hint: "À chaque vote enregistré.",
+    get title() { return t("events:notifs.locationVote.title"); },
+    get hint() { return t("events:notifs.locationVote.hint"); },
   },
   giftProposed: {
-    title: "Cadeaux proposés",
-    hint: "Nouvelle idée dans la liste.",
+    get title() { return t("events:notifs.giftProposed.title"); },
+    get hint() { return t("events:notifs.giftProposed.hint"); },
   },
   giftVote: {
-    title: "Votes sur les cadeaux",
-    hint: "Quand une idée reçoit un vote.",
+    get title() { return t("events:notifs.giftVote.title"); },
+    get hint() { return t("events:notifs.giftVote.hint"); },
   },
   poolContribution: {
-    title: "Contributions à la cagnotte",
-    hint: "Chaque participation reçue.",
+    get title() { return t("events:notifs.poolContribution.title"); },
+    get hint() { return t("events:notifs.poolContribution.hint"); },
   },
 };
 
@@ -94,7 +95,7 @@ export default function EventNotificationsSettings({
     try {
       setData(await api<Prefs>(`/events/${shortId}/my-notifications`));
     } catch (e: any) {
-      setError(e?.message ?? "Erreur de chargement.");
+      setError(e?.message ?? t("common:errors.loading"));
     }
   }, [shortId]);
 
@@ -116,7 +117,7 @@ export default function EventNotificationsSettings({
         }),
       );
     } catch (e: any) {
-      setError(e?.message ?? "Erreur.");
+      setError(e?.message ?? t("common:errors.generic"));
       await load();
     } finally {
       setBusy(false);
@@ -126,7 +127,7 @@ export default function EventNotificationsSettings({
   if (!data) {
     return (
       <View style={styles.center}>
-        {!embedded && <Stack.Screen options={{ title: "Notifications" }} />}
+        {!embedded && <Stack.Screen options={{ title: t("events:notifs.short") }} />}
         {error ? (
           <Text style={styles.error}>{error}</Text>
         ) : (
@@ -141,9 +142,9 @@ export default function EventNotificationsSettings({
   return (
     <View style={styles.container}>
       {embedded ? (
-        <Text style={styles.embeddedTitle}>🔔 Notifications de cet événement</Text>
+        <Text style={styles.embeddedTitle}>{t("events:notifs.btn")}</Text>
       ) : (
-        <Stack.Screen options={{ title: "Notifications de l'événement" }} />
+        <Stack.Screen options={{ title: t("events:notifs.screenTitle") }} />
       )}
       {error && <Text style={styles.error}>{error}</Text>}
 
@@ -164,9 +165,7 @@ export default function EventNotificationsSettings({
       </View>
 
       <Text style={styles.footer}>
-        L'annulation de l'événement et le changement de date te seront toujours
-        notifiés : ce sont les seuls messages qu'on ne peut pas se permettre de
-        rater.
+        {t("events:notifs.footer")}
       </Text>
     </View>
   );

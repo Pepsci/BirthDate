@@ -1,3 +1,4 @@
+import { t, tn, formatDayMonth } from "@/i18n";
 import { useEffect, useRef, useState } from "react";
 import {
   View,
@@ -15,10 +16,6 @@ import Avatar from "./Avatar";
 import { fetchFriendCardSummary, FriendCardSummary } from "../lib/friends";
 import { useTheme, useThemedStyles, ThemeColors } from "../lib/theme-context";
 
-const MONTHS_FR = [
-  "janvier", "février", "mars", "avril", "mai", "juin",
-  "juillet", "août", "septembre", "octobre", "novembre", "décembre",
-];
 
 function ageOf(birthDate: string): number {
   const today = new Date();
@@ -37,7 +34,7 @@ function nextBirthdayOf(birthDate: string): string {
   const birth = new Date(birthDate);
   let next = new Date(today.getFullYear(), birth.getMonth(), birth.getDate());
   if (next < today) next = new Date(today.getFullYear() + 1, birth.getMonth(), birth.getDate());
-  return `${next.getDate()} ${MONTHS_FR[next.getMonth()]}`;
+  return formatDayMonth(next);
 }
 
 /**
@@ -143,7 +140,7 @@ export default function PersonPreviewCard({
         )}
 
         {!loading && error && (
-          <Text style={styles.loadingText}>Impossible de charger ce profil.</Text>
+          <Text style={styles.loadingText}>{t("date:preview.error")}</Text>
         )}
 
         {!loading && !error && summary && (
@@ -155,7 +152,7 @@ export default function PersonPreviewCard({
                   {summary.name} {summary.surname}
                 </Text>
                 {summary.birthDate && (
-                  <Text style={styles.age}>{ageOf(summary.birthDate)} ans</Text>
+                  <Text style={styles.age}>{tn("common:age", ageOf(summary.birthDate))}</Text>
                 )}
               </View>
               <Pressable onPress={close} hitSlop={10} style={styles.closeBtn}>
@@ -168,7 +165,7 @@ export default function PersonPreviewCard({
                 <View style={styles.row}>
                   <Text style={styles.icon}>🎂</Text>
                   <Text style={styles.rowText}>
-                    Anniversaire le {nextBirthdayOf(summary.birthDate)}
+                    {t("date:preview.birthdayOn", { date: nextBirthdayOf(summary.birthDate) })}
                   </Text>
                 </View>
               )}
@@ -176,16 +173,15 @@ export default function PersonPreviewCard({
                 <Text style={styles.icon}>🎁</Text>
                 <Text style={styles.rowText}>
                   {summary.wishlistCount > 0
-                    ? `${summary.wishlistCount} idée${summary.wishlistCount > 1 ? "s" : ""} dans sa liste`
-                    : "Aucune idée cadeau partagée"}
+                    ? tn("date:preview.ideas", summary.wishlistCount)
+                    : t("date:preview.noIdeas")}
                 </Text>
               </View>
               {summary.sharedGiftList && (
                 <View style={[styles.row, styles.sharedRow]}>
                   <Text style={styles.icon}>🤝</Text>
                   <Text style={styles.rowText}>
-                    Liste commune — {summary.sharedGiftList.giftCount} cadeau
-                    {summary.sharedGiftList.giftCount > 1 ? "x" : ""}
+                    {tn("date:preview.sharedList", summary.sharedGiftList.giftCount)}
                   </Text>
                 </View>
               )}
@@ -198,7 +194,7 @@ export default function PersonPreviewCard({
                     pressed && { opacity: 0.85 },
                   ]}
                 >
-                  <Text style={styles.profileBtnText}>Voir le profil</Text>
+                  <Text style={styles.profileBtnText}>{t("date:preview.viewProfile")}</Text>
                 </Pressable>
               )}
             </View>

@@ -182,14 +182,14 @@ async function notifySharedListMembers(req, list, { giftName, guestName }) {
         data: {
           fromName: guestName,
           giftName,
-          statusLabel: "s'occupe de",
+          statusLabel: (L) => L("push.shared.status.takes"),
           listLabel: list.label || null,
         },
         link,
       });
       await sendPushToUser(memberId, {
-        title: "🎁 Cadeau réservé",
-        body: `${guestName} s'occupe de « ${giftName} »`,
+        title: (L) => L("push.shared.reservedTitle"),
+        body: (L) => L("push.shared.reservedBody", { who: guestName, gift: giftName }),
         url: link,
         tag: `shared-list-${list._id}`,
         type: "shared_list",

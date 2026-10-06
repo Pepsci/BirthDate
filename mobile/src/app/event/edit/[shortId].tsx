@@ -1,3 +1,4 @@
+import { t } from "@/i18n";
 import { useEffect, useState } from "react";
 import {
   View,
@@ -33,13 +34,13 @@ export default function EditEventScreen() {
     if (!shortId) return;
     fetchEvent(shortId)
       .then(setEvent)
-      .catch((e) => setError(e?.message ?? "Erreur de chargement."));
+      .catch((e) => setError(e?.message ?? t("common:errors.loading")));
   }, [shortId]);
 
   if (!event) {
     return (
       <View style={styles.center}>
-        <Stack.Screen options={{ title: "Modifier" }} />
+        <Stack.Screen options={{ title: t("common:actions.edit") }} />
         {error ? (
           <Text style={styles.error}>{error}</Text>
         ) : (
@@ -55,12 +56,12 @@ export default function EditEventScreen() {
 
   const confirmDeleteDraft = () => {
     Alert.alert(
-      "Supprimer ce brouillon ?",
-      "Il sera supprimé définitivement.",
+      t("events:draft.deleteTitle"),
+      t("events:draft.deleteText"),
       [
-        { text: "Garder", style: "cancel" },
+        { text: t("events:draft.keep"), style: "cancel" },
         {
-          text: "Supprimer",
+          text: t("common:actions.delete"),
           style: "destructive",
           onPress: async () => {
             try {
@@ -68,8 +69,8 @@ export default function EditEventScreen() {
               router.replace("/events");
             } catch (e: any) {
               Alert.alert(
-                "Suppression impossible",
-                e?.message ?? "Réessaie dans un instant.",
+                t("date:delete.failed"),
+                e?.message ?? t("common:errors.retrySoon"),
               );
             }
           },
@@ -82,13 +83,13 @@ export default function EditEventScreen() {
     <>
       <Stack.Screen
         options={{
-          title: isDraft ? `Brouillon ${event.title}` : `Modifier ${event.title}`,
+          title: isDraft ? t("events:draft.titleNamed", { title: event.title }) : t("date:edit.titleFor", { name: event.title }),
           headerRight: isDraft
             ? () => (
                 <HeaderIconButton
                   name="trash"
                   onPress={confirmDeleteDraft}
-                  accessibilityLabel="Supprimer ce brouillon"
+                  accessibilityLabel={t("events:draft.deleteLabel")}
                 />
               )
             : undefined,
@@ -96,7 +97,7 @@ export default function EditEventScreen() {
       />
       <EventFormStepper
         initial={event}
-        submitLabel={isDraft ? "🎉 Publier l'événement" : "💾 Enregistrer"}
+        submitLabel={isDraft ? t("events:form.publish") : t("events:form.save")}
         onSubmit={async (payload) => {
           await updateEvent(shortId!, {
             ...payload,

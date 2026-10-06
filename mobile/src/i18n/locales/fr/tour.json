@@ -1,0 +1,32 @@
+{
+  "agenda": {
+    "title": "📅 La vue agenda",
+    "text": "Ce bouton affiche tous les anniversaires, fêtes et événements du mois en un coup d'œil."
+  },
+  "addDate": {
+    "title": "🎂 Ta première date",
+    "text": "Appuie sur le ＋ pour ajouter ton premier anniversaire — c'est parti !"
+  },
+  "addEvent": {
+    "title": "🎉 Ton premier événement",
+    "text": "Appuie sur le ＋ pour organiser une fête : fais voter la date et le lieu, invite tes amis, propose des cadeaux et lance une cagnotte."
+  },
+  "friends": {
+    "title": "👥 Tes amis",
+    "text": "Tout commence ici : ajoute tes amis pour voir automatiquement leurs anniversaires, discuter avec eux et les inviter à tes événements."
+  },
+  "notifs": {
+    "title": "🔔 Notifications",
+    "text": "Choisis ce que tu veux recevoir : notifications push sur ce téléphone (anniversaires, messages, événements…) et rappels par email."
+  },
+  "wishlist": {
+    "title": "🎀 Ta wishlist",
+    "text": "Liste tes envies de cadeaux : tes amis la consultent pour ne jamais se tromper — et toi la leur !"
+  },
+  "e2e": {
+    "title": "🔐 Chiffrement & sécurité",
+    "text": "Tes messages sont chiffrés de bout en bout. Cette section te permet de gérer tes clés de chiffrement."
+  },
+  "finish": "Terminer",
+  "gotIt": "Compris !"
+}

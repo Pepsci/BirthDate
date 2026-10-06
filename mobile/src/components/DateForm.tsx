@@ -1,3 +1,4 @@
+import { t, getLocaleTag } from "@/i18n";
 import { useState } from "react";
 import {
   View,
@@ -82,7 +83,7 @@ export default function DateForm({ initial, submitLabel, onSubmit }: Props) {
       const updated = await updateDatePhoto(initial._id, jpeg.uri);
       setPhoto(updated.photo);
     } catch (e: any) {
-      setError(e?.message ?? "Erreur lors de l'upload de la photo.");
+      setError(e?.message ?? t("date:form.photoError"));
     } finally {
       setUploadingPhoto(false);
     }
@@ -90,10 +91,10 @@ export default function DateForm({ initial, submitLabel, onSubmit }: Props) {
 
   const confirmRemovePhoto = () => {
     if (!initial) return;
-    Alert.alert("Supprimer la photo ?", undefined, [
-      { text: "Annuler", style: "cancel" },
+    Alert.alert(t("date:form.removePhotoTitle"), undefined, [
+      { text: t("common:actions.cancel"), style: "cancel" },
       {
-        text: "Supprimer",
+        text: t("common:actions.delete"),
         style: "destructive",
         onPress: async () => {
           setUploadingPhoto(true);
@@ -102,7 +103,7 @@ export default function DateForm({ initial, submitLabel, onSubmit }: Props) {
             const updated = await removeDatePhoto(initial._id);
             setPhoto(updated.photo);
           } catch (e: any) {
-            setError(e?.message ?? "Erreur lors de la suppression.");
+            setError(e?.message ?? t("common:errors.delete"));
           } finally {
             setUploadingPhoto(false);
           }
@@ -113,7 +114,7 @@ export default function DateForm({ initial, submitLabel, onSubmit }: Props) {
 
   const submit = async () => {
     if (!name.trim()) {
-      setError("Le prénom est obligatoire.");
+      setError(t("date:form.nameRequired"));
       return;
     }
     setError(null);
@@ -134,7 +135,7 @@ export default function DateForm({ initial, submitLabel, onSubmit }: Props) {
         ...(nameday !== null || namedayTouched ? { nameday } : {}),
       });
     } catch (e: any) {
-      setError(e?.message ?? "Erreur lors de l'enregistrement.");
+      setError(e?.message ?? t("common:errors.save"));
       setSaving(false);
     }
   };
@@ -149,7 +150,7 @@ export default function DateForm({ initial, submitLabel, onSubmit }: Props) {
     >
       {initial && (
         <>
-          <Text style={styles.label}>Photo</Text>
+          <Text style={styles.label}>{t("date:form.photo")}</Text>
           <View style={styles.photoRow}>
             <Pressable onPress={pickPhoto} disabled={uploadingPhoto}>
               {photo ? (
@@ -172,13 +173,13 @@ export default function DateForm({ initial, submitLabel, onSubmit }: Props) {
                   <ActivityIndicator color={colors.primary} />
                 ) : (
                   <Text style={styles.photoBtnText}>
-                    {photo ? "Changer la photo" : "Ajouter une photo"}
+                    {photo ? t("date:form.changePhoto") : t("date:form.addPhoto")}
                   </Text>
                 )}
               </Pressable>
               {photo && !uploadingPhoto && (
                 <Pressable onPress={confirmRemovePhoto} style={styles.photoBtn}>
-                  <Text style={styles.photoBtnTextDanger}>Retirer</Text>
+                  <Text style={styles.photoBtnTextDanger}>{t("common:actions.remove")}</Text>
                 </Pressable>
               )}
             </View>
@@ -186,23 +187,23 @@ export default function DateForm({ initial, submitLabel, onSubmit }: Props) {
         </>
       )}
 
-      <Text style={styles.label}>Prénom *</Text>
+      <Text style={styles.label}>{t("date:form.firstNameLabel")}</Text>
       <TextInput placeholderTextColor={colors.placeholder}
         style={styles.input}
-        placeholder="Prénom"
+        placeholder={t("date:form.firstName")}
         value={name}
         onChangeText={setName}
       />
 
-      <Text style={styles.label}>Nom</Text>
+      <Text style={styles.label}>{t("date:form.lastNameLabel")}</Text>
       <TextInput placeholderTextColor={colors.placeholder}
         style={styles.input}
-        placeholder="Nom (optionnel)"
+        placeholder={t("date:form.lastNameOptional")}
         value={surname}
         onChangeText={setSurname}
       />
 
-      <Text style={styles.label}>Date d'anniversaire</Text>
+      <Text style={styles.label}>{t("date:form.birthday")}</Text>
       {Platform.OS === "android" && (
         <Pressable style={styles.input} onPress={() => setShowPicker(true)}>
           <Text style={styles.dateText}>
@@ -216,7 +217,7 @@ export default function DateForm({ initial, submitLabel, onSubmit }: Props) {
             value={date}
             mode="date"
             display="spinner"
-            locale="fr-FR"
+            locale={getLocaleTag()}
             maximumDate={new Date()}
             themeVariant={resolved}
             onChange={(event, selected) => {
@@ -228,7 +229,7 @@ export default function DateForm({ initial, submitLabel, onSubmit }: Props) {
       )}
 
       <View style={styles.switchRow}>
-        <Text style={styles.label}>Famille</Text>
+        <Text style={styles.label}>{t("date:form.family")}</Text>
         <Switch
           value={family}
           onValueChange={setFamily}
@@ -236,7 +237,7 @@ export default function DateForm({ initial, submitLabel, onSubmit }: Props) {
         />
       </View>
 
-      <Text style={styles.label}>Fête</Text>
+      <Text style={styles.label}>{t("date:form.nameday")}</Text>
       <NamedayPicker
         value={nameday}
         onChange={(next) => {
@@ -245,7 +246,7 @@ export default function DateForm({ initial, submitLabel, onSubmit }: Props) {
         }}
       />
       <Text style={styles.hint}>
-        🎉 Détectée automatiquement depuis le prénom si vous n'y touchez pas.
+        {t("date:form.namedayHint")}
       </Text>
 
       {error && <Text style={styles.error}>{error}</Text>}

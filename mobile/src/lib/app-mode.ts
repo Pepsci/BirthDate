@@ -1,3 +1,4 @@
+import { t } from "@/i18n";
 import * as SecureStore from "expo-secure-store";
 
 /**
@@ -97,7 +98,7 @@ export async function setAppMode(next: AppMode): Promise<void> {
  */
 export class LocalModeUnavailableError extends Error {
   constructor(what: string) {
-    super(`Indisponible sans compte (${what}).`);
+    super(t("local:errors.needsAccount", { what }));
     this.name = "LocalModeUnavailableError";
   }
 }

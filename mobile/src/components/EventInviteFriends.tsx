@@ -1,3 +1,4 @@
+import { t } from "@/i18n";
 import { useEffect, useState } from "react";
 import {
   View,
@@ -53,7 +54,7 @@ export default function EventInviteFriends({
   useEffect(() => {
     fetchFriends()
       .then((list) => setFriends(list.filter((x) => x?.friendUser?._id)))
-      .catch((e) => setError(e?.message ?? "Erreur de chargement."));
+      .catch((e) => setError(e?.message ?? t("common:errors.loading")));
   }, []);
 
   const toggle = (id: string) => {
@@ -81,7 +82,7 @@ export default function EventInviteFriends({
       await inviteToEvent(shortId, [...selected], externalEmails);
       done();
     } catch (e: any) {
-      setError(e?.message ?? "Erreur lors de l'envoi des invitations.");
+      setError(e?.message ?? t("events:inviteScreen.error"));
       setSending(false);
     }
   };
@@ -89,7 +90,7 @@ export default function EventInviteFriends({
   if (!friends) {
     return (
       <View style={styles.center}>
-        {!embedded && <Stack.Screen options={{ title: "Inviter" }} />}
+        {!embedded && <Stack.Screen options={{ title: t("events:inviteScreen.short") }} />}
         {error ? (
           <Text style={styles.error}>{error}</Text>
         ) : (
@@ -102,9 +103,9 @@ export default function EventInviteFriends({
   return (
     <View style={styles.container}>
       {embedded ? (
-        <Text style={styles.embeddedTitle}>👥 Inviter du monde</Text>
+        <Text style={styles.embeddedTitle}>{t("events:inviteScreen.embedded")}</Text>
       ) : (
-        <Stack.Screen options={{ title: "Inviter du monde" }} />
+        <Stack.Screen options={{ title: t("events:inviteScreen.title") }} />
       )}
 
       {error && <Text style={styles.error}>{error}</Text>}
@@ -115,11 +116,10 @@ export default function EventInviteFriends({
         keyboardDismissMode="on-drag"
         automaticallyAdjustKeyboardInsets
       >
-        <Text style={styles.sectionTitle}>Mes amis</Text>
+        <Text style={styles.sectionTitle}>{t("events:inviteScreen.friends")}</Text>
         {friends.length === 0 && (
           <Text style={styles.muted}>
-            Pas encore d'amis inscrits — utilise les emails ci-dessous ou le
-            lien de partage depuis la page de l'événement.
+            {t("events:inviteScreen.noFriends")}
           </Text>
         )}
         {friends.map((f) => {
@@ -152,10 +152,10 @@ export default function EventInviteFriends({
           );
         })}
 
-        <Text style={styles.sectionTitle}>Par email (non-inscrits)</Text>
+        <Text style={styles.sectionTitle}>{t("events:inviteScreen.byEmail")}</Text>
         <TextInput placeholderTextColor={colors.placeholder}
           style={styles.input}
-          placeholder="emails séparés par des virgules"
+          placeholder={t("events:inviteScreen.emails")}
           autoCapitalize="none"
           keyboardType="email-address"
           multiline
@@ -166,7 +166,7 @@ export default function EventInviteFriends({
 
       <View style={styles.footer}>
         <Pressable style={styles.skipBtn} onPress={done}>
-          <Text style={styles.skipText}>Plus tard</Text>
+          <Text style={styles.skipText}>{t("common:actions.later")}</Text>
         </Pressable>
         <Pressable
           style={[styles.sendBtn, sending && { opacity: 0.6 }]}
@@ -177,7 +177,7 @@ export default function EventInviteFriends({
             <ActivityIndicator color={colors.white} />
           ) : (
             <Text style={styles.sendText}>
-              Inviter{selected.size > 0 ? ` (${selected.size})` : ""}
+              {t("events:inviteScreen.short")}{selected.size > 0 ? ` (${selected.size})` : ""}
             </Text>
           )}
         </Pressable>

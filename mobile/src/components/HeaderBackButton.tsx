@@ -1,3 +1,4 @@
+import { t } from "@/i18n";
 import { Pressable, StyleSheet } from "react-native";
 import { useNavigation, usePathname, useRouter } from "expo-router";
 import { useTheme } from "../lib/theme-context";
@@ -59,7 +60,7 @@ export default function HeaderBackButton() {
       onPress={goBack}
       hitSlop={14}
       accessibilityRole="button"
-      accessibilityLabel="Retour"
+      accessibilityLabel={t("common:actions.back")}
       style={({ pressed }) => [
         headerButtonBase.btn,
         SHOW_OWN_RING && {

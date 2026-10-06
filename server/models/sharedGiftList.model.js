@@ -60,6 +60,29 @@ const sharedGiftSchema = new Schema(
   { timestamps: true },
 );
 
+/**
+ * Proposition d'idée faite par un INVITÉ (viewer).
+ *
+ * Un invité ne touche jamais au contenu de la liste. Il peut en revanche
+ * suggérer une idée : elle attend ici, hors de `gifts`, qu'un gestionnaire
+ * l'accepte (elle devient alors une idée normale) ou la refuse (elle est
+ * supprimée). On ne garde donc que les propositions EN ATTENTE : pas de
+ * statut, pas d'historique à purger.
+ *
+ * Visible des gestionnaires, et de son auteur uniquement. Les autres invités
+ * et le lien public n'en voient rien — filtré côté serveur, comme
+ * `hiddenFromViewers`.
+ */
+const sharedGiftProposalSchema = new Schema(
+  {
+    giftName: { type: String, required: true },
+    url: { type: String, default: null },
+    price: { type: Number, default: null },
+    proposedBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
+  },
+  { timestamps: true },
+);
+
 const sharedGiftListSchema = new Schema(
   {
     // `members` : le créateur et les contributeurs. Droits complets — ajouter,
@@ -87,6 +110,9 @@ const sharedGiftListSchema = new Schema(
     // Libellé indicatif (ex : "Idées pour Tom")
     label: { type: String, default: null },
     gifts: [sharedGiftSchema],
+    // Idées suggérées par des invités, en attente de décision d'un
+    // gestionnaire. Voir sharedGiftProposalSchema.
+    proposals: [sharedGiftProposalSchema],
 
     // ── Partage public ────────────────────────────────────────────────────
     // Même principe que la wishlist publique d'un utilisateur : un lien opaque

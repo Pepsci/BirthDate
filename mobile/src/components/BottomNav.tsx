@@ -1,3 +1,4 @@
+import { t } from "@/i18n";
 import { View, Text, Pressable, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -14,10 +15,10 @@ import {
  * le menu accessible en bas « comme sur les autres pages ».
  */
 const ITEMS: { path: string; label: string; emoji: string; badge?: boolean }[] = [
-  { path: "/", label: "Anniversaires", emoji: "🎂" },
-  { path: "/events", label: "Événements", emoji: "🎉" },
-  { path: "/chats", label: "Chats", emoji: "💬", badge: true },
-  { path: "/profile", label: "Profil", emoji: "👤" },
+  { path: "/", get label() { return t("common:tabs.birthdays"); }, emoji: "🎂" },
+  { path: "/events", get label() { return t("common:tabs.events"); }, emoji: "🎉" },
+  { path: "/chats", get label() { return t("common:tabs.chats"); }, emoji: "💬", badge: true },
+  { path: "/profile", get label() { return t("common:tabs.profile"); }, emoji: "👤" },
 ];
 
 export default function BottomNav() {

@@ -1,0 +1,257 @@
+{
+  "e2e": {
+    "invalidPhrase": "Invalid recovery phrase",
+    "phraseMismatch": "The phrase does not match. Check the exact order of the 12 words.",
+    "phraseInvalidBip": "Invalid phrase (incorrect BIP39 words).",
+    "wrongPassword": "Wrong password.",
+    "activateError": "Could not turn it on.",
+    "deactivateError": "Could not turn it off.",
+    "phraseInvalid": "Invalid phrase (check the 12 words).",
+    "restored": "✅ Keys restored on this device.",
+    "restoreError": "Could not restore.",
+    "title": "Encryption",
+    "maxTitle": "Maximum Encryption (Full E2E)",
+    "intro": "Standard mode already protects your messages. Maximum Encryption adds security based on a 12-word phrase that is independent of your password.",
+    "pro1": "✅ Key not tied to your password, more robust",
+    "con1": "⚠️ If you lose your 12 words, your messages will be inaccessible",
+    "con2": "⚠️ Older messages will not be re-encrypted",
+    "activate": "Turn on Maximum Encryption",
+    "active": "🔐 Maximum Encryption on",
+    "activeText": "Your messages are encrypted with your 12-word recovery phrase. Keep it safe: it is your only way to access your messages from a new device.",
+    "viewPhrase": "View my recovery phrase",
+    "restoreHere": "Restore my keys on this device",
+    "deactivate": "Turn off Maximum Encryption",
+    "beforeTitle": "⚠️ Before turning it on",
+    "before1": "✅ Your current messages will stay readable (old key kept).",
+    "before2": "💻 Works on all your devices after logging in again.",
+    "before3": "🔑 Your 12 words cannot be replaced: lost words + forgotten password = inaccessible messages.",
+    "before4": "📝 Get something to write on. 🚫 No screenshots.",
+    "accept": "I accept",
+    "wordsTitle": "Your 12 recovery words",
+    "wordsHint": "Write these words down in the exact order. Never share them.",
+    "wordsOnce": "🔒 These words will only be shown once.",
+    "noted": "I wrote them down →",
+    "verifyTitle": "Verification",
+    "verifyHint": "Enter your 12 words in the exact order to confirm.",
+    "wordsPlaceholder": "word1 word2 word3 … word12",
+    "verify": "Verify →",
+    "confirmPassword": "Confirm your password",
+    "confirmPasswordHint": "It secures your new encryption key.",
+    "activating": "Turning on…",
+    "activateShort": "Turn on",
+    "viewTitle": "🔐 View my phrase",
+    "viewHint": "Enter your password to decrypt your 12 words.",
+    "phraseTitle": "🔐 Your recovery phrase",
+    "phraseHint": "Keep these words somewhere safe. Never share them.",
+    "phraseClose": "🔒 Close this view as soon as you have written down your words.",
+    "restoreTitle": "Restore my keys",
+    "restoreHint": "Enter your 12-word phrase to regenerate your key on this device",
+    "wordsPlaceholderShort": "word1 word2 … word12",
+    "restore": "Restore",
+    "deactivateTitle": "⚠️ Turn off Maximum Encryption?",
+    "deactivateText": "You will lose access to messages exchanged while maximum encryption was on. Your earlier messages will stay readable. A new set of standard keys will be generated. This cannot be undone.",
+    "deactivating": "Turning off…",
+    "restoreHint2": "(useful on a new phone).",
+    "activatedOn": "Turned on"
+  },
+  "legal": {
+    "terms": "Terms of use",
+    "privacy": "Privacy policy",
+    "cookies": "Cookies",
+    "notice": "Legal notice"
+  },
+  "theme": {
+    "system": "⚙️ System",
+    "light": "☀️ Light",
+    "dark": "🌙 Dark"
+  },
+  "erase": {
+    "title": "Erase all your data?",
+    "text": "Your cards, gift ideas, photos and wishlist will be deleted from this phone. Make a backup first if you want to be able to get them back.",
+    "backupFirst": "Back up first",
+    "title2": "Really erase everything?",
+    "text2": "This is permanent: without an account, nothing is saved anywhere else.",
+    "action": "Erase everything",
+    "error": "Could not erase."
+  },
+  "local": {
+    "noAccount": "No account",
+    "noAccountCards": {
+      "one": "No account · {{count}} card",
+      "other": "No account · {{count}} cards"
+    },
+    "text": "Your data stays on this phone, nothing is sent. No chat, friends or events."
+  },
+  "menu": {
+    "localData": "My data (backup)",
+    "reminders": "Reminders",
+    "settings": "Settings",
+    "legalHelp": "Legal & help",
+    "guide": "User guide",
+    "changelog": "Release notes",
+    "haveAccount": "I already have an account",
+    "eraseAll": "Erase all my data",
+    "importLocal": "Import my cards from no-account mode",
+    "friends": "My friends",
+    "info": "My details",
+    "password": "Change my password",
+    "e2e": "Encryption & security",
+    "blocked": "Blocked users",
+    "backup": "Backup",
+    "export": "Download my data",
+    "legalSupport": "Legal & support",
+    "contact": "✉️ Contact support",
+    "appearance": "Appearance"
+  },
+  "logout": {
+    "pendingTitle": "Unsent changes",
+    "pendingText": {
+      "one": "{{count}} change made offline has not been sent yet. If you log out now, it will be lost.",
+      "other": "{{count}} changes made offline have not been sent yet. If you log out now, they will be lost."
+    },
+    "action": "Log out"
+  },
+  "deleteAccount": {
+    "title": "Delete your account?",
+    "text": "Your account will be deactivated and then permanently deleted. This cannot be undone.",
+    "action": "Delete my account"
+  },
+  "settings": {
+    "cards": "🎂 Card display",
+    "hideNamedays": "Hide name days",
+    "hideNamedaysHint": "Hides the name day line on birthday cards.",
+    "home": "🏠 Home display",
+    "myStats": "Show my stats",
+    "myStatsHint": "The home panel shows your own numbers instead of the whole community's. This setting is specific to this device.",
+    "todayNameday": "Show today's name day",
+    "todayNamedayHint": "Shows \"It's name day for …!\" on the home screen when one of your loved ones has their name day today.",
+    "calendar": "📅 Calendar reminders",
+    "calendarEventsHint": "Reminders set in your calendar when you add an event from BirthReminder. This setting is specific to this device and applies to future additions, not to entries already created.",
+    "birthdaysNamedays": "Birthdays and name days",
+    "allDayHint": "These entries last all day, so the reminder is set as a time of day, not as a delay before the event.",
+    "noReminder": "No reminder selected: entries added to your calendar will not alert you."
+  },
+  "edit": {
+    "avatarError": "Could not upload the photo.",
+    "removePhoto": "Remove the photo",
+    "removePhotoText": "Your photo will be replaced by a default avatar.",
+    "namedayFormat": "The name day must be in MM-DD format (e.g. 03-13).",
+    "uploading": "Uploading…",
+    "emailLocked": "The email address cannot be changed.",
+    "birthDate": "Date of birth",
+    "noBirthDate": "Not set, tap to choose",
+    "myNameday": "My name day (MM-DD format)"
+  },
+  "password": {
+    "mismatch": "The two new passwords do not match.",
+    "error": "Could not change the password.",
+    "current": "Current password",
+    "confirm": "Confirm the new password",
+    "e2eNote": "🔐 Your E2E encryption key will automatically be protected again with the new password.",
+    "submit": "Change password"
+  },
+  "blocked": {
+    "unblockTitle": "Unblock {{name}}?",
+    "unblockText": "Their content will be visible again.",
+    "unblock": "Unblock",
+    "error": "Could not unblock.",
+    "empty": "No blocked users.\nYou can block someone from a chat (⋯ menu) or by reporting a message."
+  },
+  "notif": {
+    "email": {
+      "birthdays": {
+        "label": "Birthday reminders",
+        "hint": "Email before your loved ones' birthdays"
+      },
+      "namedays": {
+        "label": "Name day reminders",
+        "hint": "Email before your loved ones' name days"
+      },
+      "mine": {
+        "label": "My birthday",
+        "hint": "Email on your birthday"
+      },
+      "friends": {
+        "label": "Friend requests",
+        "hint": "Email when someone adds you"
+      },
+      "events": {
+        "label": "Events",
+        "hint": "Invitations, reminders 7 days/1 day before, votes"
+      },
+      "chat": {
+        "label": "Unread messages",
+        "hint": "Summary email of missed messages"
+      },
+      "monthly": {
+        "label": "Monthly recap",
+        "hint": "Birthdays in the coming month"
+      }
+    },
+    "emailTitle": "✉️ Email notifications",
+    "emailNote": "These settings only affect emails. Turning one off affects neither push notifications nor the in-app notification centre.",
+    "chatFriendsTitle": "💬 Message emails, per friend",
+    "chatFriendsOn": "Choose whose unread messages trigger the summary email. Turning someone off does not block them: their messages still arrive in chat and as push.",
+    "chatFriendsOff": "The \"Unread messages\" email is off for everyone. Turn it back on above for these settings to apply.",
+    "noFriends": "No friends yet.",
+    "emailOn": "Email on",
+    "emailOff": "Email off",
+    "pushTitle": "📱 Push notifications (mobile)",
+    "pushOn": "Push on",
+    "pushHint": "Native notifications on this phone",
+    "push": {
+      "birthdays": {
+        "label": "Birthdays",
+        "hint": "Reminders ahead of the day, per your settings for each person"
+      },
+      "namedays": {
+        "label": "Name days",
+        "hint": "Name day reminders"
+      },
+      "events": {
+        "label": "Events",
+        "hint": "Invitations, replies, votes, reminders"
+      },
+      "chat": {
+        "label": "Messages",
+        "hint": "Private and event chats"
+      },
+      "friends": {
+        "label": "Friends",
+        "hint": "Requests and acceptances"
+      },
+      "gifts": {
+        "label": "Gifts",
+        "hint": "Wishlist reservations and suggestions"
+      },
+      "sharedLists": {
+        "label": "Shared lists",
+        "hint": "Ideas added, edited or removed by a member"
+      }
+    },
+    "perPerson": "🎂 Reminders per person",
+    "hideList": "Hide the list",
+    "showList": "Show the list",
+    "noBirthdays": "No birthdays saved.",
+    "remindersOn": "Reminders on",
+    "remindersOff": "Reminders off"
+  },
+  "export": {
+    "fileTitle": "My BirthReminder data",
+    "error": "Export is not possible right now.",
+    "p1": "You get a file containing your profile, your dates, your friends, your gift lists, your events, your conversations and your activity log.",
+    "p2": "Your messages are end-to-end encrypted: our servers cannot read them. They are decrypted on this device at export time. If your key is not present here, the messages concerned will appear as undecryptable.",
+    "p3": "Conversations you removed from your list are included in the export, with the date you removed them: they are kept as long as the other person has a copy.",
+    "generate": "Generate my file",
+    "generated": "File generated",
+    "shareAgain": "Share again",
+    "encNoCopy": "[encrypted: no copy for this account]",
+    "encNoKey": "[encrypted: private key missing on this device]",
+    "encFail": "[encrypted: cannot be decrypted]"
+  },
+  "language": {
+    "title": "Language",
+    "auto": "📱 Phone",
+    "hint": "\"Phone\" follows your device language. Emails and notifications arrive in the language chosen here."
+  }
+}

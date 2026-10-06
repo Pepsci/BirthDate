@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import LegalLanguageSwitch from "./LegalLanguageSwitch";
 import "./css/legalPages.css";
 
 export default function CookiesPolicy() {
@@ -14,6 +15,7 @@ export default function CookiesPolicy() {
         <Link to="/home" className="back-link">
           ← Retour à l'accueil
         </Link>
+        <LegalLanguageSwitch path="cookies" lang="fr" />
 
         <h1>🍪 Politique de Cookies</h1>
         <p className="intro">
@@ -189,7 +191,7 @@ export default function CookiesPolicy() {
 
           <h3>Dans l'application mobile</h3>
           <p>
-            L'application iOS n'utilise pas de cookies. Elle stocke en revanche
+            L'application mobile (iOS et Android) n'utilise pas de cookies. Elle stocke en revanche
             certaines informations sur votre téléphone, dans l'espace sécurisé
             du système : votre jeton de connexion, votre clé de chiffrement
             privée, votre thème et vos préférences d'affichage. Ces éléments ne
@@ -238,7 +240,7 @@ export default function CookiesPolicy() {
             consulter régulièrement.
           </p>
           <p className="last-update">
-            <strong>Dernière mise à jour :</strong> 10 février 2026
+            <strong>Dernière mise à jour :</strong> 6 octobre 2026
           </p>
         </section>
 

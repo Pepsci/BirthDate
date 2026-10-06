@@ -21,6 +21,11 @@ import MentionsLegales from "./components/pages/MentionsLegales";
 import PrivacyPolicy from "./components/pages/PrivacyPolicy";
 import AccountDeletion from "./components/pages/AccountDeletion";
 import CGU from "./components/pages/CGU";
+import NotFound from "./components/pages/NotFound";
+import TermsEn from "./components/pages/en/Terms";
+import PrivacyPolicyEn from "./components/pages/en/PrivacyPolicy";
+import CookiesPolicyEn from "./components/pages/en/CookiesPolicy";
+import LegalNoticeEn from "./components/pages/en/LegalNotice";
 import Footer from "./components/layout/Footer";
 import GuidePage from "./components/pages/GuidePage";
 import ContactPage from "./components/pages/ContactPage";
@@ -79,6 +84,12 @@ function App() {
           {/* Page exigée par Google Play : accessible sans compte. */}
           <Route path="/suppression-compte" element={<AccountDeletion />} />
           <Route path="/cgu" element={<CGU />} />
+          {/* Pages légales en anglais : même adresse, précédée de /en.
+              L'app mobile en anglais ouvre directement celles-ci. */}
+          <Route path="/en/cgu" element={<TermsEn />} />
+          <Route path="/en/privacy" element={<PrivacyPolicyEn />} />
+          <Route path="/en/cookies" element={<CookiesPolicyEn />} />
+          <Route path="/en/mentions-legales" element={<LegalNoticeEn />} />
           <Route path="/guide" element={<GuidePage />} />
           <Route path="/contact" element={<ContactPage />} />
 
@@ -152,6 +163,9 @@ function App() {
               <Route path="app-banners" element={<AdminAppBanners />} />
             </Route>
           </Route>
+
+          {/* Toute adresse inconnue. Doit rester la DERNIÈRE route. */}
+          <Route path="*" element={<NotFound />} />
         </Routes>
         <CookieBanner />
         {showFooter && <Footer />}

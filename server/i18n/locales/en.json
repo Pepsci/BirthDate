@@ -1,0 +1,130 @@
+{
+  "push": {
+    "newMessage": "New message",
+    "pool": {
+      "pool": "Money pool",
+      "contributionTitle": "💰 New contribution: {{title}}",
+      "contributionBody": "{{name}} contributed: {{amount}}"
+    },
+    "someone": "Someone",
+    "reaction": {
+      "inEvent": "{{name}} reacted to your message",
+      "dm": "reacted to your message"
+    },
+    "supportReply": "💬 Support replied to you",
+    "eventWord": "Event",
+    "shared": {
+      "status": {
+        "takes": "is taking care of",
+        "releases": "is no longer taking care of",
+        "bought": "marked it as bought",
+        "toGive": "marked it as to give",
+        "offered": "marked it as given",
+        "toBuy": "moved it back to ideas to buy"
+      },
+      "reservedTitle": "🎁 Gift reserved",
+      "reservedBody": "{{who}} is taking care of \"{{gift}}\"",
+      "addedTitle": "🎁 New idea in your shared list",
+      "addedBody": "{{who}} added \"{{gift}}\"",
+      "updatedTitle": "🎁 Shared list updated",
+      "editedBody": "{{who}} edited \"{{gift}}\"",
+      "removedTitle": "🎁 Idea removed from your shared list",
+      "removedBody": "{{who}} removed \"{{gift}}\"",
+      "unreservedTitle": "🎁 Reservation cancelled",
+      "unreservedBody": "{{who}} is no longer taking care of \"{{gift}}\"",
+      "leftTitle": "👥 Someone left a shared list",
+      "leftBody": "{{who}} left your gift ideas list",
+      "sharedTitle": "🎁 A gift list was shared with you",
+      "sharedBody": "{{who}} gave you access to their list of ideas",
+      "proposedTitle": "💡 New gift idea suggested",
+      "proposedBody": "{{who}} suggests \"{{gift}}\" for your shared list",
+      "proposalAcceptedTitle": "🎁 Your suggestion was accepted",
+      "proposalAcceptedBody": "{{who}} added \"{{gift}}\" to the list",
+      "proposalDeclinedTitle": "Suggestion not kept",
+      "proposalDeclinedBody": "{{who}} did not keep \"{{gift}}\""
+    },
+    "event": {
+      "rsvpTitle": "🎉 New reply: {{title}}",
+      "rsvp": {
+        "accepted": "is coming",
+        "declined": "is not coming",
+        "maybe": "might come"
+      },
+      "dateVoteTitle": "📅 Date vote: {{title}}",
+      "dateVoteBody": "{{name}} voted for a date",
+      "placeVoteTitle": "📍 Place vote: {{title}}",
+      "placeVoteBody": "{{name}} voted for a place",
+      "giftTitle": "🎁 New gift: {{title}}",
+      "giftBody": "{{name}} suggests: {{gift}}",
+      "giftVoteTitle": "♥ Gift vote: {{title}}",
+      "giftVoteBody": "{{name}} votes for: {{gift}}",
+      "inviteTitle": "🎉 Invitation: {{title}}",
+      "inviteBody": "{{name}} invites you to an event",
+      "dateChangedTitle": "📅 New date: {{title}}",
+      "dateChangedBody": "{{date}}. Please confirm you are coming",
+      "placeSettledTitle": "📍 Place set: {{title}}",
+      "updatedTitle": "✏️ Event updated: {{title}}",
+      "updatedBody": "The host updated the details",
+      "noReason": "The host did not give a reason.",
+      "cancelledTitle": "❌ Cancelled: {{title}}",
+      "uncancelledTitle": "✅ Back on: {{title}}",
+      "uncancelledBody": "The event will take place after all."
+    },
+    "transfer": {
+      "offerTitle": "🤝 {{name}} is asking you to host",
+      "offerBody": "\"{{title}}\": it is up to you",
+      "declinedTitle": "🤝 Transfer declined: {{title}}",
+      "declinedBody": "{{name}} would rather not take over as host",
+      "acceptedTitle": "🤝 {{name}} is taking over as host",
+      "acceptedBody": "\"{{title}}\": you remain a participant",
+      "doneTitle": "🤝 New host: {{title}}",
+      "doneBody": "{{oldName}} handed over to {{newName}}"
+    },
+    "chat": {
+      "encrypted": "🔒 New encrypted message",
+      "giftShare": "🎁 Gift ideas for {{name}}",
+      "dateShare": "🎂 {{name}}'s birthday",
+      "unread": {
+        "one": "💬 {{count}} unread message",
+        "other": "💬 {{count}} unread messages"
+      },
+      "from": "From: {{names}}"
+    },
+    "someoneLower": "someone",
+    "when": {
+      "tomorrow": "tomorrow",
+      "week1": "in 1 week",
+      "week2": "in 2 weeks",
+      "month1": "in 1 month",
+      "inDays": "in {{count}} days"
+    },
+    "birthday": {
+      "todayTitle": "🎂 It's {{name}}'s birthday!",
+      "todayBody": "Remember to wish them a happy birthday 🎉",
+      "soonTitle": "🎂 {{name}}'s birthday {{when}}",
+      "soonBody": "Do not forget to prepare something!"
+    },
+    "nameday": {
+      "todayTitle": "🌸 It's {{name}}'s name day!",
+      "todayBody": "Remember to wish them a happy name day 🎉",
+      "soonTitle": "🌸 {{name}}'s name day {{when}}",
+      "soonBody": "Do not forget to wish them!"
+    },
+    "anEvent": "An event",
+    "eventReminder": {
+      "todayTitle": "🎉 It's today: {{title}}!",
+      "todayBody": "The event is today, have fun!",
+      "soonBody": "Do not forget, the event is coming up!"
+    }
+  },
+  "notif": {
+    "poolRefunded": "Your contribution to \"{{title}}\" was refunded in full.",
+    "transferPoolLine": " The {{amount}} € already paid stay on {{oldName}}'s account, who is arranging things with {{newName}}.",
+    "transferDone": "{{oldName}} handed over hosting of \"{{title}}\" to {{newName}}.",
+    "dateChanged": "New date: {{date}}. Please confirm you are coming.",
+    "placeSettled": "The place is set: {{place}}",
+    "eventUpdated": "The event was updated by the host",
+    "eventCancelled": "\"{{title}}\" was cancelled.",
+    "eventUncancelled": "\"{{title}}\" is back on: it will take place."
+  }
+}

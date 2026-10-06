@@ -5,6 +5,7 @@
  * `readBy` contient aussi l'expéditeur (posé à l'envoi) : on ne compte que les
  * entrées des AUTRES participants.
  */
+import { getLocaleTag } from "@/i18n";
 import type { DMMessage } from "./conversations";
 
 export type ReceiptStatus = "sent" | "delivered" | "read";
@@ -68,7 +69,7 @@ export function applyReceipt(
 
 export function formatReceiptDate(date: string | null): string {
   if (!date) return "—";
-  return new Date(date).toLocaleString("fr-FR", {
+  return new Date(date).toLocaleString(getLocaleTag(), {
     weekday: "short",
     day: "numeric",
     month: "short",

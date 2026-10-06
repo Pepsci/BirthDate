@@ -1,3 +1,4 @@
+import { t, tn, formatDayMonth, formatDayMonthYear, getLanguage } from "@/i18n";
 import {
   api,
   API_URL,
@@ -182,27 +183,21 @@ export function timeUntil(target: Date, from = new Date()): TimeLeft {
   };
 }
 
-const MONTHS_FR = [
-  "janvier", "février", "mars", "avril", "mai", "juin",
-  "juillet", "août", "septembre", "octobre", "novembre", "décembre",
-];
 
 /** "13 mars" */
 export function formatBirthday(iso: string): string {
-  const d = new Date(iso);
-  return `${d.getDate()} ${MONTHS_FR[d.getMonth()]}`;
+  return formatDayMonth(new Date(iso));
 }
 
 /** "13 mars 1990" — date de naissance complète */
 export function formatFullDate(iso: string): string {
-  const d = new Date(iso);
-  return `${d.getDate()} ${MONTHS_FR[d.getMonth()]} ${d.getFullYear()}`;
+  return formatDayMonthYear(new Date(iso));
 }
 
 /** "13 mars" depuis un nameday "MM-DD" */
 export function formatNameday(mmdd: string): string {
   const [mm, dd] = mmdd.split("-").map(Number);
-  return `${dd} ${MONTHS_FR[mm - 1]}`;
+  return formatDayMonth(new Date(2000, mm - 1, dd)); // 2000 : année bissextile
 }
 
 /**
@@ -210,14 +205,14 @@ export function formatNameday(mmdd: string): string {
  * partir de 2. Utilisé partout où un âge est affiché sur une carte.
  */
 export function formatAge(age: number): string {
-  return `${age} an${age >= 2 ? "s" : ""}`;
+  return tn("common:age", age);
 }
 
 /** Libellé du countdown */
 export function countdownLabel(days: number): string {
-  if (days === 0) return "Aujourd'hui 🎂";
-  if (days === 1) return "Demain";
-  return `J-${days}`;
+  if (days === 0) return t("common:todayCake");
+  if (days === 1) return t("common:tomorrow");
+  return t("common:inDays", { count: days });
 }
 
 // ---- CRUD dates manuelles ----
@@ -279,7 +274,7 @@ export async function deleteDate(id: string): Promise<void> {
   const queueIt = async () => {
     const entry = await cachedEntry(realId);
     const label =
-      `${entry?.name ?? ""} ${entry?.surname ?? ""}`.trim() || "une carte";
+      `${entry?.name ?? ""} ${entry?.surname ?? ""}`.trim() || t("date:aCard");
     await queueDelete(realId, label);
   };
   if (isTempId(realId)) return queueIt();
@@ -314,7 +309,7 @@ export async function setDateFamily(
 export async function fetchDate(id: string): Promise<DateEntry> {
   if (isLocalMode()) return localFetchDate(id);
   const realId = resolveId(id);
-  const notFound = () => new ApiError(404, "Cette carte n'existe plus.");
+  const notFound = () => new ApiError(404, t("date:notFound"));
 
   // Carte créée hors ligne, pas encore envoyée : elle n'existe que dans la file
   if (isTempId(realId)) {
@@ -371,7 +366,7 @@ export async function updateDatePhoto(
   });
   const data = res.body ? JSON.parse(res.body) : {};
   if (res.status < 200 || res.status >= 300) {
-    throw new Error(data?.message ?? `Erreur ${res.status}`);
+    throw new Error(data?.message ?? t("common:errors.status", { status: res.status }));
   }
   if (data.authToken) await setToken(data.authToken);
   return data;
@@ -385,6 +380,7 @@ export async function removeDatePhoto(id: string): Promise<DateEntry> {
     method: "PATCH",
     headers: {
       "Content-Type": "multipart/form-data",
+      "X-App-Language": getLanguage(),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     body: (() => {
@@ -394,7 +390,7 @@ export async function removeDatePhoto(id: string): Promise<DateEntry> {
     })(),
   });
   const data = await res.json();
-  if (!res.ok) throw new Error(data?.message ?? `Erreur ${res.status}`);
+  if (!res.ok) throw new Error(data?.message ?? t("common:errors.status", { status: res.status }));
   return data;
 }
 

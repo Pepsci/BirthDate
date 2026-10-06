@@ -1,5 +1,26 @@
 const webpush = require("web-push");
 const PushSubscription = require("../models/PushSubscription.model");
+const { translator, getUserLanguage, resolveText } = require("../i18n");
+
+/**
+ * Met `title` et `body` dans la langue du destinataire.
+ *
+ * Les appelants peuvent passer une chaîne (envoyée telle quelle, comme avant)
+ * ou une fonction `(L) => L("push.cle", { … })`. La langue est lue ICI, une
+ * seule fois par envoi : les appelants n'ont pas à la connaître, et un oubli
+ * à un endroit ne peut pas envoyer du français à un compte anglophone.
+ */
+async function localizePayload(userId, payload) {
+  if (typeof payload.title !== "function" && typeof payload.body !== "function") {
+    return payload;
+  }
+  const L = translator(await getUserLanguage(userId));
+  return {
+    ...payload,
+    title: resolveText(payload.title, L),
+    body: resolveText(payload.body, L),
+  };
+}
 
 /**
  * Nombre total d'éléments non lus pour un utilisateur (messages chat +
@@ -102,6 +123,7 @@ async function isMutedFor(userId, muteScope) {
  */
 async function sendPushToUser(userId, payload) {
   if (await isMutedFor(userId, payload.muteScope)) return;
+  payload = await localizePayload(userId, payload);
 
   // Push natif mobile (Expo) — indépendant du web push, jamais bloquant
   // `webOnly: true` = uniquement web push (ex : récap "messages non lus" du cron,
@@ -189,6 +211,8 @@ const PUSH_CATEGORY_BY_TYPE = {
 async function sendExpoPushToUser(userId, payload) {
   const User = require("../models/user.model");
   const axios = require("axios");
+  // Sans effet si sendPushToUser l'a déjà fait (les textes sont alors des chaînes)
+  payload = await localizePayload(userId, payload);
 
   const user = await User.findById(userId).select(
     "expoPushTokens expoPushTokensIos pushEnabled pushEvents",

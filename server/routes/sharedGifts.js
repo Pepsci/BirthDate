@@ -464,6 +464,8 @@ function serializeListForRole(list, role, userId) {
     // lisent le même champ quel que soit le rôle.
     return {
       ...obj,
+      // Les gestionnaires voient toutes les propositions en attente.
+      proposals: (obj.proposals || []).map((p) => ({ ...p, mine: false })),
       gifts: (obj.gifts || []).map((g) => ({
         ...g,
         isReserved: !!g.reservedBy || !!g.reservedByGuest,
@@ -481,6 +483,13 @@ function serializeListForRole(list, role, userId) {
     viewers: undefined,
     accessCode: undefined,
     members: undefined,
+    // Un invité ne voit que SES propositions : celles des autres invités ne
+    // le regardent pas, et leur auteur encore moins.
+    proposals: (obj.proposals || [])
+      .filter(
+        (p) => String(p.proposedBy?._id ?? p.proposedBy) === String(userId),
+      )
+      .map((p) => ({ ...p, proposedBy: undefined, mine: true })),
     gifts: (obj.gifts || [])
       .filter(
         (g) => !HIDDEN_STATUSES_FOR_VIEWER.has(g.status) && !g.hiddenFromViewers,
@@ -650,7 +659,8 @@ router.get("/:id", isAuthenticated, loadListAsParticipant, async (req, res) => {
     const list = await SharedGiftList.findById(req.params.id)
       .populate("members", "name surname avatar")
       .populate("gifts.addedBy", "name surname")
-      .populate("gifts.reservedBy", "name surname");
+      .populate("gifts.reservedBy", "name surname")
+      .populate("proposals.proposedBy", "name surname");
     // `myRole` permet à l'app de masquer d'emblée ce qu'un invité ne peut pas
     // faire, plutôt que de lui laisser découvrir ses limites par des 403.
     res.json({
@@ -709,8 +719,8 @@ router.post("/:id/gifts", isAuthenticated, loadListAsMember, async (req, res) =>
     await notifyOtherMembers(req.app, req.sharedList, req.payload._id, {
       type: "shared_gift_added",
       data: { fromName: who, giftName: giftName.trim(), listLabel: label },
-      pushTitle: "🎁 Nouvelle idée dans votre liste commune",
-      pushBody: `${who} a ajouté « ${giftName.trim()} »`,
+      pushTitle: (L) => L("push.shared.addedTitle"),
+      pushBody: (L) => L("push.shared.addedBody", { who, gift: giftName.trim() }),
       // Une idée qui arrive peut intéresser un invité : c'est peut-être lui qui
       // s'en chargera. C'est l'un des deux seuls cas où on le dérange.
       alsoViewers: viewerIds(req.sharedList),
@@ -720,6 +730,241 @@ router.post("/:id/gifts", isAuthenticated, loadListAsMember, async (req, res) =>
     res.status(500).json({ message: "Erreur serveur" });
   }
 });
+
+// ── Propositions d'idées par les invités ────────────────────────────────────
+// Un invité (viewer) suggère une idée ; elle attend dans `list.proposals`
+// qu'un gestionnaire l'accepte ou la refuse. Voir le modèle.
+//
+// Garde-fous : un invité ne peut pas noyer une liste sous les suggestions.
+const MAX_PENDING_PROPOSALS_PER_USER = 5;
+const MAX_PENDING_PROPOSALS_PER_LIST = 50;
+
+/** Lien http(s) propre, ou null. Jamais de `javascript:` ni de texte libre. */
+function cleanProposalUrl(value) {
+  if (typeof value !== "string" || !value.trim()) return null;
+  try {
+    const url = new URL(value.trim());
+    if (url.protocol !== "http:" && url.protocol !== "https:") return null;
+    return url.toString().slice(0, 2000);
+  } catch {
+    return null;
+  }
+}
+
+/** Prix positif, ou null (champ vide, texte, négatif…). */
+function cleanProposalPrice(value) {
+  if (value === null || value === undefined || value === "") return null;
+  const n = Number(String(value).replace(",", "."));
+  return Number.isFinite(n) && n >= 0 && n < 1000000
+    ? Math.round(n * 100) / 100
+    : null;
+}
+
+/**
+ * Répond avec la liste dans la même forme que GET /:id, noms compris : les
+ * gestionnaires affichent qui propose, il faut donc repeupler après chaque
+ * changement plutôt que renvoyer le document tel qu'il vient d'être sauvé.
+ */
+async function sendListForRole(req, res, status = 200) {
+  const list = await SharedGiftList.findById(req.sharedList._id)
+    .populate("members", "name surname avatar")
+    .populate("gifts.addedBy", "name surname")
+    .populate("gifts.reservedBy", "name surname")
+    .populate("proposals.proposedBy", "name surname");
+  res.status(status).json({
+    ...serializeListForRole(list, req.listRole, req.payload._id),
+    myRole: req.listRole,
+  });
+}
+
+/** Notification + push à UNE personne, jamais bloquant. */
+async function notifyOne(app, list, userId, { type, data, pushTitle, pushBody }) {
+  try {
+    const link = await sharedListLinkFor(userId, list._id);
+    await notify(app, { userId, type, data, link });
+    await sendPushToUser(userId, {
+      title: pushTitle,
+      body: pushBody,
+      url: link,
+      tag: `shared-list-${list._id}`,
+      type: "shared_list",
+    });
+  } catch (err) {
+    console.error(
+      `❌ Notification proposition échouée pour ${userId}:`,
+      err.message,
+    );
+  }
+}
+
+/** Proposer une idée. Invités uniquement : un gestionnaire ajoute directement. */
+router.post(
+  "/:id/proposals",
+  isAuthenticated,
+  loadListAsParticipant,
+  async (req, res) => {
+    try {
+      if (req.listRole !== "viewer")
+        return res.status(400).json({
+          message:
+            "Tu gères cette liste : ajoute l'idée directement, sans passer par une proposition.",
+        });
+
+      const list = req.sharedList;
+      const uid = req.payload._id;
+      const giftName = String(req.body.giftName || "").trim().slice(0, 120);
+      if (!giftName) return res.status(400).json({ message: "Nom requis" });
+
+      const pending = list.proposals || [];
+      const mine = pending.filter((p) => p.proposedBy.toString() === uid);
+      if (mine.length >= MAX_PENDING_PROPOSALS_PER_USER)
+        return res.status(400).json({
+          message: `Tu as déjà ${MAX_PENDING_PROPOSALS_PER_USER} propositions en attente sur cette liste. Attends une réponse avant d'en envoyer d'autres.`,
+        });
+      if (pending.length >= MAX_PENDING_PROPOSALS_PER_LIST)
+        return res.status(400).json({
+          message:
+            "Cette liste a déjà beaucoup de propositions en attente. Réessaie plus tard.",
+        });
+
+      list.proposals.push({
+        giftName,
+        url: cleanProposalUrl(req.body.url),
+        price: cleanProposalPrice(req.body.price),
+        proposedBy: uid,
+      });
+      await list.save();
+      await sendListForRole(req, res, 201);
+
+      // Après la réponse : la proposition est acquise.
+      const who = await actorName(uid);
+      await notifyOtherMembers(req.app, list, uid, {
+        type: "shared_gift_proposed",
+        data: { fromName: who, giftName, listLabel: list.label || null },
+        pushTitle: (L) => L("push.shared.proposedTitle"),
+        pushBody: (L) => L("push.shared.proposedBody", { who, gift: giftName }),
+      });
+    } catch (err) {
+      console.error("❌ shared propose:", err);
+      if (!res.headersSent) res.status(500).json({ message: "Erreur serveur" });
+    }
+  },
+);
+
+/** Retirer SA proposition tant qu'elle attend. */
+router.delete(
+  "/:id/proposals/:proposalId",
+  isAuthenticated,
+  loadListAsParticipant,
+  async (req, res) => {
+    try {
+      const list = req.sharedList;
+      const proposal = list.proposals.id(req.params.proposalId);
+      if (!proposal)
+        return res.status(404).json({ message: "Proposition introuvable" });
+      // Un gestionnaire passe par « refuser », qui prévient l'auteur.
+      if (proposal.proposedBy.toString() !== req.payload._id)
+        return res.status(403).json({ message: "Non autorisé" });
+      // .pull() : `deleteOne()` n'existe pas sur un sous-document en mongoose 6.
+      list.proposals.pull(proposal._id);
+      await list.save();
+      await sendListForRole(req, res);
+    } catch (err) {
+      console.error("❌ shared withdraw proposal:", err);
+      if (!res.headersSent) res.status(500).json({ message: "Erreur serveur" });
+    }
+  },
+);
+
+/**
+ * Accepter ou refuser une proposition. Gestionnaires uniquement.
+ * Acceptée : elle devient une idée normale de la liste, attribuée à son
+ * auteur. Refusée : elle est supprimée. Dans les deux cas l'auteur est prévenu.
+ */
+async function decideProposal(req, res, accepted) {
+  try {
+    const list = req.sharedList;
+    const proposal = list.proposals.id(req.params.proposalId);
+    // Déjà traitée par un autre gestionnaire : on le dit, sans rien refaire.
+    if (!proposal)
+      return res.status(404).json({ message: "Proposition introuvable" });
+
+    const { giftName, url, price } = proposal;
+    const proposerId = proposal.proposedBy.toString();
+
+    if (accepted) {
+      list.gifts.push({
+        giftName,
+        url,
+        price,
+        occasion: "Anniversaire",
+        status: "to_buy",
+        purchased: false,
+        addedBy: proposal.proposedBy,
+      });
+    }
+    list.proposals.pull(proposal._id);
+    await list.save();
+    await sendListForRole(req, res);
+
+    const who = await actorName(req.payload._id);
+    const data = { fromName: who, giftName, listLabel: list.label || null };
+
+    await notifyOne(req.app, list, proposerId, {
+      type: accepted
+        ? "shared_gift_proposal_accepted"
+        : "shared_gift_proposal_declined",
+      data,
+      pushTitle: (L) =>
+        L(
+          accepted
+            ? "push.shared.proposalAcceptedTitle"
+            : "push.shared.proposalDeclinedTitle",
+        ),
+      pushBody: (L) =>
+        L(
+          accepted
+            ? "push.shared.proposalAcceptedBody"
+            : "push.shared.proposalDeclinedBody",
+          { who, gift: giftName },
+        ),
+    });
+
+    // Une idée de plus dans la liste : les autres gestionnaires et les autres
+    // invités l'apprennent comme pour n'importe quel ajout. L'auteur vient
+    // d'être prévenu à part, on ne le notifie pas deux fois.
+    if (accepted) {
+      const proposer = await actorName(proposerId);
+      await notifyOtherMembers(req.app, list, req.payload._id, {
+        type: "shared_gift_added",
+        data: { fromName: proposer, giftName, listLabel: list.label || null },
+        pushTitle: (L) => L("push.shared.addedTitle"),
+        pushBody: (L) =>
+          L("push.shared.addedBody", { who: proposer, gift: giftName }),
+        alsoViewers: viewerIds(list).filter(
+          (id) => id.toString() !== proposerId,
+        ),
+      });
+    }
+  } catch (err) {
+    console.error("❌ shared decide proposal:", err);
+    if (!res.headersSent) res.status(500).json({ message: "Erreur serveur" });
+  }
+}
+
+router.post(
+  "/:id/proposals/:proposalId/accept",
+  isAuthenticated,
+  loadListAsMember,
+  (req, res) => decideProposal(req, res, true),
+);
+
+router.post(
+  "/:id/proposals/:proposalId/decline",
+  isAuthenticated,
+  loadListAsMember,
+  (req, res) => decideProposal(req, res, false),
+);
 
 // ── Modifier un cadeau commun ───────────────────────────────────────────────
 router.patch(
@@ -761,12 +1006,17 @@ router.patch(
       const who = await actorName(req.payload._id);
       // Le passage en acheté/offert est l'information la plus utile de toutes
       // — c'est elle qui évite le doublon — donc on la sort dans le texte.
-      const statusLabel = {
-        bought: "l'a marquée comme achetée",
-        to_give: "l'a marquée comme à offrir",
-        offered: "l'a marquée comme offerte",
-        to_buy: "l'a remise dans les idées à acheter",
+      // Clé de traduction : le libellé est résolu dans la langue de CHAQUE
+      // destinataire (voir utils/notify.js et services/pushService.js).
+      const statusKey = {
+        bought: "bought",
+        to_give: "toGive",
+        offered: "offered",
+        to_buy: "toBuy",
       }[status];
+      const statusLabel = statusKey
+        ? (L) => L(`push.shared.status.${statusKey}`)
+        : null;
       await notifyOtherMembers(req.app, req.sharedList, req.payload._id, {
         type: "shared_gift_updated",
         data: {
@@ -775,10 +1025,11 @@ router.patch(
           statusLabel: statusLabel || null,
           listLabel: req.sharedList.label || null,
         },
-        pushTitle: "🎁 Liste commune mise à jour",
-        pushBody: statusLabel
-          ? `${who} ${statusLabel} : « ${gift.giftName} »`
-          : `${who} a modifié « ${gift.giftName} »`,
+        pushTitle: (L) => L("push.shared.updatedTitle"),
+        pushBody: (L) =>
+          statusLabel
+            ? `${who} ${statusLabel(L)} : « ${gift.giftName} »`
+            : L("push.shared.editedBody", { who, gift: gift.giftName }),
       });
     } catch (err) {
       console.error("❌ shared update gift:", err);
@@ -824,8 +1075,8 @@ router.delete(
           giftName: removedName,
           listLabel: req.sharedList.label || null,
         },
-        pushTitle: "🎁 Idée retirée de votre liste commune",
-        pushBody: `${who} a retiré « ${removedName} »`,
+        pushTitle: (L) => L("push.shared.removedTitle"),
+        pushBody: (L) => L("push.shared.removedBody", { who, gift: removedName }),
       });
     } catch (err) {
       console.error("❌ shared delete gift:", err);
@@ -875,11 +1126,12 @@ router.post(
         data: {
           fromName: who,
           giftName: gift.giftName,
-          statusLabel: "s'occupe de",
+          statusLabel: (L) => L("push.shared.status.takes"),
           listLabel: req.sharedList.label || null,
         },
-        pushTitle: "🎁 Cadeau réservé",
-        pushBody: `${who} s'occupe de « ${gift.giftName} »`,
+        pushTitle: (L) => L("push.shared.reservedTitle"),
+        pushBody: (L) =>
+          L("push.shared.reservedBody", { who, gift: gift.giftName }),
       });
     } catch (err) {
       console.error("❌ shared reserve:", err);
@@ -947,11 +1199,12 @@ router.post(
         data: {
           fromName: who,
           giftName: gift.giftName,
-          statusLabel: "ne s'occupe plus de",
+          statusLabel: (L) => L("push.shared.status.releases"),
           listLabel: req.sharedList.label || null,
         },
-        pushTitle: "🎁 Réservation annulée",
-        pushBody: `${who} ne s'occupe plus de « ${gift.giftName} »`,
+        pushTitle: (L) => L("push.shared.unreservedTitle"),
+        pushBody: (L) =>
+          L("push.shared.unreservedBody", { who, gift: gift.giftName }),
       });
     } catch (err) {
       console.error("❌ shared unreserve:", err);
@@ -1061,8 +1314,8 @@ router.post("/:id/viewers", isAuthenticated, loadListAsMember, async (req, res) 
       link: `/shared-list/${list._id}/attach`,
     });
     await sendPushToUser(friendId, {
-      title: "🎁 Une liste de cadeaux t'a été partagée",
-      body: `${who} t'a donné accès à sa liste d'idées`,
+      title: (L) => L("push.shared.sharedTitle"),
+      body: (L) => L("push.shared.sharedBody", { who }),
       url: `/shared-list/${list._id}/attach`,
       tag: `shared-list-shared-${list._id}`,
       type: "shared_list",
@@ -1090,6 +1343,11 @@ router.delete(
       );
       if (list.viewers.length === before)
         return res.status(404).json({ message: "Cet invité n'a pas d'accès" });
+      // Ses propositions en attente partent avec lui : personne ne pourrait
+      // plus lui répondre.
+      list.proposals = (list.proposals || []).filter(
+        (p) => p.proposedBy?.toString() !== userId,
+      );
 
       await list.save();
 
@@ -1274,6 +1532,10 @@ router.post(
         list.viewers = (list.viewers || []).filter(
           (v) => !v.user || v.user.toString() !== req.payload._id,
         );
+        // Ses propositions en attente partent avec lui.
+        list.proposals = (list.proposals || []).filter(
+          (p) => p.proposedBy?.toString() !== req.payload._id,
+        );
         await list.save();
         // Sa carte cesse de porter la liste, sinon elle continuerait de
         // l'afficher alors qu'il n'y a plus accès (403 au prochain fetch).
@@ -1329,8 +1591,8 @@ async function leaveAsMember(req, res) {
         {
           type: "shared_gift_member_left",
           data: { fromName: who, listLabel },
-          pushTitle: "👥 Départ d'une liste commune",
-          pushBody: `${who} a quitté votre liste d'idées cadeaux`,
+          pushTitle: (L) => L("push.shared.leftTitle"),
+          pushBody: (L) => L("push.shared.leftBody", { who }),
         },
       );
     }

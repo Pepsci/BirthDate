@@ -1,3 +1,4 @@
+import { t } from "@/i18n";
 import { ScrollView, View, Text, Pressable, StyleSheet, Linking } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import {
@@ -5,7 +6,7 @@ import {
   useThemedStyles,
   ThemeColors,
 } from "../lib/theme-context";
-import { FAQ_SECTIONS as SECTIONS } from "../lib/faqData";
+import { getFaqSections } from "../lib/faqData";
 import { readingPane } from "../lib/layout";
 import { useAuth } from "../lib/auth-context";
 
@@ -16,17 +17,17 @@ export default function GuideScreen() {
   const { mode } = useAuth();
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Stack.Screen options={{ title: "Guide d'utilisation" }} />
+      <Stack.Screen options={{ title: t("profile:menu.guide") }} />
 
       <View style={styles.hero}>
         <Text style={styles.heroEmoji}>📖</Text>
-        <Text style={styles.heroTitle}>Guide d'utilisation</Text>
+        <Text style={styles.heroTitle}>{t("profile:menu.guide")}</Text>
         <Text style={styles.heroDesc}>
-          Tout ce qu'il faut pour ne plus jamais rater un anniversaire.
+          {t("support:guide.subtitle")}
         </Text>
       </View>
 
-      {SECTIONS.map((section) => (
+      {getFaqSections().map((section) => (
         <View key={section.id} style={styles.section}>
           <Text style={styles.sectionTitle}>
             {section.emoji}  {section.title}
@@ -65,20 +66,20 @@ export default function GuideScreen() {
                     // l'événement, l'admin ouvre directement les
                     // contributions au lieu de deviner.
                     poolPicker: "1",
-                    poolSubject: "Problème avec une cagnotte",
+                    poolSubject: t("pool:mine.report.subject"),
                     poolMessage: [
-                      "— Ma contribution —",
-                      "Montant : ",
-                      "Date : ",
-                      "Événement : ",
-                      "Encaissé par : ",
-                      "Référence de paiement : ",
+                      t("pool:mine.report.mine"),
+                      t("pool:mine.sum.amount", { amount: "" }),
+                      t("pool:mine.sum.date", { date: "" }),
+                      t("pool:mine.sum.event", { title: "" }),
+                      t("pool:mine.sum.collectedBy", { name: "" }),
+                      t("pool:mine.sum.reference", { ref: "" }),
                       "",
-                      "— Ce qui se passe —",
+                      t("pool:mine.report.what"),
                       "",
                       "",
-                      "— Ai-je déjà contacté l'organisateur ? —",
-                      "(oui, le … / pas encore)",
+                      t("pool:mine.report.contacted"),
+                      t("pool:mine.report.contactedHint"),
                       "",
                     ].join("\n"),
                   },
@@ -94,7 +95,7 @@ export default function GuideScreen() {
       ))}
 
       <View style={styles.footer}>
-        <Text style={styles.footerText}>Une question sans réponse ?</Text>
+        <Text style={styles.footerText}>{t("support:guide.noAnswer")}</Text>
         {/* Sans compte, le formulaire de support (serveur) est indisponible :
             on passe par un email, envoyé par l'utilisateur lui-même. */}
         <Pressable
@@ -105,7 +106,7 @@ export default function GuideScreen() {
               : router.push("/contact")
           }
         >
-          <Text style={styles.supportBtnText}>✉️ Contacter le support</Text>
+          <Text style={styles.supportBtnText}>{t("profile:menu.contact")}</Text>
         </Pressable>
       </View>
     </ScrollView>

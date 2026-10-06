@@ -8,7 +8,8 @@ const { isAuthenticated } = require("../../middleware/jwt.middleware");
 const { checkGuestOrAuth } = require("../../middleware/checkGuestOrAuth");
 const { notify } = require("../../utils/notify");
 const { sendPushToUser } = require("../../services/pushService");
-const { sendEventInvitationEmail } = require("../../services/emailTemplates/eventEmails");
+const { emailsFor } = require("../../services/emailTemplates/localized");
+const { getUserLanguage } = require("../../i18n");
 const { filterBlockedIds } = require("../../utils/blocking");
 const { publicInvitation } = require("../../utils/eventAccess");
 const { audit } = require("../../services/auditLog");
@@ -108,22 +109,26 @@ router.post("/:shortId/invite", isAuthenticated, async (req, res) => {
             link: `/event/${event.shortId}`,
           });
           await sendPushToUser(uid, {
-            title: `🎉 Invitation — ${event.title}`,
-            body: `${organizerName} vous invite à un événement`,
+            title: (L) => L("push.event.inviteTitle", { title: event.title }),
+            body: (L) => L("push.event.inviteBody", { name: organizerName }),
             url: `/event/${event.shortId}`,
             tag: `event-invite-${event.shortId}-${uid}`,
             type: "default",
           });
           const targetedUser = await User.findById(uid);
-          if (targetedUser) await sendEventInvitationEmail(targetedUser.email, event, event.organizer.name, eventUrl);
+          if (targetedUser) await emailsFor(targetedUser.language).sendEventInvitationEmail(targetedUser.email, event, event.organizer.name, eventUrl);
         }
       }
     }
 
     let externalSent = 0;
+    // Invités sans compte : langue de l'organisateur.
+    const organizerLanguage = newExternalEmails.length
+      ? await getUserLanguage(event.organizer._id)
+      : null;
     for (const email of newExternalEmails) {
       await EventInvitation.create({ event: event._id, externalEmail: email });
-      await sendEventInvitationEmail(email, event, event.organizer.name, eventUrl);
+      await emailsFor(organizerLanguage).sendEventInvitationEmail(email, event, event.organizer.name, eventUrl);
       externalSent += 1;
     }
     // Sert de compteur au quota journalier (services/quotas.js)

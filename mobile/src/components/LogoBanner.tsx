@@ -1,3 +1,4 @@
+import { t } from "@/i18n";
 import { Pressable, Image, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import {
@@ -25,7 +26,7 @@ export default function LogoBanner() {
       onPress={() => router.push("/welcome")}
       hitSlop={6}
       accessibilityRole="link"
-      accessibilityLabel="Accueil BirthReminder"
+      accessibilityLabel={t("common:logoLabel")}
     >
       <Image
         source={resolved === "dark" ? LOGO_DARK : LOGO_LIGHT}

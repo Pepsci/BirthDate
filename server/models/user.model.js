@@ -142,6 +142,18 @@ const userSchema = new Schema({
   },
   lastAppVersion: { type: String, default: null },
   lastSeenAt: { type: Date, default: null },
+
+  // ── Langue ─────────────────────────────────────────────────────────────────
+  // Langue dans laquelle le serveur écrit à ce compte : notifications push,
+  // emails, rappels des crons. Envoyée par l'app mobile sans rien demander à
+  // l'utilisateur (langue du téléphone, ou choix dans Profil) — voir
+  // PATCH /users/me/language et server/i18n/index.js.
+  // `null` (tous les comptes d'avant, et le site web) = français.
+  language: {
+    type: String,
+    enum: ["fr", "en", null],
+    default: null,
+  },
   pushEvents: {
     birthdays: { type: Boolean, default: true },
     // Les fêtes (namedays) suivaient l'interrupteur `birthdays` : impossible de

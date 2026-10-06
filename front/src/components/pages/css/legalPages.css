@@ -207,3 +207,9 @@
         padding: 8px;
     }
 }
+/* Bascule de langue (LegalLanguageSwitch.jsx) */
+.legal-lang-switch {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 16px;
+}

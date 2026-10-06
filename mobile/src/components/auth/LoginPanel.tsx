@@ -1,3 +1,4 @@
+import { t } from "@/i18n";
 import { useState } from "react";
 import {
   View,
@@ -34,7 +35,7 @@ export default function LoginPanel({
 
   const onSubmit = async () => {
     if (!email || !password) {
-      setError("Email et mot de passe requis.");
+      setError(t("auth:login.required"));
       return;
     }
     setError(null);
@@ -42,7 +43,7 @@ export default function LoginPanel({
     try {
       await signIn(email.trim().toLowerCase(), password);
     } catch (e: any) {
-      setError(e?.message ?? "Erreur de connexion.");
+      setError(e?.message ?? t("auth:login.error"));
     } finally {
       setLoading(false);
     }
@@ -54,13 +55,13 @@ export default function LoginPanel({
       keyboardShouldPersistTaps="handled"
       showsVerticalScrollIndicator={false}
     >
-      <Text style={s.title}>Bon retour 👋</Text>
-      <Text style={s.subtitle}>Connecte-toi à ton compte</Text>
+      <Text style={s.title}>{t("auth:login.title")}</Text>
+      <Text style={s.subtitle}>{t("auth:login.subtitle")}</Text>
 
       <TextInput
         placeholderTextColor={colors.placeholder}
         style={s.input}
-        placeholder="Email"
+        placeholder={t("auth:email")}
         autoCapitalize="none"
         autoCorrect={false}
         autoComplete="email"
@@ -69,7 +70,7 @@ export default function LoginPanel({
         onChangeText={(t) => setEmail(t.toLowerCase())}
       />
       <PasswordField
-        placeholder="Mot de passe"
+        placeholder={t("auth:password")}
         autoComplete="password"
         value={password}
         onChangeText={setPassword}
@@ -85,12 +86,12 @@ export default function LoginPanel({
         {loading ? (
           <ActivityIndicator color={colors.white} />
         ) : (
-          <Text style={s.buttonText}>Se connecter</Text>
+          <Text style={s.buttonText}>{t("auth:login.submit")}</Text>
         )}
       </Pressable>
 
       <Pressable onPress={() => onGoTo("forgot")}>
-        <Text style={s.link}>Mot de passe oublié ?</Text>
+        <Text style={s.link}>{t("auth:login.forgot")}</Text>
       </Pressable>
 
       <View style={local.divider} />
@@ -104,7 +105,7 @@ export default function LoginPanel({
         onPress={() => onGoTo("signup")}
       >
         <Text style={[local.secondaryText, { color: colors.primary }]}>
-          Créer un compte
+          {t("auth:login.create")}
         </Text>
       </Pressable>
 
@@ -117,7 +118,7 @@ export default function LoginPanel({
             router.replace("/");
           }}
         >
-          <Text style={s.link}>Continuer sans compte</Text>
+          <Text style={s.link}>{t("auth:continueWithout")}</Text>
         </Pressable>
       )}
     </ScrollView>

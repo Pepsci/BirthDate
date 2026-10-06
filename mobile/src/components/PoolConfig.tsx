@@ -1,3 +1,4 @@
+import { getLocaleTag, t, tn } from "@/i18n";
 import { useEffect, useState } from "react";
 import {
   View,
@@ -49,23 +50,23 @@ const IBAN_DURATIONS = [7, 14, 30, 60, 90];
 function poolLockMessages(
   until?: unknown,
 ): Record<string, { title: string; text: string }> {
-  const date = until ? new Date(String(until)).toLocaleDateString("fr-FR") : "";
+  const date = until ? new Date(String(until)).toLocaleDateString(getLocaleTag()) : "";
   return {
     minor: {
-      title: "Cagnotte réservée aux majeurs",
-      text: "Tu pourras ouvrir une cagnotte ou partager un moyen de paiement à partir de tes 18 ans. Tout le reste de l'événement reste accessible.",
+      title: t("pool:lockMsg.minorTitle"),
+      text: t("pool:lockMsg.minorText"),
     },
     birthdate_missing: {
-      title: "Date de naissance manquante",
-      text: "Renseigne ta date de naissance dans ton profil pour pouvoir ouvrir une cagnotte.",
+      title: t("pool:lockMsg.missingTitle"),
+      text: t("pool:lockMsg.missingText"),
     },
     birthdate_cooldown: {
-      title: "Cagnotte disponible bientôt",
-      text: `Ta date de naissance a été modifiée récemment. Par sécurité, tu pourras ouvrir une cagnotte à partir du ${date}.`,
+      title: t("pool:lockMsg.cooldownTitle"),
+      text: t("pool:lockMsg.cooldownText", { date }),
     },
     admin_blocked: {
-      title: "Cagnottes suspendues",
-      text: "L'ouverture de cagnottes est suspendue pour ton compte. Contacte le support pour en savoir plus.",
+      title: t("pool:lockMsg.blockedTitle"),
+      text: t("pool:lockMsg.blockedText"),
     },
   };
 }
@@ -149,12 +150,12 @@ export default function PoolConfig({
   const onRefundAll = () => {
     if (!preview) return;
     Alert.alert(
-      "Rembourser tout le monde ?",
-      `${preview.count} contribution${preview.count > 1 ? "s" : ""} pour ${(preview.totalRefunded / 100).toFixed(2)} €.\n\nLes contributeurs récupèrent l'intégralité. Cette opération te coûtera ${preview.estimatedCount > 0 ? "environ " : ""}${(preview.feeLoss / 100).toFixed(2)} € : Stripe ne restitue pas les frais des paiements d'origine.\n\nLa cagnotte sera fermée. C'est irréversible.`,
+      t("pool:refund.confirmTitle"),
+      `${tn("pool:refund.countFor", preview.count, { amount: (preview.totalRefunded / 100).toFixed(2) })}\n\n${t("pool:refund.confirmBody", { approx: preview.estimatedCount > 0 ? t("pool:refund.approx") : "", fee: (preview.feeLoss / 100).toFixed(2) })}`,
       [
-        { text: "Annuler", style: "cancel" },
+        { text: t("common:actions.cancel"), style: "cancel" },
         {
-          text: "Rembourser",
+          text: t("pool:refund.action"),
           style: "destructive",
           onPress: async () => {
             if (!shortId) return;
@@ -163,13 +164,13 @@ export default function PoolConfig({
               const report = await refundAll(shortId);
               loadPreview();
               Alert.alert(
-                "Remboursements envoyés",
+                t("pool:refund.doneTitle"),
                 report.failed === 0
-                  ? `${report.refunded} remboursement${report.refunded > 1 ? "s" : ""} envoyé${report.refunded > 1 ? "s" : ""}. Les contributeurs seront prévenus dès que Stripe les confirme.`
-                  : `${report.refunded} réussi${report.refunded > 1 ? "s" : ""}, ${report.failed} en échec. Tu peux relancer : seules les contributions non remboursées seront reprises.`,
+                  ? tn("pool:refund.doneAll", report.refunded)
+                  : t("pool:refund.donePartial", { ok: report.refunded, failed: report.failed }),
               );
             } catch (e: any) {
-              setError(e?.message ?? "Erreur lors du remboursement.");
+              setError(e?.message ?? t("pool:refund.error"));
             } finally {
               setRefunding(false);
             }
@@ -253,11 +254,11 @@ export default function PoolConfig({
         stripeBalance().then(setBalance).catch(() => {});
       } else {
         setError(
-          "Onboarding pas encore terminé — reprends-le quand tu veux avec le même bouton.",
+          t("pool:stripe.notFinished"),
         );
       }
     } catch (e: any) {
-      setError(e?.message ?? "Erreur lors de la connexion Stripe.");
+      setError(e?.message ?? t("pool:stripe.connectError"));
     } finally {
       setOnboarding(false);
     }
@@ -271,7 +272,7 @@ export default function PoolConfig({
     // Garde-fou : IBAN activé mais aucun RIB (ni saisi, ni déjà enregistré)
     const cleanIban = iban.replace(/\s+/g, "");
     if (ibanEnabled && !ibanSaved && cleanIban.length < 14) {
-      setError("Saisis un IBAN valide ou désactive l'option virement IBAN.");
+      setError(t("pool:config.ibanInvalid"));
       return;
     }
 
@@ -320,7 +321,7 @@ export default function PoolConfig({
       else router.back();
     } catch (e: any) {
       if (e?.message?.includes("Stripe")) setStripeNotReady(true);
-      setError(e?.message ?? "Erreur lors de l'enregistrement.");
+      setError(e?.message ?? t("common:errors.save"));
       setSaving(false);
     }
   };
@@ -328,7 +329,7 @@ export default function PoolConfig({
   if (!loaded) {
     return (
       <View style={styles.center}>
-        {!embedded && <Stack.Screen options={{ title: "Cagnotte" }} />}
+        {!embedded && <Stack.Screen options={{ title: t("events:org.pool") }} />}
         <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
@@ -343,9 +344,9 @@ export default function PoolConfig({
       automaticallyAdjustKeyboardInsets
     >
       {embedded ? (
-        <Text style={styles.embeddedTitle}>💝 Configurer la cagnotte</Text>
+        <Text style={styles.embeddedTitle}>{t("pool:config.embedded")}</Text>
       ) : (
-        <Stack.Screen options={{ title: "Configurer la cagnotte" }} />
+        <Stack.Screen options={{ title: t("pool:config.title") }} />
       )}
 
       {poolLocked && (
@@ -357,9 +358,9 @@ export default function PoolConfig({
 
       <View style={styles.switchRow}>
         <View style={{ flex: 1 }}>
-          <Text style={styles.switchLabel}>Cagnotte activée</Text>
+          <Text style={styles.switchLabel}>{t("pool:config.active")}</Text>
           <Text style={styles.hint}>
-            Les invités pourront contribuer par carte bancaire
+            {t("pool:config.activeHint")}
           </Text>
         </View>
         <Switch
@@ -376,16 +377,12 @@ export default function PoolConfig({
           moment d'annuler serait la découvrir trop tard. */}
       {active && (
         <View style={styles.commitBox}>
-          <Text style={styles.commitTitle}>Ce que tu t'engages à faire</Text>
+          <Text style={styles.commitTitle}>{t("pool:config.commitTitle")}</Text>
           <Text style={styles.commitText}>
-            L'argent arrive directement sur ton compte Stripe : BirthReminder ne
-            le détient jamais et n'intervient à aucun moment sur les fonds. Tu
-            restes le seul responsable de la cagnotte vis-à-vis des
-            contributeurs.
+            {t("pool:config.commit1")}
           </Text>
           <Text style={styles.commitText}>
-            À savoir : si tu rembourses une contribution, les frais prélevés lors
-            du paiement d'origine ne te sont pas restitués par Stripe.
+            {t("pool:config.commit2")}
           </Text>
           <View style={styles.commitLinks}>
             <Text
@@ -396,7 +393,7 @@ export default function PoolConfig({
                 )
               }
             >
-              Contrat de compte Stripe Connect
+              {t("pool:config.stripeConnect")}
             </Text>
             <Text
               style={styles.commitLink}
@@ -404,7 +401,7 @@ export default function PoolConfig({
                 WebBrowser.openBrowserAsync("https://stripe.com/fr/legal/ssa")
               }
             >
-              Conditions des services Stripe
+              {t("pool:contribute.stripeTerms")}
             </Text>
           </View>
         </View>
@@ -412,7 +409,7 @@ export default function PoolConfig({
 
       {active && (
         <>
-          <Text style={styles.label}>Mode</Text>
+          <Text style={styles.label}>{t("pool:config.mode")}</Text>
           <View style={styles.modeSwitch}>
             <Pressable
               style={[styles.modeBtn, mode === "free" && styles.modeBtnActive]}
@@ -421,7 +418,7 @@ export default function PoolConfig({
               <Text
                 style={[styles.modeText, mode === "free" && styles.modeTextActive]}
               >
-                🆓 Libre
+                {t("pool:config.free")}
               </Text>
             </Pressable>
             <Pressable
@@ -431,18 +428,18 @@ export default function PoolConfig({
               <Text
                 style={[styles.modeText, mode === "goal" && styles.modeTextActive]}
               >
-                🎯 Objectif
+                {t("pool:config.goal")}
               </Text>
             </Pressable>
           </View>
 
           {mode === "goal" && (
             <>
-              <Text style={styles.label}>Objectif (€)</Text>
+              <Text style={styles.label}>{t("pool:config.goalLabel")}</Text>
               <TextInput
                 placeholderTextColor={colors.placeholder}
                 style={styles.input}
-                placeholder="ex : 150"
+                placeholder={t("pool:config.goalPlaceholder")}
                 keyboardType="decimal-pad"
                 value={goal}
                 onChangeText={setGoal}
@@ -450,21 +447,21 @@ export default function PoolConfig({
             </>
           )}
 
-          <Text style={styles.label}>Date limite (optionnel)</Text>
+          <Text style={styles.label}>{t("pool:config.deadline")}</Text>
           <Pressable style={styles.input} onPress={() => setShowPicker(true)}>
             <Text style={styles.inputText}>
               {deadline
-                ? deadline.toLocaleDateString("fr-FR", {
+                ? deadline.toLocaleDateString(getLocaleTag(), {
                     day: "numeric",
                     month: "long",
                     year: "numeric",
                   })
-                : "Aucune — appuyer pour choisir"}
+                : t("pool:config.noDeadline")}
             </Text>
           </Pressable>
           {deadline && (
             <Pressable onPress={() => setDeadline(null)}>
-              <Text style={styles.clearDeadline}>Retirer la date limite</Text>
+              <Text style={styles.clearDeadline}>{t("pool:config.clearDeadline")}</Text>
             </Pressable>
           )}
           {showPicker && (
@@ -474,7 +471,7 @@ export default function PoolConfig({
                 mode="date"
                 minimumDate={new Date()}
                 display="spinner"
-                locale="fr-FR"
+                locale={getLocaleTag()}
                 themeVariant={resolved}
                 onChange={(e, d) => {
                   if (Platform.OS === "android") setShowPicker(false);
@@ -493,21 +490,16 @@ export default function PoolConfig({
       {(preview?.count ?? 0) > 0 && (
         <>
           <View style={styles.dtDivider} />
-          <Text style={styles.dtTitle}>💸 Rembourser les contributeurs</Text>
+          <Text style={styles.dtTitle}>{t("pool:refund.title")}</Text>
           <Text style={styles.hint}>
-            {preview!.count} contribution{preview!.count > 1 ? "s" : ""} —{" "}
-            {(preview!.totalRefunded / 100).toFixed(2)} € seront intégralement
-            rendus à leurs auteurs.
+            {tn("pool:refund.summary", preview!.count, { amount: (preview!.totalRefunded / 100).toFixed(2) })}
           </Text>
           {/* ⚠️ Le chiffre qui compte pour LUI. Stripe ne restitue pas les frais
               de la transaction d'origine : le contributeur récupère tout, et
               l'écart reste à la charge de l'organisateur. Le découvrir après
               coup serait une mauvaise surprise. */}
           <Text style={styles.refundWarn}>
-            ⚠️ Cette opération te coûtera{" "}
-            {preview!.estimatedCount > 0 ? "environ " : ""}
-            {(preview!.feeLoss / 100).toFixed(2)} € : Stripe ne rend pas les
-            frais des paiements d'origine.
+            {t("pool:refund.warn", { approx: preview!.estimatedCount > 0 ? t("pool:refund.approx") : "", fee: (preview!.feeLoss / 100).toFixed(2) })}
           </Text>
           {/* Les frais dépendent de la carte utilisée par chaque contributeur
               — 1,5 % pour une carte européenne standard, jusqu'à 3,15 % plus
@@ -517,11 +509,7 @@ export default function PoolConfig({
               serait mentir sur une opération irréversible. */}
           {preview!.estimatedCount > 0 && (
             <Text style={styles.refundNote}>
-              {preview!.estimatedCount} contribution
-              {preview!.estimatedCount > 1 ? "s" : ""} sur {preview!.count} est
-              chiffrée au tarif d'une carte européenne standard. Le coût réel
-              peut être plus élevé si le paiement venait d'une carte
-              professionnelle ou étrangère.
+              {tn("pool:refund.estimated", preview!.estimatedCount, { total: preview!.count })}
             </Text>
           )}
           <Pressable
@@ -531,8 +519,8 @@ export default function PoolConfig({
           >
             <Text style={styles.refundBtnText}>
               {refunding
-                ? "Remboursement en cours…"
-                : "Rembourser tout le monde"}
+                ? t("pool:refund.inProgress")
+                : t("pool:refund.all")}
             </Text>
           </Pressable>
         </>
@@ -540,16 +528,15 @@ export default function PoolConfig({
 
       {/* ── Virement direct — indépendant de la cagnotte Stripe ── */}
       <View style={styles.dtDivider} />
-      <Text style={styles.dtTitle}>💳 Virement direct</Text>
+      <Text style={styles.dtTitle}>{t("events:pool.direct")}</Text>
       <Text style={styles.hint}>
-        Propose ton IBAN et/ou ton lien PayPal : les invités t'envoient
-        l'argent directement, sans activer de cagnotte.
+        {t("pool:config.directHint")}
       </Text>
 
       <View style={[styles.switchRow, { marginTop: 6 }]}>
         <View style={{ flex: 1 }}>
-          <Text style={styles.switchLabel}>Proposer un IBAN</Text>
-          <Text style={styles.hint}>Visible par les invités connectés</Text>
+          <Text style={styles.switchLabel}>{t("pool:config.offerIban")}</Text>
+          <Text style={styles.hint}>{t("pool:config.offerIbanHint")}</Text>
         </View>
         <Switch
           value={ibanEnabled}
@@ -572,11 +559,11 @@ export default function PoolConfig({
           <TextInput
             placeholderTextColor={colors.placeholder}
             style={styles.input}
-            placeholder="Nom du titulaire (optionnel)"
+            placeholder={t("pool:config.holder")}
             value={holderName}
             onChangeText={setHolderName}
           />
-          <Text style={styles.label}>Visible pendant</Text>
+          <Text style={styles.label}>{t("pool:config.visibleFor")}</Text>
           <View style={styles.modeSwitch}>
             {IBAN_DURATIONS.map((d) => (
               <Pressable
@@ -590,21 +577,21 @@ export default function PoolConfig({
                     ibanDuration === d && styles.modeTextActive,
                   ]}
                 >
-                  {d}j
+                  {t("pool:config.days", { count: d })}
                 </Text>
               </Pressable>
             ))}
           </View>
           <Text style={styles.hint}>
-            🔒 L'IBAN est chiffré et supprimé automatiquement après ce délai.
+            {t("pool:config.ibanNote")}
           </Text>
         </>
       )}
 
       <View style={[styles.switchRow, { marginTop: 10 }]}>
         <View style={{ flex: 1 }}>
-          <Text style={styles.switchLabel}>Proposer PayPal</Text>
-          <Text style={styles.hint}>Lien PayPal.Me public</Text>
+          <Text style={styles.switchLabel}>{t("pool:config.offerPaypal")}</Text>
+          <Text style={styles.hint}>{t("pool:config.paypalHint")}</Text>
         </View>
         <Switch
           value={paypalEnabled}
@@ -628,8 +615,8 @@ export default function PoolConfig({
 
       <View style={[styles.switchRow, { marginTop: 10 }]}>
         <View style={{ flex: 1 }}>
-          <Text style={styles.switchLabel}>Cagnotte sur un autre service</Text>
-          <Text style={styles.hint}>Leetchi, Lydia, Le Pot Commun…</Text>
+          <Text style={styles.switchLabel}>{t("pool:config.external")}</Text>
+          <Text style={styles.hint}>{t("pool:config.externalHint")}</Text>
         </View>
         <Switch
           value={externalEnabled}
@@ -653,17 +640,14 @@ export default function PoolConfig({
           <TextInput
             placeholderTextColor={colors.placeholder}
             style={styles.input}
-            placeholder="Nom affiché (optionnel)"
+            placeholder={t("pool:config.externalLabel")}
             maxLength={60}
             value={externalLabel}
             onChangeText={setExternalLabel}
           />
           {/* Dit une fois, clairement, ce que ça implique pour lui. */}
           <Text style={styles.hint}>
-            La collecte se déroule entièrement sur le service choisi.
-            BirthReminder n'en voit ni les montants ni les participants, ne peut
-            rien confirmer en cas de litige et ne pourra rien rembourser : tes
-            invités devront s'adresser à toi, ou à ce service.
+            {t("pool:config.externalNote")}
           </Text>
         </>
       )}
@@ -671,14 +655,14 @@ export default function PoolConfig({
       {!stripeNotReady && balance?.connected && (
         <View style={styles.balanceBox}>
           <View style={styles.balanceRow}>
-            <Text style={styles.balanceLabel}>Disponible</Text>
+            <Text style={styles.balanceLabel}>{t("pool:stripe.available")}</Text>
             <Text style={styles.balanceValue}>
               {((balance.availableCents ?? 0) / 100).toFixed(2)} €
             </Text>
           </View>
           {(balance.pendingCents ?? 0) > 0 && (
             <View style={styles.balanceRow}>
-              <Text style={styles.balanceLabel}>En attente de règlement</Text>
+              <Text style={styles.balanceLabel}>{t("pool:stripe.pending")}</Text>
               <Text style={styles.balanceValue}>
                 {((balance.pendingCents ?? 0) / 100).toFixed(2)} €
               </Text>
@@ -687,12 +671,12 @@ export default function PoolConfig({
 
           <Text style={styles.balanceNote}>
             {balance.payouts && balance.payouts.length > 0
-              ? `Dernier virement : ${(balance.payouts[0].amount / 100).toFixed(2)} €${
+              ? `${t("pool:stripe.lastPayout", { amount: (balance.payouts[0].amount / 100).toFixed(2) })}${
                   balance.payouts[0].arrivalDate
-                    ? ` — arrivée le ${new Date(balance.payouts[0].arrivalDate).toLocaleDateString("fr-FR")}`
+                    ? t("pool:stripe.arrival", { date: new Date(balance.payouts[0].arrivalDate).toLocaleDateString(getLocaleTag()) })
                     : ""
                 }`
-              : "Aucun virement pour l'instant. Stripe verse automatiquement sur ton compte bancaire selon son calendrier."}
+              : t("pool:stripe.noPayout")}
           </Text>
 
           <Pressable
@@ -706,7 +690,7 @@ export default function PoolConfig({
                 await WebBrowser.openBrowserAsync(url);
               } catch (e: any) {
                 setError(
-                  e?.message ?? "Impossible d'ouvrir ton tableau de bord Stripe.",
+                  e?.message ?? t("pool:stripe.dashError"),
                 );
               } finally {
                 setOpeningDash(false);
@@ -716,13 +700,11 @@ export default function PoolConfig({
             {openingDash ? (
               <ActivityIndicator color={colors.primary} />
             ) : (
-              <Text style={styles.dashBtnText}>Voir mes virements sur Stripe</Text>
+              <Text style={styles.dashBtnText}>{t("pool:stripe.dashboard")}</Text>
             )}
           </Pressable>
           <Text style={styles.hint}>
-            Solde, virements et coordonnées bancaires se gèrent depuis ton
-            tableau de bord Stripe, avec les identifiants du compte créé lors
-            de la configuration.
+            {t("pool:stripe.dashHint")}
           </Text>
 
           {/* Action rare et lourde : discrète, mais présente. Ne pas pouvoir
@@ -732,12 +714,12 @@ export default function PoolConfig({
             hitSlop={6}
             onPress={() =>
               Alert.alert(
-                "Déconnecter ton compte de paiement ?",
-                "Tes cagnottes encore ouvertes seront fermées et tu ne pourras plus encaisser de contributions. Tu pourras reconnecter un compte plus tard, mais il faudra refaire la vérification Stripe.",
+                t("pool:stripe.disconnectTitle"),
+                t("pool:stripe.disconnectText"),
                 [
-                  { text: "Annuler", style: "cancel" },
+                  { text: t("common:actions.cancel"), style: "cancel" },
                   {
-                    text: "Déconnecter",
+                    text: t("pool:stripe.disconnect"),
                     style: "destructive",
                     onPress: async () => {
                       try {
@@ -748,7 +730,7 @@ export default function PoolConfig({
                       } catch (e: any) {
                         setError(
                           e?.message ??
-                            "Impossible de déconnecter ton compte.",
+                            t("pool:stripe.disconnectError"),
                         );
                       }
                     },
@@ -758,7 +740,7 @@ export default function PoolConfig({
             }
           >
             <Text style={styles.disconnect}>
-              Déconnecter mon compte de paiement
+              {t("pool:stripe.disconnectBtn")}
             </Text>
           </Pressable>
         </View>
@@ -767,10 +749,7 @@ export default function PoolConfig({
       {stripeNotReady && (
         <View style={styles.warn}>
           <Text style={styles.warnText}>
-            ⚠️ Pour encaisser la cagnotte, tu dois créer un compte Stripe
-            (une seule fois, environ 5 minutes — identité et RIB demandés par
-            Stripe). C'est ton compte : tu y gères tes virements, et
-            BirthReminder ne détient jamais l'argent.
+            {t("pool:stripe.needAccount")}
           </Text>
           <Pressable
             style={[styles.stripeBtn, onboarding && { opacity: 0.6 }]}
@@ -781,7 +760,7 @@ export default function PoolConfig({
               <ActivityIndicator color={colors.white} />
             ) : (
               <Text style={styles.stripeBtnText}>
-                🔗 Connecter mon compte Stripe
+                {t("pool:stripe.connect")}
               </Text>
             )}
           </Pressable>
@@ -797,7 +776,7 @@ export default function PoolConfig({
         {saving ? (
           <ActivityIndicator color={colors.white} />
         ) : (
-          <Text style={styles.saveText}>Enregistrer</Text>
+          <Text style={styles.saveText}>{t("common:actions.save")}</Text>
         )}
       </Pressable>
     </ScrollView>

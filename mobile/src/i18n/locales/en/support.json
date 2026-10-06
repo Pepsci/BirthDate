@@ -1,0 +1,49 @@
+{
+  "unresolved": "Unresolved question: {{context}}",
+  "title": "Support",
+  "sent": {
+    "title": "Message sent",
+    "text": "Thank you! You will find the team's reply in Chats → Support, and a notification will let you know."
+  },
+  "pool": {
+    "title": "Money pool issue",
+    "which": "Which money pool is it about?",
+    "none": "No contribution is recorded on your account. If you contributed without being logged in, describe the situation and attach the receipt you got by email.",
+    "skip": "Continue without selecting"
+  },
+  "form": {
+    "title": "Write to us",
+    "intro": "A question, a bug, a suggestion? Write to us and we will reply by email.",
+    "subject": "Subject *",
+    "subjectPlaceholder": "Subject of your request",
+    "message": "Message *",
+    "messagePlaceholder": "Describe your request…"
+  },
+  "status": {
+    "open": "Waiting for a reply"
+  },
+  "ticket": {
+    "notFound": "Conversation not found.",
+    "sendError": "Could not send.",
+    "team": "BirthReminder team",
+    "hint": "The team replies here, usually within 48 hours.",
+    "closed": "This conversation is closed. For a new request, open a new topic.",
+    "newTopic": "New topic",
+    "placeholder": "Your reply…"
+  },
+  "contact": {
+    "title": "Contact support",
+    "intro": "Look for your answer below. Most questions get an immediate answer.",
+    "namedayTitle": "A wrong name day?",
+    "namedayText": "A first name celebrated on the wrong date, or not at all: report it and we will fix the calendar.",
+    "search": "Search for an answer (e.g. cancel an event, wishlist…)",
+    "change": "Change ↺",
+    "allQuestions": "← All questions",
+    "notSolved": "This answer does not solve your problem?",
+    "noResult": "No answer found for \"{{query}}\"."
+  },
+  "guide": {
+    "subtitle": "Everything you need to never miss a birthday again.",
+    "noAnswer": "A question without an answer?"
+  }
+}

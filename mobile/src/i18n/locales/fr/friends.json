@@ -1,0 +1,32 @@
+{
+  "remove": {
+    "title": "Retirer cet ami ?",
+    "text": "{{name}} sera retiré·e de tes amis."
+  },
+  "request": {
+    "cancelTitle": "Annuler cette demande ?",
+    "cancelTextTo": "Ta demande d'ami à {{name}} sera retirée. Tu pourras en renvoyer une plus tard.",
+    "cancelText": "Ta demande d'ami sera retirée. Tu pourras en renvoyer une plus tard.",
+    "cancel": "Annuler la demande",
+    "cancelled": "Demande annulée."
+  },
+  "invite": {
+    "cancelTitle": "Annuler cette invitation ?",
+    "cancelText": "L'invitation envoyée à {{email}} sera retirée. Le lien déjà reçu par email ne fonctionnera plus.",
+    "cancel": "Annuler l'invitation",
+    "cancelled": "Invitation annulée."
+  },
+  "addPlaceholder": "Email d'un ami à ajouter…",
+  "tabs": {
+    "friends": "Amis ({{count}})",
+    "received": "Reçues",
+    "sent": "Envoyées"
+  },
+  "empty": "Pas encore d'amis — invite-les par email ci-dessus !",
+  "longPressHint": "Appui long sur un ami pour le retirer.",
+  "noPending": "Aucune demande en attente.",
+  "added": "Ami ajouté 🎉",
+  "noSent": "Aucune demande envoyée.",
+  "waiting": "En attente de réponse…",
+  "externalInvite": "Invitation externe — pas encore inscrit·e"
+}

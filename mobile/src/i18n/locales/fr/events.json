@@ -1,0 +1,302 @@
+{
+  "type": {
+    "birthday": "🎂 Anniversaire",
+    "party": "🎉 Fête",
+    "dinner": "🍽️ Repas",
+    "other": "📌 Autre"
+  },
+  "status": {
+    "draft": "Brouillon",
+    "published": "Publié",
+    "cancelled": "Annulé",
+    "done": "Terminé"
+  },
+  "rsvp": {
+    "pending": "En attente",
+    "accepted": "✅ J'y vais",
+    "declined": "❌ Décliné",
+    "maybe": "🤷 Peut-être",
+    "no": "❌ Non",
+    "title": "Ta réponse",
+    "closed": "L'événement est annulé : les réponses sont closes."
+  },
+  "externalGuest": "Invité externe",
+  "list": {
+    "drafts": "📝 Brouillons à terminer",
+    "organizing": "J'organise",
+    "invited": "Je suis invité·e",
+    "past": "🗄️ Événements passés ({{count}})",
+    "poolTip": "Tu peux créer une cagnotte pour financer un cadeau à plusieurs, directement depuis un événement, sans commission supplémentaire de la part de BirthReminder pour le moment.",
+    "empty": "Aucun événement pour l'instant. Crée-en un avec le bouton ＋ — il apparaîtra ici."
+  },
+  "draft": {
+    "deleteTitle": "Supprimer ce brouillon ?",
+    "deleteTextNamed": "« {{title}} » sera supprimé définitivement.",
+    "keep": "Garder",
+    "deleteLabel": "Supprimer ce brouillon",
+    "resume": "Reprendre →",
+    "deleteText": "Il sera supprimé définitivement.",
+    "titleNamed": "Brouillon {{title}}"
+  },
+  "untitled": "Sans titre",
+  "forPerson": " · pour {{name}}",
+  "dateVote": "Date au vote",
+  "placeVote": "Lieu au vote",
+  "form": {
+    "create": "🎉 Créer l'événement",
+    "publish": "🎉 Publier l'événement",
+    "save": "💾 Enregistrer",
+    "newTitle": "Nouvel événement",
+    "steps": {
+      "essential": "Essentiel",
+      "date": "Date",
+      "place": "Lieu",
+      "gifts": "Cadeaux",
+      "pool": "Cagnotte",
+      "invite": "Invitation"
+    },
+    "birthdayOf": "Anniversaire de {{name}}",
+    "createError": "Erreur lors de la création.",
+    "type": "Type d'événement",
+    "title": "Titre *",
+    "titlePlaceholder": "ex : Anniversaire surprise de Léa",
+    "description": "Description",
+    "descPlaceholder": "Détails, consignes, dress code… (optionnel)",
+    "dateFixed": "📅 Date fixée",
+    "vote": "🗳️ Faire voter",
+    "time": "Heure :",
+    "dateVoteHint": "Propose au moins 2 dates — les invités voteront.",
+    "addDate": "＋ Ajouter une date",
+    "addThisDate": "Ajouter cette date",
+    "placeFixed": "📍 Lieu fixé",
+    "address": "Adresse ou nom du lieu",
+    "addressPlaceholder": "ex : 12 rue des Lilas, Paris…",
+    "addressHint": "Tape une adresse pour l'autocomplétion, ou un nom libre (\"Chez moi\"). Optionnel — modifiable plus tard.",
+    "placeVoteHint": "Propose au moins 2 lieux — les invités voteront.",
+    "placeToSuggest": "Adresse ou nom du lieu à proposer",
+    "addPlace": "＋ Ajouter ce lieu",
+    "noGifts": "🚫 Pas de cadeaux",
+    "noGiftsHint": "Crée l'événement sans aucune liste de cadeaux.",
+    "freeProposals": "💡 Propositions libres",
+    "imposed": "🎁 Liste imposée",
+    "proposalsHint": "Les invités proposent des idées et votent pour leurs préférées.",
+    "imposedHint": "Toi seul définis la liste de cadeaux.",
+    "gift": "Cadeau",
+    "enablePool": "💳 Activer une cagnotte",
+    "poolHint": "Permets à tes invités de participer financièrement au cadeau.",
+    "methods": "Moyens de participation",
+    "iban": "🏦 Virement IBAN",
+    "paypal": "💰 Lien PayPal",
+    "poolNotice": "ℹ️ Tu finaliseras la cagnotte (montant/objectif, RIB, lien PayPal) depuis la page de l'événement, une fois celui-ci créé.",
+    "maxGuests": "Nombre max d'invités",
+    "unlimited": "Illimité si vide",
+    "external": "Invités externes",
+    "externalHint": "Des personnes sans compte peuvent rejoindre avec le code",
+    "guestInvites": "Les invités peuvent inviter",
+    "guestInvitesHint": "Ils voient le lien de partage et le code d'accès"
+  },
+  "errors": {
+    "rsvp": "Erreur lors de la réponse.",
+    "vote": "Erreur lors du vote.",
+    "propose": "Erreur lors de la proposition.",
+    "import": "Erreur lors de l'import.",
+    "select": "Erreur lors de la sélection.",
+    "code": "Code invalide."
+  },
+  "calendar": {
+    "removeTitle": "Retirer du calendrier ?",
+    "removeText": "« {{title}} » sera supprimé de ton calendrier. L'événement reste dans BirthReminder.",
+    "added": "✓ Dans ton calendrier — appuie pour retirer",
+    "add": "🗓️ Ajouter à mon calendrier"
+  },
+  "vote": {
+    "keepDateTitle": "Retenir cette date ?",
+    "keepDateText": "Le vote sera clos. Tous les participants seront prévenus et devront reconfirmer leur présence.",
+    "keep": "Retenir",
+    "keepDateError": "Impossible de retenir cette date.",
+    "proposedPlace": "Lieu proposé",
+    "keepPlaceTitle": "Retenir ce lieu ?",
+    "keepPlaceText": "Le vote sera clos et les participants seront prévenus.",
+    "keepPlaceError": "Impossible de retenir ce lieu.",
+    "dateTitle": "📅 Vote pour la date",
+    "placeTitle": "📍 Vote pour le lieu",
+    "results": " (résultats)",
+    "count": {
+      "one": "{{count}} vote",
+      "other": "{{count}} votes"
+    },
+    "hintHost": "Appuie sur une date pour la retenir : le vote sera clos et chacun devra reconfirmer sa présence.",
+    "hintGuest": "Plusieurs choix possibles — appuie pour (dé)cocher."
+  },
+  "maps": {
+    "apple": "🍎 Plans",
+    "directions": "Itinéraire",
+    "openGoogle": "🧭 Ouvrir dans Google Maps",
+    "openApple": "🧭 Ouvrir dans Plans"
+  },
+  "share": {
+    "join": "Rejoins l'événement \"{{title}}\" sur BirthReminder : {{url}} (code : {{code}})",
+    "pool": "Participe à la cagnotte pour « {{title}} » sur BirthReminder : {{url}}"
+  },
+  "cancel": {
+    "doneTitle": "Événement annulé",
+    "donePool": "Tes invités ont été prévenus. La cagnotte est fermée : plus aucune contribution ne peut arriver. Les sommes déjà versées ne sont pas remboursées automatiquement.",
+    "doneText": "Tes invités ont été prévenus par notification et par email.",
+    "error": "Impossible d'annuler l'événement.",
+    "banner": "❌ Événement annulé",
+    "noReason": "L'organisateur n'a pas indiqué de raison.",
+    "hint": "La page reste consultable, mais l'événement n'aura pas lieu. Si tu l'avais ajouté à ton agenda, pense à l'y supprimer.",
+    "sheetTitle": "Annuler l'événement",
+    "sheetHint": "Tous les invités seront prévenus par notification et par email. L'événement restera consultable, barré, avec ton motif. Tu pourras le rétablir ou le supprimer ensuite.",
+    "reasonPlaceholder": "Motif (facultatif) — ex : salle indisponible",
+    "cancelling": "Annulation…",
+    "confirm": "❌ Confirmer l'annulation",
+    "sheetPool": " La cagnotte sera fermée : plus aucune contribution ne pourra arriver. Les sommes déjà versées ne sont PAS remboursées automatiquement — c'est à toi de le faire depuis la configuration de la cagnotte, et les frais Stripe des paiements d'origine resteront à ta charge."
+  },
+  "uncancel": {
+    "title": "Rétablir cet événement ?",
+    "text": "Tous les invités seront prévenus qu'il aura finalement lieu. La cagnotte, elle, reste fermée : tu peux la rouvrir depuis l'écran cagnotte.",
+    "action": "Rétablir",
+    "error": "Impossible de rétablir l'événement."
+  },
+  "transfer": {
+    "sentTitle": "Proposition envoyée",
+    "sentPool": "{{name}} doit accepter. Attention : la cagnotte ne suivra pas — les {{amount}} € déjà versés resteront sur ton compte Stripe, et c'est à toi de les rembourser ou de les reverser.",
+    "sentText": "{{name}} doit accepter pour que le transfert prenne effet. D'ici là, tu restes l'organisateur.",
+    "offerError": "Impossible de proposer le transfert.",
+    "acceptTitle": "Reprendre l'organisation ?",
+    "acceptText": "Tu deviendras responsable des invitations, des votes et de l'organisation. La cagnotte de l'organisateur actuel sera fermée : les sommes déjà versées restent sur son compte, tu peux ouvrir la tienne ensuite.",
+    "acceptError": "Impossible d'accepter le transfert.",
+    "bannerTitle": "🤝 On te propose d'organiser",
+    "bannerText": "{{name}} te propose de reprendre l'organisation de « {{title}} ».",
+    "bannerHint": "Tu deviendrais responsable des invitations, des votes et de l'organisation. Une éventuelle cagnotte ne suit pas : les sommes déjà versées restent sur le compte de l'organisateur actuel.",
+    "accept": "✅ Accepter",
+    "withdraw": "{{name}} — retirer",
+    "sheetTitle": "Transférer l'organisation",
+    "sheetHint": "La personne choisie devra accepter. Tant qu'elle n'a pas répondu, tu restes l'organisateur.",
+    "sheetPool": " La cagnotte ne suivra pas : les sommes déjà versées restent sur ton compte Stripe, à toi de les rembourser ou de les reverser.",
+    "nobody": "Personne n'a encore confirmé sa présence : il n'y a personne à qui transférer pour l'instant.",
+    "offer": "Proposer →"
+  },
+  "leave": {
+    "title": "Quitter cet événement ?",
+    "text": "Tu ne verras plus ses informations ni son chat. L'organisateur pourra t'inviter à nouveau.",
+    "error": "Impossible de quitter l'événement.",
+    "btn": "🚪 Quitter l'événement"
+  },
+  "delete": {
+    "title": "Supprimer cet événement ?",
+    "text": "Invitations, votes, cadeaux et messages seront supprimés définitivement."
+  },
+  "notFound": "Événement introuvable.",
+  "hostedBy": "👤 Organisé par {{name}}",
+  "you": " (toi)",
+  "theHost": "L'organisateur",
+  "org": {
+    "title": "⚙️ Organisation",
+    "pool": "Cagnotte",
+    "transfer": "Transférer"
+  },
+  "place": "Lieu",
+  "pool": {
+    "title": "💝 Cagnotte",
+    "contributions": {
+      "one": "{{count}} participation",
+      "other": "{{count}} participations"
+    },
+    "contributors": "Participants ({{count}})",
+    "anonymous": "🕶️ Anonyme",
+    "hiddenAmount": "Montant masqué",
+    "contribute": "💝 Contribuer",
+    "share": "📤 Partager la cagnotte",
+    "direct": "💳 Virement direct"
+  },
+  "invite": {
+    "title": "🔗 Inviter du monde",
+    "friends": "👥 Inviter mes amis",
+    "shareLink": "Partager le lien + code",
+    "copied": "✓ Code copié",
+    "copy": "📋 Copier le code d'accès",
+    "codeLabel": "Code d'accès :"
+  },
+  "participants": {
+    "title": "Participants ({{accepted}} / {{total}})",
+    "none": "Personne d'invité pour l'instant."
+  },
+  "notifs": {
+    "btn": "🔔 Notifications de cet événement",
+    "chatMessage": {
+      "title": "Messages du chat",
+      "hint": "Chaque message envoyé dans la discussion."
+    },
+    "eventUpdates": {
+      "title": "Mises à jour de l'événement",
+      "hint": "Lieu retenu, informations modifiées."
+    },
+    "rsvp": {
+      "title": "Réponses aux invitations",
+      "hint": "Quand quelqu'un accepte ou décline."
+    },
+    "locationVote": {
+      "title": "Votes pour le lieu",
+      "hint": "À chaque vote enregistré."
+    },
+    "giftProposed": {
+      "title": "Cadeaux proposés",
+      "hint": "Nouvelle idée dans la liste."
+    },
+    "giftVote": {
+      "title": "Votes sur les cadeaux",
+      "hint": "Quand une idée reçoit un vote."
+    },
+    "poolContribution": {
+      "title": "Contributions à la cagnotte",
+      "hint": "Chaque participation reçue."
+    },
+    "dateVote": {
+      "title": "Votes pour la date",
+      "hint": "À chaque vote enregistré."
+    },
+    "short": "Notifications",
+    "screenTitle": "Notifications de l'événement",
+    "footer": "L'annulation de l'événement et le changement de date te seront toujours notifiés : ce sont les seuls messages qu'on ne peut pas se permettre de rater."
+  },
+  "backToEvent": "‹ Retour à l'événement",
+  "gifts": {
+    "title": "🎁 Cadeaux",
+    "proposals": "🎁 Propositions",
+    "propose": "＋ Proposer un cadeau",
+    "import": "📋 Importer",
+    "url": "Lien du produit (optionnel)",
+    "price": "Prix en € (optionnel)",
+    "submit": "Proposer",
+    "none": "Aucune proposition pour l'instant.",
+    "by": "par {{name}}",
+    "selected": "⭐ Retenu",
+    "voted": "❤️ Voté",
+    "proposedBy": "Proposé par {{name}}",
+    "vote": "🤍 Voter",
+    "unselect": "⭐ Retirer de la sélection",
+    "select": "⭐ Retenir ce cadeau",
+    "editMine": "✏️ Modifier mon cadeau",
+    "asHost": "(organisateur)"
+  },
+  "join": {
+    "notInvited": "Tu n'es pas invité·e à cet événement — vue publique limitée.",
+    "title": "Rejoindre avec un code",
+    "placeholder": "Code d'accès (6 à 8 caractères)",
+    "checking": "Vérification…",
+    "submit": "Rejoindre"
+  },
+  "openChat": "Ouvrir le chat de l'événement",
+  "inviteScreen": {
+    "error": "Erreur lors de l'envoi des invitations.",
+    "short": "Inviter",
+    "embedded": "👥 Inviter du monde",
+    "title": "Inviter du monde",
+    "friends": "Mes amis",
+    "noFriends": "Pas encore d'amis inscrits — utilise les emails ci-dessous ou le lien de partage depuis la page de l'événement.",
+    "byEmail": "Par email (non-inscrits)",
+    "emails": "emails séparés par des virgules"
+  }
+}

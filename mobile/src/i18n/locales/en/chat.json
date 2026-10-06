@@ -1,0 +1,134 @@
+{
+  "errors": {
+    "sendMessage": "Could not send the message.",
+    "realtime": "Real-time connection failed: {{message}}"
+  },
+  "event": {
+    "title": "Event chat",
+    "view": "View the event",
+    "guest": "Guest",
+    "embedded": "💬 Event chat",
+    "open": "Open ›",
+    "empty": "No messages. Start the conversation!"
+  },
+  "menu": {
+    "report": "🚩  Report",
+    "reply": "↩️  Reply",
+    "edit": "✏️  Edit",
+    "info": "ℹ️  Info",
+    "delete": "🗑️  Delete"
+  },
+  "mute": {
+    "unmuteLabel": "Turn notifications back on",
+    "muteLabel": "Mute notifications",
+    "mutedTitle": "Notifications muted",
+    "mutedText": "Muted {{until}}. The conversation stays visible and its unread messages still show up.",
+    "text": "Your phone will stop ringing for this conversation. It stays visible in your list, with its unread messages.",
+    "unmute": "🔔 Turn notifications back on",
+    "h1": "1 hour",
+    "h8": "8 hours",
+    "w1": "1 week",
+    "forever": "Until turned back on",
+    "untilForever": "until turned back on",
+    "untilTime": "until {{time}}",
+    "untilDate": "until {{date}}"
+  },
+  "e2eMissing": "⚠️ Private key missing on this device. Log out and back in to turn on encryption.",
+  "typingName": "{{name}} is typing…",
+  "input": "Your message…",
+  "encryptedEvent": "🔒 Encrypted message (cannot be decrypted)",
+  "delete": {
+    "title": "Delete this message?",
+    "text": "It will be deleted for everyone."
+  },
+  "you": "You",
+  "options": {
+    "label": "Conversation options",
+    "title": "Options",
+    "reportUser": "Report user",
+    "blockUser": "Block user",
+    "thisUser": "this user"
+  },
+  "dm": {
+    "empty": "No messages. Say hello to {{name}}!",
+    "yourFriend": "your friend"
+  },
+  "typing": "Typing…",
+  "banner": {
+    "edit": "✏️ Edit message",
+    "replyTo": "↩️ Reply to {{name}}",
+    "yourself": "yourself"
+  },
+  "edited": " · edited",
+  "receipt": {
+    "read": "Read",
+    "delivered": "Delivered",
+    "sent": "Sent"
+  },
+  "encryptedDm": "🔒 Encrypted, cannot be decrypted",
+  "enc": {
+    "noPrivateKey": "🔒 Encrypted, private key missing (log in again)",
+    "noSenderKey": "🔒 Encrypted, sender has no public key",
+    "noCopy": "🔒 Encrypted, no copy for this account"
+  },
+  "info": {
+    "title": "Message info"
+  },
+  "reply": {
+    "button": "Reply",
+    "send": "Send",
+    "placeholder": "Message…",
+    "failedTitle": "Reply not sent",
+    "failedTo": "Your reply to {{name}} could not be sent: {{message}}",
+    "failed": "Your reply could not be sent: {{message}}"
+  },
+  "list": {
+    "removeTitle": "Remove from my list",
+    "removeText": "Messages exchanged with {{name}} will disappear on your side. {{name}} keeps their copy, and the conversation will come back if a new message arrives.",
+    "removeError": "Could not remove.",
+    "tip": "Your messages are end-to-end encrypted: nobody but you and your friend can read them. Long press a conversation to remove it from your list. Add friends from Profile → My friends.",
+    "noSupport": "No conversation with support.",
+    "newSupport": "✉️ New support request",
+    "supportPrefix": "Support: ",
+    "youPrefix": "You: ",
+    "closed": "Closed",
+    "answered": "Answered",
+    "noEventChats": "No event chats yet.",
+    "empty": "No conversations. Open a friend's chat from their card or the My friends screen!",
+    "noMessage": "No messages"
+  },
+  "report": {
+    "reason": {
+      "spam": "Spam",
+      "harassment": "Harassment",
+      "inappropriate": "Inappropriate content",
+      "scam": "Scam / fraud",
+      "other": "Other"
+    },
+    "why": "Why are you reporting this content?",
+    "thanks": "Thank you",
+    "sent": "Your report has been sent. Our team handles it within 24 hours.",
+    "error": "Could not send the report."
+  },
+  "block": {
+    "title": "Block {{name}}?",
+    "text": "You will no longer see their messages and content. You can unblock at any time from Profile → Blocked users.",
+    "action": "Block",
+    "doneTitle": "User blocked",
+    "done": "{{name}} has been blocked.",
+    "error": "Could not block."
+  },
+  "reaction": {
+    "like": "Like",
+    "love": "Love",
+    "laugh": "Haha",
+    "wow": "Wow",
+    "sad": "Sad",
+    "party": "Let's celebrate"
+  },
+  "opening": "Opening…",
+  "quoteUnavailable": "Original message unavailable",
+  "tabs": {
+    "friends": "Friends"
+  }
+}

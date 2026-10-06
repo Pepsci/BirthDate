@@ -1,0 +1,32 @@
+{
+  "remove": {
+    "title": "Remove this friend?",
+    "text": "{{name}} will be removed from your friends."
+  },
+  "request": {
+    "cancelTitle": "Cancel this request?",
+    "cancelTextTo": "Your friend request to {{name}} will be withdrawn. You can send another one later.",
+    "cancelText": "Your friend request will be withdrawn. You can send another one later.",
+    "cancel": "Cancel request",
+    "cancelled": "Request cancelled."
+  },
+  "invite": {
+    "cancelTitle": "Cancel this invitation?",
+    "cancelText": "The invitation sent to {{email}} will be withdrawn. The link already received by email will stop working.",
+    "cancel": "Cancel invitation",
+    "cancelled": "Invitation cancelled."
+  },
+  "addPlaceholder": "Email of a friend to add…",
+  "tabs": {
+    "friends": "Friends ({{count}})",
+    "received": "Received",
+    "sent": "Sent"
+  },
+  "empty": "No friends yet. Invite them by email above!",
+  "longPressHint": "Long press a friend to remove them.",
+  "noPending": "No pending requests.",
+  "added": "Friend added 🎉",
+  "noSent": "No requests sent.",
+  "waiting": "Waiting for a reply…",
+  "externalInvite": "External invitation, not signed up yet"
+}

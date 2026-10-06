@@ -1,3 +1,4 @@
+import { t, monthName } from "@/i18n";
 import { useEffect, useState } from "react";
 import { View, Text, Pressable, StyleSheet } from "react-native";
 import BottomSheet from "./BottomSheet";
@@ -11,10 +12,7 @@ import { useThemedStyles, ThemeColors } from "../lib/theme-context";
  * ajouter (l'app est en TestFlight, on évite un nouveau build natif), et le
  * format MM-JJ n'a plus à être connu de l'utilisateur.
  */
-const MONTHS = [
-  "janv.", "févr.", "mars", "avril", "mai", "juin",
-  "juil.", "août", "sept.", "oct.", "nov.", "déc.",
-];
+const MONTH_INDEXES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
 
 // Février à 29 : une fête est récurrente, elle n'est pas liée à une année.
 const DAYS_IN_MONTH = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
@@ -54,25 +52,25 @@ export default function NamedayPicker({
     <>
       <Pressable style={styles.trigger} onPress={() => setOpen(true)}>
         <Text style={value ? styles.triggerValue : styles.triggerEmpty}>
-          {value ? `🎉 ${formatNameday(value)}` : "Aucune fête définie"}
+          {value ? `🎉 ${formatNameday(value)}` : t("date:nameday.none")}
         </Text>
-        <Text style={styles.triggerAction}>{value ? "Modifier" : "Choisir"}</Text>
+        <Text style={styles.triggerAction}>{value ? t("common:actions.edit") : t("common:actions.choose")}</Text>
       </Pressable>
 
       <BottomSheet visible={open} onClose={() => setOpen(false)}>
         <Text style={styles.sheetTitle}>
-          {month ? `Jour — ${MONTHS[month - 1]}` : "Mois de la fête"}
+          {month ? t("date:nameday.dayIn", { month: monthName(month - 1, "short") }) : t("date:nameday.pickMonth")}
         </Text>
 
         {!month ? (
           <View style={styles.grid}>
-            {MONTHS.map((label, i) => (
+            {MONTH_INDEXES.map((i) => (
               <Pressable
-                key={label}
+                key={i}
                 style={styles.monthCell}
                 onPress={() => setMonth(i + 1)}
               >
-                <Text style={styles.cellText}>{label}</Text>
+                <Text style={styles.cellText}>{monthName(i, "short")}</Text>
               </Pressable>
             ))}
           </View>
@@ -101,14 +99,14 @@ export default function NamedayPicker({
               )}
             </View>
             <Pressable style={styles.backBtn} onPress={() => setMonth(null)}>
-              <Text style={styles.backBtnText}>← Changer de mois</Text>
+              <Text style={styles.backBtnText}>{t("date:nameday.changeMonth")}</Text>
             </Pressable>
           </>
         )}
 
         {value && (
           <Pressable style={styles.clearBtn} onPress={clear}>
-            <Text style={styles.clearBtnText}>Retirer la fête</Text>
+            <Text style={styles.clearBtnText}>{t("date:nameday.remove")}</Text>
           </Pressable>
         )}
       </BottomSheet>

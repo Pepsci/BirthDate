@@ -1,3 +1,4 @@
+import { t } from "@/i18n";
 import { useSyncExternalStore } from "react";
 import { api, ApiError, NetworkError } from "./api";
 import { readCache, writeCache } from "./offline-cache";
@@ -86,7 +87,7 @@ export function pendingCount(): number {
   return state.ops.length;
 }
 
-function labelOf(p: Partial<DatePayload>, fallback = "une carte"): string {
+function labelOf(p: Partial<DatePayload>, fallback = t("date:aCard")): string {
   const s = `${p.name ?? ""} ${p.surname ?? ""}`.trim();
   return s || fallback;
 }
@@ -208,15 +209,15 @@ async function send(op: Op): Promise<void> {
 function describeFailure(op: Op, e: unknown): string {
   const what =
     op.kind === "create"
-      ? `l'ajout de ${labelOf(op.payload)}`
+      ? t("offline:fail.add", { label: labelOf(op.payload) })
       : op.kind === "update"
-        ? `la modification de ${labelOf(op.payload)}`
-        : `la suppression de ${op.label}`;
+        ? t("offline:fail.update", { label: labelOf(op.payload) })
+        : t("offline:fail.delete", { label: op.label });
   if (e instanceof ApiError && e.status === 404) {
-    return `Impossible d'appliquer ${what} : la carte n'existe plus.`;
+    return t("offline:fail.gone", { what });
   }
-  const reason = e instanceof Error ? e.message : "erreur inconnue";
-  return `Impossible d'appliquer ${what} (${reason}).`;
+  const reason = e instanceof Error ? e.message : t("offline:fail.unknown");
+  return t("offline:fail.reason", { what, reason });
 }
 
 /**

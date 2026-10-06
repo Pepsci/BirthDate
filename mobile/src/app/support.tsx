@@ -1,3 +1,4 @@
+import { getLocaleTag, t } from "@/i18n";
 import { useEffect, useState } from "react";
 import {
   View,
@@ -85,7 +86,7 @@ export default function SupportScreen() {
     }
     if (context && !subject.trim()) {
       setSubject(
-        `Question non résolue : ${context}`.slice(0, SUBJECT_MAX),
+        t("support:unresolved", { context }).slice(0, SUBJECT_MAX),
       );
     }
     // On ne réagit qu'au premier montage avec un contexte : ne jamais
@@ -110,7 +111,7 @@ export default function SupportScreen() {
       );
       setSent(true);
     } catch (e: any) {
-      setError(e?.message ?? "Erreur lors de l'envoi.");
+      setError(e?.message ?? t("common:errors.send"));
     } finally {
       setSending(false);
     }
@@ -119,15 +120,14 @@ export default function SupportScreen() {
   if (sent) {
     return (
       <View style={styles.center}>
-        <Stack.Screen options={{ title: "Support" }} />
+        <Stack.Screen options={{ title: t("support:title") }} />
         <Text style={styles.doneEmoji}>✅</Text>
-        <Text style={styles.doneTitle}>Message envoyé</Text>
+        <Text style={styles.doneTitle}>{t("support:sent.title")}</Text>
         <Text style={styles.doneDesc}>
-          Merci ! Tu retrouveras la réponse de l'équipe dans Messages → Support,
-          et une notification te préviendra.
+          {t("support:sent.text")}
         </Text>
         <Pressable style={styles.primaryBtn} onPress={() => router.back()}>
-          <Text style={styles.primaryBtnText}>Retour</Text>
+          <Text style={styles.primaryBtnText}>{t("common:actions.back")}</Text>
         </Pressable>
       </View>
     );
@@ -138,23 +138,21 @@ export default function SupportScreen() {
   if (picking) {
     return (
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-        <Stack.Screen options={{ title: "Problème de cagnotte" }} />
-        <Text style={styles.label}>De quelle cagnotte s'agit-il ?</Text>
+        <Stack.Screen options={{ title: t("support:pool.title") }} />
+        <Text style={styles.label}>{t("support:pool.which")}</Text>
 
         {contributions === null ? (
-          <Text style={styles.intro}>Chargement…</Text>
+          <Text style={styles.intro}>{t("common:status.loading")}</Text>
         ) : contributions.filter((c) => c.status !== "refunded").length === 0 ? (
           <>
             <Text style={styles.intro}>
-              Aucune contribution n'est enregistrée sur ton compte. Si tu as
-              participé sans être connecté, décris-nous la situation en
-              joignant le reçu reçu par email.
+              {t("support:pool.none")}
             </Text>
             <Pressable
               style={styles.primaryBtn}
               onPress={() => setPickedEvent("")}
             >
-              <Text style={styles.primaryBtnText}>Continuer sans sélection</Text>
+              <Text style={styles.primaryBtnText}>{t("support:pool.skip")}</Text>
             </Pressable>
           </>
         ) : (
@@ -168,37 +166,35 @@ export default function SupportScreen() {
                   setPickedEvent(c.event?.shortId ?? "");
                   setSubject(
                     (c.event
-                      ? `Problème de cagnotte — ${c.event.title}`
-                      : "Problème avec une cagnotte"
+                      ? t("pool:mine.report.subjectFor", { title: c.event.title })
+                      : t("pool:mine.report.subject")
                     ).slice(0, SUBJECT_MAX),
                   );
                   setMessage(
                     [
-                      "— Ma contribution —",
-                      `Montant : ${(c.amount / 100).toFixed(2)} €`,
-                      `Date : ${new Date(c.createdAt).toLocaleDateString("fr-FR")}`,
-                      c.event ? `Événement : ${c.event.title}` : "Événement : ",
-                      c.event?.organizer
-                        ? `Encaissé par : ${c.event.organizer}`
-                        : "Encaissé par : ",
-                      `Référence de paiement : ${c.reference}`,
+                      t("pool:mine.report.mine"),
+                      t("pool:mine.sum.amount", { amount: `${(c.amount / 100).toFixed(2)} €` }),
+                      t("pool:mine.sum.date", { date: new Date(c.createdAt).toLocaleDateString(getLocaleTag()) }),
+                      t("pool:mine.sum.event", { title: c.event?.title ?? "" }),
+                      t("pool:mine.sum.collectedBy", { name: c.event?.organizer ?? "" }),
+                      t("pool:mine.sum.reference", { ref: c.reference }),
                       "",
-                      "— Ce qui se passe —",
+                      t("pool:mine.report.what"),
                       "",
                       "",
-                      "— Ai-je déjà contacté l'organisateur ? —",
-                      "(oui, le … / pas encore)",
+                      t("pool:mine.report.contacted"),
+                      t("pool:mine.report.contactedHint"),
                       "",
                     ].join("\n"),
                   );
                 }}
               >
                 <Text style={styles.poolOptionTitle}>
-                  {c.event?.title || "Événement supprimé"}
+                  {c.event?.title || t("pool:mine.eventDeleted")}
                 </Text>
                 <Text style={styles.poolOptionMeta}>
                   {(c.amount / 100).toFixed(2)} € ·{" "}
-                  {new Date(c.createdAt).toLocaleDateString("fr-FR")}
+                  {new Date(c.createdAt).toLocaleDateString(getLocaleTag())}
                 </Text>
               </Pressable>
             ))
@@ -212,17 +208,16 @@ export default function SupportScreen() {
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <Stack.Screen options={{ title: "Écris-nous" }} />
+      <Stack.Screen options={{ title: t("support:form.title") }} />
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.intro}>
-          Une question, un bug, une suggestion ? Écris-nous, on te répond par
-          email.
+          {t("support:form.intro")}
         </Text>
 
         {error && <Text style={styles.error}>{error}</Text>}
 
         <View style={styles.labelRow}>
-          <Text style={styles.label}>Objet *</Text>
+          <Text style={styles.label}>{t("support:form.subject")}</Text>
           <Text style={styles.counter}>
             {subject.length}/{SUBJECT_MAX}
           </Text>
@@ -230,14 +225,14 @@ export default function SupportScreen() {
         <TextInput
           placeholderTextColor={colors.placeholder}
           style={styles.input}
-          placeholder="Objet de ta demande"
+          placeholder={t("support:form.subjectPlaceholder")}
           value={subject}
           onChangeText={setSubject}
           maxLength={SUBJECT_MAX}
         />
 
         <View style={styles.labelRow}>
-          <Text style={styles.label}>Message *</Text>
+          <Text style={styles.label}>{t("support:form.message")}</Text>
           <Text style={styles.counter}>
             {message.length}/{MESSAGE_MAX}
           </Text>
@@ -245,7 +240,7 @@ export default function SupportScreen() {
         <TextInput
           placeholderTextColor={colors.placeholder}
           style={[styles.input, styles.textarea]}
-          placeholder="Décris ta demande…"
+          placeholder={t("support:form.messagePlaceholder")}
           value={message}
           onChangeText={setMessage}
           multiline
@@ -259,7 +254,7 @@ export default function SupportScreen() {
           onPress={submit}
         >
           <Text style={styles.primaryBtnText}>
-            {sending ? "Envoi…" : "Envoyer"}
+            {sending ? t("common:status.sending") : t("chat:reply.send")}
           </Text>
         </Pressable>
       </ScrollView>

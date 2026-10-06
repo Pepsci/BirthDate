@@ -1,3 +1,4 @@
+import { t } from "@/i18n";
 import { useCallback, useMemo, useState } from "react";
 import {
   View,
@@ -32,38 +33,38 @@ const COLLAPSE_SCOPE = "profile_notifications";
 const PREFS: { key: keyof UserProfile & string; label: string; hint: string }[] = [
   {
     key: "receiveBirthdayEmails",
-    label: "Rappels d'anniversaires",
-    hint: "Email avant les anniversaires de tes proches",
+    get label() { return t("profile:notif.email.birthdays.label"); },
+    get hint() { return t("profile:notif.email.birthdays.hint"); },
   },
   {
     key: "receiveNamedayEmails",
-    label: "Rappels de fêtes",
-    hint: "Email avant les fêtes (nameday) de tes proches",
+    get label() { return t("profile:notif.email.namedays.label"); },
+    get hint() { return t("profile:notif.email.namedays.hint"); },
   },
   {
     key: "receiveOwnBirthdayEmail",
-    label: "Mon anniversaire",
-    hint: "Email le jour de ton anniversaire",
+    get label() { return t("profile:notif.email.mine.label"); },
+    get hint() { return t("profile:notif.email.mine.hint"); },
   },
   {
     key: "receiveFriendRequestEmails",
-    label: "Demandes d'amis",
-    hint: "Email quand quelqu'un t'ajoute",
+    get label() { return t("profile:notif.email.friends.label"); },
+    get hint() { return t("profile:notif.email.friends.hint"); },
   },
   {
     key: "receiveEventEmails",
-    label: "Événements",
-    hint: "Invitations, rappels J-7/J-1, votes",
+    get label() { return t("profile:notif.email.events.label"); },
+    get hint() { return t("profile:notif.email.events.hint"); },
   },
   {
     key: "receiveChatEmails",
-    label: "Messages non lus",
-    hint: "Email récapitulatif des messages manqués",
+    get label() { return t("profile:notif.email.chat.label"); },
+    get hint() { return t("profile:notif.email.chat.hint"); },
   },
   {
     key: "monthlyRecap",
-    label: "Récap mensuel",
-    hint: "Les anniversaires du mois à venir",
+    get label() { return t("profile:notif.email.monthly.label"); },
+    get hint() { return t("profile:notif.email.monthly.hint"); },
   },
 ];
 
@@ -154,7 +155,7 @@ export default function NotificationsScreen() {
     useCallback(() => {
       fetchMe()
         .then(setMe)
-        .catch((e) => setError(e?.message ?? "Erreur de chargement."));
+        .catch((e) => setError(e?.message ?? t("common:errors.loading")));
     }, []),
   );
 
@@ -193,7 +194,7 @@ export default function NotificationsScreen() {
             d._id === date._id ? { ...d, receiveNotifications: enabled } : d,
           ) ?? prev,
       );
-      setError(e?.message ?? "Erreur d'enregistrement.");
+      setError(e?.message ?? t("common:errors.save"));
     } finally {
       setUpdatingDateIds((prev) => {
         const next = new Set(prev);
@@ -219,7 +220,7 @@ export default function NotificationsScreen() {
       setMe((cur) =>
         cur ? { ...cur, chatEmailDisabledFriends: previous } : cur,
       );
-      setError(e?.message ?? "Erreur d'enregistrement.");
+      setError(e?.message ?? t("common:errors.save"));
     } finally {
       setUpdatingFriendIds((prev) => {
         const next = new Set(prev);
@@ -249,7 +250,7 @@ export default function NotificationsScreen() {
       await updateMe({ pushEvents: next });
     } catch (e: any) {
       setMe(me);
-      setError(e?.message ?? "Erreur d'enregistrement.");
+      setError(e?.message ?? t("common:errors.save"));
     } finally {
       setBusy(null);
     }
@@ -265,7 +266,7 @@ export default function NotificationsScreen() {
       await updateMe({ [key]: value });
     } catch (e: any) {
       setMe({ ...me, [key]: !value }); // rollback
-      setError(e?.message ?? "Erreur d'enregistrement.");
+      setError(e?.message ?? t("common:errors.save"));
     } finally {
       setBusy(null);
     }
@@ -274,7 +275,7 @@ export default function NotificationsScreen() {
   if (!me) {
     return (
       <View style={styles.center}>
-        <Stack.Screen options={{ title: "Notifications" }} />
+        <Stack.Screen options={{ title: t("events:notifs.short") }} />
         {error ? (
           <Text style={styles.error}>{error}</Text>
         ) : (
@@ -293,14 +294,14 @@ export default function NotificationsScreen() {
         { paddingBottom: 40 + insets.bottom },
       ]}
     >
-      <Stack.Screen options={{ title: "Notifications" }} />
+      <Stack.Screen options={{ title: t("events:notifs.short") }} />
       {error && <Text style={styles.error}>{error}</Text>}
 
       <Pressable
         style={styles.sectionHeaderRow}
         onPress={() => setIsEmailSectionExpanded(!isEmailSectionExpanded)}
       >
-        <Text style={styles.sectionHeader}>✉️ Notifications email</Text>
+        <Text style={styles.sectionHeader}>{t("profile:notif.emailTitle")}</Text>
         <Text style={styles.sectionChevron}>
           {isEmailSectionExpanded ? "▾" : "▸"}
         </Text>
@@ -313,8 +314,7 @@ export default function NotificationsScreen() {
               sinon « Rappels d'anniversaires : OFF » se lit comme un « ne plus
               rien recevoir ». */}
           <Text style={styles.sectionNote}>
-            Ces réglages ne concernent que les emails. En couper un n'affecte ni
-            les notifications push, ni le centre de notifications de l'app.
+            {t("profile:notif.emailNote")}
           </Text>
           {PREFS.map((pref) => (
             <View key={pref.key} style={styles.row}>
@@ -337,7 +337,7 @@ export default function NotificationsScreen() {
         style={styles.sectionHeaderRow}
         onPress={() => setIsChatFriendsExpanded(!isChatFriendsExpanded)}
       >
-        <Text style={styles.sectionHeader}>💬 Emails de messages, par ami</Text>
+        <Text style={styles.sectionHeader}>{t("profile:notif.chatFriendsTitle")}</Text>
         <Text style={styles.sectionChevron}>
           {isChatFriendsExpanded ? "▾" : "▸"}
         </Text>
@@ -346,13 +346,13 @@ export default function NotificationsScreen() {
         <View style={styles.card}>
           <Text style={styles.sectionNote}>
             {me.receiveChatEmails
-              ? "Choisis de qui les messages non lus déclenchent l'email récap. Couper quelqu'un ne le bloque pas : ses messages arrivent toujours dans le chat et en push."
-              : "L'email « Messages non lus » est coupé pour tout le monde. Réactive-le plus haut pour que ces réglages servent."}
+              ? t("profile:notif.chatFriendsOn")
+              : t("profile:notif.chatFriendsOff")}
           </Text>
           {!sortedFriends ? (
             <ActivityIndicator color={colors.primary} style={styles.listLoader} />
           ) : sortedFriends.length === 0 ? (
-            <Text style={[styles.hint, styles.emptyHint]}>Aucun ami pour l'instant.</Text>
+            <Text style={[styles.hint, styles.emptyHint]}>{t("profile:notif.noFriends")}</Text>
           ) : (
             sortedFriends.map(({ friendUser }) => {
               const id = String(friendUser._id);
@@ -365,7 +365,7 @@ export default function NotificationsScreen() {
                       {friendUser.name} {friendUser.surname ?? ""}
                     </Text>
                     <Text style={styles.hint}>
-                      {enabled ? "Email activé" : "Email coupé"}
+                      {enabled ? t("profile:notif.emailOn") : t("profile:notif.emailOff")}
                     </Text>
                   </View>
                   {updating ? (
@@ -389,7 +389,7 @@ export default function NotificationsScreen() {
         style={styles.sectionHeaderRow}
         onPress={() => setIsPushSectionExpanded(!isPushSectionExpanded)}
       >
-        <Text style={styles.sectionHeader}>📱 Notifications push (mobile)</Text>
+        <Text style={styles.sectionHeader}>{t("profile:notif.pushTitle")}</Text>
         <Text style={styles.sectionChevron}>
           {isPushSectionExpanded ? "▾" : "▸"}
         </Text>
@@ -398,9 +398,9 @@ export default function NotificationsScreen() {
         <View style={styles.card}>
           <View style={styles.row}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.label}>Push activé</Text>
+              <Text style={styles.label}>{t("profile:notif.pushOn")}</Text>
               <Text style={styles.hint}>
-                Notifications natives sur ce téléphone
+                {t("profile:notif.pushHint")}
               </Text>
             </View>
             <Switch
@@ -413,15 +413,15 @@ export default function NotificationsScreen() {
           {me.pushEnabled &&
             (
               [
-                { k: "birthdays", l: "Anniversaires", h: "Rappels J-x selon tes réglages par personne" },
+                { k: "birthdays", l: t("profile:notif.push.birthdays.label"), h: t("profile:notif.push.birthdays.hint") },
                 // Séparé des anniversaires : les deux partageaient le même
                 // interrupteur, on ne pouvait pas garder l'un sans l'autre.
-                { k: "namedays", l: "Fêtes", h: "Rappels de fêtes (prénoms)" },
-                { k: "events", l: "Événements", h: "Invitations, RSVP, votes, rappels" },
-                { k: "chat", l: "Messages", h: "Chats privés et d'événements" },
-                { k: "friends", l: "Amis", h: "Demandes et acceptations" },
-                { k: "gifts", l: "Cadeaux", h: "Réservations sur les wishlists et propositions" },
-                { k: "sharedLists", l: "Listes communes", h: "Idées ajoutées, modifiées ou retirées par un membre" },
+                { k: "namedays", l: t("profile:notif.push.namedays.label"), h: t("profile:notif.push.namedays.hint") },
+                { k: "events", l: t("profile:notif.push.events.label"), h: t("profile:notif.push.events.hint") },
+                { k: "chat", l: t("profile:notif.push.chat.label"), h: t("profile:notif.push.chat.hint") },
+                { k: "friends", l: t("profile:notif.push.friends.label"), h: t("profile:notif.push.friends.hint") },
+                { k: "gifts", l: t("profile:notif.push.gifts.label"), h: t("profile:notif.push.gifts.hint") },
+                { k: "sharedLists", l: t("profile:notif.push.sharedLists.label"), h: t("profile:notif.push.sharedLists.hint") },
               ] as const
             ).map(({ k, l, h }) => (
               <View key={k} style={styles.row}>
@@ -444,7 +444,7 @@ export default function NotificationsScreen() {
         style={styles.sectionHeaderRow}
         onPress={() => setIsPersonSectionExpanded(!isPersonSectionExpanded)}
       >
-        <Text style={styles.sectionHeader}>🎂 Rappels par personne</Text>
+        <Text style={styles.sectionHeader}>{t("profile:notif.perPerson")}</Text>
         <Text style={styles.sectionChevron}>
           {isPersonSectionExpanded ? "▾" : "▸"}
         </Text>
@@ -457,7 +457,7 @@ export default function NotificationsScreen() {
           >
             <Text style={styles.toggleListIcon}>{isListExpanded ? "▾" : "▸"}</Text>
             <Text style={styles.toggleListText}>
-              {isListExpanded ? "Masquer la liste" : "Afficher la liste"}
+              {isListExpanded ? t("profile:notif.hideList") : t("profile:notif.showList")}
             </Text>
             <Text style={styles.toggleListCount}>({dates?.length ?? 0})</Text>
           </Pressable>
@@ -467,7 +467,7 @@ export default function NotificationsScreen() {
               {!sortedDates ? (
                 <ActivityIndicator color={colors.primary} style={{ marginVertical: 10 }} />
               ) : sortedDates.length === 0 ? (
-                <Text style={styles.hint}>Aucun anniversaire enregistré.</Text>
+                <Text style={styles.hint}>{t("profile:notif.noBirthdays")}</Text>
               ) : (
                 sortedDates.map((date) => {
                   const enabled = date.receiveNotifications !== false;
@@ -479,7 +479,7 @@ export default function NotificationsScreen() {
                           {date.name} {date.surname ?? ""}
                         </Text>
                         <Text style={styles.hint}>
-                          {enabled ? "Rappels activés" : "Rappels désactivés"}
+                          {enabled ? t("profile:notif.remindersOn") : t("profile:notif.remindersOff")}
                         </Text>
                       </View>
                       {updating ? (

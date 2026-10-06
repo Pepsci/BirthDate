@@ -19,7 +19,7 @@ router.put("/:shortId/rsvp", checkGuestOrAuth, rejectIfCancelled, async (req, re
     await invitation.save();
 
     const guestName = invitation.guestName || (await User.findById(invitation.user))?.name || "Un invité";
-    const statusLabel = { accepted: "sera présent(e)", declined: "ne sera pas présent(e)", maybe: "est peut-être présent(e)" }[status] || status;
+    const statusKey = { accepted: "accepted", declined: "declined", maybe: "maybe" }[status];
 
     await notifyOrganizer(req.app, {
       event: req.event,
@@ -27,8 +27,9 @@ router.put("/:shortId/rsvp", checkGuestOrAuth, rejectIfCancelled, async (req, re
       data: { eventTitle: req.event.title, eventShortId: req.event.shortId, guestName, status },
       link: `/event/${req.event.shortId}`,
       pushPayload: {
-        title: `🎉 Nouvelle réponse — ${req.event.title}`,
-        body: `${guestName} ${statusLabel}`,
+        title: (L) => L("push.event.rsvpTitle", { title: req.event.title }),
+        body: (L) =>
+          `${guestName} ${statusKey ? L(`push.event.rsvp.${statusKey}`) : status}`,
         url: `/event/${req.event.shortId}`,
         tag: `event-rsvp-${req.event.shortId}`,
         type: "default",
@@ -62,8 +63,8 @@ router.post("/:shortId/vote/date", checkGuestOrAuth, rejectIfCancelled, async (r
       data: { eventTitle: req.event.title, eventShortId: req.event.shortId, guestName },
       link: `/event/${req.event.shortId}`,
       pushPayload: {
-        title: `📅 Vote date — ${req.event.title}`,
-        body: `${guestName} a voté pour une date`,
+        title: (L) => L("push.event.dateVoteTitle", { title: req.event.title }),
+        body: (L) => L("push.event.dateVoteBody", { name: guestName }),
         url: `/event/${req.event.shortId}`,
         tag: `event-date-vote-${req.event.shortId}`,
         type: "default",
@@ -97,8 +98,8 @@ router.post("/:shortId/vote/location", checkGuestOrAuth, rejectIfCancelled, asyn
       data: { eventTitle: req.event.title, eventShortId: req.event.shortId, guestName },
       link: `/event/${req.event.shortId}`,
       pushPayload: {
-        title: `📍 Vote lieu — ${req.event.title}`,
-        body: `${guestName} a voté pour un lieu`,
+        title: (L) => L("push.event.placeVoteTitle", { title: req.event.title }),
+        body: (L) => L("push.event.placeVoteBody", { name: guestName }),
         url: `/event/${req.event.shortId}`,
         tag: `event-location-vote-${req.event.shortId}`,
         type: "default",

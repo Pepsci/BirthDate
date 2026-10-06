@@ -1,3 +1,4 @@
+import { t } from "@/i18n";
 import { useState } from "react";
 import {
   Text,
@@ -34,12 +35,12 @@ export default function ResetPasswordScreen() {
     setError(null);
     if (!PASSWORD_RE.test(password)) {
       setError(
-        "8 caractères minimum, avec au moins une majuscule, une minuscule et un chiffre.",
+        t("auth:passwordRule"),
       );
       return;
     }
     if (password !== confirm) {
-      setError("Les mots de passe ne correspondent pas.");
+      setError(t("auth:passwordMismatch2"));
       return;
     }
     setLoading(true);
@@ -52,7 +53,7 @@ export default function ResetPasswordScreen() {
     } catch (e: any) {
       setError(
         e?.message ??
-          "Une erreur s'est produite. Le lien a peut-être expiré, redemandez-en un.",
+          t("auth:reset.error"),
       );
       setLoading(false);
     }
@@ -63,38 +64,38 @@ export default function ResetPasswordScreen() {
       style={[styles.flex, { paddingBottom: keyboardPadding }]}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <Stack.Screen options={{ title: "Nouveau mot de passe" }} />
+      <Stack.Screen options={{ title: t("auth:reset.screenTitle") }} />
       <ScrollView
         contentContainerStyle={styles.container}
         keyboardShouldPersistTaps="handled"
       >
         {done ? (
           <>
-            <Text style={styles.title}>✅ Mot de passe modifié</Text>
+            <Text style={styles.title}>{t("auth:reset.doneTitle")}</Text>
             <Text style={styles.sub}>
-              Tu peux maintenant te connecter avec ton nouveau mot de passe.
+              {t("auth:reset.doneText")}
             </Text>
             <Pressable
               style={styles.button}
               onPress={() => router.replace("/login")}
             >
-              <Text style={styles.buttonText}>Se connecter</Text>
+              <Text style={styles.buttonText}>{t("auth:login.submit")}</Text>
             </Pressable>
           </>
         ) : (
           <>
-            <Text style={styles.title}>Nouveau mot de passe 🔑</Text>
-            <Text style={styles.sub}>Choisis un nouveau mot de passe.</Text>
+            <Text style={styles.title}>{t("auth:reset.title")}</Text>
+            <Text style={styles.sub}>{t("auth:reset.subtitle")}</Text>
 
             <PasswordField
-              placeholder="Nouveau mot de passe"
+              placeholder={t("auth:reset.screenTitle")}
               autoComplete="new-password"
               value={password}
               onChangeText={setPassword}
             />
 
             <PasswordField
-              placeholder="Confirme le mot de passe"
+              placeholder={t("auth:reset.confirm")}
               autoComplete="new-password"
               value={confirm}
               onChangeText={setConfirm}
@@ -113,7 +114,7 @@ export default function ResetPasswordScreen() {
               {loading ? (
                 <ActivityIndicator color={colors.white} />
               ) : (
-                <Text style={styles.buttonText}>Valider</Text>
+                <Text style={styles.buttonText}>{t("common:actions.validate")}</Text>
               )}
             </Pressable>
 
@@ -123,13 +124,10 @@ export default function ResetPasswordScreen() {
                 phrase de 12 mots. L'ancien texte alarmait à tort les
                 utilisateurs les mieux protégés. */}
             <Text style={styles.warn}>
-              ⚠️ Réinitialiser ton mot de passe régénère ta clé de chiffrement :
-              les anciens messages chiffrés deviendront illisibles.
+              {t("auth:reset.warn")}
             </Text>
             <Text style={styles.warnSoft}>
-              Sauf si tu as activé le chiffrement maximum : ressaisis ta phrase
-              de récupération de 12 mots depuis Profil → Chiffrement, et tes
-              anciens messages redeviendront lisibles.
+              {t("auth:reset.warnSoft")}
             </Text>
           </>
         )}

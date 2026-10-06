@@ -1,3 +1,6 @@
+import { getLanguage } from "@/i18n";
+import { CHANGELOG_EN } from "./changelog.en";
+
 /**
  * Notes de mise à jour affichées dans Profil → Notes de mise à jour.
  *
@@ -350,3 +353,16 @@ export const CHANGELOG: ChangelogEntry[] = [
     ],
   },
 ];
+
+/**
+ * Notes de mise à jour dans la langue courante. Version, date et build
+ * viennent toujours de `CHANGELOG` ; seuls les textes changent. Une version
+ * sans traduction reste affichée en français.
+ */
+export function getChangelog(): ChangelogEntry[] {
+  if (getLanguage() !== "en") return CHANGELOG;
+  return CHANGELOG.map((entry) => {
+    const en = CHANGELOG_EN[entry.version];
+    return en ? { ...entry, title: en.title, note: en.note, items: en.items } : entry;
+  });
+}

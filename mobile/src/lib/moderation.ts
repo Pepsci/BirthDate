@@ -4,6 +4,7 @@
  * Backend : server/routes/moderation.js (/api/moderation/*)
  */
 
+import { t } from "@/i18n";
 import { Alert } from "react-native";
 import { api } from "./api";
 
@@ -60,12 +61,12 @@ export async function getBlockedUsers(): Promise<BlockedUser[]> {
 
 // ---- Helpers UI (Alert natif, pas de dépendance) ----
 
-const REASON_LABELS: [ReportReason, string][] = [
-  ["spam", "Spam"],
-  ["harassment", "Harcèlement"],
-  ["inappropriate", "Contenu inapproprié"],
-  ["scam", "Arnaque / fraude"],
-  ["other", "Autre"],
+const REASONS: ReportReason[] = [
+  "spam",
+  "harassment",
+  "inappropriate",
+  "scam",
+  "other",
 ];
 
 /** Ouvre le choix du motif puis envoie le signalement. */
@@ -78,23 +79,23 @@ export function promptReport(
   },
   onDone?: () => void,
 ): void {
-  Alert.alert("Signaler", "Pourquoi signales-tu ce contenu ?", [
-    ...REASON_LABELS.map(([reason, label]) => ({
-      text: label,
+  Alert.alert(t("common:actions.report"), t("chat:report.why"), [
+    ...REASONS.map((reason) => ({
+      text: t(`chat:report.reason.${reason}`),
       onPress: async () => {
         try {
           await reportContent({ ...params, reason });
           Alert.alert(
-            "Merci",
-            "Ton signalement a bien été envoyé. Notre équipe le traite sous 24 h.",
+            t("chat:report.thanks"),
+            t("chat:report.sent"),
           );
           onDone?.();
         } catch (e: any) {
-          Alert.alert("Erreur", e?.message ?? "Signalement impossible.");
+          Alert.alert(t("common:errors.title"), e?.message ?? t("chat:report.error"));
         }
       },
     })),
-    { text: "Annuler", style: "cancel" as const },
+    { text: t("common:actions.cancel"), style: "cancel" as const },
   ]);
 }
 
@@ -105,20 +106,20 @@ export function promptBlock(
   onBlocked?: () => void,
 ): void {
   Alert.alert(
-    `Bloquer ${userName} ?`,
-    "Ses messages et son contenu ne te seront plus visibles. Tu peux débloquer à tout moment depuis Profil → Utilisateurs bloqués.",
+    t("chat:block.title", { name: userName }),
+    t("chat:block.text"),
     [
-      { text: "Annuler", style: "cancel" },
+      { text: t("common:actions.cancel"), style: "cancel" },
       {
-        text: "Bloquer",
+        text: t("chat:block.action"),
         style: "destructive",
         onPress: async () => {
           try {
             await blockUser(userId);
-            Alert.alert("Utilisateur bloqué", `${userName} a été bloqué·e.`);
+            Alert.alert(t("chat:block.doneTitle"), t("chat:block.done", { name: userName }));
             onBlocked?.();
           } catch (e: any) {
-            Alert.alert("Erreur", e?.message ?? "Blocage impossible.");
+            Alert.alert(t("common:errors.title"), e?.message ?? t("chat:block.error"));
           }
         },
       },

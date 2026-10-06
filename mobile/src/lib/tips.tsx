@@ -5,6 +5,7 @@
  *
  * Usage : <OnboardingTip id="birthdays" text="…" /> en tête d'écran.
  */
+import { t } from "@/i18n";
 import { useCallback, useState } from "react";
 import { View, Text, Pressable, StyleSheet } from "react-native";
 import * as SecureStore from "expo-secure-store";
@@ -66,7 +67,7 @@ export default function OnboardingTip({ id, emoji = "💡", text }: Props) {
       <Text style={styles.emoji}>{emoji}</Text>
       <Text style={styles.text}>{text}</Text>
       <Pressable onPress={dismiss} hitSlop={8} style={styles.button}>
-        <Text style={styles.buttonText}>Compris !</Text>
+        <Text style={styles.buttonText}>{t("tour:gotIt")}</Text>
       </Pressable>
     </View>
   );

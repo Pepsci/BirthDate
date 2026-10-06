@@ -1,3 +1,4 @@
+import { t } from "@/i18n";
 import { useCallback, useState } from "react";
 import {
   View,
@@ -77,7 +78,7 @@ export default function ChatsScreen() {
       setEventChats(evts);
       setTickets(tks);
     } catch (e: any) {
-      setError(e?.message ?? "Erreur de chargement.");
+      setError(e?.message ?? t("common:errors.loading"));
     }
   }, []);
 
@@ -96,12 +97,12 @@ export default function ChatsScreen() {
   const confirmDelete = useCallback(
     (conversationId: string, otherName: string) => {
       Alert.alert(
-        "Retirer de ma liste",
-        `Les messages échangés avec ${otherName} disparaîtront de votre côté. ${otherName} garde sa copie, et la conversation réapparaîtra si un nouveau message arrive.`,
+        t("chat:list.removeTitle"),
+        t("chat:list.removeText", { name: otherName }),
         [
-          { text: "Annuler", style: "cancel" },
+          { text: t("common:actions.cancel"), style: "cancel" },
           {
-            text: "Retirer",
+            text: t("common:actions.remove"),
             style: "destructive",
             onPress: async () => {
               setDeletingId(conversationId);
@@ -112,7 +113,7 @@ export default function ChatsScreen() {
                   (prev ?? []).filter((c) => c._id !== conversationId),
                 );
               } catch (e: any) {
-                setError(e?.message ?? "Suppression impossible.");
+                setError(e?.message ?? t("chat:list.removeError"));
               } finally {
                 setDeletingId(null);
               }
@@ -147,7 +148,7 @@ export default function ChatsScreen() {
       <OnboardingTip
         id="chats"
         emoji="🔒"
-        text="Tes messages sont chiffrés de bout en bout : personne d'autre que toi et ton ami ne peut les lire. Appui long sur une conversation pour la retirer de ta liste. Ajoute des amis depuis Profil → Mes amis."
+        text={t("chat:list.tip")}
       />
       {error && <Text style={styles.error}>{error}</Text>}
 
@@ -163,7 +164,7 @@ export default function ChatsScreen() {
             <Text
               style={[styles.tabText, tab === "dm" && styles.tabTextActive]}
             >
-              Amis
+              {t("chat:tabs.friends")}
             </Text>
           </Pressable>
           {eventChats.length > 0 && (
@@ -174,7 +175,7 @@ export default function ChatsScreen() {
             <Text
               style={[styles.tabText, tab === "events" && styles.tabTextActive]}
             >
-              Événements
+              {t("common:tabs.events")}
             </Text>
             {eventUnread > 0 && (
               <View style={styles.tabBadge}>
@@ -191,7 +192,7 @@ export default function ChatsScreen() {
               <Text
                 style={[styles.tabText, tab === "support" && styles.tabTextActive]}
               >
-                Support
+                {t("support:title")}
               </Text>
               {supportUnread > 0 && (
                 <View style={styles.tabBadge}>
@@ -212,24 +213,24 @@ export default function ChatsScreen() {
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
           ListEmptyComponent={
-            <Text style={styles.empty}>Aucune conversation avec le support.</Text>
+            <Text style={styles.empty}>{t("chat:list.noSupport")}</Text>
           }
           ListFooterComponent={
             <Pressable onPress={() => router.push("/contact")}>
-              <Text style={styles.supportNew}>✉️ Nouvelle demande au support</Text>
+              <Text style={styles.supportNew}>{t("chat:list.newSupport")}</Text>
             </Pressable>
           }
           renderItem={({ item }) => {
             const last = item.messages[item.messages.length - 1];
             const preview = last
-              ? `${last.sender === "admin" ? "Support : " : "Toi : "}${last.body}`
+              ? `${last.sender === "admin" ? t("chat:list.supportPrefix") : t("chat:list.youPrefix")}${last.body}`
               : "";
             const statusLabel =
               item.status === "closed"
-                ? "Fermé"
+                ? t("chat:list.closed")
                 : item.status === "answered"
-                  ? "Répondu"
-                  : "En attente";
+                  ? t("chat:list.answered")
+                  : t("events:rsvp.pending");
             return (
               <Pressable
                 style={({ pressed }) => [styles.row, pressed && { opacity: 0.8 }]}
@@ -273,7 +274,7 @@ export default function ChatsScreen() {
           }
           ListEmptyComponent={
             <Text style={styles.empty}>
-              Aucune discussion d'événement pour l'instant.
+              {t("chat:list.noEventChats")}
             </Text>
           }
           renderItem={({ item }) => {
@@ -327,8 +328,7 @@ export default function ChatsScreen() {
         }
         ListEmptyComponent={
           <Text style={styles.empty}>
-            Aucune conversation. Ouvre le chat d'un ami depuis sa fiche ou
-            l'écran Mes amis !
+            {t("chat:list.empty")}
           </Text>
         }
         renderItem={({ item }) => {
@@ -339,7 +339,7 @@ export default function ChatsScreen() {
             ? item.lastMessage.isEncrypted
               ? "🔒 Message"
               : item.lastMessage.content
-            : "Aucun message";
+            : t("chat:list.noMessage");
           const when =
             item.lastMessageAt ?? item.lastMessage?.createdAt ?? null;
           return (

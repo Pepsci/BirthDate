@@ -1,3 +1,4 @@
+import { t, tn } from "@/i18n";
 import { useCallback, useState } from "react";
 import {
   View,
@@ -64,7 +65,7 @@ export default function SharedInvitesScreen() {
       // rattachement : la répéter ici n'apporterait rien.
       setMine(active.filter((l) => l.dateId));
     } catch (e: any) {
-      setError(e?.message ?? "Erreur de chargement.");
+      setError(e?.message ?? t("common:errors.loading"));
     }
   }, []);
 
@@ -111,7 +112,7 @@ export default function SharedInvitesScreen() {
       }
       await load();
     } catch (e: any) {
-      setError(e?.message ?? "Erreur.");
+      setError(e?.message ?? t("common:errors.generic"));
     } finally {
       setBusy(false);
     }
@@ -134,14 +135,14 @@ export default function SharedInvitesScreen() {
   const leave = (l: MySharedList) => {
     const isMember = l.role === "member";
     Alert.alert(
-      isMember ? "Quitter la liste ?" : "Ne plus suivre cette liste ?",
+      isMember ? t("gifts:invites.leaveTitle") : t("gifts:invites.unfollowTitle"),
       isMember
-        ? "Tu ne verras plus les idées de cette liste, et elle sera retirée de ta carte. Les autres membres la gardent."
-        : "Elle sera retirée de ta carte. Tu pourras y revenir si on te la repartage.",
+        ? t("gifts:invites.leaveText")
+        : t("gifts:invites.unfollowText"),
       [
-        { text: "Annuler", style: "cancel" },
+        { text: t("common:actions.cancel"), style: "cancel" },
         {
-          text: isMember ? "Quitter" : "Ne plus suivre",
+          text: isMember ? t("date:shared.leave") : t("date:shared.unfollow"),
           style: "destructive",
           onPress: async () => {
             if (busy) return;
@@ -150,7 +151,7 @@ export default function SharedInvitesScreen() {
               await leaveSharedList(l._id);
               await load();
             } catch (e: any) {
-              setError(e?.message ?? "Erreur.");
+              setError(e?.message ?? t("common:errors.generic"));
             } finally {
               setBusy(false);
             }
@@ -167,7 +168,7 @@ export default function SharedInvitesScreen() {
       await declineSharedInvitation(inv._id);
       await load();
     } catch (e: any) {
-      setError(e?.message ?? "Erreur.");
+      setError(e?.message ?? t("common:errors.generic"));
     } finally {
       setBusy(false);
     }
@@ -176,7 +177,7 @@ export default function SharedInvitesScreen() {
   if (!invites) {
     return (
       <View style={styles.center}>
-        <Stack.Screen options={{ title: "Listes communes" }} />
+        <Stack.Screen options={{ title: t("gifts:invites.title") }} />
         {error ? (
           <Text style={styles.error}>{error}</Text>
         ) : (
@@ -188,7 +189,7 @@ export default function SharedInvitesScreen() {
 
   return (
     <View style={styles.container}>
-      <Stack.Screen options={{ title: "Listes communes" }} />
+      <Stack.Screen options={{ title: t("gifts:invites.title") }} />
       {error && <Text style={styles.error}>{error}</Text>}
 
       <FlatList
@@ -205,7 +206,7 @@ export default function SharedInvitesScreen() {
                 joignable que par la carte de la personne concernée. */}
             {mine.length > 0 && (
               <View style={{ marginBottom: 8 }}>
-                <Text style={styles.sectionTitle}>Mes listes communes</Text>
+                <Text style={styles.sectionTitle}>{t("gifts:invites.mine")}</Text>
                 {mine.map((l) => (
                   <Pressable
                     key={l._id}
@@ -220,13 +221,13 @@ export default function SharedInvitesScreen() {
                   >
                     <Text style={styles.cardText}>
                       <Text style={styles.bold}>
-                        {l.personName || l.label || "Liste commune"}
+                        {l.personName || l.label || t("gifts:invites.sharedList")}
                       </Text>
                       {"\n"}
-                      {l.giftCount} idée{l.giftCount > 1 ? "s" : ""} ·{" "}
+                      {tn("gifts:ideaCount", l.giftCount)} ·{" "}
                       {l.role === "member"
-                        ? `${l.memberCount} gestionnaire${l.memberCount > 1 ? "s" : ""}`
-                        : "invité en lecture"}
+                        ? tn("gifts:invites.managers", l.memberCount)
+                        : t("gifts:invites.readOnly")}
                     </Text>
                     <View style={styles.mineActions}>
                       {l.role === "member" && (
@@ -238,7 +239,7 @@ export default function SharedInvitesScreen() {
                           }
                         >
                           <Text style={styles.manageBtnText}>
-                            Gérer l'accès
+                            {t("gifts:invites.manage")}
                           </Text>
                         </Pressable>
                       )}
@@ -248,7 +249,7 @@ export default function SharedInvitesScreen() {
                         onPress={() => leave(l)}
                       >
                         <Text style={styles.leaveBtnText}>
-                          {l.role === "member" ? "Quitter" : "Ne plus suivre"}
+                          {l.role === "member" ? t("date:shared.leave") : t("date:shared.unfollow")}
                         </Text>
                       </Pressable>
                     </View>
@@ -258,7 +259,7 @@ export default function SharedInvitesScreen() {
             )}
             {pending.length > 0 && (
             <View style={{ marginBottom: 8 }}>
-              <Text style={styles.sectionTitle}>Listes partagées avec toi</Text>
+              <Text style={styles.sectionTitle}>{t("gifts:invites.sharedWithYou")}</Text>
               {pending.map((l) => (
                 <Pressable
                   key={l._id}
@@ -269,14 +270,15 @@ export default function SharedInvitesScreen() {
                     <Text style={styles.bold}>
                       {l.from
                         ? `${l.from.name} ${l.from.surname ?? ""}`.trim()
-                        : "Quelqu'un"}
+                        : t("welcome:someone")}
                     </Text>{" "}
-                    t'a partagé une liste
-                    {l.label ? ` pour ${l.label}` : ""} — {l.giftCount} idée
-                    {l.giftCount > 1 ? "s" : ""}.
+                    {l.label
+                      ? t("gifts:invites.sharedAListFor", { label: l.label })
+                      : t("gifts:invites.sharedAList")}{" "}
+                    · {tn("gifts:ideaCount", l.giftCount)}.
                   </Text>
                   <Text style={styles.pendingHint}>
-                    Appuie pour l'ajouter à une carte et pouvoir réserver.
+                    {t("gifts:invites.tapToAdd")}
                   </Text>
                 </Pressable>
               ))}
@@ -286,7 +288,7 @@ export default function SharedInvitesScreen() {
         }
         ListEmptyComponent={
           pending.length > 0 || mine.length > 0 ? null : (
-            <Text style={styles.empty}>Aucune invitation en attente.</Text>
+            <Text style={styles.empty}>{t("gifts:invites.none")}</Text>
           )
         }
         renderItem={({ item }) => (
@@ -295,8 +297,9 @@ export default function SharedInvitesScreen() {
               <Text style={styles.bold}>
                 {item.fromUser?.name} {item.fromUser?.surname ?? ""}
               </Text>{" "}
-              veut créer une liste de cadeaux commune
-              {item.label ? ` pour ${item.label}` : ""}.
+              {item.label
+                ? t("gifts:invites.wantsFor", { label: item.label })
+                : t("gifts:invites.wants")}
             </Text>
             <View style={styles.actions}>
               <Pressable
@@ -304,14 +307,14 @@ export default function SharedInvitesScreen() {
                 disabled={busy}
                 onPress={() => decline(item)}
               >
-                <Text style={styles.declineText}>Refuser</Text>
+                <Text style={styles.declineText}>{t("common:actions.decline")}</Text>
               </Pressable>
               <Pressable
                 style={styles.acceptBtn}
                 disabled={busy}
                 onPress={() => openAccept(item)}
               >
-                <Text style={styles.acceptText}>Accepter</Text>
+                <Text style={styles.acceptText}>{t("common:actions.accept")}</Text>
               </Pressable>
             </View>
           </View>
@@ -319,10 +322,9 @@ export default function SharedInvitesScreen() {
       />
 
       <BottomSheet visible={!!accepting} onClose={() => setAccepting(null)}>
-        <Text style={styles.sheetTitle}>Associer à quelle carte ?</Text>
+        <Text style={styles.sheetTitle}>{t("gifts:invites.whichCard")}</Text>
         <Text style={styles.sheetSub}>
-          Une liste commune s'affiche sur la carte de la personne concernée.
-          Choisis-en une, ou crée-la.
+          {t("gifts:invites.whichCardSub")}
         </Text>
 
         {/* Créer la carte au passage. C'était le blocage : il fallait DÉJÀ
@@ -336,7 +338,7 @@ export default function SharedInvitesScreen() {
             onPress={() => confirmAccept({ newDate: {} })}
           >
             <Text style={styles.createRowText}>
-              ➕ Créer la carte de {acceptTargetName}
+              {t("gifts:invites.createCardOf", { name: acceptTargetName })}
             </Text>
           </Pressable>
         )}
@@ -353,13 +355,13 @@ export default function SharedInvitesScreen() {
               {(d.surname || d.linkedUser?.surname) ?? ""}
             </Text>
             <Text style={styles.dateBadge}>
-              {d.linkedUser ? "Ami" : d.family ? "Famille" : "Manuelle"}
+              {d.linkedUser ? t("gifts:invites.kindFriend") : d.family ? t("gifts:invites.kindFamily") : t("gifts:invites.kindManual")}
             </Text>
           </Pressable>
         ))}
         {dates.length === 0 && (
           <Text style={styles.empty}>
-            Tu n'as encore aucune carte — utilise le bouton ci-dessus.
+            {t("gifts:invites.noCards")}
           </Text>
         )}
       </BottomSheet>

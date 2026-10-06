@@ -1,3 +1,4 @@
+import { getLocaleTag, t } from "@/i18n";
 import { MutableRefObject, useEffect, useRef, useState } from "react";
 import {
   View,
@@ -29,10 +30,10 @@ import { useAuth } from "../lib/auth-context";
 
 /** Pourquoi la cagnotte est indisponible (raison renvoyée par le serveur). */
 const POOL_LOCK_HINTS: Record<string, string> = {
-  minor: "🔒 La cagnotte est réservée aux majeurs : tu pourras en ouvrir une à partir de tes 18 ans.",
-  birthdate_missing: "🔒 Renseigne ta date de naissance dans ton profil pour ouvrir une cagnotte.",
-  birthdate_cooldown: "⏳ Ta date de naissance a été modifiée récemment : la cagnotte sera disponible dans quelques jours.",
-  admin_blocked: "🔒 L'ouverture de cagnottes est suspendue pour ton compte. Contacte le support.",
+  get minor() { return t("pool:lock.minor"); },
+  get birthdate_missing() { return t("pool:lock.birthdate_missing"); },
+  get birthdate_cooldown() { return t("pool:lock.birthdate_cooldown"); },
+  get admin_blocked() { return t("pool:lock.admin_blocked"); },
 };
 
 function initialLocation(ev?: EventDetail): LocationValue | null {
@@ -44,7 +45,7 @@ function initialLocation(ev?: EventDetail): LocationValue | null {
   };
 }
 
-const STEPS = ["Essentiel", "Date", "Lieu", "Cadeaux", "Cagnotte", "Invitation"];
+const STEPS = ["essential", "date", "place", "gifts", "pool", "invite"] as const;
 
 /**
  * Photographie de l'état du formulaire, tenue à jour à chaque render.
@@ -95,7 +96,7 @@ export default function EventFormStepper({
     initial?.type ?? (isBirthday ? "birthday" : "party"),
   );
   const [title, setTitle] = useState(
-    initial?.title ?? (prefillName ? `Anniversaire de ${prefillName}` : ""),
+    initial?.title ?? (prefillName ? t("events:form.birthdayOf", { name: prefillName }) : ""),
   );
   const [description, setDescription] = useState(initial?.description ?? "");
 
@@ -169,7 +170,8 @@ export default function EventFormStepper({
     initial?.allowExternalGuests ?? true,
   );
   const [allowGuestInvites, setAllowGuestInvites] = useState(
-    initial?.allowGuestInvites ?? false,
+    // Création : coché par défaut. Modification : la valeur de l'événement.
+    initial ? initial.allowGuestInvites === true : true,
   );
 
   const canNext = () => {
@@ -236,7 +238,7 @@ export default function EventFormStepper({
     } catch (e: any) {
       submittedRef.current = false;
       if (snapshotRef?.current) snapshotRef.current.submitted = false;
-      setError(e?.message ?? "Erreur lors de la création.");
+      setError(e?.message ?? t("events:form.createError"));
       setSaving(false);
     }
   };
@@ -273,7 +275,7 @@ export default function EventFormStepper({
                 {i < step ? "✓" : i + 1}
               </Text>
             </View>
-            <Text style={styles.progressLabel}>{s}</Text>
+            <Text style={styles.progressLabel}>{t(`events:form.steps.${s}`)}</Text>
           </Pressable>
         ))}
       </View>
@@ -283,7 +285,7 @@ export default function EventFormStepper({
       {/* ÉTAPE 1 — Essentiel */}
       {step === 0 && (
         <View style={styles.card}>
-          <Text style={styles.label}>Type d'événement</Text>
+          <Text style={styles.label}>{t("events:form.type")}</Text>
           <View style={styles.chips}>
             {(Object.keys(EVENT_TYPE_LABELS) as EventType[]).map((t) => (
               <Pressable
@@ -300,18 +302,18 @@ export default function EventFormStepper({
             ))}
           </View>
 
-          <Text style={styles.label}>Titre *</Text>
+          <Text style={styles.label}>{t("events:form.title")}</Text>
           <TextInput placeholderTextColor={colors.placeholder}
             style={styles.input}
-            placeholder="ex : Anniversaire surprise de Léa"
+            placeholder={t("events:form.titlePlaceholder")}
             value={title}
             onChangeText={setTitle}
           />
 
-          <Text style={styles.label}>Description</Text>
+          <Text style={styles.label}>{t("events:form.description")}</Text>
           <TextInput placeholderTextColor={colors.placeholder}
             style={[styles.input, { minHeight: 70 }]}
-            placeholder="Détails, consignes, dress code… (optionnel)"
+            placeholder={t("events:form.descPlaceholder")}
             multiline
             value={description}
             onChangeText={setDescription}
@@ -323,8 +325,8 @@ export default function EventFormStepper({
       {step === 1 && (
         <View style={styles.card}>
           <ModeSwitch
-            left="📅 Date fixée"
-            right="🗳️ Faire voter"
+            left={t("events:form.dateFixed")}
+            right={t("events:form.vote")}
             value={dateMode === "vote"}
             onChange={(v) => setDateMode(v ? "vote" : "fixed")}
           />
@@ -340,8 +342,8 @@ export default function EventFormStepper({
                   </Pressable>
                   <Pressable style={styles.input} onPress={() => setShowTime(true)}>
                     <Text style={styles.inputText}>
-                      Heure :{" "}
-                      {fixedDate.toLocaleTimeString("fr-FR", {
+                      {t("events:form.time")}{" "}
+                      {fixedDate.toLocaleTimeString(getLocaleTag(), {
                         hour: "2-digit",
                         minute: "2-digit",
                       })}
@@ -356,7 +358,7 @@ export default function EventFormStepper({
                     mode="date"
                     minimumDate={new Date()}
                     display="spinner"
-                    locale="fr-FR"
+                    locale={getLocaleTag()}
                     themeVariant={resolved}
                     onChange={(e, d) => {
                       if (Platform.OS === "android") setShowDate(false);
@@ -377,7 +379,7 @@ export default function EventFormStepper({
                     value={fixedDate}
                     mode="time"
                     display="spinner"
-                    locale="fr-FR"
+                    locale={getLocaleTag()}
                     themeVariant={resolved}
                     onChange={(e, d) => {
                       if (Platform.OS === "android") setShowTime(false);
@@ -396,7 +398,7 @@ export default function EventFormStepper({
           ) : (
             <>
               <Text style={styles.hint}>
-                Propose au moins 2 dates — les invités voteront.
+                {t("events:form.dateVoteHint")}
               </Text>
               {dateOptions.map((d, i) => (
                 <View key={i} style={styles.optionRow}>
@@ -420,7 +422,7 @@ export default function EventFormStepper({
                   setShowOptionPicker(true);
                 }}
               >
-                <Text style={styles.addOptionText}>＋ Ajouter une date</Text>
+                <Text style={styles.addOptionText}>{t("events:form.addDate")}</Text>
               </Pressable>
               {showOptionPicker && (
                 <View style={styles.pickerWrap}>
@@ -429,7 +431,7 @@ export default function EventFormStepper({
                     mode="date"
                     minimumDate={new Date()}
                     display="spinner"
-                    locale="fr-FR"
+                    locale={getLocaleTag()}
                     themeVariant={resolved}
                     onChange={(e, d) => {
                       // Android : la boîte se ferme et valide sur "OK"/"Annuler".
@@ -454,7 +456,7 @@ export default function EventFormStepper({
                         style={styles.pickerCancel}
                         onPress={() => setShowOptionPicker(false)}
                       >
-                        <Text style={styles.pickerCancelText}>Annuler</Text>
+                        <Text style={styles.pickerCancelText}>{t("common:actions.cancel")}</Text>
                       </Pressable>
                       <Pressable
                         style={styles.pickerConfirm}
@@ -471,7 +473,7 @@ export default function EventFormStepper({
                         }}
                       >
                         <Text style={styles.pickerConfirmText}>
-                          Ajouter cette date
+                          {t("events:form.addThisDate")}
                         </Text>
                       </Pressable>
                     </View>
@@ -487,28 +489,27 @@ export default function EventFormStepper({
       {step === 2 && (
         <View style={styles.card}>
           <ModeSwitch
-            left="📍 Lieu fixé"
-            right="🗳️ Faire voter"
+            left={t("events:form.placeFixed")}
+            right={t("events:form.vote")}
             value={locationMode === "vote"}
             onChange={(v) => setLocationMode(v ? "vote" : "fixed")}
           />
 
           {locationMode === "fixed" ? (
             <>
-              <Text style={styles.label}>Adresse ou nom du lieu</Text>
+              <Text style={styles.label}>{t("events:form.address")}</Text>
               <AddressAutocomplete
-                placeholder="ex : 12 rue des Lilas, Paris…"
+                placeholder={t("events:form.addressPlaceholder")}
                 onChange={setFixedLocation}
               />
               <Text style={styles.hint}>
-                Tape une adresse pour l'autocomplétion, ou un nom libre ("Chez
-                moi"). Optionnel — modifiable plus tard.
+                {t("events:form.addressHint")}
               </Text>
             </>
           ) : (
             <>
               <Text style={styles.hint}>
-                Propose au moins 2 lieux — les invités voteront.
+                {t("events:form.placeVoteHint")}
               </Text>
               {locationOptions.map((l, i) => (
                 <View key={i} style={styles.optionRow}>
@@ -529,7 +530,7 @@ export default function EventFormStepper({
               ))}
               <AddressAutocomplete
                 key={locKey}
-                placeholder="Adresse ou nom du lieu à proposer"
+                placeholder={t("events:form.placeToSuggest")}
                 onChange={setPendingLoc}
               />
               <Pressable
@@ -542,7 +543,7 @@ export default function EventFormStepper({
                   setLocKey((k) => k + 1);
                 }}
               >
-                <Text style={styles.addOptionText}>＋ Ajouter ce lieu</Text>
+                <Text style={styles.addOptionText}>{t("events:form.addPlace")}</Text>
               </Pressable>
             </>
           )}
@@ -554,9 +555,9 @@ export default function EventFormStepper({
         <View style={styles.card}>
           <View style={styles.switchRow}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.switchLabel}>🚫 Pas de cadeaux</Text>
+              <Text style={styles.switchLabel}>{t("events:form.noGifts")}</Text>
               <Text style={styles.hint}>
-                Crée l'événement sans aucune liste de cadeaux.
+                {t("events:form.noGiftsHint")}
               </Text>
             </View>
             <Switch
@@ -569,20 +570,20 @@ export default function EventFormStepper({
           {giftMode !== "none" && (
             <>
               <ModeSwitch
-                left="💡 Propositions libres"
-                right="🎁 Liste imposée"
+                left={t("events:form.freeProposals")}
+                right={t("events:form.imposed")}
                 value={giftMode === "imposed"}
                 onChange={(v) => setGiftMode(v ? "imposed" : "proposals")}
               />
 
               {giftMode === "proposals" ? (
             <Text style={styles.hint}>
-              Les invités proposent des idées et votent pour leurs préférées.
+              {t("events:form.proposalsHint")}
             </Text>
           ) : (
             <>
               <Text style={styles.hint}>
-                Toi seul définis la liste de cadeaux.
+                {t("events:form.imposedHint")}
               </Text>
               {imposedGifts.map((g, i) => (
                 <View key={i} style={styles.optionRow}>
@@ -603,13 +604,13 @@ export default function EventFormStepper({
               <View style={styles.rowInline}>
                 <TextInput placeholderTextColor={colors.placeholder}
                   style={[styles.input, { flex: 2 }]}
-                  placeholder="Cadeau"
+                  placeholder={t("events:form.gift")}
                   value={giftName}
                   onChangeText={setGiftName}
                 />
                 <TextInput placeholderTextColor={colors.placeholder}
                   style={[styles.input, { flex: 1 }]}
-                  placeholder="Prix €"
+                  placeholder={t("gifts:wishlist.price")}
                   keyboardType="decimal-pad"
                   value={giftPrice}
                   onChangeText={setGiftPrice}
@@ -646,12 +647,12 @@ export default function EventFormStepper({
         <View style={styles.card}>
           <View style={styles.switchRow}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.switchLabel}>💳 Activer une cagnotte</Text>
+              <Text style={styles.switchLabel}>{t("events:form.enablePool")}</Text>
               <Text style={styles.hint}>
                 {poolLocked
                   ? POOL_LOCK_HINTS[String(user?.poolBlockedReason)] ??
                     POOL_LOCK_HINTS.minor
-                  : "Permets à tes invités de participer financièrement au cadeau."}
+                  : t("events:form.poolHint")}
               </Text>
             </View>
             {!poolLocked && (
@@ -665,7 +666,7 @@ export default function EventFormStepper({
 
           {poolEnabled && !poolLocked && (
             <>
-              <Text style={styles.label}>Moyens de participation</Text>
+              <Text style={styles.label}>{t("events:form.methods")}</Text>
               <Pressable
                 style={[styles.methodBtn, wantIban && styles.methodBtnActive]}
                 onPress={() => setWantIban((v) => !v)}
@@ -676,7 +677,7 @@ export default function EventFormStepper({
                     wantIban && styles.methodTextActive,
                   ]}
                 >
-                  🏦 Virement IBAN {wantIban ? "✓" : ""}
+                  {t("events:form.iban")} {wantIban ? "✓" : ""}
                 </Text>
               </Pressable>
               <Pressable
@@ -689,14 +690,13 @@ export default function EventFormStepper({
                     wantPaypal && styles.methodTextActive,
                   ]}
                 >
-                  💰 Lien PayPal {wantPaypal ? "✓" : ""}
+                  {t("events:form.paypal")} {wantPaypal ? "✓" : ""}
                 </Text>
               </Pressable>
 
               <View style={styles.noticeBox}>
                 <Text style={styles.noticeText}>
-                  ℹ️ Tu finaliseras la cagnotte (montant/objectif, RIB, lien
-                  PayPal) depuis la page de l'événement, une fois celui-ci créé.
+                  {t("events:form.poolNotice")}
                 </Text>
               </View>
             </>
@@ -707,10 +707,10 @@ export default function EventFormStepper({
       {/* ÉTAPE 6 — Invitation */}
       {step === 5 && (
         <View style={styles.card}>
-          <Text style={styles.label}>Nombre max d'invités</Text>
+          <Text style={styles.label}>{t("events:form.maxGuests")}</Text>
           <TextInput placeholderTextColor={colors.placeholder}
             style={styles.input}
-            placeholder="Illimité si vide"
+            placeholder={t("events:form.unlimited")}
             keyboardType="number-pad"
             value={maxGuests}
             onChangeText={setMaxGuests}
@@ -718,9 +718,9 @@ export default function EventFormStepper({
 
           <View style={styles.switchRow}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.switchLabel}>Invités externes</Text>
+              <Text style={styles.switchLabel}>{t("events:form.external")}</Text>
               <Text style={styles.hint}>
-                Des personnes sans compte peuvent rejoindre avec le code
+                {t("events:form.externalHint")}
               </Text>
             </View>
             <Switch
@@ -733,10 +733,10 @@ export default function EventFormStepper({
           <View style={styles.switchRow}>
             <View style={{ flex: 1 }}>
               <Text style={styles.switchLabel}>
-                Les invités peuvent inviter
+                {t("events:form.guestInvites")}
               </Text>
               <Text style={styles.hint}>
-                Ils voient le lien de partage et le code d'accès
+                {t("events:form.guestInvitesHint")}
               </Text>
             </View>
             <Switch
@@ -752,7 +752,7 @@ export default function EventFormStepper({
       <View style={styles.nav}>
         {step > 0 && (
           <Pressable style={styles.backBtn} onPress={() => setStep(step - 1)}>
-            <Text style={styles.backText}>‹ Retour</Text>
+            <Text style={styles.backText}>‹ {t("common:actions.back")}</Text>
           </Pressable>
         )}
         {step < STEPS.length - 1 ? (
@@ -761,7 +761,7 @@ export default function EventFormStepper({
             disabled={!canNext()}
             onPress={() => goStep(step + 1)}
           >
-            <Text style={styles.nextText}>Suivant ›</Text>
+            <Text style={styles.nextText}>{t("common:actions.next")} ›</Text>
           </Pressable>
         ) : (
           <Pressable

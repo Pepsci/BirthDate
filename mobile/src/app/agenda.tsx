@@ -1,3 +1,4 @@
+import { t, tn, formatDayMonth, formatDayMonthYear, monthName, weekdayName, capitalize } from "@/i18n";
 import { useCallback, useMemo, useState } from "react";
 import {
   View,
@@ -26,11 +27,7 @@ import {
   ThemeColors,
 } from "../lib/theme-context";
 
-const MONTHS = [
-  "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
-  "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre",
-];
-const DAYS = ["L", "M", "M", "J", "V", "S", "D"];
+const DAY_INDEXES = [0, 1, 2, 3, 4, 5, 6]; // 0 = lundi
 
 function getMonday(d: Date): Date {
   const x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
@@ -39,7 +36,6 @@ function getMonday(d: Date): Date {
   return x;
 }
 
-const WEEK_DAYS = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
 
 interface DayItems {
   birthdays: DateEntry[];
@@ -76,7 +72,7 @@ export default function AgendaScreen() {
           setDates(d);
           setEvents([...ev.organized, ...ev.invited]);
         })
-        .catch((e) => setError(e?.message ?? "Erreur de chargement."));
+        .catch((e) => setError(e?.message ?? t("common:errors.loading")));
     }, []),
   );
 
@@ -177,7 +173,7 @@ export default function AgendaScreen() {
         title: ev.title,
         startDate: dt,
         location: eventLocationLabel(ev),
-        notes: `Événement BirthReminder — birthreminder.com/event/${ev.shortId}`,
+        notes: t("home:agenda.calendarNotes", { url: `birthreminder.com/event/${ev.shortId}` }),
       });
     } finally {
       setAddingToCalendar(null);
@@ -187,7 +183,7 @@ export default function AgendaScreen() {
   if (!dates) {
     return (
       <View style={styles.center}>
-        <Stack.Screen options={{ title: "Agenda" }} />
+        <Stack.Screen options={{ title: t("home:agenda.title") }} />
         {error ? (
           <Text style={styles.error}>{error}</Text>
         ) : (
@@ -219,7 +215,7 @@ export default function AgendaScreen() {
   return (
     <View style={styles.screen}>
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Stack.Screen options={{ title: "Agenda" }} />
+      <Stack.Screen options={{ title: t("home:agenda.title") }} />
       <OfflineBanner />
       {error && <Text style={styles.error}>{error}</Text>}
 
@@ -230,7 +226,7 @@ export default function AgendaScreen() {
           onPress={() => setView("month")}
         >
           <Text style={[styles.viewText, view === "month" && styles.viewTextActive]}>
-            Mois
+            {t("home:agenda.month")}
           </Text>
         </Pressable>
         <Pressable
@@ -241,7 +237,7 @@ export default function AgendaScreen() {
           }}
         >
           <Text style={[styles.viewText, view === "week" && styles.viewTextActive]}>
-            Semaine
+            {t("home:agenda.week")}
           </Text>
         </Pressable>
       </View>
@@ -256,8 +252,8 @@ export default function AgendaScreen() {
         </Pressable>
         <Text style={styles.monthTitle}>
           {view === "month"
-            ? `${MONTHS[month]} ${year}`
-            : `Semaine du ${weekStart.getDate()} ${MONTHS[weekStart.getMonth()].toLowerCase()}`}
+            ? `${capitalize(monthName(month))} ${year}`
+            : t("home:agenda.weekOf", { date: formatDayMonth(weekStart) })}
         </Text>
         <Pressable
           onPress={() => (view === "month" ? nextMonth() : moveWeek(1))}
@@ -287,7 +283,7 @@ export default function AgendaScreen() {
             })),
             ...items.namedays.map((d) => ({
               key: `n${d._id}`,
-              text: `🎉 Fête de ${d.name}`,
+              text: t("home:agenda.namedayOf", { name: d.name }),
             })),
             ...items.events.map((ev) => ({
               key: `e${ev._id}`,
@@ -306,7 +302,7 @@ export default function AgendaScreen() {
                 <Text
                   style={[styles.weekDayName, isToday && styles.weekTodayText]}
                 >
-                  {WEEK_DAYS[i]}
+                  {capitalize(weekdayName(i))}
                 </Text>
                 <Text
                   style={[styles.weekDayNum, isToday && styles.weekTodayText]}
@@ -323,7 +319,7 @@ export default function AgendaScreen() {
                 ))}
                 {hiddenCount > 0 && (
                   <Text style={styles.weekMore}>
-                    + {hiddenCount} autre{hiddenCount > 1 ? "s" : ""}…
+                    {tn("home:agenda.more", hiddenCount)}
                   </Text>
                 )}
               </View>
@@ -335,9 +331,11 @@ export default function AgendaScreen() {
       {view === "month" && (
       <View style={styles.grid}>
         <View style={styles.gridRow}>
-          {DAYS.map((d, i) => (
+          {DAY_INDEXES.map((i) => (
             <View key={i} style={styles.cell}>
-              <Text style={styles.dayHeader}>{d}</Text>
+              <Text style={styles.dayHeader}>
+                {weekdayName(i, "narrow").toUpperCase()}
+              </Text>
             </View>
           ))}
         </View>
@@ -376,9 +374,9 @@ export default function AgendaScreen() {
 
       {/* Légende */}
       <View style={styles.legend}>
-        <LegendItem color={colors.primary} label="Anniversaire" />
-        <LegendItem color={colors.warning} label="Fête" />
-        <LegendItem color={colors.success} label="Événement" />
+        <LegendItem color={colors.primary} label={t("home:agenda.legendBirthday")} />
+        <LegendItem color={colors.warning} label={t("home:agenda.legendNameday")} />
+        <LegendItem color={colors.success} label={t("home:agenda.legendEvent")} />
       </View>
 
       {/* Modal jour */}
@@ -391,7 +389,7 @@ export default function AgendaScreen() {
         <Pressable style={styles.overlay} onPress={() => setSelectedDay(null)}>
           <Pressable style={styles.sheet} onPress={() => {}}>
             <Text style={styles.sheetTitle}>
-              {selectedDay} {MONTHS[month].toLowerCase()} {year}
+              {selectedDay != null ? formatDayMonthYear(new Date(year, month, selectedDay)) : ""}
             </Text>
 
             {selected?.birthdays.map((d) => (
@@ -420,7 +418,7 @@ export default function AgendaScreen() {
               >
                 <Text style={styles.sheetEmoji}>🎉</Text>
                 <Text style={styles.sheetText}>
-                  Fête de {d.name} {d.surname ?? ""}
+                  {t("home:agenda.namedayOfFull", { name: `${d.name} ${d.surname ?? ""}`.trim() })}
                 </Text>
               </Pressable>
             ))}
@@ -452,7 +450,7 @@ export default function AgendaScreen() {
                     {addingToCalendar === ev._id ? (
                       <ActivityIndicator size="small" color={colors.primary} />
                     ) : (
-                      <Text style={styles.calBtnText}>🗓️ Agenda</Text>
+                      <Text style={styles.calBtnText}>{t("home:agenda.addToCalendar")}</Text>
                     )}
                   </Pressable>
                 )}
@@ -463,7 +461,7 @@ export default function AgendaScreen() {
               style={styles.closeBtn}
               onPress={() => setSelectedDay(null)}
             >
-              <Text style={styles.closeText}>Fermer</Text>
+              <Text style={styles.closeText}>{t("common:actions.close")}</Text>
             </Pressable>
           </Pressable>
         </Pressable>

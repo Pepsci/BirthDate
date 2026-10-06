@@ -1,3 +1,4 @@
+import { t } from "@/i18n";
 import { useEffect, useRef } from "react";
 import EventFormStepper, { EventFormSnapshot } from "./EventFormStepper";
 import { createEvent } from "../lib/events";
@@ -55,7 +56,7 @@ export default function NewEventForm({
     <EventFormStepper
       prefillName={personName}
       isBirthday={!!(forPerson || forDate)}
-      submitLabel="🎉 Créer l'événement"
+      submitLabel={t("events:form.create")}
       snapshotRef={snapshot}
       onSubmit={async (payload) => {
         const ev = await createEvent({

@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import LegalLanguageSwitch from "./LegalLanguageSwitch";
 import "./css/legalPages.css";
 
 export default function PrivacyPolicy() {
@@ -8,6 +9,7 @@ export default function PrivacyPolicy() {
         <Link to="/home" className="back-link">
           ← Retour à l'accueil
         </Link>
+        <LegalLanguageSwitch path="privacy" lang="fr" />
 
         <h1>🔒 Politique de Confidentialité</h1>
 
@@ -278,8 +280,8 @@ export default function PrivacyPolicy() {
           <p>
             Certains prestataires peuvent être situés hors de l'Union
             Européenne. Dans ce cas, nous nous assurons que des garanties
-            appropriées sont en place (clauses contractuelles types, Privacy
-            Shield, etc.).
+            appropriées sont en place, notamment les clauses contractuelles
+            types de la Commission européenne.
           </p>
         </section>
 
@@ -428,6 +430,14 @@ export default function PrivacyPolicy() {
             (article 2.3 des CGU).
           </p>
           <p>
+            Cet âge est porté à 16 ans dans les pays dont la loi l'exige, ou
+            lorsque le pays ne peut pas être déterminé. Pour connaître l'âge
+            applicable, nous utilisons le pays réglé sur votre téléphone et
+            celui correspondant à votre adresse IP, au moment de l'inscription
+            ou d'une modification de votre date de naissance. Ce pays n'est
+            pas enregistré dans votre compte.
+          </p>
+          <p>
             Votre date de naissance sert à vérifier ces conditions d'âge et à
             réserver les cagnottes aux personnes majeures. Ses modifications
             sont conservées dans notre journal d'audit, afin de pouvoir
@@ -478,7 +488,7 @@ export default function PrivacyPolicy() {
         </section>
 
         <p className="last-update">
-          <strong>Dernière mise à jour :</strong> 22 septembre 2026
+          <strong>Dernière mise à jour :</strong> 6 octobre 2026
         </p>
       </div>
     </div>

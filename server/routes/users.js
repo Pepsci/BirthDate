@@ -1,4 +1,5 @@
 const express = require("express");
+const { parseLanguage } = require("../i18n");
 const router = express.Router();
 const {
   getPoolEligibility,
@@ -61,8 +62,8 @@ const isStrongPassword = (password) =>
 const WEAK_PASSWORD_MESSAGE =
   "Le mot de passe doit contenir au moins 8 caractères, dont une majuscule, une minuscule et un chiffre.";
 
-// Âge minimum du compte — garder aligné sur MIN_AGE de routes/auth.js.
-const MIN_ACCOUNT_AGE = 15;
+// Âge minimum du compte : dépend du pays, voir utils/minAge.js.
+const { minAgeForRequest } = require("../utils/minAge");
 
 /**
  * L'adresse email ne se modifie pas depuis le profil : il n'existe pas de
@@ -89,7 +90,7 @@ const EMAIL_LOCKED_MESSAGE =
  * compte existant. Seul un CHANGEMENT est contrôlé — sans quoi il suffisait de
  * modifier sa date après l'inscription pour contourner la limite d'âge.
  */
-function birthDateChangeError(current, incoming) {
+function birthDateChangeError(current, incoming, req) {
   const next = new Date(incoming);
   if (isNaN(next.getTime()) || next > new Date()) {
     return "Date de naissance invalide.";
@@ -100,8 +101,9 @@ function birthDateChangeError(current, incoming) {
       next.toISOString().slice(0, 10);
   if (sameDay) return null;
   const age = ageFrom(next);
-  if (age === null || age < MIN_ACCOUNT_AGE) {
-    return `Tu dois avoir au moins ${MIN_ACCOUNT_AGE} ans pour utiliser un compte BirthReminder.`;
+  const { minAge } = minAgeForRequest(req);
+  if (age === null || age < minAge) {
+    return `Tu dois avoir au moins ${minAge} ans pour utiliser un compte BirthReminder.`;
   }
   return null;
 }
@@ -154,6 +156,8 @@ function formatUser(user) {
     // Emails événements
     receiveEventEmails: user.receiveEventEmails,
     eventEmailTimings: user.eventEmailTimings,
+    // Langue du compte (push, emails) — voir PATCH /users/me/language
+    language: user.language ?? null,
     // Push
     pushEnabled: user.pushEnabled,
     pushEvents: user.pushEvents,
@@ -365,6 +369,7 @@ router.patch(
         const birthError = birthDateChangeError(
           user.birthDate,
           incomingBirthDate,
+          req,
         );
         if (birthError) return res.status(400).json({ message: birthError });
         user.birthDate = incomingBirthDate;
@@ -492,6 +497,28 @@ router.patch("/me/nameday", isAuthenticated, async (req, res) => {
   } catch (error) {
     console.error("Error updating nameday:", error);
     return res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+/*
+ * PATCH /users/me/language — langue du compte ("fr" | "en").
+ *
+ * Appelée par l'app mobile toute seule (ouverture de session, changement de
+ * langue dans Profil) : c'est ce qui permet au serveur d'écrire les push et
+ * les emails dans la bonne langue quand l'app est fermée. Route à part, et
+ * non un champ de PATCH /users/me : pas de token réémis, pas d'effet de bord.
+ */
+router.patch("/me/language", isAuthenticated, async (req, res) => {
+  const language = parseLanguage(req.body?.language);
+  if (!language) {
+    return res.status(400).json({ message: "Langue non prise en charge." });
+  }
+  try {
+    await userModel.updateOne({ _id: req.payload._id }, { $set: { language } });
+    res.json({ language });
+  } catch (err) {
+    console.error("Erreur PATCH /users/me/language:", err);
+    res.status(500).json({ message: "Erreur serveur." });
   }
 });
 
@@ -710,6 +737,7 @@ router.patch(
         const birthError = birthDateChangeError(
           user.birthDate,
           incomingBirthDate,
+          req,
         );
         if (birthError) return res.status(400).json({ message: birthError });
         user.birthDate = incomingBirthDate;

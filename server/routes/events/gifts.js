@@ -94,8 +94,8 @@ router.post("/:shortId/gifts", checkGuestOrAuth, rejectIfCancelled, async (req, 
         },
         link: `/event/${event.shortId}`,
         pushPayload: {
-          title: `🎁 Nouveau cadeau — ${event.title}`,
-          body: `${proposerName} propose : ${name}`,
+          title: (L) => L("push.event.giftTitle", { title: event.title }),
+          body: (L) => L("push.event.giftBody", { name: proposerName, gift: name }),
           url: `/event/${event.shortId}`,
           tag: `event-gift-proposed-${event.shortId}`,
           type: "default",
@@ -187,8 +187,9 @@ router.post(
           },
           link: `/event/${req.event.shortId}`,
           pushPayload: {
-            title: `♥ Vote cadeau — ${req.event.title}`,
-            body: `${voterName} vote pour : ${proposal.name}`,
+            title: (L) => L("push.event.giftVoteTitle", { title: req.event.title }),
+            body: (L) =>
+              L("push.event.giftVoteBody", { name: voterName, gift: proposal.name }),
             url: `/event/${req.event.shortId}`,
             tag: `event-gift-vote-${req.event.shortId}`,
             type: "default",

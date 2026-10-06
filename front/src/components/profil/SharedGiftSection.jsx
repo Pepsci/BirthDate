@@ -3,6 +3,7 @@ import apiHandler from "../../api/apiHandler";
 import GiftCardGrid from "../UI/GiftCardGrid";
 import ConfirmModal from "../UI/ConfirmModal";
 import SharedListSharePanel from "../sharedGifts/SharedListSharePanel";
+import SharedProposals from "../sharedGifts/SharedProposals";
 import useAuth from "../../context/useAuth";
 import "./css/sharedGiftSection.css";
 
@@ -418,6 +419,10 @@ export default function SharedGiftSection({ currentDate, onUpdate }) {
         />
       )}
       {error && <p className="sgs-error">{error}</p>}
+
+      {/* Propositions d'idées : l'invité propose, le gestionnaire accepte ou
+          refuse. */}
+      <SharedProposals list={list} listId={listId} onChange={setList} />
 
       {isMember && showForm && (
         <form className="sgs-form" onSubmit={submitForm}>

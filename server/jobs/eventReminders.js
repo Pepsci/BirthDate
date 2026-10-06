@@ -2,9 +2,7 @@ const cron = require("node-cron");
 const Event = require("../models/event.model");
 const EventInvitation = require("../models/eventInvitation.model");
 const User = require("../models/user.model");
-const {
-  sendEventReminderEmail,
-} = require("../services/emailTemplates/eventEmails");
+const { emailsFor } = require("../services/emailTemplates/localized");
 const { sendPushToUser } = require("../services/pushService");
 
 // notify nécessite l'instance app — on la reçoit via initApp()
@@ -39,28 +37,30 @@ const isEventInXDays = (eventDate, daysFromNow) => {
 // HELPER: Construire le message push événement
 // ========================================
 function buildEventPushPayload(event, daysFromNow) {
-  const title = event.title || "Un événement";
+  // `title` / `body` en fonctions `(L) => …` : résolus dans la langue du
+  // destinataire par sendPushToUser (services/pushService.js).
+  const title = (L) => event.title || L("push.anEvent");
 
   if (daysFromNow === 0) {
     return {
-      title: `🎉 C'est aujourd'hui — ${title} !`,
-      body: `L'événement a lieu aujourd'hui, bonne fête !`,
+      title: (L) => L("push.eventReminder.todayTitle", { title: title(L) }),
+      body: (L) => L("push.eventReminder.todayBody"),
       url: `/event/${event.shortId}`,
       tag: `event-${event._id}-today`,
       type: "event",
     };
   }
 
-  const dayLabel =
+  const dayLabel = (L) =>
     daysFromNow === 1
-      ? "demain"
+      ? L("push.when.tomorrow")
       : daysFromNow === 7
-        ? "dans 1 semaine"
-        : `dans ${daysFromNow} jours`;
+        ? L("push.when.week1")
+        : L("push.when.inDays", { count: daysFromNow });
 
   return {
-    title: `🎉 ${title} ${dayLabel}`,
-    body: `N'oubliez pas, l'événement approche !`,
+    title: (L) => `🎉 ${title(L)} ${dayLabel(L)}`,
+    body: (L) => L("push.eventReminder.soonBody"),
     url: `/event/${event.shortId}`,
     tag: `event-${event._id}-${daysFromNow}`,
     type: "event",
@@ -111,20 +111,27 @@ async function checkAndSendEventReminders() {
               user: { $nin: [event.organizer] },
             }).populate(
               "user",
-              "email _id receiveEventEmails pushEnabled pushEvents pushEventTimings",
+              "email _id language receiveEventEmails pushEnabled pushEvents pushEventTimings",
             );
 
             const organizer = await User.findById(event.organizer);
 
             // ── Emails ──
-            const recipients = [];
+            // email → langue. Un compte reçoit l'email dans SA langue ; un
+            // invité sans compte, dans celle de l'organisateur. Le premier
+            // ajout gagne : un compte n'est jamais écrasé par son doublon
+            // « externe ».
+            const recipients = new Map();
+            const addRecipient = (email, language) => {
+              if (!recipients.has(email)) recipients.set(email, language);
+            };
 
             if (
               organizer &&
               organizer.email &&
               organizer.receiveEventEmails !== false
             ) {
-              recipients.push(organizer.email);
+              addRecipient(organizer.email, organizer.language);
             }
 
             for (const inv of invitations) {
@@ -133,16 +140,18 @@ async function checkAndSendEventReminders() {
                 inv.user.email &&
                 inv.user.receiveEventEmails !== false
               ) {
-                recipients.push(inv.user.email);
+                addRecipient(inv.user.email, inv.user.language);
               }
               // Invités externes : pas de préférence possible, on envoie toujours
-              if (inv.externalEmail) recipients.push(inv.externalEmail);
+            }
+            // Les externes en dernier, pour que les comptes passent d'abord.
+            for (const inv of invitations) {
+              if (inv.externalEmail)
+                addRecipient(inv.externalEmail, organizer?.language);
             }
 
-            const uniqueEmails = [...new Set(recipients)];
-
-            for (const email of uniqueEmails) {
-              await sendEventReminderEmail(
+            for (const [email, language] of recipients) {
+              await emailsFor(language).sendEventReminderEmail(
                 email,
                 event,
                 reminder.daysBeforeEvent,

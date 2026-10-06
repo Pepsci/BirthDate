@@ -6,9 +6,7 @@ const GiftPoolContribution = require("../models/giftPoolContribution.model");
 const Event = require("../models/event.model");
 const User = require("../models/user.model");
 const { notify } = require("../utils/notify");
-const {
-  sendContributionReceiptEmail,
-} = require("../services/emailTemplates/contributionReceiptEmail");
+const { emailsFor } = require("../services/emailTemplates/localized");
 
 /*
  * POST /api/stripe/webhook
@@ -207,13 +205,17 @@ router.post("/", async (req, res) => {
           try {
             let to = contribution.guestEmail || null;
             let toName = contribution.guestName || null;
+            // Reçu dans la langue du compte ; un contributeur sans compte a
+            // payé depuis le site web, en français.
+            let toLanguage = null;
             if (contribution.contributor) {
               const u = await User.findById(
                 contribution.contributor,
-                "name email",
+                "name email language",
               );
               if (u?.email) {
                 to = u.email;
+                toLanguage = u.language;
                 toName = toName || u.name || null;
               }
             }
@@ -225,9 +227,11 @@ router.post("/", async (req, res) => {
               );
               const organizerName = org
                 ? `${org.name}${org.surname ? " " + org.surname : ""}`
-                : "l'organisateur";
+                : toLanguage === "en"
+                  ? "the organizer"
+                  : "l'organisateur";
 
-              await sendContributionReceiptEmail({
+              await emailsFor(toLanguage).sendContributionReceiptEmail({
                 email: to,
                 guestName: toName,
                 amount: contribution.amount,
@@ -299,7 +303,7 @@ router.post("/", async (req, res) => {
               eventTitle: eventDoc.title,
               eventShortId: eventDoc.shortId,
               amount: contribution.amount,
-              message: `Ta contribution à « ${eventDoc.title} » t'a été remboursée intégralement.`,
+              message: (L) => L("notif.poolRefunded", { title: eventDoc.title }),
             },
             link: `/event/${eventDoc.shortId}`,
           });

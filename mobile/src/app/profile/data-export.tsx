@@ -1,3 +1,4 @@
+import { t } from "@/i18n";
 import { useState } from "react";
 import {
   View,
@@ -43,13 +44,13 @@ export default function DataExportScreen() {
       await writeAsStringAsync(uri, JSON.stringify(data, null, 2));
       setSavedPath(uri);
       try {
-        await Share.share({ url: uri, title: "Mes données BirthReminder" });
+        await Share.share({ url: uri, title: t("profile:export.fileTitle") });
       } catch {
         // Partage refusé ou indisponible : le fichier reste écrit, on affiche
         // simplement son emplacement.
       }
     } catch (e: any) {
-      setError(e?.message ?? "Export impossible pour le moment.");
+      setError(e?.message ?? t("profile:export.error"));
     } finally {
       setBusy(false);
     }
@@ -57,24 +58,17 @@ export default function DataExportScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Stack.Screen options={{ title: "Mes données" }} />
+      <Stack.Screen options={{ title: t("local:data.title") }} />
 
-      <Text style={styles.title}>Télécharger mes données</Text>
+      <Text style={styles.title}>{t("profile:menu.export")}</Text>
       <Text style={styles.paragraph}>
-        Vous obtenez un fichier contenant votre profil, vos dates, vos amis, vos
-        listes de cadeaux, vos événements, vos conversations et votre journal
-        d'activité.
+        {t("profile:export.p1")}
       </Text>
       <Text style={styles.paragraph}>
-        Vos messages sont chiffrés de bout en bout : nos serveurs ne peuvent pas
-        les lire. Ils sont déchiffrés sur cet appareil au moment de l'export. Si
-        votre clé n'est pas présente ici, les messages concernés apparaîtront
-        comme non déchiffrables.
+        {t("profile:export.p2")}
       </Text>
       <Text style={styles.paragraph}>
-        Les conversations que vous avez retirées de votre liste figurent dans
-        l'export, avec la date à laquelle vous les avez retirées : elles restent
-        conservées tant que votre correspondant en a une copie.
+        {t("profile:export.p3")}
       </Text>
 
       <Pressable
@@ -85,23 +79,23 @@ export default function DataExportScreen() {
         {busy ? (
           <ActivityIndicator color={colors.white} />
         ) : (
-          <Text style={styles.buttonText}>Générer mon fichier</Text>
+          <Text style={styles.buttonText}>{t("profile:export.generate")}</Text>
         )}
       </Pressable>
 
       {error && <Text style={styles.error}>{error}</Text>}
       {savedPath && (
         <View style={styles.savedBox}>
-          <Text style={styles.savedTitle}>Fichier généré</Text>
+          <Text style={styles.savedTitle}>{t("profile:export.generated")}</Text>
           <Text style={styles.savedPath} numberOfLines={3}>
             {savedPath.replace(documentDirectory ?? "", "")}
           </Text>
           <Pressable
             onPress={() =>
-              Share.share({ url: savedPath, title: "Mes données BirthReminder" })
+              Share.share({ url: savedPath, title: t("profile:export.fileTitle") })
             }
           >
-            <Text style={styles.shareAgain}>Partager à nouveau</Text>
+            <Text style={styles.shareAgain}>{t("profile:export.shareAgain")}</Text>
           </Pressable>
         </View>
       )}

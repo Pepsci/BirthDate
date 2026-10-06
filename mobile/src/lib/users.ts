@@ -1,3 +1,4 @@
+import { t } from "@/i18n";
 import { api, API_URL, getToken, setToken, AuthUser } from "./api";
 import {
   assertAccountMode,
@@ -126,7 +127,7 @@ export async function updateAvatar(imageUri: string): Promise<UserProfile> {
 
   const data = res.body ? JSON.parse(res.body) : {};
   if (res.status < 200 || res.status >= 300) {
-    throw new Error(data?.message ?? `Erreur ${res.status}`);
+    throw new Error(data?.message ?? t("common:errors.status", { status: res.status }));
   }
   if (data.authToken) await setToken(data.authToken);
   return data.payload;

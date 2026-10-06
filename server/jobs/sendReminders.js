@@ -2,15 +2,7 @@ const cron = require("node-cron");
 const dateModel = require("../models/date.model");
 const User = require("../models/user.model");
 const { sendPushToUser } = require("../services/pushService");
-const {
-  sendBirthdayReminderEmail,
-} = require("../services/emailTemplates/birthdayReminder");
-const {
-  sendNamedayReminderEmail,
-} = require("../services/emailTemplates/namedayReminder");
-const {
-  sendMonthlyRecapEmail,
-} = require("../services/emailTemplates/monthlyRecapEmail");
+const { emailsFor } = require("../services/emailTemplates/localized");
 
 // notify nécessite l'instance app — on la reçoit via init()
 let _app = null;
@@ -111,13 +103,25 @@ function displayName(date) {
 // ========================================
 // HELPER: Construire le message push anniversaire
 // ========================================
-function buildBirthdayPushPayload(date, daysFromNow) {
-  const firstName = displayName(date);
+/**
+ * Prénom pour un texte traduit : même règle que displayName(), mais le repli
+ * « Quelqu'un » suit la langue du destinataire.
+ */
+function nameIn(date, L) {
+  const name = (date.name || date.linkedUser?.name || "").trim();
+  return name || L("push.someone");
+}
 
+/**
+ * ⚠️ `title` et `body` sont des fonctions `(L) => …` : sendPushToUser les
+ * résout dans la langue du compte destinataire (services/pushService.js).
+ * Les libellés français sont dans i18n/locales/fr.json, inchangés.
+ */
+function buildBirthdayPushPayload(date, daysFromNow) {
   if (daysFromNow === 0) {
     return {
-      title: `🎂 C'est l'anniversaire de ${firstName} !`,
-      body: `Pensez à lui souhaiter un joyeux anniversaire 🎉`,
+      title: (L) => L("push.birthday.todayTitle", { name: nameIn(date, L) }),
+      body: (L) => L("push.birthday.todayBody"),
       // Deep link vers la carte de la personne (web : FriendProfile, mobile : /date/:id)
       url: `/home?tab=date&dateId=${date._id}`,
       tag: `birthday-${date._id}-today`,
@@ -125,20 +129,21 @@ function buildBirthdayPushPayload(date, daysFromNow) {
     };
   }
 
-  const dayLabel =
+  const dayLabel = (L) =>
     daysFromNow === 1
-      ? "demain"
+      ? L("push.when.tomorrow")
       : daysFromNow === 7
-        ? "dans 1 semaine"
+        ? L("push.when.week1")
         : daysFromNow === 14
-          ? "dans 2 semaines"
+          ? L("push.when.week2")
           : daysFromNow === 30
-            ? "dans 1 mois"
-            : `dans ${daysFromNow} jours`;
+            ? L("push.when.month1")
+            : L("push.when.inDays", { count: daysFromNow });
 
   return {
-    title: `🎂 Anniversaire de ${firstName} ${dayLabel}`,
-    body: `N'oubliez pas de préparer quelque chose !`,
+    title: (L) =>
+      L("push.birthday.soonTitle", { name: nameIn(date, L), when: dayLabel(L) }),
+    body: (L) => L("push.birthday.soonBody"),
     url: `/home?tab=date&dateId=${date._id}`,
     tag: `birthday-${date._id}-${daysFromNow}`,
     type: "birthday",
@@ -149,28 +154,27 @@ function buildBirthdayPushPayload(date, daysFromNow) {
 // HELPER: Construire le message push fête
 // ========================================
 function buildNamedayPushPayload(date, daysFromNow) {
-  const firstName = displayName(date);
-
   if (daysFromNow === 0) {
     return {
-      title: `🌸 C'est la fête de ${firstName} !`,
-      body: `Pensez à lui souhaiter une bonne fête 🎉`,
+      title: (L) => L("push.nameday.todayTitle", { name: nameIn(date, L) }),
+      body: (L) => L("push.nameday.todayBody"),
       url: `/home?tab=date&dateId=${date._id}`,
       tag: `nameday-${date._id}-today`,
       type: "nameday",
     };
   }
 
-  const dayLabel =
+  const dayLabel = (L) =>
     daysFromNow === 1
-      ? "demain"
+      ? L("push.when.tomorrow")
       : daysFromNow === 7
-        ? "dans 1 semaine"
-        : `dans ${daysFromNow} jours`;
+        ? L("push.when.week1")
+        : L("push.when.inDays", { count: daysFromNow });
 
   return {
-    title: `🌸 Fête de ${firstName} ${dayLabel}`,
-    body: `N'oubliez pas de lui souhaiter !`,
+    title: (L) =>
+      L("push.nameday.soonTitle", { name: nameIn(date, L), when: dayLabel(L) }),
+    body: (L) => L("push.nameday.soonBody"),
     url: `/home?tab=date&dateId=${date._id}`,
     tag: `nameday-${date._id}-${daysFromNow}`,
     type: "nameday",
@@ -198,7 +202,7 @@ async function checkAndSendUserBirthdayReminders() {
         (await claimReminder(user._id, "user_birthday", 0))
       ) {
         console.log(`🎉 Anniversaire de ${user.email} aujourd'hui !`);
-        await sendBirthdayReminderEmail(user, null, 0);
+        await emailsFor(user.language).sendBirthdayReminderEmail(user, null, 0);
       }
     }
   } catch (error) {
@@ -246,7 +250,8 @@ async function checkAndSendCardBirthdayReminders() {
         isBirthdayInXDays(date.date, 0) &&
         (await claimReminder(date._id, "birthday_card", 0))
       ) {
-        if (emailOk) await sendBirthdayReminderEmail(owner, date, 0);
+        if (emailOk)
+          await emailsFor(owner.language).sendBirthdayReminderEmail(owner, date, 0);
 
         // ── Notif applicative J ──
         if (_app) {
@@ -268,7 +273,12 @@ async function checkAndSendCardBirthdayReminders() {
           isBirthdayInXDays(date.date, days) &&
           (await claimReminder(date._id, "birthday_card", days))
         ) {
-          if (emailOk) await sendBirthdayReminderEmail(owner, date, days);
+          if (emailOk)
+            await emailsFor(owner.language).sendBirthdayReminderEmail(
+              owner,
+              date,
+              days,
+            );
 
           // ── Notif applicative J-X ──
           if (_app) {
@@ -337,7 +347,8 @@ async function checkAndSendNamedayReminders() {
         (await claimReminder(date._id, "nameday_card", 0))
       ) {
         console.log(`🎉 Fête de ${displayName(date)} aujourd'hui !`);
-        if (emailOk) await sendNamedayReminderEmail(date, 0);
+        if (emailOk)
+          await emailsFor(owner.language).sendNamedayReminderEmail(date, 0);
 
         // ── Notif applicative J ──
         if (_app) {
@@ -360,7 +371,8 @@ async function checkAndSendNamedayReminders() {
           (await claimReminder(date._id, "nameday_card", days))
         ) {
           console.log(`📅 Rappel fête de ${displayName(date)} dans ${days} jour(s)`);
-          if (emailOk) await sendNamedayReminderEmail(date, days);
+          if (emailOk)
+            await emailsFor(owner.language).sendNamedayReminderEmail(date, days);
 
           // ── Notif applicative J-X ──
           if (_app) {
@@ -393,9 +405,12 @@ async function checkAndSendMonthlyRecap() {
   try {
     console.log("📅 [CRON] Envoi des récaps mensuels...");
 
+    // ⚠️ Le récap a SON réglage (`monthlyRecap`) et ne dépend d'aucun autre.
+    // Il exigeait aussi `receiveBirthdayEmails` : décocher « rappels
+    // d'anniversaire » coupait le récap sans le dire, alors que les deux
+    // cases sont présentées côte à côte comme indépendantes.
     const users = await User.find({
       monthlyRecap: true,
-      receiveBirthdayEmails: { $ne: false },
       deletedAt: { $exists: false },
     });
 
@@ -403,7 +418,7 @@ async function checkAndSendMonthlyRecap() {
       const dates = await dateModel
         .find({ owner: user._id })
         .populate("linkedUser", "name surname");
-      await sendMonthlyRecapEmail(user, dates);
+      await emailsFor(user.language).sendMonthlyRecapEmail(user, dates);
     }
 
     console.log(

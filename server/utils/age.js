@@ -1,7 +1,7 @@
 // utils/age.js
 //
 // Âges légaux utilisés par l'application.
-//   - 15 ans : création de compte (RGPD France, voir routes/auth.js)
+//   - 15 ou 16 ans selon le pays : création de compte (voir utils/minAge.js)
 //   - 18 ans : collecte d'argent (cagnotte Stripe, RIB, PayPal, cagnotte
 //     externe). Un utilisateur de 15-17 ans garde tout le reste de l'app.
 

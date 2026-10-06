@@ -1,0 +1,91 @@
+{
+  "join": {
+    "and": "{{list}} and {{last}}",
+    "others": {
+      "one": "{{list}} and {{count}} other",
+      "other": "{{list}} and {{count}} others"
+    }
+  },
+  "nameday": {
+    "many": "It's name day for every {{name}}!",
+    "one": "It's name day for {{name}}!"
+  },
+  "features": {
+    "reminders": {
+      "title": "Smart reminders",
+      "text": "Birthdays and name days, notified at the right time. Never forget again."
+    },
+    "agenda": {
+      "title": "Calendar",
+      "text": "Month or week view, all your important dates at a glance."
+    },
+    "events": {
+      "title": "Events",
+      "text": "Votes for the date and place, invitations, real-time group chat."
+    },
+    "wishlist": {
+      "title": "Wishlist & gifts",
+      "text": "Share your wishes and find the perfect gift, together."
+    },
+    "chat": {
+      "title": "Messaging",
+      "text": "Chat with your friends right in the app, privately."
+    },
+    "pool": {
+      "title": "Money pool",
+      "text": "Chip in together for a birthday or event gift, with no fees."
+    }
+  },
+  "steps": {
+    "s1": {
+      "title": "Add your loved ones",
+      "text": "Birthdays, name days, or connect with friends who already signed up."
+    },
+    "s2": {
+      "title": "Get your reminders",
+      "text": "A notification the day before and on the day, never forget again."
+    },
+    "s3": {
+      "title": "Celebrate together",
+      "text": "Plan an event, chat and pick the gift as a group."
+    }
+  },
+  "someone": "Someone",
+  "hello": "Welcome {{name}} 👋",
+  "localHello": "📱 Your cards are on this phone",
+  "start": "Get started 🎉",
+  "createFree": "Create a free account",
+  "localHint": "Without an account, your cards stay on this phone.",
+  "haveAccount": "I already have an account · Log in",
+  "tagline": "Never forget a birthday again",
+  "subTagline": "Reminders, calendar, events and gifts, all in one place, among friends.",
+  "todayLabel": "🎈 TODAY AMONG YOUR LOVED ONES",
+  "birthdayOf": "It's {{name}}'s birthday!",
+  "birthdaysToday": "birthdays today 🎂",
+  "stats": {
+    "mine": "🎂 MY BIRTHDAYS",
+    "community": "🌍 ACROSS THE COMMUNITY",
+    "error": "Stats cannot be loaded right now.",
+    "toWish": {
+      "one": "birthday to wish today",
+      "other": "birthdays to wish today"
+    },
+    "celebrated": {
+      "one": "birthday celebrated today",
+      "other": "birthdays celebrated today"
+    },
+    "noneMine": "No birthday to wish today",
+    "noneCommunity": "No birthday in the community today",
+    "thisMonth": "this month",
+    "thisYear": "this year",
+    "saved": {
+      "one": "{{n}} date saved, you will not forget any",
+      "other": "{{n}} dates saved, you will not forget any"
+    },
+    "members": "{{n}} members signed up, and the party is only starting"
+  },
+  "sectionFeatures": "Everything you need to remember",
+  "sectionHow": "How does it work?",
+  "bannerTitle": "Plan the next birthday",
+  "bannerText": "Create an event, invite your friends (even without an account) and decide together on the date, place and gift."
+}

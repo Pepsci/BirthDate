@@ -1,0 +1,130 @@
+{
+  "push": {
+    "newMessage": "Nouveau message",
+    "pool": {
+      "pool": "Cagnotte",
+      "contributionTitle": "💰 Nouvelle contribution — {{title}}",
+      "contributionBody": "{{name}} a participé : {{amount}}"
+    },
+    "someone": "Quelqu'un",
+    "reaction": {
+      "inEvent": "{{name}} a réagi à votre message",
+      "dm": "a réagi à votre message"
+    },
+    "supportReply": "💬 Le support t'a répondu",
+    "eventWord": "Événement",
+    "shared": {
+      "status": {
+        "takes": "s'occupe de",
+        "releases": "ne s'occupe plus de",
+        "bought": "l'a marquée comme achetée",
+        "toGive": "l'a marquée comme à offrir",
+        "offered": "l'a marquée comme offerte",
+        "toBuy": "l'a remise dans les idées à acheter"
+      },
+      "reservedTitle": "🎁 Cadeau réservé",
+      "reservedBody": "{{who}} s'occupe de « {{gift}} »",
+      "addedTitle": "🎁 Nouvelle idée dans votre liste commune",
+      "addedBody": "{{who}} a ajouté « {{gift}} »",
+      "updatedTitle": "🎁 Liste commune mise à jour",
+      "editedBody": "{{who}} a modifié « {{gift}} »",
+      "removedTitle": "🎁 Idée retirée de votre liste commune",
+      "removedBody": "{{who}} a retiré « {{gift}} »",
+      "unreservedTitle": "🎁 Réservation annulée",
+      "unreservedBody": "{{who}} ne s'occupe plus de « {{gift}} »",
+      "leftTitle": "👥 Départ d'une liste commune",
+      "leftBody": "{{who}} a quitté votre liste d'idées cadeaux",
+      "sharedTitle": "🎁 Une liste de cadeaux t'a été partagée",
+      "sharedBody": "{{who}} t'a donné accès à sa liste d'idées",
+      "proposedTitle": "💡 Nouvelle proposition d'idée",
+      "proposedBody": "{{who}} propose « {{gift}} » pour votre liste commune",
+      "proposalAcceptedTitle": "🎁 Ta proposition a été acceptée",
+      "proposalAcceptedBody": "{{who}} a ajouté « {{gift}} » à la liste",
+      "proposalDeclinedTitle": "Proposition non retenue",
+      "proposalDeclinedBody": "{{who}} n'a pas retenu « {{gift}} »"
+    },
+    "event": {
+      "rsvpTitle": "🎉 Nouvelle réponse — {{title}}",
+      "rsvp": {
+        "accepted": "sera présent(e)",
+        "declined": "ne sera pas présent(e)",
+        "maybe": "est peut-être présent(e)"
+      },
+      "dateVoteTitle": "📅 Vote date — {{title}}",
+      "dateVoteBody": "{{name}} a voté pour une date",
+      "placeVoteTitle": "📍 Vote lieu — {{title}}",
+      "placeVoteBody": "{{name}} a voté pour un lieu",
+      "giftTitle": "🎁 Nouveau cadeau — {{title}}",
+      "giftBody": "{{name}} propose : {{gift}}",
+      "giftVoteTitle": "♥ Vote cadeau — {{title}}",
+      "giftVoteBody": "{{name}} vote pour : {{gift}}",
+      "inviteTitle": "🎉 Invitation — {{title}}",
+      "inviteBody": "{{name}} vous invite à un événement",
+      "dateChangedTitle": "📅 Nouvelle date — {{title}}",
+      "dateChangedBody": "{{date}} — confirme ta présence",
+      "placeSettledTitle": "📍 Lieu retenu — {{title}}",
+      "updatedTitle": "✏️ Événement modifié — {{title}}",
+      "updatedBody": "L'organisateur a mis à jour les informations",
+      "noReason": "L'organisateur n'a pas indiqué de raison.",
+      "cancelledTitle": "❌ Annulé — {{title}}",
+      "uncancelledTitle": "✅ Rétabli — {{title}}",
+      "uncancelledBody": "L'événement aura finalement bien lieu."
+    },
+    "transfer": {
+      "offerTitle": "🤝 {{name}} te propose d'organiser",
+      "offerBody": "« {{title}} » — à toi de décider",
+      "declinedTitle": "🤝 Transfert refusé — {{title}}",
+      "declinedBody": "{{name}} préfère ne pas reprendre l'organisation",
+      "acceptedTitle": "🤝 {{name}} reprend l'organisation",
+      "acceptedBody": "« {{title}} » — tu restes participant",
+      "doneTitle": "🤝 Nouvel organisateur — {{title}}",
+      "doneBody": "{{oldName}} a passé la main à {{newName}}"
+    },
+    "chat": {
+      "encrypted": "🔒 Nouveau message chiffré",
+      "giftShare": "🎁 Idées cadeaux pour {{name}}",
+      "dateShare": "🎂 Anniversaire de {{name}}",
+      "unread": {
+        "one": "💬 {{count}} message non lu",
+        "other": "💬 {{count}} messages non lus"
+      },
+      "from": "De : {{names}}"
+    },
+    "someoneLower": "quelqu'un",
+    "when": {
+      "tomorrow": "demain",
+      "week1": "dans 1 semaine",
+      "week2": "dans 2 semaines",
+      "month1": "dans 1 mois",
+      "inDays": "dans {{count}} jours"
+    },
+    "birthday": {
+      "todayTitle": "🎂 C'est l'anniversaire de {{name}} !",
+      "todayBody": "Pensez à lui souhaiter un joyeux anniversaire 🎉",
+      "soonTitle": "🎂 Anniversaire de {{name}} {{when}}",
+      "soonBody": "N'oubliez pas de préparer quelque chose !"
+    },
+    "nameday": {
+      "todayTitle": "🌸 C'est la fête de {{name}} !",
+      "todayBody": "Pensez à lui souhaiter une bonne fête 🎉",
+      "soonTitle": "🌸 Fête de {{name}} {{when}}",
+      "soonBody": "N'oubliez pas de lui souhaiter !"
+    },
+    "anEvent": "Un événement",
+    "eventReminder": {
+      "todayTitle": "🎉 C'est aujourd'hui — {{title}} !",
+      "todayBody": "L'événement a lieu aujourd'hui, bonne fête !",
+      "soonBody": "N'oubliez pas, l'événement approche !"
+    }
+  },
+  "notif": {
+    "poolRefunded": "Ta contribution à « {{title}} » t'a été remboursée intégralement.",
+    "transferPoolLine": " Les {{amount}} € déjà versés restent sur le compte de {{oldName}}, qui s'organise avec {{newName}}.",
+    "transferDone": "{{oldName}} a confié l'organisation de « {{title}} » à {{newName}}.",
+    "dateChanged": "Nouvelle date : {{date}}. Confirme ta présence.",
+    "placeSettled": "Le lieu est retenu : {{place}}",
+    "eventUpdated": "L'événement a été modifié par l'organisateur",
+    "eventCancelled": "« {{title}} » a été annulé.",
+    "eventUncancelled": "« {{title}} » est rétabli : il aura bien lieu."
+  }
+}

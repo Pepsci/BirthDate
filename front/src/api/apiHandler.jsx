@@ -67,6 +67,18 @@ const apiHandler = {
       .catch(errorHandler);
   },
 
+  /**
+   * Âge minimum pour créer un compte, selon le pays du visiteur (15 ou 16).
+   * Renvoie null si le serveur ne répond pas : l'appelant garde sa valeur
+   * par défaut, et le contrôle de l'inscription fait foi.
+   */
+  getMinAge() {
+    return service
+      .get("/auth/min-age")
+      .then((res) => (typeof res.data?.minAge === "number" ? res.data.minAge : null))
+      .catch(() => null);
+  },
+
   isLoggedIn() {
     return service
       .get("/auth/verify")

@@ -1,3 +1,4 @@
+import { t } from "@/i18n";
 import { useEffect, useState } from "react";
 import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
@@ -23,7 +24,7 @@ export default function EditDateScreen() {
     if (!id) return;
     fetchDate(id)
       .then(setEntry)
-      .catch((e) => setError(e?.message ?? "Erreur de chargement."));
+      .catch((e) => setError(e?.message ?? t("common:errors.loading")));
   }, [id]);
 
   const confirmDelete = () => {
@@ -45,7 +46,7 @@ export default function EditDateScreen() {
   if (!entry) {
     return (
       <View style={styles.center}>
-        <Stack.Screen options={{ title: "Modifier" }} />
+        <Stack.Screen options={{ title: t("common:actions.edit") }} />
         {error ? (
           <Text style={styles.error}>{error}</Text>
         ) : (
@@ -59,11 +60,11 @@ export default function EditDateScreen() {
     <>
       <Stack.Screen
         options={{
-          title: `Modifier ${entry.name}`,
+          title: t("date:edit.titleFor", { name: entry.name }),
           headerRight: () => (
             <HeaderIconButton
               name="trash"
-              accessibilityLabel="Supprimer cette date"
+              accessibilityLabel={t("date:delete.label")}
               onPress={confirmDelete}
             />
           ),
@@ -72,7 +73,7 @@ export default function EditDateScreen() {
       {error && <Text style={styles.error}>{error}</Text>}
       <DateForm
         initial={entry}
-        submitLabel="Enregistrer"
+        submitLabel={t("common:actions.save")}
         onSubmit={async (payload) => {
           await updateDate(id!, payload);
           router.back();

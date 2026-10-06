@@ -1,3 +1,4 @@
+import { t } from "@/i18n";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import NewEventForm from "../../components/NewEventForm";
 
@@ -17,7 +18,7 @@ export default function NewEventScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ title: "Nouvel événement" }} />
+      <Stack.Screen options={{ title: t("events:form.newTitle") }} />
       <NewEventForm
         forPerson={params.forPerson || null}
         forDate={params.forDate || null}

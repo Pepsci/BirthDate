@@ -1,0 +1,124 @@
+/* Propositions d'idées sur une liste commune (SharedProposals.jsx) */
+
+.sgp-box {
+    margin: 12px 0;
+    padding: 14px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+}
+
+.sgp-title {
+    margin: 0 0 6px;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.sgp-row {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 10px 0;
+    border-top: 1px solid var(--border-color);
+}
+
+.sgp-details {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.sgp-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.sgp-meta {
+    margin: 0;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
+
+.sgp-link {
+    font-size: 13px;
+    color: var(--primary);
+    overflow-wrap: anywhere;
+}
+
+.sgp-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.sgp-btn {
+    padding: 8px 14px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+}
+
+.sgp-btn:hover:not(:disabled) {
+    border-color: var(--border-color-hover);
+}
+
+.sgp-btn:disabled,
+.sgp-withdraw:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.sgp-btn--primary {
+    color: var(--bg-primary);
+    background: var(--primary);
+    border-color: var(--primary);
+}
+
+.sgp-btn--primary:hover:not(:disabled) {
+    background: var(--primary-dark);
+    border-color: var(--primary-dark);
+}
+
+.sgp-form {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.sgp-input {
+    padding: 10px;
+    font-size: 14px;
+    color: var(--text-primary);
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+}
+
+.sgp-error {
+    margin: 8px 0 0;
+    font-size: 13px;
+    color: var(--danger);
+}
+
+.sgp-mine {
+    margin-top: 12px;
+}
+
+.sgp-withdraw {
+    align-self: flex-start;
+    padding: 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--danger);
+    background: none;
+    border: none;
+    cursor: pointer;
+}

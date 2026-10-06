@@ -201,7 +201,9 @@ const EventForm = ({
       maxGiftProposalsPerUser: null,
       maxGuests: "",
       allowExternalGuests: true,
-      allowGuestInvites: false,
+      // Coché par défaut à la création : un invité qui peut en inviter
+      // d'autres, c'est le cas le plus courant. Décochable par l'organisateur.
+      allowGuestInvites: true,
       reminders: [
         { type: "event_date", daysBeforeEvent: 7, sent: false },
         { type: "event_date", daysBeforeEvent: 1, sent: false },

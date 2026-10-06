@@ -1,3 +1,5 @@
+import { syncLanguageWithServer } from "./language";
+import { t } from "@/i18n";
 import React, {
   createContext,
   useContext,
@@ -129,6 +131,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const u = await Api.verify();
           rememberUser(u);
           setUser(u);
+          syncLanguageWithServer(u.language);
           registerForPush(); // silencieux si Expo Go / permission refusée
         }
       } catch (e) {
@@ -168,6 +171,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           fromCache.current = false;
           rememberUser(u);
           setUser(u);
+          syncLanguageWithServer(u.language);
           registerForPush();
         })
         .catch(async (e) => {
@@ -267,6 +271,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.warn("E2E setup failed:", e);
     }
     setUser(u);
+    syncLanguageWithServer(u.language);
     registerForPush();
   }, []);
 
@@ -275,6 +280,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const u = await Api.verify();
       rememberUser(u);
       setUser(u);
+      syncLanguageWithServer(u.language);
     } catch {
       // session expirée — on garde l'état courant
     }
@@ -299,7 +305,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (user) {
       // Repasser d'un compte au mode local n'est pas prévu pour l'instant
       // (MODE_LOCAL.md § 7) : il faudrait d'abord se déconnecter.
-      throw new Error("Déconnecte-toi avant d'utiliser l'app sans compte.");
+      throw new Error(t("auth:logoutFirst"));
     }
     await setAppMode("local");
     setMode("local");

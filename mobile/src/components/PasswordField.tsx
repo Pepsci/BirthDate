@@ -1,3 +1,4 @@
+import { t } from "@/i18n";
 import { useState } from "react";
 import {
   View,
@@ -46,10 +47,10 @@ export default function PasswordField({ style, ...inputProps }: Props) {
         hitSlop={10}
         accessibilityRole="button"
         accessibilityLabel={
-          show ? "Masquer le mot de passe" : "Afficher le mot de passe"
+          show ? t("common:password.hideLabel") : t("common:password.showLabel")
         }
       >
-        <Text style={styles.toggleText}>{show ? "Masquer" : "Afficher"}</Text>
+        <Text style={styles.toggleText}>{show ? t("common:actions.hide") : t("common:actions.show")}</Text>
       </Pressable>
     </View>
   );

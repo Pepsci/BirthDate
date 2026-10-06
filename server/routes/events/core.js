@@ -10,10 +10,8 @@ const { nanoid } = require("nanoid");
 const { isAuthenticated } = require("../../middleware/jwt.middleware");
 const { notify } = require("../../utils/notify");
 const { sendPushToUser } = require("../../services/pushService");
-const {
-  sendEventDateChangedEmail,
-  sendEventCancelledEmail,
-} = require("../../services/emailTemplates/eventEmails");
+const { emailsFor } = require("../../services/emailTemplates/localized");
+const { getUserLanguage } = require("../../i18n");
 const User = require("../../models/user.model");
 const { audit } = require("../../services/auditLog");
 const {
@@ -512,12 +510,13 @@ router.put("/:shortId", isAuthenticated, async (req, res) => {
 
       // Année incluse : un événement peut être déplacé au-delà du 31 décembre,
       // et "samedi 10 janvier" tout seul serait ambigu.
-      const dateLabel = new Date(dateAfter).toLocaleDateString("fr-FR", {
-        weekday: "long",
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-      });
+      const dateLabelIn = (locale) =>
+        new Date(dateAfter).toLocaleDateString(locale, {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        });
 
       // ── Invités externes : email, seul canal dont ils disposent ───────────
       // Pas de compte → ni notif in-app ni push. Sans cet email leur RSVP est
@@ -530,6 +529,7 @@ router.put("/:shortId", isAuthenticated, async (req, res) => {
       });
       const eventUrl = `${process.env.FRONTEND_URL || "https://birthreminder.com"}/event/${event.shortId}`;
       const seenEmails = new Set();
+      const organizerLanguage = await getUserLanguage(req.payload._id);
       for (const inv of externalInvitations) {
         const to = (inv.externalEmail || "").trim().toLowerCase();
         // Un même email peut avoir plusieurs invitations (rejoint via code
@@ -537,10 +537,11 @@ router.put("/:shortId", isAuthenticated, async (req, res) => {
         if (!to || seenEmails.has(to)) continue;
         seenEmails.add(to);
         try {
-          await sendEventDateChangedEmail(
+          // Invité sans compte : langue de l'organisateur (l'auteur de la requête).
+          await emailsFor(organizerLanguage).sendEventDateChangedEmail(
             inv.externalEmail,
             event,
-            dateLabel,
+            dateLabelIn(organizerLanguage === "en" ? "en-GB" : "fr-FR"),
             eventUrl,
             event.accessCode,
           );
@@ -562,14 +563,17 @@ router.put("/:shortId", isAuthenticated, async (req, res) => {
             eventTitle: event.title,
             eventShortId: event.shortId,
             newDate: new Date(dateAfter).toISOString(),
-            newDateLabel: dateLabel,
-            message: `Nouvelle date : ${dateLabel}. Confirme ta présence.`,
+            // Résolus dans la langue de chaque destinataire (utils/notify.js)
+            newDateLabel: (L) => dateLabelIn(L.locale),
+            message: (L) =>
+              L("notif.dateChanged", { date: dateLabelIn(L.locale) }),
           },
           link: `/event/${event.shortId}`,
         });
         await sendPushToUser(inv.user, {
-          title: `📅 Nouvelle date — ${event.title}`,
-          body: `${dateLabel} — confirme ta présence`,
+          title: (L) => L("push.event.dateChangedTitle", { title: event.title }),
+          body: (L) =>
+            L("push.event.dateChangedBody", { date: dateLabelIn(L.locale) }),
           url: `/event/${event.shortId}`,
           tag: `event-date-changed-${event.shortId}`,
           type: "events",
@@ -579,9 +583,10 @@ router.put("/:shortId", isAuthenticated, async (req, res) => {
       // ── Modification ordinaire (titre, lieu, description…) ────────────────
       // Un lieu qui vient d'être retenu porte l'information la plus attendue
       // du moment : on le dit, plutôt que de laisser le message générique.
-      const label = locationSettled
-        ? `Le lieu est retenu : ${locationAfter}`
-        : "L'événement a été modifié par l'organisateur";
+      const label = (L) =>
+        locationSettled
+          ? L("notif.placeSettled", { place: locationAfter })
+          : L("notif.eventUpdated");
       for (const inv of invitations) {
         // Réglage propre à cette personne et à cet événement. L'annulation et
         // le changement de date, eux, ne se coupent pas : voir la branche
@@ -598,12 +603,12 @@ router.put("/:shortId", isAuthenticated, async (req, res) => {
           link: `/event/${event.shortId}`,
         });
         await sendPushToUser(inv.user, {
-          title: locationSettled
-            ? `📍 Lieu retenu — ${event.title}`
-            : `✏️ Événement modifié — ${event.title}`,
-          body: locationSettled
-            ? locationAfter
-            : "L'organisateur a mis à jour les informations",
+          title: (L) =>
+            locationSettled
+              ? L("push.event.placeSettledTitle", { title: event.title })
+              : L("push.event.updatedTitle", { title: event.title }),
+          body: (L) =>
+            locationSettled ? locationAfter : L("push.event.updatedBody"),
           url: `/event/${event.shortId}`,
           tag: `event-updated-${event.shortId}`,
           type: "events",
@@ -784,9 +789,8 @@ router.post("/:shortId/cancel", isAuthenticated, async (req, res) => {
     }
 
     const invitations = await EventInvitation.find({ event: event._id });
-    const body = reason
-      ? reason.slice(0, 120)
-      : "L'organisateur n'a pas indiqué de raison.";
+    const body = (L) =>
+      reason ? reason.slice(0, 120) : L("push.event.noReason");
 
     for (const inv of invitations) {
       // L'organisateur sait déjà qu'il vient d'annuler.
@@ -800,12 +804,12 @@ router.post("/:shortId/cancel", isAuthenticated, async (req, res) => {
             eventTitle: event.title,
             eventShortId: event.shortId,
             reason,
-            message: `« ${event.title} » a été annulé.`,
+            message: (L) => L("notif.eventCancelled", { title: event.title }),
           },
           link: `/event/${event.shortId}`,
         });
         await sendPushToUser(inv.user, {
-          title: `❌ Annulé — ${event.title}`,
+          title: (L) => L("push.event.cancelledTitle", { title: event.title }),
           body,
           url: `/event/${event.shortId}`,
           tag: `event-cancelled-${event.shortId}`,
@@ -819,12 +823,14 @@ router.post("/:shortId/cancel", isAuthenticated, async (req, res) => {
     // email peut porter plusieurs invitations (invité nommément puis arrivé
     // par le code) : on n'envoie qu'une fois.
     const seenEmails = new Set();
+    // Invité sans compte : langue de l'organisateur (l'auteur de la requête).
+    const organizerLanguage = await getUserLanguage(req.payload._id);
     for (const inv of invitations) {
       const to = (inv.externalEmail || "").trim().toLowerCase();
       if (!to || seenEmails.has(to)) continue;
       seenEmails.add(to);
       try {
-        await sendEventCancelledEmail(inv.externalEmail, {
+        await emailsFor(organizerLanguage).sendEventCancelledEmail(inv.externalEmail, {
           event,
           reason,
           organizerName,
@@ -846,13 +852,13 @@ router.post("/:shortId/cancel", isAuthenticated, async (req, res) => {
       const members = await User.find({
         _id: { $in: memberIds },
         deletedAt: { $exists: false },
-      }).select("email");
+      }).select("email language");
       for (const m of members) {
         const to = (m.email || "").trim().toLowerCase();
         if (!to || seenEmails.has(to)) continue;
         seenEmails.add(to);
         try {
-          await sendEventCancelledEmail(m.email, {
+          await emailsFor(m.language).sendEventCancelledEmail(m.email, {
             event,
             reason,
             organizerName,
@@ -925,13 +931,13 @@ router.post("/:shortId/uncancel", isAuthenticated, async (req, res) => {
         data: {
           eventTitle: event.title,
           eventShortId: event.shortId,
-          message: `« ${event.title} » est rétabli : il aura bien lieu.`,
+          message: (L) => L("notif.eventUncancelled", { title: event.title }),
         },
         link: `/event/${event.shortId}`,
       });
       await sendPushToUser(inv.user, {
-        title: `✅ Rétabli — ${event.title}`,
-        body: "L'événement aura finalement bien lieu.",
+        title: (L) => L("push.event.uncancelledTitle", { title: event.title }),
+        body: (L) => L("push.event.uncancelledBody"),
         url: `/event/${event.shortId}`,
         tag: `event-uncancelled-${event.shortId}`,
         type: "events",

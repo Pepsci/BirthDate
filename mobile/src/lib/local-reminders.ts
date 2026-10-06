@@ -1,3 +1,4 @@
+import { t } from "@/i18n";
 import * as Notifications from "expo-notifications";
 import { AppState, Platform } from "react-native";
 import type { DateEntry } from "./dates";
@@ -58,18 +59,18 @@ function midnight(from: Date, offset: number): Date {
 
 /** Même libellé que le serveur (buildBirthdayPushPayload). */
 function birthdayLabel(days: number): string {
-  if (days === 1) return "demain";
-  if (days === 7) return "dans 1 semaine";
-  if (days === 14) return "dans 2 semaines";
-  if (days === 30) return "dans 1 mois";
-  return `dans ${days} jours`;
+  if (days === 1) return t("local:rem.tomorrow");
+  if (days === 7) return t("local:rem.week1");
+  if (days === 14) return t("local:rem.week2");
+  if (days === 30) return t("local:rem.month1");
+  return t("local:rem.inDays", { count: days });
 }
 
 /** Même libellé que le serveur (buildNamedayPushPayload). */
 function namedayLabel(days: number): string {
-  if (days === 1) return "demain";
-  if (days === 7) return "dans 1 semaine";
-  return `dans ${days} jours`;
+  if (days === 1) return t("local:rem.tomorrow");
+  if (days === 7) return t("local:rem.week1");
+  return t("local:rem.inDays", { count: days });
 }
 
 /**
@@ -119,12 +120,12 @@ export function planReminders(dates: DateEntry[], now = new Date()): PlannedRemi
           at: fireAt,
           title:
             offset === 0
-              ? `🎂 C'est l'anniversaire de ${name} !`
-              : `🎂 Anniversaire de ${name} ${birthdayLabel(offset)}`,
+              ? t("local:rem.birthdayToday", { name })
+              : t("local:rem.birthdaySoon", { name, when: birthdayLabel(offset) }),
           body:
             offset === 0
-              ? "Pensez à lui souhaiter un joyeux anniversaire 🎉"
-              : "N'oubliez pas de préparer quelque chose !",
+              ? t("local:rem.birthdayTodayBody")
+              : t("local:rem.birthdaySoonBody"),
           dateId: d._id,
         });
       }
@@ -143,12 +144,12 @@ export function planReminders(dates: DateEntry[], now = new Date()): PlannedRemi
           ),
           title:
             offset === 0
-              ? `🌸 C'est la fête de ${name} !`
-              : `🌸 Fête de ${name} ${namedayLabel(offset)}`,
+              ? t("local:rem.namedayToday", { name })
+              : t("local:rem.namedaySoon", { name, when: namedayLabel(offset) }),
           body:
             offset === 0
-              ? "Pensez à lui souhaiter une bonne fête 🎉"
-              : "N'oubliez pas de lui souhaiter !",
+              ? t("local:rem.namedayTodayBody")
+              : t("local:rem.namedaySoonBody"),
           dateId: d._id,
         });
       }
@@ -176,8 +177,8 @@ export function fitToLimit(planned: PlannedReminder[], now = new Date()): Planne
     {
       id: `wakeup-${wakeAt.getTime()}`,
       at: wakeAt,
-      title: "📱 Ouvre BirthReminder",
-      body: "Ouvre l'app pour continuer à recevoir tes rappels d'anniversaires.",
+      title: t("local:rem.openTitle"),
+      body: t("local:rem.openBody"),
       dateId: null,
     },
   ];
@@ -189,7 +190,7 @@ async function ensureAndroidChannel() {
   if (Platform.OS !== "android") return;
   // Même canal que les push (lib/push.ts), qui n'est pas appelé en mode local
   await Notifications.setNotificationChannelAsync("default", {
-    name: "Notifications BirthReminder",
+    name: t("local:rem.channel"),
     importance: Notifications.AndroidImportance.HIGH,
     vibrationPattern: [0, 250, 250, 250],
     lightColor: "#3b82f6",
@@ -310,8 +311,8 @@ export async function sendTestReminder(): Promise<boolean> {
   await Notifications.scheduleNotificationAsync({
     identifier: `${ID_PREFIX}test-${Date.now()}`,
     content: {
-      title: "🎂 Rappel de test",
-      body: "Tes rappels fonctionnent : tu seras prévenu le jour venu (minuit pour un anniversaire, 9h pour une fête).",
+      title: t("local:rem.testTitle"),
+      body: t("local:rem.testBody"),
       sound: "default",
       data: { url: "/", localReminder: true },
     },

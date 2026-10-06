@@ -1,3 +1,4 @@
+import { getLocaleTag, t } from "@/i18n";
 import { useEffect, useState } from "react";
 import {
   View,
@@ -58,7 +59,7 @@ export default function ProfileEditScreen() {
         setNameday(u.nameday ?? "");
         setBirthDate(u.birthDate ? new Date(u.birthDate) : null);
       })
-      .catch((e) => setError(e?.message ?? "Erreur de chargement."));
+      .catch((e) => setError(e?.message ?? t("common:errors.loading")));
   }, []);
 
   const pickAvatar = async () => {
@@ -86,7 +87,7 @@ export default function ProfileEditScreen() {
       setMe(updated);
       await refresh();
     } catch (e: any) {
-      setError(e?.message ?? "Erreur lors de l'upload de l'avatar.");
+      setError(e?.message ?? t("profile:edit.avatarError"));
     } finally {
       setUploadingAvatar(false);
     }
@@ -100,12 +101,12 @@ export default function ProfileEditScreen() {
 
   const confirmRemoveAvatar = () => {
     Alert.alert(
-      "Supprimer la photo",
-      "Votre photo sera remplacée par un avatar par défaut.",
+      t("profile:edit.removePhoto"),
+      t("profile:edit.removePhotoText"),
       [
-        { text: "Annuler", style: "cancel" },
+        { text: t("common:actions.cancel"), style: "cancel" },
         {
-          text: "Supprimer",
+          text: t("common:actions.delete"),
           style: "destructive",
           onPress: async () => {
             setUploadingAvatar(true);
@@ -115,7 +116,7 @@ export default function ProfileEditScreen() {
               setMe(updated);
               await refresh();
             } catch (e: any) {
-              setError(e?.message ?? "Erreur lors de la suppression.");
+              setError(e?.message ?? t("common:errors.delete"));
             } finally {
               setUploadingAvatar(false);
             }
@@ -127,11 +128,11 @@ export default function ProfileEditScreen() {
 
   const save = async () => {
     if (!name.trim()) {
-      setError("Le prénom est obligatoire.");
+      setError(t("date:form.nameRequired"));
       return;
     }
     if (nameday && !/^\d{2}-\d{2}$/.test(nameday)) {
-      setError("La fête doit être au format MM-JJ (ex : 03-13).");
+      setError(t("profile:edit.namedayFormat"));
       return;
     }
     setError(null);
@@ -157,7 +158,7 @@ export default function ProfileEditScreen() {
       await refresh();
       router.back();
     } catch (e: any) {
-      setError(e?.message ?? "Erreur lors de l'enregistrement.");
+      setError(e?.message ?? t("common:errors.save"));
       setSaving(false);
     }
   };
@@ -165,7 +166,7 @@ export default function ProfileEditScreen() {
   if (!me) {
     return (
       <View style={styles.center}>
-        <Stack.Screen options={{ title: "Mes informations" }} />
+        <Stack.Screen options={{ title: t("profile:menu.info") }} />
         {error ? (
           <Text style={styles.error}>{error}</Text>
         ) : (
@@ -183,7 +184,7 @@ export default function ProfileEditScreen() {
       keyboardDismissMode="on-drag"
       automaticallyAdjustKeyboardInsets
     >
-      <Stack.Screen options={{ title: "Mes informations" }} />
+      <Stack.Screen options={{ title: t("profile:menu.info") }} />
 
       <View style={styles.avatarWrap}>
         <Pressable onPress={pickAvatar} disabled={uploadingAvatar}>
@@ -209,7 +210,7 @@ export default function ProfileEditScreen() {
           disabled={uploadingAvatar}
         >
           <Text style={styles.changePhotoText}>
-            {uploadingAvatar ? "Envoi en cours…" : "Changer la photo"}
+            {uploadingAvatar ? t("profile:edit.uploading") : t("date:form.changePhoto")}
           </Text>
         </Pressable>
 
@@ -219,20 +220,20 @@ export default function ProfileEditScreen() {
             style={styles.removeAvatarBtn}
             hitSlop={8}
           >
-            <Text style={styles.removeAvatarText}>Supprimer la photo</Text>
+            <Text style={styles.removeAvatarText}>{t("profile:edit.removePhoto")}</Text>
           </Pressable>
         )}
       </View>
 
-      <Text style={styles.label}>Prénom *</Text>
+      <Text style={styles.label}>{t("date:form.firstNameLabel")}</Text>
       <TextInput placeholderTextColor={colors.placeholder} style={styles.input} value={name} onChangeText={setName} />
 
-      <Text style={styles.label}>Nom</Text>
+      <Text style={styles.label}>{t("date:form.lastNameLabel")}</Text>
       <TextInput placeholderTextColor={colors.placeholder} style={styles.input} value={surname} onChangeText={setSurname} />
 
       {/* L'adresse email identifie le compte : elle ne se modifie pas ici
           (le serveur refuse tout changement, voir routes/users.js). */}
-      <Text style={styles.label}>Email</Text>
+      <Text style={styles.label}>{t("auth:email")}</Text>
       <TextInput
         style={[styles.input, styles.inputLocked]}
         value={email}
@@ -240,15 +241,15 @@ export default function ProfileEditScreen() {
         selectTextOnFocus={false}
       />
       <Text style={styles.hint}>
-        L'adresse email ne peut pas être modifiée.
+        {t("profile:edit.emailLocked")}
       </Text>
 
-      <Text style={styles.label}>Date de naissance</Text>
+      <Text style={styles.label}>{t("profile:edit.birthDate")}</Text>
       <Pressable style={styles.input} onPress={() => setShowPicker(true)}>
         <Text style={styles.inputText}>
           {birthDate
             ? `${formatBirthday(birthDate.toISOString())} ${birthDate.getFullYear()}`
-            : "Non renseignée — appuyer pour choisir"}
+            : t("profile:edit.noBirthDate")}
         </Text>
       </Pressable>
       {showPicker && (
@@ -256,7 +257,7 @@ export default function ProfileEditScreen() {
           value={birthDate ?? new Date()}
           mode="date"
           display="spinner"
-          locale="fr-FR"
+          locale={getLocaleTag()}
           maximumDate={new Date()}
           themeVariant={resolved}
           onChange={(event, selected) => {
@@ -266,7 +267,7 @@ export default function ProfileEditScreen() {
         />
       )}
 
-      <Text style={styles.label}>Ma fête (format MM-JJ)</Text>
+      <Text style={styles.label}>{t("profile:edit.myNameday")}</Text>
       <TextInput placeholderTextColor={colors.placeholder}
         style={styles.input}
         value={nameday}
@@ -286,7 +287,7 @@ export default function ProfileEditScreen() {
         {saving ? (
           <ActivityIndicator color={colors.white} />
         ) : (
-          <Text style={styles.submitText}>Enregistrer</Text>
+          <Text style={styles.submitText}>{t("common:actions.save")}</Text>
         )}
       </Pressable>
     </ScrollView>

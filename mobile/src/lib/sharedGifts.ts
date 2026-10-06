@@ -38,9 +38,26 @@ export interface SharedMember {
   avatar?: string | null;
 }
 
+/**
+ * Idée suggérée par un invité, en attente de la décision d'un gestionnaire.
+ * Un gestionnaire les reçoit toutes, avec leur auteur ; un invité ne reçoit
+ * que les siennes (`mine: true`), sans `proposedBy`.
+ */
+export interface SharedGiftProposal {
+  _id: string;
+  giftName: string;
+  url?: string | null;
+  price?: number | null;
+  proposedBy?: { _id: string; name: string; surname?: string } | null;
+  mine?: boolean;
+  createdAt?: string;
+}
+
 export interface SharedGiftList {
   _id: string;
   label?: string | null;
+  /** Propositions en attente visibles par moi (voir SharedGiftProposal). */
+  proposals?: SharedGiftProposal[];
   /** Absent dans la vue « invité » : il ne connaît pas la composition. */
   members?: SharedMember[];
   gifts: SharedGift[];
@@ -150,6 +167,43 @@ export async function declineSharedInvitation(id: string): Promise<void> {
 
 export async function fetchSharedList(id: string): Promise<SharedGiftList> {
   return api<SharedGiftList>(`/shared-gifts/${id}`);
+}
+
+// ── Propositions d'idées (invités) ──────────────────────────────────────────
+// Chaque appel renvoie la liste à jour, dans la même forme que fetchSharedList.
+
+/** Invité : suggérer une idée aux gestionnaires de la liste. */
+export async function proposeSharedGift(
+  listId: string,
+  proposal: { giftName: string; url?: string; price?: number | null },
+): Promise<SharedGiftList> {
+  return api<SharedGiftList>(`/shared-gifts/${listId}/proposals`, {
+    method: "POST",
+    body: JSON.stringify(proposal),
+  });
+}
+
+/** Invité : retirer sa proposition tant qu'elle attend. */
+export async function withdrawSharedProposal(
+  listId: string,
+  proposalId: string,
+): Promise<SharedGiftList> {
+  return api<SharedGiftList>(
+    `/shared-gifts/${listId}/proposals/${proposalId}`,
+    { method: "DELETE" },
+  );
+}
+
+/** Gestionnaire : accepter (l'idée entre dans la liste) ou refuser. */
+export async function decideSharedProposal(
+  listId: string,
+  proposalId: string,
+  decision: "accept" | "decline",
+): Promise<SharedGiftList> {
+  return api<SharedGiftList>(
+    `/shared-gifts/${listId}/proposals/${proposalId}/${decision}`,
+    { method: "POST" },
+  );
 }
 
 export async function addSharedGift(

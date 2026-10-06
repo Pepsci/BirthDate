@@ -84,7 +84,7 @@ app.use(
     },
     methods: "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS",
     allowedHeaders:
-      "Content-Type,Authorization,X-Event-Code,x-guest-token,Cache-Control",
+      "Content-Type,Authorization,X-Event-Code,x-guest-token,Cache-Control,X-App-Language,X-App-Region",
   }),
 );
 
@@ -116,6 +116,13 @@ if (process.env.NODE_ENV !== "production") {
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
+
+// ── Messages d'erreur dans la langue du client ──────────────────────────────
+// L'app mobile en anglais envoie `X-App-Language: en` : les messages d'erreur
+// des routes (écrits en français) sont alors traduits à la volée. Sans effet
+// pour le site web et l'app en français. Monté AVANT les limiteurs et les
+// routes pour couvrir aussi leurs refus (429…). Voir middleware/translateErrors.js.
+app.use("/api", require("./middleware/translateErrors").translateErrors);
 app.use(express.static(path.join(__dirname, "public")));
 
 // ── Avatars uploadés ────────────────────────────────────────────────────────

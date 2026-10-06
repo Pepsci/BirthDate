@@ -1,0 +1,32 @@
+{
+  "agenda": {
+    "title": "📅 Calendar view",
+    "text": "This button shows all the month's birthdays, name days and events at a glance."
+  },
+  "addDate": {
+    "title": "🎂 Your first date",
+    "text": "Tap ＋ to add your first birthday. Off you go!"
+  },
+  "addEvent": {
+    "title": "🎉 Your first event",
+    "text": "Tap ＋ to plan a party: put the date and place to a vote, invite your friends, suggest gifts and start a money pool."
+  },
+  "friends": {
+    "title": "👥 Your friends",
+    "text": "It all starts here: add your friends to see their birthdays automatically, chat with them and invite them to your events."
+  },
+  "notifs": {
+    "title": "🔔 Notifications",
+    "text": "Choose what you want to receive: push notifications on this phone (birthdays, messages, events…) and email reminders."
+  },
+  "wishlist": {
+    "title": "🎀 Your wishlist",
+    "text": "List the gifts you would like: your friends check it so they never get it wrong, and you can check theirs!"
+  },
+  "e2e": {
+    "title": "🔐 Encryption & security",
+    "text": "Your messages are end-to-end encrypted. This section lets you manage your encryption keys."
+  },
+  "finish": "Finish",
+  "gotIt": "Got it!"
+}

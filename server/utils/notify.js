@@ -2,6 +2,25 @@ const Notification = require("../models/notification.model");
 const User = require("../models/user.model");
 const { sendPushToUser } = require("../services/pushService");
 const { REACTION_PUSH_GLYPH } = require("../constants/reactions");
+const { translator, getUserLanguage, resolveText } = require("../i18n");
+
+/**
+ * Certains champs de `data` sont des phrases composées par le serveur
+ * (`message`, `statusLabel`, `newDateLabel`…) et affichées telles quelles par
+ * le centre de notifications. L'appelant peut les donner sous forme de
+ * fonction `(L) => L("cle", { … })` : elles sont résolues ici, dans la langue
+ * du destinataire, avant l'enregistrement. Les autres valeurs ne bougent pas.
+ */
+async function localizeData(userId, data) {
+  const keys = Object.keys(data || {}).filter(
+    (k) => typeof data[k] === "function",
+  );
+  if (keys.length === 0) return data;
+  const L = translator(await getUserLanguage(userId));
+  const out = { ...data };
+  for (const k of keys) out[k] = resolveText(data[k], L);
+  return out;
+}
 
 /**
  * Crée une notification en base et l'émet en temps réel via Socket.io.
@@ -19,6 +38,7 @@ const { REACTION_PUSH_GLYPH } = require("../constants/reactions");
  */
 const notify = async (app, { userId, type, data = {}, link = null }) => {
   let notif;
+  data = await localizeData(userId, data);
 
   // Déduplication messages DM : une seule notif non lue par conversation
   if (type === "new_message" && data.conversationId) {
@@ -104,8 +124,9 @@ const notify = async (app, { userId, type, data = {}, link = null }) => {
       const user = await User.findById(userId).select("pushEnabled pushEvents");
       if (user?.pushEnabled && user?.pushEvents?.events) {
         await sendPushToUser(userId, {
-          title: `💬 ${data.eventTitle || "Événement"}`,
-          body: `${data.senderName} : ${data.preview || "Nouveau message"}`,
+          title: (L) => `💬 ${data.eventTitle || L("push.eventWord")}`,
+          body: (L) =>
+            `${data.senderName} : ${data.preview || L("push.newMessage")}`,
           url: `${process.env.FRONTEND_URL}${link || "/"}`,
           tag: `event-chat-${data.eventShortId}`,
           // Idem pour la discussion d'un événement : le silencieux vise CET
@@ -125,8 +146,15 @@ const notify = async (app, { userId, type, data = {}, link = null }) => {
       const user = await User.findById(userId).select("pushEnabled pushEvents");
       if (user?.pushEnabled && user?.pushEvents?.events) {
         await sendPushToUser(userId, {
-          title: `💰 Nouvelle contribution — ${data.eventTitle || "Cagnotte"}`,
-          body: `${data.contributorName} a participé : ${data.amountLabel || ""}`,
+          title: (L) =>
+            L("push.pool.contributionTitle", {
+              title: data.eventTitle || L("push.pool.pool"),
+            }),
+          body: (L) =>
+            L("push.pool.contributionBody", {
+              name: data.contributorName,
+              amount: data.amountLabel || "",
+            }),
           url: `${process.env.FRONTEND_URL}${link || "/"}`,
           tag: `event-pool-${data.eventShortId}`,
           type: "events",
@@ -157,12 +185,16 @@ const notify = async (app, { userId, type, data = {}, link = null }) => {
       const isEvent = Boolean(data.eventShortId);
 
       await sendPushToUser(userId, {
-        title: isEvent
-          ? `${glyph} ${data.eventTitle || "Événement"}`
-          : `${glyph} ${data.reactorName || "Quelqu'un"}`,
-        body: isEvent
-          ? `${data.reactorName || "Quelqu'un"} a réagi à votre message`
-          : "a réagi à votre message",
+        title: (L) =>
+          isEvent
+            ? `${glyph} ${data.eventTitle || L("push.eventWord")}`
+            : `${glyph} ${data.reactorName || L("push.someone")}`,
+        body: (L) =>
+          isEvent
+            ? L("push.reaction.inEvent", {
+                name: data.reactorName || L("push.someone"),
+              })
+            : L("push.reaction.dm"),
         url: `${process.env.FRONTEND_URL}${link || "/"}`,
         tag: `reaction-${data.messageId}`,
         muteScope: isEvent
@@ -186,7 +218,7 @@ const notify = async (app, { userId, type, data = {}, link = null }) => {
   if (type === "support_reply") {
     try {
       await sendPushToUser(userId, {
-        title: "💬 Le support t'a répondu",
+        title: (L) => L("push.supportReply"),
         body: data.subject || "",
         url: `${process.env.FRONTEND_URL}${link || "/home?tab=support"}`,
         tag: `support-${data.ticketId}`,

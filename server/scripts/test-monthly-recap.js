@@ -108,7 +108,6 @@ async function main() {
     log("Mode --all : récupération des users avec monthlyRecap: true...");
     users = await User.find({
       monthlyRecap: true,
-      receiveBirthdayEmails: { $ne: false },
       deletedAt: { $exists: false },
     });
     if (users.length === 0) {

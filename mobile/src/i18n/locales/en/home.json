@@ -1,0 +1,49 @@
+{
+  "banner": {
+    "updateTitle": "✨ New version available",
+    "updateText": "BirthReminder {{version}} is ready. Tap here to update.",
+    "closeAnnouncement": "Close announcement"
+  },
+  "localBadge": {
+    "label": "On this phone, no account",
+    "title": "📱 On this phone",
+    "text": "You are using BirthReminder without an account: your cards stay on this phone, nothing is sent. Remember to make backups."
+  },
+  "showPools": "Show my money pools",
+  "errorRetry": "{{error}} Tap to retry",
+  "searchPlaceholder": "🔍 Search a first or last name…",
+  "clearSearch": "Clear search",
+  "filter": {
+    "all": "All",
+    "friends": "👥 Friends",
+    "family": "🏠 Family"
+  },
+  "showMore": {
+    "one": "Show more ({{count}} left)",
+    "other": "Show more ({{count}} left)"
+  },
+  "emptySearch": "No result for this search.",
+  "empty": "No dates yet. Add your first birthday with the ＋ button!",
+  "pending": "⏳ Pending",
+  "badge": {
+    "friend": "FRIEND",
+    "family": "FAMILY"
+  },
+  "agenda": {
+    "calendarNotes": "BirthReminder event: {{url}}",
+    "title": "Calendar",
+    "month": "Month",
+    "week": "Week",
+    "weekOf": "Week of {{date}}",
+    "namedayOf": "🎉 {{name}}'s name day",
+    "more": {
+      "one": "+ {{count}} more…",
+      "other": "+ {{count}} more…"
+    },
+    "legendBirthday": "Birthday",
+    "legendNameday": "Name day",
+    "legendEvent": "Event",
+    "namedayOfFull": "{{name}}'s name day",
+    "addToCalendar": "🗓️ Calendar"
+  }
+}

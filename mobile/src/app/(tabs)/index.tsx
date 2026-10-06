@@ -1,3 +1,4 @@
+import { t, tn } from "@/i18n";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useFocusEffect } from "expo-router";
 import {
@@ -71,7 +72,7 @@ export default function BirthdaysScreen() {
       setDates(list);
       if (me) setHideNamedays(!!me.hideNamedaysOnCards);
     } catch (e: any) {
-      setError(e?.message ?? "Erreur de chargement.");
+      setError(e?.message ?? t("common:errors.loading"));
     }
   }, []);
 
@@ -170,7 +171,7 @@ export default function BirthdaysScreen() {
       <HomeBanners />
       {error && (
         <Pressable style={styles.errorBanner} onPress={onRefresh}>
-          <Text style={styles.errorText}>{error} — appuyer pour réessayer</Text>
+          <Text style={styles.errorText}>{t("home:errorRetry", { error })}</Text>
         </Pressable>
       )}
 
@@ -180,7 +181,7 @@ export default function BirthdaysScreen() {
         <TextInput
           placeholderTextColor={colors.placeholder}
           style={styles.searchInput}
-          placeholder="🔍 Rechercher un prénom ou un nom…"
+          placeholder={t("home:searchPlaceholder")}
           value={search}
           onChangeText={setSearch}
           autoCorrect={false}
@@ -189,7 +190,7 @@ export default function BirthdaysScreen() {
           <Pressable
             hitSlop={12}
             accessibilityRole="button"
-            accessibilityLabel="Effacer la recherche"
+            accessibilityLabel={t("home:clearSearch")}
             onPress={() => setSearch("")}
             style={({ pressed }) => [
               styles.searchClearBtn,
@@ -204,9 +205,9 @@ export default function BirthdaysScreen() {
       <View style={styles.filterRow}>
         {(
           [
-            { v: "all", l: "Tous" },
-            { v: "friends", l: "👥 Amis" },
-            { v: "family", l: "🏠 Famille" },
+            { v: "all", l: t("home:filter.all") },
+            { v: "friends", l: t("home:filter.friends") },
+            { v: "family", l: t("home:filter.family") },
           ] as const
         ).map(({ v, l }) => (
           <Pressable
@@ -249,8 +250,7 @@ export default function BirthdaysScreen() {
               onPress={() => setVisibleCount((c) => c + PAGE_SIZE)}
             >
               <Text style={styles.loadMoreText}>
-                Afficher plus ({sorted.length - visibleCount} restant
-                {sorted.length - visibleCount > 1 ? "s" : ""})
+                {tn("home:showMore", sorted.length - visibleCount)}
               </Text>
             </Pressable>
           ) : null
@@ -258,8 +258,8 @@ export default function BirthdaysScreen() {
         ListEmptyComponent={
           <Text style={styles.empty}>
             {search || filter !== "all"
-              ? "Aucun résultat pour cette recherche."
-              : "Aucune date pour l'instant. Ajoute ton premier anniversaire avec le bouton ＋ !"}
+              ? t("home:emptySearch")
+              : t("home:empty")}
           </Text>
         }
         renderItem={({ item }) => (
@@ -318,7 +318,7 @@ function BirthdayCard({
     >
       {entry.pending && (
         <View style={styles.pendingBadge}>
-          <Text style={styles.pendingBadgeText}>⏳ En attente</Text>
+          <Text style={styles.pendingBadgeText}>{t("home:pending")}</Text>
         </View>
       )}
       {soon && (
@@ -329,7 +329,7 @@ function BirthdayCard({
           ]}
         >
           <Text style={styles.soonBadgeText}>
-            {days === 1 ? "Demain" : `J-${days}`}
+            {days === 1 ? t("common:tomorrow") : t("common:inDays", { count: days })}
           </Text>
         </View>
       )}
@@ -353,8 +353,8 @@ function BirthdayCard({
       </Text>
 
       <View style={styles.nameRow}>
-        {entry.linkedUser && <Badge label="AMI" color={colors.primary} />}
-        {entry.family && <Badge label="FAMILLE" color={colors.warning} />}
+        {entry.linkedUser && <Badge label={t("home:badge.friend")} color={colors.primary} />}
+        {entry.family && <Badge label={t("home:badge.family")} color={colors.warning} />}
       </View>
 
       {birthISO && (
@@ -375,7 +375,7 @@ function BirthdayCard({
       {birthISO &&
         (isToday ? (
           <View style={styles.countdownToday}>
-            <Text style={styles.countdownTodayText}>Aujourd'hui 🎂</Text>
+            <Text style={styles.countdownTodayText}>{t("common:todayCake")}</Text>
           </View>
         ) : (
           <BirthdayCountdown iso={birthISO} />

@@ -1,3 +1,4 @@
+import { t } from "@/i18n";
 import { useState } from "react";
 import {
   View,
@@ -34,8 +35,8 @@ export default function GiftIdeaForm({
   onCancel,
   busy,
   initial,
-  submitLabel = "Ajouter",
-  title = "Nouvelle idée",
+  submitLabel = t("common:actions.add"),
+  title = t("gifts:form.newIdea"),
 }: {
   onSubmit: (gift: GiftIdeaPayload) => Promise<void>;
   onCancel?: () => void;
@@ -71,12 +72,12 @@ export default function GiftIdeaForm({
         if (info.data.title) setName(info.data.title);
         if (info.data.price != null) setPrice(String(info.data.price));
         if (info.data.image) setImage(info.data.image);
-        setMsg("✅ Infos récupérées — vérifie et ajuste si besoin");
+        setMsg(t("gifts:form.fetched"));
       } else {
-        setMsg(info.message ?? "Infos non trouvées — remplis manuellement");
+        setMsg(info.message ?? t("gifts:form.notFound"));
       }
     } catch (e: any) {
-      setMsg(e?.message ?? "Erreur lors de la récupération.");
+      setMsg(e?.message ?? t("gifts:form.fetchError"));
     } finally {
       setFetching(false);
     }
@@ -106,7 +107,7 @@ export default function GiftIdeaForm({
       {/* Lien + fetch */}
       <TextInput placeholderTextColor={colors.placeholder}
         style={styles.input}
-        placeholder="Lien du produit (URL)"
+        placeholder={t("gifts:form.url")}
         autoCapitalize="none"
         keyboardType="url"
         value={url}
@@ -121,7 +122,7 @@ export default function GiftIdeaForm({
           onPress={fetchInfos}
         >
           <Text style={styles.fetchBtnText}>
-            {fetching ? "Récupération…" : "🔍 Récupérer les infos avec le lien"}
+            {fetching ? t("gifts:form.fetching") : t("gifts:form.fetch")}
           </Text>
         </Pressable>
       )}
@@ -139,7 +140,7 @@ export default function GiftIdeaForm({
       {/* Saisie manuelle */}
       <TextInput placeholderTextColor={colors.placeholder}
         style={styles.input}
-        placeholder="Nom du cadeau *"
+        placeholder={t("gifts:form.name")}
         value={name}
         onChangeText={setName}
       />
@@ -164,7 +165,7 @@ export default function GiftIdeaForm({
       <View style={styles.row}>
         <TextInput placeholderTextColor={colors.placeholder}
           style={[styles.input, { flex: 1 }]}
-          placeholder="Année"
+          placeholder={t("gifts:form.year")}
           keyboardType="number-pad"
           maxLength={4}
           value={year}
@@ -172,7 +173,7 @@ export default function GiftIdeaForm({
         />
         <TextInput placeholderTextColor={colors.placeholder}
           style={[styles.input, { flex: 1 }]}
-          placeholder="Prix (€)"
+          placeholder={t("gifts:form.price")}
           keyboardType="decimal-pad"
           value={price}
           onChangeText={setPrice}
@@ -181,7 +182,7 @@ export default function GiftIdeaForm({
 
       <TextInput placeholderTextColor={colors.placeholder}
         style={styles.input}
-        placeholder="URL de l'image (optionnel)"
+        placeholder={t("gifts:form.imageUrl")}
         autoCapitalize="none"
         keyboardType="url"
         value={image}
@@ -195,7 +196,7 @@ export default function GiftIdeaForm({
             disabled={busy}
             onPress={onCancel}
           >
-            <Text style={styles.cancelText}>Annuler</Text>
+            <Text style={styles.cancelText}>{t("common:actions.cancel")}</Text>
           </Pressable>
         )}
         <Pressable

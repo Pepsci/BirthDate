@@ -1,3 +1,4 @@
+import { t } from "@/i18n";
 import { useCallback, useState, useEffect, useRef } from "react";
 import {
   View,
@@ -50,7 +51,7 @@ export default function SharedListAccessScreen() {
       setError(null);
       setAccess(await fetchSharedListAccess(id));
     } catch (e: any) {
-      setError(e?.message ?? "Erreur de chargement.");
+      setError(e?.message ?? t("common:errors.loading"));
     }
   }, [id]);
 
@@ -82,7 +83,7 @@ export default function SharedListAccessScreen() {
       await fn();
       await load();
     } catch (e: any) {
-      setError(e?.message ?? "Erreur.");
+      setError(e?.message ?? t("common:errors.generic"));
     } finally {
       setBusy(false);
     }
@@ -106,12 +107,12 @@ export default function SharedListAccessScreen() {
 
   const confirmRevoke = (userId: string, name: string) => {
     Alert.alert(
-      "Retirer l'acces ?",
-      name + " ne verra plus cette liste. Ses reservations restent en place.",
+      t("gifts:access.revokeTitle"),
+      t("gifts:access.revokeText", { name }),
       [
-        { text: "Annuler", style: "cancel" },
+        { text: t("common:actions.cancel"), style: "cancel" },
         {
-          text: "Retirer",
+          text: t("common:actions.remove"),
           style: "destructive",
           onPress: () => run(() => removeSharedListViewer(id!, userId)),
         },
@@ -122,7 +123,7 @@ export default function SharedListAccessScreen() {
   if (!access) {
     return (
       <View style={styles.center}>
-        <Stack.Screen options={{ title: "Acces a la liste" }} />
+        <Stack.Screen options={{ title: t("gifts:access.title") }} />
         {error ? (
           <Text style={styles.error}>{error}</Text>
         ) : (
@@ -134,14 +135,13 @@ export default function SharedListAccessScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Stack.Screen options={{ title: "Acces a la liste" }} />
+      <Stack.Screen options={{ title: t("gifts:access.title") }} />
       {error && <Text style={styles.error}>{error}</Text>}
 
       <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Membres</Text>
+        <Text style={styles.sectionTitle}>{t("gifts:access.members")}</Text>
         <Text style={styles.hint}>
-          Ils peuvent ajouter, modifier et supprimer des idees, et gerer les
-          acces.
+          {t("gifts:access.membersHint")}
         </Text>
         {access.members.map((m) => (
           <View key={m._id} style={styles.row}>
@@ -149,7 +149,7 @@ export default function SharedListAccessScreen() {
               {m.name} {m.surname ?? ""}
             </Text>
             {access.createdBy === m._id && (
-              <Text style={styles.tag}>createur</Text>
+              <Text style={styles.tag}>{t("gifts:access.creator")}</Text>
             )}
           </View>
         ))}
@@ -157,17 +157,16 @@ export default function SharedListAccessScreen() {
 
       <View style={styles.card}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Invites</Text>
+          <Text style={styles.sectionTitle}>{t("gifts:access.guests")}</Text>
           <Pressable style={styles.addBtn} onPress={openPicker}>
-            <Text style={styles.addBtnText}>+ Inviter</Text>
+            <Text style={styles.addBtnText}>{t("gifts:access.invite")}</Text>
           </Pressable>
         </View>
         <Text style={styles.hint}>
-          Ils consultent la liste et peuvent reserver un cadeau. Ils ne voient
-          pas qui a reserve quoi, et ne modifient jamais la liste.
+          {t("gifts:access.guestsHint")}
         </Text>
         {access.viewers.length === 0 && (
-          <Text style={styles.empty}>Personne pour l'instant.</Text>
+          <Text style={styles.empty}>{t("gifts:access.nobody")}</Text>
         )}
         {access.viewers.map((v) => (
           <View key={v.user._id} style={styles.row}>
@@ -176,7 +175,7 @@ export default function SharedListAccessScreen() {
                 {v.user.name} {v.user.surname ?? ""}
               </Text>
               {v.addedBy?.name && (
-                <Text style={styles.hint}>invite par {v.addedBy.name}</Text>
+                <Text style={styles.hint}>{t("gifts:access.invitedBy", { name: v.addedBy.name })}</Text>
               )}
             </View>
             <Pressable
@@ -184,25 +183,22 @@ export default function SharedListAccessScreen() {
               disabled={busy}
               onPress={() => confirmRevoke(v.user._id, v.user.name)}
             >
-              <Text style={styles.revokeText}>Retirer</Text>
+              <Text style={styles.revokeText}>{t("common:actions.remove")}</Text>
             </Pressable>
           </View>
         ))}
       </View>
 
       <View style={styles.card}>
-        <Text style={styles.sectionTitle}>Code d'acces</Text>
+        <Text style={styles.sectionTitle}>{t("gifts:access.code")}</Text>
         <Text style={styles.hint}>
-          Demande aux personnes qui arrivent par le lien public pour OUVRIR la
-          liste. Tant qu'il n'est pas saisi, les idees ne leur sont pas
-          envoyees : le lien peut circuler sans montrer ce que tu prepares.
+          {t("gifts:access.codeHint")}
         </Text>
         {access.accessCode ? (
           <Text style={styles.code}>{access.accessCode}</Text>
         ) : (
           <Text style={styles.empty}>
-            Aucun code : toute personne ayant le lien voit la liste et peut
-            reserver.
+            {t("gifts:access.noCode")}
           </Text>
         )}
         <Pressable
@@ -210,14 +206,14 @@ export default function SharedListAccessScreen() {
           disabled={busy}
           onPress={() =>
             Alert.alert(
-              access.accessCode ? "Changer le code ?" : "Generer un code ?",
+              access.accessCode ? t("gifts:access.changeCodeQ") : t("gifts:access.genCodeQ"),
               access.accessCode
-                ? "L'ancien code cessera de fonctionner immediatement, y compris dans les liens deja envoyes qui le contenaient."
-                : "Il sera demande pour reserver depuis le lien public.",
+                ? t("gifts:access.changeCodeText")
+                : t("gifts:access.genCodeText"),
               [
-                { text: "Annuler", style: "cancel" },
+                { text: t("common:actions.cancel"), style: "cancel" },
                 {
-                  text: "Confirmer",
+                  text: t("common:actions.confirm"),
                   onPress: () => run(() => regenerateAccessCode(id!)),
                 },
               ],
@@ -225,18 +221,18 @@ export default function SharedListAccessScreen() {
           }
         >
           <Text style={styles.codeBtnText}>
-            {access.accessCode ? "Changer le code" : "Generer un code"}
+            {access.accessCode ? t("gifts:access.changeCode") : t("gifts:access.genCode")}
           </Text>
         </Pressable>
       </View>
 
       <BottomSheet visible={pickerOpen} onClose={() => setPickerOpen(false)}>
-        <Text style={styles.sheetTitle}>Inviter un contact</Text>
+        <Text style={styles.sheetTitle}>{t("gifts:access.inviteContact")}</Text>
         <Text style={styles.hint}>
-          Il pourra consulter la liste et reserver, sans pouvoir la modifier.
+          {t("gifts:access.inviteHint")}
         </Text>
         {friends.length === 0 && (
-          <Text style={styles.empty}>Aucun contact a inviter.</Text>
+          <Text style={styles.empty}>{t("gifts:access.noContact")}</Text>
         )}
         {friends.map((f) => (
           <Pressable

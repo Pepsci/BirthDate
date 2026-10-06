@@ -1,3 +1,4 @@
+import { t } from "@/i18n";
 import { Stack, useRouter } from "expo-router";
 import DateForm from "../../components/DateForm";
 import { createDate } from "../../lib/dates";
@@ -7,9 +8,9 @@ export default function NewDateScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ title: "Ajouter une date" }} />
+      <Stack.Screen options={{ title: t("date:new.title") }} />
       <DateForm
-        submitLabel="Ajouter"
+        submitLabel={t("common:actions.add")}
         onSubmit={async (payload) => {
           await createDate(payload);
           router.back();

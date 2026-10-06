@@ -1,0 +1,302 @@
+{
+  "type": {
+    "birthday": "🎂 Birthday",
+    "party": "🎉 Party",
+    "dinner": "🍽️ Meal",
+    "other": "📌 Other"
+  },
+  "status": {
+    "draft": "Draft",
+    "published": "Published",
+    "cancelled": "Cancelled",
+    "done": "Finished"
+  },
+  "rsvp": {
+    "pending": "Pending",
+    "accepted": "✅ Going",
+    "declined": "❌ Declined",
+    "maybe": "🤷 Maybe",
+    "no": "❌ No",
+    "title": "Your reply",
+    "closed": "The event is cancelled: replies are closed."
+  },
+  "externalGuest": "External guest",
+  "list": {
+    "drafts": "📝 Drafts to finish",
+    "organizing": "I'm hosting",
+    "invited": "I'm invited",
+    "past": "🗄️ Past events ({{count}})",
+    "poolTip": "You can create a money pool to fund a gift together, right from an event, with no extra fee from BirthReminder for now.",
+    "empty": "No events yet. Create one with the ＋ button and it will show up here."
+  },
+  "draft": {
+    "deleteTitle": "Delete this draft?",
+    "deleteTextNamed": "\"{{title}}\" will be permanently deleted.",
+    "keep": "Keep",
+    "deleteLabel": "Delete this draft",
+    "resume": "Resume →",
+    "deleteText": "It will be permanently deleted.",
+    "titleNamed": "Draft {{title}}"
+  },
+  "untitled": "Untitled",
+  "forPerson": " · for {{name}}",
+  "dateVote": "Date being voted",
+  "placeVote": "Place being voted",
+  "form": {
+    "create": "🎉 Create the event",
+    "publish": "🎉 Publish the event",
+    "save": "💾 Save",
+    "newTitle": "New event",
+    "steps": {
+      "essential": "Basics",
+      "date": "Date",
+      "place": "Place",
+      "gifts": "Gifts",
+      "pool": "Pool",
+      "invite": "Invite"
+    },
+    "birthdayOf": "{{name}}'s birthday",
+    "createError": "Could not create the event.",
+    "type": "Event type",
+    "title": "Title *",
+    "titlePlaceholder": "e.g. Léa's surprise birthday",
+    "description": "Description",
+    "descPlaceholder": "Details, instructions, dress code… (optional)",
+    "dateFixed": "📅 Fixed date",
+    "vote": "🗳️ Put it to a vote",
+    "time": "Time:",
+    "dateVoteHint": "Suggest at least 2 dates and guests will vote.",
+    "addDate": "＋ Add a date",
+    "addThisDate": "Add this date",
+    "placeFixed": "📍 Fixed place",
+    "address": "Address or place name",
+    "addressPlaceholder": "e.g. 12 rue des Lilas, Paris…",
+    "addressHint": "Type an address for suggestions, or any name (\"My place\"). Optional, you can change it later.",
+    "placeVoteHint": "Suggest at least 2 places and guests will vote.",
+    "placeToSuggest": "Address or name of the place to suggest",
+    "addPlace": "＋ Add this place",
+    "noGifts": "🚫 No gifts",
+    "noGiftsHint": "Create the event without any gift list.",
+    "freeProposals": "💡 Open suggestions",
+    "imposed": "🎁 Set list",
+    "proposalsHint": "Guests suggest ideas and vote for their favourites.",
+    "imposedHint": "Only you define the gift list.",
+    "gift": "Gift",
+    "enablePool": "💳 Turn on a money pool",
+    "poolHint": "Let your guests chip in for the gift.",
+    "methods": "Ways to contribute",
+    "iban": "🏦 IBAN transfer",
+    "paypal": "💰 PayPal link",
+    "poolNotice": "ℹ️ You will finish setting up the pool (amount/goal, bank details, PayPal link) from the event page once it is created.",
+    "maxGuests": "Maximum number of guests",
+    "unlimited": "Unlimited if empty",
+    "external": "External guests",
+    "externalHint": "People without an account can join with the code",
+    "guestInvites": "Guests can invite",
+    "guestInvitesHint": "They see the share link and the access code"
+  },
+  "errors": {
+    "rsvp": "Could not send your reply.",
+    "vote": "Could not save your vote.",
+    "propose": "Could not send the suggestion.",
+    "import": "Could not import.",
+    "select": "Could not save the selection.",
+    "code": "Invalid code."
+  },
+  "calendar": {
+    "removeTitle": "Remove from calendar?",
+    "removeText": "\"{{title}}\" will be removed from your calendar. The event stays in BirthReminder.",
+    "added": "✓ In your calendar · tap to remove",
+    "add": "🗓️ Add to my calendar"
+  },
+  "vote": {
+    "keepDateTitle": "Keep this date?",
+    "keepDateText": "Voting will close. All participants will be notified and will need to confirm again.",
+    "keep": "Keep",
+    "keepDateError": "Could not keep this date.",
+    "proposedPlace": "Proposed place",
+    "keepPlaceTitle": "Keep this place?",
+    "keepPlaceText": "Voting will close and participants will be notified.",
+    "keepPlaceError": "Could not keep this place.",
+    "dateTitle": "📅 Vote for the date",
+    "placeTitle": "📍 Vote for the place",
+    "results": " (results)",
+    "count": {
+      "one": "{{count}} vote",
+      "other": "{{count}} votes"
+    },
+    "hintHost": "Tap a date to keep it: voting will close and everyone will need to confirm again.",
+    "hintGuest": "Several choices allowed. Tap to tick or untick."
+  },
+  "maps": {
+    "apple": "🍎 Maps",
+    "directions": "Directions",
+    "openGoogle": "🧭 Open in Google Maps",
+    "openApple": "🧭 Open in Maps"
+  },
+  "share": {
+    "join": "Join the event \"{{title}}\" on BirthReminder: {{url}} (code: {{code}})",
+    "pool": "Chip in to the money pool for \"{{title}}\" on BirthReminder: {{url}}"
+  },
+  "cancel": {
+    "doneTitle": "Event cancelled",
+    "donePool": "Your guests have been notified. The money pool is closed: no more contributions can come in. Amounts already paid are not refunded automatically.",
+    "doneText": "Your guests have been notified by push and by email.",
+    "error": "Could not cancel the event.",
+    "banner": "❌ Event cancelled",
+    "noReason": "The host did not give a reason.",
+    "hint": "The page stays available, but the event will not take place. If you added it to your calendar, remember to remove it.",
+    "sheetTitle": "Cancel the event",
+    "sheetHint": "All guests will be notified by push and by email. The event will stay visible, crossed out, with your reason. You can restore or delete it afterwards.",
+    "reasonPlaceholder": "Reason (optional), e.g. venue unavailable",
+    "cancelling": "Cancelling…",
+    "confirm": "❌ Confirm cancellation",
+    "sheetPool": " The money pool will be closed: no more contributions can come in. Amounts already paid are NOT refunded automatically. It is up to you to do it from the pool settings, and the Stripe fees of the original payments will remain at your expense."
+  },
+  "uncancel": {
+    "title": "Restore this event?",
+    "text": "All guests will be told it is happening after all. The money pool stays closed: you can reopen it from the pool screen.",
+    "action": "Restore",
+    "error": "Could not restore the event."
+  },
+  "transfer": {
+    "sentTitle": "Proposal sent",
+    "sentPool": "{{name}} needs to accept. Note: the money pool will not follow. The {{amount}} € already paid will stay on your Stripe account, and it is up to you to refund or pass them on.",
+    "sentText": "{{name}} needs to accept for the transfer to take effect. Until then, you remain the host.",
+    "offerError": "Could not propose the transfer.",
+    "acceptTitle": "Take over as host?",
+    "acceptText": "You will be in charge of invitations, votes and planning. The current host's money pool will be closed: amounts already paid stay on their account, and you can open your own afterwards.",
+    "acceptError": "Could not accept the transfer.",
+    "bannerTitle": "🤝 You are asked to host",
+    "bannerText": "{{name}} is asking you to take over as host of \"{{title}}\".",
+    "bannerHint": "You would be in charge of invitations, votes and planning. Any money pool does not follow: amounts already paid stay on the current host's account.",
+    "accept": "✅ Accept",
+    "withdraw": "{{name}} · withdraw",
+    "sheetTitle": "Transfer hosting",
+    "sheetHint": "The person you choose will need to accept. Until they reply, you remain the host.",
+    "sheetPool": " The money pool will not follow: amounts already paid stay on your Stripe account, and it is up to you to refund or pass them on.",
+    "nobody": "Nobody has confirmed yet: there is no one to transfer to for now.",
+    "offer": "Offer →"
+  },
+  "leave": {
+    "title": "Leave this event?",
+    "text": "You will no longer see its details or chat. The host can invite you again.",
+    "error": "Could not leave the event.",
+    "btn": "🚪 Leave the event"
+  },
+  "delete": {
+    "title": "Delete this event?",
+    "text": "Invitations, votes, gifts and messages will be permanently deleted."
+  },
+  "notFound": "Event not found.",
+  "hostedBy": "👤 Hosted by {{name}}",
+  "you": " (you)",
+  "theHost": "The host",
+  "org": {
+    "title": "⚙️ Hosting",
+    "pool": "Money pool",
+    "transfer": "Transfer"
+  },
+  "place": "Place",
+  "pool": {
+    "title": "💝 Money pool",
+    "contributions": {
+      "one": "{{count}} contribution",
+      "other": "{{count}} contributions"
+    },
+    "contributors": "Contributors ({{count}})",
+    "anonymous": "🕶️ Anonymous",
+    "hiddenAmount": "Amount hidden",
+    "contribute": "💝 Contribute",
+    "share": "📤 Share the money pool",
+    "direct": "💳 Direct transfer"
+  },
+  "invite": {
+    "title": "🔗 Invite people",
+    "friends": "👥 Invite my friends",
+    "shareLink": "Share the link + code",
+    "copied": "✓ Code copied",
+    "copy": "📋 Copy the access code",
+    "codeLabel": "Access code:"
+  },
+  "participants": {
+    "title": "Participants ({{accepted}} / {{total}})",
+    "none": "Nobody invited yet."
+  },
+  "notifs": {
+    "btn": "🔔 Notifications for this event",
+    "chatMessage": {
+      "title": "Chat messages",
+      "hint": "Every message sent in the chat."
+    },
+    "eventUpdates": {
+      "title": "Event updates",
+      "hint": "Place chosen, details changed."
+    },
+    "rsvp": {
+      "title": "Invitation replies",
+      "hint": "When someone accepts or declines."
+    },
+    "locationVote": {
+      "title": "Votes for the place",
+      "hint": "Each time a vote is recorded."
+    },
+    "giftProposed": {
+      "title": "Suggested gifts",
+      "hint": "New idea in the list."
+    },
+    "giftVote": {
+      "title": "Gift votes",
+      "hint": "When an idea gets a vote."
+    },
+    "poolContribution": {
+      "title": "Pool contributions",
+      "hint": "Each contribution received."
+    },
+    "dateVote": {
+      "title": "Votes for the date",
+      "hint": "Each time a vote is recorded."
+    },
+    "short": "Notifications",
+    "screenTitle": "Event notifications",
+    "footer": "You will always be notified if the event is cancelled or its date changes: these are the only messages nobody can afford to miss."
+  },
+  "backToEvent": "‹ Back to the event",
+  "gifts": {
+    "title": "🎁 Gifts",
+    "proposals": "🎁 Suggestions",
+    "propose": "＋ Suggest a gift",
+    "import": "📋 Import",
+    "url": "Product link (optional)",
+    "price": "Price in € (optional)",
+    "submit": "Suggest",
+    "none": "No suggestions yet.",
+    "by": "by {{name}}",
+    "selected": "⭐ Selected",
+    "voted": "❤️ Voted",
+    "proposedBy": "Suggested by {{name}}",
+    "vote": "🤍 Vote",
+    "unselect": "⭐ Remove from selection",
+    "select": "⭐ Select this gift",
+    "editMine": "✏️ Edit my gift",
+    "asHost": "(host)"
+  },
+  "join": {
+    "notInvited": "You are not invited to this event. Limited public view.",
+    "title": "Join with a code",
+    "placeholder": "Access code (6 to 8 characters)",
+    "checking": "Checking…",
+    "submit": "Join"
+  },
+  "openChat": "Open the event chat",
+  "inviteScreen": {
+    "error": "Could not send the invitations.",
+    "short": "Invite",
+    "embedded": "👥 Invite people",
+    "title": "Invite people",
+    "friends": "My friends",
+    "noFriends": "No friends signed up yet. Use the emails below or the share link from the event page.",
+    "byEmail": "By email (no account)",
+    "emails": "emails separated by commas"
+  }
+}

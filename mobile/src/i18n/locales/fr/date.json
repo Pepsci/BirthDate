@@ -1,0 +1,242 @@
+{
+  "aCard": "une carte",
+  "notFound": "Cette carte n'existe plus.",
+  "preview": {
+    "error": "Impossible de charger ce profil.",
+    "birthdayOn": "Anniversaire le {{date}}",
+    "ideas": {
+      "one": "{{count}} idée dans sa liste",
+      "other": "{{count}} idées dans sa liste"
+    },
+    "noIdeas": "Aucune idée cadeau partagée",
+    "sharedList": {
+      "one": "Liste commune — {{count}} cadeau",
+      "other": "Liste commune — {{count}} cadeaux"
+    },
+    "viewProfile": "Voir le profil"
+  },
+  "form": {
+    "photoError": "Erreur lors de l'upload de la photo.",
+    "removePhotoTitle": "Supprimer la photo ?",
+    "nameRequired": "Le prénom est obligatoire.",
+    "photo": "Photo",
+    "changePhoto": "Changer la photo",
+    "addPhoto": "Ajouter une photo",
+    "firstNameLabel": "Prénom *",
+    "firstName": "Prénom",
+    "lastNameLabel": "Nom",
+    "lastNameOptional": "Nom (optionnel)",
+    "birthday": "Date d'anniversaire",
+    "family": "Famille",
+    "nameday": "Fête",
+    "namedayHint": "🎉 Détectée automatiquement depuis le prénom si vous n'y touchez pas."
+  },
+  "delete": {
+    "title": "Supprimer cette date ?",
+    "text": "{{name}} sera retiré·e de ta liste.",
+    "failed": "Suppression impossible",
+    "label": "Supprimer cette date"
+  },
+  "edit": {
+    "titleFor": "Modifier {{name}}",
+    "closeLabel": "Fermer la modification"
+  },
+  "nameday": {
+    "none": "Aucune fête définie",
+    "dayIn": "Jour — {{month}}",
+    "pickMonth": "Mois de la fête",
+    "changeMonth": "← Changer de mois",
+    "remove": "Retirer la fête"
+  },
+  "new": {
+    "title": "Ajouter une date"
+  },
+  "report": {
+    "title": "Fête incorrecte",
+    "thanks": "Merci !",
+    "doneText": "On vérifie la fête de {{name}} et on corrige le calendrier pour tout le monde. Notre réponse arrivera dans Messages → Support.",
+    "intro": "Un prénom fêté à la mauvaise date, ou pas fêté du tout ? Dis-nous lequel : on corrige le calendrier pour tout le monde.",
+    "nameLabel": "Prénom concerné *",
+    "namePlaceholder": "Ex : Mia, Jean-Luc…",
+    "dateLabel": "Bonne date (si tu la connais)",
+    "commentLabel": "Précision (optionnel)",
+    "commentPlaceholder": "Ex : dans ma famille on la fête le 15 août",
+    "linkWrong": "Fête incorrecte ?",
+    "linkMissing": "Pas de fête ? Signale-le"
+  },
+  "errors": {
+    "share": "Erreur de partage."
+  },
+  "shared": {
+    "releaseTitle": "Libérer cette réservation ?",
+    "releaseTextWho": "{{who}} s'est engagé à offrir « {{gift}} ». L'idée redeviendra disponible pour tout le monde.",
+    "releaseText": "« {{gift}} » redeviendra disponible pour tout le monde.",
+    "release": "Libérer",
+    "filterFree": "Libres",
+    "filterTaken": "Réservées",
+    "filterMine": "Je m'en occupe",
+    "mineCancel": "✓ Tu t'en occupes · annuler",
+    "reservedBy": "🔒 Réservé par {{name}}",
+    "reserved": "🔒 Réservé",
+    "take": "＋ Je m'en occupe",
+    "releaseBtn": "↩︎ Libérer la réservation",
+    "inviteSent": "Invitation envoyée ✅ En attente de la réponse.",
+    "inviteError": "Erreur lors de l'invitation.",
+    "leaveTitle": "Quitter la liste commune ?",
+    "unfollowTitle": "Ne plus suivre ?",
+    "leaveText": "Tes idées restent pour les autres membres. Si tu es le dernier, la liste sera supprimée.",
+    "unfollowText": "Tu perdras l'accès à cette liste. Un membre pourra te la repartager plus tard.",
+    "leave": "Quitter",
+    "unfollow": "Ne plus suivre",
+    "title": "👥 Liste commune",
+    "intro": "Partage une liste d'idées cadeaux avec un proche : vous la voyez et l'éditez tous les deux.",
+    "create": "＋ Créer une liste commune",
+    "waitingFor": "En attente de {{name}}…",
+    "ideasTitle": "👥 Idées communes",
+    "addFromList": "☑ Ajouter depuis une liste",
+    "shareBtn": "🔗 Partager",
+    "members": "Membres :",
+    "viewerNote": "Liste partagée avec toi — tu peux consulter et réserver.",
+    "chipAll": "Toutes",
+    "chipFree": "🆓 Libres",
+    "chipTaken": "🔒 Réservées",
+    "chipMine": "✓ Je m'en occupe",
+    "empty": "Aucune idée commune pour l'instant.",
+    "allTaken": "Tout est déjà réservé pour ce filtre 🎁",
+    "reservedPlain": "Réservé",
+    "alreadyGiven": "🎉 Déjà offerts · {{count}}",
+    "leaveBtn": "Quitter la liste commune",
+    "unfollowBtn": "Ne plus suivre cette liste",
+    "withWho": "Avec qui créer la liste ?",
+    "pickFriend": "Choisis un ami. Il recevra une invitation à rejoindre la liste.",
+    "whatToShare": "Que partager ?",
+    "pickIdeas": "Choisis les idées à inclure dans la liste commune.",
+    "shareAll": {
+      "one": "🎁 Tout partager ({{count}} idée)",
+      "other": "🎁 Tout partager ({{count}} idées)"
+    },
+    "chooseIdeas": "✅ Choisir les idées à partager",
+    "ideasToShare": "Idées à partager",
+    "selectIdeas": "Sélectionne les idées à inclure dans la liste commune.",
+    "shareTitle": "Partager la liste commune",
+    "publicLink": "Lien public",
+    "publicWithCode": "Le code est demandé pour ouvrir la liste",
+    "publicOpen": "Toute personne ayant le lien peut la consulter",
+    "publicOff": "Génère un lien à envoyer à qui tu veux",
+    "sendLinkCode": "📤 Envoyer le lien (code inclus)",
+    "sendLink": "📤 Envoyer le lien",
+    "sendLinkNoCode": "🔗 Envoyer le lien sans le code",
+    "shareContact": "👤 Partager à un contact",
+    "manageAccess": "👥 Gérer les accès et le code",
+    "guestsNote": "Les invités consultent et réservent, sans modifier la liste. Avec un code, le lien public ne montre rien tant qu'il n'est pas saisi."
+  },
+  "share": {
+    "ideasFor": "🎁 Idées cadeaux pour {{name}}",
+    "sentFrom": "Envoyé depuis BirthReminder",
+    "birthdayLine": "🎂 Anniversaire de {{name}} : {{date}}",
+    "birthdayOf": "🎂 Anniversaire de {{name}}",
+    "card": "📤 Partager cette carte",
+    "ideasTitle": "Partager des idées",
+    "selectIdeas": "Sélectionne les idées à partager.",
+    "next": "Suivant → ({{count}})",
+    "sendTo": "Envoyer à…",
+    "sent": "✅ Envoyé !",
+    "sendToName": "Envoyer à {{name}}",
+    "pickRecipient": "Choisis un destinataire",
+    "cardTitle": "Partager cette carte",
+    "cardNote": "Votre ami pourra l'ajouter à ses anniversaires. Vos idées cadeaux ne sont pas partagées."
+  },
+  "namedayLine": "🎉 Fête : {{date}}",
+  "openChat": "Ouvrir la discussion",
+  "editCard": "Modifier la carte",
+  "pendingNote": "⏳ Modifiée hors ligne, pas encore envoyée. Cadeaux, photo et partage seront disponibles une fois la carte envoyée.",
+  "family": {
+    "remove": "🏠 Retirer de la famille",
+    "add": "🏠 Ajouter à la famille"
+  },
+  "reminders": {
+    "title": "🔔 Rappels",
+    "birthday": "🎂 Anniversaire",
+    "nameday": "🎉 Fête",
+    "dDay": "Jour J",
+    "before": "J-{{count}}"
+  },
+  "seeGifts": "🎁 Voir les cadeaux",
+  "chatCount": "💬 Discuter ({{count}})",
+  "chat": "💬 Discuter",
+  "event": {
+    "view": "🎉 Voir l'événement organisé",
+    "create": "🎉 Organiser un événement"
+  },
+  "backToCard": "‹ Retour à la carte",
+  "tabs": {
+    "ideas": "🎁 Mes idées",
+    "wishlist": "🎀 Sa wishlist",
+    "shared": "👥 Commune"
+  },
+  "ideas": {
+    "title": "🎁 Mes idées cadeaux",
+    "new": "＋ Nouvelle idée",
+    "import": "📋 Importer depuis une liste",
+    "share": "📤 Partager ces idées",
+    "shareChat": "📤 Partager ces idées dans le chat",
+    "editTitle": "Modifier « {{name}} »",
+    "empty": "Aucune idée pour l'instant.",
+    "emptyFilter": "Aucune idée pour ce filtre."
+  },
+  "closeX": "✕ Fermer",
+  "filter": {
+    "close": "✕ Fermer le filtre",
+    "byOccasion": "🔎 Filtrer par occasion",
+    "filter": "🔎 Filtrer"
+  },
+  "wishlist": {
+    "titleOf": "🎀 La wishlist de {{name}}",
+    "private": "Wishlist privée ou non disponible.",
+    "empty": "Sa wishlist est vide.",
+    "reservedByYou": "Réservé par toi",
+    "available": "Disponible",
+    "allReserved": "Tous les cadeaux disponibles ont été réservés 🎁",
+    "myReservations": "🎁 Mes réservations · {{count}}"
+  },
+  "addPlus": "＋ Ajouter",
+  "noFriends": "Aucun ami disponible.",
+  "undo": {
+    "deleted": "« {{name}} » supprimé",
+    "action": "Annuler la suppression"
+  },
+  "shareCard": {
+    "requestError": "Impossible d'envoyer la demande.",
+    "exists": "Déjà dans vos anniversaires.",
+    "addError": "Impossible d'ajouter cette date.",
+    "title": "🎂 Carte anniversaire",
+    "noName": "Sans nom",
+    "born": "Né(e) le {{full}} · fêté le {{day}}",
+    "nameday": "🎉 Fête le {{date}}",
+    "note": "Les idées cadeaux ne sont pas partagées.",
+    "addFriend": "👥 Ajouter en ami",
+    "requested": "✅ Demande envoyée — sa carte se créera s'il accepte",
+    "justCreate": "🎂 Juste créer la carte",
+    "add": "＋ Ajouter à mes anniversaires",
+    "added": "✅ Ajouté à vos anniversaires"
+  },
+  "proposals": {
+    "proposeBtn": "💡 Proposer une idée",
+    "formTitle": "Proposer une idée",
+    "formHint": "Les gestionnaires de la liste décident de l'ajouter ou non.",
+    "namePlaceholder": "Nom du cadeau",
+    "urlPlaceholder": "Lien (facultatif)",
+    "pricePlaceholder": "Prix (facultatif)",
+    "send": "Envoyer la proposition",
+    "nameRequired": "Indique le nom du cadeau.",
+    "mineTitle": "Mes propositions en attente",
+    "withdraw": "Retirer",
+    "pendingTitle": "Propositions à examiner",
+    "from": "Proposé par {{name}}",
+    "accept": "Accepter",
+    "decline": "Refuser",
+    "declineTitle": "Refuser cette proposition ?",
+    "declineText": "{{name}} sera prévenu que « {{gift}} » n'a pas été retenue.",
+    "someone": "un invité"
+  }
+}

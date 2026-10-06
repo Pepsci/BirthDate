@@ -1,0 +1,134 @@
+{
+  "errors": {
+    "sendMessage": "Erreur d'envoi du message.",
+    "realtime": "Connexion temps réel impossible : {{message}}"
+  },
+  "event": {
+    "title": "Chat de l'événement",
+    "view": "Voir l'événement",
+    "guest": "Invité",
+    "embedded": "💬 Chat de l'événement",
+    "open": "Ouvrir ›",
+    "empty": "Aucun message. Lance la discussion !"
+  },
+  "menu": {
+    "report": "🚩  Signaler",
+    "reply": "↩️  Répondre",
+    "edit": "✏️  Modifier",
+    "info": "ℹ️  Infos",
+    "delete": "🗑️  Supprimer"
+  },
+  "mute": {
+    "unmuteLabel": "Réactiver les notifications",
+    "muteLabel": "Couper les notifications",
+    "mutedTitle": "Notifications coupées",
+    "mutedText": "Coupées {{until}}. La conversation reste visible et ses messages non lus continuent d'apparaître.",
+    "text": "Ton téléphone ne sonnera plus pour cette conversation. Elle reste visible dans ta liste, avec ses messages non lus.",
+    "unmute": "🔔 Réactiver les notifications",
+    "h1": "1 heure",
+    "h8": "8 heures",
+    "w1": "1 semaine",
+    "forever": "Jusqu'à réactivation",
+    "untilForever": "jusqu'à réactivation",
+    "untilTime": "jusqu'à {{time}}",
+    "untilDate": "jusqu'au {{date}}"
+  },
+  "e2eMissing": "⚠️ Clé privée absente sur cet appareil — déconnecte-toi puis reconnecte-toi pour activer le chiffrement.",
+  "typingName": "{{name}} est en train d'écrire…",
+  "input": "Ton message…",
+  "encryptedEvent": "🔒 Message chiffré (déchiffrement impossible)",
+  "delete": {
+    "title": "Supprimer ce message ?",
+    "text": "Il sera supprimé pour tout le monde."
+  },
+  "you": "Toi",
+  "options": {
+    "label": "Options de la conversation",
+    "title": "Options",
+    "reportUser": "Signaler l'utilisateur",
+    "blockUser": "Bloquer l'utilisateur",
+    "thisUser": "cet utilisateur"
+  },
+  "dm": {
+    "empty": "Aucun message. Dis bonjour à {{name}} !",
+    "yourFriend": "ton ami·e"
+  },
+  "typing": "En train d'écrire…",
+  "banner": {
+    "edit": "✏️ Modifier le message",
+    "replyTo": "↩️ Répondre à {{name}}",
+    "yourself": "toi-même"
+  },
+  "edited": " · modifié",
+  "receipt": {
+    "read": "Lu",
+    "delivered": "Distribué",
+    "sent": "Envoyé"
+  },
+  "encryptedDm": "🔒 Chiffré — déchiffrement impossible",
+  "enc": {
+    "noPrivateKey": "🔒 Chiffré — clé privée absente (reconnecte-toi)",
+    "noSenderKey": "🔒 Chiffré — expéditeur sans clé publique",
+    "noCopy": "🔒 Chiffré — pas de copie pour ce compte"
+  },
+  "info": {
+    "title": "Infos message"
+  },
+  "reply": {
+    "button": "Répondre",
+    "send": "Envoyer",
+    "placeholder": "Message…",
+    "failedTitle": "Réponse non envoyée",
+    "failedTo": "Ta réponse à {{name}} n'a pas pu partir : {{message}}",
+    "failed": "Ta réponse n'a pas pu partir : {{message}}"
+  },
+  "list": {
+    "removeTitle": "Retirer de ma liste",
+    "removeText": "Les messages échangés avec {{name}} disparaîtront de votre côté. {{name}} garde sa copie, et la conversation réapparaîtra si un nouveau message arrive.",
+    "removeError": "Suppression impossible.",
+    "tip": "Tes messages sont chiffrés de bout en bout : personne d'autre que toi et ton ami ne peut les lire. Appui long sur une conversation pour la retirer de ta liste. Ajoute des amis depuis Profil → Mes amis.",
+    "noSupport": "Aucune conversation avec le support.",
+    "newSupport": "✉️ Nouvelle demande au support",
+    "supportPrefix": "Support : ",
+    "youPrefix": "Toi : ",
+    "closed": "Fermé",
+    "answered": "Répondu",
+    "noEventChats": "Aucune discussion d'événement pour l'instant.",
+    "empty": "Aucune conversation. Ouvre le chat d'un ami depuis sa fiche ou l'écran Mes amis !",
+    "noMessage": "Aucun message"
+  },
+  "report": {
+    "reason": {
+      "spam": "Spam",
+      "harassment": "Harcèlement",
+      "inappropriate": "Contenu inapproprié",
+      "scam": "Arnaque / fraude",
+      "other": "Autre"
+    },
+    "why": "Pourquoi signales-tu ce contenu ?",
+    "thanks": "Merci",
+    "sent": "Ton signalement a bien été envoyé. Notre équipe le traite sous 24 h.",
+    "error": "Signalement impossible."
+  },
+  "block": {
+    "title": "Bloquer {{name}} ?",
+    "text": "Ses messages et son contenu ne te seront plus visibles. Tu peux débloquer à tout moment depuis Profil → Utilisateurs bloqués.",
+    "action": "Bloquer",
+    "doneTitle": "Utilisateur bloqué",
+    "done": "{{name}} a été bloqué·e.",
+    "error": "Blocage impossible."
+  },
+  "reaction": {
+    "like": "J'aime",
+    "love": "J'adore",
+    "laugh": "Ça me fait rire",
+    "wow": "Ça m'étonne",
+    "sad": "Ça me rend triste",
+    "party": "On fête ça"
+  },
+  "opening": "Ouverture…",
+  "quoteUnavailable": "Message d'origine indisponible",
+  "tabs": {
+    "friends": "Amis"
+  }
+}

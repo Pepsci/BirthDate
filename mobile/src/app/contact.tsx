@@ -1,3 +1,4 @@
+import { t } from "@/i18n";
 import { useMemo, useState } from "react";
 import {
   View,
@@ -8,7 +9,7 @@ import {
   ScrollView,
 } from "react-native";
 import { Stack, useRouter } from "expo-router";
-import { FAQ_SECTIONS, Section } from "../lib/faqData";
+import { getFaqSections, Section } from "../lib/faqData";
 import {
   useTheme,
   useThemedStyles,
@@ -26,22 +27,24 @@ function normalize(str: string) {
     .replace(/[̀-ͯ]/g, "");
 }
 
-const FLAT_ITEMS = FAQ_SECTIONS.flatMap((section) =>
-  section.items.map((item, itemIndex) => ({
-    ...item,
-    sectionId: section.id,
-    sectionTitle: section.title,
-    sectionEmoji: section.emoji,
-    itemIndex,
-  })),
-);
+// Calculé à la demande et non au niveau module : la FAQ dépend de la langue.
+const flatItems = (sections: Section[]) =>
+  sections.flatMap((section) =>
+    section.items.map((item, itemIndex) => ({
+      ...item,
+      sectionId: section.id,
+      sectionTitle: section.title,
+      sectionEmoji: section.emoji,
+      itemIndex,
+    })),
+  );
 
 const MIN_QUERY_LENGTH = 2;
 const MAX_RESULTS = 6;
 
 /**
  * Porte d'entrée du support côté mobile : recherche + catégories, comme sur
- * le web (voir HelpCenter.jsx). Le bouton "Contacter le support" n'apparaît
+ * le web (voir HelpCenter.jsx). Le bouton t("support:contact.title") n'apparaît
  * qu'une fois une réponse consultée — on ne saute plus directement à
  * l'écran d'envoi (/support), sauf depuis ici avec le contexte de la
  * question qui n'a pas résolu le problème.
@@ -55,6 +58,9 @@ export default function ContactScreen() {
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
   const [activeItemIndex, setActiveItemIndex] = useState<number | null>(null);
 
+  const FAQ_SECTIONS = useMemo(() => getFaqSections(), []);
+  const FLAT_ITEMS = useMemo(() => flatItems(FAQ_SECTIONS), [FAQ_SECTIONS]);
+
   const trimmedQuery = query.trim();
   const isSearching = trimmedQuery.length >= MIN_QUERY_LENGTH;
 
@@ -66,7 +72,7 @@ export default function ContactScreen() {
         normalize(item.q).includes(needle) ||
         normalize(item.sectionTitle).includes(needle),
     ).slice(0, MAX_RESULTS);
-  }, [isSearching, trimmedQuery]);
+  }, [isSearching, trimmedQuery, FLAT_ITEMS]);
 
   const activeSection: Section | null =
     FAQ_SECTIONS.find((s) => s.id === activeSectionId) || null;
@@ -101,11 +107,10 @@ export default function ContactScreen() {
 
   return (
     <View style={styles.container}>
-      <Stack.Screen options={{ title: "Contacter le support" }} />
+      <Stack.Screen options={{ title: t("support:contact.title") }} />
       <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
         <Text style={styles.intro}>
-          Cherche ta réponse ci-dessous — la plupart des questions trouvent
-          une réponse immédiate.
+          {t("support:contact.intro")}
         </Text>
 
         {/* Fête fausse ou manquante : formulaire court et structuré, pour
@@ -117,10 +122,9 @@ export default function ContactScreen() {
         >
           <Text style={styles.namedayTileEmoji}>🌸</Text>
           <View style={{ flex: 1 }}>
-            <Text style={styles.namedayTileTitle}>Une fête incorrecte ?</Text>
+            <Text style={styles.namedayTileTitle}>{t("support:contact.namedayTitle")}</Text>
             <Text style={styles.namedayTileText}>
-              Un prénom fêté à la mauvaise date, ou pas fêté du tout :
-              signale-le, on corrige le calendrier.
+              {t("support:contact.namedayText")}
             </Text>
           </View>
         </Pressable>
@@ -129,7 +133,7 @@ export default function ContactScreen() {
         <TextInput
           placeholderTextColor={colors.placeholder}
           style={styles.searchInput}
-          placeholder="Cherche une réponse (ex : annuler un événement, wishlist…)"
+          placeholder={t("support:contact.search")}
           value={query}
           onChangeText={(t) => {
             setQuery(t);
@@ -142,7 +146,7 @@ export default function ContactScreen() {
           <View style={styles.list}>
             {searchResults.length === 0 ? (
               <Text style={styles.empty}>
-                Aucune réponse trouvée pour « {trimmedQuery} ».
+                {t("support:contact.noResult", { query: trimmedQuery })}
               </Text>
             ) : (
               searchResults.map((item) => (
@@ -185,12 +189,12 @@ export default function ContactScreen() {
             <Pressable style={styles.activeCategory} onPress={backToCategories}>
               <Text style={styles.activeCategoryEmoji}>{activeSection.emoji}</Text>
               <Text style={styles.activeCategoryTitle}>{activeSection.title}</Text>
-              <Text style={styles.activeCategoryChange}>Changer ↺</Text>
+              <Text style={styles.activeCategoryChange}>{t("support:contact.change")}</Text>
             </Pressable>
 
             {activeItem && (
               <Pressable onPress={backToQuestions}>
-                <Text style={styles.breadcrumb}>← Toutes les questions</Text>
+                <Text style={styles.breadcrumb}>{t("support:contact.allQuestions")}</Text>
               </Pressable>
             )}
 
@@ -221,10 +225,10 @@ export default function ContactScreen() {
         {activeItem && (
           <View style={styles.cta}>
             <Text style={styles.ctaText}>
-              Cette réponse ne résout pas ton problème ?
+              {t("support:contact.notSolved")}
             </Text>
             <Pressable style={styles.ctaBtn} onPress={goToSupport}>
-              <Text style={styles.ctaBtnText}>Contacter le support</Text>
+              <Text style={styles.ctaBtnText}>{t("support:contact.title")}</Text>
             </Pressable>
           </View>
         )}

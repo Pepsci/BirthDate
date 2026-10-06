@@ -1,3 +1,4 @@
+import { getLocaleTag, t, tn } from "@/i18n";
 import { useCallback, useState } from "react";
 import {
   View,
@@ -50,30 +51,28 @@ export default function LocalDataScreen() {
   // juste au-dessus : on le rappelle au lieu de proposer d'y aller.
   const confirmErase = () => {
     Alert.alert(
-      "Effacer toutes tes données ?",
-      "Tes cartes, idées de cadeaux, photos et ta liste d'envies seront " +
-        "supprimées de ce téléphone." +
-        (lastBackup ? "" : "\n\nTu n'as encore fait aucune sauvegarde."),
+      t("profile:erase.title"),
+      t("local:erase.text") + (lastBackup ? "" : t("local:erase.noBackup")),
       [
-        { text: "Annuler", style: "cancel" },
+        { text: t("common:actions.cancel"), style: "cancel" },
         {
-          text: "Continuer",
+          text: t("common:actions.continue"),
           style: "destructive",
           onPress: () =>
             Alert.alert(
-              "Vraiment tout effacer ?",
-              "C'est définitif : sans compte, rien n'est sauvegardé ailleurs.",
+              t("profile:erase.title2"),
+              t("profile:erase.text2"),
               [
-                { text: "Annuler", style: "cancel" },
+                { text: t("common:actions.cancel"), style: "cancel" },
                 {
-                  text: "Tout effacer",
+                  text: t("profile:erase.action"),
                   style: "destructive",
                   onPress: async () => {
                     try {
                       await leaveLocalMode();
                       router.replace("/welcome");
                     } catch (e: any) {
-                      setMsg({ ok: false, text: e?.message ?? "Effacement impossible." });
+                      setMsg({ ok: false, text: e?.message ?? t("profile:erase.error") });
                     }
                   },
                 },
@@ -107,16 +106,16 @@ export default function LocalDataScreen() {
     setMsg(null);
     try {
       const uri = await writeBackupFile();
-      const res = await Share.share({ url: uri, title: "Sauvegarde BirthReminder" });
+      const res = await Share.share({ url: uri, title: t("local:backup.fileTitle") });
       // Compté comme sauvegardé seulement si le fichier est vraiment parti
       // (enregistré dans Fichiers, envoyé par AirDrop, mail…)
       if (res.action === Share.sharedAction) {
         await markBackupDone();
-        setMsg({ ok: true, text: "Sauvegarde enregistrée. Garde ce fichier en lieu sûr." });
+        setMsg({ ok: true, text: t("local:backup.savedKeep") });
         await refresh();
       }
     } catch (e: any) {
-      setMsg({ ok: false, text: e?.message ?? "Export impossible." });
+      setMsg({ ok: false, text: e?.message ?? t("local:backup.exportError") });
     } finally {
       setBusy(null);
     }
@@ -126,13 +125,13 @@ export default function LocalDataScreen() {
     setBusy("import");
     try {
       const r = await applyBackup(backup, mode);
-      const parts = [`${r.added} carte${r.added > 1 ? "s" : ""} importée${r.added > 1 ? "s" : ""}`];
-      if (r.skipped > 0) parts.push(`${r.skipped} déjà présente${r.skipped > 1 ? "s" : ""}`);
-      if (r.wishlistAdded > 0) parts.push(`${r.wishlistAdded} envie${r.wishlistAdded > 1 ? "s" : ""}`);
-      setMsg({ ok: true, text: `Import terminé : ${parts.join(", ")}.` });
+      const parts = [tn("local:import.cardsImported", r.added)];
+      if (r.skipped > 0) parts.push(tn("local:import.alreadyThere", r.skipped));
+      if (r.wishlistAdded > 0) parts.push(tn("gifts:wishCount", r.wishlistAdded));
+      setMsg({ ok: true, text: t("local:import.done", { list: parts.join(", ") }) });
       await refresh();
     } catch (e: any) {
-      setMsg({ ok: false, text: e?.message ?? "Import impossible." });
+      setMsg({ ok: false, text: e?.message ?? t("local:import.error") });
     } finally {
       setBusy(null);
     }
@@ -146,7 +145,7 @@ export default function LocalDataScreen() {
       setBusy("import");
       backup = await pickBackupFile();
     } catch (e: any) {
-      setMsg({ ok: false, text: e?.message ?? "Fichier illisible." });
+      setMsg({ ok: false, text: e?.message ?? t("local:import.unreadable") });
       return;
     } finally {
       setBusy(null);
@@ -155,39 +154,38 @@ export default function LocalDataScreen() {
 
     const s = summarize(backup);
     const when = s.exportedAt
-      ? ` du ${s.exportedAt.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}`
-      : "";
+      ? t("local:backup.titleOf", { date: s.exportedAt.toLocaleDateString(getLocaleTag(), { day: "numeric", month: "long", year: "numeric" }) })
+      : t("local:backup.title");
     const detail =
-      `${s.dates} carte${s.dates > 1 ? "s" : ""}` +
-      (s.photos ? `, ${s.photos} photo${s.photos > 1 ? "s" : ""}` : "") +
-      (s.wishlist ? `, ${s.wishlist} envie${s.wishlist > 1 ? "s" : ""}` : "");
+      tn("local:count.cards", s.dates) +
+      (s.photos ? `, ${tn("local:count.photos", s.photos)}` : "") +
+      (s.wishlist ? `, ${tn("gifts:wishCount", s.wishlist)}` : "");
     const hasData = (stats?.dates ?? 0) + (stats?.wishlist ?? 0) > 0;
 
     if (!hasData) {
-      Alert.alert(`Sauvegarde${when}`, `${detail}.`, [
-        { text: "Annuler", style: "cancel" },
-        { text: "Importer", onPress: () => apply(backup!, "replace") },
+      Alert.alert(when, `${detail}.`, [
+        { text: t("common:actions.cancel"), style: "cancel" },
+        { text: t("local:import.action"), onPress: () => apply(backup!, "replace") },
       ]);
       return;
     }
 
     Alert.alert(
-      `Sauvegarde${when}`,
-      `${detail}.\n\nFusionner : ajoute ce qui manque, sans doublon.\n` +
-        "Remplacer : tes données actuelles sont supprimées.",
+      when,
+      `${detail}.\n\n${t("local:import.mergeOrReplace")}`,
       [
-        { text: "Annuler", style: "cancel" },
-        { text: "Fusionner", onPress: () => apply(backup!, "merge") },
+        { text: t("common:actions.cancel"), style: "cancel" },
+        { text: t("local:import.merge"), onPress: () => apply(backup!, "merge") },
         {
-          text: "Remplacer",
+          text: t("gifts:attach.replace"),
           style: "destructive",
           onPress: () =>
             Alert.alert(
-              "Remplacer tes données ?",
-              `Tes ${stats?.dates ?? 0} cartes actuelles seront remplacées par celles du fichier.`,
+              t("local:import.replaceTitle"),
+              t("local:import.replaceText", { count: stats?.dates ?? 0 }),
               [
-                { text: "Annuler", style: "cancel" },
-                { text: "Remplacer", style: "destructive", onPress: () => apply(backup!, "replace") },
+                { text: t("common:actions.cancel"), style: "cancel" },
+                { text: t("gifts:attach.replace"), style: "destructive", onPress: () => apply(backup!, "replace") },
               ],
             ),
         },
@@ -198,36 +196,32 @@ export default function LocalDataScreen() {
   if (!stats) {
     return (
       <View style={styles.center}>
-        <Stack.Screen options={{ title: "Mes données" }} />
+        <Stack.Screen options={{ title: t("local:data.title") }} />
         <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
 
   const lastLabel = lastBackup
-    ? new Date(lastBackup).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })
+    ? new Date(lastBackup).toLocaleDateString(getLocaleTag(), { day: "numeric", month: "long", year: "numeric" })
     : null;
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Stack.Screen options={{ title: "Mes données" }} />
+      <Stack.Screen options={{ title: t("local:data.title") }} />
 
       <View style={styles.card}>
-        <Text style={styles.label}>📱 Sur ce téléphone</Text>
+        <Text style={styles.label}>{t("home:localBadge.title")}</Text>
         <Text style={styles.hint}>
-          {stats.dates} carte{stats.dates > 1 ? "s" : ""} · {stats.photos} photo
-          {stats.photos > 1 ? "s" : ""} · {stats.wishlist} envie{stats.wishlist > 1 ? "s" : ""}
+          {tn("local:count.cards", stats.dates)} · {tn("local:count.photos", stats.photos)} · {tn("gifts:wishCount", stats.wishlist)}
         </Text>
         <Text style={lastLabel ? styles.hint : styles.warnText}>
-          {lastLabel ? `Dernière sauvegarde : ${lastLabel}` : "Aucune sauvegarde pour l'instant"}
+          {lastLabel ? t("local:backup.last", { date: lastLabel }) : t("local:backup.none")}
         </Text>
       </View>
 
       <Text style={styles.explain}>
-        Sans compte, tes données n'existent que sur ce téléphone. Une sauvegarde
-        est un fichier que tu gardes où tu veux (Fichiers, iCloud Drive, mail…) :
-        il te permet de tout retrouver sur un nouveau téléphone ou après avoir
-        réinstallé l'app. Photos comprises.
+        {t("local:data.explain")}
       </Text>
 
       <Pressable
@@ -238,7 +232,7 @@ export default function LocalDataScreen() {
         {busy === "export" ? (
           <ActivityIndicator color={colors.white} />
         ) : (
-          <Text style={styles.primaryText}>💾 Exporter une sauvegarde</Text>
+          <Text style={styles.primaryText}>{t("local:data.export")}</Text>
         )}
       </Pressable>
 
@@ -251,19 +245,19 @@ export default function LocalDataScreen() {
           {busy === "import" ? (
             <ActivityIndicator color={colors.primary} />
           ) : (
-            <Text style={styles.secondaryText}>📂 Importer une sauvegarde</Text>
+            <Text style={styles.secondaryText}>{t("local:data.import")}</Text>
           )}
         </Pressable>
       ) : (
         <Text style={styles.explain}>
-          L'import sera disponible dans la prochaine version de l'app.
+          {t("local:data.importSoon")}
         </Text>
       )}
 
       {msg && <Text style={msg.ok ? styles.ok : styles.error}>{msg.text}</Text>}
 
       <Pressable onPress={confirmErase} disabled={busy !== null}>
-        <Text style={styles.erase}>Effacer toutes mes données</Text>
+        <Text style={styles.erase}>{t("profile:menu.eraseAll")}</Text>
       </Pressable>
     </ScrollView>
   );

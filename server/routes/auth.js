@@ -1,5 +1,6 @@
 require("dotenv").config();
 const express = require("express");
+const { parseLanguage, requestLanguage } = require("../i18n");
 const { getPoolEligibility } = require("../services/poolEligibility");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
@@ -13,16 +14,12 @@ const Invitation = require("../models/invitation.model");
 const Friend = require("../models/friend.model");
 const { isAuthenticated } = require("../middleware/jwt.middleware");
 const { sessionCutoff } = require("../utils/session");
-const {
-  generateVerificationToken,
-  sendVerificationEmail,
-} = require("../services/verififcation");
+const { generateVerificationToken } = require("../services/verififcation");
+const { emailsFor } = require("../services/emailTemplates/localized");
+const { minAgeForRequest } = require("../utils/minAge");
 const { createFriendDates } = require("../utils/friendDates");
 const { findNameDay } = require("../utils/namedayHelper");
 const { buildSignupSource } = require("../utils/signupSource");
-const {
-  sendPasswordResetEmail,
-} = require("../services/emailTemplates/passwordResetEmail");
 
 const router = express.Router();
 const saltRounds = 10;
@@ -137,8 +134,19 @@ const validatePassword = (password) => {
 // ========================================
 // POST /auth/signup
 // ========================================
+/**
+ * GET /api/auth/min-age — âge minimum pour créer un compte, pour ce visiteur.
+ * Public. Sert aux formulaires d'inscription (app et site) à prévenir AVANT
+ * l'envoi ; le contrôle qui fait foi reste celui de POST /signup.
+ */
+router.get("/min-age", (req, res) => {
+  res.json({ minAge: minAgeForRequest(req).minAge });
+});
+
 router.post("/signup", signupLimiter, async (req, res) => {
   const { email, password, name, surname, birthDate, acceptedTerms } = req.body;
+  // Langue de l'app mobile au moment de l'inscription (absente depuis le web)
+  const language = parseLanguage(req.body.language);
 
   // CGU « tolérance zéro » (conformité Apple 1.2) — requis si le client l'envoie explicitement à false
   if (acceptedTerms === false) {
@@ -171,10 +179,10 @@ router.post("/signup", signupLimiter, async (req, res) => {
       .json({ message: "Please provide a valid birth date." });
   }
 
-  // RGPD France : consentement autonome aux services en ligne à partir de 15 ans
-  // (art. 7-1 loi Informatique et Libertés). Déclaré aussi dans les
-  // questionnaires d'âge App Store / Play Store — garder cohérent.
-  const MIN_AGE = 15;
+  // Âge minimum selon le pays : 15 ans (seuil français, déclaré aussi dans
+  // les questionnaires d'âge des stores), 16 là où la loi l'exige ou quand le
+  // pays est inconnu. Toute la règle est dans utils/minAge.js.
+  const { minAge: MIN_AGE } = minAgeForRequest(req);
   const ageLimit = new Date();
   ageLimit.setFullYear(ageLimit.getFullYear() - MIN_AGE);
   if (parsedBirthDate > ageLimit) {
@@ -218,6 +226,7 @@ router.post("/signup", signupLimiter, async (req, res) => {
       lastVerificationEmailSent: Date.now(),
       isVerified: false,
       ...(acceptedTerms ? { acceptedTermsAt: new Date() } : {}),
+      ...(language ? { language } : {}),
     });
 
     if (nameday) {
@@ -282,7 +291,10 @@ router.post("/signup", signupLimiter, async (req, res) => {
       console.error("❌ Erreur logging:", logError);
     }
 
-    await sendVerificationEmail(newUser.email, verificationToken);
+    await emailsFor(language || requestLanguage(req)).sendVerificationEmail(
+      newUser.email,
+      verificationToken,
+    );
 
     return res
       .status(201)
@@ -344,7 +356,9 @@ router.post("/login", authLimiterByIp, authLimiter, async (req, res) => {
       }
 
       const verificationToken = generateVerificationToken();
-      await sendVerificationEmail(foundUser.email, verificationToken);
+      await emailsFor(
+        foundUser.language || requestLanguage(req),
+      ).sendVerificationEmail(foundUser.email, verificationToken);
       foundUser.verificationToken = hashToken(verificationToken);
       foundUser.verificationTokenExpires = now + VERIFICATION_TOKEN_TTL_MS;
       foundUser.lastVerificationEmailSent = now;
@@ -500,7 +514,9 @@ router.post("/forgot-password", passwordResetLimiterByIp, passwordResetLimiter, 
           .digest("hex");
         user.resetTokenExpires = Date.now() + RESET_TOKEN_TTL_MS;
         await user.save();
-        await sendPasswordResetEmail(email, resetToken);
+        await emailsFor(
+          user.language || requestLanguage(req),
+        ).sendPasswordResetEmail(email, resetToken);
       }
 
       // Trace de la DEMANDE (distincte du reset abouti, journalisé plus bas

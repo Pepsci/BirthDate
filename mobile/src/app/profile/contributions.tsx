@@ -1,3 +1,4 @@
+import { getLocaleTag, t, tn } from "@/i18n";
 import { useEffect, useState } from "react";
 import {
   View,
@@ -30,13 +31,13 @@ import { readingPane } from "../../lib/layout";
  */
 
 const euros = (cents: number) =>
-  ((cents || 0) / 100).toLocaleString("fr-FR", {
+  ((cents || 0) / 100).toLocaleString(getLocaleTag(), {
     style: "currency",
     currency: "EUR",
   });
 
 const formatDate = (d: string) =>
-  new Date(d).toLocaleDateString("fr-FR", {
+  new Date(d).toLocaleDateString(getLocaleTag(), {
     day: "numeric",
     month: "long",
     year: "numeric",
@@ -57,7 +58,7 @@ export default function MyContributionsScreen() {
     fetchMyContributions()
       .then(setContributions)
       .catch(() =>
-        setError("Impossible de charger tes contributions pour le moment."),
+        setError(t("pool:mine.loadError")),
       );
   }, []);
 
@@ -69,11 +70,11 @@ export default function MyContributionsScreen() {
    */
   const copySummary = async (c: MyContribution) => {
     const lines = [
-      `Contribution de ${euros(c.amount)}`,
-      c.event ? `Événement : ${c.event.title}` : null,
-      `Date : ${formatDate(c.createdAt)}`,
-      c.event?.organizer ? `Encaissée par : ${c.event.organizer}` : null,
-      `Référence de paiement : ${c.reference}`,
+      t("pool:mine.sum.contribution", { amount: euros(c.amount) }),
+      c.event ? t("pool:mine.sum.event", { title: c.event.title }) : null,
+      t("pool:mine.sum.date", { date: formatDate(c.createdAt) }),
+      c.event?.organizer ? t("pool:mine.sum.collectedBy", { name: c.event.organizer }) : null,
+      t("pool:mine.sum.reference", { ref: c.reference }),
     ].filter(Boolean);
 
     await Clipboard.setStringAsync(lines.join("\n"));
@@ -91,26 +92,26 @@ export default function MyContributionsScreen() {
    */
   const reportIssue = (c: MyContribution) => {
     const lines = [
-      "— Ma contribution —",
-      `Montant : ${euros(c.amount)}`,
-      `Date : ${formatDate(c.createdAt)}`,
-      c.event ? `Événement : ${c.event.title}` : "Événement : ",
-      c.event?.organizer ? `Encaissé par : ${c.event.organizer}` : "Encaissé par : ",
-      `Référence de paiement : ${c.reference}`,
+      t("pool:mine.report.mine"),
+      t("pool:mine.sum.amount", { amount: euros(c.amount) }),
+      t("pool:mine.sum.date", { date: formatDate(c.createdAt) }),
+      t("pool:mine.sum.event", { title: c.event?.title ?? "" }),
+      t("pool:mine.sum.collectedBy", { name: c.event?.organizer ?? "" }),
+      t("pool:mine.sum.reference", { ref: c.reference }),
       "",
-      "— Ce qui se passe —",
+      t("pool:mine.report.what"),
       "",
       "",
-      "— Ai-je déjà contacté l'organisateur ? —",
-      "(oui, le … / pas encore)",
+      t("pool:mine.report.contacted"),
+      t("pool:mine.report.contactedHint"),
       "",
     ];
     router.push({
       pathname: "/support",
       params: {
         poolSubject: c.event
-          ? `Problème de cagnotte — ${c.event.title}`
-          : "Problème avec une cagnotte",
+          ? t("pool:mine.report.subjectFor", { title: c.event.title })
+          : t("pool:mine.report.subject"),
         poolMessage: lines.join("\n"),
         // Rattache le ticket à cette cagnotte : lien direct côté admin, et
         // dérogation à la règle du ticket unique côté serveur.
@@ -125,7 +126,7 @@ export default function MyContributionsScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Stack.Screen options={{ title: "Mes contributions" }} />
+      <Stack.Screen options={{ title: t("pool:mine.title") }} />
 
       {error && <Text style={styles.error}>{error}</Text>}
 
@@ -135,16 +136,14 @@ export default function MyContributionsScreen() {
 
       {contributions && contributions.length === 0 && (
         <Text style={styles.empty}>
-          Tu n'as encore participé à aucune cagnotte. Tes contributions
-          apparaîtront ici, avec leur reçu.
+          {t("pool:mine.empty")}
         </Text>
       )}
 
       {contributions && contributions.length > 0 && (
         <>
           <Text style={styles.total}>
-            {contributions.length} contribution
-            {contributions.length > 1 ? "s" : ""} · {euros(total)} versés
+            {tn("pool:mine.total", contributions.length, { amount: euros(total) })}
           </Text>
 
           {contributions.map((c) => (
@@ -171,7 +170,7 @@ export default function MyContributionsScreen() {
                         : styles.tagTextOk,
                     ]}
                   >
-                    {c.status === "refunded" ? "Remboursée" : "Versée"}
+                    {c.status === "refunded" ? t("pool:mine.refunded") : t("pool:mine.paid")}
                   </Text>
                 </View>
               </View>
@@ -184,31 +183,31 @@ export default function MyContributionsScreen() {
                   {c.event.title}
                 </Text>
               ) : (
-                <Text style={styles.eventGone}>Événement supprimé</Text>
+                <Text style={styles.eventGone}>{t("pool:mine.eventDeleted")}</Text>
               )}
 
               <Text style={styles.meta}>
                 {formatDate(c.createdAt)}
-                {c.event?.organizer ? ` · encaissé par ${c.event.organizer}` : ""}
+                {c.event?.organizer ? t("pool:mine.collectedBy", { name: c.event.organizer }) : ""}
                 {c.status === "refunded" && c.refundedAt
-                  ? ` · remboursée le ${formatDate(c.refundedAt)}`
+                  ? t("pool:mine.refundedOn", { date: formatDate(c.refundedAt) })
                   : ""}
               </Text>
 
               <Pressable style={styles.refBox} onPress={() => copySummary(c)}>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.refLabel}>Référence de paiement</Text>
+                  <Text style={styles.refLabel}>{t("pool:mine.reference")}</Text>
                   <Text style={styles.refValue}>{c.reference}</Text>
                 </View>
                 <Text style={styles.refAction}>
-                  {copied === c.id ? "copié ✓" : "copier"}
+                  {copied === c.id ? t("pool:mine.copied") : t("pool:mine.copy")}
                 </Text>
               </Pressable>
 
               {c.status !== "refunded" && (
                 <Pressable onPress={() => reportIssue(c)} hitSlop={6}>
                   <Text style={styles.reportLink}>
-                    Un problème avec cette contribution ?
+                    {t("pool:mine.problem")}
                   </Text>
                 </Pressable>
               )}
@@ -220,20 +219,14 @@ export default function MyContributionsScreen() {
               oriente vers le bon interlocuteur. */}
           <View style={styles.note}>
             <Text style={styles.noteText}>
-              Les contributions sont encaissées{" "}
+              {t("pool:mine.note1a")}{" "}
               <Text style={styles.noteStrong}>
-                directement par l'organisateur
+                {t("pool:mine.note1b")}
               </Text>{" "}
-              de chaque événement. BirthReminder ne détient jamais les fonds et
-              ne peut donc pas rembourser à sa place.
+              {t("pool:mine.note1c")}
             </Text>
             <Text style={styles.noteText}>
-              Si un événement est annulé ou si le cadeau n'est pas acheté,
-              contacte l'organisateur : le bouton « copier » prépare un message
-              tout fait avec le montant, la date et la référence. Sans réponse
-              de sa part, écris-nous en joignant ce récapitulatif — nous ne
-              pouvons pas trancher un désaccord, mais la référence nous permet
-              de retrouver le paiement et de confirmer qu'il a bien eu lieu.
+              {t("pool:mine.note2")}
             </Text>
           </View>
         </>

@@ -1,3 +1,4 @@
+import { getLocaleTag, t } from "@/i18n";
 import { useCallback, useState } from "react";
 import { View, Text, Pressable, StyleSheet, ScrollView } from "react-native";
 import { useRouter, useFocusEffect } from "expo-router";
@@ -10,7 +11,7 @@ import {
 } from "../lib/cagnottes-strip";
 
 const euro = (cents: number) =>
-  (cents / 100).toLocaleString("fr-FR", { style: "currency", currency: "EUR" });
+  (cents / 100).toLocaleString(getLocaleTag(), { style: "currency", currency: "EUR" });
 
 /**
  * Bandeau "Mes cagnottes" affiché en haut de l'accueil : cagnottes actives
@@ -59,14 +60,14 @@ export default function MyCagnottesStrip() {
   return (
     <View style={styles.wrap}>
       <View style={styles.header}>
-        <Text style={styles.title}>🐷 Mes cagnottes</Text>
+        <Text style={styles.title}>{t("pool:strip.title")}</Text>
         <Pressable
           onPress={() => setCagnottesVisible(false)}
           hitSlop={12}
           accessibilityRole="button"
-          accessibilityLabel="Masquer mes cagnottes"
+          accessibilityLabel={t("pool:strip.hideLabel")}
         >
-          <Text style={styles.collapse}>Masquer ▴</Text>
+          <Text style={styles.collapse}>{t("pool:strip.hide")}</Text>
         </Pressable>
       </View>
       <ScrollView
@@ -91,7 +92,7 @@ export default function MyCagnottesStrip() {
                 </Text>
                 {pool.isOrganizer && (
                   <View style={styles.badge}>
-                    <Text style={styles.badgeText}>Organisateur</Text>
+                    <Text style={styles.badgeText}>{t("pool:strip.host")}</Text>
                   </View>
                 )}
               </View>

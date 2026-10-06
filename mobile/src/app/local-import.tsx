@@ -1,3 +1,4 @@
+import { t, tn } from "@/i18n";
 import { useEffect, useState } from "react";
 import {
   View,
@@ -57,7 +58,7 @@ export default function LocalImportScreen() {
       setCounts(await countLocalDataToImport());
     } catch (e: any) {
       setProgress(null);
-      setError(e?.message ?? "L'import n'a pas pu se faire.");
+      setError(e?.message ?? t("local:migrate.error"));
     }
   };
 
@@ -73,13 +74,12 @@ export default function LocalImportScreen() {
 
   const discard = () => {
     Alert.alert(
-      "Ne pas importer ?",
-      "Les cartes du mode sans compte seront supprimées de ce téléphone. " +
-        "Ton compte n'est pas touché.",
+      t("local:migrate.discardTitle"),
+      t("local:migrate.discardText"),
       [
-        { text: "Annuler", style: "cancel" },
+        { text: t("common:actions.cancel"), style: "cancel" },
         {
-          text: "Supprimer",
+          text: t("common:actions.delete"),
           style: "destructive",
           onPress: async () => {
             await discardLocalData();
@@ -90,7 +90,7 @@ export default function LocalImportScreen() {
     );
   };
 
-  const header = <Stack.Screen options={{ title: "Tes cartes", headerLeft: () => null }} />;
+  const header = <Stack.Screen options={{ title: t("local:migrate.title"), headerLeft: () => null }} />;
 
   if (!counts) {
     return (
@@ -105,25 +105,24 @@ export default function LocalImportScreen() {
   if (result) {
     const ok = result.cleared;
     const parts: string[] = [];
-    if (result.cards) parts.push(`${result.cards} carte${result.cards > 1 ? "s" : ""} ajoutée${result.cards > 1 ? "s" : ""}`);
-    if (result.merged) parts.push(`${result.merged} déjà dans ton compte, complétée${result.merged > 1 ? "s" : ""}`);
-    if (result.wishlist) parts.push(`${result.wishlist} envie${result.wishlist > 1 ? "s" : ""}`);
+    if (result.cards) parts.push(tn("local:restore.cardsAdded", result.cards));
+    if (result.merged) parts.push(tn("local:migrate.merged", result.merged));
+    if (result.wishlist) parts.push(tn("gifts:wishCount", result.wishlist));
     return (
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
         {header}
-        <Text style={styles.title}>{ok ? "✅ C'est fait !" : "⚠️ Import incomplet"}</Text>
+        <Text style={styles.title}>{ok ? t("local:migrate.done") : t("local:migrate.incomplete")}</Text>
         {parts.length > 0 && <Text style={styles.text}>{parts.join(" · ")}.</Text>}
         {ok ? (
           <Text style={styles.text}>
-            Tes cartes sont maintenant dans ton compte, sur tous tes appareils et
-            sur le site. Elles ont été retirées du stockage du téléphone.
+            {t("local:migrate.doneText")}
           </Text>
         ) : (
           <>
             <Text style={styles.text}>
               {result.offline
-                ? "La connexion a été perdue en cours de route."
-                : "Certaines cartes n'ont pas pu être envoyées :"}
+                ? t("local:migrate.offline")
+                : t("local:migrate.someFailed")}
             </Text>
             {result.failures.length > 0 && (
               <View style={styles.failBox}>
@@ -133,17 +132,16 @@ export default function LocalImportScreen() {
               </View>
             )}
             <Text style={styles.text}>
-              Rien n'est perdu : elles restent sur ce téléphone. Réessaie, l'import
-              reprendra là où il s'est arrêté, sans créer de doublons.
+              {t("local:migrate.retryText")}
             </Text>
             <Pressable style={styles.primaryBtn} onPress={start}>
-              <Text style={styles.primaryText}>Réessayer</Text>
+              <Text style={styles.primaryText}>{t("common:actions.retry")}</Text>
             </Pressable>
           </>
         )}
         <Pressable style={ok ? styles.primaryBtn : styles.secondaryBtn} onPress={ok ? finish : later}>
           <Text style={ok ? styles.primaryText : styles.secondaryText}>
-            {ok ? "Voir mes cartes" : "Plus tard"}
+            {ok ? t("local:migrate.seeCards") : t("common:actions.later")}
           </Text>
         </Pressable>
       </ScrollView>
@@ -160,7 +158,7 @@ export default function LocalImportScreen() {
           {progress!.done} / {progress!.total}
           {progress!.current ? ` · ${progress!.current}` : ""}
         </Text>
-        <Text style={styles.hint}>Garde l'app ouverte pendant l'import.</Text>
+        <Text style={styles.hint}>{t("local:migrate.keepOpen")}</Text>
       </View>
     );
   }
@@ -170,32 +168,29 @@ export default function LocalImportScreen() {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       {header}
-      <Text style={styles.title}>📱 → ☁️ Importer tes cartes ?</Text>
+      <Text style={styles.title}>{t("local:migrate.askTitle")}</Text>
       <Text style={styles.text}>
-        Tu as {n} carte{n > 1 ? "s" : ""}
-        {counts.wishlist
-          ? ` et ${counts.wishlist} envie${counts.wishlist > 1 ? "s" : ""}`
-          : ""}{" "}
-        créée{n > 1 ? "s" : ""} sans compte sur ce téléphone. Importe-les dans ton
-        compte pour les retrouver partout, avec leurs idées de cadeaux, leurs
-        photos et leurs rappels.
+        {t("local:migrate.askText", {
+          what: counts.wishlist
+            ? `${tn("local:count.cards", n)}, ${tn("gifts:wishCount", counts.wishlist)}`
+            : tn("local:count.cards", n),
+        })}
       </Text>
       <Text style={styles.hint}>
-        Une carte déjà présente dans ton compte (même prénom, nom et date) n'est
-        pas recréée : ses idées de cadeaux y sont simplement ajoutées.
+        {t("local:migrate.dupHint")}
       </Text>
       {error && <Text style={styles.error}>{error}</Text>}
 
       <Pressable style={styles.primaryBtn} onPress={start}>
         <Text style={styles.primaryText}>
-          Importer {n > 0 ? `mes ${n} carte${n > 1 ? "s" : ""}` : "ma liste d'envies"}
+          {n > 0 ? tn("local:migrate.importCards", n) : t("local:migrate.importWishlist")}
         </Text>
       </Pressable>
       <Pressable style={styles.secondaryBtn} onPress={later}>
-        <Text style={styles.secondaryText}>Plus tard</Text>
+        <Text style={styles.secondaryText}>{t("common:actions.later")}</Text>
       </Pressable>
       <Pressable onPress={discard}>
-        <Text style={styles.discard}>Ne pas importer</Text>
+        <Text style={styles.discard}>{t("local:migrate.skip")}</Text>
       </Pressable>
     </ScrollView>
   );

@@ -1,3 +1,4 @@
+import { t } from "@/i18n";
 import { useEffect, useState } from "react";
 import * as SecureStore from "expo-secure-store";
 
@@ -22,13 +23,13 @@ import * as SecureStore from "expo-secure-store";
 
 /** Rappels pour une entrée AVEC HEURE (les événements). Toujours négatifs. */
 export const TIMED_CHOICES = [
-  { minutes: -10080, label: "1 semaine avant" },
-  { minutes: -2880, label: "2 jours avant" },
-  { minutes: -1440, label: "1 jour avant" },
-  { minutes: -120, label: "2 h avant" },
-  { minutes: -60, label: "1 h avant" },
-  { minutes: -30, label: "30 min avant" },
-  { minutes: 0, label: "À l'heure" },
+  { minutes: -10080, get label() { return t("calendar:choice.w1"); } },
+  { minutes: -2880, get label() { return t("calendar:choice.d2"); } },
+  { minutes: -1440, get label() { return t("calendar:choice.d1"); } },
+  { minutes: -120, get label() { return t("calendar:choice.h2"); } },
+  { minutes: -60, get label() { return t("calendar:choice.h1"); } },
+  { minutes: -30, get label() { return t("calendar:choice.m30"); } },
+  { minutes: 0, get label() { return t("calendar:choice.onTime"); } },
 ] as const;
 
 /**
@@ -40,12 +41,12 @@ export const TIMED_CHOICES = [
  * −6 h, « le jour à 9 h » vaut +9 h (positif : après le début).
  */
 export const ALL_DAY_CHOICES = [
-  { minutes: -10080, label: "1 semaine avant" },
-  { minutes: -1440, label: "La veille, à minuit" },
-  { minutes: -360, label: "La veille, à 18 h" },
-  { minutes: 480, label: "Le jour même, à 8 h" },
-  { minutes: 540, label: "Le jour même, à 9 h" },
-  { minutes: 720, label: "Le jour même, à midi" },
+  { minutes: -10080, get label() { return t("calendar:choice.w1"); } },
+  { minutes: -1440, get label() { return t("calendar:choice.eveMidnight"); } },
+  { minutes: -360, get label() { return t("calendar:choice.eve18"); } },
+  { minutes: 480, get label() { return t("calendar:choice.day8"); } },
+  { minutes: 540, get label() { return t("calendar:choice.day9"); } },
+  { minutes: 720, get label() { return t("calendar:choice.dayNoon"); } },
 ] as const;
 
 export interface CalendarPrefs {

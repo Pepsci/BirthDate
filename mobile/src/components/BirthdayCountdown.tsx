@@ -1,3 +1,4 @@
+import { t } from "@/i18n";
 import { useEffect, useState } from "react";
 import { View, Text, StyleSheet, useWindowDimensions } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
@@ -44,10 +45,10 @@ export default function BirthdayCountdown(
 
   // Progression sur le dégradé du logo : J bleu → H violet → M rose → S orange
   const cells: [number, string, [string, string]][] = [
-    [left.days, "J", ["#3B82F6", "#8B5CF6"]],
-    [left.hours, "H", ["#8B5CF6", "#EC4899"]],
-    [left.minutes, "M", ["#EC4899", "#F59E0B"]],
-    [left.seconds, "S", ["#F59E0B", "#FF8C00"]],
+    [left.days, t("common:countdown.d"), ["#3B82F6", "#8B5CF6"]],
+    [left.hours, t("common:countdown.h"), ["#8B5CF6", "#EC4899"]],
+    [left.minutes, t("common:countdown.m"), ["#EC4899", "#F59E0B"]],
+    [left.seconds, t("common:countdown.s"), ["#F59E0B", "#FF8C00"]],
   ];
 
   return (

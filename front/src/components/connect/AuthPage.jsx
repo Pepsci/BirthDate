@@ -160,10 +160,22 @@ const AuthPage = () => {
   };
 
   // ─── SIGNUP ──────────────────────────────────────────
-  // RGPD France : 15 ans minimum (aligné avec server/routes/auth.js et
-  // l'app mobile). Contrôlé ici pour prévenir avant l'envoi du formulaire :
-  // sans ce garde-fou, le refus n'arrivait qu'après coup, par le serveur.
-  const MIN_AGE = 15;
+  // Âge minimum : 15 ans, ou 16 selon le pays. C'est le serveur qui décide
+  // (server/utils/minAge.js) ; 15 n'est que la valeur affichée en attendant sa
+  // réponse. Contrôlé ici pour prévenir avant l'envoi du formulaire : sans ce
+  // garde-fou, le refus n'arrivait qu'après coup, par le serveur.
+  const [minAge, setMinAge] = useState(null);
+  const MIN_AGE = minAge ?? 15;
+  useEffect(() => {
+    if (panel !== "signup" || minAge !== null) return;
+    let cancelled = false;
+    apiHandler.getMinAge().then((age) => {
+      if (!cancelled && age !== null) setMinAge(age);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [panel, minAge]);
 
   /** Âge révolu à partir d'une date "AAAA-MM-JJ". null si vide ou invalide. */
   const ageFromBirthDate = (value) => {

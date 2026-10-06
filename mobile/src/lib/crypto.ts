@@ -12,6 +12,7 @@
  *   - Un nonce aléatoire unique par message
  */
 
+import { t } from "@/i18n";
 import nacl from "tweetnacl";
 import { scrypt } from "@noble/hashes/scrypt.js";
 import * as bip39 from "@scure/bip39";
@@ -262,7 +263,7 @@ export function validateSeedPhrase(seedPhrase: string): boolean {
 /** Dérive une clé privée NaCl (32 octets) depuis la seed. Déterministe. */
 export function deriveKeyFromSeed(seedPhrase: string): Uint8Array {
   if (!validateSeedPhrase(seedPhrase)) {
-    throw new Error("Phrase de récupération invalide");
+    throw new Error(t("profile:e2e.invalidPhrase"));
   }
   const seed = bip39.mnemonicToSeedSync(seedPhrase.trim().toLowerCase());
   return seed.slice(0, 32);

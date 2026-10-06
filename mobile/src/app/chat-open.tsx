@@ -1,3 +1,4 @@
+import { t } from "@/i18n";
 import { useEffect } from "react";
 import { View, ActivityIndicator, StyleSheet } from "react-native";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
@@ -72,7 +73,7 @@ export default function ChatOpen() {
 
   return (
     <View style={styles.center}>
-      <Stack.Screen options={{ title: "Ouverture…" }} />
+      <Stack.Screen options={{ title: t("chat:opening") }} />
       <ActivityIndicator size="large" color={colors.primary} />
     </View>
   );

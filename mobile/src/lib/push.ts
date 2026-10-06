@@ -1,3 +1,4 @@
+import { t } from "@/i18n";
 import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
 import Constants from "expo-constants";
@@ -43,7 +44,7 @@ export async function registerForPush(): Promise<string | null> {
     // Canal Android obligatoire (importance des notifs)
     if (Platform.OS === "android") {
       await Notifications.setNotificationChannelAsync("default", {
-        name: "Notifications BirthReminder",
+        name: t("local:rem.channel"),
         importance: Notifications.AndroidImportance.HIGH,
         vibrationPattern: [0, 250, 250, 250],
         lightColor: "#3b82f6",

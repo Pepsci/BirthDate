@@ -1,0 +1,91 @@
+{
+  "join": {
+    "and": "{{list}} et {{last}}",
+    "others": {
+      "one": "{{list}} et {{count}} autre",
+      "other": "{{list}} et {{count}} autres"
+    }
+  },
+  "nameday": {
+    "many": "C'est la fête des {{name}} !",
+    "one": "C'est la fête de {{name}} !"
+  },
+  "features": {
+    "reminders": {
+      "title": "Rappels intelligents",
+      "text": "Anniversaires et fêtes, notifiés au bon moment. Plus jamais d'oubli."
+    },
+    "agenda": {
+      "title": "Agenda",
+      "text": "Vue mois ou semaine, toutes vos dates importantes d'un coup d'œil."
+    },
+    "events": {
+      "title": "Événements",
+      "text": "Votes pour la date et le lieu, invitations, chat de groupe en temps réel."
+    },
+    "wishlist": {
+      "title": "Wishlist & cadeaux",
+      "text": "Partagez vos envies et trouvez le cadeau parfait, ensemble."
+    },
+    "chat": {
+      "title": "Messagerie",
+      "text": "Discutez avec vos amis directement dans l'app, en privé."
+    },
+    "pool": {
+      "title": "Cagnotte",
+      "text": "Financez un cadeau à plusieurs pour un anniversaire ou un événement, sans commission."
+    }
+  },
+  "steps": {
+    "s1": {
+      "title": "Ajoutez vos proches",
+      "text": "Anniversaires, fêtes, ou connectez-vous avec vos amis inscrits."
+    },
+    "s2": {
+      "title": "Recevez vos rappels",
+      "text": "Notification la veille et le jour J, plus jamais d'oubli."
+    },
+    "s3": {
+      "title": "Célébrez ensemble",
+      "text": "Organisez un événement, discutez et choisissez le cadeau à plusieurs."
+    }
+  },
+  "someone": "Quelqu'un",
+  "hello": "Bienvenue {{name}} 👋",
+  "localHello": "📱 Tes cartes sont sur ce téléphone",
+  "start": "Commencer 🎉",
+  "createFree": "Créer un compte gratuitement",
+  "localHint": "Sans compte, tes cartes restent sur ce téléphone.",
+  "haveAccount": "J'ai déjà un compte · Se connecter",
+  "tagline": "N'oubliez plus jamais un anniversaire",
+  "subTagline": "Rappels, agenda, événements et cadeaux, tout au même endroit, entre amis.",
+  "todayLabel": "🎈 AUJOURD'HUI CHEZ VOS PROCHES",
+  "birthdayOf": "C'est l'anniversaire de {{name}} !",
+  "birthdaysToday": "anniversaires aujourd'hui 🎂",
+  "stats": {
+    "mine": "🎂 MES ANNIV À MOI",
+    "community": "🌍 SUR TOUTE LA COMMUNAUTÉ",
+    "error": "Impossible de charger les stats pour le moment.",
+    "toWish": {
+      "one": "anniversaire à souhaiter aujourd'hui",
+      "other": "anniversaires à souhaiter aujourd'hui"
+    },
+    "celebrated": {
+      "one": "anniversaire fêté aujourd'hui",
+      "other": "anniversaires fêtés aujourd'hui"
+    },
+    "noneMine": "Pas d'anniversaire à souhaiter aujourd'hui",
+    "noneCommunity": "Aucun anniversaire aujourd'hui dans la communauté",
+    "thisMonth": "ce mois-ci",
+    "thisYear": "cette année",
+    "saved": {
+      "one": "{{n}} date enregistrée, vous n'en oublierez aucune",
+      "other": "{{n}} dates enregistrées, vous n'en oublierez aucune"
+    },
+    "members": "{{n}} membres inscrits, et la fête ne fait que commencer"
+  },
+  "sectionFeatures": "Tout pour ne rien oublier",
+  "sectionHow": "Comment ça marche ?",
+  "bannerTitle": "Organisez le prochain anniversaire",
+  "bannerText": "Créez un événement, invitez vos amis (même sans compte) et décidez ensemble de la date, du lieu et du cadeau."
+}

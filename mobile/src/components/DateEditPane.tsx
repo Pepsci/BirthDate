@@ -1,3 +1,4 @@
+import { t } from "@/i18n";
 import { View, Text, Pressable, StyleSheet, Alert } from "react-native";
 import DateForm from "./DateForm";
 import { DateEntry, deleteDate, updateDate } from "../lib/dates";
@@ -13,19 +14,19 @@ export function confirmDeleteDate(
   onError: (message: string) => void,
 ) {
   Alert.alert(
-    "Supprimer cette date ?",
-    `${entry.name} ${entry.surname ?? ""} sera retiré·e de ta liste.`,
+    t("date:delete.title"),
+    t("date:delete.text", { name: `${entry.name} ${entry.surname ?? ""}`.trim() }),
     [
-      { text: "Annuler", style: "cancel" },
+      { text: t("common:actions.cancel"), style: "cancel" },
       {
-        text: "Supprimer",
+        text: t("common:actions.delete"),
         style: "destructive",
         onPress: async () => {
           try {
             await deleteDate(entry._id);
             onDeleted();
           } catch (e: any) {
-            onError(e?.message ?? "Erreur lors de la suppression.");
+            onError(e?.message ?? t("common:errors.delete"));
           }
         },
       },
@@ -58,33 +59,33 @@ export default function DateEditPane({
     <View style={styles.pane}>
       <View style={styles.bar}>
         <Text style={styles.title} numberOfLines={1}>
-          ✏️ Modifier {entry.name}
+          ✏️ {t("date:edit.titleFor", { name: entry.name })}
         </Text>
         <Pressable
           onPress={() =>
             confirmDeleteDate(entry, onDeleted, (m) =>
-              Alert.alert("Suppression impossible", m),
+              Alert.alert(t("date:delete.failed"), m),
             )
           }
           hitSlop={8}
           accessibilityRole="button"
-          accessibilityLabel="Supprimer cette date"
+          accessibilityLabel={t("date:delete.label")}
         >
-          <Text style={styles.delete}>🗑️ Supprimer</Text>
+          <Text style={styles.delete}>🗑️ {t("common:actions.delete")}</Text>
         </Pressable>
         <Pressable
           onPress={onClose}
           hitSlop={8}
           accessibilityRole="button"
-          accessibilityLabel="Fermer la modification"
+          accessibilityLabel={t("date:edit.closeLabel")}
         >
-          <Text style={styles.close}>Fermer</Text>
+          <Text style={styles.close}>{t("common:actions.close")}</Text>
         </Pressable>
       </View>
       <DateForm
         key={entry._id}
         initial={entry}
-        submitLabel="Enregistrer"
+        submitLabel={t("common:actions.save")}
         onSubmit={async (payload) => {
           await updateDate(entry._id, payload);
           onSaved();

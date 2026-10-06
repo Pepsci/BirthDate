@@ -1,3 +1,4 @@
+import { t } from "@/i18n";
 import { useEffect, useState } from "react";
 import {
   View,
@@ -60,10 +61,10 @@ export default function DirectTransferViewer({
         setInfo(data);
         setRevealed(true);
       } else {
-        setError("Aucun RIB disponible.");
+        setError(t("pool:direct.noIban"));
       }
     } catch (e: any) {
-      setError(e?.message ?? "Impossible d'afficher le RIB.");
+      setError(e?.message ?? t("pool:direct.ibanError"));
     } finally {
       setLoading(false);
     }
@@ -85,7 +86,7 @@ export default function DirectTransferViewer({
 
   return (
     <View style={styles.wrap}>
-      <Text style={styles.title}>💸 Autres moyens de participer</Text>
+      <Text style={styles.title}>{t("pool:direct.title")}</Text>
 
       {/* Cagnotte sur un autre service */}
       {dt.externalPoolEnabled && dt.externalPoolUrl ? (
@@ -94,16 +95,13 @@ export default function DirectTransferViewer({
               payer « sur BirthReminder » se retournera vers nous, alors que
               nous n'avons aucune trace de cette collecte. */}
           <Text style={styles.muted}>
-            {dt.externalPoolLabel || "Cagnotte externe"} — l'organisateur l'a
-            ouverte sur un autre service. Ta participation s'y déroule
-            entièrement : BirthReminder n'en a aucune trace et ne pourra ni la
-            confirmer ni la rembourser.
+            {t("pool:direct.externalText", { label: dt.externalPoolLabel || t("pool:direct.externalDefault") })}
           </Text>
           <Pressable
             style={styles.payBtn}
             onPress={() => Linking.openURL(dt.externalPoolUrl!)}
           >
-            <Text style={styles.payBtnText}>🔗 Ouvrir la cagnotte</Text>
+            <Text style={styles.payBtnText}>{t("pool:direct.openPool")}</Text>
           </Pressable>
           <Text style={[styles.muted, { textAlign: "center" }]}>
             {hostOf(dt.externalPoolUrl)}
@@ -111,8 +109,7 @@ export default function DirectTransferViewer({
         </View>
       ) : dt.externalPoolEnabled && !dt.externalPoolUrl ? (
         <Text style={styles.muted}>
-          L'organisateur a annoncé une cagnotte externe mais n'a pas encore
-          renseigné le lien.
+          {t("pool:direct.externalMissing")}
         </Text>
       ) : null}
 
@@ -122,11 +119,11 @@ export default function DirectTransferViewer({
           style={styles.payBtn}
           onPress={() => Linking.openURL(dt.paypalLink!)}
         >
-          <Text style={styles.payBtnText}>💳 Payer via PayPal</Text>
+          <Text style={styles.payBtnText}>{t("pool:direct.paypal")}</Text>
         </Pressable>
       ) : dt.paypalEnabled && !dt.paypalLink ? (
         <Text style={styles.muted}>
-          L'organisateur a activé PayPal mais n'a pas encore renseigné son lien.
+          {t("pool:direct.paypalMissing")}
         </Text>
       ) : null}
 
@@ -136,8 +133,7 @@ export default function DirectTransferViewer({
           <ActivityIndicator color={colors.primary} style={{ marginVertical: 8 }} />
         ) : ibanExists === false ? (
           <Text style={styles.muted}>
-            L'organisateur a activé le virement par RIB mais n'a pas encore
-            renseigné ses informations.
+            {t("pool:direct.ibanMissing")}
           </Text>
         ) : !revealed ? (
           <>
@@ -147,7 +143,7 @@ export default function DirectTransferViewer({
               onPress={reveal}
             >
               <Text style={styles.revealBtnText}>
-                {loading ? "Chargement…" : "🏦 Afficher le RIB"}
+                {loading ? t("common:status.loading") : t("pool:direct.showIban")}
               </Text>
             </Pressable>
             {!!error && <Text style={styles.error}>{error}</Text>}
@@ -156,7 +152,7 @@ export default function DirectTransferViewer({
           <View style={styles.ibanBox}>
             {!!info?.holderName && (
               <View style={styles.row}>
-                <Text style={styles.label}>Titulaire</Text>
+                <Text style={styles.label}>{t("pool:direct.holder")}</Text>
                 <Text style={styles.value}>{info.holderName}</Text>
               </View>
             )}
@@ -170,17 +166,16 @@ export default function DirectTransferViewer({
                 Share.share({ message: info?.iban?.replace(/\s+/g, "") ?? "" })
               }
             >
-              <Text style={styles.copyBtnText}>📤 Partager l'IBAN</Text>
+              <Text style={styles.copyBtnText}>{t("pool:direct.shareIban")}</Text>
             </Pressable>
             <Text style={styles.hint}>
-              Astuce : appuie longuement sur l'IBAN pour le copier.
+              {t("pool:direct.tip")}
             </Text>
           </View>
         ))}
 
       <Text style={styles.note}>
-        Ces paiements se font directement vers l'organisateur, en dehors de
-        BirthReminder.
+        {t("pool:direct.note")}
       </Text>
     </View>
   );

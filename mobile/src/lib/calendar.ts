@@ -1,3 +1,4 @@
+import { t, tn } from "@/i18n";
 import type * as CalendarTypes from "expo-calendar";
 import * as SecureStore from "expo-secure-store";
 import { Alert, Linking, Platform } from "react-native";
@@ -110,8 +111,8 @@ export async function removeFromDeviceCalendar(
     return true;
   } catch (e: any) {
     Alert.alert(
-      "Impossible de retirer du calendrier",
-      e?.message ?? "Une erreur est survenue.",
+      t("calendar:removeError"),
+      e?.message ?? t("common:errors.occurred"),
     );
     return false;
   }
@@ -133,11 +134,11 @@ async function ensurePermission(): Promise<boolean> {
 
   // Refus définitif : iOS ne redemande plus, il faut passer par les Réglages.
   Alert.alert(
-    "Accès au calendrier refusé",
-    "Autorise BirthReminder à accéder à ton calendrier dans les réglages du téléphone pour utiliser cette fonction.",
+    t("calendar:denied.title"),
+    t("calendar:denied.text"),
     [
-      { text: "Plus tard", style: "cancel" },
-      { text: "Ouvrir les réglages", onPress: () => Linking.openSettings() },
+      { text: t("common:actions.later"), style: "cancel" },
+      { text: t("common:actions.openSettings"), onPress: () => Linking.openSettings() },
     ],
   );
   return false;
@@ -200,8 +201,8 @@ export async function addToDeviceCalendar(
   const Calendar = getCalendar();
   if (!Calendar) {
     Alert.alert(
-      "Fonction indisponible",
-      "L'ajout au calendrier nécessite une version plus récente de l'application.",
+      t("calendar:unavailable.title"),
+      t("calendar:unavailable.text"),
     );
     return false;
   }
@@ -214,8 +215,8 @@ export async function addToDeviceCalendar(
     const existing = await getLinkedEventId(input.eventKey);
     if (existing) {
       Alert.alert(
-        "Déjà dans ton calendrier",
-        `« ${input.title} » y figure déjà.`,
+        t("calendar:already.title"),
+        t("calendar:already.text", { title: input.title }),
       );
       return false;
     }
@@ -223,8 +224,8 @@ export async function addToDeviceCalendar(
     const calendarId = await resolveTargetCalendarId();
     if (!calendarId) {
       Alert.alert(
-        "Aucun calendrier disponible",
-        "Aucun calendrier modifiable n'a été trouvé sur cet appareil.",
+        t("calendar:none.title"),
+        t("calendar:none.text"),
       );
       return false;
     }
@@ -253,7 +254,7 @@ export async function addToDeviceCalendar(
       endDate,
       allDay,
       location: input.location ?? undefined,
-      notes: input.notes ?? `Ajouté depuis ${CALENDAR_TITLE}`,
+      notes: input.notes ?? t("calendar:addedFrom", { app: CALENDAR_TITLE }),
       alarms: offsets.map((relativeOffset) => ({ relativeOffset })),
     });
 
@@ -262,16 +263,16 @@ export async function addToDeviceCalendar(
     }
 
     Alert.alert(
-      "Ajouté au calendrier",
+      t("calendar:added.title"),
       offsets.length
-        ? `« ${input.title} » a été ajouté à ton calendrier, avec ${offsets.length > 1 ? "tes rappels" : "ton rappel"}.`
-        : `« ${input.title} » a été ajouté à ton calendrier. Aucun rappel n'est posé — tu peux en choisir dans Profil → Réglages.`,
+        ? tn("calendar:added.withReminders", offsets.length, { title: input.title })
+        : t("calendar:added.noReminder", { title: input.title }),
     );
     return true;
   } catch (e: any) {
     Alert.alert(
-      "Impossible d'ajouter au calendrier",
-      e?.message ?? "Une erreur est survenue.",
+      t("calendar:addError"),
+      e?.message ?? t("common:errors.occurred"),
     );
     return false;
   }

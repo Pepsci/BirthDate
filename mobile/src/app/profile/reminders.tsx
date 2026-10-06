@@ -1,3 +1,4 @@
+import { getLocaleTag, t, tn } from "@/i18n";
 import { useCallback, useState } from "react";
 import {
   View,
@@ -68,7 +69,7 @@ export default function LocalRemindersScreen() {
       await refresh();
     } catch (e: any) {
       setEnabled(!value);
-      setMsg(e?.message ?? "Enregistrement impossible.");
+      setMsg(e?.message ?? t("local:reminders.saveError"));
     } finally {
       setBusy(false);
     }
@@ -80,15 +81,15 @@ export default function LocalRemindersScreen() {
     setPermission(await getReminderPermission());
     setMsg(
       ok
-        ? "Rappel de test dans 5 secondes. Tu peux fermer l'app pour le voir arriver."
-        : "Les notifications sont refusées pour BirthReminder.",
+        ? t("local:reminders.testScheduled")
+        : t("local:reminders.denied"),
     );
   };
 
   if (enabled === null) {
     return (
       <View style={styles.center}>
-        <Stack.Screen options={{ title: "Rappels" }} />
+        <Stack.Screen options={{ title: t("profile:menu.reminders") }} />
         <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
@@ -99,15 +100,14 @@ export default function LocalRemindersScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Stack.Screen options={{ title: "Rappels" }} />
+      <Stack.Screen options={{ title: t("profile:menu.reminders") }} />
 
       <View style={styles.card}>
         <View style={styles.row}>
           <View style={styles.rowText}>
-            <Text style={styles.label}>Recevoir les rappels</Text>
+            <Text style={styles.label}>{t("local:reminders.receive")}</Text>
             <Text style={styles.hint}>
-              Anniversaires à minuit, fêtes à 9h, selon les réglages de chaque
-              carte.
+              {t("local:reminders.receiveHint")}
             </Text>
           </View>
           <Switch
@@ -121,14 +121,12 @@ export default function LocalRemindersScreen() {
 
       {enabled && denied && (
         <View style={styles.warnBox}>
-          <Text style={styles.warnTitle}>Notifications désactivées</Text>
+          <Text style={styles.warnTitle}>{t("local:reminders.offTitle")}</Text>
           <Text style={styles.warnText}>
-            Tu as refusé les notifications pour BirthReminder : aucun rappel ne
-            peut s'afficher. Tu peux les réactiver dans les Réglages du
-            téléphone.
+            {t("local:reminders.offText")}
           </Text>
           <Pressable onPress={() => Linking.openSettings()}>
-            <Text style={styles.warnLink}>Ouvrir les Réglages</Text>
+            <Text style={styles.warnLink}>{t("common:actions.openSettings")}</Text>
           </Pressable>
         </View>
       )}
@@ -138,14 +136,14 @@ export default function LocalRemindersScreen() {
           <View style={styles.block}>
             <Text style={styles.label}>
               {upcoming.length === 0
-                ? "Aucun rappel dans les 60 prochains jours"
-                : `${upcoming.length} rappel${upcoming.length > 1 ? "s" : ""} programmé${upcoming.length > 1 ? "s" : ""}`}
+                ? t("local:reminders.none")
+                : tn("local:reminders.scheduled", upcoming.length)}
             </Text>
             {next && (
               <Text style={styles.hint}>
-                Prochain : {next.title}
+                {t("local:reminders.next", { title: next.title })}
                 {next.at
-                  ? ` — ${next.at.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })}`
+                  ? ` — ${next.at.toLocaleDateString(getLocaleTag(), { weekday: "long", day: "numeric", month: "long" })}`
                   : ""}
               </Text>
             )}
@@ -154,14 +152,11 @@ export default function LocalRemindersScreen() {
       )}
 
       <Text style={styles.explain}>
-        Sans compte, c'est ton téléphone qui programme les rappels, sur les 60
-        prochains jours. Ouvre BirthReminder de temps en temps pour qu'il
-        programme la suite : si l'app reste fermée trop longtemps, une
-        notification te le rappellera.
+        {t("local:reminders.explain")}
       </Text>
 
       <Pressable style={styles.testBtn} onPress={test}>
-        <Text style={styles.testBtnText}>Envoyer un rappel de test</Text>
+        <Text style={styles.testBtnText}>{t("local:reminders.test")}</Text>
       </Pressable>
       {msg && <Text style={styles.msg}>{msg}</Text>}
     </ScrollView>

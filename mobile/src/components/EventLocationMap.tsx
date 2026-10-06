@@ -1,3 +1,4 @@
+import { t } from "@/i18n";
 import { useEffect, useState } from "react";
 import {
   View,
@@ -89,7 +90,7 @@ export default function EventLocationMap({
 
   return (
     <View style={styles.card}>
-      <Text style={styles.title}>📍 Lieu</Text>
+      <Text style={styles.title}>📍 {t("events:place")}</Text>
       <Text style={styles.name}>{name || address}</Text>
       {!!address && name !== address && (
         <Text style={styles.address}>{address}</Text>
@@ -127,8 +128,8 @@ export default function EventLocationMap({
               des cas, avec un choix si plusieurs apps de cartes sont
               installées. iOS ouvre Plans (nom français d'Apple Maps). */}
           {Platform.OS === "android"
-            ? "🧭 Ouvrir dans Google Maps"
-            : "🧭 Ouvrir dans Plans"}
+            ? t("events:maps.openGoogle")
+            : t("events:maps.openApple")}
         </Text>
       </Pressable>
     </View>

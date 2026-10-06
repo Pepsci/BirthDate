@@ -1,3 +1,4 @@
+import { t, getLocaleTag } from "@/i18n";
 import { useCallback, useState } from "react";
 import {
   View,
@@ -89,7 +90,7 @@ export default function AttachSharedListScreen() {
           // noyer le bouton « créer la carte » sous cinquante lignes.
           setPickerOpen(list.length > 0 && list.length <= 5);
         })
-        .catch((e) => setError(e?.message ?? "Erreur de chargement."));
+        .catch((e) => setError(e?.message ?? t("common:errors.loading")));
     }, []),
   );
 
@@ -109,19 +110,19 @@ export default function AttachSharedListScreen() {
     } catch (e: any) {
       if (e?.status === 409) {
         Alert.alert(
-          "Cette carte a deja une liste",
-          "Une carte ne peut porter qu'une seule liste commune. Remplacer l'actuelle par celle-ci ?",
+          t("gifts:attach.hasListTitle"),
+          t("gifts:attach.hasListText"),
           [
-            { text: "Annuler", style: "cancel" },
+            { text: t("common:actions.cancel"), style: "cancel" },
             {
-              text: "Remplacer",
+              text: t("gifts:attach.replace"),
               style: "destructive",
               onPress: () => attach({ ...body, replace: true }),
             },
           ],
         );
       } else {
-        setError(e?.message ?? "Erreur.");
+        setError(e?.message ?? t("common:errors.generic"));
       }
     } finally {
       setBusy(false);
@@ -130,7 +131,7 @@ export default function AttachSharedListScreen() {
 
   const submitNew = () => {
     if (!name.trim() || !/^\d{4}-\d{2}-\d{2}$/.test(birth.trim())) {
-      setError("Indique au moins un prenom et une date au format AAAA-MM-JJ.");
+      setError(t("gifts:attach.invalid"));
       return;
     }
     attach({
@@ -145,7 +146,7 @@ export default function AttachSharedListScreen() {
   if (!dates) {
     return (
       <View style={styles.center}>
-        <Stack.Screen options={{ title: "Ajouter la liste" }} />
+        <Stack.Screen options={{ title: t("gifts:attach.title") }} />
         {error ? (
           <Text style={styles.error}>{error}</Text>
         ) : (
@@ -160,7 +161,7 @@ export default function AttachSharedListScreen() {
   const sorted = [...dates].sort((a, b) =>
     `${a.name ?? ""} ${a.surname ?? ""}`.localeCompare(
       `${b.name ?? ""} ${b.surname ?? ""}`,
-      "fr",
+      getLocaleTag(),
       { sensitivity: "base" },
     ),
   );
@@ -183,11 +184,10 @@ export default function AttachSharedListScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Stack.Screen options={{ title: "Ajouter la liste" }} />
+      <Stack.Screen options={{ title: t("gifts:attach.title") }} />
 
       <Text style={styles.intro}>
-        Choisis la carte sur laquelle poser cette liste. Tu pourras y consulter
-        les idees et reserver un cadeau.
+        {t("gifts:attach.intro")}
       </Text>
       {error && <Text style={styles.error}>{error}</Text>}
 
@@ -197,11 +197,11 @@ export default function AttachSharedListScreen() {
           pas encore la carte. */}
       {suggestedName ? (
         <View style={[styles.card, styles.suggestedCard]}>
-          <Text style={styles.sectionTitle}>Liste de cadeaux pour</Text>
+          <Text style={styles.sectionTitle}>{t("gifts:attach.listFor")}</Text>
           <Text style={styles.suggestedName}>{suggestedName}</Text>
           {!!suggested?.date && (
             <Text style={styles.hint}>
-              né(e) le {formatBirthday(suggested.date)}
+              {t("gifts:attach.bornOn", { date: formatBirthday(suggested.date) })}
             </Text>
           )}
           <Pressable
@@ -210,12 +210,11 @@ export default function AttachSharedListScreen() {
             onPress={() => attach({ newDate: {} })}
           >
             <Text style={styles.suggestedBtnText}>
-              ➕ Créer sa carte et rattacher
+              {t("gifts:attach.createAndAttach")}
             </Text>
           </Pressable>
           <Text style={styles.hint}>
-            Les informations viennent du carnet de la personne qui partage. Tu
-            pourras les corriger ensuite depuis la carte.
+            {t("gifts:attach.suggestedHint")}
           </Text>
         </View>
       ) : null}
@@ -226,13 +225,13 @@ export default function AttachSharedListScreen() {
           onPress={() => setPickerOpen((v) => !v)}
         >
           <Text style={styles.sectionTitle}>
-            Une carte existante{sorted.length > 0 ? ` (${sorted.length})` : ""}
+            {t("gifts:attach.existing")}{sorted.length > 0 ? ` (${sorted.length})` : ""}
           </Text>
           <Text style={styles.chevron}>{pickerOpen ? "▾" : "▸"}</Text>
         </Pressable>
 
         {pickerOpen && sorted.length === 0 && (
-          <Text style={styles.empty}>Tu n'as encore aucune carte.</Text>
+          <Text style={styles.empty}>{t("gifts:attach.noCards")}</Text>
         )}
 
         {/* Recherche seulement quand la liste est assez longue pour qu'on ait
@@ -241,7 +240,7 @@ export default function AttachSharedListScreen() {
         {pickerOpen && sorted.length > 6 && (
           <TextInput
             style={styles.input}
-            placeholder="Rechercher un prénom…"
+            placeholder={t("gifts:attach.search")}
             placeholderTextColor={colors.placeholder}
             value={search}
             onChangeText={setSearch}
@@ -263,7 +262,7 @@ export default function AttachSharedListScreen() {
                 </Text>
                 <Text style={styles.hint}>
                   {d.date ? formatBirthday(d.date) : ""}
-                  {d.sharedGiftList ? " · a deja une liste commune" : ""}
+                  {d.sharedGiftList ? t("gifts:attach.alreadyHas") : ""}
                 </Text>
               </View>
               <Text style={styles.chevron}>›</Text>
@@ -271,7 +270,7 @@ export default function AttachSharedListScreen() {
           ))}
 
         {pickerOpen && sorted.length > 0 && filtered.length === 0 && (
-          <Text style={styles.empty}>Aucune carte à ce nom.</Text>
+          <Text style={styles.empty}>{t("gifts:attach.noMatch")}</Text>
         )}
       </View>
 
@@ -280,32 +279,31 @@ export default function AttachSharedListScreen() {
           style={styles.sectionHeader}
           onPress={() => setCreating((v) => !v)}
         >
-          <Text style={styles.sectionTitle}>Creer une carte</Text>
+          <Text style={styles.sectionTitle}>{t("gifts:attach.createCard")}</Text>
           <Text style={styles.chevron}>{creating ? "▾" : "▸"}</Text>
         </Pressable>
         {creating && (
           <>
             <Text style={styles.hint}>
-              Pour la personne concernee par cette liste, si tu n'as pas encore
-              sa carte.
+              {t("gifts:attach.createHint")}
             </Text>
             <TextInput
               style={styles.input}
-              placeholder="Prenom"
+              placeholder={t("gifts:attach.firstName")}
               placeholderTextColor={colors.placeholder}
               value={name}
               onChangeText={setName}
             />
             <TextInput
               style={styles.input}
-              placeholder="Nom (facultatif)"
+              placeholder={t("gifts:attach.lastName")}
               placeholderTextColor={colors.placeholder}
               value={surname}
               onChangeText={setSurname}
             />
             <TextInput
               style={styles.input}
-              placeholder="Date de naissance (AAAA-MM-JJ)"
+              placeholder={t("gifts:attach.birth")}
               placeholderTextColor={colors.placeholder}
               value={birth}
               onChangeText={setBirth}
@@ -317,7 +315,7 @@ export default function AttachSharedListScreen() {
               onPress={submitNew}
             >
               <Text style={styles.primaryBtnText}>
-                Creer la carte et ajouter la liste
+                {t("gifts:attach.submit")}
               </Text>
             </Pressable>
           </>

@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import LegalLanguageSwitch from "./LegalLanguageSwitch";
 import "./css/legalPages.css";
 
 export default function CGU() {
@@ -8,6 +9,7 @@ export default function CGU() {
         <Link to="/home" className="back-link">
           ← Retour à l'accueil
         </Link>
+        <LegalLanguageSwitch path="cgu" lang="fr" />
 
         <h1>📜 Conditions Générales d'Utilisation</h1>
 
@@ -30,7 +32,7 @@ export default function CGU() {
             <li>Un système d'amis pour partager des dates</li>
             <li>Un chat en temps réel entre amis</li>
             <li>La gestion de listes de souhaits</li>
-            <li>Un organisateur d'événements (fonctionnalité à venir)</li>
+            <li>Un organisateur d'événements</li>
           </ul>
           <p>
             Sur l'application mobile, une partie du service est également
@@ -68,6 +70,14 @@ export default function CGU() {
             <strong>15 ans</strong>, âge à partir duquel un mineur peut
             consentir seul au traitement de ses données pour un service en
             ligne en France.
+          </p>
+          <p>
+            Cet âge est porté à <strong>16 ans</strong> dans les pays dont la
+            loi l'exige (notamment l'Allemagne, l'Irlande, les Pays-Bas et la
+            Pologne), ainsi que lorsque le pays de l'utilisateur ne peut pas
+            être déterminé. L'âge applicable est indiqué lors de
+            l'inscription ; dans la suite des présentes, « 15 ans » désigne
+            cet âge minimum.
           </p>
           <p>
             Aucun compte ne peut être créé pour une personne de moins de 15
@@ -710,7 +720,7 @@ export default function CGU() {
         </section>
 
         <p className="last-update">
-          <strong>Dernière mise à jour :</strong> 22 septembre 2026
+          <strong>Dernière mise à jour :</strong> 6 octobre 2026
         </p>
       </div>
     </div>

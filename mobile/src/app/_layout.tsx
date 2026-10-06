@@ -29,10 +29,19 @@ import { AuthProvider, useAuth } from "../lib/auth-context";
 import { UnreadProvider } from "../lib/unread-context";
 import { ThemeProvider, useTheme } from "../lib/theme-context";
 import { hasSeenWelcome, markWelcomeSeen } from "../lib/welcome-gate";
+import { useAppLanguage } from "../i18n";
 
 function RootNavigator() {
   const { user, mode, isLoading, localImportPending } = useAuth();
   const { colors } = useTheme();
+  // `t()` n'est pas un hook : au changement de langue on remonte le navigateur
+  // (prop `key` du <Stack> plus bas) pour que tous les écrans se redessinent
+  // dans la nouvelle langue. L'état de navigation, tenu plus haut par
+  // expo-router, est conservé : on reste sur le même écran.
+  // ⚠️ La clé est posée sur le <Stack> et non sur RootNavigator : remonter ce
+  // dernier relancerait getLastNotificationResponseAsync et renverrait vers
+  // la dernière notification touchée.
+  const language = useAppLanguage();
   const pathname = usePathname();
   const router = useRouter();
   // ⚠️ Au cold start (app lancée par un tap sur une notification), le listener
@@ -169,6 +178,7 @@ function RootNavigator() {
 
   return (
     <Stack
+      key={language}
       screenOptions={() => ({
         // En-tête rendu en JS, comme celui des onglets (AppHeader). L'en-tête
         // natif d'iOS enveloppe chaque bouton dans un UIBarButtonItem et dessine

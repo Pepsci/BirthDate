@@ -1,0 +1,257 @@
+{
+  "e2e": {
+    "invalidPhrase": "Phrase de récupération invalide",
+    "phraseMismatch": "La phrase ne correspond pas. Vérifie l'ordre exact des 12 mots.",
+    "phraseInvalidBip": "Phrase invalide (mots BIP39 incorrects).",
+    "wrongPassword": "Mot de passe incorrect.",
+    "activateError": "Erreur lors de l'activation.",
+    "deactivateError": "Erreur lors de la désactivation.",
+    "phraseInvalid": "Phrase invalide (vérifie les 12 mots).",
+    "restored": "✅ Clés restaurées sur cet appareil.",
+    "restoreError": "Erreur lors de la restauration.",
+    "title": "Chiffrement",
+    "maxTitle": "Chiffrement Maximum (Full E2E)",
+    "intro": "Le mode standard protège déjà tes messages. Le Chiffrement Maximum ajoute une sécurité basée sur une phrase de 12 mots — indépendante de ton mot de passe.",
+    "pro1": "✅ Clé non liée à ton mot de passe — plus robuste",
+    "con1": "⚠️ Si tu perds tes 12 mots, tes messages seront inaccessibles",
+    "con2": "⚠️ Les anciens messages ne seront pas re-chiffrés",
+    "activate": "Activer le Chiffrement Maximum",
+    "active": "🔐 Chiffrement Maximum actif",
+    "activeText": "Tes messages sont chiffrés avec ta phrase de récupération de 12 mots. Conserve-la précieusement — c'est ta seule façon d'accéder à tes messages depuis un nouvel appareil.",
+    "viewPhrase": "Voir ma phrase de récupération",
+    "restoreHere": "Restaurer mes clés sur cet appareil",
+    "deactivate": "Désactiver le Chiffrement Maximum",
+    "beforeTitle": "⚠️ Avant d'activer",
+    "before1": "✅ Tes messages actuels resteront lisibles (ancienne clé conservée).",
+    "before2": "💻 Fonctionne sur tous tes appareils en te reconnectant.",
+    "before3": "🔑 Tes 12 mots sont irremplaçables : perdus + mot de passe oublié = messages inaccessibles.",
+    "before4": "📝 Prépare de quoi noter. 🚫 Pas de capture d'écran.",
+    "accept": "J'accepte",
+    "wordsTitle": "Tes 12 mots de récupération",
+    "wordsHint": "Note ces mots dans l'ordre exact. Ne les partage jamais.",
+    "wordsOnce": "🔒 Ces mots n'apparaîtront qu'une fois.",
+    "noted": "J'ai noté →",
+    "verifyTitle": "Vérification",
+    "verifyHint": "Entre tes 12 mots dans l'ordre exact pour confirmer.",
+    "wordsPlaceholder": "mot1 mot2 mot3 … mot12",
+    "verify": "Vérifier →",
+    "confirmPassword": "Confirme ton mot de passe",
+    "confirmPasswordHint": "Il sécurise ta nouvelle clé de chiffrement.",
+    "activating": "Activation…",
+    "activateShort": "Activer",
+    "viewTitle": "🔐 Voir ma phrase",
+    "viewHint": "Entre ton mot de passe pour déchiffrer tes 12 mots.",
+    "phraseTitle": "🔐 Ta phrase de récupération",
+    "phraseHint": "Conserve ces mots en lieu sûr. Ne les partage jamais.",
+    "phraseClose": "🔒 Ferme cette vue dès que tu as noté tes mots.",
+    "restoreTitle": "Restaurer mes clés",
+    "restoreHint": "Entre ta phrase de 12 mots pour re-générer ta clé sur cet appareil",
+    "wordsPlaceholderShort": "mot1 mot2 … mot12",
+    "restore": "Restaurer",
+    "deactivateTitle": "⚠️ Désactiver le Chiffrement Maximum ?",
+    "deactivateText": "Tu perdras l'accès aux messages échangés pendant la période de chiffrement maximum. Tes messages antérieurs resteront lisibles. Un nouveau jeu de clés standard sera généré. Action irréversible.",
+    "deactivating": "Désactivation…",
+    "restoreHint2": "(utile sur un nouveau téléphone).",
+    "activatedOn": "Activé le"
+  },
+  "legal": {
+    "terms": "Conditions d'utilisation (CGU)",
+    "privacy": "Politique de confidentialité",
+    "cookies": "Cookies",
+    "notice": "Mentions légales"
+  },
+  "theme": {
+    "system": "⚙️ Système",
+    "light": "☀️ Clair",
+    "dark": "🌙 Sombre"
+  },
+  "erase": {
+    "title": "Effacer toutes tes données ?",
+    "text": "Tes cartes, idées de cadeaux, photos et ta liste d'envies seront supprimées de ce téléphone. Fais une sauvegarde avant si tu veux pouvoir les retrouver.",
+    "backupFirst": "Sauvegarder d'abord",
+    "title2": "Vraiment tout effacer ?",
+    "text2": "C'est définitif : sans compte, rien n'est sauvegardé ailleurs.",
+    "action": "Tout effacer",
+    "error": "Effacement impossible."
+  },
+  "local": {
+    "noAccount": "Sans compte",
+    "noAccountCards": {
+      "one": "Sans compte · {{count}} carte",
+      "other": "Sans compte · {{count}} cartes"
+    },
+    "text": "Tes données restent sur ce téléphone, rien n'est envoyé. Pas de chat, d'amis ni d'événements."
+  },
+  "menu": {
+    "localData": "Mes données (sauvegarde)",
+    "reminders": "Rappels",
+    "settings": "Réglages",
+    "legalHelp": "Légal & aide",
+    "guide": "Guide d'utilisation",
+    "changelog": "Notes de mise à jour",
+    "haveAccount": "J'ai déjà un compte",
+    "eraseAll": "Effacer toutes mes données",
+    "importLocal": "Importer mes cartes du mode sans compte",
+    "friends": "Mes amis",
+    "info": "Mes informations",
+    "password": "Changer mon mot de passe",
+    "e2e": "Chiffrement & sécurité",
+    "blocked": "Utilisateurs bloqués",
+    "backup": "Sauvegarde",
+    "export": "Télécharger mes données",
+    "legalSupport": "Légal & support",
+    "contact": "✉️ Contacter le support",
+    "appearance": "Apparence"
+  },
+  "logout": {
+    "pendingTitle": "Modifications non envoyées",
+    "pendingText": {
+      "one": "{{count}} modification faite hors ligne n'a pas encore été envoyée. Si tu te déconnectes maintenant, elle sera perdue.",
+      "other": "{{count}} modifications faites hors ligne n'ont pas encore été envoyées. Si tu te déconnectes maintenant, elles seront perdues."
+    },
+    "action": "Se déconnecter"
+  },
+  "deleteAccount": {
+    "title": "Supprimer ton compte ?",
+    "text": "Ton compte sera désactivé puis définitivement supprimé. Cette action est irréversible.",
+    "action": "Supprimer mon compte"
+  },
+  "settings": {
+    "cards": "🎂 Affichage des cartes",
+    "hideNamedays": "Cacher les fêtes",
+    "hideNamedaysHint": "Masque la ligne « fête » sur les cartes d'anniversaire.",
+    "home": "🏠 Affichage accueil",
+    "myStats": "Afficher mes statistiques",
+    "myStatsHint": "L'encart de l'accueil montre vos propres chiffres au lieu de ceux de toute la communauté. Réglage propre à cet appareil.",
+    "todayNameday": "Afficher la fête du jour",
+    "todayNamedayHint": "Affiche « C'est la fête de … ! » sur l'écran d'accueil quand l'un de vos proches fête son nom aujourd'hui.",
+    "calendar": "📅 Rappels du calendrier",
+    "calendarEventsHint": "Rappels posés dans votre agenda quand vous ajoutez un événement depuis BirthReminder. Réglage propre à cet appareil ; il s'applique aux prochains ajouts, pas aux entrées déjà créées.",
+    "birthdaysNamedays": "Anniversaires et fêtes",
+    "allDayHint": "Ces entrées durent toute la journée : le rappel se règle donc en heure d'horloge, pas en durée avant l'événement.",
+    "noReminder": "Aucun rappel sélectionné : les entrées ajoutées à votre agenda ne vous préviendront de rien."
+  },
+  "edit": {
+    "avatarError": "Erreur lors de l'upload de l'avatar.",
+    "removePhoto": "Supprimer la photo",
+    "removePhotoText": "Votre photo sera remplacée par un avatar par défaut.",
+    "namedayFormat": "La fête doit être au format MM-JJ (ex : 03-13).",
+    "uploading": "Envoi en cours…",
+    "emailLocked": "L'adresse email ne peut pas être modifiée.",
+    "birthDate": "Date de naissance",
+    "noBirthDate": "Non renseignée — appuyer pour choisir",
+    "myNameday": "Ma fête (format MM-JJ)"
+  },
+  "password": {
+    "mismatch": "Les deux nouveaux mots de passe ne correspondent pas.",
+    "error": "Erreur lors du changement de mot de passe.",
+    "current": "Mot de passe actuel",
+    "confirm": "Confirmer le nouveau mot de passe",
+    "e2eNote": "🔐 Ta clé de chiffrement E2E sera automatiquement re-protégée avec le nouveau mot de passe.",
+    "submit": "Changer le mot de passe"
+  },
+  "blocked": {
+    "unblockTitle": "Débloquer {{name}} ?",
+    "unblockText": "Son contenu redeviendra visible.",
+    "unblock": "Débloquer",
+    "error": "Déblocage impossible.",
+    "empty": "Aucun utilisateur bloqué.\nTu peux bloquer quelqu'un depuis un chat (menu ⋯) ou en signalant un message."
+  },
+  "notif": {
+    "email": {
+      "birthdays": {
+        "label": "Rappels d'anniversaires",
+        "hint": "Email avant les anniversaires de tes proches"
+      },
+      "namedays": {
+        "label": "Rappels de fêtes",
+        "hint": "Email avant les fêtes (nameday) de tes proches"
+      },
+      "mine": {
+        "label": "Mon anniversaire",
+        "hint": "Email le jour de ton anniversaire"
+      },
+      "friends": {
+        "label": "Demandes d'amis",
+        "hint": "Email quand quelqu'un t'ajoute"
+      },
+      "events": {
+        "label": "Événements",
+        "hint": "Invitations, rappels J-7/J-1, votes"
+      },
+      "chat": {
+        "label": "Messages non lus",
+        "hint": "Email récapitulatif des messages manqués"
+      },
+      "monthly": {
+        "label": "Récap mensuel",
+        "hint": "Les anniversaires du mois à venir"
+      }
+    },
+    "emailTitle": "✉️ Notifications email",
+    "emailNote": "Ces réglages ne concernent que les emails. En couper un n'affecte ni les notifications push, ni le centre de notifications de l'app.",
+    "chatFriendsTitle": "💬 Emails de messages, par ami",
+    "chatFriendsOn": "Choisis de qui les messages non lus déclenchent l'email récap. Couper quelqu'un ne le bloque pas : ses messages arrivent toujours dans le chat et en push.",
+    "chatFriendsOff": "L'email « Messages non lus » est coupé pour tout le monde. Réactive-le plus haut pour que ces réglages servent.",
+    "noFriends": "Aucun ami pour l'instant.",
+    "emailOn": "Email activé",
+    "emailOff": "Email coupé",
+    "pushTitle": "📱 Notifications push (mobile)",
+    "pushOn": "Push activé",
+    "pushHint": "Notifications natives sur ce téléphone",
+    "push": {
+      "birthdays": {
+        "label": "Anniversaires",
+        "hint": "Rappels J-x selon tes réglages par personne"
+      },
+      "namedays": {
+        "label": "Fêtes",
+        "hint": "Rappels de fêtes (prénoms)"
+      },
+      "events": {
+        "label": "Événements",
+        "hint": "Invitations, RSVP, votes, rappels"
+      },
+      "chat": {
+        "label": "Messages",
+        "hint": "Chats privés et d'événements"
+      },
+      "friends": {
+        "label": "Amis",
+        "hint": "Demandes et acceptations"
+      },
+      "gifts": {
+        "label": "Cadeaux",
+        "hint": "Réservations sur les wishlists et propositions"
+      },
+      "sharedLists": {
+        "label": "Listes communes",
+        "hint": "Idées ajoutées, modifiées ou retirées par un membre"
+      }
+    },
+    "perPerson": "🎂 Rappels par personne",
+    "hideList": "Masquer la liste",
+    "showList": "Afficher la liste",
+    "noBirthdays": "Aucun anniversaire enregistré.",
+    "remindersOn": "Rappels activés",
+    "remindersOff": "Rappels désactivés"
+  },
+  "export": {
+    "fileTitle": "Mes données BirthReminder",
+    "error": "Export impossible pour le moment.",
+    "p1": "Vous obtenez un fichier contenant votre profil, vos dates, vos amis, vos listes de cadeaux, vos événements, vos conversations et votre journal d'activité.",
+    "p2": "Vos messages sont chiffrés de bout en bout : nos serveurs ne peuvent pas les lire. Ils sont déchiffrés sur cet appareil au moment de l'export. Si votre clé n'est pas présente ici, les messages concernés apparaîtront comme non déchiffrables.",
+    "p3": "Les conversations que vous avez retirées de votre liste figurent dans l'export, avec la date à laquelle vous les avez retirées : elles restent conservées tant que votre correspondant en a une copie.",
+    "generate": "Générer mon fichier",
+    "generated": "Fichier généré",
+    "shareAgain": "Partager à nouveau",
+    "encNoCopy": "[chiffré — aucune copie pour ce compte]",
+    "encNoKey": "[chiffré — clé privée absente de cet appareil]",
+    "encFail": "[chiffré — déchiffrement impossible]"
+  },
+  "language": {
+    "title": "Langue",
+    "auto": "📱 Téléphone",
+    "hint": "« Téléphone » suit la langue de ton appareil. Les emails et notifications arrivent dans la langue choisie ici."
+  }
+}

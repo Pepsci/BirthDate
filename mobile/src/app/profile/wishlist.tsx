@@ -1,3 +1,4 @@
+import { t } from "@/i18n";
 import { useCallback, useState } from "react";
 import {
   View,
@@ -74,12 +75,12 @@ export default function MyWishlistScreen() {
         if (info.data.price != null) setPrice(String(info.data.price));
         setImage(info.data.image);
         setDescription(info.data.description);
-        setFetchMsg("✅ Infos récupérées — vérifie et ajuste si besoin");
+        setFetchMsg(t("gifts:form.fetched"));
       } else {
-        setFetchMsg(info.message ?? "Infos non trouvées — remplis manuellement");
+        setFetchMsg(info.message ?? t("gifts:form.notFound"));
       }
     } catch (e: any) {
-      setFetchMsg(e?.message ?? "Erreur lors de la récupération.");
+      setFetchMsg(e?.message ?? t("gifts:form.fetchError"));
     } finally {
       setFetching(false);
     }
@@ -96,7 +97,7 @@ export default function MyWishlistScreen() {
       setItems(list);
       if (s) setSettings(s);
     } catch (e: any) {
-      setError(e?.message ?? "Erreur de chargement.");
+      setError(e?.message ?? t("common:errors.loading"));
     }
   }, []);
 
@@ -106,7 +107,7 @@ export default function MyWishlistScreen() {
     try {
       setSettings(await toggleWishlistPublic());
     } catch (e: any) {
-      setError(e?.message ?? "Erreur.");
+      setError(e?.message ?? t("common:errors.generic"));
     } finally {
       setShareBusy(false);
     }
@@ -119,7 +120,7 @@ export default function MyWishlistScreen() {
       const { friendCode } = await setWishlistFriendCode(action);
       setSettings((prev) => (prev ? { ...prev, friendCode } : prev));
     } catch (e: any) {
-      setError(e?.message ?? "Erreur.");
+      setError(e?.message ?? t("common:errors.generic"));
     } finally {
       setShareBusy(false);
     }
@@ -137,7 +138,7 @@ export default function MyWishlistScreen() {
       return `• ${i.title}${price}${i.url ? `\n  ${i.url}` : ""}`;
     });
     Share.share({
-      message: `🎀 Ma liste d'envies\n\n${lines.join("\n")}\n\nEnvoyé depuis BirthReminder`,
+      message: `🎀 ${t("gifts:myWishlist")}\n\n${lines.join("\n")}\n\n${t("date:share.sentFrom")}`,
     }).catch(() => {});
   };
 
@@ -215,7 +216,7 @@ export default function MyWishlistScreen() {
       setShowForm(false);
       await load();
     } catch (e: any) {
-      setError(e?.message ?? "Erreur lors de l'enregistrement.");
+      setError(e?.message ?? t("common:errors.save"));
     } finally {
       setBusy(false);
     }
@@ -228,24 +229,24 @@ export default function MyWishlistScreen() {
       await toggleWishlistItemSharing(item._id);
       await load();
     } catch (e: any) {
-      setError(e?.message ?? "Erreur.");
+      setError(e?.message ?? t("common:errors.generic"));
     } finally {
       setBusy(false);
     }
   };
 
   const confirmDelete = (item: WishlistItem) => {
-    Alert.alert("Supprimer ?", `« ${item.title} » sera retiré de ta wishlist.`, [
-      { text: "Annuler", style: "cancel" },
+    Alert.alert(t("gifts:wishlist.deleteTitle"), t("gifts:wishlist.deleteText", { name: item.title }), [
+      { text: t("common:actions.cancel"), style: "cancel" },
       {
-        text: "Supprimer",
+        text: t("common:actions.delete"),
         style: "destructive",
         onPress: async () => {
           try {
             await deleteWishlistItem(item._id);
             await load();
           } catch (e: any) {
-            setError(e?.message ?? "Erreur lors de la suppression.");
+            setError(e?.message ?? t("common:errors.delete"));
           }
         },
       },
@@ -255,7 +256,7 @@ export default function MyWishlistScreen() {
   if (items === null) {
     return (
       <View style={styles.center}>
-        <Stack.Screen options={{ title: "Ma wishlist" }} />
+        <Stack.Screen options={{ title: t("gifts:wishlist.title") }} />
         {error ? (
           <Text style={styles.error}>{error}</Text>
         ) : (
@@ -267,7 +268,7 @@ export default function MyWishlistScreen() {
 
   return (
     <View style={styles.container}>
-      <Stack.Screen options={{ title: "Ma wishlist" }} />
+      <Stack.Screen options={{ title: t("gifts:wishlist.title") }} />
       {error && <Text style={styles.error}>{error}</Text>}
 
       <FlatList
@@ -289,7 +290,7 @@ export default function MyWishlistScreen() {
               style={[styles.shareCard, styles.shareHeader]}
               onPress={shareAsText}
             >
-              <Text style={styles.shareTitle}>📤 Partager ma liste</Text>
+              <Text style={styles.shareTitle}>{t("gifts:wishlist.shareMine")}</Text>
               <Text style={styles.shareChevron}>›</Text>
             </Pressable>
           ) : (
@@ -299,7 +300,7 @@ export default function MyWishlistScreen() {
                 onPress={() => setShowShare((v) => !v)}
               >
                 <Text style={styles.shareTitle}>
-                  🔗 Partage public{settings?.isPublic ? "  · Actif" : ""}
+                  {t("gifts:wishlist.publicShare")}{settings?.isPublic ? t("gifts:wishlist.active") : ""}
                 </Text>
                 <Text style={styles.shareChevron}>{showShare ? "▾" : "▸"}</Text>
               </Pressable>
@@ -309,10 +310,10 @@ export default function MyWishlistScreen() {
                   <View style={styles.shareRow}>
                     <View style={{ flex: 1, paddingRight: 10 }}>
                       <Text style={styles.shareRowTitle}>
-                        Rendre ma wishlist publique
+                        {t("gifts:wishlist.makePublic")}
                       </Text>
                       <Text style={styles.shareRowSub}>
-                        Accessible via un lien, sans compte. Aucun nom affiché.
+                        {t("gifts:wishlist.makePublicSub")}
                       </Text>
                     </View>
                     <Switch
@@ -325,7 +326,7 @@ export default function MyWishlistScreen() {
 
                   {settings.isPublic && !!settings.publicUrl && (
                     <Pressable style={styles.shareBtn} onPress={shareLink}>
-                      <Text style={styles.shareBtnText}>📤 Partager le lien</Text>
+                      <Text style={styles.shareBtnText}>{t("gifts:wishlist.shareLink")}</Text>
                     </Pressable>
                   )}
 
@@ -333,10 +334,10 @@ export default function MyWishlistScreen() {
                     <View style={styles.shareRow}>
                       <View style={{ flex: 1, paddingRight: 10 }}>
                         <Text style={styles.shareRowTitle}>
-                          Code de réservation
+                          {t("gifts:wishlist.code")}
                         </Text>
                         <Text style={styles.shareRowSub}>
-                          Permet à tes amis de réserver un cadeau
+                          {t("gifts:wishlist.codeSub")}
                         </Text>
                       </View>
                       {settings.friendCode ? (
@@ -365,7 +366,7 @@ export default function MyWishlistScreen() {
                           disabled={shareBusy}
                           onPress={() => onFriendCode("generate")}
                         >
-                          <Text style={styles.codeGenText}>Générer</Text>
+                          <Text style={styles.codeGenText}>{t("common:actions.generate")}</Text>
                         </Pressable>
                       )}
                     </View>
@@ -378,10 +379,10 @@ export default function MyWishlistScreen() {
           {/* Ajout / modification d'une idée — en haut, comme les autres listes */}
           <View style={styles.topFormCard}>
             <View style={styles.formHeaderRow}>
-              <Text style={styles.formHeaderTitle}>🎀 Mes souhaits</Text>
+              <Text style={styles.formHeaderTitle}>{t("gifts:wishlist.myWishes")}</Text>
               <Pressable style={styles.newIdeaBtnTop} onPress={openAddForm}>
                 <Text style={styles.newIdeaTopText}>
-                  {showForm && !editingId ? "✕ Fermer" : "＋ Nouvelle idée"}
+                  {showForm && !editingId ? t("date:closeX") : t("date:ideas.new")}
                 </Text>
               </Pressable>
             </View>
@@ -389,13 +390,13 @@ export default function MyWishlistScreen() {
             {showForm && (
               <View style={styles.formInner}>
                 {editingId && (
-                  <Text style={styles.editingHint}>✏️ Modification de l'idée</Text>
+                  <Text style={styles.editingHint}>{t("gifts:wishlist.editing")}</Text>
                 )}
                 <View style={styles.formRow}>
                   <TextInput
                     placeholderTextColor={colors.placeholder}
                     style={[styles.input, { flex: 1 }]}
-                    placeholder="Colle un lien produit…"
+                    placeholder={t("gifts:wishlist.pasteLink")}
                     autoCapitalize="none"
                     keyboardType="url"
                     value={url}
@@ -412,7 +413,7 @@ export default function MyWishlistScreen() {
                       onPress={fetchInfos}
                     >
                       <Text style={styles.fetchBtnText}>
-                        {fetching ? "…" : "🔍 Remplir"}
+                        {fetching ? "…" : t("gifts:wishlist.fill")}
                       </Text>
                     </Pressable>
                   )}
@@ -431,25 +432,25 @@ export default function MyWishlistScreen() {
                 <TextInput
                   placeholderTextColor={colors.placeholder}
                   style={styles.input}
-                  placeholder="URL de l'image (optionnel)"
+                  placeholder={t("gifts:form.imageUrl")}
                   autoCapitalize="none"
                   autoCorrect={false}
                   keyboardType="url"
                   value={image ?? ""}
-                  onChangeText={(t) => setImage(t.trim() ? t : null)}
+                  onChangeText={(v) => setImage(v.trim() ? v : null)}
                 />
                 <View style={styles.formRow}>
                   <TextInput
                     placeholderTextColor={colors.placeholder}
                     style={[styles.input, { flex: 2 }]}
-                    placeholder="Nom du souhait *"
+                    placeholder={t("gifts:wishlist.wishName")}
                     value={title}
                     onChangeText={setTitle}
                   />
                   <TextInput
                     placeholderTextColor={colors.placeholder}
                     style={[styles.input, { flex: 1 }]}
-                    placeholder="Prix €"
+                    placeholder={t("gifts:wishlist.price")}
                     keyboardType="decimal-pad"
                     value={price}
                     onChangeText={setPrice}
@@ -464,7 +465,7 @@ export default function MyWishlistScreen() {
                   onPress={add}
                 >
                   <Text style={styles.addBtnText}>
-                    {busy ? "…" : editingId ? "Enregistrer" : "Ajouter"}
+                    {busy ? "…" : editingId ? t("common:actions.save") : t("common:actions.add")}
                   </Text>
                 </Pressable>
               </View>
@@ -474,8 +475,7 @@ export default function MyWishlistScreen() {
         }
         ListEmptyComponent={
           <Text style={styles.empty}>
-            Ta wishlist est vide. Ajoute des idées — tes amis pourront les
-            réserver !
+            {t("gifts:wishlist.empty")}
           </Text>
         }
         renderItem={({ item }) => {
@@ -488,18 +488,18 @@ export default function MyWishlistScreen() {
               badge={
                 reserved
                   ? {
-                      label: "🎁 Réservé",
+                      label: t("gifts:wishlist.reserved"),
                       color: colors.successStrong,
                       bg: colors.successSoft,
                     }
                   : item.isShared === false
                     ? {
-                        label: "🔒 Masqué",
+                        label: t("gifts:wishlist.hidden"),
                         color: colors.sub,
                         bg: colors.bgSecondary,
                       }
                     : {
-                        label: "Disponible",
+                        label: t("date:wishlist.available"),
                         color: colors.sub,
                         bg: colors.bgSecondary,
                       }
@@ -523,21 +523,21 @@ export default function MyWishlistScreen() {
             <Text style={styles.sheetTitle}>{selected.title}</Text>
             <View style={styles.sheetInfoRow}>
               <Text style={styles.sheetPrice}>
-                {selected.price != null ? `${selected.price} €` : "Prix libre"}
+                {selected.price != null ? `${selected.price} €` : t("gifts:freePrice")}
               </Text>
               {selected.url ? (
                 <Text
                   style={styles.link}
                   onPress={() => Linking.openURL(selected.url!)}
                 >
-                  🔗 Voir le produit
+                  {t("gifts:viewProduct")}
                 </Text>
               ) : null}
             </View>
             {(!!selected.reservedBy || !!selected.reservedByGuest) && (
               <>
                 <Text style={styles.sheetReserved}>
-                  🎁 Quelqu'un a réservé ce cadeau pour toi
+                  {t("gifts:wishlist.someoneReserved")}
                 </Text>
                 <Pressable
                   style={styles.sheetUnreserveBtn}
@@ -549,12 +549,12 @@ export default function MyWishlistScreen() {
                       await unreserveItem(item._id);
                       await load();
                     } catch (e: any) {
-                      setError(e?.message ?? "Erreur.");
+                      setError(e?.message ?? t("common:errors.generic"));
                     }
                   }}
                 >
                   <Text style={styles.sheetUnreserveText}>
-                    ↩️ Annuler la réservation
+                    {t("gifts:wishlist.cancelReservation")}
                   </Text>
                 </Pressable>
               </>
@@ -563,11 +563,11 @@ export default function MyWishlistScreen() {
             {!isLocalMode() && (
               <View style={styles.sheetShareRow}>
                 <View style={{ flex: 1, paddingRight: 10 }}>
-                  <Text style={styles.sheetShareTitle}>Visible par mes amis</Text>
+                  <Text style={styles.sheetShareTitle}>{t("gifts:wishlist.visible")}</Text>
                   <Text style={styles.sheetShareSub}>
                     {selected.isShared === false
-                      ? "Masqué : personne ne peut le voir ni le réserver"
-                      : "Tes amis peuvent le voir et le réserver"}
+                      ? t("gifts:wishlist.hiddenSub")
+                      : t("gifts:wishlist.visibleSub")}
                   </Text>
                 </View>
                 <Switch
@@ -591,7 +591,7 @@ export default function MyWishlistScreen() {
                 startEdit(item);
               }}
             >
-              <Text style={styles.sheetEditText}>✏️ Modifier</Text>
+              <Text style={styles.sheetEditText}>✏️ {t("common:actions.edit")}</Text>
             </Pressable>
 
             <Pressable
@@ -602,7 +602,7 @@ export default function MyWishlistScreen() {
                 confirmDelete(item);
               }}
             >
-              <Text style={styles.sheetDeleteText}>🗑️ Supprimer</Text>
+              <Text style={styles.sheetDeleteText}>🗑️ {t("common:actions.delete")}</Text>
             </Pressable>
           </>
         )}

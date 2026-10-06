@@ -1,3 +1,4 @@
+import { t } from "@/i18n";
 /**
  * Statut d'une idée cadeau — 3 états.
  * `status` est stocké en base ; `purchased` reste synchro pour la compat web.
@@ -20,29 +21,29 @@ export interface GiftStatusMeta {
 
 export const GIFT_STATUS_META: Record<GiftStatus, GiftStatusMeta> = {
   to_buy: {
-    label: "À acheter",
-    short: "À acheter",
+    get label() { return t("gifts:status.toBuy"); },
+    get short() { return t("gifts:status.toBuy"); },
     emoji: "🛒",
     color: "#b45309",
     bg: "#fef3c7",
   },
   bought: {
-    label: "Acheté",
-    short: "Acheté",
+    get label() { return t("gifts:status.bought"); },
+    get short() { return t("gifts:status.bought"); },
     emoji: "✅",
     color: "#047857",
     bg: "#d1fae5",
   },
   to_give: {
-    label: "Acheté & à offrir",
-    short: "À offrir",
+    get label() { return t("gifts:status.toGiveLong"); },
+    get short() { return t("gifts:status.toGive"); },
     emoji: "🎁",
     color: "#2563eb",
     bg: "#dbeafe",
   },
   offered: {
-    label: "Offert",
-    short: "Offert",
+    get label() { return t("gifts:status.offered"); },
+    get short() { return t("gifts:status.offered"); },
     emoji: "🎉",
     color: "#7c3aed",
     bg: "#ede9fe",

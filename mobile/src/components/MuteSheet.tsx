@@ -1,3 +1,4 @@
+import { t } from "@/i18n";
 import { View, Text, Pressable, StyleSheet } from "react-native";
 import BottomSheet from "./BottomSheet";
 import {
@@ -34,12 +35,12 @@ export default function MuteSheet({
   return (
     <BottomSheet visible={visible} onClose={onClose}>
       <Text style={styles.title}>
-        {mute ? "Notifications coupées" : "Couper les notifications"}
+        {mute ? t("chat:mute.mutedTitle") : t("chat:mute.muteLabel")}
       </Text>
       <Text style={styles.sub}>
         {mute
-          ? `Coupées ${muteLabel(mute.until)}. La conversation reste visible et ses messages non lus continuent d'apparaître.`
-          : "Ton téléphone ne sonnera plus pour cette conversation. Elle reste visible dans ta liste, avec ses messages non lus."}
+          ? t("chat:mute.mutedText", { until: muteLabel(mute.until) })
+          : t("chat:mute.text")}
       </Text>
 
       {MUTE_CHOICES.map((c) => (
@@ -63,7 +64,7 @@ export default function MuteSheet({
             onClose();
           }}
         >
-          <Text style={styles.reactivateText}>🔔 Réactiver les notifications</Text>
+          <Text style={styles.reactivateText}>{t("chat:mute.unmute")}</Text>
         </Pressable>
       )}
     </BottomSheet>

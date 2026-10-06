@@ -6,15 +6,75 @@
     "delete": "Delete",
     "close": "Close",
     "back": "Back",
-    "retry": "Try again"
+    "retry": "Try again",
+    "hide": "Hide",
+    "show": "Show",
+    "validate": "Confirm",
+    "remove": "Remove",
+    "edit": "Edit",
+    "choose": "Choose",
+    "add": "Add",
+    "report": "Report",
+    "generate": "Generate",
+    "decline": "Decline",
+    "accept": "Accept",
+    "later": "Later",
+    "next": "Next",
+    "openSettings": "Open settings",
+    "continue": "Continue"
   },
   "status": {
     "loading": "Loading…",
-    "error": "Something went wrong"
+    "error": "Something went wrong",
+    "sending": "Sending…"
   },
   "language": {
     "label": "Language",
     "fr": "Français",
     "en": "English"
+  },
+  "tabs": {
+    "birthdays": "Birthdays",
+    "events": "Events",
+    "chats": "Chats",
+    "profile": "Profile"
+  },
+  "password": {
+    "hideLabel": "Hide password",
+    "showLabel": "Show password"
+  },
+  "countdown": {
+    "d": "D",
+    "h": "H",
+    "m": "M",
+    "s": "S"
+  },
+  "logoLabel": "BirthReminder home",
+  "errors": {
+    "loading": "Could not load.",
+    "status": "Error {{status}}",
+    "delete": "Could not delete.",
+    "save": "Could not save.",
+    "send": "Could not send.",
+    "generic": "Something went wrong.",
+    "retrySoon": "Please try again in a moment.",
+    "network": "No connection to the server. Try again once you are online.",
+    "title": "Error",
+    "occurred": "Something went wrong."
+  },
+  "tomorrow": "Tomorrow",
+  "inDays": "{{count}} days",
+  "todayCake": "Today 🎂",
+  "age": {
+    "one": "age {{count}}",
+    "other": "age {{count}}"
+  },
+  "sendCount": "Send ({{count}})",
+  "today": "Today",
+  "backArrow": "← Back",
+  "notFound": {
+    "title": "This page does not exist",
+    "text": "The link may be incomplete, or the page has moved.",
+    "home": "Back to home"
   }
 }

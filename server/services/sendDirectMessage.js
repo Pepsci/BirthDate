@@ -209,17 +209,21 @@ async function sendDirectMessage({ io, app, connectedUsers, senderId, data }) {
         friendId: senderId,
         // Fallback affiché si déchiffrement impossible / iOS sans NSE :
         title: `💬 ${senderName}`,
-        body: "🔒 Nouveau message chiffré",
+        body: (L) => L("push.chat.encrypted"),
       }).catch((err) => console.error("❌ Push chat error:", err));
     } else {
       // Cas non chiffrés (gift_share, date_share, chat en clair).
       let pushBody;
       if (messageType === "gift_share") {
-        const personName = metadata?.personName || "quelqu'un";
-        pushBody = `🎁 Idées cadeaux pour ${personName}`;
+        pushBody = (L) =>
+          L("push.chat.giftShare", {
+            name: metadata?.personName || L("push.someoneLower"),
+          });
       } else if (messageType === "date_share") {
-        const personName = metadata?.personName || "quelqu'un";
-        pushBody = `🎂 Anniversaire de ${personName}`;
+        pushBody = (L) =>
+          L("push.chat.dateShare", {
+            name: metadata?.personName || L("push.someoneLower"),
+          });
       } else {
         pushBody = content.trim().slice(0, 100);
       }

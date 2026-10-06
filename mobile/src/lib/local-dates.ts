@@ -1,3 +1,4 @@
+import { t } from "@/i18n";
 import {
   copyAsync,
   deleteAsync,
@@ -36,7 +37,7 @@ import { findNameDay } from "./nameday";
  * affichent déjà via `e.message`.
  */
 
-const notFound = () => new ApiError(404, "Cette carte n'existe plus.");
+const notFound = () => new ApiError(404, t("date:notFound"));
 
 // ---- Conversion stockage → écran ----
 
@@ -112,7 +113,7 @@ export async function localUpdateDate(
   payload: Partial<DatePayload>,
 ): Promise<DateEntry> {
   if (payload.nameday && !/^\d{2}-\d{2}$/.test(payload.nameday)) {
-    throw new ApiError(400, "Format de fête invalide (MM-JJ attendu).");
+    throw new ApiError(400, t("local:errors.namedayFormat"));
   }
   const updated = await mutateDate(id, (d) => {
     // Comme PATCH /date/:id : fête explicite > recalcul si le prénom change
@@ -247,7 +248,7 @@ export async function localUpdateGift(
     await mutateDate(dateId, (d) => {
       const gifts = d.gifts ?? [];
       if (!gifts.some((g) => g._id === gift._id)) {
-        throw new ApiError(404, "Cette idée de cadeau n'existe plus.");
+        throw new ApiError(404, t("local:errors.giftGone"));
       }
       return {
         ...d,
@@ -302,7 +303,7 @@ export async function localSetNamedayPrefs(
   if (!prefs.timings.every((t) => t === 1 || t === 7)) {
     throw new ApiError(
       400,
-      "Les rappels de fête sont possibles la veille ou une semaine avant.",
+      t("local:errors.namedayTimings"),
     );
   }
   await mutateDate(id, (d) => ({ ...d, namedayPreferences: prefs }));
@@ -310,7 +311,7 @@ export async function localSetNamedayPrefs(
 
 // ---- Liste d'envies ----
 
-const itemNotFound = () => new ApiError(404, "Cette envie n'existe plus.");
+const itemNotFound = () => new ApiError(404, t("local:errors.wishGone"));
 
 function toItem({ createdAt: _c, ...item }: LocalWishlistItem): WishlistItem {
   return item;
@@ -336,7 +337,7 @@ export async function localAddWishlistItem(item: {
   image?: string;
   isShared?: boolean;
 }): Promise<void> {
-  if (!item.title) throw new ApiError(400, "Le titre est obligatoire.");
+  if (!item.title) throw new ApiError(400, t("local:errors.titleRequired"));
   const full: LocalWishlistItem = {
     _id: newLocalId(),
     title: item.title,

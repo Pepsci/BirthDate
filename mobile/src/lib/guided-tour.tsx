@@ -12,6 +12,7 @@
  * Intégration : provider + <TourOverlay /> dans app/(tabs)/_layout.tsx,
  * déclenchement via startTour(TOURS.xxx) dans l'écran concerné.
  */
+import { t } from "@/i18n";
 import {
   createContext,
   useCallback,
@@ -56,13 +57,13 @@ export const TOURS = {
     steps: [
       {
         targetId: "tourAgenda",
-        title: "📅 La vue agenda",
-        text: "Ce bouton affiche tous les anniversaires, fêtes et événements du mois en un coup d'œil.",
+        get title() { return t("tour:agenda.title"); },
+        get text() { return t("tour:agenda.text"); },
       },
       {
         targetId: "tourAddDate",
-        title: "🎂 Ta première date",
-        text: "Appuie sur le ＋ pour ajouter ton premier anniversaire — c'est parti !",
+        get title() { return t("tour:addDate.title"); },
+        get text() { return t("tour:addDate.text"); },
         requirePress: true,
       },
     ],
@@ -72,8 +73,8 @@ export const TOURS = {
     steps: [
       {
         targetId: "tourAddEvent",
-        title: "🎉 Ton premier événement",
-        text: "Appuie sur le ＋ pour organiser une fête : fais voter la date et le lieu, invite tes amis, propose des cadeaux et lance une cagnotte.",
+        get title() { return t("tour:addEvent.title"); },
+        get text() { return t("tour:addEvent.text"); },
         requirePress: true,
       },
     ],
@@ -83,23 +84,23 @@ export const TOURS = {
     steps: [
       {
         targetId: "tourFriends",
-        title: "👥 Tes amis",
-        text: "Tout commence ici : ajoute tes amis pour voir automatiquement leurs anniversaires, discuter avec eux et les inviter à tes événements.",
+        get title() { return t("tour:friends.title"); },
+        get text() { return t("tour:friends.text"); },
       },
       {
         targetId: "tourNotifs",
-        title: "🔔 Notifications",
-        text: "Choisis ce que tu veux recevoir : notifications push sur ce téléphone (anniversaires, messages, événements…) et rappels par email.",
+        get title() { return t("tour:notifs.title"); },
+        get text() { return t("tour:notifs.text"); },
       },
       {
         targetId: "tourWishlist",
-        title: "🎀 Ta wishlist",
-        text: "Liste tes envies de cadeaux : tes amis la consultent pour ne jamais se tromper — et toi la leur !",
+        get title() { return t("tour:wishlist.title"); },
+        get text() { return t("tour:wishlist.text"); },
       },
       {
         targetId: "tourE2E",
-        title: "🔐 Chiffrement & sécurité",
-        text: "Tes messages sont chiffrés de bout en bout. Cette section te permet de gérer tes clés de chiffrement.",
+        get title() { return t("tour:e2e.title"); },
+        get text() { return t("tour:e2e.text"); },
       },
     ],
   },
@@ -418,12 +419,12 @@ function TourStepView({
           <Text style={styles.bubbleText}>{step.text}</Text>
           {step.requirePress ? (
             <Pressable style={styles.bubbleSkip} onPress={finish} hitSlop={8}>
-              <Text style={styles.bubbleSkipText}>Plus tard</Text>
+              <Text style={styles.bubbleSkipText}>{t("common:actions.later")}</Text>
             </Pressable>
           ) : (
             <Pressable style={styles.bubbleButton} onPress={next}>
               <Text style={styles.bubbleButtonText}>
-                {isLast ? "Terminer" : "Suivant"}
+                {isLast ? t("tour:finish") : t("common:actions.next")}
               </Text>
             </Pressable>
           )}

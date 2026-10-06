@@ -1,3 +1,4 @@
+import { t } from "@/i18n";
 import { useState } from "react";
 import {
   View,
@@ -132,11 +133,11 @@ function ContributeForm({
         return; // annulé par l'utilisateur
       }
 
-      Alert.alert("Merci ! 💝", "Ta contribution a bien été enregistrée.", [
+      Alert.alert(t("pool:contribute.thanks"), t("pool:contribute.saved"), [
         { text: "OK", onPress: () => (onDone ? onDone() : router.back()) },
       ]);
     } catch (e: any) {
-      setError(e?.message ?? "Erreur lors du paiement.");
+      setError(e?.message ?? t("pool:contribute.payError"));
       setPaying(false);
     }
   };
@@ -150,12 +151,12 @@ function ContributeForm({
       automaticallyAdjustKeyboardInsets
     >
       {embedded ? (
-        <Text style={styles.embeddedTitle}>💝 Contribuer à la cagnotte</Text>
+        <Text style={styles.embeddedTitle}>{t("pool:contribute.embedded")}</Text>
       ) : (
-        <Stack.Screen options={{ title: "Contribuer à la cagnotte" }} />
+        <Stack.Screen options={{ title: t("pool:contribute.title") }} />
       )}
 
-      <Text style={styles.label}>Montant (€)</Text>
+      <Text style={styles.label}>{t("pool:contribute.amount")}</Text>
       <View style={styles.quickRow}>
         {QUICK_AMOUNTS.map((a) => (
           <Pressable
@@ -180,39 +181,38 @@ function ContributeForm({
       <TextInput
         placeholderTextColor={colors.placeholder}
         style={styles.input}
-        placeholder="Montant libre (min 1 €)"
+        placeholder={t("pool:contribute.amountPlaceholder")}
         keyboardType="decimal-pad"
         value={amount}
         onChangeText={setAmount}
       />
 
-      <Text style={styles.label}>Message (optionnel)</Text>
+      <Text style={styles.label}>{t("pool:contribute.message")}</Text>
       <TextInput
         placeholderTextColor={colors.placeholder}
         style={[styles.input, { minHeight: 60 }]}
-        placeholder="Un petit mot avec ta contribution…"
+        placeholder={t("pool:contribute.messagePlaceholder")}
         multiline
         maxLength={200}
         value={message}
         onChangeText={setMessage}
       />
 
-      <Text style={styles.label}>Nom affiché (optionnel)</Text>
+      <Text style={styles.label}>{t("pool:contribute.displayName")}</Text>
       <TextInput
         placeholderTextColor={colors.placeholder}
         style={styles.input}
-        placeholder="Ton prénom ou un pseudonyme"
+        placeholder={t("pool:contribute.namePlaceholder")}
         maxLength={60}
         value={displayName}
         onChangeText={setDisplayName}
       />
       <Text style={styles.help}>
-        Laisse vide pour utiliser ton nom de compte. Un pseudonyme masque ton
-        vrai nom, y compris pour l'organisateur.
+        {t("pool:contribute.nameHint")}
       </Text>
 
       <View style={styles.switchRow}>
-        <Text style={styles.switchLabel}>Apparaître anonymement</Text>
+        <Text style={styles.switchLabel}>{t("pool:contribute.anonymous")}</Text>
         <Switch
           value={anonymous}
           onValueChange={setAnonymous}
@@ -221,7 +221,7 @@ function ContributeForm({
       </View>
 
       <View style={styles.switchRow}>
-        <Text style={styles.switchLabel}>Masquer le montant</Text>
+        <Text style={styles.switchLabel}>{t("pool:contribute.hideAmount")}</Text>
         <Switch
           value={hideAmount}
           onValueChange={setHideAmount}
@@ -232,8 +232,7 @@ function ContributeForm({
       {hideAmount && (
         <View style={styles.noticeBox}>
           <Text style={styles.noticeText}>
-            ℹ️ Les autres participants verront ton nom, pas le montant.
-            L'organisateur le voit, et il compte dans le total de la cagnotte.
+            {t("pool:contribute.hideAmountInfo")}
           </Text>
         </View>
       )}
@@ -241,9 +240,7 @@ function ContributeForm({
       {anonymous && (
         <View style={styles.noticeBox}>
           <Text style={styles.noticeText}>
-            ℹ️ Ta participation sera masquée pour les autres participants, mais
-            restera visible par l'organisateur. Pour rester anonyme aussi
-            vis-à-vis de lui, utilise un pseudonyme ci-dessus.
+            {t("pool:contribute.anonymousInfo")}
           </Text>
         </View>
       )}
@@ -259,15 +256,13 @@ function ContributeForm({
           <ActivityIndicator color={colors.white} />
         ) : (
           <Text style={styles.payText}>
-            💳 Payer{valid ? ` ${(amountCents / 100).toFixed(2).replace(".", ",")} €` : ""}
+            {t("pool:contribute.pay")}{valid ? ` ${(amountCents / 100).toFixed(2).replace(".", ",")} €` : ""}
           </Text>
         )}
       </Pressable>
 
       <Text style={styles.secure}>
-        🔒 Paiement sécurisé par Stripe — l'argent va directement à
-        l'organisateur. BirthReminder ne détient jamais les fonds : en cas
-        d'annulation, le remboursement relève de l'organisateur.
+        {t("pool:contribute.secure")}
       </Text>
       <Text
         style={styles.secureLink}
@@ -275,7 +270,7 @@ function ContributeForm({
           WebBrowser.openBrowserAsync("https://stripe.com/fr/legal/ssa")
         }
       >
-        Conditions des services Stripe
+        {t("pool:contribute.stripeTerms")}
       </Text>
     </ScrollView>
   );

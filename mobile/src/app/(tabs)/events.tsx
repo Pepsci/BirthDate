@@ -1,3 +1,4 @@
+import { t } from "@/i18n";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   View,
@@ -49,7 +50,7 @@ export default function EventsScreen() {
       setOrganized(organized);
       setInvited(invited);
     } catch (e: any) {
-      setError(e?.message ?? "Erreur de chargement.");
+      setError(e?.message ?? t("common:errors.loading"));
     }
   }, []);
 
@@ -102,11 +103,11 @@ export default function EventsScreen() {
       .sort(byDateDesc);
 
     return [
-      { title: "📝 Brouillons à terminer", data: drafts, key: "drafts" },
-      { title: "J'organise", data: upcoming(published), key: "organized" },
-      { title: "Je suis invité·e", data: upcoming(invited), key: "invited" },
+      { title: t("events:list.drafts"), data: drafts, key: "drafts" },
+      { title: t("events:list.organizing"), data: upcoming(published), key: "organized" },
+      { title: t("events:list.invited"), data: upcoming(invited), key: "invited" },
       {
-        title: `🗄️ Événements passés (${past.length})`,
+        title: t("events:list.past", { count: past.length }),
         data: pastOpen ? past : [],
         key: "past",
         // Conservé même vide de données pour que l'en-tête (et donc le bouton
@@ -130,14 +131,14 @@ export default function EventsScreen() {
       <OfflineBanner />
       {error && (
         <Pressable style={styles.errorBanner} onPress={onRefresh}>
-          <Text style={styles.errorText}>{error} — appuyer pour réessayer</Text>
+          <Text style={styles.errorText}>{t("home:errorRetry", { error })}</Text>
         </Pressable>
       )}
 
       <OnboardingTip
         id="cagnottes"
         emoji="💰"
-        text="Tu peux créer une cagnotte pour financer un cadeau à plusieurs, directement depuis un événement, sans commission supplémentaire de la part de BirthReminder pour le moment."
+        text={t("events:list.poolTip")}
       />
 
       <SectionList
@@ -170,8 +171,7 @@ export default function EventsScreen() {
           // événement » à quelqu'un qui en a dix serait faux.
           organized.length + invited.length === 0 ? (
             <Text style={styles.empty}>
-              Aucun événement pour l'instant. Crée-en un depuis le site web — il
-              apparaîtra ici.
+              {t("events:list.empty")}
             </Text>
           ) : null
         }
@@ -301,12 +301,12 @@ function EventCard({
   // brouillon était donc impossible à supprimer. Le bouton vit sur la carte.
   const confirmDeleteDraft = () => {
     Alert.alert(
-      "Supprimer ce brouillon ?",
-      `« ${event.title || "Sans titre"} » sera supprimé définitivement.`,
+      t("events:draft.deleteTitle"),
+      t("events:draft.deleteTextNamed", { title: event.title || t("events:untitled") }),
       [
-        { text: "Garder", style: "cancel" },
+        { text: t("events:draft.keep"), style: "cancel" },
         {
-          text: "Supprimer",
+          text: t("common:actions.delete"),
           style: "destructive",
           onPress: async () => {
             try {
@@ -314,8 +314,8 @@ function EventCard({
               onDeleted();
             } catch (e: any) {
               Alert.alert(
-                "Suppression impossible",
-                e?.message ?? "Réessaie dans un instant.",
+                t("date:delete.failed"),
+                e?.message ?? t("common:errors.retrySoon"),
               );
             }
           },
@@ -335,10 +335,10 @@ function EventCard({
   const soonLabel =
     isLive && days !== null && days >= 0 && days <= 7
       ? days === 0
-        ? "Aujourd'hui"
+        ? t("common:today")
         : days === 1
-          ? "Demain"
-          : `J-${days}`
+          ? t("common:tomorrow")
+          : t("common:inDays", { count: days })
       : null;
 
   return (
@@ -368,12 +368,12 @@ function EventCard({
               style={[styles.title, isCancelled && styles.titleCancelled]}
               numberOfLines={2}
             >
-              {event.title || "Sans titre"}
+              {event.title || t("events:untitled")}
             </Text>
             <Text style={[styles.type, { color: accent }]}>
               {EVENT_TYPE_LABELS[event.type].replace(/^\S+\s/, "")}
               {typeof event.forPerson === "object" && event.forPerson?.name
-                ? ` · pour ${event.forPerson.name}`
+                ? t("events:forPerson", { name: event.forPerson.name })
                 : ""}
             </Text>
           </View>
@@ -392,7 +392,7 @@ function EventCard({
         {isCancelled && (
           <View style={styles.cancelBanner}>
             <Text style={styles.cancelBannerText} numberOfLines={2}>
-              ❌ Annulé
+              ❌ {t("events:status.cancelled")}
               {event.cancellationReason ? ` — ${event.cancellationReason}` : ""}
             </Text>
           </View>
@@ -400,14 +400,14 @@ function EventCard({
 
         <View style={styles.infoBlock}>
           <Text style={styles.detail}>
-            📅 {d ? formatEventDate(d) : "Date au vote"}
+            📅 {d ? formatEventDate(d) : t("events:dateVote")}
           </Text>
           {location ? (
             <Text style={styles.detail} numberOfLines={1}>
               📍 {location}
             </Text>
           ) : event.locationMode === "vote" ? (
-            <Text style={styles.detail}>📍 Lieu au vote</Text>
+            <Text style={styles.detail}>📍 {t("events:placeVote")}</Text>
           ) : null}
         </View>
 
@@ -423,11 +423,11 @@ function EventCard({
                 onPress={confirmDeleteDraft}
                 hitSlop={8}
                 accessibilityRole="button"
-                accessibilityLabel="Supprimer ce brouillon"
+                accessibilityLabel={t("events:draft.deleteLabel")}
               >
-                <Text style={styles.draftDelete}>🗑️ Supprimer</Text>
+                <Text style={styles.draftDelete}>🗑️ {t("common:actions.delete")}</Text>
               </Pressable>
-              <Text style={styles.draftHint}>Reprendre →</Text>
+              <Text style={styles.draftHint}>{t("events:draft.resume")}</Text>
             </View>
           ) : (
             event.myRsvpStatus && (

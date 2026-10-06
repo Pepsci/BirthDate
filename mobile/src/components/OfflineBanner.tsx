@@ -1,3 +1,4 @@
+import { t, tn, getLocaleTag } from "@/i18n";
 import { useState } from "react";
 import { View, Text, Pressable, StyleSheet } from "react-native";
 import { useOfflineStatus } from "../lib/offline-status";
@@ -37,7 +38,7 @@ export default function OfflineBanner() {
     return (
       <View style={[styles.banner, styles.bannerError]} accessibilityRole="alert">
         <Text style={[styles.title, styles.textError]}>
-          ⚠️ {failures.length > 1 ? `${failures.length} modifications n'ont pas pu être envoyées` : "Une modification n'a pas pu être envoyée"}
+          ⚠️ {tn("offline:failed", failures.length)}
         </Text>
         {failures.map((f, i) => (
           <Text key={i} style={[styles.text, styles.textError]}>
@@ -53,7 +54,7 @@ export default function OfflineBanner() {
 
   if (offline) {
     const when = lastSync
-      ? new Date(lastSync).toLocaleString("fr-FR", {
+      ? new Date(lastSync).toLocaleString(getLocaleTag(), {
           day: "2-digit",
           month: "2-digit",
           hour: "2-digit",
@@ -64,29 +65,26 @@ export default function OfflineBanner() {
       <View style={styles.banner} accessibilityRole="alert">
         <Pressable onPress={toggleDetails} hitSlop={6} style={styles.headerRow}>
           <Text style={[styles.title, styles.headerTitle]}>
-            📡 Hors ligne{when ? ` · données du ${when}` : ""}
+            📡 {when ? t("offline:titleSince", { when }) : t("offline:title")}
           </Text>
           <Text style={styles.toggle}>
-            {detailsHidden ? "Détails ▸" : "Masquer ▾"}
+            {detailsHidden ? t("offline:details") : t("offline:hide")}
           </Text>
         </Pressable>
         {pending > 0 && (
           <Text style={styles.text}>
-            ⏳ {pending} modification{pending > 1 ? "s" : ""} en attente d'envoi.
+            ⏳ {tn("offline:pending", pending)}
           </Text>
         )}
         {!detailsHidden && (
           <>
             <Text style={styles.text}>
-              <Text style={styles.label}>✅ Possible : </Text>
-              consulter tes dates, l'agenda et les événements déjà ouverts ;
-              ajouter, modifier ou supprimer une date (envoyé au retour de la
-              connexion).
+              <Text style={styles.label}>{t("offline:possibleLabel")}</Text>
+              {t("offline:possibleText")}
             </Text>
             <Text style={styles.text}>
-              <Text style={styles.label}>🚫 Indisponible : </Text>
-              chat, ajout de cadeaux ou de photos, amis, cagnottes, listes
-              communes, réponses et votes aux événements.
+              <Text style={styles.label}>{t("offline:unavailableLabel")}</Text>
+              {t("offline:unavailableText")}
             </Text>
           </>
         )}
@@ -98,8 +96,7 @@ export default function OfflineBanner() {
     return (
       <View style={styles.banner}>
         <Text style={styles.text}>
-          ⏳ {syncing ? "Envoi de" : "En attente :"} {pending} modification
-          {pending > 1 ? "s" : ""} faite{pending > 1 ? "s" : ""} hors ligne…
+          ⏳ {tn(syncing ? "offline:sending" : "offline:waiting", pending)}
         </Text>
       </View>
     );

@@ -1,3 +1,4 @@
+import { t } from "@/i18n";
 import { useCallback, useState } from "react";
 import {
   View,
@@ -57,7 +58,7 @@ export default function SettingsScreen() {
     useCallback(() => {
       fetchMe()
         .then(setMe)
-        .catch((e) => setError(e?.message ?? "Erreur de chargement."));
+        .catch((e) => setError(e?.message ?? t("common:errors.loading")));
     }, []),
   );
 
@@ -70,7 +71,7 @@ export default function SettingsScreen() {
       await updateMe({ [key]: value });
     } catch (e: any) {
       setMe({ ...me, [key]: !value }); // rollback
-      setError(e?.message ?? "Erreur d'enregistrement.");
+      setError(e?.message ?? t("common:errors.save"));
     } finally {
       setBusy(null);
     }
@@ -79,7 +80,7 @@ export default function SettingsScreen() {
   if (!me) {
     return (
       <View style={styles.center}>
-        <Stack.Screen options={{ title: "Réglages" }} />
+        <Stack.Screen options={{ title: t("profile:menu.settings") }} />
         {error ? (
           <Text style={styles.error}>{error}</Text>
         ) : (
@@ -97,16 +98,16 @@ export default function SettingsScreen() {
         { paddingBottom: 40 + insets.bottom },
       ]}
     >
-      <Stack.Screen options={{ title: "Réglages" }} />
+      <Stack.Screen options={{ title: t("profile:menu.settings") }} />
       {error && <Text style={styles.error}>{error}</Text>}
 
-      <Text style={styles.sectionHeader}>🎂 Affichage des cartes</Text>
+      <Text style={styles.sectionHeader}>{t("profile:settings.cards")}</Text>
       <View style={styles.card}>
         <View style={styles.row}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.label}>Cacher les fêtes</Text>
+            <Text style={styles.label}>{t("profile:settings.hideNamedays")}</Text>
             <Text style={styles.hint}>
-              Masque la ligne « fête » sur les cartes d'anniversaire.
+              {t("profile:settings.hideNamedaysHint")}
             </Text>
           </View>
           <Switch
@@ -118,15 +119,14 @@ export default function SettingsScreen() {
         </View>
       </View>
 
-      <Text style={styles.sectionHeader}>🏠 Affichage accueil</Text>
+      <Text style={styles.sectionHeader}>{t("profile:settings.home")}</Text>
       <View style={styles.card}>
         {!isLocal && (
           <View style={styles.row}>
             <View style={{ flex: 1 }}>
-              <Text style={styles.label}>Afficher mes statistiques</Text>
+              <Text style={styles.label}>{t("profile:settings.myStats")}</Text>
               <Text style={styles.hint}>
-                L'encart de l'accueil montre vos propres chiffres au lieu de ceux
-                de toute la communauté. Réglage propre à cet appareil.
+                {t("profile:settings.myStatsHint")}
               </Text>
             </View>
             <Switch
@@ -138,10 +138,9 @@ export default function SettingsScreen() {
         )}
         <View style={[styles.row, !isLocal && styles.rowSeparator]}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.label}>Afficher la fête du jour</Text>
+            <Text style={styles.label}>{t("profile:settings.todayNameday")}</Text>
             <Text style={styles.hint}>
-              Affiche « C'est la fête de … ! » sur l'écran d'accueil quand
-              l'un de vos proches fête son nom aujourd'hui.
+              {t("profile:settings.todayNamedayHint")}
             </Text>
           </View>
           <Switch
@@ -155,14 +154,12 @@ export default function SettingsScreen() {
 
       {calendarReady && (
         <>
-          <Text style={styles.sectionHeader}>📅 Rappels du calendrier</Text>
+          <Text style={styles.sectionHeader}>{t("profile:settings.calendar")}</Text>
           <View style={styles.card}>
             <View style={styles.blockHeader}>
-              <Text style={styles.label}>Événements</Text>
+              <Text style={styles.label}>{t("common:tabs.events")}</Text>
               <Text style={styles.hint}>
-                Rappels posés dans votre agenda quand vous ajoutez un événement
-                depuis BirthReminder. Réglage propre à cet appareil ; il
-                s'applique aux prochains ajouts, pas aux entrées déjà créées.
+                {t("profile:settings.calendarEventsHint")}
               </Text>
             </View>
             <View style={styles.chipWrap}>
@@ -177,10 +174,9 @@ export default function SettingsScreen() {
             </View>
 
             <View style={[styles.blockHeader, styles.rowSeparator]}>
-              <Text style={styles.label}>Anniversaires et fêtes</Text>
+              <Text style={styles.label}>{t("profile:settings.birthdaysNamedays")}</Text>
               <Text style={styles.hint}>
-                Ces entrées durent toute la journée : le rappel se règle donc en
-                heure d'horloge, pas en durée avant l'événement.
+                {t("profile:settings.allDayHint")}
               </Text>
             </View>
             <View style={styles.chipWrap}>
@@ -197,8 +193,7 @@ export default function SettingsScreen() {
             {calendarPrefs.timed.length === 0 &&
               calendarPrefs.allDay.length === 0 && (
                 <Text style={styles.warn}>
-                  Aucun rappel sélectionné : les entrées ajoutées à votre agenda
-                  ne vous préviendront de rien.
+                  {t("profile:settings.noReminder")}
                 </Text>
               )}
           </View>

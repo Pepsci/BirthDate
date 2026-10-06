@@ -18,6 +18,7 @@
  * ⚠️ Chiffrement : même règle que l'écran de chat — chiffré seulement si ma clé
  * privée, la clé publique de l'ami et la mienne sont toutes disponibles.
  */
+import { t } from "@/i18n";
 import * as Notifications from "expo-notifications";
 import * as SecureStore from "expo-secure-store";
 import { api, ApiError } from "./api";
@@ -46,8 +47,8 @@ export async function registerChatReplyCategory(): Promise<void> {
     await Notifications.setNotificationCategoryAsync(CHAT_CATEGORY, [
       {
         identifier: REPLY_ACTION,
-        buttonTitle: "Répondre",
-        textInput: { submitButtonTitle: "Envoyer", placeholder: "Message…" },
+        buttonTitle: t("chat:reply.button"),
+        textInput: { submitButtonTitle: t("chat:reply.send"), placeholder: t("chat:reply.placeholder") },
         options: {
           opensAppToForeground: false,
           // Téléphone verrouillé : Face ID / code avant l'envoi. Évite qu'un
@@ -223,8 +224,10 @@ async function sendOne(item: PendingReply): Promise<"done" | "retry"> {
     if (e instanceof ApiError && e.status >= 400 && e.status < 500) {
       await Notifications.scheduleNotificationAsync({
         content: {
-          title: "Réponse non envoyée",
-          body: `Ta réponse${item.senderName ? ` à ${item.senderName}` : ""} n'a pas pu partir : ${e.message}`,
+          title: t("chat:reply.failedTitle"),
+          body: item.senderName
+            ? t("chat:reply.failedTo", { name: item.senderName, message: e.message })
+            : t("chat:reply.failed", { message: e.message }),
           data: {
             url: `/home?tab=chat&conversationId=${item.conversationId}`,
             type: "chat",

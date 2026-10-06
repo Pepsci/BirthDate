@@ -1,0 +1,6 @@
+{
+  "NSCameraUsageDescription": "BirthReminder can use the camera to scan a bank card when you contribute to a money pool.",
+  "NSPhotoLibraryUsageDescription": "BirthReminder accesses your photos only to choose your profile photo.",
+  "NSCalendarsUsageDescription": "BirthReminder adds an event to your calendar only when you tap \"Add to my calendar\".",
+  "NSCalendarsFullAccessUsageDescription": "BirthReminder adds an event to your calendar only when you tap \"Add to my calendar\"."
+}

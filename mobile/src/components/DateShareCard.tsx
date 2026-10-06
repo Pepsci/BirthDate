@@ -1,3 +1,4 @@
+import { t } from "@/i18n";
 import { useState } from "react";
 import { View, Text, Pressable, StyleSheet, ActivityIndicator } from "react-native";
 import { DMMessage } from "../lib/conversations";
@@ -51,7 +52,7 @@ export default function DateShareCard({
       await addFriendById(linkedUserId);
       setRequested(true);
     } catch (e: any) {
-      setError(e?.message ?? "Impossible d'envoyer la demande.");
+      setError(e?.message ?? t("date:shareCard.requestError"));
     } finally {
       setRequesting(false);
     }
@@ -75,7 +76,7 @@ export default function DateShareCard({
         );
       });
       if (exists) {
-        setError("Déjà dans vos anniversaires.");
+        setError(t("date:shareCard.exists"));
         return;
       }
       await createDate({
@@ -86,7 +87,7 @@ export default function DateShareCard({
       });
       setAdded(true);
     } catch (e: any) {
-      setError(e?.message ?? "Impossible d'ajouter cette date.");
+      setError(e?.message ?? t("date:shareCard.addError"));
     } finally {
       setSaving(false);
     }
@@ -94,16 +95,15 @@ export default function DateShareCard({
 
   return (
     <View style={[styles.card, isMine ? styles.cardMine : styles.cardOther]}>
-      <Text style={styles.header}>🎂 Carte anniversaire</Text>
-      <Text style={styles.name}>{fullName || "Sans nom"}</Text>
+      <Text style={styles.header}>{t("date:shareCard.title")}</Text>
+      <Text style={styles.name}>{fullName || t("date:shareCard.noName")}</Text>
       {birthDate && (
         <Text style={styles.line}>
-          Né(e) le {formatFullDate(birthDate)} · fêté le{" "}
-          {formatBirthday(birthDate)}
+          {t("date:shareCard.born", { full: formatFullDate(birthDate), day: formatBirthday(birthDate) })}
         </Text>
       )}
-      {nameday && <Text style={styles.line}>🎉 Fête le {formatNameday(nameday)}</Text>}
-      <Text style={styles.note}>Les idées cadeaux ne sont pas partagées.</Text>
+      {nameday && <Text style={styles.line}>{t("date:shareCard.nameday", { date: formatNameday(nameday) })}</Text>}
+      <Text style={styles.note}>{t("date:shareCard.note")}</Text>
 
       {!isMine && linkedUserId && !requested && !added && (
         <Pressable
@@ -114,13 +114,13 @@ export default function DateShareCard({
           {requesting ? (
             <ActivityIndicator color="#fff" size="small" />
           ) : (
-            <Text style={styles.friendBtnText}>👥 Ajouter en ami</Text>
+            <Text style={styles.friendBtnText}>{t("date:shareCard.addFriend")}</Text>
           )}
         </Pressable>
       )}
       {requested && (
         <Text style={styles.added}>
-          ✅ Demande envoyée — sa carte se créera s'il accepte
+          {t("date:shareCard.requested")}
         </Text>
       )}
 
@@ -147,13 +147,13 @@ export default function DateShareCard({
               ]}
             >
               {linkedUserId
-                ? "🎂 Juste créer la carte"
-                : "＋ Ajouter à mes anniversaires"}
+                ? t("date:shareCard.justCreate")
+                : t("date:shareCard.add")}
             </Text>
           )}
         </Pressable>
       )}
-      {added && <Text style={styles.added}>✅ Ajouté à vos anniversaires</Text>}
+      {added && <Text style={styles.added}>{t("date:shareCard.added")}</Text>}
       {error && <Text style={styles.error}>{error}</Text>}
     </View>
   );

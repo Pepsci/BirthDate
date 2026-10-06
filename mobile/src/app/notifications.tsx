@@ -1,3 +1,4 @@
+import { t } from "@/i18n";
 import { useCallback, useState } from "react";
 import {
   View,
@@ -50,7 +51,7 @@ export default function NotificationsScreen() {
       const { notifications } = await fetchNotifications();
       setItems(notifications);
     } catch (e: any) {
-      setError(e?.message ?? "Erreur de chargement.");
+      setError(e?.message ?? t("common:errors.loading"));
     }
   }, []);
 
@@ -95,18 +96,18 @@ export default function NotificationsScreen() {
       setItems((prev) => prev?.map((x) => ({ ...x, read: true })) ?? prev);
       refreshNotifs();
     } catch (e: any) {
-      setError(e?.message ?? "Erreur.");
+      setError(e?.message ?? t("common:errors.generic"));
     }
   };
 
   const removeAll = () => {
     Alert.alert(
-      "Tout supprimer ?",
-      "Toutes tes notifications seront définitivement supprimées.",
+      t("notifs:deleteAll.title"),
+      t("notifs:deleteAll.text"),
       [
-        { text: "Annuler", style: "cancel" },
+        { text: t("common:actions.cancel"), style: "cancel" },
         {
-          text: "Tout supprimer",
+          text: t("notifs:deleteAll.action"),
           style: "destructive",
           onPress: async () => {
             const prev = items;
@@ -116,7 +117,7 @@ export default function NotificationsScreen() {
               refreshNotifs();
             } catch (e: any) {
               setItems(prev); // rollback
-              setError(e?.message ?? "Erreur.");
+              setError(e?.message ?? t("common:errors.generic"));
             }
           },
         },
@@ -137,7 +138,7 @@ export default function NotificationsScreen() {
   if (!items) {
     return (
       <View style={styles.center}>
-        <Stack.Screen options={{ title: "Notifications" }} />
+        <Stack.Screen options={{ title: t("events:notifs.short") }} />
         {error ? (
           <Text style={styles.error}>{error}</Text>
         ) : (
@@ -151,7 +152,7 @@ export default function NotificationsScreen() {
 
   return (
     <View style={styles.container}>
-      <Stack.Screen options={{ title: "Notifications" }} />
+      <Stack.Screen options={{ title: t("events:notifs.short") }} />
 
       {/* ⚠️ Ces deux actions vivaient dans l'en-tête, à droite du titre. Deux
           libellés de cette longueur n'y tiennent pas : le titre, centré, finit
@@ -161,13 +162,13 @@ export default function NotificationsScreen() {
         <View style={styles.bulkBar}>
           {hasUnread ? (
             <Pressable onPress={readAll} hitSlop={8} style={styles.bulkBtn}>
-              <Text style={styles.readAll}>Tout marquer comme lu</Text>
+              <Text style={styles.readAll}>{t("notifs:markAllRead")}</Text>
             </Pressable>
           ) : (
             <View />
           )}
           <Pressable onPress={removeAll} hitSlop={8} style={styles.bulkBtn}>
-            <Text style={styles.deleteAll}>Tout supprimer</Text>
+            <Text style={styles.deleteAll}>{t("notifs:deleteAll.action")}</Text>
           </Pressable>
         </View>
       )}
@@ -183,7 +184,7 @@ export default function NotificationsScreen() {
         }
         ListEmptyComponent={
           <Text style={styles.empty}>
-            Aucune notification pour l'instant. 🔕
+            {t("notifs:empty")}
           </Text>
         }
         renderItem={({ item }) => {

@@ -1,3 +1,4 @@
+import { t, tn } from "@/i18n";
 import { ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   View,
@@ -44,10 +45,10 @@ const TODAY_GRADIENT = ["#f59e0b", "#f97316", "#ec4899"] as const;
 function joinNames(names: string[], max = 3): string {
   if (names.length <= 1) return names[0] ?? "";
   if (names.length <= max) {
-    return `${names.slice(0, -1).join(", ")} et ${names[names.length - 1]}`;
+    return t("welcome:join.and", { list: names.slice(0, -1).join(", "), last: names[names.length - 1] });
   }
   const extra = names.length - max;
-  return `${names.slice(0, max).join(", ")} et ${extra} autre${extra > 1 ? "s" : ""}`;
+  return tn("welcome:join.others", extra, { list: names.slice(0, max).join(", ") });
 }
 
 /**
@@ -81,10 +82,10 @@ function feteSentence(names: string[]): string {
   if (unique.length === 0) return "";
   if (unique.length === 1) {
     return names.length > 1
-      ? `C'est la fête des ${unique[0]} !`
-      : `C'est la fête de ${unique[0]} !`;
+      ? t("welcome:nameday.many", { name: unique[0] })
+      : t("welcome:nameday.one", { name: unique[0] });
   }
-  return `C'est la fête de ${joinNames(unique)} !`;
+  return t("welcome:nameday.one", { name: joinNames(unique) });
 }
 
 // ─── Thèmes ─────────────────────────────────────────────────────────────────
@@ -121,18 +122,18 @@ type ThemeName = keyof typeof THEMES;
 type Theme = (typeof THEMES)[ThemeName];
 
 const FEATURES = [
-  { emoji: "🔔", title: "Rappels intelligents", text: "Anniversaires et fêtes, notifiés au bon moment. Plus jamais d'oubli." },
-  { emoji: "📅", title: "Agenda", text: "Vue mois ou semaine, toutes vos dates importantes d'un coup d'œil." },
-  { emoji: "🎉", title: "Événements", text: "Votes pour la date et le lieu, invitations, chat de groupe en temps réel." },
-  { emoji: "🎁", title: "Wishlist & cadeaux", text: "Partagez vos envies et trouvez le cadeau parfait, ensemble." },
-  { emoji: "💬", title: "Messagerie", text: "Discutez avec vos amis directement dans l'app, en privé." },
-  { emoji: "💰", title: "Cagnotte", text: "Financez un cadeau à plusieurs pour un anniversaire ou un événement, sans commission." },
+  { emoji: "🔔", get title() { return t("welcome:features.reminders.title"); }, get text() { return t("welcome:features.reminders.text"); } },
+  { emoji: "📅", get title() { return t("welcome:features.agenda.title"); }, get text() { return t("welcome:features.agenda.text"); } },
+  { emoji: "🎉", get title() { return t("welcome:features.events.title"); }, get text() { return t("welcome:features.events.text"); } },
+  { emoji: "🎁", get title() { return t("welcome:features.wishlist.title"); }, get text() { return t("welcome:features.wishlist.text"); } },
+  { emoji: "💬", get title() { return t("welcome:features.chat.title"); }, get text() { return t("welcome:features.chat.text"); } },
+  { emoji: "💰", get title() { return t("welcome:features.pool.title"); }, get text() { return t("welcome:features.pool.text"); } },
 ];
 
 const STEPS = [
-  { num: "1", title: "Ajoutez vos proches", text: "Anniversaires, fêtes, ou connectez-vous avec vos amis inscrits." },
-  { num: "2", title: "Recevez vos rappels", text: "Notification la veille et le jour J, plus jamais d'oubli." },
-  { num: "3", title: "Célébrez ensemble", text: "Organisez un événement, discutez et choisissez le cadeau à plusieurs." },
+  { num: "1", get title() { return t("welcome:steps.s1.title"); }, get text() { return t("welcome:steps.s1.text"); } },
+  { num: "2", get title() { return t("welcome:steps.s2.title"); }, get text() { return t("welcome:steps.s2.text"); } },
+  { num: "3", get title() { return t("welcome:steps.s3.title"); }, get text() { return t("welcome:steps.s3.text"); } },
 ];
 
 // ─── Emojis flottants du hero ───────────────────────────────────────────────
@@ -377,8 +378,8 @@ export default function WelcomeScreen() {
   const showTodayBirthdayCard = !isPersonalStats && todayBirthdayNames.length > 0;
 
   const mode: ThemeName = resolved;
-  const t = THEMES[mode];
-  const s = useMemo(() => makeStyles(t), [t]);
+  const th = THEMES[mode];
+  const s = useMemo(() => makeStyles(th), [th]);
   const featureCardWidth = Math.min(250, width * 0.62);
 
   useEffect(() => {
@@ -432,7 +433,7 @@ export default function WelcomeScreen() {
             const name = d.name || d.linkedUser?.name;
             const birthISO = d.date || d.linkedUser?.birthDate || null;
             if (birthISO && daysUntil(birthISO) === 0) {
-              bdays.push(name || "Quelqu'un");
+              bdays.push(name || t("welcome:someone"));
             }
             const nd = d.nameday ?? d.linkedUser?.nameday;
             if (nd === todayKey && name) fetes.push(name);
@@ -469,11 +470,11 @@ export default function WelcomeScreen() {
   const Cta = user || isLocal ? (
     <>
       <Text style={s.hello}>
-        {user ? `Bienvenue ${user.name} 👋` : "📱 Tes cartes sont sur ce téléphone"}
+        {user ? t("welcome:hello", { name: user.name }) : t("welcome:localHello")}
       </Text>
       <Pressable onPress={() => go("/")} style={({ pressed }) => pressed && { opacity: 0.8 }}>
         <LinearGradient colors={GRADIENT} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.primaryBtn}>
-          <Text style={s.primaryText}>Commencer 🎉</Text>
+          <Text style={s.primaryText}>{t("welcome:start")}</Text>
         </LinearGradient>
       </Pressable>
     </>
@@ -483,28 +484,28 @@ export default function WelcomeScreen() {
     <>
       <Pressable onPress={() => go("/login?panel=signup")} style={({ pressed }) => pressed && s.pressed}>
         <LinearGradient colors={GRADIENT} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.primaryBtn}>
-          <Text style={s.primaryText}>Créer un compte gratuitement</Text>
+          <Text style={s.primaryText}>{t("welcome:createFree")}</Text>
         </LinearGradient>
       </Pressable>
       <Pressable style={({ pressed }) => [s.secondaryBtn, pressed && s.pressedSoft]} onPress={startLocal}>
-        <Text style={s.secondaryText}>Utiliser sans compte</Text>
+        <Text style={s.secondaryText}>{t("auth:signup.useWithout")}</Text>
       </Pressable>
       <Text style={s.localHint}>
-        Sans compte, tes cartes restent sur ce téléphone.
+        {t("welcome:localHint")}
       </Text>
       <Pressable onPress={() => go("/login")}>
-        <Text style={s.loginLink}>J'ai déjà un compte · Se connecter</Text>
+        <Text style={s.loginLink}>{t("welcome:haveAccount")}</Text>
       </Pressable>
     </>
   ) : (
     <>
       <Pressable onPress={() => go("/login")} style={({ pressed }) => pressed && { opacity: 0.8 }}>
         <LinearGradient colors={GRADIENT} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.primaryBtn}>
-          <Text style={s.primaryText}>Se connecter</Text>
+          <Text style={s.primaryText}>{t("auth:login.submit")}</Text>
         </LinearGradient>
       </Pressable>
       <Pressable style={({ pressed }) => [s.secondaryBtn, pressed && { opacity: 0.7 }]} onPress={() => go("/login?panel=signup")}>
-        <Text style={s.secondaryText}>Créer un compte gratuitement</Text>
+        <Text style={s.secondaryText}>{t("welcome:createFree")}</Text>
       </Pressable>
     </>
   );
@@ -533,9 +534,9 @@ export default function WelcomeScreen() {
               Birth<Text style={s.brandAccent}>Reminder</Text>
             </Text>
           </View>
-          <Text style={s.tagline}>N'oubliez plus jamais un anniversaire</Text>
+          <Text style={s.tagline}>{t("welcome:tagline")}</Text>
           <Text style={s.subTagline}>
-            Rappels, agenda, événements et cadeaux, tout au même endroit, entre amis.
+            {t("welcome:subTagline")}
           </Text>
 
           {/* ── Anniv & fête du jour (proches) — chaque case selon sa propre
@@ -547,7 +548,7 @@ export default function WelcomeScreen() {
           {(showTodayBirthdayCard || todayFetes.length > 0) && (
             <>
               <Text style={s.todaySectionLabel}>
-                🎈 AUJOURD'HUI CHEZ VOS PROCHES
+                {t("welcome:todayLabel")}
               </Text>
               <TodayHighlight>
                 <View style={s.todayRow}>
@@ -562,7 +563,7 @@ export default function WelcomeScreen() {
                         <>
                           <Text style={s.todayEmoji}>🎂</Text>
                           <Text style={s.todayFeteText} numberOfLines={2}>
-                            C'est l'anniversaire de {todayBirthdayNames[0]} !
+                            {t("welcome:birthdayOf", { name: todayBirthdayNames[0] })}
                           </Text>
                         </>
                       ) : (
@@ -571,7 +572,7 @@ export default function WelcomeScreen() {
                             {todayBirthdayNames.length}
                           </Text>
                           <Text style={s.todayLabel}>
-                            anniversaires aujourd'hui 🎂
+                            {t("welcome:birthdaysToday")}
                           </Text>
                           <Text style={s.todaySub} numberOfLines={2}>
                             {joinNames(uniqueNames(todayBirthdayNames))}
@@ -604,10 +605,10 @@ export default function WelcomeScreen() {
                 "à souhaiter") : sans ça, les chiffres communauté étaient lus
                 comme des chiffres personnels. ── */}
           <Text style={s.sectionLabel}>
-            {isPersonalStats ? "🎂 MES ANNIV À MOI" : "🌍 SUR TOUTE LA COMMUNAUTÉ"}
+            {isPersonalStats ? t("welcome:stats.mine") : t("welcome:stats.community")}
           </Text>
           {statsError ? (
-            <Text style={s.statsError}>Impossible de charger les stats pour le moment.</Text>
+            <Text style={s.statsError}>{t("welcome:stats.error")}</Text>
           ) : (
             <>
               <View style={s.bentoRow}>
@@ -632,15 +633,15 @@ export default function WelcomeScreen() {
                       <Text style={s.bentoBigValue}>{stats.today}</Text>
                       <Text style={s.bentoBigLabel}>
                         {isPersonalStats
-                          ? `anniversaire${stats.today > 1 ? "s" : ""} à souhaiter aujourd'hui`
-                          : `anniversaire${stats.today > 1 ? "s" : ""} fêté${stats.today > 1 ? "s" : ""} aujourd'hui`}
+                          ? tn("welcome:stats.toWish", stats.today)
+                          : tn("welcome:stats.celebrated", stats.today)}
                       </Text>
                     </>
                   ) : (
                     <Text style={s.bentoBigEmpty}>
                       {isPersonalStats
-                        ? "Pas d'anniversaire à souhaiter aujourd'hui"
-                        : "Aucun anniversaire aujourd'hui dans la communauté"}
+                        ? t("welcome:stats.noneMine")
+                        : t("welcome:stats.noneCommunity")}
                     </Text>
                   )}
                   {isPersonalStats && todayBirthdayNames.length > 0 && (
@@ -658,7 +659,7 @@ export default function WelcomeScreen() {
                     ) : (
                       <Text style={s.bentoSmallValue}>{stats.thisMonth}</Text>
                     )}
-                    <Text style={s.bentoSmallLabel}>ce mois-ci</Text>
+                    <Text style={s.bentoSmallLabel}>{t("welcome:stats.thisMonth")}</Text>
                   </View>
                   <View style={s.bentoSmall}>
                     <Text style={s.bentoSmallEmoji}>🗓️</Text>
@@ -667,7 +668,7 @@ export default function WelcomeScreen() {
                     ) : (
                       <Text style={s.bentoSmallValue}>{stats.thisYear}</Text>
                     )}
-                    <Text style={s.bentoSmallLabel}>cette année</Text>
+                    <Text style={s.bentoSmallLabel}>{t("welcome:stats.thisYear")}</Text>
                   </View>
                 </View>
               </View>
@@ -676,8 +677,8 @@ export default function WelcomeScreen() {
                 <Text style={s.bentoSmallEmoji}>{isPersonalStats ? "🎈" : "👥"}</Text>
                 <Text style={s.bentoWideText}>
                   {isPersonalStats
-                    ? `${stats === null ? "…" : stats.total} date${stats && stats.total > 1 ? "s" : ""} enregistrée${stats && stats.total > 1 ? "s" : ""}, vous n'en oublierez aucune`
-                    : `${stats === null ? "…" : stats.totalUsers} membres inscrits, et la fête ne fait que commencer`}
+                    ? tn("welcome:stats.saved", stats?.total ?? 2, { n: stats === null ? "…" : stats.total })
+                    : t("welcome:stats.members", { n: stats === null ? "…" : stats.totalUsers })}
                 </Text>
               </View>
             </>
@@ -687,7 +688,7 @@ export default function WelcomeScreen() {
           <View style={s.ctaBlock}>{Cta}</View>
 
           {/* ── Points forts : carrousel horizontal ── */}
-          <Text style={s.sectionTitle}>Tout pour ne rien oublier</Text>
+          <Text style={s.sectionTitle}>{t("welcome:sectionFeatures")}</Text>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -708,7 +709,7 @@ export default function WelcomeScreen() {
           </ScrollView>
 
           {/* ── Comment ça marche : timeline verticale ── */}
-          <Text style={s.sectionTitle}>Comment ça marche ?</Text>
+          <Text style={s.sectionTitle}>{t("welcome:sectionHow")}</Text>
           <View style={s.timeline}>
             {STEPS.map((step, i) => (
               <View key={step.num} style={s.timelineRow}>
@@ -740,9 +741,9 @@ export default function WelcomeScreen() {
           >
             <Text style={s.bannerEmoji}>🥳</Text>
             <View style={s.flexOnly}>
-              <Text style={s.bannerTitle}>Organisez le prochain anniversaire</Text>
+              <Text style={s.bannerTitle}>{t("welcome:bannerTitle")}</Text>
               <Text style={s.bannerText}>
-                Créez un événement, invitez vos amis (même sans compte) et décidez ensemble de la date, du lieu et du cadeau.
+                {t("welcome:bannerText")}
               </Text>
             </View>
           </LinearGradient>
@@ -751,7 +752,7 @@ export default function WelcomeScreen() {
         </ScrollView>
       </SafeAreaView>
 
-      {!splashDone && <AnimatedSplash bg={t.bg} onDone={() => setSplashDone(true)} />}
+      {!splashDone && <AnimatedSplash bg={th.bg} onDone={() => setSplashDone(true)} />}
     </View>
   );
 }

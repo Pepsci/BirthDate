@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import LegalLanguageSwitch from "./LegalLanguageSwitch";
 import "./css/legalPages.css";
 
 export default function MentionsLegales() {
@@ -8,6 +9,7 @@ export default function MentionsLegales() {
         <Link to="/home" className="back-link">
           ← Retour à l'accueil
         </Link>
+        <LegalLanguageSwitch path="mentions-legales" lang="fr" />
 
         <h1>⚖️ Mentions Légales</h1>
 
@@ -19,8 +21,7 @@ export default function MentionsLegales() {
               <strong>Nom :</strong> Josse Filippi
             </li>
             <li>
-              <strong>Statut :</strong> Étudiant / Auto-entrepreneur (à adapter
-              selon ton statut réel)
+              <strong>Statut :</strong> Particulier (éditeur non professionnel)
             </li>
             <li>
               <strong>Adresse :</strong> Paris, France
@@ -155,7 +156,7 @@ export default function MentionsLegales() {
         </section>
 
         <p className="last-update">
-          <strong>Dernière mise à jour :</strong> 10 février 2026
+          <strong>Dernière mise à jour :</strong> 6 octobre 2026
         </p>
       </div>
     </div>

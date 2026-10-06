@@ -1,3 +1,4 @@
+import { t } from "@/i18n";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   View,
@@ -29,9 +30,9 @@ import { readingPane } from "../../lib/layout";
 const REPLY_MAX = 2000;
 
 const STATUS_LABEL: Record<SupportStatus, string> = {
-  open: "En attente de réponse",
-  answered: "Répondu",
-  closed: "Fermé",
+  get open() { return t("support:status.open"); },
+  get answered() { return t("chat:list.answered"); },
+  get closed() { return t("chat:list.closed"); },
 };
 
 const CATEGORY_EMOJI = { general: "✉️", pool: "💶", nameday: "🌸" } as const;
@@ -64,7 +65,7 @@ export default function SupportTicketScreen() {
       setError(null);
       setTicket(await fetchTicket(String(id)));
     } catch (e: any) {
-      setError(e?.message ?? "Conversation introuvable.");
+      setError(e?.message ?? t("support:ticket.notFound"));
     }
   }, [id]);
 
@@ -103,7 +104,7 @@ export default function SupportTicketScreen() {
       setTicket(await replyToTicket(ticket._id, text));
       setReply("");
     } catch (e: any) {
-      setError(e?.message ?? "Envoi impossible.");
+      setError(e?.message ?? t("support:ticket.sendError"));
       load(); // le ticket a peut-être été fermé entre-temps
     } finally {
       setSending(false);
@@ -113,7 +114,7 @@ export default function SupportTicketScreen() {
   if (!ticket) {
     return (
       <View style={styles.center}>
-        <Stack.Screen options={{ title: "Support" }} />
+        <Stack.Screen options={{ title: t("support:title") }} />
         {error ? (
           <Text style={styles.error}>{error}</Text>
         ) : (
@@ -131,7 +132,7 @@ export default function SupportTicketScreen() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
       keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
     >
-      <Stack.Screen options={{ title: "Support" }} />
+      <Stack.Screen options={{ title: t("support:title") }} />
 
       <View style={styles.header}>
         <Text style={styles.subject} numberOfLines={2}>
@@ -155,7 +156,7 @@ export default function SupportTicketScreen() {
               style={[styles.bubbleRow, mine ? styles.rowMine : styles.rowTheirs]}
             >
               <View style={[styles.bubble, mine ? styles.bubbleMine : styles.bubbleTheirs]}>
-                {!mine && <Text style={styles.author}>Équipe BirthReminder</Text>}
+                {!mine && <Text style={styles.author}>{t("support:ticket.team")}</Text>}
                 <Text style={mine ? styles.textMine : styles.textTheirs}>{m.body}</Text>
                 <Text style={[styles.time, mine && styles.timeMine]}>
                   {timeAgo(m.createdAt)}
@@ -166,7 +167,7 @@ export default function SupportTicketScreen() {
         })}
         {ticket.status === "open" && (
           <Text style={styles.waiting}>
-            L'équipe te répond ici, en général sous 48 h.
+            {t("support:ticket.hint")}
           </Text>
         )}
       </ScrollView>
@@ -176,11 +177,10 @@ export default function SupportTicketScreen() {
       {closed ? (
         <View style={styles.closedBar}>
           <Text style={styles.closedText}>
-            Cette conversation est fermée. Pour une nouvelle demande, ouvre un
-            nouveau sujet.
+            {t("support:ticket.closed")}
           </Text>
           <Pressable style={styles.newBtn} onPress={() => router.push("/contact")}>
-            <Text style={styles.newBtnText}>Nouveau sujet</Text>
+            <Text style={styles.newBtnText}>{t("support:ticket.newTopic")}</Text>
           </Pressable>
         </View>
       ) : (
@@ -189,7 +189,7 @@ export default function SupportTicketScreen() {
             style={styles.input}
             value={reply}
             onChangeText={(t) => setReply(t.slice(0, REPLY_MAX))}
-            placeholder="Ta réponse…"
+            placeholder={t("support:ticket.placeholder")}
             placeholderTextColor={colors.placeholder}
             multiline
           />
@@ -198,7 +198,7 @@ export default function SupportTicketScreen() {
             onPress={send}
             disabled={!reply.trim() || sending}
           >
-            <Text style={styles.sendText}>{sending ? "…" : "Envoyer"}</Text>
+            <Text style={styles.sendText}>{sending ? "…" : t("chat:reply.send")}</Text>
           </Pressable>
         </View>
       )}

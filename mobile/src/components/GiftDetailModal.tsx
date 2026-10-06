@@ -1,3 +1,4 @@
+import { t } from "@/i18n";
 import { useEffect, useRef } from "react";
 import {
   Modal,
@@ -14,7 +15,7 @@ import {
 } from "react-native";
 
 import { Gift } from "../lib/dates";
-import { occasionEmoji } from "../lib/occasions";
+import { occasionEmoji, occasionLabel } from "../lib/occasions";
 import {
   GIFT_STATUSES,
   GIFT_STATUS_META,
@@ -130,7 +131,7 @@ export default function GiftDetailModal({
               {!!gift.occasion && (
                 <View style={styles.metaChip}>
                   <Text style={styles.metaChipText}>
-                    {occasionEmoji(gift.occasion)} {gift.occasion}
+                    {occasionEmoji(gift.occasion)} {occasionLabel(gift.occasion)}
                   </Text>
                 </View>
               )}
@@ -150,13 +151,13 @@ export default function GiftDetailModal({
                   style={styles.link}
                   onPress={() => Linking.openURL(gift.url!)}
                 >
-                  🔗 Voir le produit
+                  {t("gifts:viewProduct")}
                 </Text>
               ) : null}
             </View>
 
             {/* Statut */}
-            <Text style={styles.sectionLabel}>Statut</Text>
+            <Text style={styles.sectionLabel}>{t("gifts:statusLabel")}</Text>
             <View style={styles.statusCol}>
               {GIFT_STATUSES.map((s) => {
                 const meta = GIFT_STATUS_META[s];
@@ -205,13 +206,13 @@ export default function GiftDetailModal({
                   ]}
                 >
                   {hidden
-                    ? "🙈 Masquée aux invités · rendre visible"
-                    : "👁️ Visible par les invités · masquer"}
+                    ? t("gifts:hidden.on")
+                    : t("gifts:hidden.off")}
                 </Text>
                 <Text style={styles.visibilityHint}>
                   {hidden
-                    ? "Seuls les gestionnaires de la liste la voient."
-                    : "Elle apparaît aux invités et sur le lien public."}
+                    ? t("gifts:hidden.onHint")
+                    : t("gifts:hidden.offHint")}
                 </Text>
               </Pressable>
             )}
@@ -223,14 +224,14 @@ export default function GiftDetailModal({
                 disabled={busy}
                 onPress={() => onEdit(gift)}
               >
-                <Text style={styles.editBtnText}>✏️ Modifier</Text>
+                <Text style={styles.editBtnText}>✏️ {t("common:actions.edit")}</Text>
               </Pressable>
               <Pressable
                 style={[styles.actionBtn, styles.deleteBtn]}
                 disabled={busy}
                 onPress={() => onDelete(gift)}
               >
-                <Text style={styles.deleteBtnText}>🗑️ Supprimer</Text>
+                <Text style={styles.deleteBtnText}>🗑️ {t("common:actions.delete")}</Text>
               </Pressable>
             </View>
           </ScrollView>

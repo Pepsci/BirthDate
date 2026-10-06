@@ -1,3 +1,4 @@
+import { t } from "@/i18n";
 import { Tabs, useRouter } from "expo-router";
 import { useUnread } from "../../lib/unread-context";
 import { Text, Pressable, View, StyleSheet, Alert } from "react-native";
@@ -91,12 +92,11 @@ function LocalModeBadge() {
     <Pressable
       hitSlop={10}
       accessibilityRole="button"
-      accessibilityLabel="Sur ce téléphone, sans compte"
+      accessibilityLabel={t("home:localBadge.label")}
       onPress={() =>
         Alert.alert(
-          "📱 Sur ce téléphone",
-          "Tu utilises BirthReminder sans compte : tes cartes restent sur ce " +
-            "téléphone, rien n'est envoyé. Pense à faire des sauvegardes.",
+          t("home:localBadge.title"),
+          t("home:localBadge.text"),
         )
       }
     >
@@ -181,7 +181,7 @@ function CagnottesToggle() {
       onPress={toggleCagnottesVisible}
       hitSlop={10}
       accessibilityRole="button"
-      accessibilityLabel="Afficher mes cagnottes"
+      accessibilityLabel={t("home:showPools")}
     >
       <Text style={{ fontSize: 20 }}>🐷</Text>
     </Pressable>
@@ -233,7 +233,7 @@ function TabsInner() {
           },
         }}
         options={{
-          title: "Anniversaires",
+          title: t("common:tabs.birthdays"),
           tabBarIcon: ({ focused }) => <TabIcon emoji="🎂" focused={focused} />,
           headerRight: () => (
             <View style={{ flexDirection: "row", alignItems: "center", gap: 14, marginRight: 16 }}>
@@ -279,7 +279,7 @@ function TabsInner() {
         name="events"
         options={{
           href: hiddenInLocal,
-          title: "Événements",
+          title: t("common:tabs.events"),
           tabBarIcon: ({ focused }) => <TabIcon emoji="🎉" focused={focused} />,
           headerRight: () => (
             <View style={{ flexDirection: "row", alignItems: "center", gap: 14, marginRight: 16 }}>
@@ -303,7 +303,7 @@ function TabsInner() {
         name="chats"
         options={{
           href: hiddenInLocal,
-          title: "Chats",
+          title: t("common:tabs.chats"),
           tabBarIcon: ({ focused }) => <TabIcon emoji="💬" focused={focused} />,
           tabBarBadge: total > 0 ? total : undefined,
           headerRight: () => (
@@ -316,7 +316,7 @@ function TabsInner() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: "Profil",
+          title: t("common:tabs.profile"),
           tabBarIcon: ({ focused }) => <TabIcon emoji="👤" focused={focused} />,
           headerRight: () => (
             <View style={{ marginRight: 16 }}>

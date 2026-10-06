@@ -1,3 +1,4 @@
+import { t, getLanguage, getRegion } from "@/i18n";
 import * as SecureStore from "expo-secure-store";
 import Constants from "expo-constants";
 import { CHANGELOG } from "./changelog";
@@ -62,7 +63,7 @@ export class ApiError extends Error {
  */
 export class NetworkError extends Error {
   constructor() {
-    super("Pas de connexion au serveur. Réessaie une fois en ligne.");
+    super(t("common:errors.network"));
     this.name = "NetworkError";
   }
 }
@@ -84,8 +85,15 @@ export async function api<T = unknown>(
   const token = await getToken();
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
+    // Langue de l'app : le serveur répond (messages d'erreur) dans cette langue.
+    // En-tête dédié, et non Accept-Language : un navigateur envoie ce dernier
+    // tout seul, et le site web (français) recevrait des erreurs en anglais.
+    "X-App-Language": getLanguage(),
     ...(options.headers as Record<string, string>),
   };
+  // Pays du téléphone : le serveur en déduit l'âge minimum du compte.
+  const region = getRegion();
+  if (region) headers["X-App-Region"] = region;
   if (token) headers.Authorization = `Bearer ${token}`;
 
   // Délai maximal, sauf si l'appelant gère déjà son propre signal
@@ -124,7 +132,7 @@ export async function api<T = unknown>(
     // Le détail est concaténé au message : tous les écrans affichent
     // `e.message`, et une information qui n'atteint pas l'écran ne sert à rien.
     // Il reste accessible séparément via `error.detail` si besoin.
-    const base = data?.message ?? `Erreur ${res.status}`;
+    const base = data?.message ?? t("common:errors.status", { status: res.status });
     const detail = data?.detail || null;
     throw new ApiError(
       res.status,

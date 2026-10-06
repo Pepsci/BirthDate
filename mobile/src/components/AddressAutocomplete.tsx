@@ -1,3 +1,4 @@
+import { getLanguage } from "@/i18n";
 import { useRef, useState } from "react";
 import {
   View,
@@ -54,7 +55,7 @@ export default function AddressAutocomplete({
       setLoading(true);
       // lat/lon = biais Paris pour prioriser les résultats français
       const res = await fetch(
-        `https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=6&lang=fr&lat=48.85&lon=2.35`,
+        `https://photon.komoot.io/api/?q=${encodeURIComponent(q)}&limit=6&lang=${getLanguage()}&lat=48.85&lon=2.35`,
       );
       const json = await res.json();
       setSuggestions(

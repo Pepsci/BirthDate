@@ -1,3 +1,4 @@
+import { t } from "@/i18n";
 import Svg, { Circle, Path } from "react-native-svg";
 
 /**
@@ -34,12 +35,12 @@ export const REACTIONS: ReactionName[] = [
 
 /** Libellés pour l'accessibilité — un dessin seul n'est pas annonçable. */
 export const REACTION_LABELS: Record<ReactionName, string> = {
-  like: "J'aime",
-  love: "J'adore",
-  laugh: "Ça me fait rire",
-  wow: "Ça m'étonne",
-  sad: "Ça me rend triste",
-  party: "On fête ça",
+  get like() { return t("chat:reaction.like"); },
+  get love() { return t("chat:reaction.love"); },
+  get laugh() { return t("chat:reaction.laugh"); },
+  get wow() { return t("chat:reaction.wow"); },
+  get sad() { return t("chat:reaction.sad"); },
+  get party() { return t("chat:reaction.party"); },
 };
 
 const FACE = "#F5B301"; // jaune des visages

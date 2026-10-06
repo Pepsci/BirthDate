@@ -1,3 +1,4 @@
+import { t } from "@/i18n";
 import { useCallback, useEffect, useState } from "react";
 import {
   View,
@@ -35,7 +36,7 @@ export default function BlockedUsersScreen() {
       setBlocked(await getBlockedUsers());
       setError(null);
     } catch (e: any) {
-      setError(e?.message ?? "Erreur de chargement.");
+      setError(e?.message ?? t("common:errors.loading"));
     } finally {
       setLoading(false);
     }
@@ -46,16 +47,16 @@ export default function BlockedUsersScreen() {
   }, [load]);
 
   const confirmUnblock = (u: BlockedUser) => {
-    Alert.alert(`Débloquer ${u.name} ?`, "Son contenu redeviendra visible.", [
-      { text: "Annuler", style: "cancel" },
+    Alert.alert(t("profile:blocked.unblockTitle", { name: u.name }), t("profile:blocked.unblockText"), [
+      { text: t("common:actions.cancel"), style: "cancel" },
       {
-        text: "Débloquer",
+        text: t("profile:blocked.unblock"),
         onPress: async () => {
           try {
             await unblockUser(u._id);
             setBlocked((prev) => prev.filter((b) => b._id !== u._id));
           } catch (e: any) {
-            Alert.alert("Erreur", e?.message ?? "Déblocage impossible.");
+            Alert.alert(t("common:errors.title"), e?.message ?? t("profile:blocked.error"));
           }
         },
       },
@@ -65,7 +66,7 @@ export default function BlockedUsersScreen() {
   if (loading) {
     return (
       <View style={styles.center}>
-        <Stack.Screen options={{ title: "Utilisateurs bloqués" }} />
+        <Stack.Screen options={{ title: t("profile:menu.blocked") }} />
         <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
@@ -73,7 +74,7 @@ export default function BlockedUsersScreen() {
 
   return (
     <View style={styles.container}>
-      <Stack.Screen options={{ title: "Utilisateurs bloqués" }} />
+      <Stack.Screen options={{ title: t("profile:menu.blocked") }} />
       {error && <Text style={styles.error}>{error}</Text>}
       <FlatList
         data={blocked}
@@ -101,14 +102,13 @@ export default function BlockedUsersScreen() {
               style={styles.unblockBtn}
               onPress={() => confirmUnblock(item)}
             >
-              <Text style={styles.unblockText}>Débloquer</Text>
+              <Text style={styles.unblockText}>{t("profile:blocked.unblock")}</Text>
             </Pressable>
           </View>
         )}
         ListEmptyComponent={
           <Text style={styles.empty}>
-            Aucun utilisateur bloqué.{"\n"}Tu peux bloquer quelqu'un depuis un
-            chat (menu ⋯) ou en signalant un message.
+            {t("profile:blocked.empty")}
           </Text>
         }
       />

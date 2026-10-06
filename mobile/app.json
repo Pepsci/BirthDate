@@ -7,10 +7,14 @@
     "icon": "./assets/images/icon.png",
     "scheme": "birthreminder",
     "userInterfaceStyle": "automatic",
+    "locales": {
+      "fr": "./locales/fr.json",
+      "en": "./locales/en.json"
+    },
     "ios": {
       "icon": "./assets/images/icon.png",
       "bundleIdentifier": "com.birthreminder.app",
-      "buildNumber": "51",
+      "buildNumber": "52",
       "supportsTablet": true,
       "associatedDomains": [
         "applinks:birthreminder.com"

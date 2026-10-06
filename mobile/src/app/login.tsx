@@ -1,3 +1,4 @@
+import { t } from "@/i18n";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   View,
@@ -48,9 +49,9 @@ const LOGO_DARK = require("../../assets/images/logo-dark.png");
 const OUT_SPEED = 0.46;
 
 const TABS: { key: PanelName; label: string }[] = [
-  { key: "login", label: "Connexion" },
-  { key: "signup", label: "Inscription" },
-  { key: "forgot", label: "Oubli" },
+  { key: "login", get label() { return t("auth:tabs.login"); } },
+  { key: "signup", get label() { return t("auth:tabs.signup"); } },
+  { key: "forgot", get label() { return t("auth:tabs.forgot"); } },
 ];
 
 const TAB_HEIGHT = 34;
@@ -142,7 +143,7 @@ export default function AuthScreen() {
               hitSlop={10}
               accessibilityRole="button"
             >
-              <Text style={styles.backText}>‹ Retour</Text>
+              <Text style={styles.backText}>‹ {t("common:actions.back")}</Text>
             </Pressable>
           )}
           <Image

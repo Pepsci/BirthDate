@@ -1,3 +1,5 @@
+import { t, tn } from "@/i18n";
+import SharedProposals from "../../components/SharedProposals";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { isLocalMode } from "../../lib/app-mode";
 import {
@@ -83,7 +85,7 @@ import {
   fetchSentSharedInvitations,
   cancelSharedInvitation,
 } from "../../lib/sharedGifts";
-import { OCCASIONS, occasionEmoji } from "../../lib/occasions";
+import { OCCASIONS, occasionEmoji, occasionLabel } from "../../lib/occasions";
 import {
   GIFT_STATUS_META,
   GiftStatus,
@@ -260,7 +262,7 @@ export default function DateDetailScreen() {
         }
       }
     } catch (e: any) {
-      setError(e?.message ?? "Erreur de chargement.");
+      setError(e?.message ?? t("common:errors.loading"));
     }
   }, [id, isLocal]);
 
@@ -286,7 +288,7 @@ export default function DateDetailScreen() {
       await fn();
       await load();
     } catch (e: any) {
-      setError(e?.message ?? "Erreur.");
+      setError(e?.message ?? t("common:errors.generic"));
     } finally {
       setBusy(false);
     }
@@ -391,7 +393,7 @@ export default function DateDetailScreen() {
     try {
       setShareSettings(await toggleSharedListShare(entry.sharedGiftList));
     } catch (e: any) {
-      setError(e?.message ?? "Erreur de partage.");
+      setError(e?.message ?? t("date:errors.share"));
     } finally {
       setShareBusy(false);
     }
@@ -447,14 +449,14 @@ export default function DateDetailScreen() {
     if (!entry?.sharedGiftList || busy) return;
     const who = reserverName(g);
     Alert.alert(
-      "Libérer cette réservation ?",
+      t("date:shared.releaseTitle"),
       who
-        ? `${who} s'est engagé à offrir « ${g.giftName} ». L'idée redeviendra disponible pour tout le monde.`
-        : `« ${g.giftName} » redeviendra disponible pour tout le monde.`,
+        ? t("date:shared.releaseTextWho", { who, gift: g.giftName })
+        : t("date:shared.releaseText", { gift: g.giftName }),
       [
-        { text: "Annuler", style: "cancel" },
+        { text: t("common:actions.cancel"), style: "cancel" },
         {
-          text: "Libérer",
+          text: t("date:shared.release"),
           style: "destructive",
           onPress: () =>
             runShared(() =>
@@ -496,15 +498,15 @@ export default function DateDetailScreen() {
   // invisible et la liste semble avoir perdu des idées.
   const RESERVED_FILTER_LABEL = {
     all: null,
-    free: "Libres",
-    taken: "Réservées",
-    mine: "Je m'en occupe",
+    free: t("date:shared.filterFree"),
+    taken: t("date:shared.filterTaken"),
+    mine: t("date:shared.filterMine"),
   } as const;
   const sharedFilterActive =
     sharedFilter !== "all" || sharedReserved !== "all";
   const sharedFilterLabel = [
     sharedFilter !== "all"
-      ? `${occasionEmoji(sharedFilter)} ${sharedFilter}`
+      ? `${occasionEmoji(sharedFilter)} ${occasionLabel(sharedFilter)}`
       : null,
     RESERVED_FILTER_LABEL[sharedReserved],
   ]
@@ -560,7 +562,7 @@ export default function DateDetailScreen() {
           {/* Le marqueur passe DEVANT le reste : c'est l'information la plus
               surprenante de la carte, et celle qu'on doit voir sans lire. */}
           {g.hiddenFromViewers ? "🙈 " : ""}
-          {occasionEmoji(g.occasion)} {g.occasion}
+          {occasionEmoji(g.occasion)} {occasionLabel(g.occasion)}
           {g.addedBy?.name ? ` · ${g.addedBy.name}` : ""}
         </Text>
         {/* Réservation. Le nom est affiché : les membres sont
@@ -589,13 +591,13 @@ export default function DateDetailScreen() {
             numberOfLines={1}
           >
             {reservedByMe
-              ? "✓ Tu t'en occupes · annuler"
+              ? t("date:shared.mineCancel")
               : reservedByOther
                 ? // Le prénom n'est connu que des membres.
                   reserverName(g)
-                  ? `🔒 Réservé par ${reserverName(g)}`
-                  : "🔒 Réservé"
-                : "＋ Je m'en occupe"}
+                  ? t("date:shared.reservedBy", { name: reserverName(g) })
+                  : t("date:shared.reserved")
+                : t("date:shared.take")}
           </Text>
         </Pressable>
         {/* Action distincte, et non un second sens caché dans
@@ -608,7 +610,7 @@ export default function DateDetailScreen() {
             style={styles.releasePill}
           >
             <Text style={styles.releasePillText} numberOfLines={1}>
-              ↩︎ Libérer la réservation
+              {t("date:shared.releaseBtn")}
             </Text>
           </Pressable>
         )}
@@ -661,7 +663,7 @@ export default function DateDetailScreen() {
       await fn();
       await reloadShared();
     } catch (e: any) {
-      setError(e?.message ?? "Erreur.");
+      setError(e?.message ?? t("common:errors.generic"));
     } finally {
       setBusy(false);
     }
@@ -725,14 +727,14 @@ export default function DateDetailScreen() {
     setInviteStep("friend");
     try {
       await inviteSharedList(friendId, entry!._id, { mode, giftIds });
-      setInviteMsg("Invitation envoyée ✅ En attente de la réponse.");
+      setInviteMsg(t("date:shared.inviteSent"));
       try {
         setSentInvites(await fetchSentSharedInvitations(entry!._id));
       } catch {
         /* ignore */
       }
     } catch (e: any) {
-      setError(e?.message ?? "Erreur lors de l'invitation.");
+      setError(e?.message ?? t("date:shared.inviteError"));
     }
   };
 
@@ -742,7 +744,7 @@ export default function DateDetailScreen() {
       setSentInvites((prev) => prev.filter((i) => i._id !== id));
       setInviteMsg(null);
     } catch (e: any) {
-      setError(e?.message ?? "Erreur.");
+      setError(e?.message ?? t("common:errors.generic"));
     }
   };
 
@@ -759,7 +761,7 @@ export default function DateDetailScreen() {
     });
     try {
       await Share.share({
-        message: `🎁 Idées cadeaux pour ${who}\n\n${lines.join("\n")}\n\nEnvoyé depuis BirthReminder`,
+        message: `${t("date:share.ideasFor", { name: who })}\n\n${lines.join("\n")}\n\n${t("date:share.sentFrom")}`,
       });
     } catch {
       // partage annulé
@@ -805,9 +807,9 @@ export default function DateDetailScreen() {
     if (isLocal) {
       if (!entry) return;
       const who = `${entry.name}${entry.surname ? " " + entry.surname : ""}`.trim();
-      const lines = [`🎂 Anniversaire de ${who} : ${formatBirthday(entry.date)}`];
-      if (entry.nameday) lines.push(`🎉 Fête : ${formatNameday(entry.nameday)}`);
-      lines.push("", "Envoyé depuis BirthReminder");
+      const lines = [t("date:share.birthdayLine", { name: who, date: formatBirthday(entry.date) })];
+      if (entry.nameday) lines.push(t("date:namedayLine", { date: formatNameday(entry.nameday) }));
+      lines.push("", t("date:share.sentFrom"));
       try {
         await Share.share({ message: lines.join("\n") });
       } catch {
@@ -839,7 +841,7 @@ export default function DateDetailScreen() {
       const s = await getSocket();
       s.emit("message:send", {
         conversationId: conv._id,
-        content: `🎂 Anniversaire de ${personName}`,
+        content: t("date:share.birthdayOf", { name: personName }),
         type: "date_share",
         metadata: {
           personName,
@@ -858,7 +860,7 @@ export default function DateDetailScreen() {
       setCardShareSent(true);
       setTimeout(() => setCardShareOpen(false), 900);
     } catch (e: any) {
-      setError(e?.message ?? "Erreur d'envoi.");
+      setError(e?.message ?? t("common:errors.send"));
     } finally {
       setCardShareSending(false);
     }
@@ -883,7 +885,7 @@ export default function DateDetailScreen() {
       const s = await getSocket();
       s.emit("message:send", {
         conversationId: conv._id,
-        content: `🎁 Idées cadeaux pour ${personName}`,
+        content: t("date:share.ideasFor", { name: personName }),
         type: "gift_share",
         metadata: { personName, personId: entry._id, gifts: selectedGifts },
         tempId: `temp-${Date.now()}`,
@@ -891,7 +893,7 @@ export default function DateDetailScreen() {
       setShareSent(true);
       setTimeout(() => setShareOpen(false), 900);
     } catch (e: any) {
-      setError(e?.message ?? "Erreur d'envoi.");
+      setError(e?.message ?? t("common:errors.send"));
     } finally {
       setShareSending(false);
     }
@@ -938,14 +940,14 @@ export default function DateDetailScreen() {
     // le serveur refusait purement et simplement la demande d'un invité (403) :
     // il « quittait » la liste et la retrouvait au rechargement suivant.
     Alert.alert(
-      isSharedMember ? "Quitter la liste commune ?" : "Ne plus suivre ?",
+      isSharedMember ? t("date:shared.leaveTitle") : t("date:shared.unfollowTitle"),
       isSharedMember
-        ? "Tes idées restent pour les autres membres. Si tu es le dernier, la liste sera supprimée."
-        : "Tu perdras l'accès à cette liste. Un membre pourra te la repartager plus tard.",
+        ? t("date:shared.leaveText")
+        : t("date:shared.unfollowText"),
       [
-        { text: "Annuler", style: "cancel" },
+        { text: t("common:actions.cancel"), style: "cancel" },
         {
-          text: isSharedMember ? "Quitter" : "Ne plus suivre",
+          text: isSharedMember ? t("date:shared.leave") : t("date:shared.unfollow"),
           style: "destructive",
           onPress: async () => {
             try {
@@ -953,7 +955,7 @@ export default function DateDetailScreen() {
               setSharedList(null);
               await load();
             } catch (e: any) {
-              setError(e?.message ?? "Erreur.");
+              setError(e?.message ?? t("common:errors.generic"));
             }
           },
         },
@@ -982,7 +984,7 @@ export default function DateDetailScreen() {
         linkedUserId ? (
           <HeaderIconButton
             name="chat"
-            accessibilityLabel="Ouvrir la discussion"
+            accessibilityLabel={t("date:openChat")}
             badge={chatUnreadCount}
             onPress={() =>
               // Grand écran : la discussion s'ouvre à droite, la carte reste.
@@ -996,7 +998,7 @@ export default function DateDetailScreen() {
         ) : (
           <HeaderIconButton
             name="pencil"
-            accessibilityLabel="Modifier la carte"
+            accessibilityLabel={t("date:editCard")}
             onPress={() =>
               // Grand écran : le formulaire s'ouvre à droite, la fiche reste.
               isSplit
@@ -1012,7 +1014,7 @@ export default function DateDetailScreen() {
   if (!entry) {
     return (
       <View style={styles.center}>
-        <Stack.Screen options={{ title: "Anniversaire" }} />
+        <Stack.Screen options={{ title: t("home:agenda.legendBirthday") }} />
         {error ? (
           <Text style={styles.error}>{error}</Text>
         ) : (
@@ -1050,8 +1052,7 @@ export default function DateDetailScreen() {
       {entry.pending && (
         <View style={styles.pendingNote}>
           <Text style={styles.pendingNoteText}>
-            ⏳ Modifiée hors ligne, pas encore envoyée. Cadeaux, photo et
-            partage seront disponibles une fois la carte envoyée.
+            {t("date:pendingNote")}
           </Text>
         </View>
       )}
@@ -1073,8 +1074,8 @@ export default function DateDetailScreen() {
             )}
         </View>
         <View style={styles.badgeRow}>
-          {entry.linkedUser && <Badge label="AMI" color={colors.primary} />}
-          {entry.family && <Badge label="FAMILLE" color={colors.warning} />}
+          {entry.linkedUser && <Badge label={t("home:badge.friend")} color={colors.primary} />}
+          {entry.family && <Badge label={t("home:badge.family")} color={colors.warning} />}
         </View>
         {birthISO && (
           <Text style={styles.detail}>
@@ -1082,7 +1083,7 @@ export default function DateDetailScreen() {
           </Text>
         )}
         {nameday && (
-          <Text style={styles.detail}>🎉 Fête : {formatNameday(nameday)}</Text>
+          <Text style={styles.detail}>{t("date:namedayLine", { date: formatNameday(nameday) })}</Text>
         )}
         {/* Signaler une fête fausse ou manquante — compte uniquement : le
             mode local n'envoie rien au serveur (docs/MODE_LOCAL.md). */}
@@ -1097,14 +1098,14 @@ export default function DateDetailScreen() {
             hitSlop={8}
           >
             <Text style={styles.namedayReportLink}>
-              {nameday ? "Fête incorrecte ?" : "Pas de fête ? Signale-le"}
+              {nameday ? t("date:report.linkWrong") : t("date:report.linkMissing")}
             </Text>
           </Pressable>
         )}
         {birthISO &&
           (days === 0 ? (
             <View style={styles.countdownTodayBox}>
-              <Text style={styles.countdownTodayText}>Aujourd'hui 🎂</Text>
+              <Text style={styles.countdownTodayText}>{t("common:todayCake")}</Text>
             </View>
           ) : (
             <BirthdayCountdown iso={birthISO} />
@@ -1128,8 +1129,8 @@ export default function DateDetailScreen() {
               ]}
             >
               {entry.family
-                ? "🏠 Retirer de la famille"
-                : "🏠 Ajouter à la famille"}
+                ? t("date:family.remove")
+                : t("date:family.add")}
             </Text>
           </Pressable>
         )}
@@ -1138,7 +1139,7 @@ export default function DateDetailScreen() {
       {/* Notifications pour cette date */}
       <View style={styles.card}>
         <View style={styles.notifHeader}>
-          <Text style={styles.sectionTitle}>🔔 Rappels</Text>
+          <Text style={styles.sectionTitle}>{t("date:reminders.title")}</Text>
           <Switch
             value={entry.receiveNotifications !== false}
             disabled={busy}
@@ -1149,10 +1150,10 @@ export default function DateDetailScreen() {
 
         {entry.receiveNotifications !== false && (
           <>
-            <Text style={styles.notifLabel}>🎂 Anniversaire</Text>
+            <Text style={styles.notifLabel}>{t("date:reminders.birthday")}</Text>
             <View style={styles.notifChips}>
               <NotifChip
-                label="Jour J"
+                label={t("date:reminders.dDay")}
                 active={entry.notificationPreferences?.notifyOnBirthday !== false}
                 disabled={busy}
                 onPress={() =>
@@ -1166,11 +1167,11 @@ export default function DateDetailScreen() {
                 }
               />
               {[
-                { v: 1, l: "J-1" },
-                { v: 3, l: "J-3" },
-                { v: 7, l: "J-7" },
-                { v: 14, l: "J-14" },
-                { v: 30, l: "J-30" },
+                { v: 1, l: t("date:reminders.before", { count: 1 }) },
+                { v: 3, l: t("date:reminders.before", { count: 3 }) },
+                { v: 7, l: t("date:reminders.before", { count: 7 }) },
+                { v: 14, l: t("date:reminders.before", { count: 14 }) },
+                { v: 30, l: t("date:reminders.before", { count: 30 }) },
               ].map(({ v, l }) => {
                 const timings = entry.notificationPreferences?.timings ?? [1];
                 const active = timings.includes(v);
@@ -1199,10 +1200,10 @@ export default function DateDetailScreen() {
 
             {nameday && (
               <>
-                <Text style={styles.notifLabel}>🎉 Fête</Text>
+                <Text style={styles.notifLabel}>{t("date:reminders.nameday")}</Text>
                 <View style={styles.notifChips}>
                   <NotifChip
-                    label="Jour J"
+                    label={t("date:reminders.dDay")}
                     active={entry.namedayPreferences?.notifyOnNameday !== false}
                     disabled={busy}
                     onPress={() =>
@@ -1216,8 +1217,8 @@ export default function DateDetailScreen() {
                     }
                   />
                   {[
-                    { v: 1, l: "J-1" },
-                    { v: 7, l: "J-7" },
+                    { v: 1, l: t("date:reminders.before", { count: 1 }) },
+                    { v: 7, l: t("date:reminders.before", { count: 7 }) },
                   ].map(({ v, l }) => {
                     const timings = entry.namedayPreferences?.timings ?? [1];
                     const active = timings.includes(v);
@@ -1269,7 +1270,7 @@ export default function DateDetailScreen() {
                 rightPane === "gifts" && styles.splitBtnTextActive,
               ]}
             >
-              🎁 Voir les cadeaux
+              {t("date:seeGifts")}
             </Text>
           </Pressable>
 
@@ -1289,8 +1290,8 @@ export default function DateDetailScreen() {
                 ]}
               >
                 {chatUnreadCount > 0
-                  ? `💬 Discuter (${chatUnreadCount})`
-                  : "💬 Discuter"}
+                  ? t("date:chatCount", { count: chatUnreadCount })
+                  : t("date:chat")}
               </Text>
             </Pressable>
           )}
@@ -1316,8 +1317,8 @@ export default function DateDetailScreen() {
                 ]}
               >
                 {existingEventId
-                  ? "🎉 Voir l'événement organisé"
-                  : "🎉 Organiser un événement"}
+                  ? t("date:event.view")
+                  : t("date:event.create")}
               </Text>
             </Pressable>
           )}
@@ -1339,8 +1340,8 @@ export default function DateDetailScreen() {
             >
               <Text style={styles.eventBtnText}>
                 {existingEventId
-                  ? "🎉 Voir l'événement organisé"
-                  : "🎉 Organiser un événement"}
+                  ? t("date:event.view")
+                  : t("date:event.create")}
               </Text>
             </Pressable>
           )}
@@ -1353,7 +1354,7 @@ export default function DateDetailScreen() {
               setView("gifts");
             }}
           >
-            <Text style={styles.giftsBtnText}>🎁 Voir les cadeaux</Text>
+            <Text style={styles.giftsBtnText}>{t("date:seeGifts")}</Text>
           </Pressable>
 
           {!isLocal && (
@@ -1365,7 +1366,7 @@ export default function DateDetailScreen() {
                 setView("gifts");
               }}
             >
-              <Text style={styles.sharedBtnText}>👥 Liste commune</Text>
+              <Text style={styles.sharedBtnText}>{t("date:shared.title")}</Text>
             </Pressable>
           )}
         </>
@@ -1373,7 +1374,7 @@ export default function DateDetailScreen() {
 
       {/* Partage de la carte elle-même (sans les cadeaux) */}
       <Pressable style={styles.shareCardBtn} onPress={openCardShare}>
-        <Text style={styles.shareCardText}>📤 Partager cette carte</Text>
+        <Text style={styles.shareCardText}>{t("date:share.card")}</Text>
       </Pressable>
     </>
   );
@@ -1391,7 +1392,7 @@ export default function DateDetailScreen() {
           setView("info");
         }}
       >
-        <Text style={styles.backBtnText}>‹ Retour à la carte</Text>
+        <Text style={styles.backBtnText}>{t("date:backToCard")}</Text>
       </Pressable>
       )}
 
@@ -1409,7 +1410,7 @@ export default function DateDetailScreen() {
                 giftTab === "ideas" && styles.giftTabTextActive,
               ]}
             >
-              🎁 Mes idées
+              {t("date:tabs.ideas")}
             </Text>
           </Pressable>
           {entry.linkedUser && (
@@ -1426,7 +1427,7 @@ export default function DateDetailScreen() {
                   giftTab === "wishlist" && styles.giftTabTextActive,
                 ]}
               >
-                🎀 Sa wishlist
+                {t("date:tabs.wishlist")}
               </Text>
             </Pressable>
           )}
@@ -1443,7 +1444,7 @@ export default function DateDetailScreen() {
                   giftTab === "shared" && styles.giftTabTextActive,
                 ]}
               >
-                👥 Commune
+                {t("date:tabs.shared")}
               </Text>
             </Pressable>
           )}
@@ -1453,7 +1454,7 @@ export default function DateDetailScreen() {
       {giftTab === "ideas" && (
       <View style={styles.card}>
         <View style={styles.giftsHeader}>
-          <Text style={styles.sectionTitle}>🎁 Mes idées cadeaux</Text>
+          <Text style={styles.sectionTitle}>{t("date:ideas.title")}</Text>
           <Pressable
             style={styles.newIdeaBtnTop}
             onPress={() => {
@@ -1462,7 +1463,7 @@ export default function DateDetailScreen() {
             }}
           >
             <Text style={styles.newIdeaTopText}>
-              {showGiftForm ? "✕ Fermer" : "＋ Nouvelle idée"}
+              {showGiftForm ? t("date:closeX") : t("date:ideas.new")}
             </Text>
           </Pressable>
         </View>
@@ -1471,13 +1472,13 @@ export default function DateDetailScreen() {
           style={styles.importBtn}
           onPress={() => setImportOpen(true)}
         >
-          <Text style={styles.importText}>📋 Importer depuis une liste</Text>
+          <Text style={styles.importText}>{t("date:ideas.import")}</Text>
         </Pressable>
 
         {((entry as DateEntry & { gifts?: Gift[] }).gifts?.length ?? 0) > 0 && (
           <Pressable style={styles.shareChatBtn} onPress={openShare}>
             <Text style={styles.shareChatText}>
-              {isLocal ? "📤 Partager ces idées" : "📤 Partager ces idées dans le chat"}
+              {isLocal ? t("date:ideas.share") : t("date:ideas.shareChat")}
             </Text>
           </Pressable>
         )}
@@ -1495,8 +1496,8 @@ export default function DateDetailScreen() {
         {editingGift && (
           <GiftIdeaForm
             key={editingGift._id}
-            title={`Modifier « ${editingGift.giftName} »`}
-            submitLabel="Enregistrer"
+            title={t("date:ideas.editTitle", { name: editingGift.giftName })}
+            submitLabel={t("common:actions.save")}
             busy={busy}
             onCancel={() => setEditingGift(null)}
             initial={{
@@ -1543,10 +1544,10 @@ export default function DateDetailScreen() {
                 ]}
               >
                 {showFilters
-                  ? "✕ Fermer le filtre"
+                  ? t("date:filter.close")
                   : giftFilter === "all"
-                    ? "🔎 Filtrer par occasion"
-                    : `🔎 ${occasionEmoji(giftFilter)} ${giftFilter}`}
+                    ? t("date:filter.byOccasion")
+                    : `🔎 ${occasionEmoji(giftFilter)} ${occasionLabel(giftFilter)}`}
               </Text>
             </Pressable>
 
@@ -1565,7 +1566,7 @@ export default function DateDetailScreen() {
                       giftFilter === "all" && styles.filterChipTextOn,
                     ]}
                   >
-                    Tous
+                    {t("home:filter.all")}
                   </Text>
                 </Pressable>
                 {OCCASIONS.filter((o) =>
@@ -1597,8 +1598,8 @@ export default function DateDetailScreen() {
         {filteredGifts.length === 0 && (
           <Text style={styles.muted}>
             {gifts.length === 0
-              ? "Aucune idée pour l'instant."
-              : "Aucune idée pour ce filtre."}
+              ? t("date:ideas.empty")
+              : t("date:ideas.emptyFilter")}
           </Text>
         )}
 
@@ -1628,7 +1629,7 @@ export default function DateDetailScreen() {
                   {g.giftName}
                 </Text>
                 <Text style={styles.giftMeta} numberOfLines={1}>
-                  {occasionEmoji(g.occasion)} {g.occasion}
+                  {occasionEmoji(g.occasion)} {occasionLabel(g.occasion)}
                   {g.year ? ` · ${g.year}` : ""}
                 </Text>
                 <View style={[styles.giftGridRow, styles.cardBottom]}>
@@ -1667,15 +1668,15 @@ export default function DateDetailScreen() {
       {entry.linkedUser && giftTab === "wishlist" && (
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>
-            🎀 La wishlist de {entry.name}
+            {t("date:wishlist.titleOf", { name: entry.name })}
           </Text>
           {wishlist === null && (
             <Text style={styles.muted}>
-              Wishlist privée ou non disponible.
+              {t("date:wishlist.private")}
             </Text>
           )}
           {wishlist?.length === 0 && (
-            <Text style={styles.muted}>Sa wishlist est vide.</Text>
+            <Text style={styles.muted}>{t("date:wishlist.empty")}</Text>
           )}
           {(() => {
             // On masque les cadeaux déjà réservés par quelqu'un d'autre.
@@ -1703,12 +1704,12 @@ export default function DateDetailScreen() {
                 badge={
                   isMine(item)
                     ? {
-                        label: "Réservé par toi",
+                        label: t("date:wishlist.reservedByYou"),
                         color: colors.successStrong,
                         bg: colors.successSoft,
                       }
                     : {
-                        label: "Disponible",
+                        label: t("date:wishlist.available"),
                         color: colors.sub,
                         bg: colors.bgSecondary,
                       }
@@ -1727,7 +1728,7 @@ export default function DateDetailScreen() {
                   </View>
                 ) : (
                   <Text style={styles.muted}>
-                    Tous les cadeaux disponibles ont été réservés 🎁
+                    {t("date:wishlist.allReserved")}
                   </Text>
                 )}
 
@@ -1735,7 +1736,7 @@ export default function DateDetailScreen() {
                   <View style={styles.offeredSection}>
                     <View style={styles.offeredDivider} />
                     <Text style={styles.offeredTitle}>
-                      🎁 Mes réservations · {myReservations.length}
+                      {t("date:wishlist.myReservations", { count: myReservations.length })}
                     </Text>
                     <View style={giftGridStyles.grid}>
                       {myReservations.map(renderWish)}
@@ -1752,29 +1753,28 @@ export default function DateDetailScreen() {
         <View style={styles.card}>
           {!entry.sharedGiftList ? (
             <>
-              <Text style={styles.sectionTitle}>👥 Liste commune</Text>
+              <Text style={styles.sectionTitle}>{t("date:shared.title")}</Text>
               <Text style={styles.muted}>
-                Partage une liste d'idées cadeaux avec un proche : vous la voyez
-                et l'éditez tous les deux.
+                {t("date:shared.intro")}
               </Text>
               {inviteMsg && <Text style={styles.inviteMsg}>{inviteMsg}</Text>}
               <Pressable style={styles.eventBtn} onPress={openFriendPicker}>
                 <Text style={styles.eventBtnText}>
-                  ＋ Créer une liste commune
+                  {t("date:shared.create")}
                 </Text>
               </Pressable>
 
               {sentInvites.map((inv) => (
                 <View key={inv._id} style={styles.sentRow}>
                   <Text style={styles.muted} numberOfLines={1}>
-                    En attente de {inv.toUser?.name} {inv.toUser?.surname ?? ""}…
+                    {t("date:shared.waitingFor", { name: `${inv.toUser?.name ?? ""} ${inv.toUser?.surname ?? ""}`.trim() })}
                   </Text>
                   <Pressable
                     hitSlop={8}
                     disabled={busy}
                     onPress={() => cancelInvite(inv._id)}
                   >
-                    <Text style={styles.cancelInvite}>Annuler</Text>
+                    <Text style={styles.cancelInvite}>{t("common:actions.cancel")}</Text>
                   </Pressable>
                 </View>
               ))}
@@ -1787,7 +1787,7 @@ export default function DateDetailScreen() {
           ) : (
             <>
               <View style={styles.giftsHeader}>
-                <Text style={styles.sectionTitle}>👥 Idées communes</Text>
+                <Text style={styles.sectionTitle}>{t("date:shared.ideasTitle")}</Text>
                 {/* Un invité consulte et réserve : rien qui modifie la
                     liste ne lui est proposé. Le serveur refuse de toute
                     façon, mais lui montrer des boutons inertes serait pire
@@ -1801,7 +1801,7 @@ export default function DateDetailScreen() {
                     }}
                   >
                     <Text style={styles.newIdeaTopText}>
-                      {showSharedForm ? "✕ Fermer" : "＋ Ajouter"}
+                      {showSharedForm ? t("date:closeX") : t("date:addPlus")}
                     </Text>
                   </Pressable>
                 )}
@@ -1818,7 +1818,7 @@ export default function DateDetailScreen() {
                     onPress={() => setImportSharedOpen(true)}
                   >
                     <Text style={styles.importFromListText}>
-                      ☑ Ajouter depuis une liste
+                      {t("date:shared.addFromList")}
                     </Text>
                   </Pressable>
                   <Pressable
@@ -1826,23 +1826,34 @@ export default function DateDetailScreen() {
                     onPress={() => setShareSheetOpen(true)}
                   >
                     <Text style={styles.importFromListText}>
-                      🔗 Partager
+                      {t("date:shared.shareBtn")}
                     </Text>
                   </Pressable>
                 </View>
               )}
               {isSharedMember ? (
                 <Text style={styles.muted}>
-                  Membres :{" "}
+                  {t("date:shared.members")}{" "}
                   {(sharedList.members ?? [])
                     .map((m) => `${m.name}${m.surname ? " " + m.surname : ""}`)
                     .join(", ")}
                 </Text>
               ) : (
                 <Text style={styles.muted}>
-                  Liste partagée avec toi — tu peux consulter et réserver.
+                  {t("date:shared.viewerNote")}
                 </Text>
               )}
+
+              {/* Propositions d'idées : l'invité propose, le gestionnaire
+                  accepte ou refuse. La réponse du serveur n'a pas
+                  `suggestedCard`, d'où la fusion avec l'état précédent. */}
+              <SharedProposals
+                list={sharedList}
+                onChange={(next) =>
+                  setSharedList((prev) => ({ ...(prev ?? next), ...next }))
+                }
+                onError={setError}
+              />
 
 
 
@@ -1861,8 +1872,8 @@ export default function DateDetailScreen() {
               {editingSharedGift && (
                 <GiftIdeaForm
                   key={editingSharedGift._id}
-                  title={`Modifier « ${editingSharedGift.giftName} »`}
-                  submitLabel="Enregistrer"
+                  title={t("date:ideas.editTitle", { name: editingSharedGift.giftName })}
+                  submitLabel={t("common:actions.save")}
                   busy={busy}
                   onCancel={() => setEditingSharedGift(null)}
                   initial={{
@@ -1921,10 +1932,10 @@ export default function DateDetailScreen() {
                       ]}
                     >
                       {showSharedFilters
-                        ? "✕ Fermer le filtre"
+                        ? t("date:filter.close")
                         : sharedFilterActive
                           ? `🔎 ${sharedFilterLabel}`
-                          : "🔎 Filtrer"}
+                          : t("date:filter.filter")}
                     </Text>
                   </Pressable>
 
@@ -1943,7 +1954,7 @@ export default function DateDetailScreen() {
                             sharedFilter === "all" && styles.filterChipTextOn,
                           ]}
                         >
-                          Tous
+                          {t("home:filter.all")}
                         </Text>
                       </Pressable>
                       {/* Seules les occasions réellement présentes : proposer
@@ -1980,10 +1991,10 @@ export default function DateDetailScreen() {
                     <View style={styles.filterWrap}>
                       {(
                         [
-                          ["all", "Toutes"],
-                          ["free", "🆓 Libres"],
-                          ["taken", "🔒 Réservées"],
-                          ["mine", "✓ Je m'en occupe"],
+                          ["all", t("date:shared.chipAll")],
+                          ["free", t("date:shared.chipFree")],
+                          ["taken", t("date:shared.chipTaken")],
+                          ["mine", t("date:shared.chipMine")],
                         ] as const
                       ).map(([value, label]) => (
                         <Pressable
@@ -2013,10 +2024,10 @@ export default function DateDetailScreen() {
               {sharedFiltered.length === 0 && (
                 <Text style={styles.muted}>
                   {sharedGiftsAll.length === 0
-                    ? "Aucune idée commune pour l'instant."
+                    ? t("date:shared.empty")
                     : sharedReserved === "free"
-                      ? "Tout est déjà réservé pour ce filtre 🎁"
-                      : "Aucune idée pour ce filtre."}
+                      ? t("date:shared.allTaken")
+                      : t("date:ideas.emptyFilter")}
                 </Text>
               )}
 
@@ -2044,18 +2055,18 @@ export default function DateDetailScreen() {
                         badge={
                           mine
                             ? {
-                                label: "Réservé par toi",
+                                label: t("date:wishlist.reservedByYou"),
                                 color: colors.successStrong,
                                 bg: colors.successSoft,
                               }
                             : taken
                               ? {
-                                  label: "Réservé",
+                                  label: t("date:shared.reservedPlain"),
                                   color: colors.sub,
                                   bg: colors.bgSecondary,
                                 }
                               : {
-                                  label: "Disponible",
+                                  label: t("date:wishlist.available"),
                                   color: colors.sub,
                                   bg: colors.bgSecondary,
                                 }
@@ -2078,7 +2089,7 @@ export default function DateDetailScreen() {
                     <View style={styles.offeredSection}>
                       <View style={styles.offeredDivider} />
                       <Text style={styles.offeredTitle}>
-                        🎉 Déjà offerts · {sharedOffered.length}
+                        {t("date:shared.alreadyGiven", { count: sharedOffered.length })}
                       </Text>
                       <View style={styles.giftGrid}>
                         {sharedOffered.map(renderSharedCard)}
@@ -2091,8 +2102,8 @@ export default function DateDetailScreen() {
               <Pressable onPress={onLeaveShared} style={{ marginTop: 6 }}>
                 <Text style={styles.leaveShared}>
                   {isSharedMember
-                    ? "Quitter la liste commune"
-                    : "Ne plus suivre cette liste"}
+                    ? t("date:shared.leaveBtn")
+                    : t("date:shared.unfollowBtn")}
                 </Text>
               </Pressable>
             </>
@@ -2144,20 +2155,20 @@ export default function DateDetailScreen() {
                 <Text style={styles.sheetTitle}>{w.title}</Text>
                 <View style={styles.sheetInfoRow}>
                   <Text style={styles.sheetPrice}>
-                    {w.price != null ? `${w.price} €` : "Prix libre"}
+                    {w.price != null ? `${w.price} €` : t("gifts:freePrice")}
                   </Text>
                   {w.url ? (
                     <Text
                       style={styles.link}
                       onPress={() => Linking.openURL(w.url!)}
                     >
-                      🔗 Voir le produit
+                      {t("gifts:viewProduct")}
                     </Text>
                   ) : null}
                 </View>
                 {reserved && !reservedByMe && (
                   <Text style={styles.sheetReserved}>
-                    🧑 Déjà réservé par quelqu'un
+                    {t("gifts:reservedBySomeone")}
                   </Text>
                 )}
                 {!reserved && (
@@ -2169,7 +2180,7 @@ export default function DateDetailScreen() {
                       run(() => reserveItem(w._id));
                     }}
                   >
-                    <Text style={styles.sheetPrimaryText}>🎁 Je réserve</Text>
+                    <Text style={styles.sheetPrimaryText}>{t("gifts:reserve")}</Text>
                   </Pressable>
                 )}
                 {reservedByMe && (
@@ -2182,7 +2193,7 @@ export default function DateDetailScreen() {
                     }}
                   >
                     <Text style={styles.sheetGhostText}>
-                      ↩️ Annuler ma réservation
+                      {t("gifts:cancelReservation")}
                     </Text>
                   </Pressable>
                 )}
@@ -2261,20 +2272,20 @@ export default function DateDetailScreen() {
                   <Text style={styles.sheetTitle}>{g.giftName}</Text>
                   <View style={styles.sheetInfoRow}>
                     <Text style={styles.sheetPrice}>
-                      {g.price != null ? `${g.price} €` : "Prix libre"}
+                      {g.price != null ? `${g.price} €` : t("gifts:freePrice")}
                     </Text>
                     {g.url ? (
                       <Text
                         style={styles.link}
                         onPress={() => Linking.openURL(g.url!)}
                       >
-                        🔗 Voir le produit
+                        {t("gifts:viewProduct")}
                       </Text>
                     ) : null}
                   </View>
                   {taken && !mine && (
                     <Text style={styles.sheetReserved}>
-                      🧑 Déjà réservé par quelqu'un
+                      {t("gifts:reservedBySomeone")}
                     </Text>
                   )}
                   {!taken && (
@@ -2286,7 +2297,7 @@ export default function DateDetailScreen() {
                         toggleSharedReservation(g);
                       }}
                     >
-                      <Text style={styles.sheetPrimaryText}>🎁 Je réserve</Text>
+                      <Text style={styles.sheetPrimaryText}>{t("gifts:reserve")}</Text>
                     </Pressable>
                   )}
                   {mine && (
@@ -2299,7 +2310,7 @@ export default function DateDetailScreen() {
                       }}
                     >
                       <Text style={styles.sheetGhostText}>
-                        ↩️ Annuler ma réservation
+                        {t("gifts:cancelReservation")}
                       </Text>
                     </Pressable>
                   )}
@@ -2316,9 +2327,9 @@ export default function DateDetailScreen() {
       >
         {inviteStep === "friend" && (
           <>
-            <Text style={styles.sheetTitle}>Avec qui créer la liste ?</Text>
+            <Text style={styles.sheetTitle}>{t("date:shared.withWho")}</Text>
             <Text style={styles.muted}>
-              Choisis un ami. Il recevra une invitation à rejoindre la liste.
+              {t("date:shared.pickFriend")}
             </Text>
             {friends.map((f) => (
               <Pressable
@@ -2332,16 +2343,16 @@ export default function DateDetailScreen() {
               </Pressable>
             ))}
             {friends.length === 0 && (
-              <Text style={styles.muted}>Aucun ami disponible.</Text>
+              <Text style={styles.muted}>{t("date:noFriends")}</Text>
             )}
           </>
         )}
 
         {inviteStep === "mode" && (
           <>
-            <Text style={styles.sheetTitle}>Que partager ?</Text>
+            <Text style={styles.sheetTitle}>{t("date:shared.whatToShare")}</Text>
             <Text style={styles.muted}>
-              Choisis les idées à inclure dans la liste commune.
+              {t("date:shared.pickIdeas")}
             </Text>
             <Pressable
               style={styles.sheetPrimaryBtn}
@@ -2350,8 +2361,7 @@ export default function DateDetailScreen() {
               }
             >
               <Text style={styles.sheetPrimaryText}>
-                🎁 Tout partager ({allGifts.length} idée
-                {allGifts.length > 1 ? "s" : ""})
+                {tn("date:shared.shareAll", allGifts.length)}
               </Text>
             </Pressable>
             <Pressable
@@ -2362,7 +2372,7 @@ export default function DateDetailScreen() {
               }}
             >
               <Text style={styles.inviteAltText}>
-                ✅ Choisir les idées à partager
+                {t("date:shared.chooseIdeas")}
               </Text>
             </Pressable>
           </>
@@ -2370,9 +2380,9 @@ export default function DateDetailScreen() {
 
         {inviteStep === "select" && (
           <>
-            <Text style={styles.sheetTitle}>Idées à partager</Text>
+            <Text style={styles.sheetTitle}>{t("date:shared.ideasToShare")}</Text>
             <Text style={styles.muted}>
-              Sélectionne les idées à inclure dans la liste commune.
+              {t("date:shared.selectIdeas")}
             </Text>
             {allGifts.map((g) => (
               <Pressable
@@ -2393,7 +2403,7 @@ export default function DateDetailScreen() {
                 style={styles.inviteBackBtn}
                 onPress={() => setInviteStep("mode")}
               >
-                <Text style={styles.inviteBackText}>Retour</Text>
+                <Text style={styles.inviteBackText}>{t("common:actions.back")}</Text>
               </Pressable>
               <Pressable
                 style={[
@@ -2412,7 +2422,7 @@ export default function DateDetailScreen() {
                 }
               >
                 <Text style={styles.sheetPrimaryText}>
-                  Envoyer ({inviteSel.size})
+                  {t("common:sendCount", { count: inviteSel.size })}
                 </Text>
               </Pressable>
             </View>
@@ -2426,17 +2436,17 @@ export default function DateDetailScreen() {
         visible={shareSheetOpen}
         onClose={() => setShareSheetOpen(false)}
       >
-        <Text style={styles.sheetTitle}>Partager la liste commune</Text>
+        <Text style={styles.sheetTitle}>{t("date:shared.shareTitle")}</Text>
 
         <View style={styles.publicShareRow}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.publicShareTitle}>Lien public</Text>
+            <Text style={styles.publicShareTitle}>{t("date:shared.publicLink")}</Text>
             <Text style={styles.publicShareSub}>
               {shareSettings?.isPublic
                 ? shareSettings.accessCode
-                  ? "Le code est demandé pour ouvrir la liste"
-                  : "Toute personne ayant le lien peut la consulter"
-                : "Génère un lien à envoyer à qui tu veux"}
+                  ? t("date:shared.publicWithCode")
+                  : t("date:shared.publicOpen")
+                : t("date:shared.publicOff")}
             </Text>
           </View>
           {shareBusy ? (
@@ -2469,8 +2479,8 @@ export default function DateDetailScreen() {
             >
               <Text style={styles.publicShareBtnText}>
                 {shareSettings.accessCode
-                  ? "📤 Envoyer le lien (code inclus)"
-                  : "📤 Envoyer le lien"}
+                  ? t("date:shared.sendLinkCode")
+                  : t("date:shared.sendLink")}
               </Text>
             </Pressable>
             {!!shareSettings.accessCode && (
@@ -2481,7 +2491,7 @@ export default function DateDetailScreen() {
                 }
               >
                 <Text style={styles.publicShareBtnText}>
-                  🔗 Envoyer le lien sans le code
+                  {t("date:shared.sendLinkNoCode")}
                 </Text>
               </Pressable>
             )}
@@ -2504,7 +2514,7 @@ export default function DateDetailScreen() {
           }}
         >
           <Text style={styles.publicShareBtnText}>
-            👤 Partager à un contact
+            {t("date:shared.shareContact")}
           </Text>
         </Pressable>
 
@@ -2516,21 +2526,20 @@ export default function DateDetailScreen() {
           }}
         >
           <Text style={styles.publicShareBtnText}>
-            👥 Gérer les accès et le code
+            {t("date:shared.manageAccess")}
           </Text>
         </Pressable>
 
         <Text style={styles.publicShareSub}>
-          Les invités consultent et réservent, sans modifier la liste. Avec un
-          code, le lien public ne montre rien tant qu'il n'est pas saisi.
+          {t("date:shared.guestsNote")}
         </Text>
       </BottomSheet>
 
       <BottomSheet visible={shareOpen} onClose={() => setShareOpen(false)}>
         {shareStep === 1 ? (
           <>
-            <Text style={styles.sheetTitle}>Partager des idées</Text>
-            <Text style={styles.muted}>Sélectionne les idées à partager.</Text>
+            <Text style={styles.sheetTitle}>{t("date:share.ideasTitle")}</Text>
+            <Text style={styles.muted}>{t("date:share.selectIdeas")}</Text>
             {allGifts.map((g) => (
               <Pressable
                 key={g._id}
@@ -2555,15 +2564,15 @@ export default function DateDetailScreen() {
               onPress={goShareStep2}
             >
               <Text style={styles.sheetPrimaryText}>
-                Suivant → ({shareSel.size})
+                {t("date:share.next", { count: shareSel.size })}
               </Text>
             </Pressable>
           </>
         ) : (
           <>
-            <Text style={styles.sheetTitle}>Envoyer à…</Text>
+            <Text style={styles.sheetTitle}>{t("date:share.sendTo")}</Text>
             {shareSent ? (
-              <Text style={styles.savedShare}>✅ Envoyé !</Text>
+              <Text style={styles.savedShare}>{t("date:share.sent")}</Text>
             ) : (
               <>
                 {shareFriends.map((f) => {
@@ -2589,7 +2598,7 @@ export default function DateDetailScreen() {
                   );
                 })}
                 {shareFriends.length === 0 && (
-                  <Text style={styles.muted}>Aucun ami disponible.</Text>
+                  <Text style={styles.muted}>{t("date:noFriends")}</Text>
                 )}
                 {shareFriends.length > 0 && (
                   <Pressable
@@ -2608,8 +2617,8 @@ export default function DateDetailScreen() {
                     ) : (
                       <Text style={styles.sheetPrimaryText}>
                         {giftShareTarget
-                          ? `Envoyer à ${giftShareTarget.friendUser.name}`
-                          : "Choisis un destinataire"}
+                          ? t("date:share.sendToName", { name: giftShareTarget.friendUser.name })
+                          : t("date:share.pickRecipient")}
                       </Text>
                     )}
                   </Pressable>
@@ -2624,14 +2633,13 @@ export default function DateDetailScreen() {
         visible={cardShareOpen}
         onClose={() => setCardShareOpen(false)}
       >
-        <Text style={styles.sheetTitle}>Partager cette carte</Text>
+        <Text style={styles.sheetTitle}>{t("date:share.cardTitle")}</Text>
         {cardShareSent ? (
-          <Text style={styles.savedShare}>✅ Envoyé !</Text>
+          <Text style={styles.savedShare}>{t("date:share.sent")}</Text>
         ) : (
           <>
             <Text style={styles.muted}>
-              Votre ami pourra l'ajouter à ses anniversaires. Vos idées cadeaux
-              ne sont pas partagées.
+              {t("date:share.cardNote")}
             </Text>
             {shareFriends.map((f) => {
               const picked =
@@ -2651,7 +2659,7 @@ export default function DateDetailScreen() {
               );
             })}
             {shareFriends.length === 0 && (
-              <Text style={styles.muted}>Aucun ami disponible.</Text>
+              <Text style={styles.muted}>{t("date:noFriends")}</Text>
             )}
             {shareFriends.length > 0 && (
               <Pressable
@@ -2670,8 +2678,8 @@ export default function DateDetailScreen() {
                 ) : (
                   <Text style={styles.sheetPrimaryText}>
                     {cardShareTarget
-                      ? `Envoyer à ${cardShareTarget.friendUser.name}`
-                      : "Choisis un destinataire"}
+                      ? t("date:share.sendToName", { name: cardShareTarget.friendUser.name })
+                      : t("date:share.pickRecipient")}
                   </Text>
                 )}
               </Pressable>
@@ -2812,10 +2820,10 @@ export default function DateDetailScreen() {
         <View style={styles.undoBar}>
           <View style={styles.undoRow}>
             <Text style={styles.undoText} numberOfLines={1}>
-              « {pendingDelete.gift.giftName} » supprimé
+              {t("date:undo.deleted", { name: pendingDelete.gift.giftName })}
             </Text>
             <Pressable onPress={undoDelete} hitSlop={8}>
-              <Text style={styles.undoAction}>Annuler la suppression</Text>
+              <Text style={styles.undoAction}>{t("date:undo.action")}</Text>
             </Pressable>
           </View>
           <View style={styles.undoTrack}>

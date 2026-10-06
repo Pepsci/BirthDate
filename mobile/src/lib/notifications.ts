@@ -1,3 +1,4 @@
+import { getLocaleTag, t } from "@/i18n";
 import { api } from "./api";
 
 export type NotifType =
@@ -27,6 +28,9 @@ export type NotifType =
   | "shared_gift_invite"
   | "shared_gift_accepted"
   | "shared_gift_added"
+  | "shared_gift_proposed"
+  | "shared_gift_proposal_accepted"
+  | "shared_gift_proposal_declined"
   | "shared_gift_updated"
   | "shared_gift_removed"
   | "shared_gift_member_left"
@@ -119,38 +123,38 @@ export function notifDisplay(n: AppNotification): {
     d.reactorName ??
     d.name ??
     d.organizerName ??
-    "Quelqu'un";
+    t("welcome:someone");
   switch (n.type) {
     case "friend_request":
-      return { emoji: "👥", text: `${who} t'a envoyé une demande d'ami` };
+      return { emoji: "👥", text: t("notifs:friendRequest", { who }) };
     case "friend_accepted":
-      return { emoji: "🤝", text: `${who} a accepté ta demande d'ami` };
+      return { emoji: "🤝", text: t("notifs:friendAccepted", { who }) };
     case "new_message":
-      return { emoji: "💬", text: `Nouveau message de ${who}` };
+      return { emoji: "💬", text: t("notifs:newMessage", { who }) };
     case "birthday_soon":
       return {
         emoji: "🎂",
         text: d.name
           ? d.daysLeft === 0
-            ? `C'est l'anniversaire de ${d.name} aujourd'hui !`
-            : `L'anniversaire de ${d.name} approche !`
-          : "Un anniversaire approche !",
+            ? t("notifs:birthdayToday", { name: d.name })
+            : t("notifs:birthdaySoon", { name: d.name })
+          : t("notifs:birthdaySoonAnon"),
       };
     case "nameday_soon":
       return {
         emoji: "🌸",
         text: d.name
           ? d.daysLeft === 0
-            ? `C'est la fête de ${d.name} aujourd'hui !`
-            : `C'est bientôt la fête de ${d.name} !`
-          : "Une fête approche !",
+            ? t("notifs:namedayToday", { name: d.name })
+            : t("notifs:namedaySoon", { name: d.name })
+          : t("notifs:namedaySoonAnon"),
       };
     case "gift_reserved":
       return {
         emoji: "🎁",
         text: d.giftName
-          ? `« ${d.giftName} » a été réservé sur ta wishlist`
-          : "Un cadeau de ta wishlist a été réservé",
+          ? t("notifs:giftReserved", { gift: d.giftName })
+          : t("notifs:giftReservedAnon"),
       };
     case "event_reminder":
       return {
@@ -163,8 +167,8 @@ export function notifDisplay(n: AppNotification): {
         text: d.message
           ? `${d.message}${d.eventTitle ? ` « ${d.eventTitle} »` : ""}`
           : d.eventTitle
-            ? `${d.organizerName ? `${d.organizerName} t'invite à` : "Rappel :"} « ${d.eventTitle} »`
-            : "Rappel d'événement",
+            ? d.organizerName ? t("notifs:eventInvite", { who: d.organizerName, title: d.eventTitle }) : t("notifs:eventReminderTitle", { title: d.eventTitle })
+            : t("notifs:eventReminder"),
       };
     case "event_cancelled":
       return {
@@ -172,28 +176,28 @@ export function notifDisplay(n: AppNotification): {
         // Le motif, quand il y en a un, EST l'information : « X est annulé »
         // sans raison laisse la question ouverte et pousse à rouvrir la page.
         text: d.reason
-          ? `« ${d.eventTitle ?? "Un événement"} » est annulé — ${d.reason}`
-          : `« ${d.eventTitle ?? "Un événement"} » est annulé`,
+          ? t("notifs:eventCancelledReason", { title: d.eventTitle ?? t("notifs:anEventCap"), reason: d.reason })
+          : t("notifs:eventCancelled", { title: d.eventTitle ?? t("notifs:anEventCap") }),
       };
     case "event_uncancelled":
       return {
         emoji: "✅",
-        text: `« ${d.eventTitle ?? "Un événement"} » est rétabli : il aura bien lieu`,
+        text: t("notifs:eventUncancelled", { title: d.eventTitle ?? t("notifs:anEventCap") }),
       };
     case "event_transfer_offer":
       return {
         emoji: "🤝",
-        text: `${d.fromName ?? "L'organisateur"} te propose de reprendre l'organisation de « ${d.eventTitle ?? "un événement"} »`,
+        text: t("notifs:transferOffer", { who: d.fromName ?? t("events:theHost"), title: d.eventTitle ?? t("notifs:anEvent") }),
       };
     case "event_transfer_accepted":
       return {
         emoji: "🤝",
-        text: `${d.fromName ?? "Un participant"} reprend l'organisation de « ${d.eventTitle ?? "un événement"} » — tu restes participant`,
+        text: t("notifs:transferAccepted", { who: d.fromName ?? t("notifs:aParticipant"), title: d.eventTitle ?? t("notifs:anEvent") }),
       };
     case "event_transfer_declined":
       return {
         emoji: "↩️",
-        text: `${d.fromName ?? "Le participant"} préfère ne pas reprendre l'organisation de « ${d.eventTitle ?? "un événement"} »`,
+        text: t("notifs:transferDeclined", { who: d.fromName ?? t("notifs:theParticipant"), title: d.eventTitle ?? t("notifs:anEvent") }),
       };
     case "event_transfer_done":
       return {
@@ -203,117 +207,133 @@ export function notifDisplay(n: AppNotification): {
         // transfert.
         text:
           d.message ??
-          `L'organisation de « ${d.eventTitle ?? "un événement"} » a changé de mains`,
+          t("notifs:transferDone", { title: d.eventTitle ?? t("notifs:anEvent") }),
       };
     case "event_pool_refunded":
       return {
         emoji: "💸",
         text: d.amount
-          ? `Ta contribution de ${(Number(d.amount) / 100).toFixed(2)} € à « ${d.eventTitle ?? "un événement"} » t'a été remboursée intégralement`
-          : `Ta contribution à « ${d.eventTitle ?? "un événement"} » t'a été remboursée`,
+          ? t("notifs:poolRefundedAmount", { amount: (Number(d.amount) / 100).toFixed(2), title: d.eventTitle ?? t("notifs:anEvent") })
+          : t("notifs:poolRefunded", { title: d.eventTitle ?? t("notifs:anEvent") }),
       };
     case "event_updated":
       return {
         emoji: "✏️",
-        text: `L'organisateur a modifié « ${d.eventTitle ?? "un événement"} »`,
+        text: t("notifs:eventUpdated", { title: d.eventTitle ?? t("notifs:anEvent") }),
       };
     case "event_date_changed":
       return {
         emoji: "📅",
         text: d.newDateLabel
-          ? `Nouvelle date pour « ${d.eventTitle ?? "événement"} » : ${d.newDateLabel} — confirme ta présence`
-          : `La date de « ${d.eventTitle ?? "événement"} » a changé — confirme ta présence`,
+          ? t("notifs:dateChangedLabel", { title: d.eventTitle ?? t("notifs:event"), date: d.newDateLabel })
+          : t("notifs:dateChanged", { title: d.eventTitle ?? t("notifs:event") }),
       };
     case "event_rsvp":
       return {
         emoji: "✅",
-        text: `${who} a répondu à « ${d.eventTitle ?? "ton événement"} »`,
+        text: t("notifs:rsvp", { who, title: d.eventTitle ?? t("notifs:yourEvent") }),
       };
     case "event_date_vote":
       return {
         emoji: "📅",
-        text: `${who} a voté pour une date dans « ${d.eventTitle ?? "un événement"} »`,
+        text: t("notifs:dateVote", { who, title: d.eventTitle ?? t("notifs:anEvent") }),
       };
     case "event_location_vote":
       return {
         emoji: "📍",
-        text: `${who} a voté pour un lieu dans « ${d.eventTitle ?? "un événement"} »`,
+        text: t("notifs:locationVote", { who, title: d.eventTitle ?? t("notifs:anEvent") }),
       };
     case "event_gift_proposed":
       return {
         emoji: "🎁",
-        text: `${d.proposerName ?? who} propose « ${d.giftName ?? "un cadeau"} »`,
+        text: t("notifs:giftProposed", { who: d.proposerName ?? who, gift: d.giftName ?? t("notifs:aGift") }),
       };
     case "event_gift_vote":
       return {
         emoji: "❤️",
-        text: `${who} a voté pour un cadeau dans « ${d.eventTitle ?? "un événement"} »`,
+        text: t("notifs:giftVote", { who, title: d.eventTitle ?? t("notifs:anEvent") }),
       };
     case "event_chat_message":
       return {
         emoji: "💬",
-        text: `Nouveaux messages dans « ${d.eventTitle ?? "un événement"} »`,
+        text: t("notifs:eventChat", { title: d.eventTitle ?? t("notifs:anEvent") }),
       };
     case "event_pool_contribution":
       return {
         emoji: "💝",
-        text: `${who} a contribué à la cagnotte${d.eventTitle ? ` de « ${d.eventTitle} »` : ""}`,
+        text: d.eventTitle ? t("notifs:poolContributionOf", { who, title: d.eventTitle }) : t("notifs:poolContribution", { who }),
       };
     case "shared_gift_invite":
       return {
         emoji: "👥",
-        text: `${d.fromName ?? who} veut créer une liste de cadeaux commune${d.personName ? ` pour ${d.personName}` : ""}`,
+        text: d.personName ? t("notifs:sharedInviteFor", { who: d.fromName ?? who, person: d.personName }) : t("notifs:sharedInvite", { who: d.fromName ?? who }),
       };
     case "shared_gift_accepted":
       return {
         emoji: "🎁",
-        text: `${d.fromName ?? who} a rejoint votre liste de cadeaux commune${d.personName ? ` — ${d.personName}` : ""}`,
+        text: `${t("notifs:sharedAccepted", { who: d.fromName ?? who })}${d.personName ? ` · ${d.personName}` : ""}`,
       };
     // ── Activité dans une liste commune ──────────────────────────────────
     // `listLabel` est optionnel : la liste n'est pas toujours nommée.
     case "shared_gift_added":
       return {
         emoji: "🎁",
-        text: `${d.fromName ?? who} a ajouté « ${d.giftName ?? "une idée"} »${d.listLabel ? ` à ${d.listLabel}` : " à votre liste commune"}`,
+        text: d.listLabel ? t("notifs:sharedAddedTo", { who: d.fromName ?? who, gift: d.giftName ?? t("notifs:anIdea"), list: d.listLabel }) : t("notifs:sharedAdded", { who: d.fromName ?? who, gift: d.giftName ?? t("notifs:anIdea") }),
+      };
+    // ── Propositions d'idées par un invité ───────────────────────────────
+    case "shared_gift_proposed":
+      return {
+        emoji: "💡",
+        text: d.listLabel ? t("notifs:sharedProposedTo", { who: d.fromName ?? who, gift: d.giftName ?? t("notifs:anIdea"), list: d.listLabel }) : t("notifs:sharedProposed", { who: d.fromName ?? who, gift: d.giftName ?? t("notifs:anIdea") }),
+      };
+    case "shared_gift_proposal_accepted":
+      return {
+        emoji: "🎁",
+        text: t("notifs:sharedProposalAccepted", { who: d.fromName ?? who, gift: d.giftName ?? t("notifs:anIdea") }),
+      };
+    case "shared_gift_proposal_declined":
+      return {
+        emoji: "↩️",
+        text: t("notifs:sharedProposalDeclined", { who: d.fromName ?? who, gift: d.giftName ?? t("notifs:anIdea") }),
       };
     case "shared_gift_updated":
       return {
         emoji: "✏️",
         text: d.statusLabel
-          ? `${d.fromName ?? who} ${d.statusLabel} : « ${d.giftName ?? "une idée"} »`
-          : `${d.fromName ?? who} a modifié « ${d.giftName ?? "une idée"} »${d.listLabel ? ` dans ${d.listLabel}` : ""}`,
+          ? `${d.fromName ?? who} ${d.statusLabel} : « ${d.giftName ?? t("notifs:anIdea")} »`
+          : d.listLabel ? t("notifs:sharedUpdatedIn", { who: d.fromName ?? who, gift: d.giftName ?? t("notifs:anIdea"), list: d.listLabel }) : t("notifs:sharedUpdated", { who: d.fromName ?? who, gift: d.giftName ?? t("notifs:anIdea") }),
       };
     case "shared_gift_removed":
       return {
         emoji: "🗑️",
-        text: `${d.fromName ?? who} a retiré « ${d.giftName ?? "une idée"} »${d.listLabel ? ` de ${d.listLabel}` : " de votre liste commune"}`,
+        text: d.listLabel ? t("notifs:sharedRemovedFrom", { who: d.fromName ?? who, gift: d.giftName ?? t("notifs:anIdea"), list: d.listLabel }) : t("notifs:sharedRemoved", { who: d.fromName ?? who, gift: d.giftName ?? t("notifs:anIdea") }),
       };
     case "shared_gift_shared":
       return {
         emoji: "🎁",
-        text: `${d.fromName ?? who} t'a partagé sa liste de cadeaux${d.listLabel ? ` — ${d.listLabel}` : ""}`,
+        text: `${t("notifs:sharedShared", { who: d.fromName ?? who })}${d.listLabel ? ` · ${d.listLabel}` : ""}`,
       };
     case "shared_gift_member_left":
       return {
         emoji: "👋",
-        text: `${d.fromName ?? who} a quitté votre liste de cadeaux commune${d.listLabel ? ` — ${d.listLabel}` : ""}`,
+        text: `${t("notifs:sharedLeft", { who: d.fromName ?? who })}${d.listLabel ? ` · ${d.listLabel}` : ""}`,
       };
     case "message_reaction":
       return {
         emoji: REACTION_EMOJI[d.reaction as string] ?? "🙂",
         text: d.eventTitle
-          ? `${who} a réagi à votre message dans « ${d.eventTitle} »`
-          : `${who} a réagi à votre message`,
+          ? t("notifs:reactionIn", { who, title: d.eventTitle })
+          : t("notifs:reaction", { who }),
       };
     case "support_reply":
       return {
         emoji: "💬",
         text: d.subject
-          ? `Le support t'a répondu : « ${d.subject} »`
-          : "Le support t'a répondu",
+          ? t("notifs:supportReplySubject", { subject: d.subject })
+          : t("notifs:supportReply"),
       };
     default:
-      return { emoji: "🔔", text: "Nouvelle notification" };
+      return { emoji: "🔔", text: t("notifs:generic") };
   }
 }
 
@@ -321,14 +341,14 @@ export function notifDisplay(n: AppNotification): {
 export function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
   const min = Math.floor(diff / 60000);
-  if (min < 1) return "à l'instant";
-  if (min < 60) return `il y a ${min} min`;
+  if (min < 1) return t("notifs:ago.now");
+  if (min < 60) return t("notifs:ago.min", { count: min });
   const h = Math.floor(min / 60);
-  if (h < 24) return `il y a ${h} h`;
+  if (h < 24) return t("notifs:ago.h", { count: h });
   const days = Math.floor(h / 24);
-  if (days === 1) return "hier";
-  if (days < 7) return `il y a ${days} j`;
-  return new Date(iso).toLocaleDateString("fr-FR", {
+  if (days === 1) return t("notifs:ago.yesterday");
+  if (days < 7) return t("notifs:ago.d", { count: days });
+  return new Date(iso).toLocaleDateString(getLocaleTag(), {
     day: "numeric",
     month: "short",
   });

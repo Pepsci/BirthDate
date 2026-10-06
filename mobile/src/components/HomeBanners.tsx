@@ -1,3 +1,4 @@
+import { t } from "@/i18n";
 import { useCallback, useState } from "react";
 import { Linking, Pressable, Text, View, StyleSheet } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
@@ -66,16 +67,16 @@ export default function HomeBanners() {
             onPress={() => Linking.openURL(update.url).catch(() => {})}
           >
             <Text style={[styles.title, styles.updateText]}>
-              {update.title || "✨ Nouvelle version disponible"}
+              {update.title || t("home:banner.updateTitle")}
             </Text>
             <Text style={[styles.text, styles.updateText]}>
               {update.message ||
-                `BirthReminder ${update.version} est prête. Touche ici pour mettre à jour.`}
+                t("home:banner.updateText", { version: update.version })}
             </Text>
           </Pressable>
           <Pressable
             hitSlop={10}
-            accessibilityLabel="Masquer"
+            accessibilityLabel={t("common:actions.hide")}
             onPress={() => {
               dismissUpdate(update.version);
               setUpdate(null);
@@ -106,7 +107,7 @@ export default function HomeBanners() {
           </Pressable>
           <Pressable
             hitSlop={10}
-            accessibilityLabel="Fermer l'annonce"
+            accessibilityLabel={t("home:banner.closeAnnouncement")}
             onPress={() => {
               dismissAnnouncement(announcement.id);
               setAnnouncement(null);

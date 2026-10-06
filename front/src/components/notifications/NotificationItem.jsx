@@ -30,6 +30,9 @@ const TYPE_CONFIG = {
   shared_gift_invite: { icon: "👥" },
   shared_gift_accepted: { icon: "🎁" },
   shared_gift_added: { icon: "🎁" },
+  shared_gift_proposed: { icon: "💡" },
+  shared_gift_proposal_accepted: { icon: "🎁" },
+  shared_gift_proposal_declined: { icon: "↩️" },
   shared_gift_updated: { icon: "✏️" },
   shared_gift_removed: { icon: "🗑️" },
   shared_gift_member_left: { icon: "👋" },
@@ -188,6 +191,27 @@ const buildText = (type, data) => {
         <>
           {data.fromName} a ajouté <strong>{data.giftName}</strong> à votre
           liste commune
+        </>
+      );
+    case "shared_gift_proposed":
+      return (
+        <>
+          {data.fromName} propose <strong>{data.giftName}</strong> pour{" "}
+          {data.listLabel || "votre liste commune"}
+        </>
+      );
+    case "shared_gift_proposal_accepted":
+      return (
+        <>
+          {data.fromName} a accepté ta proposition{" "}
+          <strong>{data.giftName}</strong>
+        </>
+      );
+    case "shared_gift_proposal_declined":
+      return (
+        <>
+          {data.fromName} n'a pas retenu ta proposition{" "}
+          <strong>{data.giftName}</strong>
         </>
       );
     case "shared_gift_updated":

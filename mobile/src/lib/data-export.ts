@@ -1,3 +1,4 @@
+import { t } from "@/i18n";
 import { api } from "./api";
 import { getPrivateKey, getOldPrivateKey, decryptMessage } from "./crypto";
 
@@ -64,10 +65,10 @@ export async function buildReadableExport(): Promise<DataExport> {
 
   const decrypt = (m: ExportMessage): string => {
     if (!m.isEncrypted) return m.content;
-    if (!m.encryptedForYou) return "[chiffré — aucune copie pour ce compte]";
+    if (!m.encryptedForYou) return t("profile:export.encNoCopy");
     const keys = [privateKey, oldPrivateKey].filter(Boolean) as Uint8Array[];
     if (keys.length === 0) {
-      return "[chiffré — clé privée absente de cet appareil]";
+      return t("profile:export.encNoKey");
     }
     // Le serveur a déjà replié senderPublicKey sur l'empreinte si le compte
     // de l'expéditeur a été purgé.
@@ -80,7 +81,7 @@ export async function buildReadableExport(): Promise<DataExport> {
         if (clear !== null) return clear;
       }
     }
-    return "[chiffré — déchiffrement impossible]";
+    return t("profile:export.encFail");
   };
 
   return {

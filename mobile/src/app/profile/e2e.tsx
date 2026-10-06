@@ -1,3 +1,4 @@
+import { getLocaleTag, t } from "@/i18n";
 import { useState } from "react";
 import {
   View,
@@ -101,11 +102,11 @@ export default function E2EScreen() {
   const verifySeed = () => {
     setError("");
     if (normalizeSeed(seedInput) !== normalizeSeed(seedPhrase)) {
-      setError("La phrase ne correspond pas. Vérifie l'ordre exact des 12 mots.");
+      setError(t("profile:e2e.phraseMismatch"));
       return;
     }
     if (!validateSeedPhrase(normalizeSeed(seedInput))) {
-      setError("Phrase invalide (mots BIP39 incorrects).");
+      setError(t("profile:e2e.phraseInvalidBip"));
       return;
     }
     go("step4");
@@ -114,7 +115,7 @@ export default function E2EScreen() {
   const activateFullE2E = async () => {
     setError("");
     if (encryptedPrivateKey && !passwordOk(password)) {
-      setError("Mot de passe incorrect.");
+      setError(t("profile:e2e.wrongPassword"));
       return;
     }
     setLoading(true);
@@ -142,7 +143,7 @@ export default function E2EScreen() {
       resetFlow();
       go("overview");
     } catch (e: any) {
-      setError(e?.message ?? "Erreur lors de l'activation.");
+      setError(e?.message ?? t("profile:e2e.activateError"));
     } finally {
       setLoading(false);
     }
@@ -156,7 +157,7 @@ export default function E2EScreen() {
         ? decryptSeedPhrase(encryptedSeedPhrase, password, userId)
         : null;
       if (!phrase) {
-        setError("Mot de passe incorrect.");
+        setError(t("profile:e2e.wrongPassword"));
         return;
       }
       setRevealedSeed(phrase);
@@ -170,7 +171,7 @@ export default function E2EScreen() {
   const deactivate = async () => {
     setError("");
     if (encryptedPrivateKey && !passwordOk(password)) {
-      setError("Mot de passe incorrect.");
+      setError(t("profile:e2e.wrongPassword"));
       return;
     }
     setLoading(true);
@@ -197,7 +198,7 @@ export default function E2EScreen() {
       resetFlow();
       go("overview");
     } catch (e: any) {
-      setError(e?.message ?? "Erreur lors de la désactivation.");
+      setError(e?.message ?? t("profile:e2e.deactivateError"));
     } finally {
       setLoading(false);
     }
@@ -208,7 +209,7 @@ export default function E2EScreen() {
     setError("");
     const phrase = normalizeSeed(seedInput);
     if (!validateSeedPhrase(phrase)) {
-      setError("Phrase invalide (vérifie les 12 mots).");
+      setError(t("profile:e2e.phraseInvalid"));
       return;
     }
     setLoading(true);
@@ -216,10 +217,10 @@ export default function E2EScreen() {
       const { secretKey } = keyPairFromSeed(phrase);
       await storePrivateKey(secretKey);
       resetFlow();
-      setInfo("✅ Clés restaurées sur cet appareil.");
+      setInfo(t("profile:e2e.restored"));
       go("overview");
     } catch (e: any) {
-      setError(e?.message ?? "Erreur lors de la restauration.");
+      setError(e?.message ?? t("profile:e2e.restoreError"));
     } finally {
       setLoading(false);
     }
@@ -262,7 +263,7 @@ export default function E2EScreen() {
       style={s.container}
       contentContainerStyle={[s.content, { paddingBottom: 40 + insets.bottom }]}
     >
-      <Stack.Screen options={{ title: "Chiffrement" }} />
+      <Stack.Screen options={{ title: t("profile:e2e.title") }} />
 
       {!!info && view === "overview" && (
         <Text style={s.infoBanner}>{info}</Text>
@@ -271,25 +272,23 @@ export default function E2EScreen() {
       {/* Overview — standard */}
       {view === "overview" && !isFullE2E && (
         <View style={s.card}>
-          <Text style={s.title}>Chiffrement Maximum (Full E2E)</Text>
+          <Text style={s.title}>{t("profile:e2e.maxTitle")}</Text>
           <Text style={s.desc}>
-            Le mode standard protège déjà tes messages. Le Chiffrement Maximum
-            ajoute une sécurité basée sur une phrase de 12 mots — indépendante de
-            ton mot de passe.
+            {t("profile:e2e.intro")}
           </Text>
           <View style={s.infoBox}>
             <Text style={s.infoLine}>
-              ✅ Clé non liée à ton mot de passe — plus robuste
+              {t("profile:e2e.pro1")}
             </Text>
             <Text style={s.infoLine}>
-              ⚠️ Si tu perds tes 12 mots, tes messages seront inaccessibles
+              {t("profile:e2e.con1")}
             </Text>
             <Text style={s.infoLine}>
-              ⚠️ Les anciens messages ne seront pas re-chiffrés
+              {t("profile:e2e.con2")}
             </Text>
           </View>
           <Pressable style={s.primaryBtn} onPress={() => go("step1")}>
-            <Text style={s.primaryText}>Activer le Chiffrement Maximum</Text>
+            <Text style={s.primaryText}>{t("profile:e2e.activate")}</Text>
           </Pressable>
         </View>
       )}
@@ -298,12 +297,12 @@ export default function E2EScreen() {
       {view === "overview" && isFullE2E && (
         <View style={s.card}>
           <View style={s.activeBadge}>
-            <Text style={s.activeBadgeText}>🔐 Chiffrement Maximum actif</Text>
+            <Text style={s.activeBadgeText}>{t("profile:e2e.active")}</Text>
           </View>
           {!!e2eActivatedAt && (
             <Text style={s.meta}>
-              Activé le{" "}
-              {new Date(e2eActivatedAt).toLocaleDateString("fr-FR", {
+              {t("profile:e2e.activatedOn")}{" "}
+              {new Date(e2eActivatedAt).toLocaleDateString(getLocaleTag(), {
                 day: "2-digit",
                 month: "long",
                 year: "numeric",
@@ -311,20 +310,18 @@ export default function E2EScreen() {
             </Text>
           )}
           <Text style={s.desc}>
-            Tes messages sont chiffrés avec ta phrase de récupération de 12 mots.
-            Conserve-la précieusement — c'est ta seule façon d'accéder à tes
-            messages depuis un nouvel appareil.
+            {t("profile:e2e.activeText")}
           </Text>
           {!!encryptedSeedPhrase && (
             <Pressable style={s.secondaryBtn} onPress={() => go("view-seed-pw")}>
-              <Text style={s.secondaryText}>Voir ma phrase de récupération</Text>
+              <Text style={s.secondaryText}>{t("profile:e2e.viewPhrase")}</Text>
             </Pressable>
           )}
           <Pressable style={s.secondaryBtn} onPress={() => go("restore")}>
-            <Text style={s.secondaryText}>Restaurer mes clés sur cet appareil</Text>
+            <Text style={s.secondaryText}>{t("profile:e2e.restoreHere")}</Text>
           </Pressable>
           <Pressable style={s.dangerBtn} onPress={() => go("deactivate")}>
-            <Text style={s.dangerText}>Désactiver le Chiffrement Maximum</Text>
+            <Text style={s.dangerText}>{t("profile:e2e.deactivate")}</Text>
           </Pressable>
         </View>
       )}
@@ -333,20 +330,19 @@ export default function E2EScreen() {
       {view === "step1" && (
         <View style={s.card}>
           <Stepper n={1} />
-          <Text style={s.title}>⚠️ Avant d'activer</Text>
+          <Text style={s.title}>{t("profile:e2e.beforeTitle")}</Text>
           <View style={s.infoBox}>
             <Text style={s.infoLine}>
-              ✅ Tes messages actuels resteront lisibles (ancienne clé conservée).
+              {t("profile:e2e.before1")}
             </Text>
             <Text style={s.infoLine}>
-              💻 Fonctionne sur tous tes appareils en te reconnectant.
+              {t("profile:e2e.before2")}
             </Text>
             <Text style={s.infoLine}>
-              🔑 Tes 12 mots sont irremplaçables : perdus + mot de passe oublié =
-              messages inaccessibles.
+              {t("profile:e2e.before3")}
             </Text>
             <Text style={s.infoLine}>
-              📝 Prépare de quoi noter. 🚫 Pas de capture d'écran.
+              {t("profile:e2e.before4")}
             </Text>
           </View>
           <View style={s.navRow}>
@@ -357,10 +353,10 @@ export default function E2EScreen() {
                 go("overview");
               }}
             >
-              <Text style={s.ghostText}>Annuler</Text>
+              <Text style={s.ghostText}>{t("common:actions.cancel")}</Text>
             </Pressable>
             <Pressable style={s.primaryBtn} onPress={startStep2}>
-              <Text style={s.primaryText}>J'accepte</Text>
+              <Text style={s.primaryText}>{t("profile:e2e.accept")}</Text>
             </Pressable>
           </View>
         </View>
@@ -370,17 +366,17 @@ export default function E2EScreen() {
       {view === "step2" && (
         <View style={s.card}>
           <Stepper n={2} />
-          <Text style={s.title}>Tes 12 mots de récupération</Text>
+          <Text style={s.title}>{t("profile:e2e.wordsTitle")}</Text>
           <Text style={s.desc}>
-            Note ces mots dans l'ordre exact. Ne les partage jamais.
+            {t("profile:e2e.wordsHint")}
           </Text>
           <SeedGrid phrase={seedPhrase} />
           <View style={s.warnBox}>
-            <Text style={s.warnText}>🔒 Ces mots n'apparaîtront qu'une fois.</Text>
+            <Text style={s.warnText}>{t("profile:e2e.wordsOnce")}</Text>
           </View>
           <View style={s.navRow}>
             <Pressable style={s.ghostBtn} onPress={() => go("step1")}>
-              <Text style={s.ghostText}>← Retour</Text>
+              <Text style={s.ghostText}>{t("common:backArrow")}</Text>
             </Pressable>
             <Pressable
               style={s.primaryBtn}
@@ -389,7 +385,7 @@ export default function E2EScreen() {
                 go("step3");
               }}
             >
-              <Text style={s.primaryText}>J'ai noté →</Text>
+              <Text style={s.primaryText}>{t("profile:e2e.noted")}</Text>
             </Pressable>
           </View>
         </View>
@@ -399,13 +395,13 @@ export default function E2EScreen() {
       {view === "step3" && (
         <View style={s.card}>
           <Stepper n={3} />
-          <Text style={s.title}>Vérification</Text>
+          <Text style={s.title}>{t("profile:e2e.verifyTitle")}</Text>
           <Text style={s.desc}>
-            Entre tes 12 mots dans l'ordre exact pour confirmer.
+            {t("profile:e2e.verifyHint")}
           </Text>
           <TextInput
             style={s.textarea}
-            placeholder="mot1 mot2 mot3 … mot12"
+            placeholder={t("profile:e2e.wordsPlaceholder")}
             placeholderTextColor={colors.placeholder}
             value={seedInput}
             onChangeText={(t) => {
@@ -419,14 +415,14 @@ export default function E2EScreen() {
           <Err />
           <View style={s.navRow}>
             <Pressable style={s.ghostBtn} onPress={() => go("step2")}>
-              <Text style={s.ghostText}>← Retour</Text>
+              <Text style={s.ghostText}>{t("common:backArrow")}</Text>
             </Pressable>
             <Pressable
               style={[s.primaryBtn, !seedInput.trim() && s.disabled]}
               disabled={!seedInput.trim()}
               onPress={verifySeed}
             >
-              <Text style={s.primaryText}>Vérifier →</Text>
+              <Text style={s.primaryText}>{t("profile:e2e.verify")}</Text>
             </Pressable>
           </View>
         </View>
@@ -436,13 +432,13 @@ export default function E2EScreen() {
       {view === "step4" && (
         <View style={s.card}>
           <Stepper n={4} />
-          <Text style={s.title}>Confirme ton mot de passe</Text>
+          <Text style={s.title}>{t("profile:e2e.confirmPassword")}</Text>
           <Text style={s.desc}>
-            Il sécurise ta nouvelle clé de chiffrement.
+            {t("profile:e2e.confirmPasswordHint")}
           </Text>
           <TextInput
             style={s.input}
-            placeholder="Mot de passe"
+            placeholder={t("auth:password")}
             placeholderTextColor={colors.placeholder}
             secureTextEntry
             value={password}
@@ -461,7 +457,7 @@ export default function E2EScreen() {
                 go("step3");
               }}
             >
-              <Text style={s.ghostText}>← Retour</Text>
+              <Text style={s.ghostText}>{t("common:backArrow")}</Text>
             </Pressable>
             <Pressable
               style={[s.primaryBtn, (!password || loading) && s.disabled]}
@@ -469,7 +465,7 @@ export default function E2EScreen() {
               onPress={activateFullE2E}
             >
               <Text style={s.primaryText}>
-                {loading ? "Activation…" : "Activer"}
+                {loading ? t("profile:e2e.activating") : t("profile:e2e.activateShort")}
               </Text>
             </Pressable>
           </View>
@@ -479,13 +475,13 @@ export default function E2EScreen() {
       {/* Voir seed — mot de passe */}
       {view === "view-seed-pw" && (
         <View style={s.card}>
-          <Text style={s.title}>🔐 Voir ma phrase</Text>
+          <Text style={s.title}>{t("profile:e2e.viewTitle")}</Text>
           <Text style={s.desc}>
-            Entre ton mot de passe pour déchiffrer tes 12 mots.
+            {t("profile:e2e.viewHint")}
           </Text>
           <TextInput
             style={s.input}
-            placeholder="Mot de passe"
+            placeholder={t("auth:password")}
             placeholderTextColor={colors.placeholder}
             secureTextEntry
             value={password}
@@ -504,7 +500,7 @@ export default function E2EScreen() {
                 go("overview");
               }}
             >
-              <Text style={s.ghostText}>Annuler</Text>
+              <Text style={s.ghostText}>{t("common:actions.cancel")}</Text>
             </Pressable>
             <Pressable
               style={[s.primaryBtn, (!password || loading) && s.disabled]}
@@ -512,7 +508,7 @@ export default function E2EScreen() {
               onPress={viewSeedPhrase}
             >
               <Text style={s.primaryText}>
-                {loading ? "…" : "Afficher"}
+                {loading ? "…" : t("common:actions.show")}
               </Text>
             </Pressable>
           </View>
@@ -522,14 +518,14 @@ export default function E2EScreen() {
       {/* Voir seed — révélation */}
       {view === "view-seed-reveal" && (
         <View style={s.card}>
-          <Text style={s.title}>🔐 Ta phrase de récupération</Text>
+          <Text style={s.title}>{t("profile:e2e.phraseTitle")}</Text>
           <Text style={s.desc}>
-            Conserve ces mots en lieu sûr. Ne les partage jamais.
+            {t("profile:e2e.phraseHint")}
           </Text>
           <SeedGrid phrase={revealedSeed} />
           <View style={s.warnBox}>
             <Text style={s.warnText}>
-              🔒 Ferme cette vue dès que tu as noté tes mots.
+              {t("profile:e2e.phraseClose")}
             </Text>
           </View>
           <Pressable
@@ -539,7 +535,7 @@ export default function E2EScreen() {
               go("overview");
             }}
           >
-            <Text style={s.secondaryText}>Fermer</Text>
+            <Text style={s.secondaryText}>{t("common:actions.close")}</Text>
           </Pressable>
         </View>
       )}
@@ -547,14 +543,14 @@ export default function E2EScreen() {
       {/* Restore — recovery depuis la phrase */}
       {view === "restore" && (
         <View style={s.card}>
-          <Text style={s.title}>Restaurer mes clés</Text>
+          <Text style={s.title}>{t("profile:e2e.restoreTitle")}</Text>
           <Text style={s.desc}>
-            Entre ta phrase de 12 mots pour re-générer ta clé sur cet appareil
-            (utile sur un nouveau téléphone).
+            {t("profile:e2e.restoreHint")}
+            {t("profile:e2e.restoreHint2")}
           </Text>
           <TextInput
             style={s.textarea}
-            placeholder="mot1 mot2 … mot12"
+            placeholder={t("profile:e2e.wordsPlaceholderShort")}
             placeholderTextColor={colors.placeholder}
             value={seedInput}
             onChangeText={(t) => {
@@ -574,7 +570,7 @@ export default function E2EScreen() {
                 go("overview");
               }}
             >
-              <Text style={s.ghostText}>Annuler</Text>
+              <Text style={s.ghostText}>{t("common:actions.cancel")}</Text>
             </Pressable>
             <Pressable
               style={[s.primaryBtn, (!seedInput.trim() || loading) && s.disabled]}
@@ -582,7 +578,7 @@ export default function E2EScreen() {
               onPress={restoreFromSeed}
             >
               <Text style={s.primaryText}>
-                {loading ? "…" : "Restaurer"}
+                {loading ? "…" : t("profile:e2e.restore")}
               </Text>
             </Pressable>
           </View>
@@ -592,17 +588,15 @@ export default function E2EScreen() {
       {/* Désactivation */}
       {view === "deactivate" && (
         <View style={s.card}>
-          <Text style={s.title}>⚠️ Désactiver le Chiffrement Maximum ?</Text>
+          <Text style={s.title}>{t("profile:e2e.deactivateTitle")}</Text>
           <View style={s.warnBox}>
             <Text style={s.warnText}>
-              Tu perdras l'accès aux messages échangés pendant la période de
-              chiffrement maximum. Tes messages antérieurs resteront lisibles. Un
-              nouveau jeu de clés standard sera généré. Action irréversible.
+              {t("profile:e2e.deactivateText")}
             </Text>
           </View>
           <TextInput
             style={s.input}
-            placeholder="Mot de passe"
+            placeholder={t("auth:password")}
             placeholderTextColor={colors.placeholder}
             secureTextEntry
             value={password}
@@ -621,7 +615,7 @@ export default function E2EScreen() {
                 go("overview");
               }}
             >
-              <Text style={s.ghostText}>Annuler</Text>
+              <Text style={s.ghostText}>{t("common:actions.cancel")}</Text>
             </Pressable>
             <Pressable
               style={[s.dangerBtn, (!password || loading) && s.disabled]}
@@ -629,7 +623,7 @@ export default function E2EScreen() {
               onPress={deactivate}
             >
               <Text style={s.dangerText}>
-                {loading ? "Désactivation…" : "Confirmer"}
+                {loading ? t("profile:e2e.deactivating") : t("common:actions.confirm")}
               </Text>
             </Pressable>
           </View>

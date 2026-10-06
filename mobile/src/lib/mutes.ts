@@ -1,3 +1,4 @@
+import { getLocaleTag, t } from "@/i18n";
 import { useCallback, useEffect, useState } from "react";
 import { api } from "./api";
 
@@ -19,10 +20,10 @@ export interface ChatMute {
 }
 
 export const MUTE_CHOICES: { value: MuteDuration; label: string }[] = [
-  { value: "1h", label: "1 heure" },
-  { value: "8h", label: "8 heures" },
-  { value: "1w", label: "1 semaine" },
-  { value: "forever", label: "Jusqu'à réactivation" },
+  { value: "1h", get label() { return t("chat:mute.h1"); } },
+  { value: "8h", get label() { return t("chat:mute.h8"); } },
+  { value: "1w", get label() { return t("chat:mute.w1"); } },
+  { value: "forever", get label() { return t("chat:mute.forever"); } },
 ];
 
 export async function fetchMutes(): Promise<ChatMute[]> {
@@ -51,12 +52,12 @@ export async function unmuteChat(
 
 /** « jusqu'à 14 h 30 », « jusqu'au 12 mars », ou « jusqu'à réactivation ». */
 export function muteLabel(until: string | null): string {
-  if (!until) return "jusqu'à réactivation";
+  if (!until) return t("chat:mute.untilForever");
   const d = new Date(until);
   const sameDay = d.toDateString() === new Date().toDateString();
   return sameDay
-    ? `jusqu'à ${d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}`
-    : `jusqu'au ${d.toLocaleDateString("fr-FR", { day: "numeric", month: "long" })}`;
+    ? t("chat:mute.untilTime", { time: d.toLocaleTimeString(getLocaleTag(), { hour: "2-digit", minute: "2-digit" }) })
+    : t("chat:mute.untilDate", { date: d.toLocaleDateString(getLocaleTag(), { day: "numeric", month: "long" }) });
 }
 
 /**

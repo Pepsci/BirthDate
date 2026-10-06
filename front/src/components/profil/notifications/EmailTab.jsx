@@ -188,11 +188,6 @@ const EmailTab = ({ dates, loading }) => {
               setMonthlyRecap,
             )
           }
-          warning={
-            monthlyRecap && !userEmailPreference
-              ? "⚠️ Les emails globaux sont désactivés — le récap mensuel ne sera pas envoyé."
-              : null
-          }
         />
       </div>
 

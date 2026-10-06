@@ -1,3 +1,4 @@
+import { t } from "@/i18n";
 import { useCallback, useState } from "react";
 import {
   View,
@@ -77,7 +78,7 @@ export default function FriendsScreen() {
       }
       setDateByUser(map);
     } catch (e: any) {
-      setError(e?.message ?? "Erreur de chargement.");
+      setError(e?.message ?? t("common:errors.loading"));
     }
   }, []);
 
@@ -103,7 +104,7 @@ export default function FriendsScreen() {
       if (successMsg) setInfo(successMsg);
       await load();
     } catch (e: any) {
-      setError(e?.message ?? "Erreur.");
+      setError(e?.message ?? t("common:errors.generic"));
     } finally {
       setBusy(false);
     }
@@ -118,12 +119,12 @@ export default function FriendsScreen() {
 
   const confirmRemove = (entry: FriendEntry) => {
     Alert.alert(
-      "Retirer cet ami ?",
-      `${entry.friendUser.name} ${entry.friendUser.surname ?? ""} sera retiré·e de tes amis.`,
+      t("friends:remove.title"),
+      t("friends:remove.text", { name: `${entry.friendUser.name} ${entry.friendUser.surname ?? ""}`.trim() }),
       [
-        { text: "Annuler", style: "cancel" },
+        { text: t("common:actions.cancel"), style: "cancel" },
         {
-          text: "Retirer",
+          text: t("common:actions.remove"),
           style: "destructive",
           onPress: () => run(() => removeFriend(entry.friendship._id)),
         },
@@ -135,15 +136,15 @@ export default function FriendsScreen() {
   const confirmCancelRequest = (r: SentItems["requests"][number]) => {
     const who = `${r.friend?.name ?? ""} ${r.friend?.surname ?? ""}`.trim();
     Alert.alert(
-      "Annuler cette demande ?",
-      `Ta demande d'ami${who ? ` à ${who}` : ""} sera retirée. Tu pourras en renvoyer une plus tard.`,
+      t("friends:request.cancelTitle"),
+      who ? t("friends:request.cancelTextTo", { name: who }) : t("friends:request.cancelText"),
       [
-        { text: "Garder", style: "cancel" },
+        { text: t("events:draft.keep"), style: "cancel" },
         {
-          text: "Annuler la demande",
+          text: t("friends:request.cancel"),
           style: "destructive",
           onPress: () =>
-            run(() => cancelSentRequest(r._id), "Demande annulée."),
+            run(() => cancelSentRequest(r._id), t("friends:request.cancelled")),
         },
       ],
     );
@@ -154,15 +155,15 @@ export default function FriendsScreen() {
     inv: SentItems["invitations"][number],
   ) => {
     Alert.alert(
-      "Annuler cette invitation ?",
-      `L'invitation envoyée à ${inv.email} sera retirée. Le lien déjà reçu par email ne fonctionnera plus.`,
+      t("friends:invite.cancelTitle"),
+      t("friends:invite.cancelText", { email: inv.email }),
       [
-        { text: "Garder", style: "cancel" },
+        { text: t("events:draft.keep"), style: "cancel" },
         {
-          text: "Annuler l'invitation",
+          text: t("friends:invite.cancel"),
           style: "destructive",
           onPress: () =>
-            run(() => cancelInvitation(inv._id), "Invitation annulée."),
+            run(() => cancelInvitation(inv._id), t("friends:invite.cancelled")),
         },
       ],
     );
@@ -171,7 +172,7 @@ export default function FriendsScreen() {
   if (friends === null) {
     return (
       <View style={styles.center}>
-        <Stack.Screen options={{ title: "Mes amis" }} />
+        <Stack.Screen options={{ title: t("profile:menu.friends") }} />
         {error ? (
           <Text style={styles.error}>{error}</Text>
         ) : (
@@ -187,13 +188,13 @@ export default function FriendsScreen() {
 
   return (
     <View style={styles.container}>
-      <Stack.Screen options={{ title: "Mes amis" }} />
+      <Stack.Screen options={{ title: t("profile:menu.friends") }} />
 
       {/* Ajout par email */}
       <View style={styles.addRow}>
         <TextInput placeholderTextColor={colors.placeholder}
           style={styles.input}
-          placeholder="Email d'un ami à ajouter…"
+          placeholder={t("friends:addPlaceholder")}
           autoCapitalize="none"
           keyboardType="email-address"
           value={email}
@@ -204,7 +205,7 @@ export default function FriendsScreen() {
           disabled={!email.trim() || busy}
           onPress={onAdd}
         >
-          <Text style={styles.addBtnText}>Inviter</Text>
+          <Text style={styles.addBtnText}>{t("events:inviteScreen.short")}</Text>
         </Pressable>
       </View>
 
@@ -214,18 +215,18 @@ export default function FriendsScreen() {
       {/* Segments */}
       <View style={styles.tabs}>
         <TabBtn
-          label={`Amis (${friends.length})`}
+          label={t("friends:tabs.friends", { count: friends.length })}
           active={tab === "friends"}
           onPress={() => setTab("friends")}
         />
         <TabBtn
-          label={`Reçues${pendingCount ? ` (${pendingCount})` : ""}`}
+          label={`${t("friends:tabs.received")}${pendingCount ? ` (${pendingCount})` : ""}`}
           active={tab === "received"}
           onPress={() => setTab("received")}
           highlight={pendingCount > 0}
         />
         <TabBtn
-          label={`Envoyées${sentCount ? ` (${sentCount})` : ""}`}
+          label={`${t("friends:tabs.sent")}${sentCount ? ` (${sentCount})` : ""}`}
           active={tab === "sent"}
           onPress={() => setTab("sent")}
         />
@@ -241,7 +242,7 @@ export default function FriendsScreen() {
           <>
             {friends.length === 0 && (
               <Text style={styles.empty}>
-                Pas encore d'amis — invite-les par email ci-dessus !
+                {t("friends:empty")}
               </Text>
             )}
             {friends.map((f) => (
@@ -284,7 +285,7 @@ export default function FriendsScreen() {
             ))}
             {friends.length > 0 && (
               <Text style={styles.hint}>
-                Appui long sur un ami pour le retirer.
+                {t("friends:longPressHint")}
               </Text>
             )}
           </>
@@ -293,7 +294,7 @@ export default function FriendsScreen() {
         {tab === "received" && (
           <>
             {requests.length === 0 && (
-              <Text style={styles.empty}>Aucune demande en attente.</Text>
+              <Text style={styles.empty}>{t("friends:noPending")}</Text>
             )}
             {requests.map((r) => (
               <View key={r._id} style={styles.row}>
@@ -307,7 +308,7 @@ export default function FriendsScreen() {
                 <Pressable
                   style={styles.acceptBtn}
                   disabled={busy}
-                  onPress={() => run(() => acceptRequest(r._id), "Ami ajouté 🎉")}
+                  onPress={() => run(() => acceptRequest(r._id), t("friends:added"))}
                 >
                   <Text style={styles.acceptText}>✓</Text>
                 </Pressable>
@@ -326,7 +327,7 @@ export default function FriendsScreen() {
         {tab === "sent" && (
           <>
             {sent.requests.length === 0 && sent.invitations.length === 0 && (
-              <Text style={styles.empty}>Aucune demande envoyée.</Text>
+              <Text style={styles.empty}>{t("friends:noSent")}</Text>
             )}
             {sent.requests.map((r) => (
               <View key={r._id} style={styles.row}>
@@ -335,14 +336,14 @@ export default function FriendsScreen() {
                   <Text style={styles.name}>
                     {r.friend?.name} {r.friend?.surname ?? ""}
                   </Text>
-                  <Text style={styles.muted}>En attente de réponse…</Text>
+                  <Text style={styles.muted}>{t("friends:waiting")}</Text>
                 </View>
                 <Pressable
                   style={styles.cancelBtn}
                   disabled={busy}
                   onPress={() => confirmCancelRequest(r)}
                 >
-                  <Text style={styles.cancelText}>Annuler</Text>
+                  <Text style={styles.cancelText}>{t("common:actions.cancel")}</Text>
                 </Pressable>
               </View>
             ))}
@@ -354,7 +355,7 @@ export default function FriendsScreen() {
                 <View style={{ flex: 1 }}>
                   <Text style={styles.name}>{inv.email}</Text>
                   <Text style={styles.muted}>
-                    Invitation externe — pas encore inscrit·e
+                    {t("friends:externalInvite")}
                   </Text>
                 </View>
                 <Pressable
@@ -362,7 +363,7 @@ export default function FriendsScreen() {
                   disabled={busy}
                   onPress={() => confirmCancelInvitation(inv)}
                 >
-                  <Text style={styles.cancelText}>Annuler</Text>
+                  <Text style={styles.cancelText}>{t("common:actions.cancel")}</Text>
                 </Pressable>
               </View>
             ))}

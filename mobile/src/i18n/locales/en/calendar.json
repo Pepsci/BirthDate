@@ -1,0 +1,43 @@
+{
+  "choice": {
+    "w1": "1 week before",
+    "d2": "2 days before",
+    "d1": "1 day before",
+    "h2": "2 hours before",
+    "h1": "1 hour before",
+    "m30": "30 min before",
+    "onTime": "At the time",
+    "eveMidnight": "The day before, at midnight",
+    "eve18": "The day before, at 6 pm",
+    "day8": "On the day, at 8 am",
+    "day9": "On the day, at 9 am",
+    "dayNoon": "On the day, at noon"
+  },
+  "removeError": "Could not remove from calendar",
+  "denied": {
+    "title": "Calendar access denied",
+    "text": "Allow BirthReminder to access your calendar in your phone settings to use this feature."
+  },
+  "unavailable": {
+    "title": "Feature unavailable",
+    "text": "Adding to the calendar requires a newer version of the app."
+  },
+  "already": {
+    "title": "Already in your calendar",
+    "text": "\"{{title}}\" is already there."
+  },
+  "none": {
+    "title": "No calendar available",
+    "text": "No editable calendar was found on this device."
+  },
+  "addedFrom": "Added from {{app}}",
+  "added": {
+    "title": "Added to calendar",
+    "withReminders": {
+      "one": "\"{{title}}\" was added to your calendar, with your reminder.",
+      "other": "\"{{title}}\" was added to your calendar, with your reminders."
+    },
+    "noReminder": "\"{{title}}\" was added to your calendar. No reminder is set. You can choose some in Profile → Settings."
+  },
+  "addError": "Could not add to calendar"
+}

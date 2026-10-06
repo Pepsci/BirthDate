@@ -1,3 +1,4 @@
+import { t } from "@/i18n";
 import { useCallback, useState } from "react";
 import { Pressable, Text, View, StyleSheet } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
@@ -47,14 +48,14 @@ export default function BackupReminder() {
   return (
     <View style={styles.banner}>
       <Pressable style={styles.body} onPress={() => router.push("/profile/local-data")}>
-        <Text style={styles.title}>💾 Pense à sauvegarder tes cartes</Text>
+        <Text style={styles.title}>{t("local:backupReminder.title")}</Text>
         <Text style={styles.text}>
-          Sans compte, elles n'existent que sur ce téléphone.
+          {t("local:backupReminder.text")}
         </Text>
       </Pressable>
       <Pressable
         hitSlop={10}
-        accessibilityLabel="Masquer"
+        accessibilityLabel={t("common:actions.hide")}
         onPress={() => {
           dismissedThisSession = true;
           setShow(false);

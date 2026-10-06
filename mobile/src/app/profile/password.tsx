@@ -1,3 +1,4 @@
+import { t } from "@/i18n";
 import { useState } from "react";
 import {
   View,
@@ -35,16 +36,16 @@ export default function PasswordScreen() {
 
   const submit = async () => {
     if (!current || !next || !confirm) {
-      setError("Tous les champs sont obligatoires.");
+      setError(t("auth:signup.allRequired"));
       return;
     }
     if (next !== confirm) {
-      setError("Les deux nouveaux mots de passe ne correspondent pas.");
+      setError(t("profile:password.mismatch"));
       return;
     }
     if (!/(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}/.test(next)) {
       setError(
-        "8 caractères minimum, avec au moins une majuscule, une minuscule et un chiffre.",
+        t("auth:passwordRule"),
       );
       return;
     }
@@ -66,7 +67,7 @@ export default function PasswordScreen() {
       });
       router.back();
     } catch (e: any) {
-      setError(e?.message ?? "Erreur lors du changement de mot de passe.");
+      setError(e?.message ?? t("profile:password.error"));
       setSaving(false);
     }
   };
@@ -79,13 +80,13 @@ export default function PasswordScreen() {
       keyboardDismissMode="on-drag"
       automaticallyAdjustKeyboardInsets
     >
-      <Stack.Screen options={{ title: "Mot de passe" }} />
+      <Stack.Screen options={{ title: t("auth:password") }} />
 
       <View style={styles.labelRow}>
-        <Text style={styles.label}>Mot de passe actuel</Text>
+        <Text style={styles.label}>{t("profile:password.current")}</Text>
         <Pressable onPress={() => setVisible((v) => !v)} hitSlop={10}>
           <Text style={styles.toggle}>
-            {visible ? "Masquer" : "Afficher"}
+            {visible ? t("common:actions.hide") : t("common:actions.show")}
           </Text>
         </Pressable>
       </View>
@@ -99,7 +100,7 @@ export default function PasswordScreen() {
         onChangeText={setCurrent}
       />
 
-      <Text style={styles.label}>Nouveau mot de passe</Text>
+      <Text style={styles.label}>{t("auth:reset.screenTitle")}</Text>
       <TextInput placeholderTextColor={colors.placeholder}
         style={styles.input}
         secureTextEntry={!visible}
@@ -110,7 +111,7 @@ export default function PasswordScreen() {
         onChangeText={setNext}
       />
 
-      <Text style={styles.label}>Confirmer le nouveau mot de passe</Text>
+      <Text style={styles.label}>{t("profile:password.confirm")}</Text>
       <TextInput placeholderTextColor={colors.placeholder}
         style={styles.input}
         secureTextEntry={!visible}
@@ -122,8 +123,7 @@ export default function PasswordScreen() {
       />
 
       <Text style={styles.hint}>
-        🔐 Ta clé de chiffrement E2E sera automatiquement re-protégée avec le
-        nouveau mot de passe.
+        {t("profile:password.e2eNote")}
       </Text>
 
       {error && <Text style={styles.error}>{error}</Text>}
@@ -136,7 +136,7 @@ export default function PasswordScreen() {
         {saving ? (
           <ActivityIndicator color={colors.white} />
         ) : (
-          <Text style={styles.submitText}>Changer le mot de passe</Text>
+          <Text style={styles.submitText}>{t("profile:password.submit")}</Text>
         )}
       </Pressable>
     </ScrollView>

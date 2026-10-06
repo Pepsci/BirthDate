@@ -53,6 +53,11 @@ const notificationSchema = new mongoose.Schema(
         "shared_gift_member_left",
         // Liste partagée à un contact en lecture + réservation.
         "shared_gift_shared",
+        // Propositions d'idées faites par un invité d'une liste commune :
+        // reçue par les gestionnaires, puis la décision revient à l'auteur.
+        "shared_gift_proposed",
+        "shared_gift_proposal_accepted",
+        "shared_gift_proposal_declined",
         // Réponse de l'équipe support à un ticket ouvert par un utilisateur
         // connecté (formulaire de contact / centre d'aide).
         "support_reply",

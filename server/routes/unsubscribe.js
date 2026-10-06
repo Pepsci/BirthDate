@@ -286,11 +286,16 @@ router.post("/", async (req, res) => {
     };
     const field = FIELD_BY_TYPE[type] || "receiveBirthdayEmails";
 
-    const user = await userModel.findByIdAndUpdate(
-      userId,
-      { [field]: false },
-      { new: true },
-    );
+    const update = { [field]: false };
+    // « Tout arrêter » depuis un email d'anniversaire coupe aussi le récap
+    // mensuel : il parle des mêmes anniversaires, et le cron ne le fait plus
+    // dépendre de `receiveBirthdayEmails`. Sans cette ligne, quelqu'un qui
+    // demande à ne plus rien recevoir continuerait de recevoir le récap.
+    if (type === "all") update.monthlyRecap = false;
+
+    const user = await userModel.findByIdAndUpdate(userId, update, {
+      new: true,
+    });
     if (!user) {
       return res.status(404).json({ message: "Utilisateur non trouvé" });
     }

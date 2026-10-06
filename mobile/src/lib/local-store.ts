@@ -1,3 +1,4 @@
+import { t } from "@/i18n";
 import {
   documentDirectory,
   readAsStringAsync,
@@ -166,8 +167,7 @@ function migrate<T>(raw: unknown): T[] {
   const version = typeof file.schemaVersion === "number" ? file.schemaVersion : 0;
   if (version > LOCAL_SCHEMA_VERSION) {
     throw new LocalStoreError(
-      "Tes données ont été enregistrées par une version plus récente de " +
-        "BirthReminder. Mets l'app à jour pour y accéder.",
+      t("local:errors.storeTooRecent"),
     );
   }
   // Pas encore de migration : la v1 est la première version.

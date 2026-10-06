@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { t, getLocaleTag, getLanguage } from "@/i18n";
+import { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -15,15 +16,15 @@ import { api, APP_VERSION } from "../../lib/api";
 import { useAuth } from "../../lib/auth-context";
 import { LOCAL_MODE_READY, withServerAccess } from "../../lib/app-mode";
 import { formatBirthday } from "../../lib/dates";
+import { legalUrl } from "../../lib/legal";
 import { useTheme, useThemedStyles } from "../../lib/theme-context";
 import PasswordField from "../PasswordField";
 import { makeAuthStyles, PanelName } from "./authStyles";
 
-// RGPD France : 15 ans minimum pour s'inscrire (aligné avec le contrôle serveur
-// dans server/routes/auth.js et les questionnaires d'âge des stores).
-const MIN_AGE = 15;
-const maxBirthDate = new Date();
-maxBirthDate.setFullYear(maxBirthDate.getFullYear() - MIN_AGE);
+// Âge minimum pour s'inscrire : 15 ans, ou 16 selon le pays. C'est le serveur
+// qui décide (server/utils/minAge.js) ; 15 n'est que la valeur affichée en
+// attendant sa réponse. Le contrôle qui fait foi reste celui de l'inscription.
+const DEFAULT_MIN_AGE = 15;
 
 /** Panneau « Inscription » du pager /login. Logique inchangée. */
 export default function SignupPanel({
@@ -49,7 +50,28 @@ export default function SignupPanel({
   // Détecté dès le choix de la date, sans attendre la validation : le reste
   // du formulaire (email, mot de passe…) est alors masqué, on ne fait pas
   // saisir de données personnelles à quelqu'un qui ne pourra pas s'inscrire.
+  const [minAge, setMinAge] = useState<number | null>(null);
+  const MIN_AGE = minAge ?? DEFAULT_MIN_AGE;
+  const maxBirthDate = new Date();
+  maxBirthDate.setFullYear(maxBirthDate.getFullYear() - MIN_AGE);
   const isUnder15 = !!birth && birth > maxBirthDate;
+
+  // Demandé au serveur seulement une fois la date choisie : tant que la
+  // personne n'a rien saisi, aucune requête ne part (important en mode local).
+  const hasBirth = !!birth;
+  useEffect(() => {
+    if (!hasBirth || minAge !== null) return;
+    let cancelled = false;
+    withServerAccess(() => api<{ minAge: number }>("/auth/min-age"))
+      .then((r) => {
+        if (!cancelled && typeof r?.minAge === "number") setMinAge(r.minAge);
+      })
+      // Hors ligne : on garde 15, le serveur tranchera à l'inscription.
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [hasBirth, minAge]);
 
   /**
    * « Utiliser sans compte ». Rien n'est envoyé au serveur : les champs déjà
@@ -62,38 +84,38 @@ export default function SignupPanel({
       await enterLocalMode();
       router.replace("/");
     } catch (e: any) {
-      setError(e?.message ?? "Impossible de passer en mode sans compte.");
+      setError(e?.message ?? t("auth:signup.localError"));
       setLoading(false);
     }
   };
 
   const submit = async () => {
     if (!name.trim() || !surname.trim() || !email.trim() || !password) {
-      setError("Tous les champs sont obligatoires.");
+      setError(t("auth:signup.allRequired"));
       return;
     }
     if (!birth) {
-      setError("La date de naissance est obligatoire.");
+      setError(t("auth:signup.birthRequired"));
       return;
     }
     if (birth > maxBirthDate) {
       setError(
-        `Tu dois avoir au moins ${MIN_AGE} ans pour créer un compte BirthReminder.`,
+        t("auth:signup.minAge", { age: MIN_AGE }),
       );
       return;
     }
     if (password !== confirm) {
-      setError("Les deux mots de passe ne correspondent pas.");
+      setError(t("auth:passwordMismatch"));
       return;
     }
     if (!/(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}/.test(password)) {
       setError(
-        "8 caractères minimum, avec au moins une majuscule, une minuscule et un chiffre.",
+        t("auth:passwordRule"),
       );
       return;
     }
     if (!acceptedTerms) {
-      setError("Tu dois accepter les conditions d'utilisation.");
+      setError(t("auth:signup.termsRequired"));
       return;
     }
     setError(null);
@@ -115,11 +137,12 @@ export default function SignupPanel({
           // Provenance de l'inscription, affichée dans l'admin (journal).
           platform: Platform.OS,
           appVersion: APP_VERSION,
+          language: getLanguage(),
         }),
       }));
       setDone(true);
     } catch (e: any) {
-      setError(e?.message ?? "Erreur lors de l'inscription.");
+      setError(e?.message ?? t("auth:signup.error"));
       setLoading(false);
     }
   };
@@ -131,15 +154,12 @@ export default function SignupPanel({
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <Text style={s.title}>📬 Vérifie tes emails !</Text>
+        <Text style={s.title}>{t("auth:signup.doneTitle")}</Text>
         <Text style={s.doneText}>
-          Un email de vérification a été envoyé à {email.trim()}. Clique sur le
-          lien qu'il contient, puis reviens te connecter ici.
-          {"\n\n"}Pas reçu ? Regarde dans tes spams (courrier indésirable) :
-          l'email vient de BirthReminder.
+          {t("auth:signup.doneText", { email: email.trim() })}
         </Text>
         <Pressable style={s.button} onPress={() => onGoTo("login")}>
-          <Text style={s.buttonText}>Retour à la connexion</Text>
+          <Text style={s.buttonText}>{t("auth:backToLogin")}</Text>
         </Pressable>
       </ScrollView>
     );
@@ -151,15 +171,15 @@ export default function SignupPanel({
       keyboardShouldPersistTaps="handled"
       showsVerticalScrollIndicator={false}
     >
-      <Text style={s.title}>Bienvenue ! 🎂</Text>
-      <Text style={s.subtitle}>Rejoins BirthReminder gratuitement</Text>
+      <Text style={s.title}>{t("auth:signup.title")}</Text>
+      <Text style={s.subtitle}>{t("auth:signup.subtitle")}</Text>
 
       {/* Date de naissance EN PREMIER : elle décide de la suite du formulaire */}
       <Pressable style={s.input} onPress={() => setShowPicker(true)}>
         <Text style={birth ? s.dateText : s.datePlaceholder}>
           {birth
             ? `${formatBirthday(birth.toISOString())} ${birth.getFullYear()}`
-            : "Date de naissance *"}
+            : t("auth:signup.birthDate")}
         </Text>
       </Pressable>
       {showPicker && (
@@ -168,7 +188,7 @@ export default function SignupPanel({
             value={birth ?? maxBirthDate}
             mode="date"
             display="spinner"
-            locale="fr-FR"
+            locale={getLocaleTag()}
             // Plafond = aujourd'hui (pas de date future), PAS 15 ans : un
             // plafond à 15 ans bloquait la roue sans explication.
             maximumDate={new Date()}
@@ -188,14 +208,12 @@ export default function SignupPanel({
         <>
           <View style={s.localBox}>
             <Text style={s.localTitle}>
-              Il faut avoir {MIN_AGE} ans pour créer un compte
+              {t("auth:signup.under15Title", { age: MIN_AGE })}
             </Text>
             <Text style={s.localText}>
               {LOCAL_MODE_READY
-                ? "Mais tu peux utiliser BirthReminder sans compte : tes cartes " +
-                  "et tes idées de cadeaux restent sur ton téléphone, rien " +
-                  "n'est envoyé. Pas de chat, d'amis ni d'événements."
-                : "Tu pourras t'inscrire à partir de tes " + MIN_AGE + " ans."}
+                ? t("auth:signup.under15Local")
+                : t("auth:signup.under15Wait", { age: MIN_AGE })}
             </Text>
           </View>
           {error && <Text style={s.error}>{error}</Text>}
@@ -208,7 +226,7 @@ export default function SignupPanel({
               {loading ? (
                 <ActivityIndicator color={colors.white} />
               ) : (
-                <Text style={s.buttonText}>Utiliser sans compte</Text>
+                <Text style={s.buttonText}>{t("auth:signup.useWithout")}</Text>
               )}
             </Pressable>
           )}
@@ -218,39 +236,39 @@ export default function SignupPanel({
           <TextInput
             placeholderTextColor={colors.placeholder}
             style={s.input}
-            placeholder="Prénom *"
+            placeholder={t("auth:signup.firstName")}
             value={name}
             onChangeText={setName}
           />
           <TextInput
             placeholderTextColor={colors.placeholder}
             style={s.input}
-            placeholder="Nom *"
+            placeholder={t("auth:signup.lastName")}
             value={surname}
             onChangeText={setSurname}
           />
           <TextInput
             placeholderTextColor={colors.placeholder}
             style={s.input}
-            placeholder="Email *"
+            placeholder={t("auth:signup.email")}
             autoCapitalize="none"
             keyboardType="email-address"
             value={email}
             onChangeText={setEmail}
           />
           <PasswordField
-            placeholder="Mot de passe *"
+            placeholder={t("auth:signup.password")}
             value={password}
             onChangeText={setPassword}
           />
           <PasswordField
-            placeholder="Confirmer le mot de passe *"
+            placeholder={t("auth:signup.confirm")}
             value={confirm}
             onChangeText={setConfirm}
           />
 
           <Text style={s.hint}>
-            8 caractères min., une majuscule, une minuscule et un chiffre.
+            {t("auth:signup.hint")}
           </Text>
 
           <Pressable style={s.termsRow} onPress={() => setAcceptedTerms((v) => !v)}>
@@ -258,14 +276,14 @@ export default function SignupPanel({
               {acceptedTerms && <Text style={s.checkmark}>✓</Text>}
             </View>
             <Text style={s.termsText}>
-              J'accepte les{" "}
+              {t("auth:signup.termsBefore")}{" "}
               <Text
                 style={s.termsLink}
-                onPress={() => Linking.openURL("https://birthreminder.com/cgu")}
+                onPress={() => Linking.openURL(legalUrl("cgu"))}
               >
-                conditions d'utilisation
+                {t("auth:signup.termsLink")}
               </Text>
-              , dont la tolérance zéro envers les contenus abusifs. *
+              {t("auth:signup.termsAfter")}
             </Text>
           </Pressable>
 
@@ -279,20 +297,20 @@ export default function SignupPanel({
             {loading ? (
               <ActivityIndicator color={colors.white} />
             ) : (
-              <Text style={s.buttonText}>Créer mon compte</Text>
+              <Text style={s.buttonText}>{t("auth:signup.submit")}</Text>
             )}
           </Pressable>
         </>
       )}
 
       <Pressable onPress={() => onGoTo("login")}>
-        <Text style={s.link}>Déjà un compte ? Se connecter</Text>
+        <Text style={s.link}>{t("auth:signup.haveAccount")}</Text>
       </Pressable>
 
       {/* Pour tous : une porte de sortie à qui hésite à confier ses données */}
       {LOCAL_MODE_READY && !isUnder15 && mode !== "local" && (
         <Pressable onPress={startLocal} disabled={loading}>
-          <Text style={s.link}>Continuer sans compte</Text>
+          <Text style={s.link}>{t("auth:continueWithout")}</Text>
         </Pressable>
       )}
     </ScrollView>

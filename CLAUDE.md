@@ -695,6 +695,123 @@ dans `utils/age.js`) sur `POST /stripe/connect/onboard`, `PUT /:shortId/pool`
 
 ---
 
+## 🌍 Langues (français + anglais) : octobre 2026
+
+Périmètre : **app mobile + ce que le serveur envoie** (push, notifications,
+emails, messages d'erreur). Le site web (`front/`) reste en français.
+
+### Comment la langue est choisie
+- Mobile : choix enregistré dans Profil (`br-lang` dans SecureStore) → sinon
+  langue du téléphone → `fr` si français, **`en` pour tout le reste**.
+- Serveur : `User.language` (`"fr"`, `"en"` ou `null` = français). Le champ est
+  rempli tout seul par l'app (`PATCH /users/me/language`, et à l'inscription).
+  Aucun formulaire. Un compte créé sur le web reste à `null`.
+
+### Mobile : règles
+- Textes dans `mobile/src/i18n/locales/{fr,en}/<espace>.json`. Les deux langues
+  doivent avoir **exactement les mêmes clés**.
+- `import { t, tn } from "@/i18n"` puis `t("espace:cle", { variable })`.
+  `t` est une fonction simple, pas un hook.
+- Pluriels : deux clés `cle.one` / `cle.other`, lues avec `tn("espace:cle", n)`.
+  Pas de `Intl.PluralRules` (absent de Hermes).
+- ⚠️ **Jamais de `t()` au niveau module** (constante en haut de fichier) : la
+  valeur serait figée dans la langue du démarrage. Utiliser un getter
+  (`get label() { return t("…") }`) ou une fonction.
+- Changer de langue remonte le navigateur (`<Stack key={language}>` dans
+  `app/_layout.tsx`) : pas besoin d'abonner chaque écran.
+- Les valeurs **stockées** restent en français (occasion `"Anniversaire"`…),
+  seul l'affichage est traduit (`occasionLabel()`).
+- Dates : `formatDayMonth`, `formatDayMonthYear`, `monthName`, `weekdayName`,
+  `getLocaleTag()` de `@/i18n`. Jamais `"fr-FR"` en dur.
+- Contenus longs : un fichier par langue (`faqData.en.ts`, `changelog.en.ts`),
+  lus via `getFaqSections()` / `getChangelog()`. **Toute nouvelle entrée de
+  `changelog.ts` doit aussi être ajoutée à `changelog.en.ts`.**
+- Textes de permission iOS : `mobile/locales/{fr,en}.json` (clé `locales` de
+  `app.json`).
+
+### Serveur : règles
+- **Push et notifications** : passer le texte en fonction,
+  `title: (L) => L("push.cle", { name })`. Il est résolu dans la langue du
+  destinataire par `sendPushToUser` / `sendExpoPushToUser` / `notify()`.
+  Textes dans `server/i18n/locales/{fr,en}.json`. Une chaîne simple part telle
+  quelle, donc en français pour tout le monde.
+- **Messages d'erreur** : les routes continuent d'écrire en français.
+  `middleware/translateErrors.js` traduit la réponse (statut ≥ 400) quand l'app
+  envoie l'en-tête `X-App-Language: en`. Tout nouveau message doit être ajouté
+  à `server/i18n/messages.en.js`, sinon il part en français.
+  ⚠️ On ne lit pas `Accept-Language` : le navigateur l'envoie tout seul et le
+  site web recevrait des erreurs en anglais.
+- **Emails** : les templates français ne bougent pas. Leur version anglaise est
+  un fichier de même nom dans `services/emailTemplates/en/`, avec les mêmes
+  fonctions. On envoie toujours par
+  `emailsFor(langue).sendXxx(…)` (`services/emailTemplates/localized.js`).
+  Langue : celle du destinataire s'il a un compte ; sinon celle de la personne
+  à l'origine de l'email (ami qui invite, organisateur).
+  Vérification sans envoi : `node scripts/test-emails-en.js`.
+- Restent en français : emails internes (support, alerte fraude), email de
+  réservation d'un invité sans compte, réponse du support, erreurs émises par
+  socket (`message:error`).
+
+### Pages légales (site web)
+- Un seul jeu de textes pour tous les pays (droit français + RGPD), traduit.
+  Français : `/cgu`, `/privacy`, `/cookies`, `/mentions-legales`.
+  Anglais : la même adresse sous `/en/` (`front/src/components/pages/en/`).
+- La version anglaise est une traduction : **la version française fait foi**
+  (rappelé en haut de chaque page anglaise par `LegalLanguageSwitch`).
+- ⚠️ **Toute modification d'une page légale française doit être reportée dans
+  sa version anglaise**, date de mise à jour comprise.
+- Mobile : toujours passer par `legalUrl("cgu")` (`mobile/src/lib/legal.ts`),
+  jamais d'adresse en dur.
+
+### Âge minimum selon le pays
+- **15 ans partout, 16 ans dans les pays qui l'exigent ou quand le pays est
+  inconnu.** Toute la règle est dans `server/utils/minAge.js` (une seule
+  liste : les pays où 15 ans suffit). Ne jamais écrire l'âge en dur ailleurs.
+- Pays deviné, jamais demandé : en-tête `X-App-Region` (région du téléphone)
+  et pays de l'IP ; en cas de désaccord, l'âge le plus élevé.
+- Appliqué à l'inscription et à la modification de la date de naissance. Les
+  comptes existants ne sont pas touchés.
+- Les formulaires (app et site) demandent `GET /api/auth/min-age` pour
+  prévenir avant l'envoi ; 15 est seulement la valeur affichée en attendant.
+- En local (`localhost`), aucun pays n'est détecté côté site : c'est donc 16.
+- Cagnotte : 18 ans partout, inchangé (`utils/age.js`).
+
+### Ajouter une langue
+1. Mobile : dossier `locales/<code>/`, l'ajouter à `SUPPORTED_LANGUAGES`
+   (`src/i18n/index.ts`) et au sélecteur du profil.
+2. Serveur : `i18n/locales/<code>.json`, `SUPPORTED_LANGUAGES`, l'enum de
+   `User.language`, un dossier `emailTemplates/<code>/` déclaré dans
+   `localized.js`, un dictionnaire de messages d'erreur.
+
+---
+
+## 💡 Listes communes : propositions d'idées (octobre 2026)
+
+- Un **invité** (viewer, avec compte) peut proposer une idée ; elle attend dans
+  `SharedGiftList.proposals`, hors de `gifts`. Un **gestionnaire** (member)
+  l'accepte (elle devient une idée normale, `addedBy` = l'auteur) ou la refuse
+  (elle est supprimée). On ne stocke que les propositions en attente.
+- Le lien public (visiteurs sans compte) ne permet pas de proposer.
+- Visibilité filtrée par `serializeListForRole` : un gestionnaire voit tout,
+  un invité seulement les siennes, sans `proposedBy`.
+- Routes (`routes/sharedGifts.js`) : `POST /:id/proposals`,
+  `DELETE /:id/proposals/:proposalId` (retirer la sienne),
+  `POST /:id/proposals/:proposalId/accept|decline`.
+- Limites : 5 propositions en attente par invité, 50 par liste.
+- Notifications : `shared_gift_proposed` (aux gestionnaires),
+  `shared_gift_proposal_accepted` / `_declined` (à l'auteur, dans les deux cas).
+- ⚠️ Sous-documents en mongoose 6 : `list.proposals.pull(id)`, pas
+  `deleteOne()`.
+- Interfaces : `mobile/src/components/SharedProposals.tsx` et
+  `front/src/components/sharedGifts/SharedProposals.jsx`.
+
+### Récap mensuel
+Ne dépend QUE de `User.monthlyRecap` (désactivé par défaut). Il exigeait aussi
+`receiveBirthdayEmails`, ce qui le coupait sans le dire. Le lien « tout
+arrêter » d'un email (`type=all`) coupe les deux.
+
+---
+
 ## 🚫 Ne pas toucher
 
 - Le système de chat entre amis existant (s'en inspirer, ne pas modifier)

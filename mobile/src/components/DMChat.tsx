@@ -1,3 +1,4 @@
+import { getLocaleTag, t } from "@/i18n";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   View,
@@ -203,7 +204,7 @@ export default function DMChat({
         if (mounted) setMessages(history);
         markReadAndRefresh(conv._id);
       } catch (e: any) {
-        if (mounted) setError(e?.message ?? "Erreur de chargement.");
+        if (mounted) setError(e?.message ?? t("common:errors.loading"));
         return;
       } finally {
         if (mounted) setLoading(false);
@@ -271,9 +272,9 @@ export default function DMChat({
       const onTypingStop = () => setTyping(false);
 
       const onMessageError = ({ error }: { error?: string }) =>
-        setError(error ?? "Erreur d'envoi du message.");
+        setError(error ?? t("chat:errors.sendMessage"));
       const onConnectError = (err: Error) =>
-        setError(`Connexion temps réel impossible : ${err.message}`);
+        setError(t("chat:errors.realtime", { message: err.message }));
 
       // Ré-enregistrement à chaque (re)connexion — pattern anti-stale-closure
       const register = () => {
@@ -425,7 +426,7 @@ export default function DMChat({
 
     const actions: MessageAction[] = [
       {
-        label: "↩️  Répondre",
+        label: t("chat:menu.reply"),
         onPress: () => {
           setEditTarget(null);
           setReplyTarget(message);
@@ -440,7 +441,7 @@ export default function DMChat({
         Date.now() - new Date(message.createdAt).getTime() < EDIT_TIME_LIMIT;
       if (canEdit) {
         actions.push({
-          label: "✏️  Modifier",
+          label: t("chat:menu.edit"),
           onPress: () => {
             setReplyTarget(null);
             setEditTarget(message);
@@ -449,23 +450,23 @@ export default function DMChat({
         });
       }
       actions.push({
-        label: "ℹ️  Infos",
+        label: t("chat:menu.info"),
         // ⚠️ Délai : la feuille d'actions (Modal) est encore en train de se
         // fermer ; ouvrir une seconde Modal dans la même frame échoue sans
         // bruit sur iOS.
         onPress: () => setTimeout(() => setInfoTarget(message), 350),
       });
       actions.push({
-        label: "🗑️  Supprimer",
+        label: t("chat:menu.delete"),
         destructive: true,
         onPress: () =>
           Alert.alert(
-            "Supprimer ce message ?",
-            "Il sera supprimé pour tout le monde.",
+            t("chat:delete.title"),
+            t("chat:delete.text"),
             [
-              { text: "Annuler", style: "cancel" },
+              { text: t("common:actions.cancel"), style: "cancel" },
               {
-                text: "Supprimer",
+                text: t("common:actions.delete"),
                 style: "destructive",
                 onPress: () =>
                   socketRef.current?.emit("message:delete", {
@@ -478,7 +479,7 @@ export default function DMChat({
       });
     } else {
       actions.push({
-        label: "🚩  Signaler",
+        label: t("chat:menu.report"),
         destructive: true,
         onPress: () =>
           promptReport({
@@ -521,9 +522,9 @@ export default function DMChat({
   const getQuote = (m: DMMessage) => {
     if (!m.replyTo) return null;
     const ref = messages.find((x) => x._id === m.replyTo);
-    if (!ref) return { author: "", text: "Message d'origine indisponible" };
+    if (!ref) return { author: "", text: t("chat:quoteUnavailable") };
     return {
-      author: ref.sender?._id === user?._id ? "Toi" : (ref.sender?.name ?? ""),
+      author: ref.sender?._id === user?._id ? t("chat:you") : (ref.sender?.name ?? ""),
       text: displayContent(ref, user?._id ?? null, privateKey),
     };
   };
@@ -573,18 +574,18 @@ export default function DMChat({
               name={mute.mute ? "bell-off" : "bell"}
               accessibilityLabel={
                 mute.mute
-                  ? "Réactiver les notifications"
-                  : "Couper les notifications"
+                  ? t("chat:mute.unmuteLabel")
+                  : t("chat:mute.muteLabel")
               }
               onPress={() => setMuteSheet(true)}
             />
             <HeaderIconButton
               name="more"
-              accessibilityLabel="Options de la conversation"
+              accessibilityLabel={t("chat:options.label")}
               onPress={() =>
-                Alert.alert(name ?? "Options", undefined, [
+                Alert.alert(name ?? t("chat:options.title"), undefined, [
                   {
-                    text: "Signaler l'utilisateur",
+                    text: t("chat:options.reportUser"),
                     onPress: () =>
                       promptReport({
                         contentType: "user",
@@ -592,14 +593,14 @@ export default function DMChat({
                       }),
                   },
                   {
-                    text: "Bloquer l'utilisateur",
+                    text: t("chat:options.blockUser"),
                     style: "destructive",
                     onPress: () =>
-                      promptBlock(friendId, name ?? "cet utilisateur", () =>
+                      promptBlock(friendId, name ?? t("chat:options.thisUser"), () =>
                         router.back(),
                       ),
                   },
-                  { text: "Annuler", style: "cancel" },
+                  { text: t("common:actions.cancel"), style: "cancel" },
                 ])
               }
             />
@@ -685,24 +686,25 @@ export default function DMChat({
         }
         ListEmptyComponent={
           <Text style={styles.empty}>
-            Aucun message. Dis bonjour à {name ?? "ton ami·e"} !
+            {t("chat:dm.empty", { name: name ?? t("chat:dm.yourFriend") })}
           </Text>
         }
       />
 
-      {typing && <Text style={styles.typing}>En train d'écrire…</Text>}
+      {typing && <Text style={styles.typing}>{t("chat:typing")}</Text>}
 
       {(replyTarget || editTarget) && (
         <View style={styles.composerBanner}>
           <View style={styles.composerBannerBody}>
             <Text style={styles.bannerTitle}>
               {editTarget
-                ? "✏️ Modifier le message"
-                : `↩️ Répondre à ${
-                    replyTarget?.sender?._id === user?._id
-                      ? "toi-même"
-                      : (name ?? "…")
-                  }`}
+                ? t("chat:banner.edit")
+                : t("chat:banner.replyTo", {
+                    name:
+                      replyTarget?.sender?._id === user?._id
+                        ? t("chat:banner.yourself")
+                        : (name ?? "…"),
+                  })}
             </Text>
             <Text numberOfLines={1} style={styles.bannerText}>
               {displayContent(
@@ -751,7 +753,7 @@ export default function DMChat({
       <View style={[styles.inputRow, { paddingBottom: inputBottom }]}>
         <TextInput placeholderTextColor={colors.placeholder}
           style={styles.input}
-          placeholder="Ton message…"
+          placeholder={t("chat:input")}
           value={input}
           onChangeText={onChangeInput}
           multiline
@@ -803,7 +805,7 @@ function Bubble({
   onToggleReaction?: (reaction: ReactionName) => void;
 }) {
   const styles = useThemedStyles(makeStyles);
-  const time = new Date(message.createdAt).toLocaleTimeString("fr-FR", {
+  const time = new Date(message.createdAt).toLocaleTimeString(getLocaleTag(), {
     hour: "2-digit",
     minute: "2-digit",
   });
@@ -835,7 +837,7 @@ function Bubble({
         </Text>
         <Text style={[styles.time, isMine && styles.timeMine]}>
           {time}
-          {message.edited ? " · modifié" : ""}
+          {message.edited ? t("chat:edited") : ""}
           {isMine && <ReceiptTicks message={message} myUserId={myUserId} />}
         </Text>
       </Pressable>
@@ -868,7 +870,7 @@ function ReceiptTicks({
   const styles = useThemedStyles(makeStyles);
   const status = getReceiptStatus(message, myUserId);
   const label =
-    status === "read" ? "Lu" : status === "delivered" ? "Distribué" : "Envoyé";
+    status === "read" ? t("chat:receipt.read") : status === "delivered" ? t("chat:receipt.delivered") : t("chat:receipt.sent");
   return (
     <Text
       accessibilityLabel={label}
@@ -890,12 +892,12 @@ function displayContent(
   const senderKey =
     message.sender?.publicKey ?? message.senderSnapshot?.publicKey;
   const myCopy = myUserId ? message.encryptedFor?.[myUserId] : null;
-  if (!privateKey) return "🔒 Chiffré — clé privée absente (reconnecte-toi)";
-  if (!senderKey) return "🔒 Chiffré — expéditeur sans clé publique";
-  if (!myCopy) return "🔒 Chiffré — pas de copie pour ce compte";
+  if (!privateKey) return t("chat:enc.noPrivateKey");
+  if (!senderKey) return t("chat:enc.noSenderKey");
+  if (!myCopy) return t("chat:enc.noCopy");
   return (
     decryptMessage(myCopy, senderKey, privateKey) ??
-    "🔒 Chiffré — déchiffrement impossible"
+    t("chat:encryptedDm")
   );
 }
 

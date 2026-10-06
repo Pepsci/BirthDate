@@ -1,0 +1,43 @@
+{
+  "choice": {
+    "w1": "1 semaine avant",
+    "d2": "2 jours avant",
+    "d1": "1 jour avant",
+    "h2": "2 h avant",
+    "h1": "1 h avant",
+    "m30": "30 min avant",
+    "onTime": "À l'heure",
+    "eveMidnight": "La veille, à minuit",
+    "eve18": "La veille, à 18 h",
+    "day8": "Le jour même, à 8 h",
+    "day9": "Le jour même, à 9 h",
+    "dayNoon": "Le jour même, à midi"
+  },
+  "removeError": "Impossible de retirer du calendrier",
+  "denied": {
+    "title": "Accès au calendrier refusé",
+    "text": "Autorise BirthReminder à accéder à ton calendrier dans les réglages du téléphone pour utiliser cette fonction."
+  },
+  "unavailable": {
+    "title": "Fonction indisponible",
+    "text": "L'ajout au calendrier nécessite une version plus récente de l'application."
+  },
+  "already": {
+    "title": "Déjà dans ton calendrier",
+    "text": "« {{title}} » y figure déjà."
+  },
+  "none": {
+    "title": "Aucun calendrier disponible",
+    "text": "Aucun calendrier modifiable n'a été trouvé sur cet appareil."
+  },
+  "addedFrom": "Ajouté depuis {{app}}",
+  "added": {
+    "title": "Ajouté au calendrier",
+    "withReminders": {
+      "one": "« {{title}} » a été ajouté à ton calendrier, avec ton rappel.",
+      "other": "« {{title}} » a été ajouté à ton calendrier, avec tes rappels."
+    },
+    "noReminder": "« {{title}} » a été ajouté à ton calendrier. Aucun rappel n'est posé — tu peux en choisir dans Profil → Réglages."
+  },
+  "addError": "Impossible d'ajouter au calendrier"
+}

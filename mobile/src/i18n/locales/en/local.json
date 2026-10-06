@@ -1,0 +1,156 @@
+{
+  "backupReminder": {
+    "title": "💾 Remember to back up your cards",
+    "text": "Without an account, they only exist on this phone."
+  },
+  "erase": {
+    "text": "Your cards, gift ideas, photos and wishlist will be deleted from this phone.",
+    "noBackup": "\n\nYou have not made any backup yet."
+  },
+  "backup": {
+    "fileTitle": "BirthReminder backup",
+    "savedKeep": "Backup saved. Keep this file somewhere safe.",
+    "exportError": "Could not export.",
+    "titleOf": "Backup from {{date}}",
+    "title": "Backup",
+    "last": "Last backup: {{date}}",
+    "none": "No backup yet",
+    "saved": "Backup saved.",
+    "error": "Could not back up.",
+    "unknownDate": "unknown date",
+    "saveTitle": "💾 Back up my data",
+    "saveText": "A file with your birthday cards, their gift ideas, their photos and your wishlist. Store it wherever you like: Files, Drive, an email to yourself.",
+    "save": "Back up",
+    "scopeNote": "This backup does not include your events, money pools or shared lists: that data is shared with other people, and restoring it would create duplicates for them. For a full export of everything we hold about you, use \"Download my data\"."
+  },
+  "import": {
+    "cardsImported": {
+      "one": "{{count}} card imported",
+      "other": "{{count}} cards imported"
+    },
+    "alreadyThere": {
+      "one": "{{count}} already there",
+      "other": "{{count}} already there"
+    },
+    "done": "Import finished: {{list}}.",
+    "error": "Could not import.",
+    "unreadable": "This file cannot be read.",
+    "action": "Import",
+    "mergeOrReplace": "Merge: adds what is missing, without duplicates.\nReplace: your current data is deleted.",
+    "merge": "Merge",
+    "replaceTitle": "Replace your data?",
+    "replaceText": "Your {{count}} current cards will be replaced by those in the file.",
+    "unavailable": "Import is not available in this version of the app.",
+    "notBackup": "This file is not a BirthReminder backup.",
+    "tooRecent": "This backup comes from a newer version of BirthReminder. Update the app to import it.",
+    "damaged": "The backup is damaged: one card cannot be read."
+  },
+  "count": {
+    "cards": {
+      "one": "{{count}} card",
+      "other": "{{count}} cards"
+    },
+    "photos": {
+      "one": "{{count}} photo",
+      "other": "{{count}} photos"
+    }
+  },
+  "data": {
+    "title": "My data",
+    "explain": "Without an account, your data only exists on this phone. A backup is a file you keep wherever you like (Files, iCloud Drive, email…): it lets you get everything back on a new phone or after reinstalling the app. Photos included.",
+    "export": "💾 Export a backup",
+    "import": "📂 Import a backup",
+    "importSoon": "Import will be available in the next version of the app."
+  },
+  "restore": {
+    "title": "Restore this backup?",
+    "text": "\n\nNothing will be deleted: only cards missing from your account will be added. Those that already exist will be completed.",
+    "cardsAdded": {
+      "one": "{{count}} card added",
+      "other": "{{count}} cards added"
+    },
+    "offline": "Connection lost along the way. Start the restore again: what already went through will not be created twice.",
+    "partial": "{{list}}. Could not be restored: {{failures}}.",
+    "nothing": "Nothing added",
+    "allThere": "Everything was already in your account.",
+    "error": "Could not restore.",
+    "readError": "Could not read the file.",
+    "sectionTitle": "↩️ Restore a backup",
+    "sectionText": "Puts the cards and wishes from a backup back into your account. Nothing is deleted, and a card that is already there is never duplicated: you can restore safely.",
+    "pickFile": "Choose a file",
+    "unavailable": "Restore is not available in this version of the app."
+  },
+  "reminders": {
+    "saveError": "Could not save.",
+    "testScheduled": "Test reminder in 5 seconds. You can close the app to see it arrive.",
+    "denied": "Notifications are denied for BirthReminder.",
+    "receive": "Receive reminders",
+    "receiveHint": "Birthdays at midnight, name days at 9 am, following each card's settings.",
+    "offTitle": "Notifications off",
+    "offText": "You denied notifications for BirthReminder: no reminder can be shown. You can turn them back on in your phone's Settings.",
+    "none": "No reminder in the next 60 days",
+    "scheduled": {
+      "one": "{{count}} reminder scheduled",
+      "other": "{{count}} reminders scheduled"
+    },
+    "next": "Next: {{title}}",
+    "explain": "Without an account, your phone schedules the reminders, for the next 60 days. Open BirthReminder from time to time so it can schedule what comes next: if the app stays closed too long, a notification will remind you.",
+    "test": "Send a test reminder"
+  },
+  "migrate": {
+    "error": "The import could not be completed.",
+    "discardTitle": "Skip the import?",
+    "discardText": "Cards from no-account mode will be deleted from this phone. Your account is not affected.",
+    "title": "Your cards",
+    "done": "✅ All done!",
+    "incomplete": "⚠️ Import incomplete",
+    "doneText": "Your cards are now in your account, on all your devices and on the website. They have been removed from the phone's storage.",
+    "offline": "The connection was lost along the way.",
+    "someFailed": "Some cards could not be sent:",
+    "retryText": "Nothing is lost: they stay on this phone. Try again and the import will pick up where it stopped, without creating duplicates.",
+    "seeCards": "See my cards",
+    "keepOpen": "Keep the app open during the import.",
+    "askTitle": "📱 → ☁️ Import your cards?",
+    "askText": "You created these on this phone without an account: {{what}}. Import them into your account to find them everywhere, with their gift ideas, photos and reminders.",
+    "dupHint": "A card already in your account (same first name, last name and date) is not created again: its gift ideas are simply added to it.",
+    "importCards": {
+      "one": "Import my card",
+      "other": "Import my {{count}} cards"
+    },
+    "importWishlist": "Import my wishlist",
+    "skip": "Do not import",
+    "merged": {
+      "one": "{{count}} already in your account, completed",
+      "other": "{{count}} already in your account, completed"
+    }
+  },
+  "rem": {
+    "tomorrow": "tomorrow",
+    "week1": "in 1 week",
+    "week2": "in 2 weeks",
+    "month1": "in 1 month",
+    "inDays": "in {{count}} days",
+    "birthdayToday": "🎂 It's {{name}}'s birthday!",
+    "birthdaySoon": "🎂 {{name}}'s birthday {{when}}",
+    "birthdayTodayBody": "Remember to wish them a happy birthday 🎉",
+    "birthdaySoonBody": "Do not forget to prepare something!",
+    "namedayToday": "🌸 It's {{name}}'s name day!",
+    "namedaySoon": "🌸 {{name}}'s name day {{when}}",
+    "namedayTodayBody": "Remember to wish them a happy name day 🎉",
+    "namedaySoonBody": "Do not forget to wish them!",
+    "openTitle": "📱 Open BirthReminder",
+    "openBody": "Open the app to keep receiving your birthday reminders.",
+    "channel": "BirthReminder notifications",
+    "testTitle": "🎂 Test reminder",
+    "testBody": "Your reminders work: you will be notified on the day (midnight for a birthday, 9 am for a name day)."
+  },
+  "errors": {
+    "namedayFormat": "Invalid name day format (MM-DD expected).",
+    "giftGone": "This gift idea no longer exists.",
+    "namedayTimings": "Name day reminders are possible the day before or a week before.",
+    "wishGone": "This wish no longer exists.",
+    "titleRequired": "The title is required.",
+    "storeTooRecent": "Your data was saved by a newer version of BirthReminder. Update the app to access it.",
+    "needsAccount": "Not available without an account ({{what}})."
+  }
+}

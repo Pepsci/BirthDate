@@ -1,3 +1,12 @@
+import {
+  t,
+  tn,
+  AppLanguage,
+  SUPPORTED_LANGUAGES,
+  changeLanguage,
+  getStoredLanguage,
+} from "@/i18n";
+import { syncLanguageWithServer } from "../../lib/language";
 import { useCallback, useEffect, useState } from "react";
 import {
   View,
@@ -28,20 +37,77 @@ import {
   ThemeMode,
 } from "../../lib/theme-context";
 import { readingPane } from "../../lib/layout";
+import { legalUrl } from "../../lib/legal";
 
-const SITE = "https://birthreminder.com";
 const LEGAL_LINKS: { emoji: string; label: string; url: string }[] = [
-  { emoji: "📄", label: "Conditions d'utilisation (CGU)", url: `${SITE}/cgu` },
-  { emoji: "🔒", label: "Politique de confidentialité", url: `${SITE}/privacy` },
-  { emoji: "🍪", label: "Cookies", url: `${SITE}/cookies` },
-  { emoji: "⚖️", label: "Mentions légales", url: `${SITE}/mentions-legales` },
+  { emoji: "📄", get label() { return t("profile:legal.terms"); }, get url() { return legalUrl("cgu"); } },
+  { emoji: "🔒", get label() { return t("profile:legal.privacy"); }, get url() { return legalUrl("privacy"); } },
+  { emoji: "🍪", get label() { return t("profile:legal.cookies"); }, get url() { return legalUrl("cookies"); } },
+  { emoji: "⚖️", get label() { return t("profile:legal.notice"); }, get url() { return legalUrl("mentions-legales"); } },
 ];
 
 const THEME_OPTIONS: { v: ThemeMode; l: string }[] = [
-  { v: "system", l: "⚙️ Système" },
-  { v: "light", l: "☀️ Clair" },
-  { v: "dark", l: "🌙 Sombre" },
+  { v: "system", get l() { return t("profile:theme.system"); } },
+  { v: "light", get l() { return t("profile:theme.light"); } },
+  { v: "dark", get l() { return t("profile:theme.dark"); } },
 ];
+
+/** Noms des langues : toujours écrits dans leur propre langue. */
+const LANGUAGE_NAMES: Record<AppLanguage, string> = {
+  fr: "Français",
+  en: "English",
+};
+
+/**
+ * Choix de la langue. Par défaut l'app suit le téléphone (« Téléphone ») ;
+ * choisir une langue la force. Le serveur est prévenu dans la foulée pour que
+ * les emails et les notifications suivent (lib/language.ts).
+ *
+ * Changer de langue remonte le navigateur (voir app/_layout.tsx) : ce
+ * composant est donc recréé et relit le choix enregistré.
+ */
+function LanguageChooser() {
+  const styles = useThemedStyles(makeStyles);
+  const [choice, setChoice] = useState<AppLanguage | null>(() =>
+    getStoredLanguage(),
+  );
+  const options: { v: AppLanguage | null; l: string }[] = [
+    { v: null, l: t("profile:language.auto") },
+    ...SUPPORTED_LANGUAGES.map((v) => ({ v, l: LANGUAGE_NAMES[v] })),
+  ];
+  const pick = async (v: AppLanguage | null) => {
+    if (v === choice) return;
+    setChoice(v);
+    await changeLanguage(v);
+    syncLanguageWithServer();
+  };
+  return (
+    <>
+      <Text style={styles.sectionLabel}>{t("profile:language.title")}</Text>
+      <View style={styles.themeRow}>
+        {options.map(({ v, l }) => (
+          <Pressable
+            key={v ?? "auto"}
+            style={[styles.themeChip, choice === v && styles.themeChipActive]}
+            onPress={() => pick(v)}
+            accessibilityRole="button"
+            accessibilityState={{ selected: choice === v }}
+          >
+            <Text
+              style={[
+                styles.themeChipText,
+                choice === v && styles.themeChipTextActive,
+              ]}
+            >
+              {l}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+      <Text style={styles.languageHint}>{t("profile:language.hint")}</Text>
+    </>
+  );
+}
 
 /**
  * Deux profils distincts : compte ou mode local. Composants séparés plutôt
@@ -78,31 +144,29 @@ function LocalProfile() {
   // pour la rattraper. On propose d'abord de faire une sauvegarde.
   const confirmErase = () => {
     Alert.alert(
-      "Effacer toutes tes données ?",
-      "Tes cartes, idées de cadeaux, photos et ta liste d'envies seront " +
-        "supprimées de ce téléphone. Fais une sauvegarde avant si tu veux " +
-        "pouvoir les retrouver.",
+      t("profile:erase.title"),
+      t("profile:erase.text"),
       [
-        { text: "Annuler", style: "cancel" },
-        { text: "Sauvegarder d'abord", onPress: () => router.push("/profile/local-data") },
+        { text: t("common:actions.cancel"), style: "cancel" },
+        { text: t("profile:erase.backupFirst"), onPress: () => router.push("/profile/local-data") },
         {
-          text: "Continuer",
+          text: t("common:actions.continue"),
           style: "destructive",
           onPress: () =>
             Alert.alert(
-              "Vraiment tout effacer ?",
-              "C'est définitif : sans compte, rien n'est sauvegardé ailleurs.",
+              t("profile:erase.title2"),
+              t("profile:erase.text2"),
               [
-                { text: "Annuler", style: "cancel" },
+                { text: t("common:actions.cancel"), style: "cancel" },
                 {
-                  text: "Tout effacer",
+                  text: t("profile:erase.action"),
                   style: "destructive",
                   onPress: async () => {
                     try {
                       await leaveLocalMode();
                       router.replace("/welcome");
                     } catch (e: any) {
-                      Alert.alert("Erreur", e?.message ?? "Effacement impossible.");
+                      Alert.alert(t("common:errors.title"), e?.message ?? t("profile:erase.error"));
                     }
                   },
                 },
@@ -116,42 +180,41 @@ function LocalProfile() {
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.localCard}>
-        <Text style={styles.localTitle}>📱 Sur ce téléphone</Text>
+        <Text style={styles.localTitle}>{t("home:localBadge.title")}</Text>
         <Text style={styles.localCount}>
           {count === null
-            ? "Sans compte"
-            : `Sans compte · ${count} carte${count > 1 ? "s" : ""}`}
+            ? t("profile:local.noAccount")
+            : tn("profile:local.noAccountCards", count)}
         </Text>
         <Text style={styles.localText}>
-          Tes données restent sur ce téléphone, rien n'est envoyé. Pas de chat,
-          d'amis ni d'événements.
+          {t("profile:local.text")}
         </Text>
       </View>
 
       <View style={styles.menu}>
         <MenuRow
           emoji="🎀"
-          label="Ma liste d'envies"
+          label={t("gifts:myWishlist")}
           onPress={() => router.push("/profile/wishlist")}
         />
         <MenuRow
           emoji="💾"
-          label="Mes données (sauvegarde)"
+          label={t("profile:menu.localData")}
           onPress={() => router.push("/profile/local-data")}
         />
         <MenuRow
           emoji="🔔"
-          label="Rappels"
+          label={t("profile:menu.reminders")}
           onPress={() => router.push("/profile/reminders")}
         />
         <MenuRow
           emoji="⚙️"
-          label="Réglages"
+          label={t("profile:menu.settings")}
           onPress={() => router.push("/profile/settings")}
         />
       </View>
 
-      <Text style={styles.sectionLabel}>Apparence</Text>
+      <Text style={styles.sectionLabel}>{t("profile:menu.appearance")}</Text>
       <View style={styles.themeRow}>
         {THEME_OPTIONS.map(({ v, l }) => (
           <Pressable
@@ -171,16 +234,18 @@ function LocalProfile() {
         ))}
       </View>
 
-      <Text style={styles.sectionLabel}>Légal & aide</Text>
+      <LanguageChooser />
+
+      <Text style={styles.sectionLabel}>{t("profile:menu.legalHelp")}</Text>
       <View style={styles.menu}>
         <MenuRow
           emoji="📖"
-          label="Guide d'utilisation"
+          label={t("profile:menu.guide")}
           onPress={() => router.push("/guide")}
         />
         <MenuRow
           emoji="📝"
-          label="Notes de mise à jour"
+          label={t("profile:menu.changelog")}
           onPress={() => router.push("/profile/changelog")}
         />
         {LEGAL_LINKS.map((l) => (
@@ -199,14 +264,14 @@ function LocalProfile() {
         style={styles.accountBtn}
         onPress={() => router.push("/login?panel=signup")}
       >
-        <Text style={styles.accountBtnText}>Créer un compte</Text>
+        <Text style={styles.accountBtnText}>{t("auth:login.create")}</Text>
       </Pressable>
       <Pressable onPress={() => router.push("/login")}>
-        <Text style={styles.loginLink}>J'ai déjà un compte</Text>
+        <Text style={styles.loginLink}>{t("profile:menu.haveAccount")}</Text>
       </Pressable>
 
       <Pressable onPress={confirmErase}>
-        <Text style={styles.deleteText}>Effacer toutes mes données</Text>
+        <Text style={styles.deleteText}>{t("profile:menu.eraseAll")}</Text>
       </Pressable>
     </ScrollView>
   );
@@ -242,30 +307,30 @@ function AccountProfile() {
       return;
     }
     Alert.alert(
-      "Modifications non envoyées",
-      `${pending} modification${pending > 1 ? "s" : ""} faite${pending > 1 ? "s" : ""} hors ligne n'${pending > 1 ? "ont" : "a"} pas encore été envoyée${pending > 1 ? "s" : ""}. Si tu te déconnectes maintenant, ${pending > 1 ? "elles seront perdues" : "elle sera perdue"}.`,
+      t("profile:logout.pendingTitle"),
+      tn("profile:logout.pendingText", pending),
       [
-        { text: "Annuler", style: "cancel" },
-        { text: "Se déconnecter", style: "destructive", onPress: () => signOut() },
+        { text: t("common:actions.cancel"), style: "cancel" },
+        { text: t("profile:logout.action"), style: "destructive", onPress: () => signOut() },
       ],
     );
   };
 
   const confirmDelete = () => {
     Alert.alert(
-      "Supprimer ton compte ?",
-      "Ton compte sera désactivé puis définitivement supprimé. Cette action est irréversible.",
+      t("profile:deleteAccount.title"),
+      t("profile:deleteAccount.text"),
       [
-        { text: "Annuler", style: "cancel" },
+        { text: t("common:actions.cancel"), style: "cancel" },
         {
-          text: "Supprimer mon compte",
+          text: t("profile:deleteAccount.action"),
           style: "destructive",
           onPress: async () => {
             try {
               if (user?._id) await deleteAccount(user._id);
               await signOut();
             } catch (e: any) {
-              Alert.alert("Erreur", e?.message ?? "Suppression impossible.");
+              Alert.alert(t("common:errors.title"), e?.message ?? t("chat:list.removeError"));
             }
           },
         },
@@ -298,33 +363,33 @@ function AccountProfile() {
         {hasLocal && (
           <MenuRow
             emoji="📱"
-            label="Importer mes cartes du mode sans compte"
+            label={t("profile:menu.importLocal")}
             onPress={() => router.push("/local-import")}
           />
         )}
         <TourTarget id="tourFriends">
           <MenuRow
             emoji="👥"
-            label="Mes amis"
+            label={t("profile:menu.friends")}
             onPress={() => router.push("/friends")}
           />
         </TourTarget>
         <MenuRow
           emoji="✏️"
-          label="Mes informations"
+          label={t("profile:menu.info")}
           onPress={() => router.push("/profile/edit")}
         />
         <TourTarget id="tourNotifs">
           <MenuRow
             emoji="🔔"
-            label="Notifications"
+            label={t("events:notifs.short")}
             onPress={() => router.push("/profile/notifications")}
           />
         </TourTarget>
         <TourTarget id="tourWishlist">
           <MenuRow
             emoji="🎀"
-            label="Ma wishlist"
+            label={t("gifts:wishlist.title")}
             onPress={() => router.push("/profile/wishlist")}
           />
         </TourTarget>
@@ -335,7 +400,7 @@ function AccountProfile() {
             attente ne doit jamais dépendre d'un message éphémère. */}
         <MenuRow
           emoji="👨‍👩‍👧"
-          label="Listes communes"
+          label={t("gifts:invites.title")}
           onPress={() => router.push("/shared-invites")}
         />
         {/* ⚠️ Trace des sommes versées. En charges directes l'argent part chez
@@ -345,45 +410,45 @@ function AccountProfile() {
             quelqu'un qui n'est pas nous. */}
         <MenuRow
           emoji="💝"
-          label="Mes contributions"
+          label={t("pool:mine.title")}
           onPress={() => router.push("/profile/contributions")}
         />
         <MenuRow
           emoji="🔑"
-          label="Changer mon mot de passe"
+          label={t("profile:menu.password")}
           onPress={() => router.push("/profile/password")}
         />
         <TourTarget id="tourE2E">
           <MenuRow
             emoji="🔐"
-            label="Chiffrement & sécurité"
+            label={t("profile:menu.e2e")}
             onPress={() => router.push("/profile/e2e")}
           />
         </TourTarget>
         <MenuRow
           emoji="🚫"
-          label="Utilisateurs bloqués"
+          label={t("profile:menu.blocked")}
           onPress={() => router.push("/profile/blocked")}
         />
         <MenuRow
           emoji="⚙️"
-          label="Réglages"
+          label={t("profile:menu.settings")}
           onPress={() => router.push("/profile/settings")}
         />
         <MenuRow
           emoji="💾"
-          label="Sauvegarde"
+          label={t("profile:menu.backup")}
           onPress={() => router.push("/profile/backup")}
         />
         <MenuRow
           emoji="📄"
-          label="Télécharger mes données"
+          label={t("profile:menu.export")}
           onPress={() => router.push("/profile/data-export")}
         />
       </View>
 
       {/* ── Apparence ── */}
-      <Text style={styles.sectionLabel}>Apparence</Text>
+      <Text style={styles.sectionLabel}>{t("profile:menu.appearance")}</Text>
       <View style={styles.themeRow}>
         {THEME_OPTIONS.map(({ v, l }) => (
           <Pressable
@@ -403,16 +468,18 @@ function AccountProfile() {
         ))}
       </View>
 
-      <Text style={styles.sectionLabel}>Légal & support</Text>
+      <LanguageChooser />
+
+      <Text style={styles.sectionLabel}>{t("profile:menu.legalSupport")}</Text>
       <View style={styles.menu}>
         <MenuRow
           emoji="📖"
-          label="Guide d'utilisation"
+          label={t("profile:menu.guide")}
           onPress={() => router.push("/guide")}
         />
         <MenuRow
           emoji="📝"
-          label="Notes de mise à jour"
+          label={t("profile:menu.changelog")}
           onPress={() => router.push("/profile/changelog")}
         />
         {LEGAL_LINKS.map((l) => (
@@ -426,18 +493,18 @@ function AccountProfile() {
       </View>
 
       <Pressable style={styles.logout} onPress={confirmSignOut}>
-        <Text style={styles.logoutText}>Se déconnecter</Text>
+        <Text style={styles.logoutText}>{t("profile:logout.action")}</Text>
       </Pressable>
 
       <Pressable onPress={confirmDelete}>
-        <Text style={styles.deleteText}>Supprimer mon compte</Text>
+        <Text style={styles.deleteText}>{t("profile:deleteAccount.action")}</Text>
       </Pressable>
 
       <Pressable
         style={styles.contactBtn}
         onPress={() => router.push("/contact")}
       >
-        <Text style={styles.contactBtnText}>✉️ Contacter le support</Text>
+        <Text style={styles.contactBtnText}>{t("profile:menu.contact")}</Text>
       </Pressable>
     </ScrollView>
   );
@@ -517,6 +584,13 @@ const makeStyles = (c: ThemeColors) =>
     themeChipActive: { backgroundColor: c.primary, borderColor: c.primary },
     themeChipText: { fontSize: 13, fontWeight: "600", color: c.sub },
     themeChipTextActive: { color: c.white },
+    languageHint: {
+      fontSize: 12,
+      color: c.faint,
+      marginHorizontal: 16,
+      marginTop: 6,
+      lineHeight: 16,
+    },
     row: {
       flexDirection: "row",
       alignItems: "center",

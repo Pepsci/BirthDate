@@ -21,6 +21,8 @@ const {
   buildUnsubscribeUrl,
   listUnsubscribeHeaders,
 } = require("../utils/unsubscribeLinks");
+const chatEmailEn = require("../services/emailTemplates/en/chatRecapEmail");
+const { normalizeLanguage } = require("../i18n");
 
 // ── Transport SES ─────────────────────────────────────────────────────────────
 const sesClient = new SESClient({
@@ -302,7 +304,9 @@ async function sendChatNotifications(frequency) {
           ...g,
           senderName: sender
             ? `${sender.name} ${sender.surname || ""}`.trim()
-            : "Quelqu'un",
+            : normalizeLanguage(user.language) === "en"
+              ? "Someone"
+              : "Quelqu'un",
         };
       });
 
@@ -319,7 +323,12 @@ async function sendChatNotifications(frequency) {
         const unsubscribeUrl = buildUnsubscribeUrl(user.email, "chat");
         const total = emailGroups.reduce((s, g) => s + g.count, 0);
 
-        const html = buildChatEmailHtml({
+        // Email dans la langue du destinataire (français si inconnue).
+        const inEnglish = normalizeLanguage(user.language) === "en";
+
+        const html = (inEnglish
+          ? chatEmailEn.buildChatEmailHtml
+          : buildChatEmailHtml)({
           userName: user.name,
           userEmail: user.email,
           unreadGroups: emailGroups,
@@ -328,8 +337,17 @@ async function sendChatNotifications(frequency) {
           frequency,
         });
 
-        const subject = `💬 ${total} message${total > 1 ? "s" : ""} non lu${total > 1 ? "s" : ""} sur BirthReminder`;
-        const textBody = [
+        const subject = inEnglish
+          ? chatEmailEn.chatEmailSubject(total)
+          : `💬 ${total} message${total > 1 ? "s" : ""} non lu${total > 1 ? "s" : ""} sur BirthReminder`;
+        const textBody = inEnglish
+          ? chatEmailEn.chatEmailText({
+              userName: user.name,
+              total,
+              appUrl,
+              unsubscribeUrl,
+            })
+          : [
           `Bonjour ${user.name},`,
           ``,
           `Vous avez ${total} message(s) non lu(s) sur BirthReminder.`,
@@ -378,8 +396,8 @@ async function sendChatNotifications(frequency) {
             : "/home";
 
         await sendPushToUser(user._id, {
-          title: `💬 ${total} message${total > 1 ? "s" : ""} non lu${total > 1 ? "s" : ""}`,
-          body: `De : ${senderNames}`,
+          title: (L) => L.n("push.chat.unread", total),
+          body: (L) => L("push.chat.from", { names: senderNames }),
           url: pushUrl,
           tag: "birthreminder-chat",
           // Web uniquement : sur mobile chaque message a déjà sa propre notif,

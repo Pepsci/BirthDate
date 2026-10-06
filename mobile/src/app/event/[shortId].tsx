@@ -1,3 +1,4 @@
+import { t, tn } from "@/i18n";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   View,
@@ -98,9 +99,9 @@ const UNDO_ACTION = "#93c5fd";
 const UNDO_TRACK = "rgba(255,255,255,0.2)";
 
 const RSVP_OPTIONS: { status: Exclude<RsvpStatus, "pending">; label: string }[] = [
-  { status: "accepted", label: "✅ J'y vais" },
-  { status: "maybe", label: "🤷 Peut-être" },
-  { status: "declined", label: "❌ Non" },
+  { status: "accepted", get label() { return t("events:rsvp.accepted"); } },
+  { status: "maybe", get label() { return t("events:rsvp.maybe"); } },
+  { status: "declined", get label() { return t("events:rsvp.no"); } },
 ];
 
 export default function EventDetailScreen() {
@@ -181,14 +182,14 @@ export default function EventDetailScreen() {
         if (info.data.title) setGiftName(info.data.title);
         if (info.data.price != null) setGiftPrice(String(info.data.price));
         setGiftImage(info.data.image);
-        setGiftFetchMsg("✅ Infos récupérées — vérifie et ajuste si besoin");
+        setGiftFetchMsg(t("gifts:form.fetched"));
       } else {
         setGiftFetchMsg(
-          info.message ?? "Infos non trouvées — remplis manuellement",
+          info.message ?? t("gifts:form.notFound"),
         );
       }
     } catch (e: any) {
-      setGiftFetchMsg(e?.message ?? "Erreur lors de la récupération.");
+      setGiftFetchMsg(e?.message ?? t("gifts:form.fetchError"));
     } finally {
       setGiftFetching(false);
     }
@@ -223,7 +224,7 @@ export default function EventDetailScreen() {
           .catch(() => {});
       }
     } catch (e: any) {
-      setError(e?.message ?? "Erreur de chargement.");
+      setError(e?.message ?? t("common:errors.loading"));
     }
   }, [shortId]);
 
@@ -251,7 +252,7 @@ export default function EventDetailScreen() {
       await sendRsvp(shortId, status);
       await load();
     } catch (e: any) {
-      setError(e?.message ?? "Erreur lors de la réponse.");
+      setError(e?.message ?? t("events:errors.rsvp"));
     } finally {
       setRsvpSending(false);
     }
@@ -289,7 +290,7 @@ export default function EventDetailScreen() {
         location: eventLocationLabel(event),
         notes: event.description
           ? `${event.description}\n\nbirthreminder.com/event/${event.shortId}`
-          : `Événement BirthReminder — birthreminder.com/event/${event.shortId}`,
+          : t("home:agenda.calendarNotes", { url: `birthreminder.com/event/${event.shortId}` }),
       });
       if (ok) setInCalendar(true);
     } finally {
@@ -300,12 +301,12 @@ export default function EventDetailScreen() {
   const onRemoveFromCalendar = () => {
     if (!event || addingToCalendar) return;
     Alert.alert(
-      "Retirer du calendrier ?",
-      `« ${event.title} » sera supprimé de ton calendrier. L'événement reste dans BirthReminder.`,
+      t("events:calendar.removeTitle"),
+      t("events:calendar.removeText", { title: event.title }),
       [
-        { text: "Annuler", style: "cancel" },
+        { text: t("common:actions.cancel"), style: "cancel" },
         {
-          text: "Retirer",
+          text: t("common:actions.remove"),
           style: "destructive",
           onPress: async () => {
             setAddingToCalendar(true);
@@ -333,7 +334,7 @@ export default function EventDetailScreen() {
       await voteDate(shortId, next);
       await load();
     } catch (e: any) {
-      setError(e?.message ?? "Erreur lors du vote.");
+      setError(e?.message ?? t("events:errors.vote"));
     } finally {
       setVoteSending(false);
     }
@@ -356,12 +357,12 @@ export default function EventDetailScreen() {
   const onKeepDate = (optionIso: string) => {
     if (!shortId || voteSending) return;
     Alert.alert(
-      "Retenir cette date ?",
-      `${formatEventDate(new Date(optionIso))}\n\nLe vote sera clos. Tous les participants seront prévenus et devront reconfirmer leur présence.`,
+      t("events:vote.keepDateTitle"),
+      `${formatEventDate(new Date(optionIso))}\n\n${t("events:vote.keepDateText")}`,
       [
-        { text: "Annuler", style: "cancel" },
+        { text: t("common:actions.cancel"), style: "cancel" },
         {
-          text: "Retenir",
+          text: t("events:vote.keep"),
           onPress: async () => {
             setVoteSending(true);
             try {
@@ -372,7 +373,7 @@ export default function EventDetailScreen() {
               } as any);
               await load();
             } catch (e: any) {
-              setError(e?.message ?? "Impossible de retenir cette date.");
+              setError(e?.message ?? t("events:vote.keepDateError"));
             } finally {
               setVoteSending(false);
             }
@@ -390,14 +391,14 @@ export default function EventDetailScreen() {
     if (!shortId || voteSending) return;
     // Une option de lieu peut n'avoir qu'une adresse : on ne retient jamais un
     // lieu sans nom affichable, sinon la fiche annoncerait un lieu vide.
-    const label = opt.name || opt.address || "Lieu proposé";
+    const label = opt.name || opt.address || t("events:vote.proposedPlace");
     Alert.alert(
-      "Retenir ce lieu ?",
-      `${label}\n\nLe vote sera clos et les participants seront prévenus.`,
+      t("events:vote.keepPlaceTitle"),
+      `${label}\n\n${t("events:vote.keepPlaceText")}`,
       [
-        { text: "Annuler", style: "cancel" },
+        { text: t("common:actions.cancel"), style: "cancel" },
         {
-          text: "Retenir",
+          text: t("events:vote.keep"),
           onPress: async () => {
             setVoteSending(true);
             try {
@@ -414,7 +415,7 @@ export default function EventDetailScreen() {
               } as any);
               await load();
             } catch (e: any) {
-              setError(e?.message ?? "Impossible de retenir ce lieu.");
+              setError(e?.message ?? t("events:vote.keepPlaceError"));
             } finally {
               setVoteSending(false);
             }
@@ -431,7 +432,7 @@ export default function EventDetailScreen() {
       await voteLocation(shortId, locationId);
       await load();
     } catch (e: any) {
-      setError(e?.message ?? "Erreur lors du vote.");
+      setError(e?.message ?? t("events:errors.vote"));
     } finally {
       setVoteSending(false);
     }
@@ -466,7 +467,7 @@ export default function EventDetailScreen() {
       setShowGiftForm(false);
       await load();
     } catch (e: any) {
-      setError(e?.message ?? "Erreur lors de la proposition.");
+      setError(e?.message ?? t("events:errors.propose"));
     } finally {
       setGiftSending(false);
     }
@@ -499,7 +500,7 @@ export default function EventDetailScreen() {
       setImportOpen(false);
       await load();
     } catch (e: any) {
-      setError(e?.message ?? "Erreur lors de l'import.");
+      setError(e?.message ?? t("events:errors.import"));
     } finally {
       setGiftSending(false);
     }
@@ -512,7 +513,7 @@ export default function EventDetailScreen() {
       await toggleGiftVote(shortId, giftId);
       await load();
     } catch (e: any) {
-      setError(e?.message ?? "Erreur lors du vote.");
+      setError(e?.message ?? t("events:errors.vote"));
     } finally {
       setGiftSending(false);
     }
@@ -525,7 +526,7 @@ export default function EventDetailScreen() {
       await toggleGiftSelection(shortId, giftId);
       await load();
     } catch (e: any) {
-      setError(e?.message ?? "Erreur lors de la sélection.");
+      setError(e?.message ?? t("events:errors.select"));
     } finally {
       setGiftSending(false);
     }
@@ -540,7 +541,7 @@ export default function EventDetailScreen() {
       await deleteGiftProposal(shortId, g._id);
       await load();
     } catch (e: any) {
-      setError(e?.message ?? "Erreur lors de la suppression.");
+      setError(e?.message ?? t("common:errors.delete"));
     }
   };
 
@@ -583,7 +584,7 @@ export default function EventDetailScreen() {
       setJoinCode("");
       await load();
     } catch (e: any) {
-      setError(e?.message ?? "Code invalide.");
+      setError(e?.message ?? t("events:errors.code"));
     } finally {
       setJoining(false);
     }
@@ -599,7 +600,7 @@ export default function EventDetailScreen() {
         ? event.fixedLocation
         : (loc?.name ?? loc?.address ?? "");
     const coords = loc?.coordinates;
-    const q = encodeURIComponent(label || "Événement");
+    const q = encodeURIComponent(label || t("home:agenda.legendEvent"));
 
     if (Platform.OS === "android") {
       // Android affiche nativement le choix entre les apps de cartes
@@ -625,7 +626,7 @@ export default function EventDetailScreen() {
 
     (async () => {
       const options: { text: string; url: string }[] = [
-        { text: "🍎 Plans", url: appleUrl },
+        { text: t("events:maps.apple"), url: appleUrl },
       ];
       // canOpenURL exige LSApplicationQueriesSchemes (ok en dev build ;
       // dans Expo Go, dépend de la liste blanche d'Expo)
@@ -645,12 +646,12 @@ export default function EventDetailScreen() {
         Linking.openURL(options[0].url).catch(() => {});
         return;
       }
-      Alert.alert("Itinéraire", label || undefined, [
+      Alert.alert(t("events:maps.directions"), label || undefined, [
         ...options.map((o) => ({
           text: o.text,
           onPress: () => Linking.openURL(o.url).catch(() => {}),
         })),
-        { text: "Annuler", style: "cancel" as const },
+        { text: t("common:actions.cancel"), style: "cancel" as const },
       ]);
     })();
   };
@@ -661,7 +662,7 @@ export default function EventDetailScreen() {
       const s = share ?? (await fetchShare(shortId));
       setShare(s);
       await Share.share({
-        message: `Rejoins l'événement "${event?.title}" sur BirthReminder : ${s.url} (code : ${s.code})`,
+        message: t("events:share.join", { title: event?.title, url: s.url, code: s.code }),
       });
     } catch (e: any) {
       if (e?.message) setError(e.message);
@@ -675,7 +676,7 @@ export default function EventDetailScreen() {
       setShare(s);
       const poolUrl = s.url.replace("/event/", "/pool/");
       await Share.share({
-        message: `Participe à la cagnotte pour « ${event?.title} » sur BirthReminder : ${poolUrl}`,
+        message: t("events:share.pool", { title: event?.title, url: poolUrl }),
       });
     } catch (e: any) {
       if (e?.message) setError(e.message);
@@ -715,13 +716,13 @@ export default function EventDetailScreen() {
       setCancelReason("");
       await load();
       Alert.alert(
-        "Événement annulé",
+        t("events:cancel.doneTitle"),
         res.poolFrozen
-          ? "Tes invités ont été prévenus. La cagnotte est fermée : plus aucune contribution ne peut arriver. Les sommes déjà versées ne sont pas remboursées automatiquement."
-          : "Tes invités ont été prévenus par notification et par email.",
+          ? t("events:cancel.donePool")
+          : t("events:cancel.doneText"),
       );
     } catch (e: any) {
-      setError(e?.message ?? "Impossible d'annuler l'événement.");
+      setError(e?.message ?? t("events:cancel.error"));
     } finally {
       setCancelling(false);
     }
@@ -729,18 +730,18 @@ export default function EventDetailScreen() {
 
   const confirmUncancel = () => {
     Alert.alert(
-      "Rétablir cet événement ?",
-      "Tous les invités seront prévenus qu'il aura finalement lieu. La cagnotte, elle, reste fermée : tu peux la rouvrir depuis l'écran cagnotte.",
+      t("events:uncancel.title"),
+      t("events:uncancel.text"),
       [
-        { text: "Annuler", style: "cancel" },
+        { text: t("common:actions.cancel"), style: "cancel" },
         {
-          text: "Rétablir",
+          text: t("events:uncancel.action"),
           onPress: async () => {
             try {
               await uncancelEvent(shortId!);
               await load();
             } catch (e: any) {
-              setError(e?.message ?? "Impossible de rétablir l'événement.");
+              setError(e?.message ?? t("events:uncancel.error"));
             }
           },
         },
@@ -763,13 +764,13 @@ export default function EventDetailScreen() {
       setTransferSheet(false);
       await load();
       Alert.alert(
-        "Proposition envoyée",
+        t("events:transfer.sentTitle"),
         res.pool.count > 0
-          ? `${targetName} doit accepter. Attention : la cagnotte ne suivra pas — les ${(res.pool.total / 100).toFixed(2)} € déjà versés resteront sur ton compte Stripe, et c'est à toi de les rembourser ou de les reverser.`
-          : `${targetName} doit accepter pour que le transfert prenne effet. D'ici là, tu restes l'organisateur.`,
+          ? t("events:transfer.sentPool", { name: targetName, amount: (res.pool.total / 100).toFixed(2) })
+          : t("events:transfer.sentText", { name: targetName }),
       );
     } catch (e: any) {
-      setError(e?.message ?? "Impossible de proposer le transfert.");
+      setError(e?.message ?? t("events:transfer.offerError"));
     } finally {
       setTransferBusy(false);
     }
@@ -782,7 +783,7 @@ export default function EventDetailScreen() {
       await cancelLeadTransfer(shortId);
       await load();
     } catch (e: any) {
-      setError(e?.message ?? "Erreur.");
+      setError(e?.message ?? t("common:errors.generic"));
     } finally {
       setTransferBusy(false);
     }
@@ -790,12 +791,12 @@ export default function EventDetailScreen() {
 
   const onAcceptTransfer = () => {
     Alert.alert(
-      "Reprendre l'organisation ?",
-      "Tu deviendras responsable des invitations, des votes et de l'organisation. La cagnotte de l'organisateur actuel sera fermée : les sommes déjà versées restent sur son compte, tu peux ouvrir la tienne ensuite.",
+      t("events:transfer.acceptTitle"),
+      t("events:transfer.acceptText"),
       [
-        { text: "Plus tard", style: "cancel" },
+        { text: t("common:actions.later"), style: "cancel" },
         {
-          text: "Accepter",
+          text: t("common:actions.accept"),
           onPress: async () => {
             if (!shortId) return;
             setTransferBusy(true);
@@ -803,7 +804,7 @@ export default function EventDetailScreen() {
               await acceptLeadTransfer(shortId);
               await load();
             } catch (e: any) {
-              setError(e?.message ?? "Impossible d'accepter le transfert.");
+              setError(e?.message ?? t("events:transfer.acceptError"));
             } finally {
               setTransferBusy(false);
             }
@@ -815,19 +816,19 @@ export default function EventDetailScreen() {
 
   const confirmLeave = () => {
     Alert.alert(
-      "Quitter cet événement ?",
-      "Tu ne verras plus ses informations ni son chat. L'organisateur pourra t'inviter à nouveau.",
+      t("events:leave.title"),
+      t("events:leave.text"),
       [
-        { text: "Annuler", style: "cancel" },
+        { text: t("common:actions.cancel"), style: "cancel" },
         {
-          text: "Quitter",
+          text: t("date:shared.leave"),
           style: "destructive",
           onPress: async () => {
             try {
               await leaveEvent(shortId!);
               router.replace("/events");
             } catch (e: any) {
-              setError(e?.message ?? "Impossible de quitter l'événement.");
+              setError(e?.message ?? t("events:leave.error"));
             }
           },
         },
@@ -837,19 +838,19 @@ export default function EventDetailScreen() {
 
   const confirmDelete = () => {
     Alert.alert(
-      "Supprimer cet événement ?",
-      "Invitations, votes, cadeaux et messages seront supprimés définitivement.",
+      t("events:delete.title"),
+      t("events:delete.text"),
       [
-        { text: "Annuler", style: "cancel" },
+        { text: t("common:actions.cancel"), style: "cancel" },
         {
-          text: "Supprimer",
+          text: t("common:actions.delete"),
           style: "destructive",
           onPress: async () => {
             try {
               await deleteEvent(shortId!);
               router.replace("/events");
             } catch (e: any) {
-              setError(e?.message ?? "Erreur lors de la suppression.");
+              setError(e?.message ?? t("common:errors.delete"));
             }
           },
         },
@@ -864,7 +865,7 @@ export default function EventDetailScreen() {
   if (loading) {
     return (
       <View style={styles.center}>
-        <Stack.Screen options={{ title: "Événement" }} />
+        <Stack.Screen options={{ title: t("home:agenda.legendEvent") }} />
         <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
@@ -873,8 +874,8 @@ export default function EventDetailScreen() {
   if (!event) {
     return (
       <View style={styles.center}>
-        <Stack.Screen options={{ title: "Événement" }} />
-        <Text style={styles.error}>{error ?? "Événement introuvable."}</Text>
+        <Stack.Screen options={{ title: t("home:agenda.legendEvent") }} />
+        <Text style={styles.error}>{error ?? t("events:notFound")}</Text>
       </View>
     );
   }
@@ -951,11 +952,11 @@ export default function EventDetailScreen() {
           <Text style={styles.description}>{event.description}</Text>
         ) : null}
         <Text style={styles.detail}>
-          📅 {d ? formatEventDate(d) : "Date au vote"}
+          📅 {d ? formatEventDate(d) : t("events:dateVote")}
         </Text>
         <Text style={styles.detail}>
-          👤 Organisé par {event.organizer.name} {event.organizer.surname}
-          {isOrganizer ? " (toi)" : ""}
+          {t("events:hostedBy", { name: `${event.organizer.name} ${event.organizer.surname ?? ""}`.trim() })}
+          {isOrganizer ? t("events:you") : ""}
         </Text>
         {/* Export vers le calendrier natif — masqué tant que la date est au
             vote (rien de ferme à inscrire) et si le module natif manque dans
@@ -977,8 +978,8 @@ export default function EventDetailScreen() {
                 ]}
               >
                 {inCalendar
-                  ? "✓ Dans ton calendrier — appuie pour retirer"
-                  : "🗓️ Ajouter à mon calendrier"}
+                  ? t("events:calendar.added")
+                  : t("events:calendar.add")}
               </Text>
             )}
           </Pressable>
@@ -1021,15 +1022,14 @@ export default function EventDetailScreen() {
           conditionne la lecture de toute la page. */}
       {event.status === "cancelled" && (
         <View style={styles.cancelledCard}>
-          <Text style={styles.cancelledTitle}>❌ Événement annulé</Text>
+          <Text style={styles.cancelledTitle}>{t("events:cancel.banner")}</Text>
           <Text style={styles.cancelledText}>
             {event.cancellationReason
               ? event.cancellationReason
-              : "L'organisateur n'a pas indiqué de raison."}
+              : t("events:cancel.noReason")}
           </Text>
           <Text style={styles.cancelledHint}>
-            La page reste consultable, mais l'événement n'aura pas lieu. Si tu
-            l'avais ajouté à ton agenda, pense à l'y supprimer.
+            {t("events:cancel.hint")}
           </Text>
         </View>
       )}
@@ -1038,15 +1038,12 @@ export default function EventDetailScreen() {
           décision à prendre, pas une information à faire défiler. */}
       {iAmTransferTarget && (
         <View style={styles.transferCard}>
-          <Text style={styles.transferTitle}>🤝 On te propose d'organiser</Text>
+          <Text style={styles.transferTitle}>{t("events:transfer.bannerTitle")}</Text>
           <Text style={styles.cancelledText}>
-            {event.pendingTransfer?.requestedBy?.name ?? "L'organisateur"} te
-            propose de reprendre l'organisation de « {event.title} ».
+            {t("events:transfer.bannerText", { name: event.pendingTransfer?.requestedBy?.name ?? t("events:theHost"), title: event.title })}
           </Text>
           <Text style={styles.cancelledHint}>
-            Tu deviendrais responsable des invitations, des votes et de
-            l'organisation. Une éventuelle cagnotte ne suit pas : les sommes
-            déjà versées restent sur le compte de l'organisateur actuel.
+            {t("events:transfer.bannerHint")}
           </Text>
           <View style={styles.orgRow}>
             <Pressable
@@ -1054,7 +1051,7 @@ export default function EventDetailScreen() {
               disabled={transferBusy}
               onPress={onAcceptTransfer}
             >
-              <Text style={styles.orgBtnText}>✅ Accepter</Text>
+              <Text style={styles.orgBtnText}>{t("events:transfer.accept")}</Text>
             </Pressable>
             <Pressable
               style={[styles.orgBtn, styles.orgBtnDanger]}
@@ -1062,7 +1059,7 @@ export default function EventDetailScreen() {
               onPress={onWithdrawTransfer}
             >
               <Text style={[styles.orgBtnText, { color: colors.danger }]}>
-                Refuser
+                {t("common:actions.decline")}
               </Text>
             </Pressable>
           </View>
@@ -1072,7 +1069,7 @@ export default function EventDetailScreen() {
       {/* Organisation (organizer) — juste après les infos */}
       {isOrganizer && (
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>⚙️ Organisation</Text>
+          <Text style={styles.sectionTitle}>{t("events:org.title")}</Text>
           <View style={styles.orgRow}>
             <Pressable
               style={styles.orgBtn}
@@ -1085,7 +1082,7 @@ export default function EventDetailScreen() {
                   adjustsFontSizeToFit
                   minimumFontScale={0.8}
                 >
-                  Modifier
+                  {t("common:actions.edit")}
                 </Text>
             </Pressable>
             <Pressable
@@ -1103,7 +1100,7 @@ export default function EventDetailScreen() {
                   adjustsFontSizeToFit
                   minimumFontScale={0.8}
                 >
-                  Cagnotte
+                  {t("events:org.pool")}
                 </Text>
             </Pressable>
             {pendingTransferTo ? (
@@ -1114,7 +1111,7 @@ export default function EventDetailScreen() {
               >
                 <Text style={styles.orgBtnIcon}>⏳</Text>
                 <Text style={styles.orgBtnText} numberOfLines={2}>
-                  {pendingTransferTo.name} — retirer
+                  {t("events:transfer.withdraw", { name: pendingTransferTo.name })}
                 </Text>
               </Pressable>
             ) : (
@@ -1130,7 +1127,7 @@ export default function EventDetailScreen() {
                   adjustsFontSizeToFit
                   minimumFontScale={0.8}
                 >
-                  Transférer
+                  {t("events:org.transfer")}
                 </Text>
                 </Pressable>
               )
@@ -1148,7 +1145,7 @@ export default function EventDetailScreen() {
                   adjustsFontSizeToFit
                   minimumFontScale={0.8}
                 >
-                  Rétablir
+                  {t("events:uncancel.action")}
                 </Text>
               </Pressable>
             ) : event.status === "draft" ? null : (
@@ -1165,7 +1162,7 @@ export default function EventDetailScreen() {
                   adjustsFontSizeToFit
                   minimumFontScale={0.8}
                 >
-                  Annuler
+                  {t("common:actions.cancel")}
                 </Text>
               </Pressable>
             )}
@@ -1181,7 +1178,7 @@ export default function EventDetailScreen() {
                   adjustsFontSizeToFit
                   minimumFontScale={0.8}
                 >
-                  Supprimer
+                  {t("common:actions.delete")}
                 </Text>
               </Pressable>
             )}
@@ -1192,10 +1189,10 @@ export default function EventDetailScreen() {
       {/* RSVP */}
       {event.hasFullAccess && !isOrganizer && (
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Ta réponse</Text>
+          <Text style={styles.sectionTitle}>{t("events:rsvp.title")}</Text>
           {isCancelled && (
             <Text style={styles.cancelledHint}>
-              L'événement est annulé : les réponses sont closes.
+              {t("events:rsvp.closed")}
             </Text>
           )}
           {/* Grisé plutôt que retiré : l'invité doit pouvoir relire ce qu'il
@@ -1229,7 +1226,7 @@ export default function EventDetailScreen() {
               retire l'invitation — et les placer côte à côte rend la nuance
               lisible au moment où elle se pose. */}
           <Pressable style={styles.leaveBtn} onPress={confirmLeave}>
-            <Text style={styles.leaveBtnText}>🚪 Quitter l'événement</Text>
+            <Text style={styles.leaveBtnText}>{t("events:leave.btn")}</Text>
           </Pressable>
         </View>
       )}
@@ -1238,7 +1235,7 @@ export default function EventDetailScreen() {
       {showDateVote && (event.dateOptions?.length ?? 0) > 0 && (
         <View style={styles.card}>
           <SectionHeader
-            title={`📅 Vote pour la date${isOrganizer ? " (résultats)" : ""}`}
+            title={`${t("events:vote.dateTitle")}${isOrganizer ? t("events:vote.results") : ""}`}
             open={showDateVoteSection}
             onToggle={() => setShowDateVoteSection(!showDateVoteSection)}
           />
@@ -1266,7 +1263,7 @@ export default function EventDetailScreen() {
                   {formatEventDate(new Date(opt))}
                 </Text>
                 <Text style={[styles.voteCount, votedByMe && styles.voteLabelActive]}>
-                  {votes} vote{votes > 1 ? "s" : ""}
+                  {tn("events:vote.count", votes)}
                 </Text>
               </Pressable>
             );
@@ -1274,8 +1271,8 @@ export default function EventDetailScreen() {
           {showDateVoteSection && (
             <Text style={styles.voteHint}>
               {isOrganizer
-                ? "Appuie sur une date pour la retenir : le vote sera clos et chacun devra reconfirmer sa présence."
-                : "Plusieurs choix possibles — appuie pour (dé)cocher."}
+                ? t("events:vote.hintHost")
+                : t("events:vote.hintGuest")}
             </Text>
           )}
         </View>
@@ -1285,7 +1282,7 @@ export default function EventDetailScreen() {
       {showLocationVote && (event.locationOptions?.length ?? 0) > 0 && (
         <View style={styles.card}>
           <SectionHeader
-            title={`📍 Vote pour le lieu${isOrganizer ? " (résultats)" : ""}`}
+            title={`${t("events:vote.placeTitle")}${isOrganizer ? t("events:vote.results") : ""}`}
             open={showLocationVoteSection}
             onToggle={() => setShowLocationVoteSection(!showLocationVoteSection)}
           />
@@ -1307,7 +1304,7 @@ export default function EventDetailScreen() {
                     style={[styles.voteLabel, votedByMe && styles.voteLabelActive]}
                     numberOfLines={1}
                   >
-                    {opt.name ?? opt.address ?? "Lieu"}
+                    {opt.name ?? opt.address ?? t("events:place")}
                   </Text>
                   {opt.name && opt.address ? (
                     <Text
@@ -1319,7 +1316,7 @@ export default function EventDetailScreen() {
                   ) : null}
                 </View>
                 <Text style={[styles.voteCount, votedByMe && styles.voteLabelActive]}>
-                  {votes} vote{votes > 1 ? "s" : ""}
+                  {tn("events:vote.count", votes)}
                 </Text>
               </Pressable>
             );
@@ -1333,8 +1330,8 @@ export default function EventDetailScreen() {
           <SectionHeader
             title={
               showPool
-                ? "💝 Cagnotte"
-                : `💝 Cagnotte · ${((pool.totalCollected ?? 0) / 100)
+                ? t("events:pool.title")
+                : `${t("events:pool.title")} · ${((pool.totalCollected ?? 0) / 100)
                     .toFixed(2)
                     .replace(".", ",")} €${
                     pool.mode === "goal" && pool.goal
@@ -1357,8 +1354,7 @@ export default function EventDetailScreen() {
                   : ""}
                 <Text style={styles.detail}>
                   {"  ·  "}
-                  {pool.contributionsCount ?? 0} participation
-                  {(pool.contributionsCount ?? 0) > 1 ? "s" : ""}
+                  {tn("events:pool.contributions", pool.contributionsCount ?? 0)}
                 </Text>
               </Text>
               {pool.mode === "goal" && pool.goal ? (
@@ -1376,7 +1372,7 @@ export default function EventDetailScreen() {
               {(pool.contributions ?? []).length > 0 && (
                 <View style={styles.contribList}>
                   <Text style={styles.contribHeader}>
-                    Participants ({pool.contributions!.length})
+                    {t("events:pool.contributors", { count: pool.contributions!.length })}
                   </Text>
                   {pool.contributions!.map((c) => (
                     <View key={c.id} style={styles.contribRow}>
@@ -1388,7 +1384,7 @@ export default function EventDetailScreen() {
                                   ? " " + c.contributor.surname
                                   : ""
                               }`
-                            : "🕶️ Anonyme"}
+                            : t("events:pool.anonymous")}
                         </Text>
                         {!!c.message && (
                           <Text style={styles.contribMsg} numberOfLines={2}>
@@ -1398,7 +1394,7 @@ export default function EventDetailScreen() {
                       </View>
                       <Text style={styles.contribAmount}>
                         {c.amountHidden || c.amount == null
-                          ? "Montant masqué"
+                          ? t("events:pool.hiddenAmount")
                           : `${(c.amount / 100).toFixed(2).replace(".", ",")} €`}
                       </Text>
                     </View>
@@ -1414,13 +1410,13 @@ export default function EventDetailScreen() {
                       : router.push(`/event/pool/${event.shortId}`)
                   }
                 >
-                  <Text style={styles.poolBtnText}>💝 Contribuer</Text>
+                  <Text style={styles.poolBtnText}>{t("events:pool.contribute")}</Text>
                 </Pressable>
               )}
 
               <Pressable style={styles.poolShareBtn} onPress={onSharePool}>
                 <Text style={styles.poolShareText}>
-                  📤 Partager la cagnotte
+                  {t("events:pool.share")}
                 </Text>
               </Pressable>
             </>
@@ -1434,7 +1430,7 @@ export default function EventDetailScreen() {
           event.directTransfer?.paypalEnabled ||
           event.directTransfer?.externalPoolEnabled) && (
           <View style={styles.card}>
-            <Text style={styles.sectionTitle}>💳 Virement direct</Text>
+            <Text style={styles.sectionTitle}>{t("events:pool.direct")}</Text>
             <DirectTransferViewer
               shortId={event.shortId}
               directTransfer={event.directTransfer}
@@ -1446,7 +1442,7 @@ export default function EventDetailScreen() {
       {event.hasFullAccess && (isOrganizer || event.allowGuestInvites) && (
         <View style={styles.card}>
           <SectionHeader
-            title="🔗 Inviter du monde"
+            title={t("events:invite.title")}
             open={showInvite}
             onToggle={() => setShowInvite(!showInvite)}
           />
@@ -1463,23 +1459,23 @@ export default function EventDetailScreen() {
                       : router.push(`/event/invite/${event.shortId}`)
                   }
                 >
-                  <Text style={styles.shareBtnText}>👥 Inviter mes amis</Text>
+                  <Text style={styles.shareBtnText}>{t("events:invite.friends")}</Text>
                 </Pressable>
               )}
               <Pressable style={styles.shareBtn} onPress={onShare}>
-                <Text style={styles.shareBtnText}>Partager le lien + code</Text>
+                <Text style={styles.shareBtnText}>{t("events:invite.shareLink")}</Text>
               </Pressable>
               {/* Copier le code seul : partager le lien complet ouvre la feuille
                   de partage du système, alors qu'on veut souvent juste coller
                   le code dans une conversation déjà ouverte ailleurs. */}
               <Pressable style={styles.shareBtn} onPress={onCopyCode}>
                 <Text style={styles.shareBtnText}>
-                  {codeCopied ? "✓ Code copié" : "📋 Copier le code d'accès"}
+                  {codeCopied ? t("events:invite.copied") : t("events:invite.copy")}
                 </Text>
               </Pressable>
               {share && (
                 <Text style={styles.detail}>
-                  Code d'accès :{" "}
+                  {t("events:invite.codeLabel")}{" "}
                   <Text style={styles.shareCode}>{share.code}</Text>
                 </Text>
               )}
@@ -1492,7 +1488,7 @@ export default function EventDetailScreen() {
       {event.hasFullAccess && (
         <View style={styles.card}>
           <SectionHeader
-            title={`Participants (${acceptedCount} / ${invitations.length})`}
+            title={t("events:participants.title", { accepted: acceptedCount, total: invitations.length })}
             open={showParticipants}
             onToggle={() => setShowParticipants(!showParticipants)}
           />
@@ -1500,7 +1496,7 @@ export default function EventDetailScreen() {
             <>
               {invitations.length === 0 && (
                 <Text style={styles.detail}>
-                  Personne d'invité pour l'instant.
+                  {t("events:participants.none")}
                 </Text>
               )}
               {invitations.map((inv) => (
@@ -1559,7 +1555,7 @@ export default function EventDetailScreen() {
                 ]}
                 numberOfLines={1}
               >
-                🎁 Voir les cadeaux
+                {t("date:seeGifts")}
               </Text>
             </Pressable>
           )}
@@ -1576,7 +1572,7 @@ export default function EventDetailScreen() {
               ]}
               numberOfLines={1}
             >
-              🔔 Notifications de cet événement
+              {t("events:notifs.btn")}
             </Text>
           </Pressable>
         </>
@@ -1588,7 +1584,7 @@ export default function EventDetailScreen() {
               onPress={() => setEventView("gifts")}
             >
               <Text style={styles.giftsBtnText} numberOfLines={1}>
-                🎁 Voir les cadeaux
+                {t("date:seeGifts")}
               </Text>
             </Pressable>
           )}
@@ -1603,7 +1599,7 @@ export default function EventDetailScreen() {
               onPress={() => router.push(`/event/notifications/${shortId}`)}
             >
               <Text style={styles.giftsBtnText} numberOfLines={1}>
-                🔔 Notifications de cet événement
+                {t("events:notifs.btn")}
               </Text>
             </Pressable>
           )}
@@ -1618,7 +1614,7 @@ export default function EventDetailScreen() {
       {/* Inutile en paysage : l'événement reste affiché à gauche. */}
       {!isSplit && (
         <Pressable style={styles.backBtn} onPress={() => setEventView("info")}>
-          <Text style={styles.backBtnText}>‹ Retour à l'événement</Text>
+          <Text style={styles.backBtnText}>{t("events:backToEvent")}</Text>
         </Pressable>
       )}
 
@@ -1627,7 +1623,7 @@ export default function EventDetailScreen() {
         event.giftMode === "imposed" &&
         (event.imposedGifts?.length ?? 0) > 0 && (
           <View style={styles.card}>
-            <Text style={styles.sectionTitle}>🎁 Cadeaux</Text>
+            <Text style={styles.sectionTitle}>{t("events:gifts.title")}</Text>
             <View style={giftGridStyles.grid}>
               {event.imposedGifts!.map((g, i) => (
                 <GiftGridCard
@@ -1645,7 +1641,7 @@ export default function EventDetailScreen() {
       {/* Propositions de cadeaux */}
       {event.hasFullAccess && !isCancelled && event.giftMode === "proposals" && (
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>🎁 Propositions</Text>
+          <Text style={styles.sectionTitle}>{t("events:gifts.proposals")}</Text>
           <View style={styles.giftBtnRow}>
             <Pressable
               style={[styles.proposeTopBtn, { flex: 1 }]}
@@ -1666,15 +1662,15 @@ export default function EventDetailScreen() {
             >
               <Text style={styles.proposeTopText}>
                 {showGiftForm
-                  ? "✕ Fermer"
-                  : "＋ Proposer un cadeau"}
+                  ? t("date:closeX")
+                  : t("events:gifts.propose")}
               </Text>
             </Pressable>
             <Pressable
               style={[styles.importBtn, { flex: 1, marginTop: 0 }]}
               onPress={() => setImportOpen(true)}
             >
-              <Text style={styles.importText}>📋 Importer</Text>
+              <Text style={styles.importText}>{t("events:gifts.import")}</Text>
             </Pressable>
           </View>
 
@@ -1683,7 +1679,7 @@ export default function EventDetailScreen() {
               <View style={{ flexDirection: "row", gap: 8 }}>
                 <TextInput placeholderTextColor={colors.placeholder}
                   style={[styles.input, { flex: 1 }]}
-                  placeholder="Lien du produit (optionnel)"
+                  placeholder={t("events:gifts.url")}
                   autoCapitalize="none"
                   keyboardType="url"
                   value={giftUrl}
@@ -1698,7 +1694,7 @@ export default function EventDetailScreen() {
                   onPress={onFetchGiftInfos}
                 >
                   <Text style={styles.giftFetchText}>
-                    {giftFetching ? "…" : "🔍 Remplir"}
+                    {giftFetching ? "…" : t("gifts:wishlist.fill")}
                   </Text>
                 </Pressable>
               </View>
@@ -1717,20 +1713,20 @@ export default function EventDetailScreen() {
               )}
               <TextInput placeholderTextColor={colors.placeholder}
                 style={styles.input}
-                placeholder="Nom du cadeau *"
+                placeholder={t("gifts:form.name")}
                 value={giftName}
                 onChangeText={setGiftName}
               />
               <TextInput placeholderTextColor={colors.placeholder}
                 style={styles.input}
-                placeholder="Prix en € (optionnel)"
+                placeholder={t("events:gifts.price")}
                 keyboardType="decimal-pad"
                 value={giftPrice}
                 onChangeText={setGiftPrice}
               />
               <TextInput placeholderTextColor={colors.placeholder}
                 style={styles.input}
-                placeholder="URL de l'image (optionnel)"
+                placeholder={t("gifts:form.imageUrl")}
                 autoCapitalize="none"
                 keyboardType="url"
                 value={giftImage ?? ""}
@@ -1746,17 +1742,17 @@ export default function EventDetailScreen() {
               >
                 <Text style={styles.giftSubmitText}>
                   {giftSending
-                    ? "Envoi…"
+                    ? t("common:status.sending")
                     : editingGiftId
-                      ? "Enregistrer"
-                      : "Proposer"}
+                      ? t("common:actions.save")
+                      : t("events:gifts.submit")}
                 </Text>
               </Pressable>
             </>
           )}
 
           {visibleGifts.length === 0 && (
-            <Text style={styles.detail}>Aucune proposition pour l'instant.</Text>
+            <Text style={styles.detail}>{t("events:gifts.none")}</Text>
           )}
           <View style={giftGridStyles.grid}>
             {visibleGifts.map((g) => {
@@ -1764,13 +1760,13 @@ export default function EventDetailScreen() {
                 g.votedByMe ?? (!!user && g.votes.includes(user._id));
               const voteCount = g.voteCount ?? g.votes.length;
               const by = g.proposedBy
-                ? `par ${g.proposedBy.name}`
+                ? t("events:gifts.by", { name: g.proposedBy.name })
                 : g.guestName
-                  ? `par ${g.guestName}`
+                  ? t("events:gifts.by", { name: g.guestName })
                   : "";
               const lines = [
                 by,
-                `❤️ ${voteCount} vote${voteCount > 1 ? "s" : ""}`,
+                `❤️ ${tn("events:vote.count", voteCount)}`,
               ].filter(Boolean) as string[];
               return (
                 <GiftGridCard
@@ -1783,13 +1779,13 @@ export default function EventDetailScreen() {
                   badge={
                     g.selected
                       ? {
-                          label: "⭐ Retenu",
+                          label: t("events:gifts.selected"),
                           color: colors.warningStrong,
                           bg: colors.warningSoft,
                         }
                       : votedByMe
                         ? {
-                            label: "❤️ Voté",
+                            label: t("events:gifts.voted"),
                             color: colors.favoriteStrong,
                             bg: colors.favoriteSoft,
                           }
@@ -1812,9 +1808,9 @@ export default function EventDetailScreen() {
                   g.votedByMe ?? (!!user && g.votes.includes(user._id));
                 const voteCount = g.voteCount ?? g.votes.length;
                 const by = g.proposedBy
-                  ? `Proposé par ${g.proposedBy.name}`
+                  ? t("events:gifts.proposedBy", { name: g.proposedBy.name })
                   : g.guestName
-                    ? `Proposé par ${g.guestName}`
+                    ? t("events:gifts.proposedBy", { name: g.guestName })
                     : "";
                 return (
                   <>
@@ -1838,7 +1834,7 @@ export default function EventDetailScreen() {
                           style={styles.giftLink}
                           onPress={() => Linking.openURL(g.url!)}
                         >
-                          🔗 Voir le produit
+                          {t("gifts:viewProduct")}
                         </Text>
                       ) : null}
                     </View>
@@ -1859,7 +1855,7 @@ export default function EventDetailScreen() {
                           votedByMe && styles.sheetVoteTextActive,
                         ]}
                       >
-                        {votedByMe ? "❤️ Voté" : "🤍 Voter"} · {voteCount}
+                        {votedByMe ? t("events:gifts.voted") : t("events:gifts.vote")} · {voteCount}
                       </Text>
                     </Pressable>
                     {isOrganizer && (
@@ -1881,8 +1877,8 @@ export default function EventDetailScreen() {
                           ]}
                         >
                           {g.selected
-                            ? "⭐ Retiré de la sélection"
-                            : "⭐ Retenir ce cadeau"}
+                            ? t("events:gifts.unselect")
+                            : t("events:gifts.select")}
                         </Text>
                       </Pressable>
                     )}
@@ -1893,7 +1889,7 @@ export default function EventDetailScreen() {
                         onPress={() => startEditGift(g)}
                       >
                         <Text style={styles.sheetSelectText}>
-                          ✏️ Modifier mon cadeau
+                          {t("events:gifts.editMine")}
                         </Text>
                       </Pressable>
                     )}
@@ -1908,9 +1904,9 @@ export default function EventDetailScreen() {
                         }}
                       >
                         <Text style={styles.sheetDeleteText}>
-                          🗑️ Supprimer{" "}
+                          🗑️ {t("common:actions.delete")}{" "}
                           {isOrganizer && g.proposedBy?._id !== user?._id
-                            ? "(organisateur)"
+                            ? t("events:gifts.asHost")
                             : ""}
                         </Text>
                       </Pressable>
@@ -1931,12 +1927,12 @@ export default function EventDetailScreen() {
       {!event.hasFullAccess && (
         <View style={styles.card}>
           <Text style={styles.detail}>
-            Tu n'es pas invité·e à cet événement — vue publique limitée.
+            {t("events:join.notInvited")}
           </Text>
-          <Text style={styles.sectionTitle}>Rejoindre avec un code</Text>
+          <Text style={styles.sectionTitle}>{t("events:join.title")}</Text>
           <TextInput placeholderTextColor={colors.placeholder}
             style={styles.input}
-            placeholder="Code d'accès (6 à 8 caractères)"
+            placeholder={t("events:join.placeholder")}
             autoCapitalize="characters"
             maxLength={8}
             value={joinCode}
@@ -1951,7 +1947,7 @@ export default function EventDetailScreen() {
             ]}
           >
             <Text style={styles.giftSubmitText}>
-              {joining ? "Vérification…" : "Rejoindre"}
+              {joining ? t("events:join.checking") : t("events:join.submit")}
             </Text>
           </Pressable>
         </View>
@@ -1971,12 +1967,11 @@ export default function EventDetailScreen() {
         visible={transferSheet}
         onClose={() => setTransferSheet(false)}
       >
-        <Text style={styles.sheetTitle}>Transférer l'organisation</Text>
+        <Text style={styles.sheetTitle}>{t("events:transfer.sheetTitle")}</Text>
         <Text style={styles.cancelledHint}>
-          La personne choisie devra accepter. Tant qu'elle n'a pas répondu, tu
-          restes l'organisateur.
+          {t("events:transfer.sheetHint")}
           {pool?.active || (pool?.totalCollected ?? 0) > 0
-            ? " La cagnotte ne suivra pas : les sommes déjà versées restent sur ton compte Stripe, à toi de les rembourser ou de les reverser."
+            ? t("events:transfer.sheetPool")
             : ""}
         </Text>
         {(() => {
@@ -1986,8 +1981,7 @@ export default function EventDetailScreen() {
           if (eligible.length === 0) {
             return (
               <Text style={styles.cancelledHint}>
-                Personne n'a encore confirmé sa présence : il n'y a personne à
-                qui transférer pour l'instant.
+                {t("events:transfer.nobody")}
               </Text>
             );
           }
@@ -2003,7 +1997,7 @@ export default function EventDetailScreen() {
               <Text style={styles.transferName}>
                 {inv.user!.name} {inv.user!.surname}
               </Text>
-              <Text style={styles.orgBtnText}>Proposer →</Text>
+              <Text style={styles.orgBtnText}>{t("events:transfer.offer")}</Text>
             </Pressable>
           ));
         })()}
@@ -2014,18 +2008,16 @@ export default function EventDetailScreen() {
           absence de motif assumée — le message dit alors simplement que
           l'organisateur n'en a pas donné. */}
       <BottomSheet visible={cancelSheet} onClose={() => setCancelSheet(false)}>
-        <Text style={styles.sheetTitle}>Annuler l'événement</Text>
+        <Text style={styles.sheetTitle}>{t("events:cancel.sheetTitle")}</Text>
         <Text style={styles.cancelledHint}>
-          Tous les invités seront prévenus par notification et par email.
-          L'événement restera consultable, barré, avec ton motif. Tu pourras le
-          rétablir ou le supprimer ensuite.
+          {t("events:cancel.sheetHint")}
           {pool?.active
-            ? " La cagnotte sera fermée : plus aucune contribution ne pourra arriver. Les sommes déjà versées ne sont PAS remboursées automatiquement — c'est à toi de le faire depuis la configuration de la cagnotte, et les frais Stripe des paiements d'origine resteront à ta charge."
+            ? t("events:cancel.sheetPool")
             : ""}
         </Text>
         <TextInput
           style={[styles.input, { minHeight: 80, textAlignVertical: "top" }]}
-          placeholder="Motif (facultatif) — ex : salle indisponible"
+          placeholder={t("events:cancel.reasonPlaceholder")}
           placeholderTextColor={colors.placeholder}
           multiline
           maxLength={500}
@@ -2038,7 +2030,7 @@ export default function EventDetailScreen() {
           style={[styles.sheetDeleteBtn, cancelling && { opacity: 0.5 }]}
         >
           <Text style={styles.sheetDeleteText}>
-            {cancelling ? "Annulation…" : "❌ Confirmer l'annulation"}
+            {cancelling ? t("events:cancel.cancelling") : t("events:cancel.confirm")}
           </Text>
         </Pressable>
       </BottomSheet>
@@ -2061,7 +2053,7 @@ export default function EventDetailScreen() {
             event.hasFullAccess ? (
               <HeaderIconButton
                 name="chat"
-                accessibilityLabel="Ouvrir le chat de l'événement"
+                accessibilityLabel={t("events:openChat")}
                 badge={chatUnread}
                 onPress={() => {
                   setChatUnread(0);
@@ -2184,10 +2176,10 @@ export default function EventDetailScreen() {
         <View style={styles.undoBar}>
           <View style={styles.undoRow}>
             <Text style={styles.undoText} numberOfLines={1}>
-              « {pendingDelete.name} » supprimé
+              {t("date:undo.deleted", { name: pendingDelete.name })}
             </Text>
             <Pressable onPress={undoDelete} hitSlop={8}>
-              <Text style={styles.undoAction}>Annuler la suppression</Text>
+              <Text style={styles.undoAction}>{t("date:undo.action")}</Text>
             </Pressable>
           </View>
           <View style={styles.undoTrack}>

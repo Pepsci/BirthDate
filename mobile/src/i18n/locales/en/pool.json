@@ -1,0 +1,180 @@
+{
+  "lock": {
+    "minor": "🔒 Money pools are for adults only: you will be able to open one once you turn 18.",
+    "birthdate_missing": "🔒 Add your date of birth in your profile to open a money pool.",
+    "birthdate_cooldown": "⏳ Your date of birth was changed recently: the money pool will be available in a few days.",
+    "admin_blocked": "🔒 Opening money pools is suspended for your account. Please contact support."
+  },
+  "strip": {
+    "title": "🐷 My money pools",
+    "hideLabel": "Hide my money pools",
+    "hide": "Hide ▴",
+    "host": "Host"
+  },
+  "direct": {
+    "noIban": "No bank details available.",
+    "ibanError": "Could not show the bank details.",
+    "title": "💸 Other ways to contribute",
+    "externalDefault": "External money pool",
+    "externalText": "{{label}}: the host opened it on another service. Your contribution happens entirely there: BirthReminder has no record of it and cannot confirm or refund it.",
+    "openPool": "🔗 Open the money pool",
+    "externalMissing": "The host announced an external money pool but has not added the link yet.",
+    "paypal": "💳 Pay with PayPal",
+    "paypalMissing": "The host turned on PayPal but has not added their link yet.",
+    "ibanMissing": "The host turned on bank transfer but has not added their details yet.",
+    "showIban": "🏦 Show bank details",
+    "shareIban": "📤 Share the IBAN",
+    "tip": "Tip: long press the IBAN to copy it.",
+    "note": "These payments go straight to the host, outside BirthReminder.",
+    "holder": "Account holder"
+  },
+  "contribute": {
+    "thanks": "Thank you! 💝",
+    "saved": "Your contribution has been recorded.",
+    "payError": "Payment failed.",
+    "embedded": "💝 Contribute to the money pool",
+    "title": "Contribute to the money pool",
+    "amount": "Amount (€)",
+    "message": "Message (optional)",
+    "messagePlaceholder": "A few words with your contribution…",
+    "displayName": "Display name (optional)",
+    "namePlaceholder": "Your first name or a nickname",
+    "nameHint": "Leave empty to use your account name. A nickname hides your real name, including from the host.",
+    "anonymous": "Appear anonymously",
+    "hideAmount": "Hide the amount",
+    "hideAmountInfo": "ℹ️ Other participants will see your name, not the amount. The host sees it, and it counts towards the pool total.",
+    "anonymousInfo": "ℹ️ Your contribution will be hidden from other participants but will stay visible to the host. To stay anonymous to them too, use a nickname above.",
+    "secure": "🔒 Secure payment by Stripe. The money goes straight to the host. BirthReminder never holds the funds: if the event is cancelled, refunds are up to the host.",
+    "stripeTerms": "Stripe services agreement",
+    "amountPlaceholder": "Any amount (min 1 €)",
+    "pay": "💳 Pay"
+  },
+  "lockMsg": {
+    "minorTitle": "Money pools are for adults only",
+    "minorText": "You will be able to open a money pool or share a payment method once you turn 18. Everything else in the event stays available.",
+    "missingTitle": "Date of birth missing",
+    "missingText": "Add your date of birth in your profile to be able to open a money pool.",
+    "cooldownTitle": "Money pool available soon",
+    "cooldownText": "Your date of birth was changed recently. For security, you will be able to open a money pool from {{date}}.",
+    "blockedTitle": "Money pools suspended",
+    "blockedText": "Opening money pools is suspended for your account. Contact support to find out more."
+  },
+  "refund": {
+    "confirmTitle": "Refund everyone?",
+    "countFor": {
+      "one": "{{count}} contribution for {{amount}} €.",
+      "other": "{{count}} contributions for {{amount}} €."
+    },
+    "approx": "about ",
+    "confirmBody": "Contributors get everything back. This will cost you {{approx}}{{fee}} €: Stripe does not return the fees of the original payments.\n\nThe money pool will be closed. This cannot be undone.",
+    "action": "Refund",
+    "doneTitle": "Refunds sent",
+    "doneAll": {
+      "one": "{{count}} refund sent. Contributors will be notified as soon as Stripe confirms.",
+      "other": "{{count}} refunds sent. Contributors will be notified as soon as Stripe confirms."
+    },
+    "donePartial": "{{ok}} succeeded, {{failed}} failed. You can try again: only contributions not yet refunded will be retried.",
+    "error": "Could not refund.",
+    "title": "💸 Refund contributors",
+    "summary": {
+      "one": "{{count}} contribution: {{amount}} € will be returned in full.",
+      "other": "{{count}} contributions: {{amount}} € will be returned in full."
+    },
+    "warn": "⚠️ This will cost you {{approx}}{{fee}} €: Stripe does not return the fees of the original payments.",
+    "estimated": {
+      "one": "{{count}} contribution out of {{total}} is priced at the standard European card rate. The real cost may be higher if the payment came from a business or foreign card.",
+      "other": "{{count}} contributions out of {{total}} are priced at the standard European card rate. The real cost may be higher if the payment came from a business or foreign card."
+    },
+    "inProgress": "Refunding…",
+    "all": "Refund everyone"
+  },
+  "stripe": {
+    "notFinished": "Setup is not finished yet. Resume whenever you like with the same button.",
+    "connectError": "Could not connect to Stripe.",
+    "available": "Available",
+    "pending": "Pending settlement",
+    "lastPayout": "Last payout: {{amount}} €",
+    "arrival": ", arriving on {{date}}",
+    "noPayout": "No payout yet. Stripe pays out automatically to your bank account on its own schedule.",
+    "dashError": "Could not open your Stripe dashboard.",
+    "dashboard": "View my payouts on Stripe",
+    "dashHint": "Balance, payouts and bank details are managed from your Stripe dashboard, with the login of the account created during setup.",
+    "disconnectTitle": "Disconnect your payment account?",
+    "disconnectText": "Your open money pools will be closed and you will no longer be able to collect contributions. You can reconnect an account later, but you will have to go through Stripe verification again.",
+    "disconnect": "Disconnect",
+    "disconnectError": "Could not disconnect your account.",
+    "disconnectBtn": "Disconnect my payment account",
+    "needAccount": "⚠️ To collect the money pool, you need to create a Stripe account (once only, about 5 minutes, with ID and bank details requested by Stripe). It is your account: you manage your payouts there, and BirthReminder never holds the money.",
+    "connect": "🔗 Connect my Stripe account"
+  },
+  "config": {
+    "ibanInvalid": "Enter a valid IBAN or turn off the IBAN transfer option.",
+    "embedded": "💝 Set up the money pool",
+    "title": "Set up the money pool",
+    "active": "Money pool on",
+    "activeHint": "Guests will be able to contribute by card",
+    "commitTitle": "What you are committing to",
+    "commit1": "The money goes straight to your Stripe account: BirthReminder never holds it and never touches the funds. You remain solely responsible for the money pool towards contributors.",
+    "commit2": "Good to know: if you refund a contribution, the fees taken on the original payment are not returned to you by Stripe.",
+    "stripeConnect": "Stripe Connect account agreement",
+    "mode": "Mode",
+    "free": "🆓 Open",
+    "goal": "🎯 Goal",
+    "goalLabel": "Goal (€)",
+    "goalPlaceholder": "e.g. 150",
+    "deadline": "Deadline (optional)",
+    "noDeadline": "None, tap to choose",
+    "clearDeadline": "Remove the deadline",
+    "directHint": "Offer your IBAN and/or your PayPal link: guests send you the money directly, without turning on a money pool.",
+    "offerIban": "Offer an IBAN",
+    "offerIbanHint": "Visible to logged-in guests",
+    "holder": "Account holder name (optional)",
+    "visibleFor": "Visible for",
+    "days": "{{count}}d",
+    "ibanNote": "🔒 The IBAN is encrypted and deleted automatically after this period.",
+    "offerPaypal": "Offer PayPal",
+    "paypalHint": "Public PayPal.Me link",
+    "external": "Money pool on another service",
+    "externalHint": "Leetchi, Lydia, Le Pot Commun…",
+    "externalLabel": "Display name (optional)",
+    "externalNote": "The collection happens entirely on the chosen service. BirthReminder sees neither the amounts nor the participants, cannot confirm anything in a dispute and cannot refund anything: your guests will have to contact you, or that service."
+  },
+  "mine": {
+    "loadError": "Your contributions cannot be loaded right now.",
+    "sum": {
+      "contribution": "Contribution of {{amount}}",
+      "event": "Event: {{title}}",
+      "date": "Date: {{date}}",
+      "collectedBy": "Collected by: {{name}}",
+      "reference": "Payment reference: {{ref}}",
+      "amount": "Amount: {{amount}}"
+    },
+    "report": {
+      "mine": "My contribution:",
+      "what": "What is happening:",
+      "contacted": "Have I already contacted the host?",
+      "contactedHint": "(yes, on … / not yet)",
+      "subjectFor": "Money pool issue: {{title}}",
+      "subject": "Issue with a money pool"
+    },
+    "title": "My contributions",
+    "empty": "You have not contributed to any money pool yet. Your contributions will show up here, with their receipt.",
+    "refunded": "Refunded",
+    "paid": "Paid",
+    "eventDeleted": "Event deleted",
+    "collectedBy": " · collected by {{name}}",
+    "refundedOn": " · refunded on {{date}}",
+    "reference": "Payment reference",
+    "copied": "copied ✓",
+    "copy": "copy",
+    "problem": "A problem with this contribution?",
+    "note1a": "Contributions are collected",
+    "note1b": "directly by the host",
+    "note1c": "of each event. BirthReminder never holds the funds and therefore cannot refund on their behalf.",
+    "note2": "If an event is cancelled or the gift is not bought, contact the host: the \"copy\" button prepares a ready-made message with the amount, date and reference. If they do not reply, write to us and attach that summary. We cannot settle a disagreement, but the reference lets us find the payment and confirm it did take place.",
+    "total": {
+      "one": "{{count}} contribution · {{amount}} paid",
+      "other": "{{count}} contributions · {{amount}} paid"
+    }
+  }
+}

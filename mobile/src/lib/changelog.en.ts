@@ -1,0 +1,300 @@
+/**
+ * Notes de mise à jour en anglais, indexées par version.
+ *
+ * `changelog.ts` (français) reste la référence : c'est lui qui porte la
+ * version, la date et le build. Ici on ne fournit que les textes. Une version
+ * absente de ce fichier s'affiche en français : penser à l'ajouter ici à
+ * chaque nouvelle entrée.
+ */
+export interface ChangelogText {
+  title: string;
+  note?: string;
+  items: string[];
+}
+
+const SERVER_NOTE =
+  "Please report anything that gets in your way. Items marked ⚠️ need the new server version.";
+
+export const CHANGELOG_EN: Record<string, ChangelogText> = {
+  "2.3.2": {
+    title: "Told about new versions",
+    items: [
+      "✨ When a new version of BirthReminder is available, a banner on the home screen tells you: one tap opens the update page.",
+      "📣 News and important information also show as a banner on the home screen. Close it with the cross and it does not come back.",
+      "📬 Sign-up, forgotten password: the app reminds you to check your spam folder if the email does not arrive.",
+    ],
+  },
+  "2.3.1": {
+    title: "More accurate name days, and support in the app",
+    note: "With an account, name days are computed by the server: the fixes already apply to your cards.",
+    items: [
+      "🌸 New name day calendar, more complete and checked: some first names were celebrated on the wrong date (Mia on 29 September instead of 15 August, Arthur in December instead of 15 November), others had no name day at all.",
+      "✏️ If you chose a card's name day yourself, it is never changed again by a calendar update.",
+      "👥 Compound first names are recognised better: Jean-Luc is celebrated on St Luke's day (18 October) and Jean-Pierre on St Peter's day, rather than on St John's day. Written with a space (\"Jean marc\"), they are recognised just like with a hyphen.",
+      "⏰ Without an account, name day reminders arrive at 9 am instead of midnight. Birthdays stay at midnight.",
+      "🙋 A name day looks wrong? Report it from Contact support, or with the \"Wrong name day?\" link under a card's name day: we fix the calendar for everyone.",
+      "💬 New Support tab in Chats: read the team's replies and answer right in the app. A notification tells you when we have replied.",
+    ],
+  },
+  "2.3.0": {
+    title: "Backup of your data with an account, and shared list notifications",
+    note: "Shared list notifications need the new server version.",
+    items: [
+      "💾 Backup and restore for accounts too: Profile → Backup. The file contains your birthday cards, their gift ideas, their photos and your wishlist. You can put it back into your account at any time without ever creating a duplicate: a card that is already there is completed, not created again.",
+      "🔁 The same file works both ways: a backup made without an account can be restored into an account, and the other way round.",
+      "🎁 Notifications from a shared gift list finally open the list itself. They used to land on the person's card, on the \"Ideas\" tab, and you had to find the right tab by hand.",
+    ],
+  },
+  "2.2.0": {
+    title: "BirthReminder without an account: everything stays on your phone",
+    note: "Everything happens in the app: no new server version needed.",
+    items: [
+      "📱 New: use BirthReminder without creating an account. Your cards, gift ideas, photos and wishlist stay on your phone, nothing is sent. Choose \"Use without an account\" on the welcome screen.",
+      "🧒 Under 15, signing up is still not possible, but the app offers no-account mode straight away. The date of birth is now asked first: no need to fill in everything to find out.",
+      "🔔 Without an account, birthday and name day reminders are scheduled by your phone, at midnight, even in airplane mode. Go to Profile → Reminders to check them and send a test reminder.",
+      "💾 Backup and restore: export all your cards (photos included) to a file, and import it again on a new phone or after reinstalling the app. Profile → My data.",
+      "☁️ Creating an account later? The app offers to import your cards into it, without duplicates, even if the import is interrupted along the way.",
+      "📤 Without an account, \"Share\" sends a card, your gift ideas or your wishlist as text, by message, WhatsApp or email.",
+    ],
+  },
+  "2.1.0": {
+    title:
+      "BirthReminder works offline, new event cards, import from your wishlist",
+    note: "Everything happens in the app: no new server version needed. Please report anything that looks odd offline.",
+    items: [
+      "📡 With no network, the app stays usable: your birthdays, the calendar and your upcoming events show with the latest data saved on your phone. An \"Offline\" banner says how old it is, and what is or is not possible.",
+      "✍️ Offline, you can add, edit or delete a birthday. The card shows a \"⏳ Pending\" badge, and everything is sent by itself once you are back online. If a change cannot be applied (card deleted from the website in the meantime, for example), the app tells you which one.",
+      "🎉 Upcoming events open offline even if you never looked at them: date, address, participants and suggested gifts. Handy on the day when there is no signal.",
+      "🔐 Opening the app without a network no longer logs you out.",
+      "🎨 New cards in the Events tab: colour and emoji by type (birthday, party, meal…), a \"Today\", \"Tomorrow\" or \"3 days\" badge, and the same countdown as birthday cards.",
+      "⭐ \"Import from a list\" now offers your own wishlist, in addition to the ideas noted on your other cards. It works for a card's ideas, the shared list and an event's gift suggestions.",
+      "↩️ An event opened from an invitation link (or from an email or a notification) finally has a back button: it takes you to the Events tab instead of leaving you stuck on the page.",
+      "🗂️ On iPad, editing a card happens in the right-hand pane: the card stays visible on the left instead of opening a new page.",
+    ],
+  },
+  "2.0.1": {
+    title:
+      "One-click email unsubscribe, money pools for adults only, deleted accounts that disappear everywhere",
+    note: "Items marked ⚠️ need the new server version.",
+    items: [
+      "🗑️ ⚠️ When someone deletes their account, they also disappear for their friends: their birthday card is deleted on both sides, like when you remove a friend.",
+      "🧹 ⚠️ Cards stuck with \"Cannot delete a date linked to a friend\" can finally be deleted. They belonged to accounts that were already deleted: there was no friend left to remove to unblock them.",
+      "📧 ⚠️ Gmail's \"Unsubscribe\" button works on the unread messages email: one click, without opening a page.",
+      "🔕 ⚠️ In the unread messages email, \"Stop receiving emails for messages from…\" turns the email off for that friend only. It is not a block: their messages still arrive in chat and as notifications. To turn it back on: Profile → Notifications → \"Message emails, per friend\".",
+      "🔔 ⚠️ Turning off the messages email no longer turns off notifications, and vice versa. Before, one setting could knock out the other.",
+      "🔁 ⚠️ If you receive message notifications, no more duplicate recap at the time of the daily or weekly email.",
+      "💰 ⚠️ Opening a money pool or offering a payment method (card, bank details, PayPal, external link) is for adults only. From 15 to 17, everything else stays available, including contributing to other people's pools.",
+      "🎂 ⚠️ If you change your date of birth and go from minor to adult, opening a money pool becomes possible 30 days later.",
+      "📜 Terms of use and privacy policy updated: account from age 15, money pools at 18.",
+    ],
+  },
+  "2.0.0": {
+    title:
+      "BirthReminder on iPad: two panes side by side, birthday grid and screens at the right width",
+    note: "On iPhone, nothing changes on screen, but many screens were reorganised to make iPad possible: please report anything that looks odd.",
+    items: [
+      "📱 BirthReminder becomes a real iPad app. Same account, same encrypted chats: it installs as a native version instead of an enlarged iPhone version, and finally uses the space available.",
+      "🗂️ On a person's card, no more going back and forth: the card stays on the left while gifts show on the right. Your ideas, their wishlist and the shared list become three tabs side by side.",
+      "💬 Chatting with a friend from their card opens the conversation on the right, with the card still visible on the left. Handy for talking about a gift while looking at it.",
+      "🎉 Planning an event from a card also happens on the right, without leaving the person concerned. A draft is still saved if you stop along the way.",
+      "🎊 On an event page in landscape, the event stays on the left and the buttons open their content on the right: chat, gifts, invitations, money pool and notification settings.",
+      "🎂 The birthday grid goes to 3 columns on iPad in portrait and 4 in landscape, instead of 2. Cards are a bit more generous there.",
+      "📏 Forms and lists no longer stretch across the full width: they are centred in a readable column. No more 30-centimetre-wide \"First name\" field.",
+      "🔄 Rotating the iPad, folding the screen or switching to Split View no longer loses anything: the open tab, a message being typed or a half-filled form stay in place.",
+      "⌨️ In a chat shown in a pane, the keyboard used to cover the input field.",
+      "🫧 Sheets sliding up from the bottom (gift details, options) used to close crookedly after a screen rotation.",
+      "📲 All this also prepares for foldable phones: unfolded, the screen shows both panes; folded, it goes back to the usual layout.",
+    ],
+  },
+  "1.9.0": {
+    title:
+      "Arriving on Android, reliable notifications on all your devices, \"My reservations\" in wishlists",
+    note: SERVER_NOTE,
+    items: [
+      "🤖 BirthReminder arrives on Android. Same app, same account, same encrypted chats: everything below was fixed while porting it, and benefits iPhone too.",
+      "🔔 ⚠️ A BirthReminder tab open on a computer stopped your phone from ringing: the server thought you were already in front of the screen. Each device is now handled separately: only the one where the app is open gets no notification, the others ring.",
+      "📵 ⚠️ After going to the background, the app could still be considered open and block all your message notifications, sometimes for several minutes.",
+      "🔓 On Android, private messages arrive decrypted in the notification, with the app in the background or closed, like on iPhone.",
+      "🎁 In a friend's wishlist, the gifts you reserved move below a line, in \"My reservations\". At the top, only what is still available remains.",
+      "🗑️ An event draft can finally be deleted: from its card in the Events tab, or with the bin at the top of the form. It used to open the form directly, where those buttons did not exist, so there was no way to get rid of it.",
+      "⚙️ An event's hosting buttons (Edit, Money pool, Transfer, Cancel) are aligned, icon above label. On Android, \"Transfer\" wrapped to a second line and pushed the other three out of place.",
+      "🎡 Picking a date uses the wheel on Android too (birthday, sign-up, profile, event, pool deadline), instead of the calendar.",
+      "⌨️ On Android, the keyboard used to cover the chat input field.",
+      "🪞 On Android, \"No messages. Say hello…\" was displayed back to front in an empty conversation.",
+      "🧭 On Android, the getting-started guide framed the wrong spot, slightly above each button it was presenting.",
+    ],
+  },
+  "1.8.0": {
+    title:
+      "Reactions, read receipts and reply from the notification, full Stripe payment accounts, external money pool",
+    note: SERVER_NOTE,
+    items: [
+      "✓✓ ⚠️ Delivery receipts in private chats, like on WhatsApp: one tick when your message is sent, two grey ticks when it reached your friend's phone (even with the app closed, as soon as the notification gets there) and two coloured ticks when they have read it.",
+      "ℹ️ ⚠️ Message info: long press one of your messages, then \"Info\", to see when it was sent, delivered and read.",
+      "↩️ ⚠️ Reply straight from a message notification, without opening the app. With the phone locked, Face ID or the passcode is asked before sending. The reply stays encrypted, and if the network drops, it is sent the next time the app opens, never twice.",
+      "👀 ⚠️ Reading a conversation on the phone never told the sender: on their side, the message still showed as unread.",
+      "🔁 With the app closed, tapping a message notification did open the conversation, but made a second notification of the same message appear.",
+      "🔑 ⚠️ The password reset link now expires after 30 minutes, and the email confirmation link after 24 hours. The latter actually stayed valid forever, contrary to what the email said.",
+      "😀 ⚠️ React to a message, in private or in an event: long press, then one of the six reactions. They show as pills under the bubble, grouped with a counter. Tap an existing pill to join the reaction, or yours to remove it.",
+      "🔔 ⚠️ When someone reacts to your message, you are notified. Only the author of the message gets the notification, and only one per message: in a twelve-person event, a thumbs up should not send twelve notifications to everyone.",
+      "💬 ⚠️ An event message notification opened the event page instead of the chat: you had to find the tab by hand to read the message you had just been notified about.",
+      "✅ ⚠️ Reading a message right in the chat clears its notification. Until now the red badge stayed on for a message already read, until you went back through the notification centre.",
+      "🔓 On iPhone, message notifications showed \"New encrypted message\" instead of the text. The device could not find its decryption key: this is fixed, and the content shows again on the lock screen (and never leaves your phone).",
+      "🏦 ⚠️ Money pool payment accounts become full Stripe accounts. The host has their own Stripe dashboard to follow payouts, and if an unpaid amount cannot be recovered, the loss is borne by Stripe and not by BirthReminder. Sign-up is also shorter: business details are pre-filled.",
+      "📊 ⚠️ The pool balance shows in the event management screen, with direct access to the Stripe dashboard and the option to disconnect your payment account.",
+      "🔗 ⚠️ A host who already uses a money pool elsewhere (Leetchi, Le Pot Commun…) can give its link from the event, rather than opening one with us.",
+      "🧾 ⚠️ A receipt is emailed after each contribution to a money pool, and \"My contributions\" in the profile keeps the history of all your payments, with a summary you can copy and attach to a claim.",
+      "🛡️ ⚠️ Above 150 €, bank validation (3-D Secure) is required: if a payment is disputed for fraud, liability shifts to the card issuer's bank and not to the host.",
+      "🆘 ⚠️ \"A problem with this contribution?\" from My contributions: the process is explained step by step before the form, which arrives pre-filled and has you choose the pool concerned. As a reminder: BirthReminder never holds the funds. The money goes straight to the host's Stripe account, so they are the one who refunds.",
+      "🎫 ⚠️ Requests about a money pool are no longer blocked by the one-open-ticket limit: you can open as many as you have contributions.",
+      "🍽️ The \"Dinner\" event type is now called \"Meal\": it was used just as much for a lunch or a brunch.",
+      "📖 Terms of use updated: host's payment account, what to do when there is a problem with a money pool, external money pool, the service being free. Contact goes through the form rather than an email address to copy.",
+    ],
+  },
+  "1.7.0": {
+    title:
+      "Mute per conversation, event chats in messages, shared lists finalised",
+    note: SERVER_NOTE,
+    items: [
+      "🔕 ⚠️ A bell in the header of each chat, private or event, to mute notifications for 1 hour, 8 hours, 1 week or until turned back on. The conversation stays in your list with its unread messages: only the ringing stops.",
+      "🔔 ⚠️ Notification settings per event, open to all participants and no longer just the host. Until now, silencing a single event meant turning off the whole \"Events\" category, so all the others too. Cancellation and date change are always notified: these are the only messages nobody can afford to miss.",
+      "🔕 ⚠️ The \"chat messages\" switch in an event's settings had no effect: the setting was saved then lost. It also turned off notifications for all guests, not just the host's.",
+      "📩 ⚠️ When sending a message in an event chat, the host received two notifications on their phone for a single message.",
+      "💬 ⚠️ Event chats appear in the Chats screen, under an \"Events\" tab with their unread counter. They could only be reached by reopening the event.",
+      "🎉 An event's chat carries its name as the title, and a banner takes you back to the event in one tap. Opened from the chat list, this screen was a dead end: you read a message about the date or a gift with no way to reach the place where it is decided.",
+      "📅 ⚠️ The host can finally keep a date or a place straight from the vote results. Until now you had to go through \"Edit the event\" and switch the date back to fixed mode, without the counts in front of you when choosing. Keeping a place now notifies participants and names it.",
+      "🗳️ ⚠️ Votes from guests without an account were not counted anywhere on gifts: only members' votes appeared.",
+      "🔐 ⚠️ Security fix: session identifiers of guests without an account were exposed in server responses, on gift suggestions. Any participant could read them and pose as those guests.",
+      "👤 ⚠️ A guest without an account who logs in or signs up from an event finds their participation on their account: their reply, votes and gift ideas follow them instead of being lost.",
+      "⌨️ In the event cancellation sheet, the keyboard hid the reason field, so you were typing blind. And with the keyboard open, the first tap on a button was swallowed: you had to tap twice.",
+      "💶 ⚠️ The cost of a money pool refund is computed from the fees actually taken at payment, no longer estimated at the standard European card rate. A business or foreign card costs up to twice as much, so the amount shown before confirming could be well below reality.",
+      "📜 When opening a money pool, a box reminds you what you are committing to: if the event is cancelled, refunding is up to you, and the fees of the original payment remain at your expense.",
+      "🎁 ⚠️ Shared lists: managers finally see reservations made from the public link. They did not appear anywhere in the app: the idea looked available while someone was already taking care of it.",
+      "↩️ ⚠️ Shared lists: a manager can release someone else's reservation. Without that, an idea reserved by a visitor who never comes back stayed blocked forever.",
+      "🙈 ⚠️ Shared lists: hide an idea from guests and from the public link, while keeping it visible among managers.",
+      "🔎 Shared lists: filter by occasion and by reservation status (available, reserved, the ones you are taking care of). Gifts already given move below a line at the bottom: they are not deleted, they are the record of what has already been given.",
+      "👀 Shared lists: the guest view now matches wishlists: \"Available\" or \"Reserved\", and a button to reserve. Until now they saw the managers' controls (status, edit, delete), which all failed.",
+      "🔑 ⚠️ Shared lists: the access code now guards the public link: until it is entered, the ideas are not even sent. Sharing offers a link that carries the code, so you do not have to send it in a second message.",
+      "📧 ⚠️ Shared lists: when reserving from the public link, you can leave your email to get a confirmation and find your reservation from another device. Before, switching browsers lost everything, and knowing a first name was enough to undo someone else's reservation.",
+      "📂 ⚠️ Shared lists: the profile menu gives access to the lists you manage and those you are a guest on, opens straight on the list, and lets you leave it.",
+      "🃏 Gift idea cards finally line up: title, occasion, price and status are at the same height from one card to the next, even without a price or an image.",
+      "📱 In notifications, \"Mark all as read\" and \"Delete all\" overlapped the title. Headers now adapt to the width of their buttons.",
+      "📖 User guide and terms of use updated: cancellation, hosting transfer, money pool refunds and their cost, how shared lists work.",
+    ],
+  },
+  "1.6.0": {
+    title:
+      "Event cancellation and transfer, refundable money pool, shared lists reworked",
+    note: SERVER_NOTE,
+    items: [
+      "🔔 Phone notifications did not open the right page: tapping them led nowhere. All system notifications were affected, not just birthdays. The notification centre inside the app did work.",
+      "🗓️ Adding an event to your calendar set no reminder: the entry only showed up at the time of the event. It was not Apple or Google, the app was simply not asking for any. New setting in Profile → Settings → Calendar reminders, with a separate choice for events and for birthdays.",
+      "❌ ⚠️ Cancel an event, with an optional reason. The event is not deleted: it stays visible, crossed out, and all guests are notified in the app and by email. It can be restored. A published event can no longer be deleted directly: you have to cancel it first, so nobody sees it vanish without explanation.",
+      "🚫 ⚠️ A cancelled event no longer accepts any participation: date and place votes, replies, gift suggestions, invitations and pool contributions are closed. Otherwise the host got vote notifications on an event they had just cancelled, from phones that had not reloaded the page yet. The chat stays open: that is when people most need to talk.",
+      "🤝 ⚠️ Transfer hosting of an event to a participant. They must accept: until they reply, you remain the host. The money pool never follows the transfer. Amounts already paid are on your payment account, it is up to you to refund or pass them on, and the message sent to participants says so explicitly.",
+      "💸 ⚠️ Refund all contributors to a money pool, from the pool screen. Contributors get back everything they paid; the fees of the original payment are not returned and remain at your expense. The exact amount is shown before you confirm.",
+      "🚪 Button to leave an event you are invited to, under your reply. Declining tells the host, leaving removes the invitation: these are two different actions.",
+      "📋 Button to copy just an event's access code, for when you want to paste it into a conversation already open elsewhere.",
+      "🗄️ Past events are grouped in a collapsible section at the bottom of the list, with cancelled events. An event whose date is pushed back comes out of it by itself.",
+      "🎁 ⚠️ Shared lists: gifts already bought or given are no longer shown to guests. Showing them pushed guests to buy twice, which is exactly what the list is meant to avoid.",
+      "🚪 ⚠️ Shared lists: a guest can finally leave a list. The button existed but the server refused the request: access remained, and the list came back on the next reload.",
+      "➕ ⚠️ Shared lists: when someone shares a list with you for a person you do not have in your address book, the app offers to create their card in one tap, pre-filled with their name and date of birth. You can correct them afterwards. The list of existing cards collapses and becomes searchable instead of unrolling everything.",
+      "📂 ⚠️ Shared lists: new entry in the Profile menu. A shared list you have not finished attaching is found there, even if you closed the notification: until now it was only reachable from that message.",
+      "👤 Shared lists: \"Share with a contact\" is right in the share sheet, instead of being buried in the access management screen.",
+      "🔔 ⚠️ Shared lists: guests get a notification when an idea is added, and when a gift they had reserved is removed. A reservation made from the public link now notifies members: it used to notify nobody.",
+      "📧 ⚠️ The \"unsubscribe\" links in emails did not work, except the one for friend requests, which went another way.",
+      "🎂 On the home screen, \"It's name day for Louis and Louis!\" when two loved ones share a first name. And at zero, the birthday counter shows a sentence rather than a \"0\" that read like a failure.",
+      "🃏 Gift cards in the grid shifted against each other depending on title length.",
+      "🔘 The round header buttons were still not centred: the icons are redrawn, and the header no longer depends on the background the system draws behind.",
+      "✉️ Monthly recap: a double arrow was left on the \"See next month\" button.",
+    ],
+  },
+  "1.5.0": {
+    title: "Shareable shared lists, reservations & logout fix",
+    note: SERVER_NOTE,
+    items: [
+      "🔑 ⚠️ Were you logged out for no reason? The slightest profile change, even a simple notification switch, brought your session from 30 days down to 6 hours. Closing the app overnight was then enough to have to log in again. One last login will be needed, then the session will last the full 30 days.",
+      "🎁 ⚠️ Shared lists, reservation: \"I'll take it\" on an idea. Other members see it greyed out with your first name, and only you can cancel your reservation if the gift ends up not being given.",
+      "🔗 ⚠️ Shared lists, link sharing: create a link that can be viewed without an account. A code, which you generate from \"Manage access\", is asked to reserve; viewing does not require it. Visitors never see who reserved what.",
+      "👥 ⚠️ Shared lists, sharing with a contact: they can view and reserve, never edit the list. They attach it to an existing card or create one, and it then appears in their app.",
+      "🔐 ⚠️ Shared lists, access management: a screen shows members, guests and who invited them, with the option to remove access at any time.",
+      "🗂️ ⚠️ A card can only hold one shared list. If you receive a second one for the same person, the app tells you and offers to replace the current one.",
+      "↩️ Deleting an idea from a shared list now leaves a few seconds to undo, like for your personal ideas.",
+      "☑️ \"Add from a list\" moved up next to \"+ Add\", and sharing happens from the top of the panel: no more scrolling to the bottom of a long list.",
+      "🔔 ⚠️ Shared list notifications: an idea added, edited or deleted, and a member leaving. A change to bought or given is stated in the text, to avoid buying the same gift twice. They have their own switch in Push notifications.",
+      "🎂 ⚠️ Birthdays and name days now each have their own push switch: they shared the same one, so you could not keep one without the other.",
+      "📬 In the notification centre, tapping a notification makes it disappear once it has taken you to the right place. The \"Expand / Collapse\" button was removed: it showed on texts that already fitted on screen.",
+      "🗓️ Add to calendar: tapping several times created as many duplicates. The button now changes to \"In your calendar\" and lets you remove the event. If you delete the entry by hand in your calendar, it goes back to \"Add\".",
+      "🐛 Fixed a scrolling lock: on some screens, after collapsing a section or switching tab, the content stayed stuck at the top until you changed page.",
+      "🐛 The round header buttons (back, chat, pencil) were off-centre in their background.",
+      "✏️ Notification wording reviewed, without the dash that cut sentences: \"The host updated Dinner\", \"New messages in Dinner\".",
+    ],
+  },
+  "1.4.0": {
+    title: "Notifications fixed, add to calendar & event attendance",
+    note: SERVER_NOTE,
+    items: [
+      "🔔 ⚠️ Notifications: turning off a setting in the email section also turned off push notifications and the notification centre. The three channels are now independent: an \"email\" setting only affects emails. If you stopped receiving anything after turning off a reminder, that was why.",
+      "📱 ⚠️ The switches in the Push notifications section actually had no effect: they are now respected. And turning push off no longer turns itself back on when the app restarts.",
+      "🗓️ New \"Add to my calendar\" button on an event page and in the calendar view: the event is created in the phone's calendar. Nothing is synced afterwards: if the date changes, you need to tap again.",
+      "👤 ⚠️ An event's host is now listed among the participants: the count included everyone except the host.",
+      "📅 ⚠️ When the host changes an event's date, replies go back to pending and everyone is asked to confirm again. Guests without an account are told by email.",
+      "✏️ ⚠️ In the notification centre, an event update showed as a \"Reminder\". It now appears as \"Event updated\", and a date change is announced as such.",
+      "📤 Sharing a card or gift ideas: tapping a name sent it straight away, with no way back. You now select the recipient, then confirm with the \"Send to …\" button.",
+      "👥 ⚠️ Friends → Sent: the number of pending requests shows on the tab, and each friend request or email invitation can be cancelled.",
+      "🐛 The back button chevron was not centred in its circle.",
+      "🐛 The action button at the top right (pencil, chat, bin) sometimes took a stretched shape, until you changed page.",
+    ],
+  },
+  "1.3.0": {
+    title: "Today's name day, photo on cards & quick preview in chat",
+    note: SERVER_NOTE,
+    items: [
+      "🎉 ⚠️ Settings → Home display: the \"Show today's name day\" switch now only controls the banner on the home screen. It no longer has any effect on name day reminder emails. The banner now hides and shows correctly when you toggle it.",
+      "🔔 ⚠️ Notifications → \"Name day reminders\": this switch was mixed up with the birthdays one and did not save its state. It is now independent and works correctly, on mobile and on the website.",
+      "🖼️ ⚠️ Photo on a card you added yourself: possible from the person's card, in addition to the website.",
+      "💬 New quick preview in a conversation: tapping the contact's name at the top of the screen opens a card with their age, next birthday, gift ideas, and a \"View profile\" button to go straight there.",
+      "🔴 The badge on the app icon now shows the number of unread messages and notifications.",
+      "🎂 ⚠️ Birthday and name day reminder notifications opened the wrong page: they now correctly lead to the card of the person concerned.",
+      "🐛 Fixed a cut-off page bottom on the Notifications screen.",
+    ],
+  },
+  "1.2.0": {
+    title: "Collapsible notifications & money pools highlighted",
+    items: [
+      "🐛 Fixed a scrolling bug: on some screens (notifications, wishlist, event), it was impossible to scroll back up after reaching the bottom.",
+      "🔔 Notifications can now be collapsed/expanded one by one, and deleted with a tap (no more long press).",
+      "🎂 New: turn birthday reminders on or off person by person from Profile → Notifications.",
+      "🔽 The Email notifications, Push notifications and Reminders per person sections now also collapse individually, and their state is remembered when you leave and come back.",
+      "📌 An event's panels (money pool, invitations, participants…) now keep their collapsed/expanded state when you come back to the page.",
+      "💰 The money pool is now presented on the welcome screen (before login) and on the website, which still listed it as an upcoming feature.",
+      "📝 Added this release notes screen.",
+    ],
+  },
+  "1.1.0": {
+    title: "Stats, card sharing, stronger blocking & privacy",
+    note: "Please report anything that gets in your way, even minor. Items marked ⚠️ need the new server version: if something fails there, that may be why.",
+    items: [
+      "📊 Home stats fixed: the numbers were read as personal when they were about the whole community. Labels are now explicit (\"birthdays wished today\"). New setting in Profile → Settings: \"Show my stats\", which switches the panel to your own numbers, with first names under the total.",
+      "🎉 Editable name day: the field now exists on mobile too, when adding or editing a card (month then day picker). If you leave it alone, the name day is still detected automatically from the first name.",
+      "📤 ⚠️ Card sharing: new \"Share this card\" button on a person's card, sent in your conversation. Your gift ideas are never passed on. For someone who has an account: they can send you a friend request to accept, and their card is then created automatically on both sides. Otherwise, they can simply create the card on their side.",
+      "🗑️ Remove a conversation: long press a conversation (Chats tab). The removal only applies to you, the other person keeps their history. This is deliberate, so nobody can erase messages on someone else's side, especially those serving as evidence after a report. A new message brings the conversation back, with the new messages only.",
+      "❌ ⚠️ Account deletion: same principle. Your conversations are removed on your side, and the people you talked to keep their copy where your messages appear as \"Deleted user\".",
+      "🚫 ⚠️ Stronger blocking: blocking someone hid the conversation but the person could keep writing without knowing. Blocking now also prevents messages, friend requests and invitations to an event or a shared list.",
+      "⬇️ ⚠️ Download my data: Profile → \"Download my data\" generates a file with your profile, dates, friends, gifts, events and conversations. Your messages are end-to-end encrypted, our servers cannot read them: they are decrypted on your device. From a device where your key has not been restored, they will appear as undecryptable, which is normal.",
+      "🔑 Password: a \"Show\" button reveals what you type in the three change-password fields. The reset screen now states that maximum encryption (12-word phrase) lets you get older messages back, unlike standard encryption where they become unreadable.",
+      "🎁 Wishlist: the \"Image URL\" field was missing on mobile while it existed on the website. You can now paste an image link by hand, in addition to the \"Fill in\" button.",
+      "📖 Guide and texts: the guide (Profile → User guide) now covers the money pool, encryption and the recovery phrase, card sharing, reporting and blocking. Terms of use, privacy policy and cookies were updated.",
+    ],
+  },
+  "1.0.0": {
+    title: "App launch",
+    items: [
+      "🎉 First version of the BirthReminder mobile app.",
+      "🎂 Keep track of your loved ones' birthdays and name days.",
+      "🎁 Wishlists, gift suggestions and reservations.",
+      "📅 Event planning: date/place votes, invitations, money pools.",
+      "💬 Private and group messaging.",
+    ],
+  },
+};

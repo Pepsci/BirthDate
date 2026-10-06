@@ -1,3 +1,4 @@
+import { t, tn } from "@/i18n";
 import { useState } from "react";
 import { View, Text, Pressable, StyleSheet } from "react-native";
 import { DMMessage } from "../lib/conversations";
@@ -64,17 +65,17 @@ export default function GiftShareCard({
     >
       <Pressable style={styles.header} onPress={() => setExpanded((v) => !v)}>
         <Text style={styles.headerText}>
-          🎁 Idées cadeaux{personName ? ` · ${personName}` : ""}
+          {t("gifts:share.title")}{personName ? ` · ${personName}` : ""}
         </Text>
         <Text style={styles.count}>
-          {gifts.length} idée{gifts.length > 1 ? "s" : ""} {expanded ? "▾" : "▸"}
+          {tn("gifts:ideaCount", gifts.length)} {expanded ? "▾" : "▸"}
         </Text>
       </Pressable>
 
       {expanded && (
         <View style={styles.body}>
           {gifts.length === 0 && (
-            <Text style={styles.empty}>Aucune idée.</Text>
+            <Text style={styles.empty}>{t("gifts:share.empty")}</Text>
           )}
           {pending.map((g, i) => (
             <Text key={`p${i}`} style={styles.giftRow} numberOfLines={1}>
@@ -90,15 +91,15 @@ export default function GiftShareCard({
 
           {!isMine && gifts.length > 0 && !saved && (
             <Pressable style={styles.saveBtn} onPress={openPicker}>
-              <Text style={styles.saveBtnText}>💾 Sauvegarder sur une fiche</Text>
+              <Text style={styles.saveBtnText}>{t("gifts:share.save")}</Text>
             </Pressable>
           )}
-          {saved && <Text style={styles.savedMsg}>✅ Sauvegardé</Text>}
+          {saved && <Text style={styles.savedMsg}>{t("gifts:share.saved")}</Text>}
         </View>
       )}
 
       <BottomSheet visible={picker} onClose={() => setPicker(false)}>
-        <Text style={styles.sheetTitle}>Sauvegarder sur quelle fiche ?</Text>
+        <Text style={styles.sheetTitle}>{t("gifts:share.whichCard")}</Text>
         {dates.map((d) => (
           <Pressable
             key={d._id}
@@ -113,7 +114,7 @@ export default function GiftShareCard({
           </Pressable>
         ))}
         {dates.length === 0 && (
-          <Text style={styles.empty}>Aucune fiche disponible.</Text>
+          <Text style={styles.empty}>{t("gifts:share.noCard")}</Text>
         )}
       </BottomSheet>
     </View>

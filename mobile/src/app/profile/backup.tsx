@@ -1,3 +1,4 @@
+import { getLocaleTag, t, tn } from "@/i18n";
 import { useState } from "react";
 import {
   View,
@@ -56,13 +57,13 @@ export default function AccountBackupScreen() {
       const uri = await writeAccountBackupFile(setProgress);
       const res = await Share.share({
         url: uri,
-        title: "Sauvegarde BirthReminder",
+        title: t("local:backup.fileTitle"),
       });
       if (res.action === Share.sharedAction) {
-        setMsg({ ok: true, text: "Sauvegarde enregistrée." });
+        setMsg({ ok: true, text: t("local:backup.saved") });
       }
     } catch (e: any) {
-      setMsg({ ok: false, text: e?.message ?? "Sauvegarde impossible." });
+      setMsg({ ok: false, text: e?.message ?? t("local:backup.error") });
     } finally {
       setBusy(null);
       setProgress(null);
@@ -73,22 +74,21 @@ export default function AccountBackupScreen() {
   const confirmRestore = (backup: LocalBackup) => {
     const s = summarize(backup);
     const when = s.exportedAt
-      ? s.exportedAt.toLocaleDateString("fr-FR", {
+      ? s.exportedAt.toLocaleDateString(getLocaleTag(), {
           day: "numeric",
           month: "long",
           year: "numeric",
         })
-      : "date inconnue";
+      : t("local:backup.unknownDate");
     Alert.alert(
-      "Restaurer cette sauvegarde ?",
-      `Sauvegarde du ${when} : ${s.dates} carte${s.dates > 1 ? "s" : ""}` +
-        `${s.photos ? ` (${s.photos} photo${s.photos > 1 ? "s" : ""})` : ""}` +
-        `${s.wishlist ? ` et ${s.wishlist} envie${s.wishlist > 1 ? "s" : ""}` : ""}.` +
-        "\n\nRien ne sera supprimé : seules les cartes absentes de ton compte " +
-        "seront ajoutées. Celles qui existent déjà seront complétées.",
+      t("local:restore.title"),
+      `${t("local:backup.titleOf", { date: when })} : ${tn("local:count.cards", s.dates)}` +
+        `${s.photos ? ` (${tn("local:count.photos", s.photos)})` : ""}` +
+        `${s.wishlist ? `, ${tn("gifts:wishCount", s.wishlist)}` : ""}.` +
+        t("local:restore.text"),
       [
-        { text: "Annuler", style: "cancel" },
-        { text: "Restaurer", onPress: () => runRestore(backup) },
+        { text: t("common:actions.cancel"), style: "cancel" },
+        { text: t("profile:e2e.restore"), onPress: () => runRestore(backup) },
       ],
     );
   };
@@ -100,27 +100,27 @@ export default function AccountBackupScreen() {
     try {
       const r = await restoreBackupIntoAccount(backup, setProgress);
       const parts: string[] = [];
-      if (r.cards) parts.push(`${r.cards} carte${r.cards > 1 ? "s" : ""} ajoutée${r.cards > 1 ? "s" : ""}`);
-      if (r.merged) parts.push(`${r.merged} déjà présente${r.merged > 1 ? "s" : ""}`);
-      if (r.wishlist) parts.push(`${r.wishlist} envie${r.wishlist > 1 ? "s" : ""}`);
+      if (r.cards) parts.push(tn("local:restore.cardsAdded", r.cards));
+      if (r.merged) parts.push(tn("local:import.alreadyThere", r.merged));
+      if (r.wishlist) parts.push(tn("gifts:wishCount", r.wishlist));
       if (r.offline) {
         setMsg({
           ok: false,
-          text: "Réseau perdu en cours de route. Relance la restauration : ce qui est déjà passé ne sera pas recréé.",
+          text: t("local:restore.offline"),
         });
       } else if (r.failures.length) {
         setMsg({
           ok: false,
-          text: `${parts.join(", ") || "Rien ajouté"}. N'ont pas pu passer : ${r.failures.join(", ")}.`,
+          text: t("local:restore.partial", { list: parts.join(", ") || t("local:restore.nothing"), failures: r.failures.join(", ") }),
         });
       } else {
         setMsg({
           ok: true,
-          text: parts.length ? `${parts.join(", ")}.` : "Tout était déjà dans ton compte.",
+          text: parts.length ? `${parts.join(", ")}.` : t("local:restore.allThere"),
         });
       }
     } catch (e: any) {
-      setMsg({ ok: false, text: e?.message ?? "Restauration impossible." });
+      setMsg({ ok: false, text: e?.message ?? t("local:restore.error") });
     } finally {
       setBusy(null);
       setProgress(null);
@@ -139,21 +139,19 @@ export default function AccountBackupScreen() {
         text:
           e instanceof BackupFormatError
             ? e.message
-            : (e?.message ?? "Lecture du fichier impossible."),
+            : (e?.message ?? t("local:restore.readError")),
       });
     }
   };
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <Stack.Screen options={{ title: "Sauvegarde" }} />
+      <Stack.Screen options={{ title: t("local:backup.title") }} />
 
       <View style={styles.card}>
-        <Text style={styles.label}>💾 Sauvegarder mes données</Text>
+        <Text style={styles.label}>{t("local:backup.saveTitle")}</Text>
         <Text style={styles.hint}>
-          Un fichier avec tes cartes d'anniversaire, leurs idées de cadeaux,
-          leurs photos et ta liste d'envies. Range-le où tu veux : Fichiers,
-          Drive, un mail que tu t'envoies.
+          {t("local:backup.saveText")}
         </Text>
       </View>
 
@@ -165,16 +163,14 @@ export default function AccountBackupScreen() {
         {busy === "export" ? (
           <ActivityIndicator color={colors.white} />
         ) : (
-          <Text style={styles.primaryText}>Sauvegarder</Text>
+          <Text style={styles.primaryText}>{t("local:backup.save")}</Text>
         )}
       </Pressable>
 
       <View style={styles.card}>
-        <Text style={styles.label}>↩️ Restaurer une sauvegarde</Text>
+        <Text style={styles.label}>{t("local:restore.sectionTitle")}</Text>
         <Text style={styles.hint}>
-          Remet dans ton compte les cartes et les envies d'une sauvegarde.
-          Rien n'est supprimé, et une carte déjà présente n'est jamais
-          dupliquée : tu peux restaurer sans crainte.
+          {t("local:restore.sectionText")}
         </Text>
       </View>
 
@@ -186,13 +182,13 @@ export default function AccountBackupScreen() {
         {busy === "restore" ? (
           <ActivityIndicator color={colors.primary} />
         ) : (
-          <Text style={styles.secondaryText}>Choisir un fichier</Text>
+          <Text style={styles.secondaryText}>{t("local:restore.pickFile")}</Text>
         )}
       </Pressable>
 
       {!importReady && (
         <Text style={styles.hint}>
-          La restauration n'est pas disponible dans cette version de l'app.
+          {t("local:restore.unavailable")}
         </Text>
       )}
 
@@ -208,11 +204,7 @@ export default function AccountBackupScreen() {
       )}
 
       <Text style={styles.explain}>
-        Cette sauvegarde ne contient ni tes événements, ni tes cagnottes, ni
-        tes listes communes : ce sont des données partagées avec d'autres
-        personnes, les restaurer créerait des doublons chez elles. Pour un
-        export complet de tout ce que nous détenons sur toi, utilise
-        « Télécharger mes données ».
+        {t("local:backup.scopeNote")}
       </Text>
     </ScrollView>
   );

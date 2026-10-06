@@ -1,3 +1,4 @@
+import { getLocaleTag, t } from "@/i18n";
 import { api, NetworkError } from "./api";
 import { withOfflineCache } from "./offline-fetch";
 import { isLocalMode } from "./app-mode";
@@ -124,29 +125,29 @@ export function eventLocationLabel(
 }
 
 export const EVENT_TYPE_LABELS: Record<EventType, string> = {
-  birthday: "🎂 Anniversaire",
-  party: "🎉 Fête",
-  dinner: "🍽️ Repas",
-  other: "📌 Autre",
+  get birthday() { return t("events:type.birthday"); },
+  get party() { return t("events:type.party"); },
+  get dinner() { return t("events:type.dinner"); },
+  get other() { return t("events:type.other"); },
 };
 
 export const STATUS_LABELS: Record<EventStatus, string> = {
-  draft: "Brouillon",
-  published: "Publié",
-  cancelled: "Annulé",
-  done: "Terminé",
+  get draft() { return t("events:status.draft"); },
+  get published() { return t("events:status.published"); },
+  get cancelled() { return t("events:status.cancelled"); },
+  get done() { return t("events:status.done"); },
 };
 
 export const RSVP_LABELS: Record<RsvpStatus, string> = {
-  pending: "En attente",
-  accepted: "✅ J'y vais",
-  declined: "❌ Décliné",
-  maybe: "🤷 Peut-être",
+  get pending() { return t("events:rsvp.pending"); },
+  get accepted() { return t("events:rsvp.accepted"); },
+  get declined() { return t("events:rsvp.declined"); },
+  get maybe() { return t("events:rsvp.maybe"); },
 };
 
 /** "vendredi 3 juillet 2026 à 19:30" (sans lib externe) */
 export function formatEventDate(d: Date): string {
-  return d.toLocaleDateString("fr-FR", {
+  return d.toLocaleDateString(getLocaleTag(), {
     weekday: "long",
     day: "numeric",
     month: "long",
@@ -369,7 +370,7 @@ export async function sendRsvp(
 /** Nom affichable d'un invité (user inscrit ou guest externe) */
 export function invitationName(inv: EventInvitationEntry): string {
   if (inv.user) return `${inv.user.name} ${inv.user.surname ?? ""}`.trim();
-  return inv.guestName || "Invité externe";
+  return inv.guestName || t("events:externalGuest");
 }
 
 export async function voteDate(shortId: string, dates: string[]): Promise<void> {

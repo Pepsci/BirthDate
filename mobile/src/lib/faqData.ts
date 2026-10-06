@@ -1,3 +1,6 @@
+import { getLanguage } from "@/i18n";
+import { FAQ_SECTIONS_EN } from "./faqData.en";
+
 // Contenu de la FAQ, partagé entre le Guide (/guide, référence complète) et
 // le centre d'aide du support (/contact, recherche guidée avant d'écrire).
 // Une seule source : ajoute ou modifie une question ici, elle apparaît aux
@@ -24,7 +27,8 @@ export interface Section {
   action?: { kind: "poolIssue"; label: string };
 }
 
-export const FAQ_SECTIONS: Section[] = [
+/** Français : la version de référence. L'anglais est dans `faqData.en.ts`. */
+export const FAQ_SECTIONS_FR: Section[] = [
   {
     id: "local",
     emoji: "📱",
@@ -364,3 +368,11 @@ export const FAQ_SECTIONS: Section[] = [
     ],
   },
 ];
+
+/**
+ * FAQ dans la langue courante. À appeler au rendu (jamais au niveau module) :
+ * la langue peut changer en cours de session.
+ */
+export function getFaqSections(): Section[] {
+  return getLanguage() === "en" ? FAQ_SECTIONS_EN : FAQ_SECTIONS_FR;
+}

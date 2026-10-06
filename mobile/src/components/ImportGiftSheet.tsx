@@ -1,3 +1,4 @@
+import { t, tn } from "@/i18n";
 import { useEffect, useState } from "react";
 import {
   View,
@@ -9,7 +10,7 @@ import {
 } from "react-native";
 import BottomSheet from "./BottomSheet";
 import { DateEntry, Gift, fetchDates } from "../lib/dates";
-import { occasionEmoji } from "../lib/occasions";
+import { occasionEmoji, occasionLabel } from "../lib/occasions";
 import { fetchMyWishlist } from "../lib/wishlist";
 import {
   useTheme,
@@ -133,24 +134,24 @@ export default function ImportGiftSheet({
     <BottomSheet visible={visible} onClose={onClose}>
       {step === 1 ? (
         <>
-          <Text style={styles.title}>Importer depuis une liste</Text>
-          <Text style={styles.sub}>Choisis une fiche source.</Text>
+          <Text style={styles.title}>{t("gifts:import.title")}</Text>
+          <Text style={styles.sub}>{t("gifts:import.pickSource")}</Text>
           <TextInput
             placeholderTextColor={colors.placeholder}
             style={styles.search}
-            placeholder="🔍 Rechercher un prénom…"
+            placeholder={t("gifts:import.search")}
             value={search}
             onChangeText={setSearch}
           />
           {/* Ma liste d'envies : toujours en tête, masquée si vide */}
           {(wishlistGifts?.length ?? 0) > 0 &&
-            "ma liste d'envies".includes(search.trim().toLowerCase()) && (
+            t("gifts:myWishlist").toLowerCase().includes(search.trim().toLowerCase()) && (
               <Pressable
                 style={styles.dateRow}
                 onPress={() => {
                   setSource({
                     _id: WISHLIST_SOURCE_ID,
-                    name: "Ma liste d'envies",
+                    name: t("gifts:myWishlist"),
                     date: "",
                     family: false,
                     linkedUser: null,
@@ -161,10 +162,9 @@ export default function ImportGiftSheet({
                 }}
               >
                 <View style={styles.rowText}>
-                  <Text style={styles.dateName}>⭐ Ma liste d'envies</Text>
+                  <Text style={styles.dateName}>⭐ {t("gifts:myWishlist")}</Text>
                   <Text style={styles.dateMeta}>
-                    {wishlistGifts!.length} envie
-                    {wishlistGifts!.length > 1 ? "s" : ""}
+                    {tn("gifts:wishCount", wishlistGifts!.length)}
                   </Text>
                 </View>
                 <Text style={styles.arrow}>›</Text>
@@ -178,8 +178,7 @@ export default function ImportGiftSheet({
           ) : filtered.length === 0 ? (
             (wishlistGifts?.length ?? 0) === 0 && (
               <Text style={styles.empty}>
-                Aucune fiche avec des idées cadeaux, et ta liste d'envies est
-                vide.
+                {t("gifts:import.empty")}
               </Text>
             )
           ) : (
@@ -199,7 +198,7 @@ export default function ImportGiftSheet({
                     {d.linkedUser ? " 👥" : d.family ? " 🏠" : ""}
                   </Text>
                   <Text style={styles.dateMeta}>
-                    {d.gifts?.length} idée{(d.gifts?.length ?? 0) > 1 ? "s" : ""}
+                    {tn("gifts:ideaCount", d.gifts?.length ?? 0)}
                   </Text>
                 </View>
                 <Text style={styles.arrow}>›</Text>
@@ -211,10 +210,10 @@ export default function ImportGiftSheet({
         <>
           <Text style={styles.title}>
             {isWishlistSource
-              ? "Ma liste d'envies"
-              : `Idées de ${source?.name} ${source?.surname ?? ""}`}
+              ? t("gifts:myWishlist")
+              : t("gifts:import.ideasOf", { name: `${source?.name ?? ""} ${source?.surname ?? ""}`.trim() })}
           </Text>
-          <Text style={styles.sub}>Sélectionne les idées à importer.</Text>
+          <Text style={styles.sub}>{t("gifts:import.select")}</Text>
           {sourceGifts.map((g) => (
             <Pressable
               key={g._id}
@@ -230,8 +229,8 @@ export default function ImportGiftSheet({
                   {isWishlistSource
                     ? g.price != null
                       ? `${g.price} €`
-                      : "⭐ Envie"
-                    : `${occasionEmoji(g.occasion)} ${g.occasion ?? ""}${
+                      : t("gifts:import.wish")
+                    : `${occasionEmoji(g.occasion)} ${occasionLabel(g.occasion)}${
                         g.year ? ` · ${g.year}` : ""
                       }${g.price != null ? ` · ${g.price} €` : ""}`}
                 </Text>
@@ -240,7 +239,7 @@ export default function ImportGiftSheet({
           ))}
           <View style={styles.footer}>
             <Pressable style={styles.ghostBtn} onPress={() => setStep(1)}>
-              <Text style={styles.ghostText}>Retour</Text>
+              <Text style={styles.ghostText}>{t("common:actions.back")}</Text>
             </Pressable>
             <Pressable
               style={[
@@ -251,7 +250,7 @@ export default function ImportGiftSheet({
               onPress={confirm}
             >
               <Text style={styles.primaryText}>
-                {busy ? "…" : `Ajouter (${selected.size})`}
+                {busy ? "…" : t("gifts:import.addCount", { count: selected.size })}
               </Text>
             </Pressable>
           </View>

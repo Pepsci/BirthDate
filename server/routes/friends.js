@@ -7,12 +7,7 @@ const Invitation = require("../models/invitation.model");
 const mongoose = require("mongoose");
 const { isAuthenticated } = require("../middleware/jwt.middleware");
 const { notify } = require("../utils/notify");
-const {
-  sendFriendRequestNotification,
-} = require("../services/emailTemplates/friendRequestEmailService");
-const {
-  sendInvitationEmail,
-} = require("../services/emailTemplates/invitationEmail");
+const { emailsFor } = require("../services/emailTemplates/localized");
 const { generateVerificationToken } = require("../services/verififcation");
 const { createFriendDates } = require("../utils/friendDates");
 const { isBlockedBetween } = require("../utils/blocking");
@@ -157,7 +152,7 @@ router.post("/", isAuthenticated, friendRequestLimiter, async (req, res, next) =
         requestedBy: currentUserId,
       });
 
-      await sendFriendRequestNotification(
+      await emailsFor(targetUser.language).sendFriendRequestNotification(
         targetUser.email,
         currentUser.name,
         targetUser._id,
@@ -201,7 +196,12 @@ router.post("/", isAuthenticated, friendRequestLimiter, async (req, res, next) =
         token,
       });
 
-      await sendInvitationEmail(email, currentUser.name, token);
+      // Pas encore de compte : on écrit dans la langue de celui qui invite.
+      await emailsFor(currentUser.language).sendInvitationEmail(
+        email,
+        currentUser.name,
+        token,
+      );
 
       return res
         .status(201)
@@ -239,7 +239,7 @@ router.post("/request-by-id", isAuthenticated, friendRequestLimiter, async (req,
 
     const [currentUser, targetUser] = await Promise.all([
       User.findById(currentUserId).select("name surname avatar"),
-      User.findById(userId).select("name email deletedAt"),
+      User.findById(userId).select("name email deletedAt language"),
     ]);
 
     if (!targetUser || targetUser.deletedAt) {
@@ -273,7 +273,7 @@ router.post("/request-by-id", isAuthenticated, friendRequestLimiter, async (req,
       requestedBy: currentUserId,
     });
 
-    await sendFriendRequestNotification(
+    await emailsFor(targetUser.language).sendFriendRequestNotification(
       targetUser.email,
       currentUser.name,
       targetUser._id,

@@ -1,0 +1,180 @@
+{
+  "lock": {
+    "minor": "🔒 La cagnotte est réservée aux majeurs : tu pourras en ouvrir une à partir de tes 18 ans.",
+    "birthdate_missing": "🔒 Renseigne ta date de naissance dans ton profil pour ouvrir une cagnotte.",
+    "birthdate_cooldown": "⏳ Ta date de naissance a été modifiée récemment : la cagnotte sera disponible dans quelques jours.",
+    "admin_blocked": "🔒 L'ouverture de cagnottes est suspendue pour ton compte. Contacte le support."
+  },
+  "strip": {
+    "title": "🐷 Mes cagnottes",
+    "hideLabel": "Masquer mes cagnottes",
+    "hide": "Masquer ▴",
+    "host": "Organisateur"
+  },
+  "direct": {
+    "noIban": "Aucun RIB disponible.",
+    "ibanError": "Impossible d'afficher le RIB.",
+    "title": "💸 Autres moyens de participer",
+    "externalDefault": "Cagnotte externe",
+    "externalText": "{{label}} — l'organisateur l'a ouverte sur un autre service. Ta participation s'y déroule entièrement : BirthReminder n'en a aucune trace et ne pourra ni la confirmer ni la rembourser.",
+    "openPool": "🔗 Ouvrir la cagnotte",
+    "externalMissing": "L'organisateur a annoncé une cagnotte externe mais n'a pas encore renseigné le lien.",
+    "paypal": "💳 Payer via PayPal",
+    "paypalMissing": "L'organisateur a activé PayPal mais n'a pas encore renseigné son lien.",
+    "ibanMissing": "L'organisateur a activé le virement par RIB mais n'a pas encore renseigné ses informations.",
+    "showIban": "🏦 Afficher le RIB",
+    "shareIban": "📤 Partager l'IBAN",
+    "tip": "Astuce : appuie longuement sur l'IBAN pour le copier.",
+    "note": "Ces paiements se font directement vers l'organisateur, en dehors de BirthReminder.",
+    "holder": "Titulaire"
+  },
+  "contribute": {
+    "thanks": "Merci ! 💝",
+    "saved": "Ta contribution a bien été enregistrée.",
+    "payError": "Erreur lors du paiement.",
+    "embedded": "💝 Contribuer à la cagnotte",
+    "title": "Contribuer à la cagnotte",
+    "amount": "Montant (€)",
+    "message": "Message (optionnel)",
+    "messagePlaceholder": "Un petit mot avec ta contribution…",
+    "displayName": "Nom affiché (optionnel)",
+    "namePlaceholder": "Ton prénom ou un pseudonyme",
+    "nameHint": "Laisse vide pour utiliser ton nom de compte. Un pseudonyme masque ton vrai nom, y compris pour l'organisateur.",
+    "anonymous": "Apparaître anonymement",
+    "hideAmount": "Masquer le montant",
+    "hideAmountInfo": "ℹ️ Les autres participants verront ton nom, pas le montant. L'organisateur le voit, et il compte dans le total de la cagnotte.",
+    "anonymousInfo": "ℹ️ Ta participation sera masquée pour les autres participants, mais restera visible par l'organisateur. Pour rester anonyme aussi vis-à-vis de lui, utilise un pseudonyme ci-dessus.",
+    "secure": "🔒 Paiement sécurisé par Stripe — l'argent va directement à l'organisateur. BirthReminder ne détient jamais les fonds : en cas d'annulation, le remboursement relève de l'organisateur.",
+    "stripeTerms": "Conditions des services Stripe",
+    "amountPlaceholder": "Montant libre (min 1 €)",
+    "pay": "💳 Payer"
+  },
+  "lockMsg": {
+    "minorTitle": "Cagnotte réservée aux majeurs",
+    "minorText": "Tu pourras ouvrir une cagnotte ou partager un moyen de paiement à partir de tes 18 ans. Tout le reste de l'événement reste accessible.",
+    "missingTitle": "Date de naissance manquante",
+    "missingText": "Renseigne ta date de naissance dans ton profil pour pouvoir ouvrir une cagnotte.",
+    "cooldownTitle": "Cagnotte disponible bientôt",
+    "cooldownText": "Ta date de naissance a été modifiée récemment. Par sécurité, tu pourras ouvrir une cagnotte à partir du {{date}}.",
+    "blockedTitle": "Cagnottes suspendues",
+    "blockedText": "L'ouverture de cagnottes est suspendue pour ton compte. Contacte le support pour en savoir plus."
+  },
+  "refund": {
+    "confirmTitle": "Rembourser tout le monde ?",
+    "countFor": {
+      "one": "{{count}} contribution pour {{amount}} €.",
+      "other": "{{count}} contributions pour {{amount}} €."
+    },
+    "approx": "environ ",
+    "confirmBody": "Les contributeurs récupèrent l'intégralité. Cette opération te coûtera {{approx}}{{fee}} € : Stripe ne restitue pas les frais des paiements d'origine.\n\nLa cagnotte sera fermée. C'est irréversible.",
+    "action": "Rembourser",
+    "doneTitle": "Remboursements envoyés",
+    "doneAll": {
+      "one": "{{count}} remboursement envoyé. Les contributeurs seront prévenus dès que Stripe les confirme.",
+      "other": "{{count}} remboursements envoyés. Les contributeurs seront prévenus dès que Stripe les confirme."
+    },
+    "donePartial": "{{ok}} réussi(s), {{failed}} en échec. Tu peux relancer : seules les contributions non remboursées seront reprises.",
+    "error": "Erreur lors du remboursement.",
+    "title": "💸 Rembourser les contributeurs",
+    "summary": {
+      "one": "{{count}} contribution — {{amount}} € seront intégralement rendus à leurs auteurs.",
+      "other": "{{count}} contributions — {{amount}} € seront intégralement rendus à leurs auteurs."
+    },
+    "warn": "⚠️ Cette opération te coûtera {{approx}}{{fee}} € : Stripe ne rend pas les frais des paiements d'origine.",
+    "estimated": {
+      "one": "{{count}} contribution sur {{total}} est chiffrée au tarif d'une carte européenne standard. Le coût réel peut être plus élevé si le paiement venait d'une carte professionnelle ou étrangère.",
+      "other": "{{count}} contributions sur {{total}} sont chiffrées au tarif d'une carte européenne standard. Le coût réel peut être plus élevé si le paiement venait d'une carte professionnelle ou étrangère."
+    },
+    "inProgress": "Remboursement en cours…",
+    "all": "Rembourser tout le monde"
+  },
+  "stripe": {
+    "notFinished": "Onboarding pas encore terminé — reprends-le quand tu veux avec le même bouton.",
+    "connectError": "Erreur lors de la connexion Stripe.",
+    "available": "Disponible",
+    "pending": "En attente de règlement",
+    "lastPayout": "Dernier virement : {{amount}} €",
+    "arrival": " — arrivée le {{date}}",
+    "noPayout": "Aucun virement pour l'instant. Stripe verse automatiquement sur ton compte bancaire selon son calendrier.",
+    "dashError": "Impossible d'ouvrir ton tableau de bord Stripe.",
+    "dashboard": "Voir mes virements sur Stripe",
+    "dashHint": "Solde, virements et coordonnées bancaires se gèrent depuis ton tableau de bord Stripe, avec les identifiants du compte créé lors de la configuration.",
+    "disconnectTitle": "Déconnecter ton compte de paiement ?",
+    "disconnectText": "Tes cagnottes encore ouvertes seront fermées et tu ne pourras plus encaisser de contributions. Tu pourras reconnecter un compte plus tard, mais il faudra refaire la vérification Stripe.",
+    "disconnect": "Déconnecter",
+    "disconnectError": "Impossible de déconnecter ton compte.",
+    "disconnectBtn": "Déconnecter mon compte de paiement",
+    "needAccount": "⚠️ Pour encaisser la cagnotte, tu dois créer un compte Stripe (une seule fois, environ 5 minutes — identité et RIB demandés par Stripe). C'est ton compte : tu y gères tes virements, et BirthReminder ne détient jamais l'argent.",
+    "connect": "🔗 Connecter mon compte Stripe"
+  },
+  "config": {
+    "ibanInvalid": "Saisis un IBAN valide ou désactive l'option virement IBAN.",
+    "embedded": "💝 Configurer la cagnotte",
+    "title": "Configurer la cagnotte",
+    "active": "Cagnotte activée",
+    "activeHint": "Les invités pourront contribuer par carte bancaire",
+    "commitTitle": "Ce que tu t'engages à faire",
+    "commit1": "L'argent arrive directement sur ton compte Stripe : BirthReminder ne le détient jamais et n'intervient à aucun moment sur les fonds. Tu restes le seul responsable de la cagnotte vis-à-vis des contributeurs.",
+    "commit2": "À savoir : si tu rembourses une contribution, les frais prélevés lors du paiement d'origine ne te sont pas restitués par Stripe.",
+    "stripeConnect": "Contrat de compte Stripe Connect",
+    "mode": "Mode",
+    "free": "🆓 Libre",
+    "goal": "🎯 Objectif",
+    "goalLabel": "Objectif (€)",
+    "goalPlaceholder": "ex : 150",
+    "deadline": "Date limite (optionnel)",
+    "noDeadline": "Aucune — appuyer pour choisir",
+    "clearDeadline": "Retirer la date limite",
+    "directHint": "Propose ton IBAN et/ou ton lien PayPal : les invités t'envoient l'argent directement, sans activer de cagnotte.",
+    "offerIban": "Proposer un IBAN",
+    "offerIbanHint": "Visible par les invités connectés",
+    "holder": "Nom du titulaire (optionnel)",
+    "visibleFor": "Visible pendant",
+    "days": "{{count}}j",
+    "ibanNote": "🔒 L'IBAN est chiffré et supprimé automatiquement après ce délai.",
+    "offerPaypal": "Proposer PayPal",
+    "paypalHint": "Lien PayPal.Me public",
+    "external": "Cagnotte sur un autre service",
+    "externalHint": "Leetchi, Lydia, Le Pot Commun…",
+    "externalLabel": "Nom affiché (optionnel)",
+    "externalNote": "La collecte se déroule entièrement sur le service choisi. BirthReminder n'en voit ni les montants ni les participants, ne peut rien confirmer en cas de litige et ne pourra rien rembourser : tes invités devront s'adresser à toi, ou à ce service."
+  },
+  "mine": {
+    "loadError": "Impossible de charger tes contributions pour le moment.",
+    "sum": {
+      "contribution": "Contribution de {{amount}}",
+      "event": "Événement : {{title}}",
+      "date": "Date : {{date}}",
+      "collectedBy": "Encaissée par : {{name}}",
+      "reference": "Référence de paiement : {{ref}}",
+      "amount": "Montant : {{amount}}"
+    },
+    "report": {
+      "mine": "— Ma contribution —",
+      "what": "— Ce qui se passe —",
+      "contacted": "— Ai-je déjà contacté l'organisateur ? —",
+      "contactedHint": "(oui, le … / pas encore)",
+      "subjectFor": "Problème de cagnotte — {{title}}",
+      "subject": "Problème avec une cagnotte"
+    },
+    "title": "Mes contributions",
+    "empty": "Tu n'as encore participé à aucune cagnotte. Tes contributions apparaîtront ici, avec leur reçu.",
+    "refunded": "Remboursée",
+    "paid": "Versée",
+    "eventDeleted": "Événement supprimé",
+    "collectedBy": " · encaissé par {{name}}",
+    "refundedOn": " · remboursée le {{date}}",
+    "reference": "Référence de paiement",
+    "copied": "copié ✓",
+    "copy": "copier",
+    "problem": "Un problème avec cette contribution ?",
+    "note1a": "Les contributions sont encaissées",
+    "note1b": "directement par l'organisateur",
+    "note1c": "de chaque événement. BirthReminder ne détient jamais les fonds et ne peut donc pas rembourser à sa place.",
+    "note2": "Si un événement est annulé ou si le cadeau n'est pas acheté, contacte l'organisateur : le bouton « copier » prépare un message tout fait avec le montant, la date et la référence. Sans réponse de sa part, écris-nous en joignant ce récapitulatif — nous ne pouvons pas trancher un désaccord, mais la référence nous permet de retrouver le paiement et de confirmer qu'il a bien eu lieu.",
+    "total": {
+      "one": "{{count}} contribution · {{amount}} versés",
+      "other": "{{count}} contributions · {{amount}} versés"
+    }
+  }
+}

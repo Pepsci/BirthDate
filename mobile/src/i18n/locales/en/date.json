@@ -1,0 +1,242 @@
+{
+  "aCard": "a card",
+  "notFound": "This card no longer exists.",
+  "preview": {
+    "error": "This profile could not be loaded.",
+    "birthdayOn": "Birthday on {{date}}",
+    "ideas": {
+      "one": "{{count}} idea in their list",
+      "other": "{{count}} ideas in their list"
+    },
+    "noIdeas": "No gift idea shared",
+    "sharedList": {
+      "one": "Shared list · {{count}} gift",
+      "other": "Shared list · {{count}} gifts"
+    },
+    "viewProfile": "View profile"
+  },
+  "form": {
+    "photoError": "Could not upload the photo.",
+    "removePhotoTitle": "Remove the photo?",
+    "nameRequired": "First name is required.",
+    "photo": "Photo",
+    "changePhoto": "Change photo",
+    "addPhoto": "Add a photo",
+    "firstNameLabel": "First name *",
+    "firstName": "First name",
+    "lastNameLabel": "Last name",
+    "lastNameOptional": "Last name (optional)",
+    "birthday": "Birthday",
+    "family": "Family",
+    "nameday": "Name day",
+    "namedayHint": "🎉 Detected automatically from the first name if you leave it alone."
+  },
+  "delete": {
+    "title": "Delete this date?",
+    "text": "{{name}} will be removed from your list.",
+    "failed": "Could not delete",
+    "label": "Delete this date"
+  },
+  "edit": {
+    "titleFor": "Edit {{name}}",
+    "closeLabel": "Close editing"
+  },
+  "nameday": {
+    "none": "No name day set",
+    "dayIn": "Day in {{month}}",
+    "pickMonth": "Month of the name day",
+    "changeMonth": "← Change month",
+    "remove": "Remove the name day"
+  },
+  "new": {
+    "title": "Add a date"
+  },
+  "report": {
+    "title": "Wrong name day",
+    "thanks": "Thank you!",
+    "doneText": "We will check the name day for {{name}} and fix the calendar for everyone. Our reply will arrive in Chats → Support.",
+    "intro": "A first name celebrated on the wrong date, or not at all? Tell us which one and we will fix the calendar for everyone.",
+    "nameLabel": "First name *",
+    "namePlaceholder": "E.g. Mia, Jean-Luc…",
+    "dateLabel": "Correct date (if you know it)",
+    "commentLabel": "Details (optional)",
+    "commentPlaceholder": "E.g. in my family we celebrate it on 15 August",
+    "linkWrong": "Wrong name day?",
+    "linkMissing": "No name day? Let us know"
+  },
+  "errors": {
+    "share": "Could not share."
+  },
+  "shared": {
+    "releaseTitle": "Release this reservation?",
+    "releaseTextWho": "{{who}} committed to giving \"{{gift}}\". The idea will be available to everyone again.",
+    "releaseText": "\"{{gift}}\" will be available to everyone again.",
+    "release": "Release",
+    "filterFree": "Available",
+    "filterTaken": "Reserved",
+    "filterMine": "I'll take it",
+    "mineCancel": "✓ You've got it · cancel",
+    "reservedBy": "🔒 Reserved by {{name}}",
+    "reserved": "🔒 Reserved",
+    "take": "＋ I'll take it",
+    "releaseBtn": "↩︎ Release the reservation",
+    "inviteSent": "Invitation sent ✅ Waiting for a reply.",
+    "inviteError": "Could not send the invitation.",
+    "leaveTitle": "Leave the shared list?",
+    "unfollowTitle": "Stop following?",
+    "leaveText": "Your ideas stay for the other members. If you are the last one, the list will be deleted.",
+    "unfollowText": "You will lose access to this list. A member can share it with you again later.",
+    "leave": "Leave",
+    "unfollow": "Stop following",
+    "title": "👥 Shared list",
+    "intro": "Share a list of gift ideas with someone close: you can both see and edit it.",
+    "create": "＋ Create a shared list",
+    "waitingFor": "Waiting for {{name}}…",
+    "ideasTitle": "👥 Shared ideas",
+    "addFromList": "☑ Add from a list",
+    "shareBtn": "🔗 Share",
+    "members": "Members:",
+    "viewerNote": "List shared with you. You can view it and reserve gifts.",
+    "chipAll": "All",
+    "chipFree": "🆓 Available",
+    "chipTaken": "🔒 Reserved",
+    "chipMine": "✓ I'll take it",
+    "empty": "No shared ideas yet.",
+    "allTaken": "Everything is already reserved for this filter 🎁",
+    "reservedPlain": "Reserved",
+    "alreadyGiven": "🎉 Already given · {{count}}",
+    "leaveBtn": "Leave the shared list",
+    "unfollowBtn": "Stop following this list",
+    "withWho": "Who do you want to create the list with?",
+    "pickFriend": "Pick a friend. They will get an invitation to join the list.",
+    "whatToShare": "What do you want to share?",
+    "pickIdeas": "Choose the ideas to include in the shared list.",
+    "shareAll": {
+      "one": "🎁 Share everything ({{count}} idea)",
+      "other": "🎁 Share everything ({{count}} ideas)"
+    },
+    "chooseIdeas": "✅ Choose the ideas to share",
+    "ideasToShare": "Ideas to share",
+    "selectIdeas": "Select the ideas to include in the shared list.",
+    "shareTitle": "Share the shared list",
+    "publicLink": "Public link",
+    "publicWithCode": "The code is required to open the list",
+    "publicOpen": "Anyone with the link can view it",
+    "publicOff": "Create a link to send to anyone you like",
+    "sendLinkCode": "📤 Send the link (code included)",
+    "sendLink": "📤 Send the link",
+    "sendLinkNoCode": "🔗 Send the link without the code",
+    "shareContact": "👤 Share with a contact",
+    "manageAccess": "👥 Manage access and code",
+    "guestsNote": "Guests can view and reserve without editing the list. With a code, the public link shows nothing until it is entered."
+  },
+  "share": {
+    "ideasFor": "🎁 Gift ideas for {{name}}",
+    "sentFrom": "Sent from BirthReminder",
+    "birthdayLine": "🎂 {{name}}'s birthday: {{date}}",
+    "birthdayOf": "🎂 {{name}}'s birthday",
+    "card": "📤 Share this card",
+    "ideasTitle": "Share ideas",
+    "selectIdeas": "Select the ideas to share.",
+    "next": "Next → ({{count}})",
+    "sendTo": "Send to…",
+    "sent": "✅ Sent!",
+    "sendToName": "Send to {{name}}",
+    "pickRecipient": "Pick a recipient",
+    "cardTitle": "Share this card",
+    "cardNote": "Your friend will be able to add it to their birthdays. Your gift ideas are not shared."
+  },
+  "namedayLine": "🎉 Name day: {{date}}",
+  "openChat": "Open the chat",
+  "editCard": "Edit the card",
+  "pendingNote": "⏳ Edited offline, not sent yet. Gifts, photo and sharing will be available once the card is sent.",
+  "family": {
+    "remove": "🏠 Remove from family",
+    "add": "🏠 Add to family"
+  },
+  "reminders": {
+    "title": "🔔 Reminders",
+    "birthday": "🎂 Birthday",
+    "nameday": "🎉 Name day",
+    "dDay": "On the day",
+    "before": "{{count}}d before"
+  },
+  "seeGifts": "🎁 See gifts",
+  "chatCount": "💬 Chat ({{count}})",
+  "chat": "💬 Chat",
+  "event": {
+    "view": "🎉 View the planned event",
+    "create": "🎉 Plan an event"
+  },
+  "backToCard": "‹ Back to the card",
+  "tabs": {
+    "ideas": "🎁 My ideas",
+    "wishlist": "🎀 Their wishlist",
+    "shared": "👥 Shared"
+  },
+  "ideas": {
+    "title": "🎁 My gift ideas",
+    "new": "＋ New idea",
+    "import": "📋 Import from a list",
+    "share": "📤 Share these ideas",
+    "shareChat": "📤 Share these ideas in chat",
+    "editTitle": "Edit \"{{name}}\"",
+    "empty": "No ideas yet.",
+    "emptyFilter": "No ideas for this filter."
+  },
+  "closeX": "✕ Close",
+  "filter": {
+    "close": "✕ Close filter",
+    "byOccasion": "🔎 Filter by occasion",
+    "filter": "🔎 Filter"
+  },
+  "wishlist": {
+    "titleOf": "🎀 {{name}}'s wishlist",
+    "private": "Wishlist is private or unavailable.",
+    "empty": "Their wishlist is empty.",
+    "reservedByYou": "Reserved by you",
+    "available": "Available",
+    "allReserved": "All available gifts have been reserved 🎁",
+    "myReservations": "🎁 My reservations · {{count}}"
+  },
+  "addPlus": "＋ Add",
+  "noFriends": "No friends available.",
+  "undo": {
+    "deleted": "\"{{name}}\" deleted",
+    "action": "Undo"
+  },
+  "shareCard": {
+    "requestError": "Could not send the request.",
+    "exists": "Already in your birthdays.",
+    "addError": "Could not add this date.",
+    "title": "🎂 Birthday card",
+    "noName": "No name",
+    "born": "Born on {{full}} · celebrated on {{day}}",
+    "nameday": "🎉 Name day on {{date}}",
+    "note": "Gift ideas are not shared.",
+    "addFriend": "👥 Add as friend",
+    "requested": "✅ Request sent. Their card will be created if they accept",
+    "justCreate": "🎂 Just create the card",
+    "add": "＋ Add to my birthdays",
+    "added": "✅ Added to your birthdays"
+  },
+  "proposals": {
+    "proposeBtn": "💡 Suggest an idea",
+    "formTitle": "Suggest an idea",
+    "formHint": "The list managers decide whether to add it.",
+    "namePlaceholder": "Gift name",
+    "urlPlaceholder": "Link (optional)",
+    "pricePlaceholder": "Price (optional)",
+    "send": "Send suggestion",
+    "nameRequired": "Enter the gift name.",
+    "mineTitle": "My pending suggestions",
+    "withdraw": "Withdraw",
+    "pendingTitle": "Suggestions to review",
+    "from": "Suggested by {{name}}",
+    "accept": "Accept",
+    "decline": "Decline",
+    "declineTitle": "Decline this suggestion?",
+    "declineText": "{{name}} will be told that \"{{gift}}\" was not kept.",
+    "someone": "a guest"
+  }
+}

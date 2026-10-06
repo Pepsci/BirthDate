@@ -108,8 +108,8 @@ router.post("/:shortId/transfer-lead", isAuthenticated, async (req, res) => {
       link: `/event/${event.shortId}`,
     });
     await sendPushToUser(userId, {
-      title: `🤝 ${fromName} te propose d'organiser`,
-      body: `« ${event.title} » — à toi de décider`,
+      title: (L) => L("push.transfer.offerTitle", { name: fromName }),
+      body: (L) => L("push.transfer.offerBody", { title: event.title }),
       url: `/event/${event.shortId}`,
       tag: `event-transfer-${event.shortId}`,
       type: "events",
@@ -165,8 +165,8 @@ router.delete("/:shortId/transfer-lead", isAuthenticated, async (req, res) => {
         link: `/event/${event.shortId}`,
       });
       await sendPushToUser(event.organizer, {
-        title: `🤝 Transfert refusé — ${event.title}`,
-        body: `${name} préfère ne pas reprendre l'organisation`,
+        title: (L) => L("push.transfer.declinedTitle", { title: event.title }),
+        body: (L) => L("push.transfer.declinedBody", { name }),
         url: `/event/${event.shortId}`,
         tag: `event-transfer-declined-${event.shortId}`,
         type: "events",
@@ -285,8 +285,8 @@ router.post(
         link: `/event/${event.shortId}`,
       });
       await sendPushToUser(previousOrganizer, {
-        title: `🤝 ${newName} reprend l'organisation`,
-        body: `« ${event.title} » — tu restes participant`,
+        title: (L) => L("push.transfer.acceptedTitle", { name: newName }),
+        body: (L) => L("push.transfer.acceptedBody", { title: event.title }),
         url: `/event/${event.shortId}`,
         tag: `event-transfer-accepted-${event.shortId}`,
         type: "events",
@@ -298,9 +298,13 @@ router.post(
       // « suit » l'événement — ce qui est faux, et ce que l'app ne peut pas
       // garantir : c'est un engagement entre deux personnes.
       const invitations = await EventInvitation.find({ event: event._id });
-      const poolLine =
+      const poolLine = (L) =>
         pool.count > 0
-          ? ` Les ${(pool.total / 100).toFixed(2)} € déjà versés restent sur le compte de ${oldName}, qui s'organise avec ${newName}.`
+          ? L("notif.transferPoolLine", {
+              amount: (pool.total / 100).toFixed(2),
+              oldName,
+              newName,
+            })
           : "";
 
       for (const inv of invitations) {
@@ -317,13 +321,15 @@ router.post(
             toName: newName,
             poolTotal: pool.total,
             poolCount: pool.count,
-            message: `${oldName} a confié l'organisation de « ${event.title} » à ${newName}.${poolLine}`,
+            message: (L) =>
+              L("notif.transferDone", { oldName, newName, title: event.title }) +
+              poolLine(L),
           },
           link: `/event/${event.shortId}`,
         });
         await sendPushToUser(inv.user, {
-          title: `🤝 Nouvel organisateur — ${event.title}`,
-          body: `${oldName} a passé la main à ${newName}`,
+          title: (L) => L("push.transfer.doneTitle", { title: event.title }),
+          body: (L) => L("push.transfer.doneBody", { oldName, newName }),
           url: `/event/${event.shortId}`,
           tag: `event-transfer-done-${event.shortId}`,
           type: "events",

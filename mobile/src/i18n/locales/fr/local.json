@@ -1,0 +1,156 @@
+{
+  "backupReminder": {
+    "title": "💾 Pense à sauvegarder tes cartes",
+    "text": "Sans compte, elles n'existent que sur ce téléphone."
+  },
+  "erase": {
+    "text": "Tes cartes, idées de cadeaux, photos et ta liste d'envies seront supprimées de ce téléphone.",
+    "noBackup": "\n\nTu n'as encore fait aucune sauvegarde."
+  },
+  "backup": {
+    "fileTitle": "Sauvegarde BirthReminder",
+    "savedKeep": "Sauvegarde enregistrée. Garde ce fichier en lieu sûr.",
+    "exportError": "Export impossible.",
+    "titleOf": "Sauvegarde du {{date}}",
+    "title": "Sauvegarde",
+    "last": "Dernière sauvegarde : {{date}}",
+    "none": "Aucune sauvegarde pour l'instant",
+    "saved": "Sauvegarde enregistrée.",
+    "error": "Sauvegarde impossible.",
+    "unknownDate": "date inconnue",
+    "saveTitle": "💾 Sauvegarder mes données",
+    "saveText": "Un fichier avec tes cartes d'anniversaire, leurs idées de cadeaux, leurs photos et ta liste d'envies. Range-le où tu veux : Fichiers, Drive, un mail que tu t'envoies.",
+    "save": "Sauvegarder",
+    "scopeNote": "Cette sauvegarde ne contient ni tes événements, ni tes cagnottes, ni tes listes communes : ce sont des données partagées avec d'autres personnes, les restaurer créerait des doublons chez elles. Pour un export complet de tout ce que nous détenons sur toi, utilise « Télécharger mes données »."
+  },
+  "import": {
+    "cardsImported": {
+      "one": "{{count}} carte importée",
+      "other": "{{count}} cartes importées"
+    },
+    "alreadyThere": {
+      "one": "{{count}} déjà présente",
+      "other": "{{count}} déjà présentes"
+    },
+    "done": "Import terminé : {{list}}.",
+    "error": "Import impossible.",
+    "unreadable": "Fichier illisible.",
+    "action": "Importer",
+    "mergeOrReplace": "Fusionner : ajoute ce qui manque, sans doublon.\nRemplacer : tes données actuelles sont supprimées.",
+    "merge": "Fusionner",
+    "replaceTitle": "Remplacer tes données ?",
+    "replaceText": "Tes {{count}} cartes actuelles seront remplacées par celles du fichier.",
+    "unavailable": "L'import n'est pas disponible dans cette version de l'app.",
+    "notBackup": "Ce fichier n'est pas une sauvegarde BirthReminder.",
+    "tooRecent": "Cette sauvegarde vient d'une version plus récente de BirthReminder. Mets l'app à jour pour l'importer.",
+    "damaged": "La sauvegarde est abîmée : une carte est illisible."
+  },
+  "count": {
+    "cards": {
+      "one": "{{count}} carte",
+      "other": "{{count}} cartes"
+    },
+    "photos": {
+      "one": "{{count}} photo",
+      "other": "{{count}} photos"
+    }
+  },
+  "data": {
+    "title": "Mes données",
+    "explain": "Sans compte, tes données n'existent que sur ce téléphone. Une sauvegarde est un fichier que tu gardes où tu veux (Fichiers, iCloud Drive, mail…) : il te permet de tout retrouver sur un nouveau téléphone ou après avoir réinstallé l'app. Photos comprises.",
+    "export": "💾 Exporter une sauvegarde",
+    "import": "📂 Importer une sauvegarde",
+    "importSoon": "L'import sera disponible dans la prochaine version de l'app."
+  },
+  "restore": {
+    "title": "Restaurer cette sauvegarde ?",
+    "text": "\n\nRien ne sera supprimé : seules les cartes absentes de ton compte seront ajoutées. Celles qui existent déjà seront complétées.",
+    "cardsAdded": {
+      "one": "{{count}} carte ajoutée",
+      "other": "{{count}} cartes ajoutées"
+    },
+    "offline": "Réseau perdu en cours de route. Relance la restauration : ce qui est déjà passé ne sera pas recréé.",
+    "partial": "{{list}}. N'ont pas pu passer : {{failures}}.",
+    "nothing": "Rien ajouté",
+    "allThere": "Tout était déjà dans ton compte.",
+    "error": "Restauration impossible.",
+    "readError": "Lecture du fichier impossible.",
+    "sectionTitle": "↩️ Restaurer une sauvegarde",
+    "sectionText": "Remet dans ton compte les cartes et les envies d'une sauvegarde. Rien n'est supprimé, et une carte déjà présente n'est jamais dupliquée : tu peux restaurer sans crainte.",
+    "pickFile": "Choisir un fichier",
+    "unavailable": "La restauration n'est pas disponible dans cette version de l'app."
+  },
+  "reminders": {
+    "saveError": "Enregistrement impossible.",
+    "testScheduled": "Rappel de test dans 5 secondes. Tu peux fermer l'app pour le voir arriver.",
+    "denied": "Les notifications sont refusées pour BirthReminder.",
+    "receive": "Recevoir les rappels",
+    "receiveHint": "Anniversaires à minuit, fêtes à 9h, selon les réglages de chaque carte.",
+    "offTitle": "Notifications désactivées",
+    "offText": "Tu as refusé les notifications pour BirthReminder : aucun rappel ne peut s'afficher. Tu peux les réactiver dans les Réglages du téléphone.",
+    "none": "Aucun rappel dans les 60 prochains jours",
+    "scheduled": {
+      "one": "{{count}} rappel programmé",
+      "other": "{{count}} rappels programmés"
+    },
+    "next": "Prochain : {{title}}",
+    "explain": "Sans compte, c'est ton téléphone qui programme les rappels, sur les 60 prochains jours. Ouvre BirthReminder de temps en temps pour qu'il programme la suite : si l'app reste fermée trop longtemps, une notification te le rappellera.",
+    "test": "Envoyer un rappel de test"
+  },
+  "migrate": {
+    "error": "L'import n'a pas pu se faire.",
+    "discardTitle": "Ne pas importer ?",
+    "discardText": "Les cartes du mode sans compte seront supprimées de ce téléphone. Ton compte n'est pas touché.",
+    "title": "Tes cartes",
+    "done": "✅ C'est fait !",
+    "incomplete": "⚠️ Import incomplet",
+    "doneText": "Tes cartes sont maintenant dans ton compte, sur tous tes appareils et sur le site. Elles ont été retirées du stockage du téléphone.",
+    "offline": "La connexion a été perdue en cours de route.",
+    "someFailed": "Certaines cartes n'ont pas pu être envoyées :",
+    "retryText": "Rien n'est perdu : elles restent sur ce téléphone. Réessaie, l'import reprendra là où il s'est arrêté, sans créer de doublons.",
+    "seeCards": "Voir mes cartes",
+    "keepOpen": "Garde l'app ouverte pendant l'import.",
+    "askTitle": "📱 → ☁️ Importer tes cartes ?",
+    "askText": "Tu as créé sans compte sur ce téléphone : {{what}}. Importe-les dans ton compte pour les retrouver partout, avec leurs idées de cadeaux, leurs photos et leurs rappels.",
+    "dupHint": "Une carte déjà présente dans ton compte (même prénom, nom et date) n'est pas recréée : ses idées de cadeaux y sont simplement ajoutées.",
+    "importCards": {
+      "one": "Importer ma carte",
+      "other": "Importer mes {{count}} cartes"
+    },
+    "importWishlist": "Importer ma liste d'envies",
+    "skip": "Ne pas importer",
+    "merged": {
+      "one": "{{count}} déjà dans ton compte, complétée",
+      "other": "{{count}} déjà dans ton compte, complétées"
+    }
+  },
+  "rem": {
+    "tomorrow": "demain",
+    "week1": "dans 1 semaine",
+    "week2": "dans 2 semaines",
+    "month1": "dans 1 mois",
+    "inDays": "dans {{count}} jours",
+    "birthdayToday": "🎂 C'est l'anniversaire de {{name}} !",
+    "birthdaySoon": "🎂 Anniversaire de {{name}} {{when}}",
+    "birthdayTodayBody": "Pensez à lui souhaiter un joyeux anniversaire 🎉",
+    "birthdaySoonBody": "N'oubliez pas de préparer quelque chose !",
+    "namedayToday": "🌸 C'est la fête de {{name}} !",
+    "namedaySoon": "🌸 Fête de {{name}} {{when}}",
+    "namedayTodayBody": "Pensez à lui souhaiter une bonne fête 🎉",
+    "namedaySoonBody": "N'oubliez pas de lui souhaiter !",
+    "openTitle": "📱 Ouvre BirthReminder",
+    "openBody": "Ouvre l'app pour continuer à recevoir tes rappels d'anniversaires.",
+    "channel": "Notifications BirthReminder",
+    "testTitle": "🎂 Rappel de test",
+    "testBody": "Tes rappels fonctionnent : tu seras prévenu le jour venu (minuit pour un anniversaire, 9h pour une fête)."
+  },
+  "errors": {
+    "namedayFormat": "Format de fête invalide (MM-JJ attendu).",
+    "giftGone": "Cette idée de cadeau n'existe plus.",
+    "namedayTimings": "Les rappels de fête sont possibles la veille ou une semaine avant.",
+    "wishGone": "Cette envie n'existe plus.",
+    "titleRequired": "Le titre est obligatoire.",
+    "storeTooRecent": "Tes données ont été enregistrées par une version plus récente de BirthReminder. Mets l'app à jour pour y accéder.",
+    "needsAccount": "Indisponible sans compte ({{what}})."
+  }
+}

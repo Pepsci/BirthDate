@@ -1,3 +1,4 @@
+import { t } from "@/i18n";
 import { useState } from "react";
 import {
   View,
@@ -58,7 +59,7 @@ export default function NamedayReportScreen() {
       await reportNameday(name.trim(), expectedDate, comment.trim());
       setSent(true);
     } catch (e: any) {
-      setError(e?.message ?? "Erreur lors de l'envoi.");
+      setError(e?.message ?? t("common:errors.send"));
     } finally {
       setSending(false);
     }
@@ -67,15 +68,14 @@ export default function NamedayReportScreen() {
   if (sent) {
     return (
       <View style={styles.center}>
-        <Stack.Screen options={{ title: "Fête incorrecte" }} />
+        <Stack.Screen options={{ title: t("date:report.title") }} />
         <Text style={styles.doneEmoji}>🌸</Text>
-        <Text style={styles.doneTitle}>Merci !</Text>
+        <Text style={styles.doneTitle}>{t("date:report.thanks")}</Text>
         <Text style={styles.doneDesc}>
-          On vérifie la fête de {name.trim()} et on corrige le calendrier pour
-          tout le monde. Notre réponse arrivera dans Messages → Support.
+          {t("date:report.doneText", { name: name.trim() })}
         </Text>
         <Pressable style={styles.primaryBtn} onPress={() => router.back()}>
-          <Text style={styles.primaryBtnText}>Retour</Text>
+          <Text style={styles.primaryBtnText}>{t("common:actions.back")}</Text>
         </Pressable>
       </View>
     );
@@ -86,31 +86,30 @@ export default function NamedayReportScreen() {
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <Stack.Screen options={{ title: "Fête incorrecte" }} />
+      <Stack.Screen options={{ title: t("date:report.title") }} />
       <ScrollView
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
       >
         <Text style={styles.intro}>
-          Un prénom fêté à la mauvaise date, ou pas fêté du tout ? Dis-nous
-          lequel : on corrige le calendrier pour tout le monde.
+          {t("date:report.intro")}
         </Text>
 
-        <Text style={styles.label}>Prénom concerné *</Text>
+        <Text style={styles.label}>{t("date:report.nameLabel")}</Text>
         <TextInput
           style={styles.input}
           value={name}
           onChangeText={(t) => setName(t.slice(0, NAME_MAX))}
-          placeholder="Ex : Mia, Jean-Luc…"
+          placeholder={t("date:report.namePlaceholder")}
           placeholderTextColor={colors.placeholder}
           autoCapitalize="words"
         />
 
-        <Text style={styles.label}>Bonne date (si tu la connais)</Text>
+        <Text style={styles.label}>{t("date:report.dateLabel")}</Text>
         <NamedayPicker value={expectedDate} onChange={setExpectedDate} />
 
         <View style={styles.labelRow}>
-          <Text style={styles.label}>Précision (optionnel)</Text>
+          <Text style={styles.label}>{t("date:report.commentLabel")}</Text>
           <Text style={styles.counter}>
             {comment.length}/{COMMENT_MAX}
           </Text>
@@ -119,7 +118,7 @@ export default function NamedayReportScreen() {
           style={[styles.input, styles.textarea]}
           value={comment}
           onChangeText={(t) => setComment(t.slice(0, COMMENT_MAX))}
-          placeholder="Ex : dans ma famille on la fête le 15 août"
+          placeholder={t("date:report.commentPlaceholder")}
           placeholderTextColor={colors.placeholder}
           multiline
           textAlignVertical="top"
@@ -133,7 +132,7 @@ export default function NamedayReportScreen() {
           disabled={!canSend}
         >
           <Text style={styles.primaryBtnText}>
-            {sending ? "Envoi…" : "Signaler"}
+            {sending ? t("common:status.sending") : t("common:actions.report")}
           </Text>
         </Pressable>
       </ScrollView>

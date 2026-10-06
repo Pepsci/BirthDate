@@ -1,3 +1,4 @@
+import { t } from "@/i18n";
 import {
   cacheDirectory,
   deleteAsync,
@@ -163,7 +164,7 @@ export async function pickBackupFile(): Promise<LocalBackup | null> {
   const DocumentPicker = getPicker();
   if (!DocumentPicker) {
     throw new BackupFormatError(
-      "L'import n'est pas disponible dans cette version de l'app.",
+      t("local:import.unavailable"),
     );
   }
   // Tous types : un fichier reçu par mail ou AirDrop n'a pas toujours le
@@ -188,15 +189,14 @@ export function parseBackup(text: string): LocalBackup {
   try {
     raw = JSON.parse(text);
   } catch {
-    throw new BackupFormatError("Ce fichier n'est pas une sauvegarde BirthReminder.");
+    throw new BackupFormatError(t("local:import.notBackup"));
   }
   if (!raw || raw.kind !== BACKUP_KIND || !Array.isArray(raw.dates)) {
-    throw new BackupFormatError("Ce fichier n'est pas une sauvegarde BirthReminder.");
+    throw new BackupFormatError(t("local:import.notBackup"));
   }
   if (typeof raw.schemaVersion !== "number" || raw.schemaVersion > LOCAL_SCHEMA_VERSION) {
     throw new BackupFormatError(
-      "Cette sauvegarde vient d'une version plus récente de BirthReminder. " +
-        "Mets l'app à jour pour l'importer.",
+      t("local:import.tooRecent"),
     );
   }
   const badDate = raw.dates.find(
@@ -205,7 +205,7 @@ export function parseBackup(text: string): LocalBackup {
       typeof d.date !== "string" || isNaN(new Date(d.date).getTime()),
   );
   if (badDate) {
-    throw new BackupFormatError("La sauvegarde est abîmée : une carte est illisible.");
+    throw new BackupFormatError(t("local:import.damaged"));
   }
   return {
     kind: BACKUP_KIND,
