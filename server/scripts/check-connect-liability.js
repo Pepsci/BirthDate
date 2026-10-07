@@ -4,7 +4,7 @@
 //
 // Sur des charges directes, un chargeback est d'abord débité du solde du
 // compte de l'ORGANISATEUR. S'il l'a déjà vidé sur sa banque, Stripe tente de
-// débiter son compte externe — et si ça échoue, la perte remonte soit à
+// débiter son compte externe : et si ça échoue, la perte remonte soit à
 // Stripe, soit à NOUS, selon `controller.losses.payments`.
 //
 //   "stripe"      → Stripe couvre

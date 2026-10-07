@@ -129,7 +129,7 @@
   margin-bottom: 1rem;
 }
 
-/* Tuile de la catégorie active, épinglée en haut de la recherche guidée —
+/* Tuile de la catégorie active, épinglée en haut de la recherche guidée :
    même esprit que .helpcenter-category mais en pleine largeur, avec un
    indice qu'elle est cliquable pour changer de catégorie. */
 .helpcenter-active-category {

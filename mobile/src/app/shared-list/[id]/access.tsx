@@ -27,7 +27,7 @@ import {
 import { readingPane } from "../../../lib/layout";
 
 /**
- * Gestion des accès d'une liste commune — membres uniquement.
+ * Gestion des accès d'une liste commune : membres uniquement.
  *
  * Trois niveaux coexistent : les membres (créateur et contributeurs, droits
  * complets), les invités internes (consultation et réservation) et les
@@ -64,7 +64,7 @@ export default function SharedListAccessScreen() {
   // Arrivée depuis « Partager à un contact » : on ouvre directement le
   // sélecteur d'amis. Sans ça, l'utilisateur qui vient de cliquer sur cette
   // action retombe sur l'écran de gestion complet et doit chercher le bouton
-  // « ＋ » — un pas de plus pour l'action la plus courante.
+  // « ＋ » : un pas de plus pour l'action la plus courante.
   const autoOpened = useRef(false);
   useEffect(() => {
     if (add === "1" && access && !autoOpened.current) {

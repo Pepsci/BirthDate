@@ -1,5 +1,5 @@
 /**
- * Statut d'une idée cadeau — 3 états (aligné avec le mobile).
+ * Statut d'une idée cadeau : 3 états (aligné avec le mobile).
  * `status` est stocké en base ; `purchased` reste synchro pour compat.
  * `badge` = classe CSS existante réutilisée (pending / purchased / reserved).
  */

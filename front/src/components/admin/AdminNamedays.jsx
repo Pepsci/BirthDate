@@ -14,7 +14,7 @@ import "./css/adminNamedays.css";
  *  - Par date        : prénoms principaux et leurs variantes, dans l'ordre de l'année ;
  *  - Liste complète  : tous les prénoms (principaux + variantes) de A à Z ;
  *  - Composés        : prénoms composés des répertoires, avec la date que leur
- *                      donne la règle (Jean-Luc → Luc) — à vérifier une fois ;
+ *                      donne la règle (Jean-Luc → Luc) : à vérifier une fois ;
  *  - Sans fête       : prénoms des répertoires qui ne matchent rien ;
  *  - À appliquer     : cartes dont la fête automatique ne correspond plus au
  *                      calendrier (modif laissée « Plus tard », ou nouvelle

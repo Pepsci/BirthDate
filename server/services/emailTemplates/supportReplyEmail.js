@@ -43,7 +43,7 @@ const sendSupportReplyEmail = async ({ toEmail, toName, subject, message }) => {
     // Adresse factice, volontairement non surveillée : contrairement à
     // sendSupportEmail (où le Reply-To pointe vers l'utilisateur pour que
     // l'admin puisse répondre depuis son client mail), ici c'est l'admin qui
-    // écrit — une réponse du visiteur ne doit pas atterrir dans une boîte
+    // écrit : une réponse du visiteur ne doit pas atterrir dans une boîte
     // que personne ne lit. Le paragraphe ci-dessus l'explique clairement.
     ReplyToAddresses: ["no-reply@birthreminder.com"],
     Destination: { ToAddresses: [toEmail] },

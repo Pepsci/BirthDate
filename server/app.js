@@ -201,13 +201,13 @@ app.use("/api/app-version", require("./routes/appVersion"));
 //
 // Le .env local pointe sur la base de PRODUCTION. Un `npm run dev` lancé sur
 // un poste de développement démarrait donc, en plus du serveur, toutes les
-// tâches planifiées — sur les données réelles. Deux processus, deux exécutions
+// tâches planifiées : sur les données réelles. Deux processus, deux exécutions
 // à minuit : chaque utilisateur recevait ses rappels d'anniversaire en double,
 // et le récap mensuel partait deux fois.
 //
 // Le symptôme était trompeur : seules les notifications issues d'un CRON
 // doublaient. Un message de chat ou une notification d'événement part de la
-// machine qui reçoit la requête — une seule — alors qu'une tâche planifiée
+// machine qui reçoit la requête, une seule, alors qu'une tâche planifiée
 // s'exécute sur chaque processus qui tourne.
 //
 // Plus grave que les doublons : `purgeDeletedAccounts` et
@@ -223,7 +223,7 @@ const cronsDisabled = process.env.CRONS_DISABLED === "true";
 
 if (cronsDisabled) {
   console.log(
-    "⏸️  Tâches planifiées DÉSACTIVÉES (CRONS_DISABLED=true) — poste de développement",
+    "⏸️  Tâches planifiées DÉSACTIVÉES (CRONS_DISABLED=true) : poste de développement",
   );
 } else {
   purgeDeletedAccounts.start();

@@ -38,7 +38,7 @@ const STATUS_LABEL: Record<SupportStatus, string> = {
 const CATEGORY_EMOJI = { general: "✉️", pool: "💶", nameday: "🌸" } as const;
 
 /**
- * Une conversation avec le support — équivalent mobile de l'onglet Support
+ * Une conversation avec le support : équivalent mobile de l'onglet Support
  * du web (front/…/chat/SupportThread.jsx).
  *
  * Ouvrir l'écran marque la réponse comme lue (GET /support/mine/:id).

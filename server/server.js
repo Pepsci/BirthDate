@@ -10,7 +10,7 @@ const PORT = process.env.PORT || 3000;
 const server = http.createServer(app);
 
 // Même politique que le CORS Express (app.js) : les requêtes sans Origin
-// (app mobile React Native, outils) sont autorisées — l'auth reste assurée
+// (app mobile React Native, outils) sont autorisées : l'auth reste assurée
 // par le middleware socketAuth (JWT obligatoire).
 const allowedSocketOrigins = [
   "http://localhost:5173",
@@ -46,12 +46,12 @@ app.set("io", io);
 app.set("connectedUsers", connectedUsers);
 io.app = app;
 
-// Un seul io.on("connection") — évite les doublons de listeners
+// Un seul io.on("connection") : évite les doublons de listeners
 io.on("connection", (socket) => {
   socket.join(`user:${socket.userId}`);
   // Room "admin" : permet de pousser en direct les nouveaux messages support
   // (nouveau ticket, réponse utilisateur) à tous les admins connectés, sans
-  // qu'ils aient à recharger la page pour les voir arriver — voir
+  // qu'ils aient à recharger la page pour les voir arriver : voir
   // routes/support.js et AdminSupport.jsx.
   User.findById(socket.userId)
     .select("role")

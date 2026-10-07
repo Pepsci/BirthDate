@@ -7,7 +7,7 @@ const { Schema, model } = mongoose;
  *
  * Un utilisateur connecté peut continuer la conversation directement dans
  * l'app (chat) : chaque réponse admin déclenche une notification in-app.
- * Un visiteur sans compte n'a pas d'espace où revenir — la réponse admin lui
+ * Un visiteur sans compte n'a pas d'espace où revenir : la réponse admin lui
  * est alors envoyée par email (seul canal disponible), et le ticket passe
  * directement à "closed".
  */
@@ -32,7 +32,7 @@ const supportMessageSchema = new Schema(
     /**
      * Nature du ticket.
      *
-     * ⚠️ "pool" échappe à la règle du ticket unique — et c'est délibéré.
+     * ⚠️ "pool" échappe à la règle du ticket unique : et c'est délibéré.
      *
      * La règle « une seule conversation à la fois » sert à éviter des fils
      * parallèles sur le même sujet. Appliquée aux litiges de cagnotte, elle

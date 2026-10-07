@@ -15,13 +15,13 @@ import {
  * ⚠️ Remplace un `Alert.alert`, et ce n'est pas cosmétique.
  *
  * Une réaction se pose d'un geste : on vise l'icône, on tape. Dans une alerte
- * système, il aurait fallu une ligne de texte par réaction — « 👍 J'aime »,
- * « ❤️ J'adore »… — soit six lignes à lire avant de choisir, pour une action
+ * système, il aurait fallu une ligne de texte par réaction : « 👍 J'aime »,
+ * « ❤️ J'adore »… : soit six lignes à lire avant de choisir, pour une action
  * qui doit être instantanée. La rangée horizontale rend le choix visuel : on
  * reconnaît la forme sans lire.
  *
  * Les actions textuelles (répondre, modifier, supprimer) restent en dessous,
- * en liste, parce qu'elles se lisent — ce sont des décisions, pas des réflexes.
+ * en liste, parce qu'elles se lisent : ce sont des décisions, pas des réflexes.
  */
 
 export type MessageAction = {

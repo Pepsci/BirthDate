@@ -1,5 +1,5 @@
 /* ========================================
-   GIFTS & WISHLIST — CSS COMMUN
+   GIFTS & WISHLIST : CSS COMMUN
    Utilisé par : Wishlist.jsx, FriendGiftList.jsx, FriendProfile.jsx
    ======================================== */
 
@@ -348,7 +348,7 @@
 }
 
 /* ========================================
-   CARD ITEM — BASE
+   CARD ITEM : BASE
    ======================================== */
 .gift-item-card {
   background: var(--bg-primary);
@@ -462,7 +462,7 @@
   margin: 4px 0 0;
 }
 
-/* Meta info (occasion, année — FriendGiftList) */
+/* Meta info (occasion, année : FriendGiftList) */
 .gift-item-meta {
   display: flex;
   justify-content: space-between;

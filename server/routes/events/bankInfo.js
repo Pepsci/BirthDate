@@ -7,7 +7,7 @@ const { requireAdultForPool } = require("../../middleware/requireAdultForPool");
 const { encrypt, decrypt } = require("../../utils/bankCrypto");
 const { audit } = require("../../services/auditLog");
 
-// Durées autorisées pour l'expiration (en jours) — garde-fou
+// Durées autorisées pour l'expiration (en jours) : garde-fou
 const ALLOWED_DURATIONS = [7, 14, 30, 60, 90];
 
 // Helper : émet la mise à jour temps réel sur la room de l'événement
@@ -115,7 +115,7 @@ router.put(
     // chiffré au repos justement pour qu'un dump de la base ne le révèle pas :
     // le recopier en clair ici annulerait toute la protection. On garde ce qui
     // permet de répondre à « ce RIB a été mis en ligne quand, par qui, et
-    // jusqu'à quand » — rien de plus.
+    // jusqu'à quand » : rien de plus.
     await audit(req, {
       action: "bankinfo_set",
       userId: req.payload._id,
@@ -320,7 +320,7 @@ router.put(
  * ⚠️ On n'accepte que du HTTPS, et on refuse explicitement un lien qui
  * pointerait vers BirthReminder : un organisateur qui colle par erreur l'URL
  * de son propre événement créerait une boucle incompréhensible pour ses
- * invités. Aucune liste blanche de services en revanche — en imposer une
+ * invités. Aucune liste blanche de services en revanche : en imposer une
  * reviendrait à cautionner ceux qu'on y met, ce qu'on ne veut surtout pas.
  */
 router.put(
@@ -351,7 +351,7 @@ router.put(
         if (!/^https:\/\//i.test(url)) {
           return res.status(400).json({
             message:
-              "Le lien doit être en https :// — une page de paiement non " +
+              "Le lien doit être en https ://, une page de paiement non " +
               "sécurisée ne peut pas être proposée à vos invités.",
           });
         }

@@ -9,7 +9,7 @@ import * as SecureStore from "expo-secure-store";
  * ⚠️ Pourquoi ce fichier existe. `Calendar.createEventAsync()` était appelé
  * sans champ `alarms` : iOS et Android ne posent alors AUCUN rappel, et
  * l'entrée ne se signalait qu'à l'heure de l'événement. Ce n'était pas un
- * comportement d'Apple ou de Google — c'était nous qui ne demandions rien.
+ * comportement d'Apple ou de Google : c'était nous qui ne demandions rien.
  *
  * Réglage LOCAL À L'APPAREIL (SecureStore), même principe que stats-scope :
  * il ne décrit pas l'utilisateur mais ce que cette application écrit dans le
@@ -37,7 +37,7 @@ export const TIMED_CHOICES = [
  *
  * Une journée entière commence à minuit : un décalage de 0 réveillerait donc
  * l'utilisateur à 00 h 00, ce qui n'a aucun intérêt pour un anniversaire. Les
- * valeurs utiles se lisent donc en heure d'horloge — « la veille à 18 h » vaut
+ * valeurs utiles se lisent donc en heure d'horloge : « la veille à 18 h » vaut
  * −6 h, « le jour à 9 h » vaut +9 h (positif : après le début).
  */
 export const ALL_DAY_CHOICES = [

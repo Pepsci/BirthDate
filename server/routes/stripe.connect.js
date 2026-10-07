@@ -15,7 +15,7 @@ const FALLBACK = process.env.FRONTEND_URL || "https://birthreminder.com";
  *
  * ⚠️ Volontairement distincte de FRONTEND_URL, qui vaut « http://localhost:5173 »
  * en développement. Stripe refuse une adresse non publique dans le profil
- * d'activité — c'est une information destinée à ses équipes de conformité, pas
+ * d'activité : c'est une information destinée à ses équipes de conformité, pas
  * une URL de redirection. Utiliser FRONTEND_URL ici faisait échouer toute
  * création de compte en local, avec un message générique côté application.
  *
@@ -134,7 +134,7 @@ router.post("/onboard", isAuthenticated, requireAdultForPool(), async (req, res)
         // produit, ni entreprise. À cet écran, il abandonne.
         //
         // Connect Onboarding ne redemande pas ce qui est déjà renseigné sur
-        // l'objet Account. On décrit donc l'activité à sa place — ce qui est
+        // l'objet Account. On décrit donc l'activité à sa place : ce qui est
         // honnête : cette activité se déroule bien sur birthreminder.com, et
         // c'est nous qui savons la décrire.
         //
@@ -144,7 +144,7 @@ router.post("/onboard", isAuthenticated, requireAdultForPool(), async (req, res)
           url: PUBLIC_SITE_URL,
           // 5947 « Gift, Card, Novelty and Souvenir Shops » : le code le plus
           // proche d'une collecte destinée à l'achat d'un cadeau. Aucun code
-          // ne décrit exactement un particulier qui organise une cagnotte —
+          // ne décrit exactement un particulier qui organise une cagnotte :
           // à confirmer avec le support Stripe si un contrôle survient.
           mcc: "5947",
           product_description:
@@ -202,7 +202,7 @@ router.post("/onboard", isAuthenticated, requireAdultForPool(), async (req, res)
  * l'organisateur et sont virés automatiquement sur son compte bancaire selon
  * le calendrier de Stripe : il n'a, en principe, rien à faire. Mais il n'avait
  * jusqu'ici AUCUN moyen depuis l'application de voir son solde, ses virements
- * ou de changer son RIB — il fallait retrouver un vieil email de Stripe. Un
+ * ou de changer son RIB : il fallait retrouver un vieil email de Stripe. Un
  * organisateur qui ne voit pas son argent nous écrit, ou pire, doute.
  *
  * Le lien expire vite et ne s'envoie jamais par email : il ouvre une session
@@ -221,8 +221,8 @@ router.post("/dashboard", isAuthenticated, async (req, res) => {
     //
     // Un compte Standard a son propre compte Stripe : il s'y connecte
     // directement, et la plateforme n'a pas à lui fabriquer de session. Les
-    // deux types coexistent chez nous — les comptes Express créés avant la
-    // bascule gardent leur configuration à vie — donc on regarde le compte
+    // deux types coexistent chez nous : les comptes Express créés avant la
+    // bascule gardent leur configuration à vie : donc on regarde le compte
     // avant de choisir.
     const acct = await stripe.accounts.retrieve(account.stripeAccountId);
     const hasExpressDashboard =
@@ -230,15 +230,15 @@ router.post("/dashboard", isAuthenticated, async (req, res) => {
       acct.controller?.stripe_dashboard?.type === "express";
 
     console.log(
-      `[connect] dashboard demandé pour ${account.stripeAccountId} — ` +
+      `[connect] dashboard demandé pour ${account.stripeAccountId} : ` +
         `type=${acct.type || "none"} dashboard=${acct.controller?.stripe_dashboard?.type || "?"} ` +
         `details_submitted=${acct.details_submitted}`,
     );
 
     if (hasExpressDashboard) {
       // ⚠️ Stripe refuse le lien de session tant que l'onboarding n'est pas
-      // terminé. On le vérifie AVANT d'appeler, pour distinguer ce cas — qui
-      // est normal et appelle une action de l'utilisateur — d'une vraie panne.
+      // terminé. On le vérifie AVANT d'appeler, pour distinguer ce cas : qui
+      // est normal et appelle une action de l'utilisateur : d'une vraie panne.
       if (!acct.details_submitted) {
         return res.status(400).json({
           code: "ONBOARDING_INCOMPLETE",
@@ -327,8 +327,8 @@ router.get("/balance", isAuthenticated, async (req, res) => {
  *
  * ⚠️ Ce n'est pas une fonction de confort : sans elle, un organisateur qui a
  * ouvert un compte Stripe une fois n'avait aucun moyen de revenir en arrière
- * depuis l'application. Avec des comptes Standard — donc de vrais comptes
- * Stripe appartenant à l'utilisateur — pouvoir couper le lien est une attente
+ * depuis l'application. Avec des comptes Standard : donc de vrais comptes
+ * Stripe appartenant à l'utilisateur : pouvoir couper le lien est une attente
  * légitime, et le refuser serait difficilement défendable.
  *
  * Deux garde-fous, dans cet ordre :

@@ -54,9 +54,9 @@ export default function DateForm({ initial, submitLabel, onSubmit }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
-  // Photo de carte — uniquement en édition (il faut un dateId existant pour
+  // Photo de carte : uniquement en édition (il faut un dateId existant pour
   // PATCH /date/:id/photo), et jamais pour une date liée à un ami (cet écran
-  // n'est de toute façon pas accessible dans ce cas — voir date/[id].tsx).
+  // n'est de toute façon pas accessible dans ce cas : voir date/[id].tsx).
   const [photo, setPhoto] = useState<string | null | undefined>(initial?.photo);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
@@ -123,7 +123,7 @@ export default function DateForm({ initial, submitLabel, onSubmit }: Props) {
       await onSubmit({
         name: name.trim(),
         surname: surname.trim() || undefined,
-        // new Date(y, m, d) côté lecture — ici on envoie l'ISO à midi UTC
+        // new Date(y, m, d) côté lecture : ici on envoie l'ISO à midi UTC
         // pour éviter tout glissement de jour lié aux timezones
         date: new Date(
           Date.UTC(date.getFullYear(), date.getMonth(), date.getDate(), 12),

@@ -67,7 +67,7 @@ export async function markAllNotificationsRead(): Promise<void> {
  *
  * ⚠️ Personne ne lit ses messages depuis le centre de notifications : on ouvre
  * l'app, on va dans le chat, on lit. Sans ça la pastille reste rouge pour un
- * message déjà lu — et un compteur qui ment finit par ne plus être regardé.
+ * message déjà lu : et un compteur qui ment finit par ne plus être regardé.
  *
  * Jamais bloquant : c'est du confort d'affichage, pas une action de
  * l'utilisateur. Un échec réseau ne doit pas remonter dans l'écran de chat.
@@ -99,7 +99,7 @@ export async function deleteAllNotifications(): Promise<void> {
  *
  * ⚠️ Le centre de notifications est une liste de texte : chaque ligne porte un
  * emoji, pas un composant. Y injecter le dessin maison demanderait de refaire
- * le rendu de toute la liste pour un seul type — l'emoji reste ici, le dessin
+ * le rendu de toute la liste pour un seul type : l'emoji reste ici, le dessin
  * maison reste dans le fil de discussion, là où on le regarde.
  */
 const REACTION_EMOJI: Record<string, string> = {
@@ -160,7 +160,7 @@ export function notifDisplay(n: AppNotification): {
       return {
         emoji: "🎉",
         // `data.message` est posé par le serveur quand la notif n'est pas un
-        // simple rappel — sans ça on affichait « Rappel : … » sur des
+        // simple rappel, sans ça on affichait « Rappel : … » sur des
         // notifications de modification. On le respecte comme le fait le web.
         // Ces notifs-là datent d'avant les types dédiés ci-dessous : on garde
         // le rendu pour celles déjà en base.

@@ -109,7 +109,7 @@ const buildText = (type, data) => {
     case "event_reminder":
       return data.message ? (
         <>
-          {data.message} — <strong>{data.eventTitle}</strong>
+          {data.message} : <strong>{data.eventTitle}</strong>
         </>
       ) : (
         <>
@@ -127,7 +127,7 @@ const buildText = (type, data) => {
       // raison laisse la question ouverte et force à rouvrir la page.
       return data.reason ? (
         <>
-          <strong>{data.eventTitle}</strong> est annulé — {data.reason}
+          <strong>{data.eventTitle}</strong> est annulé : {data.reason}
         </>
       ) : (
         <>
@@ -151,7 +151,7 @@ const buildText = (type, data) => {
       return (
         <>
           {data.fromName} reprend l'organisation de{" "}
-          <strong>{data.eventTitle}</strong> — tu restes participant
+          <strong>{data.eventTitle}</strong>, tu restes participant
         </>
       );
     case "event_transfer_declined":
@@ -235,7 +235,7 @@ const buildText = (type, data) => {
       return (
         <>
           <strong>{data.fromName}</strong> t'a partagé sa liste de cadeaux
-          {data.listLabel ? ` — ${data.listLabel}` : ""}
+          {data.listLabel ? `, ${data.listLabel}` : ""}
         </>
       );
     case "shared_gift_member_left":
@@ -249,11 +249,11 @@ const buildText = (type, data) => {
       return data.newDateLabel ? (
         <>
           Nouvelle date pour <strong>{data.eventTitle}</strong> :{" "}
-          {data.newDateLabel} — confirme ta présence
+          {data.newDateLabel} : confirme ta présence
         </>
       ) : (
         <>
-          La date de <strong>{data.eventTitle}</strong> a changé — confirme ta
+          La date de <strong>{data.eventTitle}</strong> a changé : confirme ta
           présence
         </>
       );
@@ -274,14 +274,14 @@ const buildText = (type, data) => {
     case "event_date_vote":
       return (
         <>
-          <strong>{data.guestName}</strong> a voté pour une date —{" "}
+          <strong>{data.guestName}</strong> a voté pour une date : {" "}
           <strong>{data.eventTitle}</strong>
         </>
       );
     case "event_location_vote":
       return (
         <>
-          <strong>{data.guestName}</strong> a voté pour un lieu —{" "}
+          <strong>{data.guestName}</strong> a voté pour un lieu : {" "}
           <strong>{data.eventTitle}</strong>
         </>
       );
@@ -297,7 +297,7 @@ const buildText = (type, data) => {
       return (
         <>
           <strong>{data.voterName}</strong> vote pour le cadeau{" "}
-          <strong>{data.giftName}</strong> — <strong>{data.eventTitle}</strong>
+          <strong>{data.giftName}</strong>, <strong>{data.eventTitle}</strong>
         </>
       );
     case "event_chat_message":
@@ -311,7 +311,7 @@ const buildText = (type, data) => {
       return (
         <>
           <strong>{data.contributorName}</strong> a participé à la cagnotte
-          {data.amountLabel ? <> ({data.amountLabel})</> : null} —{" "}
+          {data.amountLabel ? <> ({data.amountLabel})</> : null}, {" "}
           <strong>{data.eventTitle}</strong>
         </>
       );
@@ -326,7 +326,7 @@ const buildText = (type, data) => {
       return (
         <>
           <strong>{data.fromName}</strong> a rejoint votre liste de cadeaux
-          commune{data.personName ? <> — {data.personName}</> : null}
+          commune{data.personName ? <>, {data.personName}</> : null}
         </>
       );
     case "support_reply":

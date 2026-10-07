@@ -158,7 +158,7 @@ export const FAQ_SECTIONS_FR: Section[] = [
       },
       {
         q: "Que devient la cagnotte si je transmets l'organisation ?",
-        a: "Elle est gelée et tes coordonnées bancaires sont retirées de l'événement. L'argent déjà collecté reste sur TON compte Stripe — il ne suit pas le rôle. C'est à toi de le reverser ou de le rembourser, et le nouvel organisateur peut ouvrir sa propre cagnotte. Tous les participants sont prévenus.",
+        a: "Elle est gelée et tes coordonnées bancaires sont retirées de l'événement. L'argent déjà collecté reste sur TON compte Stripe : il ne suit pas le rôle. C'est à toi de le reverser ou de le rembourser, et le nouvel organisateur peut ouvrir sa propre cagnotte. Tous les participants sont prévenus.",
       },
       {
         q: "Comment quitter un événement ?",
@@ -177,13 +177,13 @@ export const FAQ_SECTIONS_FR: Section[] = [
     items: [
       {
         q: "J'ai un problème avec ma participation : que dois-je faire ?",
-        a: "BirthReminder ne détient jamais l'argent d'une cagnotte : il est encaissé directement par l'organisateur. Nous ne pouvons donc pas rembourser à sa place, ni trancher un désaccord — mais nous pouvons prouver que tu as payé, et relancer l'organisateur. Suis les étapes dans l'ordre, la plupart des situations se règlent à la première.",
+        a: "BirthReminder ne détient jamais l'argent d'une cagnotte : il est encaissé directement par l'organisateur. Nous ne pouvons donc pas rembourser à sa place, ni trancher un désaccord : mais nous pouvons prouver que tu as payé, et relancer l'organisateur. Suis les étapes dans l'ordre, la plupart des situations se règlent à la première.",
         steps: [
           "Contacte l'organisateur. Il est le seul à détenir les fonds et le seul à pouvoir déclencher le remboursement. Donne-lui la référence de ta contribution : tu la trouves dans « Mes contributions », avec un bouton qui prépare le message pour toi.",
           "Écris-nous si tu restes sans réponse. Nous confirmons le paiement, vérifions que le compte de l'organisateur existe toujours et le relançons.",
           "Saisis un conciliateur de justice si le désaccord persiste. C'est gratuit, cela se demande auprès de ta mairie, et c'est un préalable obligatoire avant toute action en justice pour les litiges de moins de 5 000 €.",
           "Conteste le paiement auprès de ta banque en dernier recours seulement : cette démarche fait supporter des frais à l'organisateur, en plus du montant repris.",
-          "Dépose plainte si tu penses avoir été victime d'une escroquerie — événement inventé, organisateur disparu avec les fonds. Signale-le-nous aussi : nous gelons la cagnotte concernée.",
+          "Dépose plainte si tu penses avoir été victime d'une escroquerie : événement inventé, organisateur disparu avec les fonds. Signale-le-nous aussi : nous gelons la cagnotte concernée.",
         ],
       },
       {
@@ -204,7 +204,7 @@ export const FAQ_SECTIONS_FR: Section[] = [
       },
       {
         q: "Comment savoir que j'ai été remboursé ?",
-        a: "Tu reçois une notification dès que le remboursement est enregistré, et ta contribution passe en « remboursée » sur la page de l'événement. Le crédit apparaît ensuite sur ton relevé sous 5 à 10 jours ouvrés selon ta banque. Attention : si le remboursement intervient peu après ton paiement, ta banque peut simplement annuler l'opération d'origine au lieu de créditer une somme. Dans ce cas tu ne verras aucun remboursement arriver — c'est le paiement lui-même qui disparaît de ton relevé. C'est normal, et le compte est bon.",
+        a: "Tu reçois une notification dès que le remboursement est enregistré, et ta contribution passe en « remboursée » sur la page de l'événement. Le crédit apparaît ensuite sur ton relevé sous 5 à 10 jours ouvrés selon ta banque. Attention : si le remboursement intervient peu après ton paiement, ta banque peut simplement annuler l'opération d'origine au lieu de créditer une somme. Dans ce cas tu ne verras aucun remboursement arriver : c'est le paiement lui-même qui disparaît de ton relevé. C'est normal, et le compte est bon.",
       },
       {
         q: "Un remboursement est-il possible sur une cagnotte par virement ?",
@@ -216,11 +216,11 @@ export const FAQ_SECTIONS_FR: Section[] = [
       },
       {
         q: "Puis-je utiliser une cagnotte que j'ai déjà ouverte ailleurs ?",
-        a: "Oui. Dans les réglages de la cagnotte, active « Cagnotte sur un autre service » et colle le lien (Leetchi, Lydia, Le Pot Commun…). Il s'affichera sur la page de l'événement, visible par tous les invités, y compris ceux qui arrivent plus tard — contrairement à un lien collé dans le chat, qui disparaît sous les messages.",
+        a: "Oui. Dans les réglages de la cagnotte, active « Cagnotte sur un autre service » et colle le lien (Leetchi, Lydia, Le Pot Commun…). Il s'affichera sur la page de l'événement, visible par tous les invités, y compris ceux qui arrivent plus tard : contrairement à un lien collé dans le chat, qui disparaît sous les messages.",
       },
       {
         q: "Qu'est-ce que ça change de passer par une cagnotte externe ?",
-        a: "Tout se déroule sur le service choisi : BirthReminder n'en voit ni les montants, ni les participants. Nous ne pouvons rien confirmer en cas de désaccord, aucun reçu n'est envoyé, rien n'apparaît dans « Mes contributions », et aucun remboursement n'est possible depuis l'application. C'est un simple lien affiché — pratique, mais sans aucune des garanties de la cagnotte intégrée.",
+        a: "Tout se déroule sur le service choisi : BirthReminder n'en voit ni les montants, ni les participants. Nous ne pouvons rien confirmer en cas de désaccord, aucun reçu n'est envoyé, rien n'apparaît dans « Mes contributions », et aucun remboursement n'est possible depuis l'application. C'est un simple lien affiché : pratique, mais sans aucune des garanties de la cagnotte intégrée.",
       },
       {
         q: "Comment savoir où m'envoie un lien de cagnotte externe ?",
@@ -251,7 +251,7 @@ export const FAQ_SECTIONS_FR: Section[] = [
       },
       {
         q: "Et si je perds ma phrase de récupération ?",
-        a: "Personne ne peut la retrouver, pas même nous — c'est précisément ce qui rend tes messages illisibles par des tiers. Sans elle ni ton mot de passe, les anciens messages sont perdus.",
+        a: "Personne ne peut la retrouver, pas même nous : c'est précisément ce qui rend tes messages illisibles par des tiers. Sans elle ni ton mot de passe, les anciens messages sont perdus.",
       },
     ],
   },
@@ -282,7 +282,7 @@ export const FAQ_SECTIONS_FR: Section[] = [
       },
       {
         q: "À quoi sert « Je m'en occupe » ?",
-        a: "À signaler aux autres que tu prends ce cadeau en charge, pour que personne ne l'achète en double. Tu peux libérer ta réservation à tout moment, et un gestionnaire peut libérer celle de quelqu'un d'autre — utile quand la personne ne revient jamais.",
+        a: "À signaler aux autres que tu prends ce cadeau en charge, pour que personne ne l'achète en double. Tu peux libérer ta réservation à tout moment, et un gestionnaire peut libérer celle de quelqu'un d'autre : utile quand la personne ne revient jamais.",
       },
       {
         q: "Comment partager la liste à quelqu'un sans compte ?",

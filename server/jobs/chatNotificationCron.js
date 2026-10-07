@@ -5,7 +5,7 @@
  * Respecte les préférences de l'utilisateur :
  *   - receiveChatEmails (bool)          : activer/désactiver emails globalement
  *   - chatEmailFrequency                : "instant" | "twice_daily" | "daily" | "weekly"
- *   - chatEmailDisabledFriends          : [userId] — amis exclus de l'EMAIL uniquement (pas du push)
+ *   - chatEmailDisabledFriends          : [userId], amis exclus de l'EMAIL uniquement (pas du push)
  *   - pushEnabled (bool)                : activer/désactiver push globalement
  *   - pushEvents.chat (bool)            : push pour les messages chat
  */
@@ -235,7 +235,7 @@ function buildChatEmailHtml({
 
 // ── Logique principale ────────────────────────────────────────────────────────
 async function sendChatNotifications(frequency) {
-  console.log(`💬 [CRON-CHAT] Démarrage — fréquence : ${frequency}`);
+  console.log(`💬 [CRON-CHAT] Démarrage, fréquence : ${frequency}`);
 
   try {
     // Récupère tous les users concernés par les emails OU les push
@@ -411,7 +411,7 @@ async function sendChatNotifications(frequency) {
     }
 
     console.log(
-      `💬 [CRON-CHAT] Terminé — ${emailsSent} email(s), ${pushSent} push envoyée(s)`,
+      `💬 [CRON-CHAT] Terminé : ${emailsSent} email(s), ${pushSent} push envoyée(s)`,
     );
   } catch (err) {
     console.error("❌ [CRON-CHAT] Erreur :", err);

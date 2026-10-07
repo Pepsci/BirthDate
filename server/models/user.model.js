@@ -60,7 +60,7 @@ const userSchema = new Schema({
   receiveFriendRequestEmails: { type: Boolean, default: true },
   receiveOwnBirthdayEmail: { type: Boolean, default: true },
 
-  // ── Emails fêtes (namedays) — indépendant des emails d'anniversaire ────────
+  // ── Emails fêtes (namedays) : indépendant des emails d'anniversaire ────────
   receiveNamedayEmails: { type: Boolean, default: true },
 
   // ── Récap mensuel ────────────────────────────────────────────────────────
@@ -126,13 +126,13 @@ const userSchema = new Schema({
 
   // ── Push notifications ─────────────────────────────────────────────────────
   pushEnabled: { type: Boolean, default: false },
-  // Tokens Expo Push (app mobile) — un par appareil
+  // Tokens Expo Push (app mobile) : un par appareil
   expoPushTokens: { type: [String], default: [] },
   // Sous-ensemble des tokens ci-dessus appartenant à des appareils iOS.
   // iOS throttle les pushes silencieuses → on leur envoie des notifs alerte.
   expoPushTokensIos: { type: [String], default: [] },
 
-  // ── Suivi plateforme / version (admin — support & débogage) ────────────────
+  // ── Suivi plateforme / version (admin : support & débogage) ────────────────
   // Mis à jour à chaque connexion (voir routes/auth.js) et, côté mobile, à
   // chaque enregistrement du token push (voir routes/push.js).
   lastPlatform: {
@@ -146,7 +146,7 @@ const userSchema = new Schema({
   // ── Langue ─────────────────────────────────────────────────────────────────
   // Langue dans laquelle le serveur écrit à ce compte : notifications push,
   // emails, rappels des crons. Envoyée par l'app mobile sans rien demander à
-  // l'utilisateur (langue du téléphone, ou choix dans Profil) — voir
+  // l'utilisateur (langue du téléphone, ou choix dans Profil) : voir
   // PATCH /users/me/language et server/i18n/index.js.
   // `null` (tous les comptes d'avant, et le site web) = français.
   language: {
@@ -162,7 +162,7 @@ const userSchema = new Schema({
     namedays: { type: Boolean, default: true },
     // Activité des listes de cadeaux communes (ajout, modification, retrait
     // d'une idée, départ d'un membre). Catégorie propre : elle suivait
-    // « Cadeaux », qui couvre les réservations sur les wishlists — deux usages
+    // « Cadeaux », qui couvre les réservations sur les wishlists : deux usages
     // assez différents pour mériter chacun son interrupteur.
     sharedLists: { type: Boolean, default: true },
     chat: { type: Boolean, default: true },

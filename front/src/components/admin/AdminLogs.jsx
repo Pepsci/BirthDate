@@ -125,7 +125,7 @@ const AdminLogs = () => {
                     <span className="admin-muted"> · bloquée (anti-spam)</span>
                   )}
                   {/* Formulaire de support public : pas de compte, donc
-                      userId est vide — l'email saisi dans le formulaire est
+                      userId est vide : l'email saisi dans le formulaire est
                       la seule piste pour repérer un visiteur ou un bot. */}
                   {log.action === "support_message" && log.metadata?.email && (
                     <span className="admin-muted"> · {log.metadata.email}</span>

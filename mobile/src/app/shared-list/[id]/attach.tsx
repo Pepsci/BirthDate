@@ -29,7 +29,7 @@ import { readingPane } from "../../../lib/layout";
  *
  * Une liste ne s'affiche dans l'app que posée sur une carte : c'est l'étape
  * qui manque entre « on t'a partagé une liste » et « je la vois ». Deux
- * chemins, comme pour une carte anniversaire reçue — la poser sur une carte
+ * chemins, comme pour une carte anniversaire reçue : la poser sur une carte
  * que j'ai déjà, ou créer la carte au passage.
  *
  * ⚠️ Une carte ne peut porter qu'UNE liste commune. Si elle en a déjà une
@@ -56,7 +56,7 @@ export default function AttachSharedListScreen() {
   const [suggested, setSuggested] = useState<SuggestedCard | null>(null);
   // Repli et recherche de la liste des cartes. Elle contient TOUTES les cartes
   // du carnet : au-delà de quelques-unes, l'afficher en entier noie le reste de
-  // l'écran — dont le bouton « créer la carte », qui est souvent le bon choix.
+  // l'écran : dont le bouton « créer la carte », qui est souvent le bon choix.
   const [pickerOpen, setPickerOpen] = useState(false);
   const [search, setSearch] = useState("");
 
@@ -81,11 +81,11 @@ export default function AttachSharedListScreen() {
           setDates(list);
           // Sans aucune carte, le seul chemin possible est la création : on
           // déplie la section d'emblée. Repliée, l'écran ne présentait qu'un
-          // « Tu n'as encore aucune carte » et rien de cliquable — un
+          // « Tu n'as encore aucune carte » et rien de cliquable : un
           // cul-de-sac au moment précis où l'utilisateur découvre la
           // fonctionnalité.
           if (list.length === 0) setCreating(true);
-          // Dépliée quand le carnet est court — la voir d'un coup d'œil est
+          // Dépliée quand le carnet est court : la voir d'un coup d'œil est
           // alors plus rapide que de la déplier. Repliée au-delà, pour ne pas
           // noyer le bouton « créer la carte » sous cinquante lignes.
           setPickerOpen(list.length > 0 && list.length <= 5);
@@ -193,7 +193,7 @@ export default function AttachSharedListScreen() {
 
       {/* Création en un geste, quand le serveur sait de qui il s'agit. Sans
           elle, l'utilisateur devait ressaisir un nom et une date de naissance
-          qu'il ne connaît parfois même pas — c'est justement pour ça qu'il n'a
+          qu'il ne connaît parfois même pas : c'est justement pour ça qu'il n'a
           pas encore la carte. */}
       {suggestedName ? (
         <View style={[styles.card, styles.suggestedCard]}>

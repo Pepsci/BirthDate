@@ -1,5 +1,5 @@
 // analytics/analytics.js
-// Wrapper PostHog Cloud EU — conditionné au consentement cookies (RGPD).
+// Wrapper PostHog Cloud EU : conditionné au consentement cookies (RGPD).
 // Si VITE_POSTHOG_KEY est absente, toutes les fonctions sont des no-op.
 
 import posthog from "posthog-js";

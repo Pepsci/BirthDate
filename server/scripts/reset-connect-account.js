@@ -1,6 +1,6 @@
 // scripts/reset-connect-account.js
 //
-// Supprime le compte connecté d'un utilisateur — chez Stripe ET en base — pour
+// Supprime le compte connecté d'un utilisateur, chez Stripe ET en base, pour
 // qu'il puisse se ré-onboarder avec la configuration actuelle du code.
 //
 // ⚠️ Pourquoi les deux, et pas seulement Stripe.
@@ -14,7 +14,7 @@
 // ⚠️ Pourquoi ce script existe tout court : les propriétés de contrôle d'un
 // compte connecté (`controller.losses.payments`, le type de tableau de bord)
 // sont IMMUABLES. Changer la configuration dans le code ne rattrape aucun
-// compte déjà créé — le seul moyen est d'en créer un nouveau.
+// compte déjà créé : le seul moyen est d'en créer un nouveau.
 //
 // ⚠️ ORDRE : déployer le code AVANT de lancer ce script. Sinon le compte
 // recréé le sera avec l'ancienne configuration, et il faudra recommencer.
@@ -27,12 +27,12 @@
 //                 l'organisateur, puis supprime. Stripe refuse la suppression
 //                 d'un compte au solde non nul ; un reliquat de test doit donc
 //                 être balayé avant. Peut échouer si le montant est sous le
-//                 minimum de virement de Stripe — utiliser --local-only alors.
+//                 minimum de virement de Stripe : utiliser --local-only alors.
 //
 //   --local-only  Ne supprime QUE la ligne en base, laisse le compte chez
 //                 Stripe. C'est souvent le bon choix : l'objectif est d'obtenir
 //                 un NOUVEAU compte à la bonne configuration, pas de détruire
-//                 l'ancien. Le compte orphelin reste inoffensif — il n'est plus
+//                 l'ancien. Le compte orphelin reste inoffensif : il n'est plus
 //                 rattaché à personne dans l'application.
 //
 //   --yes         Sans confirmation interactive.
@@ -108,7 +108,7 @@ const ask = (q) =>
   } catch (e) {
     accountExists = false;
     console.log(`⚠️  Compte introuvable chez Stripe : ${e.message}`);
-    console.log("   Il a sans doute déjà été supprimé — la ligne en base, non.");
+    console.log("   Il a sans doute déjà été supprimé : la ligne en base, non.");
   }
 
   // Solde : lu seulement si le compte existe encore.
@@ -145,7 +145,7 @@ const ask = (q) =>
             `   Deux sorties :\n` +
             `     --payout      vide le solde vers le compte bancaire, puis supprime\n` +
             `     --local-only  laisse le compte chez Stripe, ne retire que la ligne\n` +
-            `                   en base — suffisant pour se ré-onboarder à neuf\n`,
+            `                   en base : suffisant pour se ré-onboarder à neuf\n`,
         );
         await mongoose.disconnect();
         process.exit(1);

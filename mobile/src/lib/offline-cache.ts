@@ -12,7 +12,7 @@ import {
  * l'app (sandbox, invisible des autres apps).
  *
  * Pourquoi des fichiers plutôt que SQLite : quelques centaines de cartes
- * tiennent dans un seul JSON, et expo-file-system est déjà embarqué — pas de
+ * tiennent dans un seul JSON, et expo-file-system est déjà embarqué : pas de
  * nouveau module natif, donc pas de nouveau build de dev ni de TestFlight.
  *
  * ⚠️ Chaque entrée porte l'id de son propriétaire. Sur un téléphone partagé,
@@ -59,7 +59,7 @@ export async function writeCache<T>(key: string, data: T): Promise<void> {
 }
 
 /**
- * @param anyOwner lire sans vérifier le propriétaire — réservé à la lecture
+ * @param anyOwner lire sans vérifier le propriétaire : réservé à la lecture
  *                 du profil au démarrage, avant de savoir qui est connecté.
  */
 export async function readCache<T>(

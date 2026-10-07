@@ -93,7 +93,7 @@ function RootNavigator() {
   // `setPendingNotifRoute(null)` AVANT de programmer le `setTimeout` : ce
   // setState re-rend le composant, les dépendances de l'effet changent
   // (pendingNotifRoute : route → null), React exécute donc le nettoyage de
-  // l'effet précédent — c'est-à-dire `clearTimeout(t)` — avant que le timer de
+  // l'effet précédent, c'est-à-dire `clearTimeout(t)`, avant que le timer de
   // 0 ms, qui est une macrotâche, ait eu la moindre chance de se déclencher.
   // La navigation était annulée à chaque fois. Le centre de notifications
   // in-app, lui, appelle router.push() directement : c'est pour ça qu'il
@@ -183,7 +183,7 @@ function RootNavigator() {
         // En-tête rendu en JS, comme celui des onglets (AppHeader). L'en-tête
         // natif d'iOS enveloppe chaque bouton dans un UIBarButtonItem et dessine
         // derrière lui une capsule qu'il ne centre pas exactement sur notre vue
-        // — décalage impossible à corriger depuis le JS. Voir AppStackHeader.
+        // décalage impossible à corriger depuis le JS. Voir AppStackHeader.
         header: (props) => <AppStackHeader {...props} />,
         contentStyle: { backgroundColor: colors.bg },
         // Bouton retour custom (piloté en JS) : le bouton natif iOS devient
@@ -215,7 +215,7 @@ export default function RootLayout() {
     // ⚠️ Requis par react-native-gesture-handler (swipe-back natif du Stack,
     // BottomSheet, PanResponder…) : sans ce wrapper racine, les gestes entrent
     // en conflit avec les ScrollView/FlatList une fois arrivés en bas du
-    // contenu — le scroll reste alors bloqué et impossible à remonter.
+    // contenu : le scroll reste alors bloqué et impossible à remonter.
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemeProvider>
         <AuthProvider>

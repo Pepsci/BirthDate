@@ -82,7 +82,7 @@ export default function EventChat({
   // clavier est fermé (réduite quand il est ouvert, car il couvre déjà la zone).
   const inputBottom = keyboardVisible ? 10 : insets.bottom + 12;
   // Panneau : position du haut du chat dans la FENÊTRE, rendue au calcul du
-  // clavier via keyboardVerticalOffset. Même correctif que DMChat — voir le
+  // clavier via keyboardVerticalOffset. Même correctif que DMChat : voir le
   // commentaire détaillé là-bas.
   const embeddedRootRef = useRef<View>(null);
   const [embeddedTop, setEmbeddedTop] = useState(0);
@@ -98,7 +98,7 @@ export default function EventChat({
   /**
    * Titre de l'événement.
    *
-   * ⚠️ L'écran s'intitulait « Chat de l'événement » — lisible quand on y
+   * ⚠️ L'écran s'intitulait « Chat de l'événement » : lisible quand on y
    * arrive depuis l'événement lui-même, illisible depuis la liste des
    * discussions : on ouvre une conversation sans savoir laquelle. L'événement
    * est déjà chargé ici pour les clés de chiffrement, on en garde le titre.
@@ -222,7 +222,7 @@ export default function EventChat({
       };
       const onTypingStop = () => setTypingName(null);
 
-      // Ré-enregistrement à chaque (re)connexion — pattern anti-stale-closure
+      // Ré-enregistrement à chaque (re)connexion : pattern anti-stale-closure
       const register = () => {
         console.log(`💬 event:join émis pour ${shortId}`);
         socket.emit("event:join", { shortId });
@@ -349,7 +349,7 @@ export default function EventChat({
   };
 
   /* Appui long : réactions pour tous, signalement seulement sur le message
-     d'autrui — on ne se signale pas soi-même. */
+     d'autrui : on ne se signale pas soi-même. */
   const openMessageMenu = (message: EventChatMessage) => {
     const actions: MessageAction[] = [];
     if (message.sender?._id !== user?._id) {
@@ -403,7 +403,7 @@ export default function EventChat({
       // la réintroduire ici la comptait deux fois.
       //
       // Exception : en panneau (`embedded`), la vue ne démarre pas en haut de
-      // la fenêtre — voir embeddedTop plus haut.
+      // la fenêtre : voir embeddedTop plus haut.
       keyboardVerticalOffset={embedded ? embeddedTop : 0}
     >
       {embedded ? (

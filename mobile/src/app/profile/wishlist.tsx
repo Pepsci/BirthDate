@@ -376,7 +376,7 @@ export default function MyWishlistScreen() {
             </View>
           )}
 
-          {/* Ajout / modification d'une idée — en haut, comme les autres listes */}
+          {/* Ajout / modification d'une idée : en haut, comme les autres listes */}
           <View style={styles.topFormCard}>
             <View style={styles.formHeaderRow}>
               <Text style={styles.formHeaderTitle}>{t("gifts:wishlist.myWishes")}</Text>
@@ -559,7 +559,7 @@ export default function MyWishlistScreen() {
                 </Pressable>
               </>
             )}
-            {/* Visibilité pour les amis inscrits — sans objet en mode local */}
+            {/* Visibilité pour les amis inscrits : sans objet en mode local */}
             {!isLocalMode() && (
               <View style={styles.sheetShareRow}>
                 <View style={{ flex: 1, paddingRight: 10 }}>

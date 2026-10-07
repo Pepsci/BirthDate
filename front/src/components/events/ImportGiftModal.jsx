@@ -4,7 +4,7 @@ import apiHandler from "../../api/apiHandler";
 import "./css/importGiftModal.css";
 
 /**
- * ImportGiftModal — deux modes :
+ * ImportGiftModal, deux modes :
  *
  * mode="import" (défaut) :
  *   Étape 1 : sélectionner une carte source (filtre par nom)
@@ -350,7 +350,7 @@ const ImportGiftModal = ({
           </p>
 
           <div className="igm-footer-buttons">
-            {/* Mode import — étape 2 */}
+            {/* Mode import : étape 2 */}
             {!isSaveMode && step === 2 && (
               <>
                 <button
@@ -373,7 +373,7 @@ const ImportGiftModal = ({
               </>
             )}
 
-            {/* Mode save — étape 1 */}
+            {/* Mode save : étape 1 */}
             {isSaveMode && step === 1 && (
               <>
                 <button className="igm-btn igm-btn--cancel" onClick={onClose}>
@@ -392,7 +392,7 @@ const ImportGiftModal = ({
               </>
             )}
 
-            {/* Mode save — étape 2 */}
+            {/* Mode save : étape 2 */}
             {isSaveMode && step === 2 && (
               <>
                 <button

@@ -1,5 +1,5 @@
 /**
- * notif-decrypt.ts — Notifications de message lisibles façon WhatsApp (E2E préservé)
+ * notif-decrypt.ts : Notifications de message lisibles façon WhatsApp (E2E préservé)
  *
  * Principe (identique à WhatsApp) :
  *   1. Le backend envoie une push **data-only** contenant le chiffré du message
@@ -84,7 +84,7 @@ function extractEncryptedData(raw: unknown): EncryptedPushData | null {
 /**
  * Accusé « distribué » : prévient le serveur que la push d'un message est
  * arrivée sur l'appareil (app fermée, donc sans socket). Même contrat que la
- * NSE iOS — jeton HMAC propre au message, voir server/utils/messageReceipts.js.
+ * NSE iOS : jeton HMAC propre au message, voir server/utils/messageReceipts.js.
  * Silencieux en cas d'échec : ne doit jamais empêcher l'affichage.
  */
 export async function reportDeliveryFromPush(raw: unknown): Promise<void> {
@@ -143,7 +143,7 @@ export async function decryptAndPresent(raw: unknown): Promise<boolean> {
     // message, app ouverte, en arrière-plan ou tuée. Présenter une copie locale
     // ici ne sert qu'en secours, si l'extension a échoué (corps resté sur
     // « 🔒 ») ET que l'app est au premier plan. Dans tous les autres cas, c'est
-    // un doublon — c'est ce qui se produisait à l'ouverture depuis une
+    // un doublon : c'est ce qui se produisait à l'ouverture depuis une
     // notification, app fermée.
     if (Platform.OS === "ios") {
       const body = (raw as { body?: unknown } | null)?.body;

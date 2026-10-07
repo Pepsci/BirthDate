@@ -64,7 +64,7 @@ const Wishlist = () => {
     if (matched)
       setFetchMessage({
         type: "warning",
-        text: `⚠️ ${matched.name} ne supporte pas le remplissage automatique — remplis les champs manuellement`,
+        text: `⚠️ ${matched.name} ne supporte pas le remplissage automatique : remplis les champs manuellement`,
       });
     else
       setFetchMessage((prev) =>
@@ -113,7 +113,7 @@ const Wishlist = () => {
         setFetchMessage({
           type: "warning",
           text: isAffiliated
-            ? `⚠️ ${r.data.message} — Lien affilié appliqué ✓`
+            ? `⚠️ ${r.data.message} : Lien affilié appliqué ✓`
             : `⚠️ ${r.data.message || "Ce site ne permet pas la récupération automatique"}`,
         });
         return;
@@ -138,7 +138,7 @@ const Wishlist = () => {
           ? { type: "success", text: "✓ Infos récupérées !" }
           : {
               type: "warning",
-              text: `⚠️ Remplissage partiel — ${missing.join(", ")} non trouvé${missing.length > 1 ? "s" : ""}`,
+              text: `⚠️ Remplissage partiel : ${missing.join(", ")} non trouvé${missing.length > 1 ? "s" : ""}`,
             },
       );
     } catch {

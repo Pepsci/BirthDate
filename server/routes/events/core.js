@@ -43,7 +43,7 @@ function eventEffectiveDate(event) {
  */
 router.post("/", isAuthenticated, async (req, res) => {
   try {
-    // Quota de création (5 par 24 h, 15 en cours — réglable par compte dans
+    // Quota de création (5 par 24 h, 15 en cours : réglable par compte dans
     // l'admin). Vérifié avant toute écriture.
     const creator = await User.findById(req.payload._id).select(
       "name surname email role eventQuota",
@@ -114,7 +114,7 @@ router.post("/", isAuthenticated, async (req, res) => {
 
     // L'organisateur est un participant : il vient à son propre événement.
     // Sans cette invitation, il n'apparaissait pas dans la liste des
-    // participants et le décompte "X / Y" excluait l'hôte — un dîner à 4 dont
+    // participants et le décompte "X / Y" excluait l'hôte : un dîner à 4 dont
     // l'organisateur s'affichait "3 / 3". Statut "accepted" d'emblée : on ne
     // demande pas à quelqu'un de RSVP à sa propre soirée.
     // `findOneAndUpdate` + upsert plutôt que create : idempotent si la route
@@ -200,7 +200,7 @@ router.get("/mine", isAuthenticated, async (req, res) => {
  * Seuls les événements AYANT DÉJÀ des messages sont renvoyés : une liste de
  * conversations vides n'aide personne à trouver la sienne.
  *
- * ⚠️ Doit être déclarée AVANT `/:shortId` — sinon "mine" serait pris pour un
+ * ⚠️ Doit être déclarée AVANT `/:shortId` : sinon "mine" serait pris pour un
  * identifiant d'événement.
  */
 router.get("/mine/chats", isAuthenticated, async (req, res) => {
@@ -373,7 +373,7 @@ router.get("/:shortId", async (req, res) => {
       type: event.type,
       status: event.status,
       // Le motif d'annulation accompagne le statut. Sans lui, la page publique
-      // afficherait « annulé — l'organisateur n'a pas indiqué de raison » alors
+      // afficherait « annulé : l'organisateur n'a pas indiqué de raison » alors
       // qu'il en a donné une : un message faux, pire que pas de message. Il est
       // du même ordre de confidentialité que le titre et la description, déjà
       // exposés ici.
@@ -638,8 +638,8 @@ router.delete("/:shortId", isAuthenticated, async (req, res) => {
     // événements déjà annulés. Supprimer directement un événement publié le
     // faisait disparaître de la liste de chaque invité sans un mot, en
     // emportant le chat et l'historique : c'est précisément ce que l'annulation
-    // évite. On demande donc d'annuler d'abord — les invités sont prévenus et
-    // comprennent — puis de supprimer si on veut vraiment effacer.
+    // évite. On demande donc d'annuler d'abord : les invités sont prévenus et
+    // comprennent : puis de supprimer si on veut vraiment effacer.
     if (event.status !== "draft" && event.status !== "cancelled") {
       return res.status(409).json({
         code: "CANCEL_BEFORE_DELETE",
@@ -650,7 +650,7 @@ router.delete("/:shortId", isAuthenticated, async (req, res) => {
 
     // ⚠️ Une cagnotte qui a encaissé ne se supprime pas.
     //
-    // Les contributions ne sont PAS effacées avec l'événement — et c'est
+    // Les contributions ne sont PAS effacées avec l'événement : et c'est
     // volontaire, ce sont des mouvements d'argent. Mais tout le reste du
     // remboursement passe par l'événement : la route organisateur est montée
     // sur /:shortId, et la route admin lit `contribution.event.organizer`.
@@ -681,7 +681,7 @@ router.delete("/:shortId", isAuthenticated, async (req, res) => {
     }
 
     // Trace écrite AVANT la suppression : après, il ne resterait plus rien à
-    // décrire — ni le titre, ni la date, ni le nombre d'invités prévenus.
+    // décrire : ni le titre, ni la date, ni le nombre d'invités prévenus.
     const invitationCount = await EventInvitation.countDocuments({
       event: event._id,
     });
@@ -711,7 +711,7 @@ router.delete("/:shortId", isAuthenticated, async (req, res) => {
 });
 
 /*
- * POST /api/events/:shortId/cancel — annuler un événement (organizer only)
+ * POST /api/events/:shortId/cancel : annuler un événement (organizer only)
  * Body: { reason?: string }
  *
  * ⚠️ Annuler n'est PAS supprimer, et c'est délibéré. Une suppression fait
@@ -746,7 +746,7 @@ router.post("/:shortId/cancel", isAuthenticated, async (req, res) => {
 
     // ── Cagnotte ──────────────────────────────────────────────────────────
     // On coupe la collecte : accepter de nouvelles contributions sur un
-    // événement annulé serait indéfendable. On ne rembourse rien ici — c'est
+    // événement annulé serait indéfendable. On ne rembourse rien ici : c'est
     // une décision qui appartient à l'organisateur, et une opération Stripe
     // qui a son propre écran (voir la gestion des remboursements).
     const poolWasActive = !!event.giftPool?.active;
@@ -885,11 +885,11 @@ router.post("/:shortId/cancel", isAuthenticated, async (req, res) => {
 });
 
 /*
- * POST /api/events/:shortId/uncancel — rétablir un événement annulé
+ * POST /api/events/:shortId/uncancel : rétablir un événement annulé
  *
  * Une annulation part d'un geste unique et irrattrapable autrement : erreur de
  * manipulation, ou décision revue dans la foulée. Rétablir remet l'événement
- * en "published" et prévient tout le monde — mais ne réactive PAS la cagnotte :
+ * en "published" et prévient tout le monde, mais ne réactive PAS la cagnotte :
  * relancer une collecte d'argent est une décision distincte, que l'organisateur
  * doit reprendre explicitement depuis son écran.
  */

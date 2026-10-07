@@ -40,7 +40,7 @@ async function run() {
 
     console.log(`📊 ${orphans.length} carte(s) orpheline(s) pour ${deadIds.length} compte(s) disparu(s)`);
     for (const c of orphans) {
-      console.log(`   • ${c.name || "?"} ${c.surname || ""} — carte ${c._id} (owner ${c.owner}, linkedUser ${c.linkedUser})`);
+      console.log(`   • ${c.name || "?"} ${c.surname || ""} : carte ${c._id} (owner ${c.owner}, linkedUser ${c.linkedUser})`);
     }
 
     if (DRY_RUN || orphans.length === 0) return;

@@ -76,7 +76,7 @@ async function reloadNamedays(country = "fr") {
     .sort({ createdAt: 1 })
     .lean();
   // Base vide : on garde le repli JSON, sauf si c'est l'admin qui vient de
-  // tout supprimer (le cache venait déjà de la base) — il doit alors être vide.
+  // tout supprimer (le cache venait déjà de la base) : il doit alors être vide.
   if (!rows.length && cache[country]?.source !== "db") return false;
   cache[country] = buildIndex(rows);
   return rows.length > 0;
@@ -152,7 +152,7 @@ function findNameDay(firstName, country = "fr") {
 }
 
 /**
- * Comme findNameDay, mais dit aussi D'OÙ vient la date — pour l'admin.
+ * Comme findNameDay, mais dit aussi D'OÙ vient la date : pour l'admin.
  * @returns {{ date: string|null, via: string|null, exact: boolean }}
  *   exact = le prénom entier a sa propre ligne ; sinon `via` est la clé
  *   utilisée par la règle des prénoms composés (Jean-Luc → "luc").

@@ -15,7 +15,7 @@
  * Le serveur déduplique grâce à `clientId` = identifiant de la notification :
  * rejouer n'envoie jamais deux fois.
  *
- * ⚠️ Chiffrement : même règle que l'écran de chat — chiffré seulement si ma clé
+ * ⚠️ Chiffrement : même règle que l'écran de chat, chiffré seulement si ma clé
  * privée, la clé publique de l'ami et la mienne sont toutes disponibles.
  */
 import { t } from "@/i18n";

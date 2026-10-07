@@ -29,7 +29,7 @@ export interface ImportedGift {
 
 /**
  * Sélecteur "Importer depuis une liste" (repris du web ImportGiftModal, mode import) :
- *   Étape 1 : choisir une source — sa propre liste d'envies, ou une fiche qui
+ *   Étape 1 : choisir une source, sa propre liste d'envies, ou une fiche qui
  *             a des idées cadeaux
  *   Étape 2 : choisir les idées → onImport(gifts)
  * Le parent gère l'ajout réel (event proposal / idée de carte) puis ferme.

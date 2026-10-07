@@ -1,5 +1,5 @@
 /**
- * Garde "écran de bienvenue" — en mémoire uniquement : se réinitialise
+ * Garde "écran de bienvenue", en mémoire uniquement : se réinitialise
  * à chaque lancement de l'app (le welcome s'affiche donc à chaque démarrage).
  *
  * markWelcomeSeen() est aussi appelé par les handlers de notifications

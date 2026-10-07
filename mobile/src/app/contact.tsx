@@ -18,7 +18,7 @@ import {
 import { formPane } from "../lib/layout";
 import { isLocalMode } from "../lib/app-mode";
 
-// Retire les accents pour que "evenement" retrouve "événement" — même règle
+// Retire les accents pour que "evenement" retrouve "événement" : même règle
 // que le centre d'aide web (front/src/components/pages/HelpCenter.jsx).
 function normalize(str: string) {
   return String(str || "")
@@ -45,7 +45,7 @@ const MAX_RESULTS = 6;
 /**
  * Porte d'entrée du support côté mobile : recherche + catégories, comme sur
  * le web (voir HelpCenter.jsx). Le bouton t("support:contact.title") n'apparaît
- * qu'une fois une réponse consultée — on ne saute plus directement à
+ * qu'une fois une réponse consultée : on ne saute plus directement à
  * l'écran d'envoi (/support), sauf depuis ici avec le contexte de la
  * question qui n'a pas résolu le problème.
  */
@@ -95,7 +95,7 @@ export default function ContactScreen() {
   const backToQuestions = () => setActiveItemIndex(null);
 
   const currentContext = activeItem
-    ? `${activeSection!.title} — ${activeItem.q}`
+    ? `${activeSection!.title} : ${activeItem.q}`
     : null;
 
   const goToSupport = () => {
@@ -183,7 +183,7 @@ export default function ContactScreen() {
         ) : (
           <View style={styles.section}>
             {/* Grosse tuile de la catégorie active, épinglée en haut tant
-                qu'on y reste — même tuile que la grille de départ, agrandie.
+                qu'on y reste : même tuile que la grille de départ, agrandie.
                 Change de catégorie en catégorie, disparaît au retour à la
                 grille. */}
             <Pressable style={styles.activeCategory} onPress={backToCategories}>

@@ -27,7 +27,7 @@ export interface GiftIdeaPayload {
 }
 
 /**
- * Formulaire complet d'idée cadeau — miroir de "Nouvelle idée" du web :
+ * Formulaire complet d'idée cadeau, miroir de "Nouvelle idée" du web :
  * lien produit + récupération auto des infos, ou saisie 100 % manuelle.
  */
 export default function GiftIdeaForm({

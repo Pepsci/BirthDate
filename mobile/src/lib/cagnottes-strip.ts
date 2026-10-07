@@ -8,7 +8,7 @@ import * as SecureStore from "expo-secure-store";
  * dans l'écran (tabs)/index.tsx, le bouton qui le rappelle vit dans l'en-tête
  * déclaré par (tabs)/_layout.tsx. Passer par une prop supposerait de faire
  * remonter l'état jusqu'au navigateur, ce que la structure d'expo-router ne
- * permet pas simplement — d'où ce petit magasin de module, même approche que
+ * permet pas simplement : d'où ce petit magasin de module, même approche que
  * stats-scope.ts.
  *
  * `hasPools` est renseigné par le bandeau lui-même : l'en-tête n'a aucun moyen

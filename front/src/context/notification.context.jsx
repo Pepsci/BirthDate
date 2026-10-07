@@ -150,7 +150,7 @@ export const NotificationProvider = ({ children }) => {
     };
   }, [isLoggedIn, currentUser, activeConversationId]);
 
-  // ── Listener new_notification — séparé pour survivre aux reconnexions ────────
+  // ── Listener new_notification : séparé pour survivre aux reconnexions ────────
   // On s'attache sur l'event "connect" du socket pour être sûr
   // que le listener est toujours actif après une reconnexion.
   useEffect(() => {
@@ -242,7 +242,7 @@ export const NotificationProvider = ({ children }) => {
    *
    * ⚠️ Personne ne lit ses messages depuis le centre de notifications : on
    * ouvre l'app, on va dans le chat, on lit. Sans ça la pastille reste rouge
-   * pour un message déjà lu — et un compteur qui ment finit par ne plus être
+   * pour un message déjà lu : et un compteur qui ment finit par ne plus être
    * regardé du tout.
    */
   const markConversationNotifsRead = useCallback(async (kind, id) => {

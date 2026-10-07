@@ -5,7 +5,7 @@ const User = require("../models/user.model");
 const { emailsFor } = require("../services/emailTemplates/localized");
 const { sendPushToUser } = require("../services/pushService");
 
-// notify nécessite l'instance app — on la reçoit via initApp()
+// notify nécessite l'instance app : on la reçoit via initApp()
 let _app = null;
 const initApp = (app) => {
   _app = app;
@@ -103,7 +103,7 @@ async function checkAndSendEventReminders() {
             // Populate étendu pour avoir les prefs email et push des participants
             // `$nin: [event.organizer]` : l'organisateur a maintenant sa propre
             // EventInvitation (il figure dans les participants). Il est déjà
-            // traité séparément plus bas — sans cette exclusion il recevrait
+            // traité séparément plus bas : sans cette exclusion il recevrait
             // email et push en double.
             const invitations = await EventInvitation.find({
               event: event._id,

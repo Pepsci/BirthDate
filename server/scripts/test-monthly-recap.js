@@ -1,5 +1,5 @@
 /**
- * Script de test — Récap mensuel BirthReminder
+ * Script de test : Récap mensuel BirthReminder
  * Usage : node test-monthly-recap.js [option]
  *
  * Options :
@@ -72,7 +72,7 @@ function printUserSummary(user, dates) {
   if (datesThisMonth.length > 0) {
     datesThisMonth.forEach((d) => {
       const bd = new Date(d.date);
-      info(`  → ${d.name} ${d.surname} — ${bd.getDate()}/${bd.getMonth() + 1}`);
+      info(`  → ${d.name} ${d.surname} : ${bd.getDate()}/${bd.getMonth() + 1}`);
     });
   }
 }
@@ -127,7 +127,7 @@ async function main() {
     }
     users = [user];
   } else {
-    log("Aucune option spécifiée — utilisation du premier user en base...");
+    log("Aucune option spécifiée : utilisation du premier user en base...");
     const user = await User.findOne({ deletedAt: { $exists: false } });
     if (!user) {
       err("Aucun user trouvé en base.");
@@ -263,7 +263,7 @@ async function main() {
       const subject =
         datesThisMonth.length > 0
           ? `🎂 ${datesThisMonth.length} anniversaire(s) ce mois-ci`
-          : `📅 Récap BirthReminder — mois vide`;
+          : `📅 Récap BirthReminder : mois vide`;
       ok(`Sujet    : ${subject}`);
       ok(`Destinat.: ${user.email}`);
       ok(`Dates    : ${datesThisMonth.length} ce mois-ci`);

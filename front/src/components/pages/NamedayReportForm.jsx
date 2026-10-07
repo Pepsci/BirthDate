@@ -11,7 +11,7 @@ const COMMENT_MAX = 1000;
  * Formulaire court et structuré plutôt que le message libre : on demande le
  * prénom et, si la personne la connaît, la bonne date. Le serveur ajoute la
  * date que donne le calendrier aujourd'hui et construit le ticket (catégorie
- * "nameday") — l'admin voit « Mia : 29 septembre → proposé 15 août » et ouvre
+ * "nameday"), l'admin voit « Mia : 29 septembre → proposé 15 août » et ouvre
  * le prénom dans l'onglet Fêtes en un clic.
  *
  * Pas bloqué par une conversation en cours sur un autre sujet (règle serveur :

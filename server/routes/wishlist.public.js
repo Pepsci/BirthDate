@@ -1,6 +1,6 @@
 // ============================================================
 // server/routes/wishlist.public.js
-// Routes publiques wishlist — sans authentification
+// Routes publiques wishlist : sans authentification
 // ============================================================
 
 const router = require("express").Router();
@@ -8,7 +8,7 @@ const UserModel = require("../models/user.model");
 const WishlistModel = require("../models/wishlist.model");
 
 // ─── GET /api/wishlist/public/:slug ──────────────────────────
-// Retourne les items isShared:true — aucune info personnelle
+// Retourne les items isShared:true : aucune info personnelle
 router.get("/:slug", async (req, res) => {
   try {
     const user = await UserModel.findOne({

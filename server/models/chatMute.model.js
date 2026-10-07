@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 const { Schema } = mongoose;
 
 /**
- * Silencieux posé par une personne sur UNE conversation — privée ou
+ * Silencieux posé par une personne sur UNE conversation : privée ou
  * discussion d'événement.
  *
  * ⚠️ Ne coupe que les notifications PUSH. La notification in-app est toujours
@@ -16,7 +16,7 @@ const { Schema } = mongoose;
  *  - `null`    → « toujours », jusqu'à réactivation explicite.
  *
  * L'index TTL supprime les lignes dont la date est passée. Un document dont
- * le champ vaut `null` n'expire JAMAIS pour MongoDB — c'est précisément ce
+ * le champ vaut `null` n'expire JAMAIS pour MongoDB : c'est précisément ce
  * qui permet de coder « toujours » sans champ supplémentaire.
  */
 const chatMuteSchema = new Schema(

@@ -1,6 +1,6 @@
 // ============================================================
 // server/routes/sharedGifts.public.js
-// Consultation et réservation d'une liste d'idées commune — sans compte.
+// Consultation et réservation d'une liste d'idées commune : sans compte.
 //
 // Monté AVANT le routeur authentifié dans app.js : sinon "/public/:slug"
 // serait capturé par le "/:id" de sharedGifts.js et exigerait un compte.
@@ -24,7 +24,7 @@
 // Ce que ce fichier ne renvoie JAMAIS : l'identité des membres, qui a ajouté
 // quoi, le prénom des réserveurs, et l'adresse mail d'un visiteur. Un lien
 // public peut être transféré à n'importe qui, y compris à la personne
-// concernée — « réservé » suffit à éviter le doublon sans rien révéler.
+// concernée : « réservé » suffit à éviter le doublon sans rien révéler.
 // ============================================================
 
 const router = require("express").Router();
@@ -37,7 +37,7 @@ const {
 } = require("../services/emailTemplates/guestReservationEmail");
 
 /**
- * Statuts invisibles depuis le lien public — même règle que pour les invités
+ * Statuts invisibles depuis le lien public : même règle que pour les invités
  * dans l'application (voir HIDDEN_STATUSES_FOR_VIEWER dans sharedGifts.js).
  * Un cadeau déjà acheté ou déjà offert n'est plus à prendre : l'afficher à
  * quelqu'un qui vient chercher quoi offrir l'invite au doublon.
@@ -51,7 +51,7 @@ const codeMatches = (given, expected) =>
 
 /**
  * Comparaison de jetons à temps constant. Un `===` laisserait fuir, par le
- * temps de réponse, la longueur du préfixe correct — marginal ici, mais ce
+ * temps de réponse, la longueur du préfixe correct : marginal ici, mais ce
  * jeton est la seule chose qui protège une réservation.
  */
 function tokenMatches(given, expected) {
@@ -62,7 +62,7 @@ function tokenMatches(given, expected) {
   return crypto.timingSafeEqual(a, b);
 }
 
-/** Format d'adresse — volontairement permissif, on ne valide pas la boîte. */
+/** Format d'adresse : volontairement permissif, on ne valide pas la boîte. */
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 const FRONTEND_URL = process.env.FRONTEND_URL || "https://birthreminder.com";
@@ -83,7 +83,7 @@ const manageUrlFor = (slug, code, token) => {
  * Garde-fou d'envoi de mails. Cette page est ouverte à tous et accepte une
  * adresse saisie librement : sans plafond, elle devient une machine à
  * expédier des messages à des boîtes qu'on ne possède pas. Compteur en
- * mémoire, remis à zéro chaque heure — suffisant pour ce qu'il protège, et
+ * mémoire, remis à zéro chaque heure : suffisant pour ce qu'il protège, et
  * sans dépendance à ajouter.
  */
 const mailQuota = new Map(); // slug -> { count, resetAt }
@@ -116,7 +116,7 @@ function publicView(list, guestToken) {
     locked: false,
     gifts: (list.gifts || [])
       // `hiddenFromViewers` : idée réservée aux membres. Le lien public est
-      // le canal le plus large de tous — c'est là que le filtre compte le plus.
+      // le canal le plus large de tous : c'est là que le filtre compte le plus.
       .filter((g) => !HIDDEN_STATUSES.has(g.status) && !g.hiddenFromViewers)
       .map((g) => ({
         _id: g._id,
@@ -164,7 +164,7 @@ function requireCode(req, res, list) {
  *
  * Jamais bloquant : la réservation est déjà enregistrée quand on arrive ici, et
  * la réponse est déjà partie. Le lien pointe vers la carte de chaque
- * destinataire — résolu côté sharedGifts.js pour les routes authentifiées ;
+ * destinataire : résolu côté sharedGifts.js pour les routes authentifiées ;
  * ici on reste simple et on vise l'accueil, faute de contexte utilisateur.
  */
 async function notifySharedListMembers(req, list, { giftName, guestName }) {

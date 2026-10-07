@@ -52,7 +52,7 @@ async function sharedListLinkFor(userId, listId) {
  * Jusqu'ici seules l'invitation et l'acceptation notifiaient. Ajouter, modifier
  * ou retirer une idée se faisait en silence : les autres membres ne
  * découvraient le changement qu'en rouvrant la liste, au risque d'acheter deux
- * fois le même cadeau — ce que la liste commune est censée éviter.
+ * fois le même cadeau : ce que la liste commune est censée éviter.
  *
  * Le push part sur la catégorie "gifts" : ces notifications suivent donc
  * l'interrupteur « Cadeaux » de Notifications push, sans nouveau réglage à
@@ -74,7 +74,7 @@ async function notifyOtherMembers(
   // ── Invités ───────────────────────────────────────────────────────────────
   // Ils ne reçoivent PAS tout : un invité n'a pas à suivre chaque changement
   // de statut d'une liste qui ne lui appartient pas. L'appelant décide, cas par
-  // cas, lesquels concerner — en pratique l'ajout d'une idée (il peut vouloir
+  // cas, lesquels concerner : en pratique l'ajout d'une idée (il peut vouloir
   // s'en charger) et le retrait d'un cadeau qu'il avait réservé (il comptait
   // dessus). D'où cette liste explicite plutôt qu'un booléen.
   const recipients = [...others, ...alsoViewers].filter(
@@ -210,7 +210,7 @@ router.get("/invitations", isAuthenticated, async (req, res) => {
       .populate("fromUser", "name surname avatar")
       // `date` et `nameday` en plus du nom : ils permettent au client de
       // proposer la création de la carte préremplie. L'invitation porte déjà
-      // tout ce qu'il faut sur la personne concernée — inutile de le redemander.
+      // tout ce qu'il faut sur la personne concernée : inutile de le redemander.
       .populate("fromDate", "name surname date nameday")
       .sort({ createdAt: -1 });
     res.json(invs);
@@ -271,12 +271,12 @@ router.post("/invitations/:id/accept", isAuthenticated, async (req, res) => {
     // ── Sur quelle carte poser la liste ? ────────────────────────────────
     // Une liste commune ne s'affiche que posée sur une carte. Jusqu'ici il
     // fallait donc DÉJÀ avoir enregistré la personne concernée pour pouvoir
-    // accepter — un blocage courant, puisqu'on est souvent invité à préparer
+    // accepter : un blocage courant, puisqu'on est souvent invité à préparer
     // le cadeau de quelqu'un qu'on n'a pas dans son carnet.
     //
     // On accepte maintenant `newDate` : le client peut demander la création de
     // la carte au passage. Les champs absents sont repris de la carte de celui
-    // qui invite, qui décrit la même personne — c'est ce qui permet de proposer
+    // qui invite, qui décrit la même personne : c'est ce qui permet de proposer
     // « Créer la carte de Tom » sans rien faire saisir.
     let myDate = null;
 
@@ -529,7 +529,7 @@ function serializeListForRole(list, role, userId) {
 // route, un invité qui supprime sa notification n'aurait plus aucun moyen
 // d'atteindre la liste : elle existerait pour lui sans être joignable.
 //
-// ⚠️ Déclarée AVANT `/:id` — sinon "shared-with-me" serait pris pour un id.
+// ⚠️ Déclarée AVANT `/:id` : sinon "shared-with-me" serait pris pour un id.
 /**
  * Identité de la personne dont la liste parle, déduite d'une carte déjà
  * rattachée à cette liste.
@@ -537,7 +537,7 @@ function serializeListForRole(list, role, userId) {
  * Une liste commune est posée, chez chaque membre, sur la carte de la personne
  * concernée : n'importe laquelle de ces cartes décrit donc cette personne. On
  * s'en sert pour proposer la création de la carte préremplie à quelqu'un qui
- * reçoit la liste et n'a pas encore enregistré cette personne — sans quoi il
+ * reçoit la liste et n'a pas encore enregistré cette personne : sans quoi il
  * doit ressaisir un nom et une date de naissance qu'il ne connaît peut-être
  * même pas.
  *
@@ -559,7 +559,7 @@ async function suggestedCardFor(listId) {
 }
 
 /*
- * GET /api/shared-gifts/mine — toutes mes listes communes, actives
+ * GET /api/shared-gifts/mine : toutes mes listes communes, actives
  *
  * ⚠️ DOIT ÊTRE DÉCLARÉE AVANT "/:id", sinon "mine" serait pris pour un
  * identifiant de liste.
@@ -1065,7 +1065,7 @@ router.patch(
 
       const who = await actorName(req.payload._id);
       // Le passage en acheté/offert est l'information la plus utile de toutes
-      // — c'est elle qui évite le doublon — donc on la sort dans le texte.
+      // c'est elle qui évite le doublon, donc on la sort dans le texte.
       // Clé de traduction : le libellé est résolu dans la langue de CHAQUE
       // destinataire (voir utils/notify.js et services/pushService.js).
       const statusKey = {
@@ -1111,7 +1111,7 @@ router.delete(
       // .pull() retire l'élément du tableau, toutes versions confondues.
       // Nom retenu AVANT le pull : après, le sous-document n'existe plus.
       const removedName = gift.giftName;
-      // Qui l'avait réservé, AVANT le pull — après, le sous-document n'existe
+      // Qui l'avait réservé, AVANT le pull : après, le sous-document n'existe
       // plus. Cette personne comptait s'en charger : si c'est un invité, il
       // fait partie des rares cas où on le notifie, parce qu'il aurait sinon
       // découvert la disparition en arrivant les mains vides.
@@ -1147,7 +1147,7 @@ router.delete(
 
 // ── Réserver / libérer un cadeau commun ─────────────────────────────────────
 // « Je m'en occupe » : empêche deux membres d'acheter la même chose.
-// Seul le réserveur peut libérer sa réservation — sinon n'importe qui pourrait
+// Seul le réserveur peut libérer sa réservation : sinon n'importe qui pourrait
 // s'approprier le cadeau d'un autre, ce qui viderait le mécanisme de son sens.
 // Le cadeau n'est jamais retiré de la liste, seulement marqué.
 router.post(
@@ -1212,8 +1212,8 @@ router.post(
       if (!gift) return res.status(404).json({ message: "Cadeau introuvable" });
 
       // Réservation faite depuis le lien public. Le visiteur n'a pas de
-      // compte : s'il perd son jeton — navigateur nettoyé, appareil changé
-      // sans avoir demandé le mail — personne ne peut plus libérer l'idée et
+      // compte : s'il perd son jeton, navigateur nettoyé, appareil changé
+      // sans avoir demandé le mail : personne ne peut plus libérer l'idée et
       // elle reste bloquée pour toujours. Les membres gèrent la liste, ce
       // sont eux qui doivent pouvoir la débloquer.
       if (gift.reservedByGuest) {
@@ -1236,7 +1236,7 @@ router.post(
       // Le réserveur libère la sienne ; un MEMBRE peut libérer n'importe
       // laquelle. Sans ça, une idée réservée par quelqu'un qui ne revient
       // jamais reste bloquée indéfiniment, et les gestionnaires de la liste
-      // — ceux qui en répondent — n'y peuvent rien. Un invité, lui, reste
+      // ceux qui en répondent, n'y peuvent rien. Un invité, lui, reste
       // limité à sa propre réservation.
       if (
         gift.reservedBy.toString() !== req.payload._id &&
@@ -1274,7 +1274,7 @@ router.post(
 );
 
 // ── Accès à la liste : qui la voit, code de réservation ─────────────────────
-// Réservé aux membres — créateur et contributeurs. Un invité ne gère pas les
+// Réservé aux membres : créateur et contributeurs. Un invité ne gère pas les
 // accès et ne connaît même pas la composition de la liste.
 
 /** Code court, lisible à l'oral, sans caractères ambigus (0/O, 1/I). */
@@ -1511,7 +1511,7 @@ router.get("/:id/share", isAuthenticated, loadListAsMember, async (req, res) => 
       publicUrl: list.publicSlug ? publicUrlFor(list.publicSlug) : null,
       // Le code garde désormais la porte : le lien nu ne montre plus rien.
       // Sans ce second lien, partager une liste protégée demanderait deux
-      // envois — le lien, puis le code — et la moitié des gens n'iraient
+      // envois, le lien, puis le code, et la moitié des gens n'iraient
       // jamais au bout. Le lien nu reste proposé pour qui veut transmettre
       // le code séparément.
       accessCode: list.accessCode || null,
@@ -1551,7 +1551,7 @@ router.patch(
 
       // Même forme que GET /:id/share : les deux clients remplacent leur état
       // par cette réponse, et il leur manquait alors le code et le lien qui
-      // le porte — le panneau affichait « lien seul » juste après activation.
+      // le porte : le panneau affichait « lien seul » juste après activation.
       res.json({
         isPublic: list.isPublic,
         publicSlug: list.publicSlug,
@@ -1574,7 +1574,7 @@ router.patch(
  *
  * ⚠️ Ouvert aux MEMBRES ET AUX INVITÉS. La route était gardée par
  * `loadListAsMember` : un invité recevait 403, son entrée restait dans
- * `viewers`, et sa carte restait rattachée — il « quittait » la liste et la
+ * `viewers`, et sa carte restait rattachée : il « quittait » la liste et la
  * revoyait au rechargement suivant. Il n'existait aucune autre route pour
  * retirer sa propre entrée d'invité (seul un membre pouvait le faire via
  * DELETE /:id/viewers/:userId), donc aucun moyen de partir de son plein gré.
@@ -1641,7 +1641,7 @@ async function leaveAsMember(req, res) {
 
     // `remaining` ne contient déjà plus le partant (filtré ci-dessus), donc
     // seuls ceux qui restent sont prévenus. Si la liste est vide, la boucle ne
-    // tourne pas — et la liste vient d'être supprimée de toute façon.
+    // tourne pas : et la liste vient d'être supprimée de toute façon.
     if (remaining.length) {
       const who = await actorName(req.payload._id);
       await notifyOtherMembers(

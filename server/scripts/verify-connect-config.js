@@ -11,14 +11,14 @@
 //   1. que Stripe ACCEPTE la combinaison de propriétés (le point le moins sûr :
 //      elle est déduite de la table des combinaisons interdites, pas d'un
 //      exemple officiel) ;
-//   2. que `losses.payments` vaut bien "stripe" — c'est-à-dire que la perte
+//   2. que `losses.payments` vaut bien "stripe" : c'est-à-dire que la perte
 //      irrécouvrable ne remonte plus à BirthReminder ;
 //   3. que le lien d'onboarding se génère toujours.
 //
 // Ce qu'il n'établit PAS : le comportement de facturation des frais. Stripe
 // signale une variation entre `application_express` et `account` en charges
 // directes, et notre lecture de `balance_transaction.fee` en dépend. Cela
-// demande un vrai paiement de test — voir l'encadré affiché en fin de script.
+// demande un vrai paiement de test : voir l'encadré affiché en fin de script.
 //
 // ⚠️ À lancer avec des CLÉS DE TEST. Le script refuse de tourner autrement :
 // il crée un compte connecté, ce qui n'a rien à faire en production.
@@ -45,7 +45,7 @@ const stripe = require("stripe")(key);
 // ne se dissocient pas.
 //
 // Le script est conservé pour pouvoir reconstater le refus si Stripe fait
-// évoluer ses règles — pas pour être appliqué tel quel. Voir le commentaire
+// évoluer ses règles : pas pour être appliqué tel quel. Voir le commentaire
 // d'arbitrage en tête de routes/stripe.connect.js.
 
 const TARGET = {
@@ -134,7 +134,7 @@ const get = (obj, path) =>
       "   et Stripe signale une variation du comportement de facturation en\n" +
       "   charges directes. Notre webhook lit `balance_transaction.fee` sur le\n" +
       "   compte de l'organisateur pour figer ce champ. S'il revient vide, rien\n" +
-      "   ne casse visiblement — mais le coût de remboursement affiché à\n" +
+      "   ne casse visiblement : mais le coût de remboursement affiché à\n" +
       "   l'organisateur retombe sur une estimation, avant une opération\n" +
       "   irréversible. C'est le seul vrai risque de cette migration.\n",
   );

@@ -10,7 +10,7 @@ import "./css/myContributions.css";
  *
  * En charges directes, l'argent d'une contribution part directement chez
  * l'organisateur. BirthReminder ne le détient jamais et ne peut pas rembourser
- * à sa place. Le contributeur n'a donc qu'un interlocuteur — et jusqu'ici, plus
+ * à sa place. Le contributeur n'a donc qu'un interlocuteur : et jusqu'ici, plus
  * aucune trace de ce qu'il avait versé une fois la page fermée : ni montant, ni
  * date, ni référence. Réclamer devenait très difficile.
  *
@@ -52,7 +52,7 @@ const MyContributions = () => {
    * Un `pi_3ToKuh3ZbPfimmX51j8TUNlk` collé tout nu dans un message ne dit rien
    * à personne : l'organisateur ne reconnaît pas ce code, il reconnaît « 25 €
    * le 19 juin pour l'anniversaire de Marie ». La référence reste dedans parce
-   * qu'elle est le seul identifiant sans ambiguïté — c'est ce que le support
+   * qu'elle est le seul identifiant sans ambiguïté : c'est ce que le support
    * recherche, et ce que l'organisateur retrouvera dans son tableau de bord
    * Stripe si le doute persiste. Mais elle accompagne le message, elle ne le
    * remplace pas.
@@ -195,7 +195,7 @@ const MyContributions = () => {
             ))}
           </ul>
 
-          {/* Dire une fois, clairement, qui détient l'argent — c'est ce qui
+          {/* Dire une fois, clairement, qui détient l'argent : c'est ce qui
               évite qu'on nous réclame un remboursement qu'on ne peut pas
               faire, et ce qui oriente vers le bon interlocuteur. */}
           <div className="mycontrib-note">
@@ -210,7 +210,7 @@ const MyContributions = () => {
               contactez l'organisateur : le bouton « copier le récapitulatif »
               prépare un message tout fait avec le montant, la date et la
               référence. Sans réponse de sa part,{" "}
-              <a href="/contact">écrivez-nous</a> — le bouton « Un problème
+              <a href="/contact">écrivez-nous</a>, le bouton « Un problème
               avec cette contribution ? » prépare la demande avec les bons
               éléments :
               nous ne pouvons pas trancher un désaccord, mais la référence nous

@@ -13,7 +13,7 @@ const { isValidUnsubscribeSignature } = require("../utils/unsubscribeLinks");
 //
 // Les emails déjà partis n'ont pas de signature, et un lien de désabonnement
 // doit continuer de fonctionner : on les accepte encore jusqu'à la date
-// ci-dessous. PASSÉ CETTE DATE, un lien sans signature est refusé — il n'y a
+// ci-dessous. PASSÉ CETTE DATE, un lien sans signature est refusé : il n'y a
 // rien à modifier ici, la bascule est automatique.
 const UNSIGNED_LINKS_ACCEPTED_UNTIL = new Date("2027-01-15T00:00:00Z");
 
@@ -109,7 +109,7 @@ async function unsubscribeByEmail({ email, dateid, type, friendId }) {
     return "Vous ne recevrez plus d'emails pour les nouvelles demandes d'ami.";
   }
 
-  // ── 2. Messages chat — tous ────────────────────────────────────────────────
+  // ── 2. Messages chat : tous ────────────────────────────────────────────────
   if (type === "chat") {
     const user = await userModel.findOneAndUpdate(
       emailFilter,
@@ -121,7 +121,7 @@ async function unsubscribeByEmail({ email, dateid, type, friendId }) {
     return "Vous ne recevrez plus d'emails récapitulant vos messages non lus. Le chat et les notifications push ne changent pas.";
   }
 
-  // ── 3. Messages chat — ami spécifique ──────────────────────────────────────
+  // ── 3. Messages chat : ami spécifique ──────────────────────────────────────
   // Coupe UNIQUEMENT l'email récap des messages non lus venant de cet ami.
   // Ce n'est pas un blocage : il peut toujours écrire, le push et le chat
   // fonctionnent. Réglage = User.chatEmailDisabledFriends, le même que
@@ -207,7 +207,7 @@ router.get("/", async (req, res) => {
 });
 
 /*
- * POST /api/unsubscribe  — désabonnement par identifiant utilisateur
+ * POST /api/unsubscribe : désabonnement par identifiant utilisateur
  *
  * ⚠️ Cette route manquait, et TOUS les liens « se désabonner » des emails
  * étaient donc cassés. Le parcours réel est le suivant : l'email pointe vers
@@ -219,7 +219,7 @@ router.get("/", async (req, res) => {
  * demande d'ami l'utilisent encore, et d'anciens messages déjà partis dans les
  * boîtes de réception continuent de pointer dessus.
  *
- * Aucune authentification : c'est délibéré et nécessaire — on se désabonne
+ * Aucune authentification : c'est délibéré et nécessaire, on se désabonne
  * depuis sa boîte mail, sans se connecter. L'identifiant Mongo joue le rôle de
  * jeton opaque, et l'action est strictement restrictive (elle ne peut que
  * couper des envois), donc sans risque d'usage abusif.

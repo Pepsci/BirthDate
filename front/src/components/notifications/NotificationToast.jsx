@@ -21,7 +21,7 @@ const buildToastText = (type, data) => {
     case "birthday_soon":
       return data.daysLeft === 0
         ? `C'est l'anniversaire de ${data.name} aujourd'hui !`
-        : `${data.name} — anniversaire dans ${data.daysLeft}j`;
+        : `${data.name} : anniversaire dans ${data.daysLeft}j`;
     case "friend_request":
       return `${data.name} t'a envoyé une demande d'ami`;
     case "friend_accepted":

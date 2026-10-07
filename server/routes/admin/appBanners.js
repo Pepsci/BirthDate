@@ -44,7 +44,7 @@ router.get("/", async (req, res) => {
   }
 });
 
-// PUT /api/admin/app-banners/releases — { android, ios }
+// PUT /api/admin/app-banners/releases : { android, ios }
 router.put("/releases", async (req, res) => {
   try {
     const android = readRelease(req.body.android, "Android");
@@ -68,7 +68,7 @@ router.put("/releases", async (req, res) => {
   }
 });
 
-// PUT /api/admin/app-banners/announcement — publier (nouvel id → visible par tous)
+// PUT /api/admin/app-banners/announcement : publier (nouvel id → visible par tous)
 // body : { title, message, url, platforms, until } ; DELETE pour retirer.
 router.put("/announcement", async (req, res) => {
   try {

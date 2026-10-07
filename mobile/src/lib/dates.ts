@@ -189,7 +189,7 @@ export function formatBirthday(iso: string): string {
   return formatDayMonth(new Date(iso));
 }
 
-/** "13 mars 1990" — date de naissance complète */
+/** "13 mars 1990" : date de naissance complète */
 export function formatFullDate(iso: string): string {
   return formatDayMonthYear(new Date(iso));
 }
@@ -201,7 +201,7 @@ export function formatNameday(mmdd: string): string {
 }
 
 /**
- * "0 an" · "1 an" · "34 ans" — le pluriel français ne s'applique qu'à
+ * "0 an" · "1 an" · "34 ans" : le pluriel français ne s'applique qu'à
  * partir de 2. Utilisé partout où un âge est affiché sur une carte.
  */
 export function formatAge(age: number): string {
@@ -222,7 +222,7 @@ export interface DatePayload {
   surname?: string;
   date: string; // ISO
   family?: boolean;
-  nameday?: string | null; // "MM-DD" — auto-détecté côté serveur si absent
+  nameday?: string | null; // "MM-DD" : auto-détecté côté serveur si absent
 }
 
 // Sans réseau, ces trois fonctions déposent l'opération dans la file
@@ -294,7 +294,7 @@ async function cachedEntry(id: string): Promise<DateEntry | null> {
   return list?.data.find((d) => d._id === id) ?? null;
 }
 
-/** (Dé)marque une date comme "famille" — fonctionne aussi pour un ami lié. */
+/** (Dé)marque une date comme "famille" : fonctionne aussi pour un ami lié. */
 export async function setDateFamily(
   id: string,
   family: boolean,
@@ -346,7 +346,7 @@ export async function fetchDate(id: string): Promise<DateEntry> {
 }
 
 /**
- * PATCH /date/:id/photo en multipart (champ "photo") — même technique que
+ * PATCH /date/:id/photo en multipart (champ "photo") : même technique que
  * updateAvatar() dans lib/users.ts (uploadAsync plutôt que fetch+FormData,
  * seul moyen fiable d'envoyer du multipart sur iOS).
  */

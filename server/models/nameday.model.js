@@ -1,7 +1,7 @@
 const { Schema, model } = require("mongoose");
 
 /**
- * Calendrier des fêtes — une ligne par prénom.
+ * Calendrier des fêtes : une ligne par prénom.
  *
  * Deux sortes de lignes :
  *  - prénom principal (aliasOf: null)     : « Michel » → 09-29

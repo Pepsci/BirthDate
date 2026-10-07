@@ -146,7 +146,7 @@ function PersonPreviewCard({ userId, open, onClose }) {
                     <div className="person-preview-row person-preview-shared">
                       <span className="person-preview-icon">🤝</span>
                       <span>
-                        Liste commune —{" "}
+                        Liste commune : {" "}
                         {summary.sharedGiftList.giftCount} cadeau
                         {summary.sharedGiftList.giftCount > 1 ? "x" : ""}
                       </span>

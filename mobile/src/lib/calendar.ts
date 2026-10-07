@@ -31,7 +31,7 @@ const LINK_PREFIX = "cal_event_";
  * `expo-calendar` embarque du code natif : il n'existe que dans un binaire
  * reconstruit après son ajout. Un `import` statique s'évalue au chargement du
  * module et lève « Cannot find native module 'ExpoCalendar' » dans un client
- * de développement plus ancien — ce qui faisait échouer l'évaluation de tout
+ * de développement plus ancien : ce qui faisait échouer l'évaluation de tout
  * l'écran Agenda et de la page événement (« Route is missing the required
  * default export »), alors qu'ils n'ont rien à voir avec le calendrier.
  *
@@ -63,7 +63,7 @@ const linkKey = (eventKey: string) =>
 
 /**
  * Identifiant de l'entrée d'agenda créée pour cet événement, ou null.
- * Renvoie null — et oublie le lien — si l'entrée n'existe plus côté système.
+ * Renvoie null, et oublie le lien, si l'entrée n'existe plus côté système.
  */
 export async function getLinkedEventId(
   eventKey: string,
@@ -242,7 +242,7 @@ export async function addToDeviceCalendar(
     //
     // Les décalages viennent des réglages (Profil → Réglages → Calendrier), et
     // diffèrent selon le type d'entrée : un événement a une heure, un
-    // anniversaire est une journée entière qui commence à minuit — d'où deux
+    // anniversaire est une journée entière qui commence à minuit : d'où deux
     // listes distinctes plutôt qu'une seule mal adaptée aux deux.
     const allDay = input.allDay ?? false;
     const prefs = await loadCalendarPrefs();

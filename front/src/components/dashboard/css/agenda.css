@@ -1,5 +1,5 @@
 /* ============================================
-   AGENDA — Mois & Semaine
+   AGENDA : Mois & Semaine
    ============================================ */
 
 .agenda-container {
@@ -85,7 +85,7 @@
 }
 
 /* ============================================
-   VUE MOIS — grille CSS 7 colonnes
+   VUE MOIS : grille CSS 7 colonnes
    ============================================ */
 
 .agenda-month-grid {
@@ -139,7 +139,7 @@
   background: rgba(59, 130, 246, 0.08);
 }
 
-/* Numéro du jour — top right */
+/* Numéro du jour : top right */
 .agenda-cell__top {
   display: flex;
   justify-content: flex-end;
@@ -165,7 +165,7 @@
   font-size: 0.8rem;
 }
 
-/* Pastilles — bottom center */
+/* Pastilles : bottom center */
 .agenda-cell__bottom {
   display: flex;
   justify-content: center;
@@ -201,7 +201,7 @@
 }
 
 /* ============================================
-   VUE SEMAINE — layout vertical 7 lignes
+   VUE SEMAINE : layout vertical 7 lignes
    ============================================ */
 
 .agenda-week-grid {

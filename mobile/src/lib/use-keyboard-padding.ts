@@ -12,7 +12,7 @@ export function useKeyboardPadding(): number {
     if (Platform.OS !== "android") return;
     // ⚠️ Pas `endCoordinates.height` : en edge-to-edge, cette hauteur exclut
     // la barre de navigation système et, sur les claviers Samsung, la barre
-    // d'outils (emoji, GIF, micro) — le champ de saisie restait caché
+    // d'outils (emoji, GIF, micro) : le champ de saisie restait caché
     // derrière. On prend donc la distance réelle entre le HAUT du clavier et
     // le bas de l'écran. Le conteneur du chat descend jusqu'au bas de
     // l'écran : c'est exactement la marge nécessaire.

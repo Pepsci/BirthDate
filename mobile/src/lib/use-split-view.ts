@@ -12,7 +12,7 @@ import * as SecureStore from "expo-secure-store";
  * Deux conditions, toutes deux nécessaires :
  * - largeur ≥ 600 : sinon chaque panneau serait plus étroit qu'un téléphone ;
  * - hauteur ≥ 600 : un iPhone Pro Max à l'horizontale dépasse 600 de large
- *   mais n'a que ~430 de haut — deux colonnes y seraient illisibles.
+ *   mais n'a que ~430 de haut : deux colonnes y seraient illisibles.
  *
  * Le réglage utilisateur (« Affichage deux panneaux ») permet de garder une
  * seule colonne même sur grand écran. Préférence locale à l'appareil
@@ -86,7 +86,7 @@ export function useSplitViewPreference(): [boolean, (next: boolean) => void] {
 export function useSplitView(options?: {
   /**
    * N'autorise les deux panneaux qu'en paysage (largeur > hauteur).
-   * Pour les écrans dont les deux moitiés ont besoin de place — la page d'un
+   * Pour les écrans dont les deux moitiés ont besoin de place : la page d'un
    * événement : un iPad à la verticale y garde une seule colonne.
    */
   landscapeOnly?: boolean;

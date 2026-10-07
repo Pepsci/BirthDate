@@ -1,4 +1,4 @@
-// Généré par l'outil d'extraction — une entrée par fichier de locales/fr.
+// Généré par l'outil d'extraction : une entrée par fichier de locales/fr.
 import fr_auth from "./fr/auth.json";
 import fr_calendar from "./fr/calendar.json";
 import fr_chat from "./fr/chat.json";

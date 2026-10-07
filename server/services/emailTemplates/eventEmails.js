@@ -110,13 +110,13 @@ const sendEventDateConfirmedEmail = (email, event, dateStr, url) => {
  *
  * Destiné aux invités EXTERNES (pas de compte, donc ni notification in-app ni
  * push) : sans cet email, leur RSVP est réinitialisé côté serveur sans qu'ils
- * en soient jamais informés — l'organisateur les verrait passer en "en attente"
+ * en soient jamais informés : l'organisateur les verrait passer en "en attente"
  * sans qu'ils aient rien fait.
  *
  * Le code d'accès est inclus : sans lui, un invité qui ouvre le lien depuis un
  * autre appareil que celui où il a rejoint l'événement retombe en lecture seule
  * (son guestToken vit dans le localStorage de l'autre navigateur) et ne peut
- * donc pas faire ce que l'email lui demande — reconfirmer sa présence.
+ * donc pas faire ce que l'email lui demande : reconfirmer sa présence.
  *
  * @param {string} email      destinataire
  * @param {Object} event      document Event (title, shortId)
@@ -125,7 +125,7 @@ const sendEventDateConfirmedEmail = (email, event, dateStr, url) => {
  * @param {string|null} accessCode  code d'accès, si l'événement en a un
  */
 const sendEventDateChangedEmail = (email, event, dateStr, url, accessCode) => {
-  return sendEventEmail(email, `Nouvelle date pour ${event.title} — confirme ta présence 📅`, {
+  return sendEventEmail(email, `Nouvelle date pour ${event.title} : confirme ta présence 📅`, {
     badge: "Date modifiée",
     title: "La date a changé",
     message: `L'organisateur a déplacé l'événement "${event.title}". Nouvelle date : <strong>${dateStr}</strong>.<br><br>Ta réponse précédente a été remise à zéro : merci de <strong>reconfirmer ta présence</strong> pour cette nouvelle date.`,

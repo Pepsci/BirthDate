@@ -115,7 +115,7 @@ router.get("/alerts", async (req, res) => {
     // Une alerte déjà tranchée n'est pas retirée de la liste : elle est
     // marquée. La masquer ferait perdre de vue des cagnottes qui restent à
     // risque, et empêcherait surtout de constater qu'une décision a été prise
-    // — ce qu'on cherche précisément à pouvoir montrer.
+    // ce qu'on cherche précisément à pouvoir montrer.
     //
     // En revanche une décision devient caduque dès que les chiffres bougent :
     // « écartée, 180 € entre amis » ne vaut plus rien quand la cagnotte en est
@@ -176,8 +176,8 @@ router.get("/alerts", async (req, res) => {
  *
  * Gèle ou rouvre une cagnotte depuis l'admin.
  *
- * ⚠️ Geler ≠ rembourser. Le gel ferme le robinet — plus aucune contribution ne
- * peut entrer — mais ne touche pas à l'argent déjà collecté, qui reste sur le
+ * ⚠️ Geler ≠ rembourser. Le gel ferme le robinet : plus aucune contribution ne
+ * peut entrer : mais ne touche pas à l'argent déjà collecté, qui reste sur le
  * compte Stripe de l'organisateur. C'est l'intervention la plus utile face à
  * une cagnotte suspecte : elle limite le nombre de victimes sans nous faire
  * décider à la place de qui que ce soit, et elle est réversible.
@@ -460,7 +460,7 @@ router.post("/alerts/review", async (req, res) => {
 
 /*
  * GET /api/admin/pools/:eventId/contributions
- * Détail des contributions d'une cagnotte (identités visibles — usage admin only).
+ * Détail des contributions d'une cagnotte (identités visibles : usage admin only).
  */
 router.get("/:eventId/contributions", async (req, res) => {
   try {
@@ -539,7 +539,7 @@ router.post("/contributions/:contributionId/refund", async (req, res) => {
     //
     // Un remboursement administrateur est une EXCEPTION : la règle est que
     // l'organisateur rembourse lui-même. Chaque fois qu'on s'y substitue, il
-    // faut pouvoir dire pourquoi — sinon la trace ne vaut rien le jour où on
+    // faut pouvoir dire pourquoi : sinon la trace ne vaut rien le jour où on
     // demande des comptes, et l'exception se banalise en service après-vente.
     //
     // Même exigence que sur les décisions d'alerte : c'est le texte qui
@@ -569,8 +569,8 @@ router.post("/contributions/:contributionId/refund", async (req, res) => {
     // En charges directes, Stripe débite le remboursement du solde du compte
     // de l'ORGANISATEUR. S'il a déjà viré sa collecte sur sa banque, ce solde
     // est vide : le compte part en négatif. Stripe tente alors de se
-    // rembourser sur son compte bancaire externe, et si ça échoue — compte
-    // clos, compte à sec — la perte remonte selon
+    // rembourser sur son compte bancaire externe, et si ça échoue : compte
+    // clos, compte à sec : la perte remonte selon
     // `controller.losses.payments`. Sur nos comptes Express, cette valeur vaut
     // `application` : c'est BirthReminder qui paie, après une réserve retenue
     // puis une ponction au bout de 180 jours de négatif.
@@ -586,7 +586,7 @@ router.post("/contributions/:contributionId/refund", async (req, res) => {
     let balanceInfo = null;
     try {
       // ⚠️ Le compte connecté est une OPTION (2e argument), pas un paramètre.
-      // Passé en 1er, Stripe lève « unknown parameter » — l'exception tombait
+      // Passé en 1er, Stripe lève « unknown parameter » : l'exception tombait
       // dans le catch plus bas, le solde restait inconnu, et le remboursement
       // passait SANS contrôle. Le garde-fou ne servait alors à rien.
       const balance = await stripe.balance.retrieve(
@@ -619,7 +619,7 @@ router.post("/contributions/:contributionId/refund", async (req, res) => {
       }
     } catch (err) {
       // Solde illisible : on ne bloque pas une opération légitime pour autant,
-      // mais on le consigne — c'est exactement le contexte qu'on voudra
+      // mais on le consigne : c'est exactement le contexte qu'on voudra
       // retrouver si ce remboursement finit par nous coûter.
       console.error(
         `[admin.refund] solde du compte ${account.stripeAccountId} illisible :`,
@@ -637,7 +637,7 @@ router.post("/contributions/:contributionId/refund", async (req, res) => {
     await contribution.save();
 
     console.log(
-      `↩️ Admin refund: contribution ${contribution._id} (event ${contribution.event.shortId}) — refund ${refund.id} par admin ${req.payload._id}` +
+      `↩️ Admin refund: contribution ${contribution._id} (event ${contribution.event.shortId}) : refund ${refund.id} par admin ${req.payload._id}` +
         (req.body.force === true ? " [FORCÉ malgré le solde]" : ""),
     );
 

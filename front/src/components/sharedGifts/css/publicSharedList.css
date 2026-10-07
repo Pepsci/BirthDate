@@ -91,7 +91,7 @@
   flex-direction: column;
 }
 
-/* Réservé : atténué mais toujours lisible. Le cadeau n'est jamais retiré —
+/* Réservé : atténué mais toujours lisible. Le cadeau n'est jamais retiré :
    le voir disparaître laisserait croire à une suppression. */
 .psl-card--reserved {
   opacity: 0.62;

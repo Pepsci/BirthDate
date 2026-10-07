@@ -100,7 +100,7 @@ async function sendBirthdayReminderEmail(owner, date, daysBeforeBirthday) {
 
     // Une carte peut n'avoir aucun nom propre et s'appuyer sur l'ami lié
     // (linkedUser) : on retombe dessus avant d'abandonner. Le nom de famille
-    // est optionnel — fullNameOf() se charge de ne pas laisser de "undefined".
+    // est optionnel : fullNameOf() se charge de ne pas laisser de "undefined".
     const name = date ? date.name || date.linkedUser?.name || "" : owner.name;
     const surname = date
       ? date.surname || date.linkedUser?.surname || ""

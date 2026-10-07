@@ -4,7 +4,7 @@ import NewEventForm from "../../components/NewEventForm";
 
 /**
  * Écran plein de création d'événement (téléphone, onglet Événements).
- * La logique — formulaire, brouillon automatique — est dans NewEventForm,
+ * La logique, formulaire, brouillon automatique, est dans NewEventForm,
  * partagée avec le panneau de droite de la carte en grand écran.
  */
 export default function NewEventScreen() {

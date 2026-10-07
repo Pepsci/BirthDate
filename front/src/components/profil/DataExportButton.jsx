@@ -25,9 +25,9 @@ const DataExportButton = () => {
 
     const toClear = (m) => {
       if (!m.isEncrypted) return m.content;
-      if (!m.encryptedForYou) return "[chiffré — aucune copie pour ce compte]";
+      if (!m.encryptedForYou) return "[chiffré : aucune copie pour ce compte]";
       if (keys.length === 0) {
-        return "[chiffré — clé privée absente de ce navigateur]";
+        return "[chiffré : clé privée absente de ce navigateur]";
       }
       const publicKeys = [m.senderPublicKey, m.senderOldPublicKey].filter(
         Boolean,
@@ -36,7 +36,7 @@ const DataExportButton = () => {
         const clear = decryptMessage(m.encryptedForYou, pk, keys);
         if (clear) return clear;
       }
-      return "[chiffré — déchiffrement impossible]";
+      return "[chiffré : déchiffrement impossible]";
     };
 
     return {

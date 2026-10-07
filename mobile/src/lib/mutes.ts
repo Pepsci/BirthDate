@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { api } from "./api";
 
 /**
- * Silencieux par conversation — privée ou discussion d'événement.
+ * Silencieux par conversation : privée ou discussion d'événement.
  *
  * ⚠️ Ne coupe que les notifications PUSH. La conversation continue de remonter
  * dans la liste avec son badge de non-lus : couper les deux ferait disparaître

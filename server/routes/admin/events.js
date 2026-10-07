@@ -95,7 +95,7 @@ router.get("/", async (req, res) => {
 });
 
 /*
- * DELETE /api/admin/events/:id — suppression + cascade (même logique que la
+ * DELETE /api/admin/events/:id : suppression + cascade (même logique que la
  * suppression organisateur dans routes/events/core.js).
  * Bloquée si des contributions encaissées non remboursées existent.
  */

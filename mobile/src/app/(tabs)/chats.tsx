@@ -46,8 +46,8 @@ export default function ChatsScreen() {
    * précisément cet écran qu'on ouvre pour lire ses messages.
    *
    * Elles vivent dans un onglet à part plutôt que mêlées aux conversations
-   * privées : ce ne sont pas les mêmes objets — l'une se supprime, l'autre
-   * appartient à un événement — et les confondre rendrait l'appui long
+   * privées : ce ne sont pas les mêmes objets, l'une se supprime, l'autre
+   * appartient à un événement : et les confondre rendrait l'appui long
    * ambigu.
    */
   const [eventChats, setEventChats] = useState<EventChatSummary[]>([]);

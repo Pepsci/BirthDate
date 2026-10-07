@@ -24,7 +24,7 @@ import { readingPane } from "../lib/layout";
  * Invitation d'amis (et d'emails externes) à un événement.
  *
  * Deux usages :
- * - `app/event/invite/[shortId].tsx` : écran plein — c'est aussi l'étape qui
+ * - `app/event/invite/[shortId].tsx` : écran plein, c'est aussi l'étape qui
  *   suit la création d'un événement ;
  * - `app/event/[shortId].tsx` en paysage (`embedded`) : panneau de droite,
  *   l'événement restant à gauche.

@@ -64,7 +64,7 @@ export function UnreadProvider({ children }: { children: React.ReactNode }) {
       }
       setByFriend(map);
     } catch {
-      // silencieux — les badges ne doivent jamais bloquer l'app
+      // silencieux : les badges ne doivent jamais bloquer l'app
     }
   }, [user?._id]);
 
@@ -112,13 +112,13 @@ export function UnreadProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     Notifications.setBadgeCountAsync(badgeTotalRef.current).catch(() => {
-      // silencieux — le badge n'est pas critique
+      // silencieux : le badge n'est pas critique
     });
   }, [total, notifCount]);
 
   // Filet de sécurité : au premier lancement, la demande de permission
   // (registerForPush, non-awaited dans auth-context) peut encore être en
-  // attente de réponse de l'utilisateur au moment où ce total est calculé —
+  // attente de réponse de l'utilisateur au moment où ce total est calculé :
   // le premier appel ci-dessus échoue alors silencieusement faute de
   // permission accordée, et comme total/notifCount ne rechangent pas tout
   // seuls, le badge ne se réapplique jamais. On le réapplique donc aussi à

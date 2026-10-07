@@ -41,11 +41,11 @@ const AdminPools = () => {
    * à la charge de BirthReminder. Un remboursement déclenché ici est un acte
    * volontaire : contrairement à une opposition bancaire, personne ne nous
    * l'impose. Rembourser à la place d'un organisateur solvable mais lent,
-   * c'est payer la dette d'autrui sans y être tenu — et se placer, aux yeux
+   * c'est payer la dette d'autrui sans y être tenu : et se placer, aux yeux
    * des utilisateurs suivants, dans le rôle de celui qui rembourse.
    *
    * La règle : on relaie, l'organisateur rembourse. Ce bouton sert aux cas où
-   * il ne le fera jamais — fraude avérée, compte disparu — et de préférence
+   * il ne le fera jamais, fraude avérée, compte disparu, et de préférence
    * tant que l'argent est encore là.
    *
    * Le serveur refuse (409) si le solde est insuffisant ; `force` permet
@@ -81,8 +81,8 @@ const AdminPools = () => {
   /*
    * Geler une cagnotte.
    *
-   * ⚠️ Geler ≠ rembourser. Le gel ferme le robinet — plus aucune contribution
-   * ne peut entrer — sans toucher à l'argent déjà collecté, qui reste chez
+   * ⚠️ Geler ≠ rembourser. Le gel ferme le robinet : plus aucune contribution
+   * ne peut entrer : sans toucher à l'argent déjà collecté, qui reste chez
    * l'organisateur. C'est l'intervention la plus utile face à une cagnotte
    * suspecte : elle limite le nombre de victimes sans nous faire décider à la
    * place de qui que ce soit, et elle est réversible.

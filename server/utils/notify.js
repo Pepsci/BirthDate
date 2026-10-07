@@ -80,7 +80,7 @@ const notify = async (app, { userId, type, data = {}, link = null }) => {
    * Déduplication des réactions : une seule notif non lue par message.
    *
    * ⚠️ Sans ça, un message d'événement que douze personnes aiment produit
-   * douze lignes dans le centre de notifications — et douze pushes. La
+   * douze lignes dans le centre de notifications : et douze pushes. La
    * dernière réaction écrase la précédente : on garde « quelqu'un a réagi à ce
    * message », qui est l'information utile, sans l'empilement.
    */
@@ -173,7 +173,7 @@ const notify = async (app, { userId, type, data = {}, link = null }) => {
    * notification d'un message pas encore lu.
    *
    * Aucun extrait du message : les contenus sont chiffrés de bout en bout et
-   * le serveur ne peut pas les lire — il n'a d'ailleurs pas à le pouvoir.
+   * le serveur ne peut pas les lire : il n'a d'ailleurs pas à le pouvoir.
    * « Pierre a réagi ❤️ à votre message » dit tout ce qu'il faut.
    *
    * `sendPushToUser` applique seul `pushEnabled`, la catégorie et le mode

@@ -424,7 +424,7 @@
 }
 
 /* Coupé : on garde le blanc plein plutôt que le rouge, qui passerait mal sur
-   cette teinte — la cloche barrée suffit à dire l'état. */
+   cette teinte : la cloche barrée suffit à dire l'état. */
 .event-chat-header .mb-btn--on {
   color: #fff;
   background: rgba(0, 0, 0, 0.2);

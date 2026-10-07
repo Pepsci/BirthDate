@@ -156,8 +156,8 @@ module.exports = (io, socket, app) => {
              * ⚠️ Destinataires DÉDOUBLONNÉS.
              *
              * L'organisateur était notifié deux fois : une fois par la boucle
-             * sur les invitations — il a désormais la sienne, il compte parmi
-             * les participants — et une fois par un bloc qui lui était dédié,
+             * sur les invitations : il a désormais la sienne, il compte parmi
+             * les participants : et une fois par un bloc qui lui était dédié,
              * écrit à l'époque où il n'en avait pas. Les notifications in-app
              * étant dédoublonnées par événement (voir utils/notify.js), ça ne
              * se voyait pas dans le centre de notifications : seul le PUSH
@@ -226,7 +226,7 @@ module.exports = (io, socket, app) => {
    * ⚠️ Même règle que pour les messages privés : une réaction par personne et
    * par message, la nouvelle remplace l'ancienne, et renvoyer la même la
    * retire. C'est le comportement attendu par quiconque a déjà utilisé
-   * WhatsApp — s'en écarter surprendrait plus que ça n'apporterait.
+   * WhatsApp : s'en écarter surprendrait plus que ça n'apporterait.
    *
    * Le contrôle d'accès s'appuie sur la présence dans la room de l'événement,
    * déjà accordée par `event:join` qui vérifie l'invitation. Sans lui,
@@ -272,7 +272,7 @@ module.exports = (io, socket, app) => {
       await message.save();
 
       /*
-       * Notifier l'auteur du message — même règle que la messagerie privée :
+       * Notifier l'auteur du message, même règle que la messagerie privée :
        * à la pose seulement, jamais sur son propre message.
        *
        * ⚠️ Un message d'événement est lu par tout le monde, mais la réaction

@@ -12,7 +12,7 @@ import type { DateEntry } from "./dates";
 import type { WishlistItem } from "./wishlist";
 
 /**
- * Données du mode local (sans compte) — docs/MODE_LOCAL.md § 5.1.
+ * Données du mode local (sans compte) : docs/MODE_LOCAL.md § 5.1.
  *
  * ⚠️ À NE PAS CONFONDRE avec offline-cache.ts :
  * - le cache est une copie JETABLE de données serveur, vidé au signOut ;
@@ -20,7 +20,7 @@ import type { WishlistItem } from "./wishlist";
  *   (ni signOut, ni clearCache). Seul `clearLocalData()`, appelé sur action
  *   explicite de l'utilisateur, l'efface.
  *
- * Emplacement : Documents/local-data/ — inclus dans la sauvegarde iCloud /
+ * Emplacement : Documents/local-data/, inclus dans la sauvegarde iCloud /
  * Google de l'appareil, ce qui fait une sauvegarde gratuite.
  *
  * Trois protections, parce qu'il n'y a pas de serveur pour rattraper une
@@ -60,7 +60,7 @@ export type LocalDate = Omit<DateEntry, "photo"> & {
   /**
    * Import vers un compte (étape 6, local-migration.ts) : marques posées au
    * fur et à mesure, pour qu'un import relancé après un échec reprenne là
-   * où il s'était arrêté — sans jamais recréer ce qui est déjà passé.
+   * où il s'était arrêté : sans jamais recréer ce qui est déjà passé.
    */
   importedAs?: string; // id de la carte côté serveur
   importedGifts?: string[]; // ids LOCAUX des idées déjà envoyées
@@ -81,9 +81,9 @@ export interface LocalPrefs {
   _id: "prefs";
   hideNamedaysOnCards?: boolean;
   showTodayNamedayOnHome?: boolean;
-  /** Rappels locaux (étape 4) — activés par défaut. */
+  /** Rappels locaux (étape 4) : activés par défaut. */
   remindersEnabled?: boolean;
-  /** Dernière sauvegarde exportée (timestamp) — rappel de sauvegarde. */
+  /** Dernière sauvegarde exportée (timestamp) : rappel de sauvegarde. */
   lastBackupAt?: number;
 }
 
@@ -108,7 +108,7 @@ export class LocalStoreError extends Error {
 
 // ---- Ids locaux ----
 
-/** `local-<timestamp>-<aléa>` — distinct des `tmp-…` de la file hors ligne. */
+/** `local-<timestamp>-<aléa>` : distinct des `tmp-…` de la file hors ligne. */
 export function newLocalId(): string {
   const rand = Math.random().toString(36).slice(2, 8).padEnd(6, "0");
   return `local-${Date.now()}-${rand}`;
@@ -304,7 +304,7 @@ export async function countLocalDates(): Promise<number> {
 
 /**
  * Efface TOUTES les données locales (cartes, liste d'envies, photos).
- * Irréversible — uniquement sur action explicite de l'utilisateur
+ * Irréversible : uniquement sur action explicite de l'utilisateur
  * (« Effacer toutes mes données », ou après un import réussi vers un compte).
  */
 export function clearLocalData(): Promise<void> {

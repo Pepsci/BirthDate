@@ -103,7 +103,7 @@ async function migrate() {
   console.log(`  Users : ${userUpdated + userCleared} changements`);
 
   if (DRY_RUN) {
-    console.log("\n⚠️  DRY-RUN — rien n'a été modifié.");
+    console.log("\n⚠️  DRY-RUN : rien n'a été modifié.");
     console.log("   Relance avec --apply pour appliquer :\n");
     console.log("   node migrate-namedays.js --apply\n");
   } else {

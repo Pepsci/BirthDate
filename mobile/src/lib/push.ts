@@ -8,7 +8,7 @@ import { setPresencePushToken } from "./socket";
 
 /**
  * Push natif via Expo Push (roadmap priorité n°1).
- * ⚠️ Ne fonctionne PAS dans Expo Go (SDK 53+) — development build requis.
+ * ⚠️ Ne fonctionne PAS dans Expo Go (SDK 53+) : development build requis.
  * Flux : token Expo → POST /push/expo-token → stocké sur User →
  * le backend l'utilise dans sendPushToUser (services/pushService.js).
  */
@@ -33,7 +33,7 @@ export function isExpoGo(): boolean {
  * Demande la permission, récupère le token et l'enregistre sur le backend.
  *
  * Sur simulateur / Expo Go, le token push distant ne peut pas fonctionner
- * (Apple ne délivre pas de vraies pushes remote à un simulateur) — mais la
+ * (Apple ne délivre pas de vraies pushes remote à un simulateur) : mais la
  * permission de notification (qui couvre aussi le badge sur l'icône) reste
  * demandée quand même, sinon `Notifications.setBadgeCountAsync()` est
  * silencieusement ignoré par iOS faute de permission accordée, y compris
@@ -67,7 +67,7 @@ export async function registerForPush(): Promise<string | null> {
       (Constants as { easConfig?: { projectId?: string } }).easConfig
         ?.projectId;
     if (!projectId) {
-      console.warn("⚠️ Push: pas de projectId EAS — lance `eas init` d'abord");
+      console.warn("⚠️ Push: pas de projectId EAS : lance `eas init` d'abord");
       return null;
     }
 
@@ -136,7 +136,7 @@ export function webLinkToMobileRoute(url: string | null | undefined): string {
   // Discussion d'un événement : le web l'ouvre par un onglet de la même page,
   // le mobile a un écran dédié. Sans cette règle, une notification de message
   // ouvrait l'accueil de l'événement et il fallait retrouver l'onglet à la
-  // main — pour lire le message qu'on venait justement d'être notifié.
+  // main : pour lire le message qu'on venait justement d'être notifié.
   const eventChat = url.match(/^\/event\/([^/?#]+)/i);
   if (eventChat && /[?&]tab=chat\b/.test(url)) {
     return `/event/chat/${eventChat[1]}`;
@@ -147,7 +147,7 @@ export function webLinkToMobileRoute(url: string | null | undefined): string {
   // Liste commune : le backend résout, pour chaque destinataire, la carte qui
   // porte la liste (/home?tab=date&dateId=…) ou, à défaut, l'écran de
   // rattachement. Ce dernier n'a pas d'équivalent web, on le laisse passer tel
-  // quel — sans cette règle il retombait sur "/" (accueil).
+  // quel : sans cette règle il retombait sur "/" (accueil).
   const attach = url.match(/\/shared-list\/([a-f0-9]+)\/attach/i);
   if (attach) return `/shared-list/${attach[1]}/attach`;
   // Réponse du support : le web l'ouvre dans l'onglet Support du dashboard,
@@ -164,7 +164,7 @@ export function webLinkToMobileRoute(url: string | null | undefined): string {
   if (url.includes("tab=date") && url.includes("dateId=")) {
     const m = url.match(/dateId=([a-f0-9]+)/i);
     // `focus=shared` (notifications de liste commune) ouvre la carte
-    // directement sur l'onglet « Liste commune » — voir app/date/[id].tsx.
+    // directement sur l'onglet « Liste commune » : voir app/date/[id].tsx.
     if (m) return /[?&]focus=shared\b/.test(url)
       ? `/date/${m[1]}?focus=shared`
       : `/date/${m[1]}`;

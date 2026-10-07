@@ -11,12 +11,12 @@ import "./css/attachSharedList.css";
  * (server/routes/sharedGifts.js). Un utilisateur web qui recevait « X t'a
  * partagé sa liste de cadeaux » et cliquait dessus atterrissait sur une route
  * absente d'App.jsx : page morte. C'était la cause principale du « je ne reçois
- * aucune notification sur le web » — elles arrivaient, mais ne menaient nulle
+ * aucune notification sur le web » : elles arrivaient, mais ne menaient nulle
  * part.
  *
  * Une liste commune ne s'affiche que posée sur une carte : c'est l'étape
  * manquante entre « on t'a partagé une liste » et « je la vois ». Deux chemins,
- * comme sur mobile — la poser sur une carte existante, ou créer la carte au
+ * comme sur mobile : la poser sur une carte existante, ou créer la carte au
  * passage pour quelqu'un qu'on n'a pas encore enregistré.
  */
 export default function AttachSharedList() {
@@ -72,7 +72,7 @@ export default function AttachSharedList() {
       navigate(`/home?tab=date&dateId=${res.data.dateId}`, { replace: true });
     } catch (err) {
       // 409 : la carte porte déjà une AUTRE liste commune. On ne remplace
-      // jamais en silence — l'ancienne disparaîtrait de cette carte sans que
+      // jamais en silence : l'ancienne disparaîtrait de cette carte sans que
       // personne l'ait décidé.
       if (err?.response?.data?.code === "ALREADY_HAS_LIST") {
         if (
@@ -143,7 +143,7 @@ export default function AttachSharedList() {
 
       {/* Création en un geste, quand le serveur sait de qui il s'agit. Sans
           elle, l'utilisateur devait ressaisir un nom et une date de naissance
-          qu'il ne connaît parfois même pas — c'est justement pour ça qu'il n'a
+          qu'il ne connaît parfois même pas : c'est justement pour ça qu'il n'a
           pas encore la carte. */}
       {suggestedName && (
         <section className="asl-section asl-section--suggested">
@@ -172,12 +172,12 @@ export default function AttachSharedList() {
         <h2 className="asl-section-title">Une carte existante</h2>
         {dates.length === 0 ? (
           <p className="asl-muted">
-            Vous n'avez encore aucune carte — créez-en une ci-dessous.
+            Vous n'avez encore aucune carte : créez-en une ci-dessous.
           </p>
         ) : (
           /* ⚠️ Menu déroulant, et non la liste complète : ce sont TOUTES les
              cartes du carnet. Au-delà de quelques-unes, les afficher en entier
-             noie le reste de l'écran — dont le bouton « créer la carte », qui
+             noie le reste de l'écran : dont le bouton « créer la carte », qui
              est souvent le bon choix quand on reçoit une liste. */
           <div className="asl-picker">
             <select

@@ -5,7 +5,7 @@
 // Un JWT valide ne suffit plus : la signature prouve seulement que le token a
 // été émis un jour. On vérifie en plus, EN BASE et à chaque requête, que le
 // compte existe encore, qu'il n'est pas supprimé (suppression par
-// l'utilisateur ou par un admin — c'est aussi le « bannissement »), et que le
+// l'utilisateur ou par un admin : c'est aussi le « bannissement »), et que le
 // token n'est pas antérieur au dernier changement de mot de passe.
 //
 // Sans cela, un compte supprimé ou banni gardait l'accès jusqu'à l'expiration

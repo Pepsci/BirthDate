@@ -3,7 +3,7 @@
     "newMessage": "Nouveau message",
     "pool": {
       "pool": "Cagnotte",
-      "contributionTitle": "💰 Nouvelle contribution — {{title}}",
+      "contributionTitle": "💰 Nouvelle contribution : {{title}}",
       "contributionBody": "{{name}} a participé : {{amount}}"
     },
     "someone": "Quelqu'un",
@@ -44,40 +44,40 @@
       "proposalDeclinedBody": "{{who}} n'a pas retenu « {{gift}} »"
     },
     "event": {
-      "rsvpTitle": "🎉 Nouvelle réponse — {{title}}",
+      "rsvpTitle": "🎉 Nouvelle réponse : {{title}}",
       "rsvp": {
         "accepted": "sera présent(e)",
         "declined": "ne sera pas présent(e)",
         "maybe": "est peut-être présent(e)"
       },
-      "dateVoteTitle": "📅 Vote date — {{title}}",
+      "dateVoteTitle": "📅 Vote date : {{title}}",
       "dateVoteBody": "{{name}} a voté pour une date",
-      "placeVoteTitle": "📍 Vote lieu — {{title}}",
+      "placeVoteTitle": "📍 Vote lieu : {{title}}",
       "placeVoteBody": "{{name}} a voté pour un lieu",
-      "giftTitle": "🎁 Nouveau cadeau — {{title}}",
+      "giftTitle": "🎁 Nouveau cadeau : {{title}}",
       "giftBody": "{{name}} propose : {{gift}}",
-      "giftVoteTitle": "♥ Vote cadeau — {{title}}",
+      "giftVoteTitle": "♥ Vote cadeau : {{title}}",
       "giftVoteBody": "{{name}} vote pour : {{gift}}",
-      "inviteTitle": "🎉 Invitation — {{title}}",
+      "inviteTitle": "🎉 Invitation : {{title}}",
       "inviteBody": "{{name}} vous invite à un événement",
-      "dateChangedTitle": "📅 Nouvelle date — {{title}}",
-      "dateChangedBody": "{{date}} — confirme ta présence",
-      "placeSettledTitle": "📍 Lieu retenu — {{title}}",
-      "updatedTitle": "✏️ Événement modifié — {{title}}",
+      "dateChangedTitle": "📅 Nouvelle date : {{title}}",
+      "dateChangedBody": "{{date}} : confirme ta présence",
+      "placeSettledTitle": "📍 Lieu retenu : {{title}}",
+      "updatedTitle": "✏️ Événement modifié : {{title}}",
       "updatedBody": "L'organisateur a mis à jour les informations",
       "noReason": "L'organisateur n'a pas indiqué de raison.",
-      "cancelledTitle": "❌ Annulé — {{title}}",
-      "uncancelledTitle": "✅ Rétabli — {{title}}",
+      "cancelledTitle": "❌ Annulé : {{title}}",
+      "uncancelledTitle": "✅ Rétabli : {{title}}",
       "uncancelledBody": "L'événement aura finalement bien lieu."
     },
     "transfer": {
       "offerTitle": "🤝 {{name}} te propose d'organiser",
-      "offerBody": "« {{title}} » — à toi de décider",
-      "declinedTitle": "🤝 Transfert refusé — {{title}}",
+      "offerBody": "« {{title}} » : à toi de décider",
+      "declinedTitle": "🤝 Transfert refusé : {{title}}",
       "declinedBody": "{{name}} préfère ne pas reprendre l'organisation",
       "acceptedTitle": "🤝 {{name}} reprend l'organisation",
-      "acceptedBody": "« {{title}} » — tu restes participant",
-      "doneTitle": "🤝 Nouvel organisateur — {{title}}",
+      "acceptedBody": "« {{title}} » : tu restes participant",
+      "doneTitle": "🤝 Nouvel organisateur : {{title}}",
       "doneBody": "{{oldName}} a passé la main à {{newName}}"
     },
     "chat": {
@@ -112,7 +112,7 @@
     },
     "anEvent": "Un événement",
     "eventReminder": {
-      "todayTitle": "🎉 C'est aujourd'hui — {{title}} !",
+      "todayTitle": "🎉 C'est aujourd'hui : {{title}} !",
       "todayBody": "L'événement a lieu aujourd'hui, bonne fête !",
       "soonBody": "N'oubliez pas, l'événement approche !"
     }

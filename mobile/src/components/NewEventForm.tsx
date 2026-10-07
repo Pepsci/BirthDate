@@ -25,7 +25,7 @@ export default function NewEventForm({
   forPerson: string | null;
   forDate: string | null;
   personName?: string;
-  /** Appelé après création réussie — au parent de décider où aller ensuite. */
+  /** Appelé après création réussie : au parent de décider où aller ensuite. */
   onCreated: (shortId: string) => void;
 }) {
   const snapshot = useRef<EventFormSnapshot | null>(null);
@@ -38,7 +38,7 @@ export default function NewEventForm({
 
   // Sortie sans avoir validé : si un titre avait été saisi, on enregistre
   // l'événement en brouillon pour pouvoir reprendre depuis l'onglet
-  // Événements. Silencieux par choix — le formulaire est déjà en train de
+  // Événements. Silencieux par choix : le formulaire est déjà en train de
   // disparaître, une alerte n'y serait pas vue.
   useEffect(() => {
     return () => {

@@ -115,7 +115,7 @@ const DateVotePanel = ({
                     {voteCount} votant(s)
                   </span>
 
-                  {/* Bouton confirmer — organisateur uniquement */}
+                  {/* Bouton confirmer : organisateur uniquement */}
                   {isOrganizer && (
                     <button
                       onClick={(e) => {
@@ -138,7 +138,7 @@ const DateVotePanel = ({
                     </button>
                   )}
 
-                  {/* Checkbox vote — invités uniquement */}
+                  {/* Checkbox vote : invités uniquement */}
                   {!isOrganizer && (
                     <div
                       style={{

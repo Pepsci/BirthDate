@@ -13,7 +13,7 @@ const organizerBankInfoSchema = new Schema(
       ref: "User",
       required: true,
     },
-    // IBAN chiffré (AES-256-GCM) — jamais stocké en clair
+    // IBAN chiffré (AES-256-GCM) : jamais stocké en clair
     ibanEncrypted: { type: String, required: true },
     iv: { type: String, required: true },
     authTag: { type: String, required: true },

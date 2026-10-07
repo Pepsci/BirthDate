@@ -10,7 +10,7 @@ import { useColorScheme } from "react-native";
 import * as SecureStore from "expo-secure-store";
 
 /**
- * Thème global mobile — équivalent du ThemeContext web (variables.css).
+ * Thème global mobile : équivalent du ThemeContext web (variables.css).
  *
  * - mode "system" : suit le réglage de l'appareil (défaut)
  * - mode "light" / "dark" : choix manuel, persisté entre les lancements
@@ -60,7 +60,7 @@ export const LIGHT = {
   successSoft: "#d1fae5",
   successStrong: "#047857",
   dangerSoft: "rgba(239,68,68,0.12)",
-  // État « voté / favori » — le rose des votes cadeaux d'un événement.
+  // État « voté / favori » : le rose des votes cadeaux d'un événement.
   favorite: "#ec4899",
   favoriteSoft: "#fce7f3",
   favoriteStrong: "#be185d",

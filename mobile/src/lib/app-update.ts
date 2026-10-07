@@ -6,7 +6,7 @@ import { CHANGELOG } from "./changelog";
 /**
  * Bandeaux de l'accueil : « Nouvelle version disponible » et annonce libre.
  *
- * Source : GET /api/app-version, édité depuis l'admin web (« Bandeaux app ») —
+ * Source : GET /api/app-version, édité depuis l'admin web (« Bandeaux app »),
  * version publiée, textes, annonce. En ligne immédiatement, sans nouveau
  * build de l'app.
  *
@@ -103,7 +103,7 @@ async function getDismissedUpdate(): Promise<string | null> {
  * personne (serveur injoignable, plateforme non renseignée…).
  *
  * ⚠️ Mode compte uniquement : en mode local, aucune requête ne part
- * (docs/MODE_LOCAL.md) — l'appelant vérifie le mode avant.
+ * (docs/MODE_LOCAL.md) : l'appelant vérifie le mode avant.
  */
 export async function fetchHomeBanners(): Promise<{
   update: AvailableUpdate | null;

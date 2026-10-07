@@ -24,7 +24,7 @@ const REACTIONS = ["like", "love", "laugh", "wow", "sad", "party"];
  *
  * ⚠️ Ce n'est pas une contradiction avec la règle ci-dessus : rien de tout
  * ceci n'est stocké. Une push est du texte brut affiché par le système
- * d'exploitation — on ne peut pas y glisser un SVG maison. L'emoji est donc le
+ * d'exploitation : on ne peut pas y glisser un SVG maison. L'emoji est donc le
  * seul rendu possible à cet endroit, et il reste cantonné à la couche de
  * présentation la plus externe qui soit.
  *

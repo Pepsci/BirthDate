@@ -1,5 +1,5 @@
 /**
- * crypto.ts — Portage mobile de front/src/utils/encryption.js
+ * crypto.ts : Portage mobile de front/src/utils/encryption.js
  *
  * Même schéma que le web :
  *   - Paire de clés NaCl box (X25519 + XSalsa20-Poly1305)
@@ -21,7 +21,7 @@ import * as Crypto from "expo-crypto";
 import * as SecureStore from "expo-secure-store";
 import { Platform } from "react-native";
 
-// ── PRNG : tweetnacl a besoin d'une source d'aléa — expo-crypto la fournit ──
+// ── PRNG : tweetnacl a besoin d'une source d'aléa, expo-crypto la fournit ──
 nacl.setPRNG((x: Uint8Array, n: number) => {
   const bytes = Crypto.getRandomBytes(n);
   x.set(bytes);
@@ -240,7 +240,7 @@ export function decryptMessage(
   }
 }
 
-// ── Seed phrase BIP39 (Full E2E) — miroir du web ─────────────────────────────
+// ── Seed phrase BIP39 (Full E2E) : miroir du web ─────────────────────────────
 //
 // Identique à front/src/utils/encryption.js : la seed 12 mots (français) dérive
 // une clé NaCl déterministe via PBKDF2-SHA512 (mnemonicToSeed). @scure/bip39
@@ -327,7 +327,7 @@ export async function setupE2EKeys(
     return;
   }
 
-  // Cas 2 : connexion normale — déchiffrer la clé existante
+  // Cas 2 : connexion normale, déchiffrer la clé existante
   const privateKey = decryptPrivateKey(user.encryptedPrivateKey, password, userId);
   if (privateKey) {
     await storePrivateKey(privateKey);
@@ -335,9 +335,9 @@ export async function setupE2EKeys(
     return;
   }
 
-  // Cas 3 : échec de déchiffrement — on N'ÉCRASE PAS les clés du compte
+  // Cas 3 : échec de déchiffrement, on N'ÉCRASE PAS les clés du compte
   // (le web régénère silencieusement, mais depuis le mobile on préfère ne pas
   // invalider les messages existants ; le chat retombera en clair)
-  console.warn("⚠️ E2E: impossible de déchiffrer la clé privée — chat en clair");
+  console.warn("⚠️ E2E: impossible de déchiffrer la clé privée : chat en clair");
   await clearPrivateKey();
 }

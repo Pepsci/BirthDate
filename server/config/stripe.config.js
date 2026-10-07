@@ -2,7 +2,7 @@ const Stripe = require("stripe");
 
 if (!process.env.STRIPE_SECRET_KEY) {
   console.warn(
-    "⚠️  STRIPE_SECRET_KEY manquant — la cagnotte ne fonctionnera pas tant que la clé n'est pas définie.",
+    "⚠️  STRIPE_SECRET_KEY manquant : la cagnotte ne fonctionnera pas tant que la clé n'est pas définie.",
   );
 }
 

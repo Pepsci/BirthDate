@@ -3,7 +3,7 @@ import { StyleSheet } from "react-native";
 /**
  * Géométrie commune aux boutons d'en-tête (retour + actions).
  *
- * Ces boutons sont rendus dans AppStackHeader, notre en-tête JS — pas dans
+ * Ces boutons sont rendus dans AppStackHeader, notre en-tête JS : pas dans
  * l'en-tête natif. C'est ce qui rend ces valeurs fiables : sans
  * UIBarButtonItem, iOS ne dessine aucune capsule derrière eux, et rien ne
  * vient décaler notre vue après le layout. Le rond ci-dessous est donc le seul

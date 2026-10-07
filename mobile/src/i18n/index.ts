@@ -1,5 +1,5 @@
 /**
- * i18n — socle de traduction de l'app mobile.
+ * i18n : socle de traduction de l'app mobile.
  *
  * Ordre de résolution de la langue :
  *   1. choix manuel de l'utilisateur (expo-secure-store "br-lang")

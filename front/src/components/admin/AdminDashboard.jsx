@@ -145,7 +145,7 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      <h3 className="admin-section-title">Évolution — 30 derniers jours</h3>
+      <h3 className="admin-section-title">Évolution : 30 derniers jours</h3>
       <div className="admin-charts">
         <div className="admin-chart-box">
           <h4>Inscriptions</h4>

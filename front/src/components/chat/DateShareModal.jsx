@@ -8,7 +8,7 @@ import "./css/giftShareModal.css";
  * Partage d'une carte anniversaire (type de message "date_share") : le
  * destinataire pourra l'ajouter à ses propres dates en un clic.
  *
- * Une seule étape (choix de l'ami) — contrairement à GiftShareModal, il n'y a
+ * Une seule étape (choix de l'ami) : contrairement à GiftShareModal, il n'y a
  * rien à sélectionner : les idées cadeaux ne sont volontairement pas partagées.
  * Le CSS de GiftShareModal est réutilisé pour rester cohérent visuellement.
  */
@@ -89,7 +89,7 @@ const DateShareModal = ({ currentDate, onClose }) => {
         nameday: currentDate.nameday || currentDate.linkedUser?.nameday || null,
         // Présent seulement si la carte est liée à un inscrit : permet au
         // destinataire de lui envoyer une demande d'ami. On transmet l'_id,
-        // jamais l'email — un ObjectId est opaque hors de l'app.
+        // jamais l'email : un ObjectId est opaque hors de l'app.
         linkedUserId: excludedUserId,
       },
       tempId: `temp-${Date.now()}`,

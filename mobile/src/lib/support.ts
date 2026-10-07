@@ -9,7 +9,7 @@ export async function sendSupportMessage(
    *
    * ⚠️ Deux effets côté serveur : le ticket est rattaché à l'événement (l'admin
    * ouvre directement les contributions au lieu de deviner), et il échappe à la
-   * règle du ticket unique — un litige d'argent ne doit pas être bloqué par une
+   * règle du ticket unique : un litige d'argent ne doit pas être bloqué par une
    * question en cours sur autre chose. Le plafond devient un ticket ouvert par
    * cagnotte.
    */
@@ -89,7 +89,7 @@ export async function fetchTicket(id: string): Promise<SupportTicket> {
 
 /**
  * Répond dans un fil existant. Un ticket fermé refuse la réponse (409) :
- * il faut ouvrir un nouveau sujet — règle serveur, l'écran grise la saisie.
+ * il faut ouvrir un nouveau sujet : règle serveur, l'écran grise la saisie.
  */
 export async function replyToTicket(
   id: string,

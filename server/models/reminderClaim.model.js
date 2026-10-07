@@ -6,13 +6,13 @@ const { Schema, model } = mongoose;
  *
  * Le cron de minuit (jobs/sendReminders.js) ne doit envoyer chaque rappel
  * qu'UNE fois par jour, quel que soit le nombre de fois où le job se
- * déclenche réellement ce jour-là — plusieurs instances pm2, un restart au
+ * déclenche réellement ce jour-là : plusieurs instances pm2, un restart au
  * mauvais moment, ou (historiquement) un poste de dev qui tournait en même
  * temps que la prod ont déjà produit des doublons (email, push ET
  * notification in-app en double). Plutôt que de traquer chaque cause une
  * par une, chaque rappel commence par « réclamer » ce document : le premier
  * appel réussit (crée le document), tous les suivants pour la même
- * combinaison le même jour échouent sur l'index unique et sont ignorés —
+ * combinaison le même jour échouent sur l'index unique et sont ignorés :
  * voir claimReminder() dans sendReminders.js.
  *
  * Purge : un TTL sur `sentDate`+30j suffit, ces documents n'ont pas besoin
@@ -28,7 +28,7 @@ const reminderClaimSchema = new Schema(
       required: true,
     },
     daysLeft: { type: Number, required: true },
-    // "YYYY-MM-DD" (Europe/Paris) — le jour couvert par ce rappel.
+    // "YYYY-MM-DD" (Europe/Paris) : le jour couvert par ce rappel.
     sentDate: { type: String, required: true },
   },
   { timestamps: true },

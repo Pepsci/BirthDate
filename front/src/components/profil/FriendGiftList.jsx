@@ -70,7 +70,7 @@ const FriendGiftList = ({
         if (matched) {
           setFetchMessage({
             type: "warning",
-            text: `⚠️ ${matched.name} ne supporte pas le remplissage automatique — remplis les champs manuellement`,
+            text: `⚠️ ${matched.name} ne supporte pas le remplissage automatique : remplis les champs manuellement`,
           });
         } else if (!value) {
           setFetchMessage(null);
@@ -115,7 +115,7 @@ const FriendGiftList = ({
           ? { type: "success", text: "✓ Infos récupérées !" }
           : {
               type: "warning",
-              text: `⚠️ Remplissage partiel — ${missing.join(", ")} non trouvé${missing.length > 1 ? "s" : ""}`,
+              text: `⚠️ Remplissage partiel : ${missing.join(", ")} non trouvé${missing.length > 1 ? "s" : ""}`,
             },
       );
     } catch {

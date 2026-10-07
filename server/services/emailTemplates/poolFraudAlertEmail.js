@@ -30,7 +30,7 @@ function alertRowHtml(alert) {
   return `
     <div style="border:1px solid #e5e7eb;border-left:4px solid ${sevColor};border-radius:8px;padding:12px 16px;margin:0 0 12px;">
       <p style="margin:0 0 4px;font-weight:600;color:#111827;">
-        ${RULE_LABELS[alert.type] || alert.type} — ${alert.event.title}
+        ${RULE_LABELS[alert.type] || alert.type} : ${alert.event.title}
       </p>
       <p style="margin:0 0 4px;font-size:14px;color:#374151;">${alert.details}</p>
       <p style="margin:0;font-size:12px;color:#6b7280;">
@@ -44,7 +44,7 @@ function alertRowHtml(alert) {
 /*
  * Envoie le récap d'alertes aux adresses admin.
  * @param {string[]} toAddresses
- * @param {Array} alerts — sortie de computePoolAlerts()
+ * @param {Array} alerts : sortie de computePoolAlerts()
  */
 async function sendPoolFraudAlertEmail(toAddresses, alerts) {
   if (!toAddresses.length || !alerts.length) return;
@@ -86,7 +86,7 @@ async function sendPoolFraudAlertEmail(toAddresses, alerts) {
     Destination: { ToAddresses: toAddresses },
     Message: {
       Subject: {
-        Data: `🚨 BirthReminder Admin — ${alerts.length} alerte(s) cagnotte`,
+        Data: `🚨 BirthReminder Admin : ${alerts.length} alerte(s) cagnotte`,
         Charset: "UTF-8",
       },
       Body: {

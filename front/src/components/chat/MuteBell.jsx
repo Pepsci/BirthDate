@@ -3,7 +3,7 @@ import apiHandler from "../../api/apiHandler";
 import "./css/muteBell.css";
 
 /**
- * Cloche de mise en silencieux d'UNE conversation — privée ou discussion
+ * Cloche de mise en silencieux d'UNE conversation : privée ou discussion
  * d'événement.
  *
  * ⚠️ Ne coupe que les notifications push. La conversation reste dans la liste

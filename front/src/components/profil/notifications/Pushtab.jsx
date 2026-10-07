@@ -275,15 +275,15 @@ const PushTab = () => {
           <p>Vous avez bloqué les notifications. Pour les réactiver :</p>
           <ul className="push-instructions">
             <li>
-              <strong>Chrome</strong> — Cliquez sur le 🔒 dans la barre
+              <strong>Chrome</strong> : Cliquez sur le 🔒 dans la barre
               d'adresse → "Notifications" → "Autoriser"
             </li>
             <li>
-              <strong>Firefox</strong> — Cliquez sur le 🛡️ → "Plus
+              <strong>Firefox</strong> : Cliquez sur le 🛡️ → "Plus
               d'informations" → onglet "Permissions" → décochez "Bloquer"
             </li>
             <li>
-              <strong>Safari iOS</strong> — Réglages → Apps → Safari →
+              <strong>Safari iOS</strong> : Réglages → Apps → Safari →
               Notifications → Autoriser
             </li>
           </ul>

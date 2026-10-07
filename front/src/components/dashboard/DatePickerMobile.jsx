@@ -72,7 +72,7 @@ const WheelColumn = ({ items, selectedIndex, onChange }) => {
    * `scrollTop` 200 ms plus tard, en plein défilement animé : sur mobile
    * l'animation dure souvent plus longtemps, et c'est l'élément survolé qui
    * était enregistré. On voyait « 2008 » à l'écran et l'état gardait une
-   * autre année — d'où des inscriptions refusées pour l'âge avec une date
+   * autre année : d'où des inscriptions refusées pour l'âge avec une date
    * pourtant correcte à l'affichage.
    */
   const snapToNearest = useCallback(() => {

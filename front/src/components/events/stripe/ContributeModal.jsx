@@ -73,7 +73,7 @@ const PaymentStep = ({ onSuccess, onBack }) => {
 
   return (
     <div className="gp-pay-step">
-      {/* Boutons Apple Pay / Google Pay — s'affichent seulement si dispo */}
+      {/* Boutons Apple Pay / Google Pay : s'affichent seulement si dispo */}
       <ExpressCheckoutElement
         onReady={({ availablePaymentMethods }) => {
           setExpressAvailable(!!availablePaymentMethods);
@@ -128,7 +128,7 @@ const ContributeModal = ({ shortId, onClose, onSuccess }) => {
   /**
    * Acceptation des conditions, demandée aux SEULS contributeurs sans compte.
    *
-   * Un contributeur inscrit les a acceptées à l'inscription — case obligatoire,
+   * Un contributeur inscrit les a acceptées à l'inscription : case obligatoire,
    * horodatée sur son compte : la redemander serait une friction sans objet.
    * Un visiteur arrivé par le lien public n'avait, lui, jamais rien accepté, et
    * c'est pourtant lui qui se retournera vers nous si l'événement est annulé.
@@ -141,7 +141,7 @@ const ContributeModal = ({ shortId, onClose, onSuccess }) => {
    * ⚠️ Obligatoire, et ce n'est pas du confort : c'est sa seule preuve de
    * paiement. Un inscrit retrouve sa contribution dans l'application ; un
    * visiteur du lien public n'a ni compte ni historique. Le PaymentElement de
-   * Stripe ne comble pas ce trou — il ne collecte pas l'email de façon fiable,
+   * Stripe ne comble pas ce trou : il ne collecte pas l'email de façon fiable,
    * et ça n'alimente de toute façon pas `receipt_email`.
    */
   const [guestEmail, setGuestEmail] = useState("");
@@ -385,11 +385,11 @@ const ContributeModal = ({ shortId, onClose, onSuccess }) => {
               />
             </Elements>
             {/* Sous le bouton de paiement : le contributeur ne contracte pas
-                avec Stripe, mais ses données de carte y transitent — le lien
+                avec Stripe, mais ses données de carte y transitent : le lien
                 qui le concerne est la politique de confidentialité. Le rappel
                 sur la détention des fonds, lui, engage l'organisateur. */}
             <p className="gp-stripe-note">
-              Paiement traité par Stripe — les fonds vont directement à
+              Paiement traité par Stripe : les fonds vont directement à
               l'organisateur, BirthReminder ne les détient jamais.{" "}
               <a
                 href="https://stripe.com/fr/privacy"

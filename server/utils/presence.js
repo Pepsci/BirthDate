@@ -1,5 +1,5 @@
 /**
- * presence.js — Qui est connecté, depuis quel client, et avec quel jeton push.
+ * presence.js : Qui est connecté, depuis quel client, et avec quel jeton push.
  *
  * `connectedUsers` (partagée via app.get("connectedUsers")) est une
  *   Map<userId, Map<socketId, { kind: "web" | "app", pushToken: string|null }>>
@@ -27,7 +27,7 @@
 
 const MAX_TOKEN_LENGTH = 200;
 
-/** N'accepte qu'un jeton Expo plausible — la valeur vient du client. */
+/** N'accepte qu'un jeton Expo plausible : la valeur vient du client. */
 function sanitizePushToken(value) {
   if (typeof value !== "string" || value.length > MAX_TOKEN_LENGTH) return null;
   return /^Expo(nent)?PushToken\[[^\]]+\]$/.test(value) ? value : null;

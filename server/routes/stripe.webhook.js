@@ -80,14 +80,14 @@ router.post("/", async (req, res) => {
             // En charges directes, la charge et sa `balance_transaction`
             // vivent sur le compte de l'ORGANISATEUR. Stripe renseigne
             // normalement `event.account`, mais pas toujours selon la façon
-            // dont les événements sont transmis — en local notamment, quand
+            // dont les événements sont transmis : en local notamment, quand
             // les événements de compte connecté arrivent sans leur contexte.
             //
             // Sans ce repli, la lecture part sur le compte plateforme où la
             // charge n'existe pas : elle échoue, le paiement et le reçu
             // passent quand même, et seuls les frais manquent. Panne
             // parfaitement silencieuse, dont la conséquence n'apparaît que
-            // bien plus tard — un coût de remboursement estimé au lieu du
+            // bien plus tard : un coût de remboursement estimé au lieu du
             // vrai, montré juste avant une opération irréversible.
             //
             // On retrouve donc le compte par l'organisateur de l'événement,
@@ -105,7 +105,7 @@ router.post("/", async (req, res) => {
               }
               if (connectedAccountId) {
                 console.log(
-                  `[stripe.webhook] event.account absent — compte retrouvé via l'organisateur : ${connectedAccountId}`,
+                  `[stripe.webhook] event.account absent, compte retrouvé via l'organisateur : ${connectedAccountId}`,
                 );
               }
             }
@@ -190,7 +190,7 @@ router.post("/", async (req, res) => {
           });
         }
 
-        // c) Accusé de réception au CONTRIBUTEUR — sa preuve de paiement.
+        // c) Accusé de réception au CONTRIBUTEUR : sa preuve de paiement.
         //
         // ⚠️ Ne dépend pas des préférences de l'organisateur : ce mail ne lui
         // appartient pas. C'est la seule trace que gardera un contributeur sans
@@ -260,7 +260,7 @@ router.post("/", async (req, res) => {
        * Remboursement confirmé par Stripe.
        *
        * ⚠️ C'est ICI, et nulle part ailleurs, qu'une contribution passe en
-       * "refunded" — la route /pool/refund-all se contente de demander le
+       * "refunded" : la route /pool/refund-all se contente de demander le
        * remboursement. Même principe que l'encaissement : le front et nos
        * routes demandent, Stripe confirme, et seule la confirmation fait foi.
        *
@@ -286,7 +286,7 @@ router.post("/", async (req, res) => {
           "title shortId",
         );
 
-        // Le contributeur est prévenu — c'est son argent.
+        // Le contributeur est prévenu : c'est son argent.
         //
         // ⚠️ Un invité externe (contributor null) n'a pas de compte, donc pas
         // de notification in-app. On compte pour lui sur l'avis de

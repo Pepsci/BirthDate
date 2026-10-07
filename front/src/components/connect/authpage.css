@@ -1,5 +1,5 @@
 /* ================================================
-   AUTH PAGE — BirthReminder
+   AUTH PAGE : BirthReminder
    Utilise les variables globales de variables.css
    ================================================ */
 
@@ -76,7 +76,7 @@
   padding: 28px 28px 24px;
 }
 
-/* Panel autonome (hors track à 3 volets) — ex: page ResetPassword.
+/* Panel autonome (hors track à 3 volets) : ex: page ResetPassword.
    Sélecteur à 2 classes pour battre la règle .auth-panel du media query. */
 .auth-shell .auth-panel--full {
   width: 100%;
@@ -157,7 +157,7 @@
   color: var(--text-secondary);
 }
 
-/* PasswordInput interne — overrides pour coller au style */
+/* PasswordInput interne : overrides pour coller au style */
 .auth-field .password-input-container {
   position: relative;
 }

@@ -28,7 +28,7 @@ export async function fetchConversations(): Promise<ConversationSummary[]> {
 
 /**
  * « Supprimer pour moi » : le serveur horodate mon effacement, il ne détruit
- * rien. L'autre participant garde son historique — un utilisateur ne doit pas
+ * rien. L'autre participant garde son historique : un utilisateur ne doit pas
  * pouvoir effacer les preuves chez quelqu'un d'autre.
  */
 export async function deleteConversation(
@@ -59,7 +59,7 @@ export interface DMMessage {
    * Réactions posées sur ce message.
    *
    * ⚠️ Clé sémantique ("love"), pas un emoji : le dessin peut changer sans
-   * toucher aux données. Non chiffrées, contrairement au contenu — compromis
+   * toucher aux données. Non chiffrées, contrairement au contenu : compromis
    * assumé, l'emoji seul ne dit presque rien sans le texte.
    */
   reactions?: { user: string; reaction: string }[];

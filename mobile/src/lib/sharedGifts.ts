@@ -10,19 +10,19 @@ export interface SharedGift extends Gift {
   /**
    * Idée gardée entre gestionnaires : ni les invités ni le lien public ne la
    * reçoivent. Le filtrage est fait par le serveur, donc ce champ n'arrive
-   * qu'aux membres — un invité ne verra jamais ces idées, même à false.
+   * qu'aux membres : un invité ne verra jamais ces idées, même à false.
    */
   hiddenFromViewers?: boolean;
   /** Membre qui s'est réservé ce cadeau, ou null s'il est libre. */
   reservedBy?: { _id: string; name: string; surname?: string } | null;
   /**
    * Prénom d'un visiteur venu du lien public, qui n'a pas de compte. Renvoyé
-   * aux seuls membres — un invité ne voit jamais qui réserve.
+   * aux seuls membres : un invité ne voit jamais qui réserve.
    */
   reservedByGuest?: string | null;
   reservedAt?: string | null;
   /**
-   * Réservé, par qui que ce soit — membre OU visiteur du lien public.
+   * Réservé, par qui que ce soit : membre OU visiteur du lien public.
    * Calculé par le serveur pour les deux rôles : les membres ne le recevaient
    * pas et testaient `reservedBy` seul, donc une réservation venue du lien
    * public n'apparaissait pas chez eux.
@@ -70,7 +70,7 @@ export interface SharedGiftList {
   members?: SharedMember[];
   gifts: SharedGift[];
   createdBy?: string;
-  /** Renvoyé par GET /shared-gifts/:id — pilote ce que l'écran autorise. */
+  /** Renvoyé par GET /shared-gifts/:id : pilote ce que l'écran autorise. */
   myRole?: SharedListRole;
   /**
    * Identité de la personne dont la liste parle, déduite par le serveur d'une
@@ -155,7 +155,7 @@ export async function cancelSharedInvitation(id: string): Promise<void> {
  *
  * `{ dateId }` pose la liste sur une carte existante. `{ newDate: {} }` demande
  * au serveur de créer la carte au passage : il reprend le nom et la date de
- * naissance depuis la carte de celui qui invite, qui décrit la même personne —
+ * naissance depuis la carte de celui qui invite, qui décrit la même personne :
  * on peut donc accepter sans avoir enregistré cette personne au préalable, ce
  * qui était jusqu'ici un blocage complet.
  */
@@ -293,7 +293,7 @@ export interface SharedListShareSettings {
   accessCode: string | null;
   /**
    * Le même lien, code inclus. Depuis que le code garde la porte, envoyer le
-   * lien nu oblige à envoyer le code dans un second message — et la moitié
+   * lien nu oblige à envoyer le code dans un second message : et la moitié
    * des gens ne le font pas. Ce lien-ci suffit à lui seul.
    */
   publicUrlWithCode: string | null;

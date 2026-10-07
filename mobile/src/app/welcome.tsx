@@ -25,7 +25,7 @@ import { fetchMe } from "../lib/users";
 import { hasSeenWelcome, markWelcomeSeen } from "../lib/welcome-gate";
 import { LOCAL_MODE_READY } from "../lib/app-mode";
 
-const LOGO_MARK = require("../../assets/images/logo-mark.png"); // B bougie — lisible sur les deux thèmes
+const LOGO_MARK = require("../../assets/images/logo-mark.png"); // B bougie : lisible sur les deux thèmes
 // Calques du logo pour l'animation d'ouverture (découpés du SVG)
 const LOGO_B = require("../../assets/images/logo-b.png");
 const LOGO_WAX = require("../../assets/images/logo-wax.png");
@@ -356,14 +356,14 @@ export default function WelcomeScreen() {
   const isLocal = appMode === "local";
   const { resolved, setMode } = useTheme();
   const { width } = useWindowDimensions();
-  // Splash animé uniquement au lancement de l'app — pas quand on revient
+  // Splash animé uniquement au lancement de l'app : pas quand on revient
   // sur l'accueil via le logo ou la navigation.
   const [splashDone, setSplashDone] = useState(() => hasSeenWelcome());
   const [stats, setStats] = useState<PublicStats | null>(null);
   const [statsError, setStatsError] = useState(false);
-  // Portée des stats (réglages) — "personal" n'a de sens que connecté.
+  // Portée des stats (réglages) : "personal" n'a de sens que connecté.
   const statsPref = useStatsScope();
-  // Mode local : toujours les stats perso — les stats communauté viennent du
+  // Mode local : toujours les stats perso, les stats communauté viennent du
   // serveur, et rien ne doit partir en mode local.
   const statsScope =
     isLocal || (user && statsPref === "personal") ? "personal" : "community";
@@ -465,7 +465,7 @@ export default function WelcomeScreen() {
     }
   };
 
-  // Mode local : même bouton « Commencer » qu'un compte connecté — sinon
+  // Mode local : même bouton « Commencer » qu'un compte connecté, sinon
   // l'écran proposait seulement de se connecter, sans chemin vers l'accueil.
   const Cta = user || isLocal ? (
     <>
@@ -539,7 +539,7 @@ export default function WelcomeScreen() {
             {t("welcome:subTagline")}
           </Text>
 
-          {/* ── Anniv & fête du jour (proches) — chaque case selon sa propre
+          {/* ── Anniv & fête du jour (proches) : chaque case selon sa propre
                 condition, rien si aucune (pas de carré vide).
                 En mode stats perso, la carte "anniversaire" ferait doublon avec
                 la grosse tuile du bento : on la masque et les prénoms sont
@@ -625,7 +625,7 @@ export default function WelcomeScreen() {
                       chiffre + libellé par une phrase.
                       Le libellé communauté disait « souhaités » : ce compteur
                       compte les anniversaires du jour (date.stats.js), pas les
-                      souhaits envoyés — d'où « fêtés ». */}
+                      souhaits envoyés : d'où « fêtés ». */}
                   {stats === null ? (
                     <ActivityIndicator color="#fff" />
                   ) : stats.today > 0 ? (
@@ -789,7 +789,7 @@ const makeStyles = (t: Theme) =>
     tagline: { fontSize: 21, fontWeight: "800", color: t.text, textAlign: "center", marginTop: 14 },
     subTagline: { fontSize: 14, color: t.sub, textAlign: "center", marginTop: 8, marginBottom: 30, lineHeight: 20 },
 
-    // Anniv & fête du jour — carte en dégradé chaud, texte blanc, pour se
+    // Anniv & fête du jour : carte en dégradé chaud, texte blanc, pour se
     // détacher des stats communauté (bleu-violet) qui suivent immédiatement.
     todaySectionLabel: {
       fontSize: 12,
@@ -839,7 +839,7 @@ const makeStyles = (t: Theme) =>
     bentoBigEmoji: { fontSize: 30 },
     bentoBigValue: { fontSize: 46, fontWeight: "900", color: "#fff" },
     bentoBigLabel: { fontSize: 12, fontWeight: "600", color: "rgba(255,255,255,0.9)", textAlign: "center" },
-    // État vide : pas de chiffre à surmonter, la phrase porte seule la tuile —
+    // État vide : pas de chiffre à surmonter, la phrase porte seule la tuile,
     // donc un peu plus grande et plus contrastée que le libellé sous un nombre.
     bentoBigEmpty: {
       fontSize: 14,

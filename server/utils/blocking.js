@@ -1,7 +1,7 @@
 const User = require("../models/user.model");
 
 /**
- * Modération — helpers de blocage.
+ * Modération : helpers de blocage.
  *
  * `User.blockedUsers` doit être respecté dans les DEUX sens : que ce soit moi
  * qui aie bloqué l'autre ou l'inverse, aucune mise en relation ne doit pouvoir

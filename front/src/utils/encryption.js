@@ -1,11 +1,11 @@
 /**
- * encryption.js — Fonctions cryptographiques E2E de BirthReminder
+ * encryption.js : Fonctions cryptographiques E2E de BirthReminder
  *
  * Librairies :
- *   tweetnacl       — chiffrement asymétrique (box) + symétrique (secretbox)
- *   tweetnacl-util  — encodage base64 / UTF-8
- *   @noble/hashes   — dérivation de clé scrypt (password → 32 bytes)
- *   bip39           — génération / validation de seed phrase 12 mots
+ *   tweetnacl : chiffrement asymétrique (box) + symétrique (secretbox)
+ *   tweetnacl-util : encodage base64 / UTF-8
+ *   @noble/hashes : dérivation de clé scrypt (password → 32 bytes)
+ *   bip39 : génération / validation de seed phrase 12 mots
  *
  * Règles absolues :
  *   - La clé privée NE QUITTE JAMAIS le client (jamais envoyée en HTTP)
@@ -20,7 +20,7 @@ import french from "bip39/src/wordlists/french.json";
 import { scrypt } from "@noble/hashes/scrypt.js";
 
 // ────────────────────────────────────────────────────────────────────────────
-// Helpers natifs — contournent complètement les polyfills Vite
+// Helpers natifs : contournent complètement les polyfills Vite
 // qui font retourner des Buffer au lieu de vrais Uint8Array natifs
 // ────────────────────────────────────────────────────────────────────────────
 
@@ -50,7 +50,7 @@ function bytesToUtf8(bytes) {
 }
 
 // ────────────────────────────────────────────────────────────────────────────
-// SessionStorage + LocalStorage backup — clé privée déchiffrée en mémoire
+// SessionStorage + LocalStorage backup : clé privée déchiffrée en mémoire
 // ────────────────────────────────────────────────────────────────────────────
 
 const SESSION_KEY = "e2e_private_key";
@@ -146,8 +146,8 @@ export function clearOldPrivateKey() {
  * Génère une nouvelle paire de clés NaCl aléatoire.
  *
  * @returns {{
- *   publicKey: string,    — clé publique encodée base64 (à stocker en DB)
- *   secretKey: Uint8Array — clé privée brute 32 bytes (ne quitte pas le client)
+ *   publicKey: string, : clé publique encodée base64 (à stocker en DB)
+ *   secretKey: Uint8Array : clé privée brute 32 bytes (ne quitte pas le client)
  * }}
  */
 export function generateKeyPair() {
@@ -185,9 +185,9 @@ function deriveEncryptionKey(password, userId) {
  *
  * Format de sortie (base64) : nonce(24 bytes) ‖ ciphertext
  *
- * @param {Uint8Array} privateKeyBytes — clé privée brute 32 bytes
- * @param {string}     password         — mot de passe en clair
- * @param {string}     userId           — MongoDB ObjectId (sel scrypt)
+ * @param {Uint8Array} privateKeyBytes : clé privée brute 32 bytes
+ * @param {string}     password : mot de passe en clair
+ * @param {string}     userId : MongoDB ObjectId (sel scrypt)
  * @returns {string}   encryptedPrivateKey encodée base64
  */
 export function encryptPrivateKey(privateKeyBytes, password, userId) {
@@ -205,7 +205,7 @@ export function encryptPrivateKey(privateKeyBytes, password, userId) {
 /**
  * Déchiffre la clé privée avec le mot de passe.
  *
- * @param {string} encryptedB64 — valeur stockée en DB (nonce ‖ ciphertext, base64)
+ * @param {string} encryptedB64 : valeur stockée en DB (nonce ‖ ciphertext, base64)
  * @param {string} password
  * @param {string} userId
  * @returns {Uint8Array|null} clé privée brute, ou null si mot de passe incorrect
@@ -231,9 +231,9 @@ export function decryptPrivateKey(encryptedB64, password, userId) {
  *
  * Format de sortie (base64) : nonce(24 bytes) ‖ ciphertext
  *
- * @param {string}     message               — texte en clair
- * @param {string}     recipientPublicKeyB64  — publicKey du destinataire (base64)
- * @param {Uint8Array} myPrivateKey           — ma clé privée (via getPrivateKey())
+ * @param {string}     message : texte en clair
+ * @param {string}     recipientPublicKeyB64 : publicKey du destinataire (base64)
+ * @param {Uint8Array} myPrivateKey : ma clé privée (via getPrivateKey())
  * @returns {string}   contenu chiffré encodé base64
  */
 export function encryptMessage(message, recipientPublicKeyB64, myPrivateKey) {
@@ -259,9 +259,9 @@ export function encryptMessage(message, recipientPublicKeyB64, myPrivateKey) {
  * Accepte une clé privée unique OU un tableau de clés (ex : clé active + ancienne clé).
  * Essaie chaque clé dans l'ordre et retourne le plaintext dès le premier succès.
  *
- * @param {string}                encryptedB64        — contenu chiffré en base64
- * @param {string}                senderPublicKeyB64  — publicKey de l'expéditeur (base64)
- * @param {Uint8Array|Uint8Array[]} privateKeyOrKeys  — clé(s) privée(s)
+ * @param {string}                encryptedB64 : contenu chiffré en base64
+ * @param {string}                senderPublicKeyB64 : publicKey de l'expéditeur (base64)
+ * @param {Uint8Array|Uint8Array[]} privateKeyOrKeys : clé(s) privée(s)
  * @returns {string|null} texte déchiffré, ou null si toutes les clés échouent
  */
 export function decryptMessage(
@@ -295,7 +295,7 @@ export function decryptMessage(
 }
 
 // ────────────────────────────────────────────────────────────────────────────
-// Seed phrase BIP39 — Mode Full E2E
+// Seed phrase BIP39 : Mode Full E2E
 // ────────────────────────────────────────────────────────────────────────────
 
 /**
@@ -321,7 +321,7 @@ export function validateSeedPhrase(seedPhrase) {
  * Méthode : PBKDF2-SHA512 (bip39 standard) → Buffer 64 bytes → premiers 32 bytes.
  * Résultat déterministe : même seed → même clé privée → même historique de chat.
  *
- * @param {string} seedPhrase — phrase de 12 mots BIP39
+ * @param {string} seedPhrase : phrase de 12 mots BIP39
  * @returns {Uint8Array} clé privée de 32 bytes (utilisable dans nacl.box)
  * @throws {Error} si la phrase est invalide
  */
@@ -338,7 +338,7 @@ export function deriveKeyFromSeed(seedPhrase) {
  * Génère une paire de clés NaCl déterministe depuis une seed phrase.
  * Utilisé pour l'activation du Mode Full E2E.
  *
- * @param {string} seedPhrase — phrase de 12 mots BIP39
+ * @param {string} seedPhrase : phrase de 12 mots BIP39
  * @returns {{ publicKey: string, secretKey: Uint8Array }}
  */
 export function keyPairFromSeed(seedPhrase) {
@@ -351,15 +351,15 @@ export function keyPairFromSeed(seedPhrase) {
 }
 
 // ────────────────────────────────────────────────────────────────────────────
-// Chiffrement de la seed phrase (Full E2E — pour affichage ultérieur)
+// Chiffrement de la seed phrase (Full E2E : pour affichage ultérieur)
 // ────────────────────────────────────────────────────────────────────────────
 
 /**
  * Chiffre la seed phrase BIP39 avec le mot de passe de l'utilisateur.
- * Réutilise encryptPrivateKey (nacl.secretbox + scrypt) — la seed est traitée
+ * Réutilise encryptPrivateKey (nacl.secretbox + scrypt) : la seed est traitée
  * comme un payload binaire quelconque.
  *
- * @param {string} seedPhrase — phrase de 12 mots
+ * @param {string} seedPhrase : phrase de 12 mots
  * @param {string} password
  * @param {string} userId
  * @returns {string} base64 (nonce ‖ ciphertext)
@@ -371,7 +371,7 @@ export function encryptSeedPhrase(seedPhrase, password, userId) {
 /**
  * Déchiffre la seed phrase BIP39.
  *
- * @param {string} encryptedB64 — valeur stockée en DB
+ * @param {string} encryptedB64 : valeur stockée en DB
  * @param {string} password
  * @param {string} userId
  * @returns {string|null} seed phrase en clair, ou null si mot de passe incorrect

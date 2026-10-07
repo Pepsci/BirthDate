@@ -173,7 +173,7 @@ router.patch("/:id", isAuthenticated, async (req, res, next) => {
       });
     }
 
-    // Fête du calendrier ou choisie à la main — une fête manuelle n'est
+    // Fête du calendrier ou choisie à la main : une fête manuelle n'est
     // jamais écrasée, une fête auto suit un changement de prénom.
     const resolved = resolveNameday({
       name: name !== undefined ? name : existingDate.name,
@@ -297,7 +297,7 @@ router.patch("/:id/gifts", isAuthenticated, async (req, res, next) => {
       return res.status(400).json({ message: "Invalid Date ID" });
     }
 
-    // url/price/image étaient envoyés par le front mais ignorés ici — corrigé
+    // url/price/image étaient envoyés par le front mais ignorés ici : corrigé
     const { giftName, occasion, year, purchased, status, url, price, image } =
       req.body;
 
@@ -448,7 +448,7 @@ router.delete("/:id", isAuthenticated, async (req, res, next) => {
     }
 
     // Carte liée : on ne bloque que si le compte lié existe encore. S'il a
-    // été supprimé (ou purgé), il n'y a plus d'ami à retirer — sans cette
+    // été supprimé (ou purgé), il n'y a plus d'ami à retirer : sans cette
     // exception la carte resterait impossible à supprimer.
     const linkedStillActive =
       existingDate.linkedUser &&

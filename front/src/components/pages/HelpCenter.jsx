@@ -81,7 +81,7 @@ export default function HelpCenter({
   };
 
   const currentContext = activeItem
-    ? `${activeSection.title} — ${activeItem.q}`
+    ? `${activeSection.title} : ${activeItem.q}`
     : null;
 
   return (
@@ -178,7 +178,7 @@ export default function HelpCenter({
               <p className="helpcenter-answer-q">{activeItem.q}</p>
               <p className="helpcenter-answer-a">{activeItem.a}</p>
               {/* Une procédure se lit en étapes numérotées, pas en pavé : ici
-                  l'ordre compte réellement — chaque marche suppose que la
+                  l'ordre compte réellement : chaque marche suppose que la
                   précédente a échoué. */}
               {activeItem.steps?.length > 0 && (
                 <>

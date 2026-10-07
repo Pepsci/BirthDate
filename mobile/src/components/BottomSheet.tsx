@@ -88,7 +88,7 @@ export default function BottomSheet({
             </View>
             <Pressable onPress={() => {}}>
               {/* keyboardShouldPersistTaps : clavier ouvert, le premier appui
-                  sur un bouton était avalé pour fermer le clavier — il fallait
+                  sur un bouton était avalé pour fermer le clavier : il fallait
                   appuyer deux fois pour valider. */}
               <ScrollView
                 showsVerticalScrollIndicator={false}

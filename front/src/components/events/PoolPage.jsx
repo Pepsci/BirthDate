@@ -33,7 +33,7 @@ export default function PoolPage() {
           <span className="pool-page-emoji">💝</span>
           <h1 className="pool-page-title">
             {meta?.eventTitle
-              ? `Cagnotte — ${meta.eventTitle}`
+              ? `Cagnotte : ${meta.eventTitle}`
               : "Cagnotte"}
           </h1>
           <p className="pool-page-sub">

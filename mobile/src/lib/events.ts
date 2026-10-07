@@ -111,7 +111,7 @@ export function eventDate(e: EventEntry): Date | null {
 /**
  * Lieu affichable d'un event, ou null si aucun n'est encore fixé.
  * `fixedLocation` est tantôt une chaîne (anciens events), tantôt un objet
- * { name, address } — d'où la normalisation ici plutôt qu'à chaque appel.
+ * { name, address } : d'où la normalisation ici plutôt qu'à chaque appel.
  */
 export function eventLocationLabel(
   e: EventEntry & {
@@ -297,7 +297,7 @@ export async function setPaypalOption(
  *
  * ⚠️ BirthReminder n'a aucune visibilité sur ces collectes : ni montant, ni
  * participants, ni preuve, ni remboursement possible. L'interface doit le dire
- * des deux côtés — sinon l'invité croira payer « sur BirthReminder » et se
+ * des deux côtés : sinon l'invité croira payer « sur BirthReminder » et se
  * retournera vers nous.
  */
 export async function setExternalPoolOption(
@@ -341,7 +341,7 @@ export type MyContribution = {
  * ⚠️ Écran de PREUVE, pas de confort. En charges directes, l'argent part chez
  * l'organisateur et l'application n'en gardait aucune trace côté contributeur :
  * montant, date et référence disparaissaient dès la page fermée. C'est pourtant
- * ce qu'il faut produire pour réclamer un remboursement — à quelqu'un qui n'est
+ * ce qu'il faut produire pour réclamer un remboursement : à quelqu'un qui n'est
  * pas nous.
  */
 export async function fetchMyContributions(): Promise<MyContribution[]> {
@@ -424,7 +424,7 @@ export interface GiftProposal {
   image?: string | null;
   proposedBy: { _id: string; name: string; surname?: string } | null;
   guestName?: string | null;
-  votes: string[]; // userIds — comptes uniquement
+  votes: string[]; // userIds : comptes uniquement
   /**
    * Total des votes, comptes ET invités sans compte confondus, calculé par le
    * serveur. `votes.length` seul ignorait les invités : leurs votes
@@ -452,7 +452,7 @@ export async function proposeGift(
   });
 }
 
-/** Modifie une proposition — autorisé au proposeur (son propre cadeau)
+/** Modifie une proposition : autorisé au proposeur (son propre cadeau)
  * ou à l'organisateur. Le backend valide les droits. */
 export async function updateGiftProposal(
   shortId: string,
@@ -473,7 +473,7 @@ export async function toggleGiftVote(
   await api(`/events/${shortId}/gifts/${giftId}/vote`, { method: "POST" });
 }
 
-/** (Dé)sélectionne un cadeau — organisateur uniquement */
+/** (Dé)sélectionne un cadeau : organisateur uniquement */
 export async function toggleGiftSelection(
   shortId: string,
   giftId: string,
@@ -482,7 +482,7 @@ export async function toggleGiftSelection(
 }
 
 /**
- * Supprime une proposition — autorisé au proposeur (son propre cadeau)
+ * Supprime une proposition : autorisé au proposeur (son propre cadeau)
  * ou à l'organisateur (n'importe quel cadeau). Le backend valide les droits.
  */
 export async function deleteGiftProposal(
@@ -634,7 +634,7 @@ export interface CancelResult {
  *
  * L'événement n'est pas supprimé : il reste consultable, barré, avec son motif.
  * Tous les invités sont prévenus (notif, push, email). Une cagnotte active est
- * coupée au passage, mais rien n'est remboursé — c'est une décision distincte.
+ * coupée au passage, mais rien n'est remboursé : c'est une décision distincte.
  */
 export async function cancelEvent(
   shortId: string,
@@ -652,7 +652,7 @@ export async function cancelEvent(
  * Proposer l'organisation à un participant ayant confirmé sa présence.
  *
  * En deux temps : la personne doit accepter. Tant qu'elle n'a pas répondu,
- * l'organisateur actuel garde toutes ses prérogatives — on n'impose à personne
+ * l'organisateur actuel garde toutes ses prérogatives : on n'impose à personne
  * la charge d'organiser un événement.
  */
 export async function offerLeadTransfer(
@@ -755,7 +755,7 @@ export async function refundPreview(shortId: string): Promise<RefundPreview> {
  * Rembourser toutes les contributions.
  *
  * Stripe n'a pas d'endpoint de lot : le serveur boucle et renvoie un rapport.
- * Relançable — seules les contributions non encore remboursées sont reprises.
+ * Relançable : seules les contributions non encore remboursées sont reprises.
  */
 export async function refundAll(shortId: string): Promise<RefundReport> {
   return api<RefundReport>(`/events/${shortId}/pool/refund-all`, {
@@ -914,7 +914,7 @@ export async function stripeBalance(): Promise<ConnectBalance> {
  * ⚠️ Le serveur refuse tant qu'il reste des contributions encaissées non
  * remboursées : couper le lien rendrait tout remboursement impossible depuis
  * l'application, alors que l'obligation de rendre l'argent subsiste. Les
- * cagnottes encore ouvertes sont fermées au passage — en laisser une active
+ * cagnottes encore ouvertes sont fermées au passage : en laisser une active
  * sans compte pour encaisser produirait des erreurs incompréhensibles pour
  * les invités.
  */

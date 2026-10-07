@@ -1,5 +1,5 @@
 /**
- * Envoi d'un message privé — logique commune au socket (`message:send`) et à
+ * Envoi d'un message privé : logique commune au socket (`message:send`) et à
  * la route REST `POST /api/conversations/:conversationId/messages`.
  *
  * ⚠️ La route REST existe pour la réponse depuis une notification push : app
@@ -8,7 +8,7 @@
  * chemins divergeraient.
  *
  * Idempotence : `clientId` (UUID généré par l'appareil) permet de rejouer un
- * envoi interrompu sans créer de doublon — une réponse depuis la notification
+ * envoi interrompu sans créer de doublon : une réponse depuis la notification
  * peut être coupée net par iOS et retentée au lancement suivant.
  */
 const mongoose = require("mongoose");
@@ -95,7 +95,7 @@ async function sendDirectMessage({ io, app, connectedUsers, senderId, data }) {
   );
 
   // Modération : aucun message ne passe si l'un des deux a bloqué l'autre.
-  // Jusqu'ici le blocage ne faisait que masquer le fil côté bloqueur — la
+  // Jusqu'ici le blocage ne faisait que masquer le fil côté bloqueur : la
   // personne bloquée pouvait continuer à écrire sans le savoir.
   // Le message n'est ni stocké ni notifié ; l'émetteur reçoit une erreur
   // générique, qui ne distingue pas « bloqué » de « conversation fermée ».

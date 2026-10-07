@@ -33,7 +33,7 @@ const AdminSupport = () => {
    * Dossier de preuve, accessible directement depuis le ticket.
    *
    * Le moment où l'on en a besoin, c'est celui où la demande devient
-   * sérieuse — et c'est précisément là qu'on n'a pas envie de chercher dans
+   * sérieuse : et c'est précisément là qu'on n'a pas envie de chercher dans
    * trois écrans avec un identifiant en tête.
    */
   const downloadEvidence = async (event) => {
@@ -274,7 +274,7 @@ const AdminSupport = () => {
                   {ticket.category === "nameday" && ticket.namedayReport && (
                     <div className="support-pool-link">
                       <p>
-                        🌸 <strong>{ticket.namedayReport.name}</strong> — fête
+                        🌸 <strong>{ticket.namedayReport.name}</strong>, fête
                         actuelle :{" "}
                         <strong>{formatNameday(ticket.namedayReport.currentDate)}</strong>
                         {" · "}proposée :{" "}

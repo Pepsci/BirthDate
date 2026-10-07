@@ -11,7 +11,7 @@ export type MessageReaction = { user: string; reaction: ReactionName };
  * sur un message d'événement à douze participants, l'affichage individuel
  * déborderait de l'écran et noierait le message lui-même.
  *
- * Le compteur n'apparaît qu'à partir de deux — « ❤️ 1 » est du bruit, la
+ * Le compteur n'apparaît qu'à partir de deux : « ❤️ 1 » est du bruit, la
  * présence de la pastille dit déjà « une personne ».
  *
  * Taper une pastille bascule sa propre réaction : c'est le raccourci qu'on

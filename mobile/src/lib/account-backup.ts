@@ -49,7 +49,7 @@ export interface BackupProgress {
  * Télécharge une photo de carte et la renvoie en base64.
  *
  * Renvoie null en cas d'échec : une photo manquante ne doit jamais faire
- * échouer une sauvegarde — perdre la photo est gênant, perdre les 80 cartes
+ * échouer une sauvegarde : perdre la photo est gênant, perdre les 80 cartes
  * le serait bien plus.
  */
 async function photoToBase64(url: string): Promise<string | null> {
@@ -133,7 +133,7 @@ export async function writeAccountBackupFile(
  * (même prénom, même nom, même jour de naissance) n'est jamais recréée, ses
  * idées de cadeaux manquantes y sont ajoutées, et sa photo n'est posée que
  * si elle n'en a pas. Restaurer deux fois la même sauvegarde ne crée donc
- * aucun doublon — c'est la garantie qui rend le bouton sans danger.
+ * aucun doublon : c'est la garantie qui rend le bouton sans danger.
  *
  * Rien n'est supprimé : la restauration AJOUTE à ce qui existe. Elle ne
  * remet pas le compte dans l'état exact de la sauvegarde, elle rapatrie ce

@@ -22,7 +22,7 @@ import {
 } from "./local-store";
 
 /**
- * Sauvegarde / restauration du mode local — docs/MODE_LOCAL.md § 5.5.
+ * Sauvegarde / restauration du mode local : docs/MODE_LOCAL.md § 5.5.
  *
  * Sans compte, c'est la SEULE vraie sauvegarde : si le téléphone est perdu
  * ou l'app supprimée, tout disparaît. Le même format servira à l'import

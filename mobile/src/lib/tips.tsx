@@ -1,7 +1,7 @@
 /**
- * Astuces d'onboarding contextuelles — une par écran, affichée uniquement
+ * Astuces d'onboarding contextuelles : une par écran, affichée uniquement
  * lors de la première visite de l'écran concerné, puis mémorisée pour de bon
- * (expo-secure-store, déjà utilisé ailleurs — évite une dépendance de plus).
+ * (expo-secure-store, déjà utilisé ailleurs : évite une dépendance de plus).
  *
  * Usage : <OnboardingTip id="birthdays" text="…" /> en tête d'écran.
  */

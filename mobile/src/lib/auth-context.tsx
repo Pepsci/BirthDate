@@ -100,7 +100,7 @@ interface AuthContextValue {
   enterLocalMode: () => Promise<void>;
   /**
    * « Effacer toutes mes données » : supprime les données locales et revient
-   * au choix initial. IRRÉVERSIBLE — l'écran doit avoir confirmé deux fois.
+   * au choix initial. IRRÉVERSIBLE : l'écran doit avoir confirmé deux fois.
    */
   leaveLocalMode: () => Promise<void>;
 }
@@ -203,7 +203,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // Rappels locaux : actifs en mode local uniquement. Dans tout autre mode,
-  // on annule — y compris au démarrage en mode compte, pour nettoyer une
+  // on annule : y compris au démarrage en mode compte, pour nettoyer une
   // session locale précédente (sinon doublon avec les push du serveur).
   useEffect(() => {
     if (isLoading) return;
@@ -282,7 +282,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(u);
       syncLanguageWithServer(u.language);
     } catch {
-      // session expirée — on garde l'état courant
+      // session expirée : on garde l'état courant
     }
   }, []);
 

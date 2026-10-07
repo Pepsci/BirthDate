@@ -195,7 +195,7 @@ function getEmptyMonthTemplate({
       <div style="width:64px;height:64px;background:rgba(255,255,255,0.15);border-radius:50%;text-align:center;line-height:64px;font-size:30px;margin:0 auto;">🎂</div>
     </td></tr>` +
     paragraph(
-      `Rien à l'horizon pour ${monthName}, ${ownerName}.<br>Un peu de répit — pensez à préparer ${nextMonthName} !`,
+      `Rien à l'horizon pour ${monthName}, ${ownerName}.<br>Un peu de répit : pensez à préparer ${nextMonthName} !`,
     ) +
     // ⚠️ Pas de flèche ici : ctaButton() ajoute déjà " →" au libellé.
     //    En la remettant, le bouton affichait « Voir octobre → → ».
@@ -246,7 +246,7 @@ async function sendMonthlyRecapEmail(owner, dates) {
     const subject =
       datesThisMonth.length > 0
         ? `🎂 ${datesThisMonth.length} anniversaire${datesThisMonth.length > 1 ? "s" : ""} en ${monthName} !`
-        : `📅 Récap BirthReminder — ${monthName} ${year}`;
+        : `📅 Récap BirthReminder : ${monthName} ${year}`;
 
     const html =
       datesThisMonth.length > 0
@@ -292,11 +292,11 @@ async function sendMonthlyRecapEmail(owner, dates) {
 
     // MessageId tracé : c'est la SEULE façon de retrouver ensuite un envoi
     // dans SES (delivery, bounce, complaint, suppression list). Sans lui, un
-    // « je n'ai pas reçu le récap » est indébogable — on ne peut même pas
+    // « je n'ai pas reçu le récap » est indébogable : on ne peut même pas
     // distinguer un email jamais parti d'un email bloqué par SES.
     const sent = await sesClient.send(new SendEmailCommand(params));
     console.log(
-      `✅ Récap mensuel ${monthName} envoyé à ${owner.email} — SES MessageId=${sent?.MessageId || "?"}`,
+      `✅ Récap mensuel ${monthName} envoyé à ${owner.email} : SES MessageId=${sent?.MessageId || "?"}`,
     );
   } catch (error) {
     console.error(`❌ Erreur récap mensuel à ${owner.email}:`, error);

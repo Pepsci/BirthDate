@@ -11,7 +11,7 @@
  * de la conversation : sur mobile, celle-ci n'est rejointe que lorsque l'écran
  * du chat est ouvert, et l'accusé serait perdu.
  *
- * Payload : { conversationId, userId, at } — `userId` est la personne qui a
+ * Payload : { conversationId, userId, at }, `userId` est la personne qui a
  * reçu ou lu, `at` l'horodatage serveur (ISO).
  */
 const Conversation = require("../models/conversation.model");

@@ -21,7 +21,7 @@ const dateSchema = Schema({
   owner: { type: Schema.Types.ObjectId, ref: "User" },
   family: { type: Boolean, default: false },
 
-  // Photo de la carte (dates créées manuellement uniquement — Cloudinary)
+  // Photo de la carte (dates créées manuellement uniquement : Cloudinary)
   photo: { type: String, default: null },
 
   receiveNotifications: {
@@ -63,7 +63,7 @@ const dateSchema = Schema({
         default: "to_buy",
       },
 
-      // String libre — plus d'enum restrictif
+      // String libre : plus d'enum restrictif
       // Valeurs courantes : "Anniversaire", "Noël", "Saint-Valentin", etc.
       // Anciennes valeurs en base ("birthday", "christmas", "other") restent valides
       occasion: {
@@ -79,7 +79,7 @@ const dateSchema = Schema({
         default: null,
       },
 
-      // Nouveaux champs — infos produit
+      // Nouveaux champs : infos produit
       url: { type: String, default: null },
       price: { type: Number, default: null },
       image: { type: String, default: null },

@@ -160,7 +160,7 @@ const GiftShareModal = ({ currentDate, onClose }) => {
         {/* ── Corps ── */}
         <div className="gsm-body">
 
-          {/* ÉTAPE 1 — Sélection des idées */}
+          {/* ÉTAPE 1 : Sélection des idées */}
           {step === 1 && (
             gifts.length === 0 ? (
               <div className="gsm-empty">
@@ -198,7 +198,7 @@ const GiftShareModal = ({ currentDate, onClose }) => {
             )
           )}
 
-          {/* ÉTAPE 2 — Sélection du destinataire */}
+          {/* ÉTAPE 2 : Sélection du destinataire */}
           {step === 2 && (
             friendsLoading ? (
               <div className="gsm-loading">Chargement de vos amis...</div>

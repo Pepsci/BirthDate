@@ -8,7 +8,7 @@
  * Le problème qu'il règle : après une annulation, l'interface d'un invité qui
  * n'avait pas rechargé la page continuait de proposer les votes, le RSVP et
  * les propositions de cadeaux. Chacune de ces actions notifiait l'organisateur
- * — qui recevait donc « X a voté pour le 12 mars » sur un événement qu'il
+ * qui recevait donc « X a voté pour le 12 mars » sur un événement qu'il
  * venait d'annuler. Masquer les boutons côté client ne suffit pas : une page
  * déjà ouverte ne le sait pas, et le serveur doit trancher.
  *

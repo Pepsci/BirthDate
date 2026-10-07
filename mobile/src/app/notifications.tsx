@@ -69,7 +69,7 @@ export default function NotificationsScreen() {
 
   // Ouvrir une notification la consomme : elle disparaît de la liste.
   // Elle était seulement marquée comme lue, donc elle restait affichée après
-  // t'avoir emmené au bon endroit — et il fallait la supprimer à la main.
+  // t'avoir emmené au bon endroit : et il fallait la supprimer à la main.
   // Le retrait de la liste est optimiste (avant la réponse serveur) pour que
   // l'écran soit déjà à jour au retour de la navigation.
   const open = async (n: AppNotification) => {

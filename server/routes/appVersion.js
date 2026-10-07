@@ -1,5 +1,5 @@
 // routes/appVersion.js
-// GET /api/app-version — bandeaux de l'accueil mobile (public, sans compte) :
+// GET /api/app-version, bandeaux de l'accueil mobile (public, sans compte) :
 //   - android / ios : dernière version disponible en store (+ texte facultatif)
 //   - announcement  : annonce en cours, ou null
 //

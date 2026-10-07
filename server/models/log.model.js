@@ -8,7 +8,7 @@ const { Schema, model } = mongoose;
  * différentes (voir `expiresAt` plus bas) :
  *  - les actions de compte (connexion, modification, suppression), utiles au
  *    support et à la sécurité sur une fenêtre courte ;
- *  - les actions à conséquence durable — annulation d'événement, transfert
+ *  - les actions à conséquence durable : annulation d'événement, transfert
  *    d'organisation, activation de cagnotte, remboursement, enregistrement ou
  *    suppression d'un RIB. Celles-là engagent des personnes entre elles, et
  *    parfois de l'argent : elles doivent rester consultables bien au-delà.
@@ -19,7 +19,7 @@ const logSchema = new Schema(
       type: Schema.Types.ObjectId,
       ref: "User",
       // Absent pour "support_message" quand le formulaire public est utilisé
-      // sans compte (visiteur anonyme) — toutes les autres actions restent
+      // sans compte (visiteur anonyme) : toutes les autres actions restent
       // rattachées à un utilisateur.
       required: false,
     },
@@ -41,7 +41,7 @@ const logSchema = new Schema(
         "friend_add",
         "message_send",
         // Soumission d'un message via le formulaire de support (connecté ou
-        // public) — sert à distinguer un vrai visiteur d'un bot qui teste le
+        // public) : sert à distinguer un vrai visiteur d'un bot qui teste le
         // formulaire, et à repérer une IP qui spam.
         "support_message",
 
@@ -109,7 +109,7 @@ const logSchema = new Schema(
      * ignore les documents dont le champ TTL est absent, ce qui permet à une
      * entrée de ne jamais expirer. Les actions à conséquence durable sont
      * écrites sans `expiresAt` et restent donc indéfiniment, là où l'ancien
-     * index effaçait tout à un an sans distinction — y compris la trace d'un
+     * index effaçait tout à un an sans distinction : y compris la trace d'un
      * remboursement.
      *
      * ⚠️ MIGRATION : l'ancien index { createdAt: 1 } doit être supprimé, sinon
@@ -118,7 +118,7 @@ const logSchema = new Schema(
      *
      * ⚠️ Le défaut vaut UN AN, pas null. MongoDB ignore les documents dont le
      * champ TTL n'est pas une date : un défaut à null aurait rendu éternelle
-     * toute écriture ne renseignant pas explicitement ce champ — c'est-à-dire
+     * toute écriture ne renseignant pas explicitement ce champ : c'est-à-dire
      * les Log.create() de auth.js et le middleware logAction, qui ne le
      * connaissent pas. Le comportement par défaut doit être la rétention
      * ordinaire ; c'est la conservation indéfinie qui se demande explicitement,
@@ -136,7 +136,7 @@ const logSchema = new Schema(
 
 logSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 // Recherche par événement dans le journal (« que s'est-il passé sur cet
-// événement ? ») — sparse : la grande majorité des logs n'a pas ce champ.
+// événement ? »), sparse : la grande majorité des logs n'a pas ce champ.
 logSchema.index({ "metadata.eventShortId": 1, createdAt: -1 }, { sparse: true });
 logSchema.index({ userId: 1, createdAt: -1 });
 

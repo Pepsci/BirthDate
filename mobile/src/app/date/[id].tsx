@@ -131,7 +131,7 @@ export default function DateDetailScreen() {
   const { isSplit } = useSplitView();
   // Contenu du panneau de droite en grand écran : les cadeaux (défaut), la
   // discussion avec l'ami lié, ou la création d'un événement. Depuis l'onglet Événements, la création reste un
-  // écran plein (app/event/new.tsx) — seul le parcours « depuis une carte »
+  // écran plein (app/event/new.tsx) : seul le parcours « depuis une carte »
   // garde la personne visible à côté.
   const [rightPane, setRightPane] = useState<
     "gifts" | "chat" | "newEvent" | "edit"
@@ -167,7 +167,7 @@ export default function DateDetailScreen() {
   // sont deux listes différentes, avec des occasions différentes, et partager
   // un même filtre ferait disparaître des idées en changeant d'onglet.
   const [sharedFilter, setSharedFilter] = useState<string>("all");
-  // Second axe : l'état de réservation. Indépendant de l'occasion — chercher
+  // Second axe : l'état de réservation. Indépendant de l'occasion : chercher
   // « ce qui reste à prendre pour Noël » croise les deux, et n'aurait pas de
   // réponse si l'un remplaçait l'autre.
   const [sharedReserved, setSharedReserved] = useState<
@@ -207,7 +207,7 @@ export default function DateDetailScreen() {
   // Destinataire choisi dans les feuilles de partage. Un tap sur un nom ne fait
   // que sélectionner : l'envoi n'a lieu qu'au bouton « Envoyer à … ». Avant,
   // le tap envoyait directement, et une erreur de doigt partageait la carte de
-  // quelqu'un à la mauvaise personne — sans annulation possible.
+  // quelqu'un à la mauvaise personne : sans annulation possible.
   const [cardShareTarget, setCardShareTarget] = useState<FriendEntry | null>(
     null,
   );
@@ -367,7 +367,7 @@ export default function DateDetailScreen() {
   // du réserveur ; seul lui peut se libérer (le serveur le vérifie aussi).
   // ── Partage public de la liste commune ─────────────────────────────────
   // Même mécanique que la wishlist publique : un lien opaque, consultable
-  // sans compte. Le lien ne révèle ni les membres, ni qui a réservé quoi —
+  // sans compte. Le lien ne révèle ni les membres, ni qui a réservé quoi :
   // il peut donc être transmis à n'importe qui, y compris à la personne
   // concernée, sans gâcher la surprise.
   const [shareSettings, setShareSettings] =
@@ -441,7 +441,7 @@ export default function DateDetailScreen() {
   const isReservedByMe = (g: SharedGift) =>
     g.reservedByMe ?? g.reservedBy?._id === user?._id;
 
-  /** Réservé, tout court — un invité ne reçoit pas `reservedBy`. */
+  /** Réservé, tout court : un invité ne reçoit pas `reservedBy`. */
   const isReserved = (g: SharedGift) =>
     g.isReserved ?? (!!g.reservedBy || !!g.reservedByGuest);
 
@@ -471,7 +471,7 @@ export default function DateDetailScreen() {
   /**
    * Libérer la réservation de quelqu'un d'autre. Réservé aux membres : ce
    * sont eux qui répondent de la liste. Sans ce geste, une idée réservée par
-   * un visiteur qui ne revient jamais — ou par un membre injoignable — restait
+   * un visiteur qui ne revient jamais, ou par un membre injoignable, restait
    * bloquée pour toujours, et personne ne pouvait l'offrir.
    *
    * Confirmation obligatoire : on défait l'engagement d'un autre, et le
@@ -521,7 +521,7 @@ export default function DateDetailScreen() {
    *
    * Une liste commune sert pendant des mois : au bout de deux Noëls, les
    * idées vivantes se noient parmi celles qui sont derrière nous. Elles ne
-   * sont pas supprimées pour autant — c'est la mémoire de ce qui a déjà été
+   * sont pas supprimées pour autant : c'est la mémoire de ce qui a déjà été
    * offert, et donc ce qui évite d'offrir deux fois la même chose.
    *
    * Les invités ne sont pas concernés : le serveur ne leur envoie jamais les
@@ -570,7 +570,7 @@ export default function DateDetailScreen() {
           styles.giftGridCard,
           st !== "to_buy" && styles.giftCardDone,
           // Réservé par un autre : grisé, mais jamais retiré de
-          // la liste — le voir disparaître ferait croire à une
+          // la liste : le voir disparaître ferait croire à une
           // suppression.
           reservedByOther && styles.giftCardReserved,
         ]}
@@ -600,7 +600,7 @@ export default function DateDetailScreen() {
         </Text>
         {/* Réservation. Le nom est affiché : les membres sont
             les offrants, la personne concernée n'a pas accès à
-            la liste, il n'y a donc pas de surprise à protéger —
+            la liste, il n'y a donc pas de surprise à protéger :
             et savoir qui s'en occupe est justement ce qui évite
             le double achat. */}
         {/* Pied de carte ancré en bas : les cartes d'une même
@@ -835,7 +835,7 @@ export default function DateDetailScreen() {
   // le destinataire reçoit juste de quoi recréer la carte chez lui.
   const openCardShare = async () => {
     // Mode local : pas d'amis ni de chat. On partage la carte en texte via la
-    // feuille de partage native (SMS, WhatsApp, notes…) — rien ne passe par
+    // feuille de partage native (SMS, WhatsApp, notes…) : rien ne passe par
     // le serveur, et c'est l'utilisateur qui choisit le destinataire.
     if (isLocal) {
       if (!entry) return;
@@ -885,7 +885,7 @@ export default function DateDetailScreen() {
           nameday: entry.nameday ?? entry.linkedUser?.nameday ?? null,
           // Présent seulement si la carte est liée à un inscrit : permet au
           // destinataire de lui envoyer une demande d'ami. On transmet l'_id,
-          // jamais l'email — un ObjectId est opaque hors de l'app.
+          // jamais l'email : un ObjectId est opaque hors de l'app.
           linkedUserId: entry.linkedUser?._id ?? null,
         },
         tempId: `temp-${Date.now()}`,
@@ -999,8 +999,8 @@ export default function DateDetailScreen() {
   // Options d'en-tête mémoïsées.
   //
   // Elles étaient déclarées en objet littéral avec un `headerRight` en fonction
-  // fléchée : à chaque rendu de cet écran — et il en a beaucoup, une trentaine
-  // d'états y vivent — react-navigation recevait de nouvelles options et
+  // fléchée : à chaque rendu de cet écran, et il en a beaucoup, une trentaine
+  // d'états y vivent : react-navigation recevait de nouvelles options et
   // reconstruisait le bouton natif de la barre. C'est pendant ces
   // reconstructions à répétition que le bouton apparaissait étiré, faute d'être
   // mesuré à temps. Avec un objet stable, il n'est reconstruit que si son
@@ -1118,7 +1118,7 @@ export default function DateDetailScreen() {
         {nameday && (
           <Text style={styles.detail}>{t("date:namedayLine", { date: formatNameday(nameday) })}</Text>
         )}
-        {/* Signaler une fête fausse ou manquante — compte uniquement : le
+        {/* Signaler une fête fausse ou manquante, compte uniquement : le
             mode local n'envoie rien au serveur (docs/MODE_LOCAL.md). */}
         {!isLocalMode() && !!entry.name?.trim() && (
           <Pressable
@@ -1285,7 +1285,7 @@ export default function DateDetailScreen() {
 
       {/* Boutons sous les infos.
           Grand écran : ils pilotent le panneau de droite. « Voir les cadeaux »
-          passe en premier et le bouton du panneau affiché est plein — on voit
+          passe en premier et le bouton du panneau affiché est plein : on voit
           d'un coup d'œil ce qui est ouvert à droite. Plus de « Liste commune » :
           c'est un onglet du panneau cadeaux. */}
       {isSplit ? (
@@ -1415,7 +1415,7 @@ export default function DateDetailScreen() {
   // Cadeaux : mes idées / sa wishlist / liste commune
   const giftsContent = (
     <>
-      {/* Retour à l'accueil de la carte — inutile en grand écran, la fiche
+      {/* Retour à l'accueil de la carte : inutile en grand écran, la fiche
           reste affichée à gauche. */}
       {!isSplit && (
       <Pressable
@@ -1556,7 +1556,7 @@ export default function DateDetailScreen() {
           />
         )}
 
-        {/* Filtre par occasion — bouton déroulant */}
+        {/* Filtre par occasion : bouton déroulant */}
         {gifts.length > 0 && (
           <>
             <Pressable
@@ -1714,7 +1714,7 @@ export default function DateDetailScreen() {
           {(() => {
             // On masque les cadeaux déjà réservés par quelqu'un d'autre.
             // Ceux que J'AI réservés ne se mélangent plus aux disponibles :
-            // ils descendent dans « Mes réservations », sous un trait — même
+            // ils descendent dans « Mes réservations », sous un trait : même
             // présentation que « Déjà offerts » de la liste commune. En haut
             // il ne reste que ce qu'on peut encore choisir.
             const isMine = (item: WishlistItem) =>
@@ -1944,7 +1944,7 @@ export default function DateDetailScreen() {
                 />
               )}
 
-              {/* Filtre par occasion — même mécanique que les idées perso.
+              {/* Filtre par occasion : même mécanique que les idées perso.
                   Une liste commune vit longtemps et mélange Noël,
                   anniversaire et le reste : sans filtre, préparer UNE
                   occasion oblige à faire le tri à l'œil à chaque visite. */}
@@ -2075,8 +2075,8 @@ export default function DateDetailScreen() {
 
               {/* ── Vue INVITÉ ────────────────────────────────────────
                   Un invité ne fait que deux choses : regarder et réserver.
-                  Lui montrer la grille des membres — pastille de statut « à
-                  acheter », bouton de changement d'état — lui proposait des
+                  Lui montrer la grille des membres : pastille de statut « à
+                  acheter », bouton de changement d'état : lui proposait des
                   commandes inertes et lui demandait de comprendre un
                   vocabulaire de gestion qui ne le concerne pas. On reprend
                   donc exactement la carte des wishlists, où la seule question
@@ -2248,7 +2248,7 @@ export default function DateDetailScreen() {
           ⚠️ Le modal des membres était servi à tout le monde : un invité y
           trouvait « Modifier », « Supprimer » et les trois statuts, sur une
           liste qu'il n'a pas le droit de toucher. Le serveur refusait, mais
-          après le geste — et proposer une commande pour la refuser ensuite
+          après le geste : et proposer une commande pour la refuser ensuite
           est pire que ne pas la proposer. */}
       {isSharedMember ? (
         <GiftDetailModal
@@ -2805,7 +2805,7 @@ export default function DateDetailScreen() {
             </View>
           ) : rightPane === "newEvent" && !existingEventId ? (
             // Le stepper a son propre défilement : pas de ScrollView autour.
-            // Changer de panneau (ou plier l'appareil) le démonte — un titre
+            // Changer de panneau (ou plier l'appareil) le démonte : un titre
             // déjà saisi part alors en brouillon, comme sur l'écran plein.
             <View
               style={[styles.container, styles.splitPane, styles.splitPaneRight]}
@@ -3062,7 +3062,7 @@ const makeStyles = (c: ThemeColors) =>
   // Sans elle, une carte au titre court et sa voisine au titre long
   // n'alignaient plus rien de ce qui suit : occasion, prix et badge se
   // retrouvaient à des hauteurs différentes d'une carte à l'autre.
-  // `lineHeight` est fixé explicitement pour que 2 × lineHeight soit exact —
+  // `lineHeight` est fixé explicitement pour que 2 × lineHeight soit exact :
   // sinon la valeur dépend de la police du système.
   giftName: {
     color: c.text,
@@ -3260,7 +3260,7 @@ const makeStyles = (c: ThemeColors) =>
     borderRadius: 10,
     paddingVertical: 7,
     paddingHorizontal: 12,
-    // flexShrink: 0 — sans lui, c'est le bouton qui se comprime quand le titre
+    // flexShrink: 0 : sans lui, c'est le bouton qui se comprime quand le titre
     // est long, et son libellé se retrouve tronqué au lieu du titre.
     flexShrink: 0,
   },
@@ -3321,7 +3321,7 @@ const makeStyles = (c: ThemeColors) =>
   // Colle un pied de carte en bas, quelle que soit la longueur du titre.
   cardBottom: { marginTop: "auto" },
   // Pied de la carte « idée commune » : la pastille de réservation, le bouton
-  // de libération et la ligne prix/statut forment un seul bloc ancré en bas —
+  // de libération et la ligne prix/statut forment un seul bloc ancré en bas :
   // deux `marginTop: "auto"` séparés se partageraient l'espace libre et les
   // écarteraient l'un de l'autre.
   sharedCardBottom: { marginTop: "auto", gap: 4 },
@@ -3452,7 +3452,7 @@ const makeStyles = (c: ThemeColors) =>
   },
   // En-tête de la liste commune : « Ajouter depuis une liste » est une action
   // secondaire, posée à côté du « + Ajouter » plein qui reste l'action
-  // principale — d'où la bordure au lieu du fond.
+  // principale : d'où la bordure au lieu du fond.
   // flexWrap : sur un écran étroit les deux boutons passent à la ligne plutôt
   // que de se tronquer l'un l'autre.
   sharedHeaderActions: {

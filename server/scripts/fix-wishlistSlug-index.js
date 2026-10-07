@@ -5,7 +5,7 @@
  * tous les documents avec `wishlistPublicSlug: null` comme des doublons, ce qui
  * bloquait la création de nouveaux comptes (E11000).
  *
- * Fix : on supprime l'ancien index et on le recrée en "partial" — unique
+ * Fix : on supprime l'ancien index et on le recrée en "partial", unique
  * uniquement quand le slug est une vraie chaîne.
  *
  * Usage : node scripts/fix-wishlistSlug-index.js

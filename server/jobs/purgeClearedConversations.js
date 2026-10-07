@@ -8,7 +8,7 @@ const Report = require("../models/report.model");
  *
  * « Supprimer une conversation » ne détruit rien : chacun horodate son
  * effacement (champ `clears`), pour que personne ne puisse effacer des
- * messages chez quelqu'un d'autre — notamment les preuves d'un harcèlement
+ * messages chez quelqu'un d'autre : notamment les preuves d'un harcèlement
  * signalé. Restait un trou : ces données étaient alors conservées sans limite.
  *
  * Ce job fixe la durée de conservation. Quand les deux participants ont fait

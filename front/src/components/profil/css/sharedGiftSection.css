@@ -215,7 +215,7 @@
 }
 
 /* Listes communes déjà actives : même carte que les listes en attente, mais
-   bordure neutre — il n'y a rien à traiter, c'est un simple accès. */
+   bordure neutre : il n'y a rien à traiter, c'est un simple accès. */
 .sgi-mine-card {
   border-color: var(--border-color, #e5e7eb);
 }
@@ -293,7 +293,7 @@
 /* ── Déjà offerts ────────────────────────────────────────────────────────
    Rangés sous un trait, jamais supprimés : c'est la mémoire de ce qui a été
    offert, donc ce qui évite d'offrir deux fois la même chose. Le trait fait
-   le travail — il dit « ce qui suit appartient au passé » sans se lire. */
+   le travail : il dit « ce qui suit appartient au passé » sans se lire. */
 .sgs-offered {
   margin-top: 1.5rem;
 }
@@ -313,8 +313,8 @@
   color: var(--text-secondary);
 }
 
-/* Sépare les deux axes du filtre — occasion à gauche, état de réservation à
-   droite — sans imposer une seconde ligne quand la place ne le demande pas. */
+/* Sépare les deux axes du filtre : occasion à gauche, état de réservation à
+   droite : sans imposer une seconde ligne quand la place ne le demande pas. */
 .sgs-chip-sep {
   width: 1px;
   align-self: stretch;

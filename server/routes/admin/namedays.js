@@ -66,7 +66,7 @@ function notCanonicalMessage(target) {
   return `« ${target.trim()} » n'est pas un prénom principal du calendrier.`;
 }
 
-// ── GET / — tout le calendrier, prénoms principaux + variantes ─────────────
+// ── GET / : tout le calendrier, prénoms principaux + variantes ─────────────
 
 router.get("/", async (req, res) => {
   try {
@@ -126,7 +126,7 @@ async function directoryNames({ excludeManual }) {
   return Object.values(byKey).map((n) => ({ ...n, total: n.cards + n.users }));
 }
 
-// ── GET /compounds — prénoms composés des répertoires ──────────────────────
+// ── GET /compounds : prénoms composés des répertoires ──────────────────────
 // Ils ne remontent jamais dans « Sans fête » : la règle des composés leur
 // donne toujours une date (Jean-Luc → Luc, Paul-Henri → Paul). Cette liste
 // sert à vérifier cette date une fois, et à donner une ligne propre aux
@@ -154,7 +154,7 @@ router.get("/compounds", async (req, res) => {
   }
 });
 
-// ── GET /missing — prénoms des répertoires qui n'ont pas de fête ───────────
+// ── GET /missing : prénoms des répertoires qui n'ont pas de fête ───────────
 
 router.get("/missing", async (req, res) => {
   try {
@@ -170,7 +170,7 @@ router.get("/missing", async (req, res) => {
   }
 });
 
-// ── POST / — ajouter un prénom ou une variante ─────────────────────────────
+// ── POST / : ajouter un prénom ou une variante ─────────────────────────────
 // body : { name, date }            → prénom principal
 //        { name, aliasOf }         → variante (prend la date du principal)
 
@@ -219,7 +219,7 @@ router.post("/", async (req, res) => {
   }
 });
 
-// ── PATCH /:id — changer la date, le rattachement ou l'orthographe ─────────
+// ── PATCH /:id : changer la date, le rattachement ou l'orthographe ─────────
 // body : { date }     → prénom principal (ses variantes suivent)
 //        { aliasOf }  → variante rattachée à un autre prénom principal
 //        { name }     → corriger l'orthographe
@@ -308,7 +308,7 @@ router.patch("/:id", async (req, res) => {
   }
 });
 
-// ── DELETE /:id — retirer un prénom (et ses variantes) ─────────────────────
+// ── DELETE /:id : retirer un prénom (et ses variantes) ─────────────────────
 
 router.delete("/:id", async (req, res) => {
   try {
@@ -392,7 +392,7 @@ async function writeChanges(changes) {
 
 const publicChange = ({ model, ...c }) => c;
 
-// ── POST /apply — reporter une modification sur les contacts existants ─────
+// ── POST /apply : reporter une modification sur les contacts existants ─────
 // body : { names: ["Pauline", ...], dryRun: true|false }
 // Appelé juste après une modif (fenêtre « Contacts existants concernés »).
 
@@ -418,11 +418,11 @@ router.post("/apply", async (req, res) => {
   }
 });
 
-// ── GET /pending — tout ce qui reste à appliquer ───────────────────────────
+// ── GET /pending : tout ce qui reste à appliquer ───────────────────────────
 // Toutes les fêtes automatiques qui ne correspondent plus au calendrier :
 // modifs laissées « Plus tard », ou changement de règle après un déploiement
 // (normalisation, prénoms composés). Remplace scripts/recompute-namedays.js
-// au quotidien — le script reste pour les documents sans namedaySource.
+// au quotidien : le script reste pour les documents sans namedaySource.
 
 router.get("/pending", async (req, res) => {
   try {
@@ -437,8 +437,8 @@ router.get("/pending", async (req, res) => {
   }
 });
 
-// ── POST /pending/apply — appliquer tout, ou une sélection ─────────────────
-// body : { ids?: ["<id carte ou compte>", ...] } — sans ids : tout appliquer.
+// ── POST /pending/apply : appliquer tout, ou une sélection ─────────────────
+// body : { ids?: ["<id carte ou compte>", ...] }, sans ids : tout appliquer.
 // Recalcule au moment d'écrire : on n'applique jamais une liste périmée.
 
 router.post("/pending/apply", async (req, res) => {
@@ -455,7 +455,7 @@ router.post("/pending/apply", async (req, res) => {
   }
 });
 
-// ── GET /export — le calendrier au format de data/namedays/fr.json ─────────
+// ── GET /export : le calendrier au format de data/namedays/fr.json ─────────
 // Sert à remettre le fichier du repo à jour : il alimente la copie embarquée
 // du mobile (mode local, sans réseau) et le premier remplissage d'une base vide.
 

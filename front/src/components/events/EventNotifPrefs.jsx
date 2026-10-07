@@ -60,7 +60,7 @@ const PREFS = [
  * votes, les cadeaux proposés et les contributions ne partent qu'à
  * l'organisateur : les proposer à un invité afficherait des interrupteurs sans
  * effet. Le serveur renvoie donc les clés qui concernent le demandeur, et
- * n'accepte que celles-là — on n'affiche que ce qu'il envoie.
+ * n'accepte que celles-là : on n'affiche que ce qu'il envoie.
  *
  * L'écran servait auparavant `/notification-prefs`, réservée à
  * l'organisateur : un invité n'avait aucun moyen de régler ses propres

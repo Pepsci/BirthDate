@@ -231,7 +231,7 @@ export default function AuthScreen() {
           {panels.map((panel, i) => {
             // Le panneau situé à gauche du scroll traîne de (1 - OUT_SPEED)
             // écran : c'est ce décalage qui crée la parallaxe. Il empiète donc
-            // sur le viewport du panneau voisin — d'où le fond opaque ci-dessous.
+            // sur le viewport du panneau voisin : d'où le fond opaque ci-dessous.
             // L'ordre de rendu du ScrollView (i croissant = au-dessus) suffit
             // à masquer le panneau qui traîne dans les deux sens de navigation.
             const translateX = scrollX.interpolate({

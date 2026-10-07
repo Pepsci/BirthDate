@@ -25,7 +25,7 @@ import { readingPane } from "../../lib/layout";
  *
  * En charges directes, l'argent d'une contribution part directement chez
  * l'organisateur. BirthReminder ne le détient jamais et ne peut pas rembourser
- * à sa place. Le contributeur n'a donc qu'un interlocuteur — et il n'avait,
+ * à sa place. Le contributeur n'a donc qu'un interlocuteur : et il n'avait,
  * jusqu'ici, plus aucune trace de ce qu'il avait versé une fois l'écran fermé.
  * Réclamer sans montant, sans date et sans référence est très difficile.
  */
@@ -85,7 +85,7 @@ export default function MyContributionsScreen() {
   /*
    * Ouvre le support avec la contribution déjà décrite.
    *
-   * La dernière question du gabarit — « ai-je contacté l'organisateur ? » —
+   * La dernière question du gabarit, « ai-je contacté l'organisateur ? »,
    * est la plus utile : c'est la première marche de la procédure, et la
    * grande majorité des situations se règlent là. Connaître la réponse dès le
    * premier message évite un aller-retour.

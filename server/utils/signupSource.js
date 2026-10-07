@@ -25,7 +25,7 @@ function cleanString(value, max) {
 
 /**
  * Plateforme déduite du User-Agent. Sert de repli quand le client ne déclare
- * rien — donc aussi pour TOUTES les inscriptions antérieures à ce fichier.
+ * rien : donc aussi pour TOUTES les inscriptions antérieures à ce fichier.
  *  - React Native Android passe par OkHttp ("okhttp/4.x")
  *  - React Native iOS passe par CFNetwork ("BirthReminder/43 CFNetwork/… Darwin/…")
  *  - un navigateur s'annonce toujours "Mozilla/5.0 …"

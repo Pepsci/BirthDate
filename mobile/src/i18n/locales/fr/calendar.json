@@ -37,7 +37,7 @@
       "one": "« {{title}} » a été ajouté à ton calendrier, avec ton rappel.",
       "other": "« {{title}} » a été ajouté à ton calendrier, avec tes rappels."
     },
-    "noReminder": "« {{title}} » a été ajouté à ton calendrier. Aucun rappel n'est posé — tu peux en choisir dans Profil → Réglages."
+    "noReminder": "« {{title}} » a été ajouté à ton calendrier. Aucun rappel n'est posé : tu peux en choisir dans Profil → Réglages."
   },
   "addError": "Impossible d'ajouter au calendrier"
 }

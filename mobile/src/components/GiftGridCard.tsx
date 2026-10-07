@@ -9,7 +9,7 @@ export interface GiftBadge {
 }
 
 /**
- * Carte cadeau générique (grille 2 colonnes) — réutilisée par la wishlist perso,
+ * Carte cadeau générique (grille 2 colonnes) : réutilisée par la wishlist perso,
  * la wishlist d'un ami, les propositions d'événement et les idées cadeaux.
  * À placer dans un conteneur `giftGridStyles.grid`.
  */

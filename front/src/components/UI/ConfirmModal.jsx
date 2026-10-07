@@ -5,13 +5,13 @@ import "./css/confirmModal.css";
  * Fenêtre de confirmation maison.
  *
  * Remplace `window.confirm`, qui protégeait correctement mais avec une boîte
- * système au milieu d'une interface soignée — et sans possibilité de nommer
+ * système au milieu d'une interface soignée : et sans possibilité de nommer
  * l'action, de la teinter, ni d'expliquer sa conséquence en deux phrases.
  *
  * Ce que le natif faisait gratuitement et qu'il faut donc refaire ici :
  *  - Échap ferme (retour au natif attendu par tout le monde) ;
  *  - le focus part sur le bouton d'action à l'ouverture, et revient à
- *    l'élément d'origine à la fermeture — sans quoi, au clavier, on se
+ *    l'élément d'origine à la fermeture : sans quoi, au clavier, on se
  *    retrouve perdu en haut de page ;
  *  - le focus reste PIÉGÉ dans la fenêtre tant qu'elle est ouverte, sinon on
  *    tabule dans la page au-dessous, qu'on ne voit pas ;

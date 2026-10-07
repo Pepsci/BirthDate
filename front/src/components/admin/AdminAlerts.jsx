@@ -29,7 +29,7 @@ const ACTION_LABELS = {
  *
  * ⚠️ Le motif est obligatoire, et ce n'est pas une coquetterie d'interface :
  * c'est tout ce qui distingue un registre de diligence d'une case cochée. Le
- * serveur le refuse aussi, mais l'interface doit dire POURQUOI on le demande —
+ * serveur le refuse aussi, mais l'interface doit dire POURQUOI on le demande :
  * sinon l'administrateur tape « ok » et le registre ne vaut plus rien.
  */
 const ReviewForm = ({ alert, onDone }) => {
@@ -70,7 +70,7 @@ const ReviewForm = ({ alert, onDone }) => {
             checked={status === "dismissed"}
             onChange={() => setStatus("dismissed")}
           />
-          Écarter — pas de suite à donner
+          Écarter : pas de suite à donner
         </label>
         <label className="admin-review-choice">
           <input
@@ -101,7 +101,7 @@ const ReviewForm = ({ alert, onDone }) => {
         value={reason}
         onChange={(e) => setReason(e.target.value)}
         rows={3}
-        placeholder="Motif de la décision — ce texte est ce qui la justifiera si elle est contestée. Ex. : organisateur vérifié, cagnotte de mariage, montants cohérents avec le nombre d'invités."
+        placeholder="Motif de la décision : ce texte est ce qui la justifiera si elle est contestée. Ex. : organisateur vérifié, cagnotte de mariage, montants cohérents avec le nombre d'invités."
       />
 
       {err && <p className="admin-error">{err}</p>}
@@ -242,7 +242,7 @@ const AdminAlerts = () => {
                     <p className="admin-review-reason">« {a.review.reason} »</p>
                     {a.review.stale && (
                       <p className="admin-review-stale">
-                        ⚠️ La situation a évolué depuis cette décision — à
+                        ⚠️ La situation a évolué depuis cette décision : à
                         réexaminer.
                       </p>
                     )}

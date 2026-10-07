@@ -18,7 +18,7 @@ const { sendSupportEmail } = require("./emailTemplates/supportEmail");
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-// Valeurs par défaut — un compte peut recevoir un quota propre depuis l'admin
+// Valeurs par défaut : un compte peut recevoir un quota propre depuis l'admin
 // (User.eventQuota, bouton « Quota d'événements » de la fiche utilisateur).
 const EVENT_DAILY_DEFAULT = 5; // créations par 24 h glissantes
 const EVENT_ACTIVE_DEFAULT = 15; // événements en cours en même temps
@@ -95,7 +95,7 @@ async function externalInvitesLast24h(userId) {
  * Chaque refus est journalisé (onglet Logs de l'admin, action `quota_refused`).
  * L'email d'alerte, lui, ne part qu'UNE fois par compte, par type de quota et
  * par 24 h : quelqu'un qui insiste sur le bouton ne doit pas inonder la boîte
- * du support. Jamais bloquant — un échec d'envoi n'empêche pas la réponse.
+ * du support. Jamais bloquant : un échec d'envoi n'empêche pas la réponse.
  */
 async function reportQuotaRefusal(req, user, kind, detail) {
   try {
@@ -114,10 +114,10 @@ async function reportQuotaRefusal(req, user, kind, detail) {
     await sendSupportEmail({
       fromEmail: user.email,
       fromName: `${user.name} ${user.surname || ""}`.trim(),
-      subject: `⚠️ Quota atteint [${kind}] — ${user.email}`,
+      subject: `⚠️ Quota atteint [${kind}] : ${user.email}`,
       message:
         `Un compte vient d'atteindre un plafond anti-abus.\n\n` +
-        `Compte : ${user.name} ${user.surname || ""} (${user.email}) — ${user._id}\n` +
+        `Compte : ${user.name} ${user.surname || ""} (${user.email}) : ${user._id}\n` +
         `Quota : ${kind}\n` +
         `Détail : ${JSON.stringify(detail)}\n\n` +
         `Rien à faire si l'usage est normal. Si la personne demande plus ` +
@@ -163,7 +163,7 @@ async function checkEventCreation(req, user) {
       code: "EVENT_QUOTA_ACTIVE",
       message:
         `Vous avez atteint la limite de ${quota.active} événements en cours. ` +
-        `Annulez ou supprimez-en un pour en créer un nouveau — les événements passés ne comptent pas. ${SUPPORT_HINT}`,
+        `Annulez ou supprimez-en un pour en créer un nouveau : les événements passés ne comptent pas. ${SUPPORT_HINT}`,
     };
   }
   return null;

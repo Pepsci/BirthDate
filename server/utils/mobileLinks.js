@@ -10,7 +10,7 @@
  * App Links Android pas encore validés, client mail qui court-circuite le
  * système) : on ajoute alors un second lien en schéma maison
  * `birthreminder://…`, qui lui va toujours à l'app. Ce lien n'est proposé
- * qu'aux comptes qui ont un appareil mobile enregistré — inutile de polluer
+ * qu'aux comptes qui ont un appareil mobile enregistré : inutile de polluer
  * l'email des utilisateurs web-only.
  *
  * ⚠️ La table de correspondance ci-dessous doit rester alignée sur

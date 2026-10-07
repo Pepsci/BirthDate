@@ -27,7 +27,7 @@
     "invited": "Je suis invité·e",
     "past": "🗄️ Événements passés ({{count}})",
     "poolTip": "Tu peux créer une cagnotte pour financer un cadeau à plusieurs, directement depuis un événement, sans commission supplémentaire de la part de BirthReminder pour le moment.",
-    "empty": "Aucun événement pour l'instant. Crée-en un avec le bouton ＋ — il apparaîtra ici."
+    "empty": "Aucun événement pour l'instant. Crée-en un avec le bouton ＋ : il apparaîtra ici."
   },
   "draft": {
     "deleteTitle": "Supprimer ce brouillon ?",
@@ -65,14 +65,14 @@
     "dateFixed": "📅 Date fixée",
     "vote": "🗳️ Faire voter",
     "time": "Heure :",
-    "dateVoteHint": "Propose au moins 2 dates — les invités voteront.",
+    "dateVoteHint": "Propose au moins 2 dates : les invités voteront.",
     "addDate": "＋ Ajouter une date",
     "addThisDate": "Ajouter cette date",
     "placeFixed": "📍 Lieu fixé",
     "address": "Adresse ou nom du lieu",
     "addressPlaceholder": "ex : 12 rue des Lilas, Paris…",
-    "addressHint": "Tape une adresse pour l'autocomplétion, ou un nom libre (\"Chez moi\"). Optionnel — modifiable plus tard.",
-    "placeVoteHint": "Propose au moins 2 lieux — les invités voteront.",
+    "addressHint": "Tape une adresse pour l'autocomplétion, ou un nom libre (\"Chez moi\"). Optionnel : modifiable plus tard.",
+    "placeVoteHint": "Propose au moins 2 lieux : les invités voteront.",
     "placeToSuggest": "Adresse ou nom du lieu à proposer",
     "addPlace": "＋ Ajouter ce lieu",
     "noGifts": "🚫 Pas de cadeaux",
@@ -106,7 +106,7 @@
   "calendar": {
     "removeTitle": "Retirer du calendrier ?",
     "removeText": "« {{title}} » sera supprimé de ton calendrier. L'événement reste dans BirthReminder.",
-    "added": "✓ Dans ton calendrier — appuie pour retirer",
+    "added": "✓ Dans ton calendrier : appuie pour retirer",
     "add": "🗓️ Ajouter à mon calendrier"
   },
   "vote": {
@@ -126,7 +126,7 @@
       "other": "{{count}} votes"
     },
     "hintHost": "Appuie sur une date pour la retenir : le vote sera clos et chacun devra reconfirmer sa présence.",
-    "hintGuest": "Plusieurs choix possibles — appuie pour (dé)cocher."
+    "hintGuest": "Plusieurs choix possibles : appuie pour (dé)cocher."
   },
   "maps": {
     "apple": "🍎 Plans",
@@ -148,10 +148,10 @@
     "hint": "La page reste consultable, mais l'événement n'aura pas lieu. Si tu l'avais ajouté à ton agenda, pense à l'y supprimer.",
     "sheetTitle": "Annuler l'événement",
     "sheetHint": "Tous les invités seront prévenus par notification et par email. L'événement restera consultable, barré, avec ton motif. Tu pourras le rétablir ou le supprimer ensuite.",
-    "reasonPlaceholder": "Motif (facultatif) — ex : salle indisponible",
+    "reasonPlaceholder": "Motif (facultatif), ex : salle indisponible",
     "cancelling": "Annulation…",
     "confirm": "❌ Confirmer l'annulation",
-    "sheetPool": " La cagnotte sera fermée : plus aucune contribution ne pourra arriver. Les sommes déjà versées ne sont PAS remboursées automatiquement — c'est à toi de le faire depuis la configuration de la cagnotte, et les frais Stripe des paiements d'origine resteront à ta charge."
+    "sheetPool": " La cagnotte sera fermée : plus aucune contribution ne pourra arriver. Les sommes déjà versées ne sont PAS remboursées automatiquement : c'est à toi de le faire depuis la configuration de la cagnotte, et les frais Stripe des paiements d'origine resteront à ta charge."
   },
   "uncancel": {
     "title": "Rétablir cet événement ?",
@@ -161,7 +161,7 @@
   },
   "transfer": {
     "sentTitle": "Proposition envoyée",
-    "sentPool": "{{name}} doit accepter. Attention : la cagnotte ne suivra pas — les {{amount}} € déjà versés resteront sur ton compte Stripe, et c'est à toi de les rembourser ou de les reverser.",
+    "sentPool": "{{name}} doit accepter. Attention : la cagnotte ne suivra pas, les {{amount}} € déjà versés resteront sur ton compte Stripe, et c'est à toi de les rembourser ou de les reverser.",
     "sentText": "{{name}} doit accepter pour que le transfert prenne effet. D'ici là, tu restes l'organisateur.",
     "offerError": "Impossible de proposer le transfert.",
     "acceptTitle": "Reprendre l'organisation ?",
@@ -171,7 +171,7 @@
     "bannerText": "{{name}} te propose de reprendre l'organisation de « {{title}} ».",
     "bannerHint": "Tu deviendrais responsable des invitations, des votes et de l'organisation. Une éventuelle cagnotte ne suit pas : les sommes déjà versées restent sur le compte de l'organisateur actuel.",
     "accept": "✅ Accepter",
-    "withdraw": "{{name}} — retirer",
+    "withdraw": "{{name}} : retirer",
     "sheetTitle": "Transférer l'organisation",
     "sheetHint": "La personne choisie devra accepter. Tant qu'elle n'a pas répondu, tu restes l'organisateur.",
     "sheetPool": " La cagnotte ne suivra pas : les sommes déjà versées restent sur ton compte Stripe, à toi de les rembourser ou de les reverser.",
@@ -282,7 +282,7 @@
     "asHost": "(organisateur)"
   },
   "join": {
-    "notInvited": "Tu n'es pas invité·e à cet événement — vue publique limitée.",
+    "notInvited": "Tu n'es pas invité·e à cet événement : vue publique limitée.",
     "title": "Rejoindre avec un code",
     "placeholder": "Code d'accès (6 à 8 caractères)",
     "checking": "Vérification…",
@@ -295,7 +295,7 @@
     "embedded": "👥 Inviter du monde",
     "title": "Inviter du monde",
     "friends": "Mes amis",
-    "noFriends": "Pas encore d'amis inscrits — utilise les emails ci-dessous ou le lien de partage depuis la page de l'événement.",
+    "noFriends": "Pas encore d'amis inscrits : utilise les emails ci-dessous ou le lien de partage depuis la page de l'événement.",
     "byEmail": "Par email (non-inscrits)",
     "emails": "emails séparés par des virgules"
   }

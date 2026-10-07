@@ -1,5 +1,5 @@
 /**
- * i18n côté serveur — textes écrits PAR le serveur pour un utilisateur :
+ * i18n côté serveur, textes écrits PAR le serveur pour un utilisateur :
  * notifications push, emails, messages d'erreur renvoyés à l'app mobile.
  *
  * Deux sources de langue, selon le moment :

@@ -6,7 +6,7 @@ import { Platform } from "react-native";
 import { markOffline, markOnline } from "./offline-status";
 import { assertAccountMode } from "./app-mode";
 
-// URL de l'API — définie dans .env (EXPO_PUBLIC_API_URL)
+// URL de l'API : définie dans .env (EXPO_PUBLIC_API_URL)
 // En dev : l'IP locale de ton PC sur le réseau (pas "localhost", qui pointerait vers le téléphone)
 export const API_URL =
   process.env.EXPO_PUBLIC_API_URL ?? "http://192.168.1.10:4000";
@@ -80,7 +80,7 @@ export async function api<T = unknown>(
   options: RequestInit = {},
 ): Promise<T> {
   // Mode local : aucune requête ne part vers le serveur (docs/MODE_LOCAL.md).
-  // Lève AVANT tout accès réseau — un oubli d'aiguillage se voit tout de suite.
+  // Lève AVANT tout accès réseau : un oubli d'aiguillage se voit tout de suite.
   assertAccountMode(`api ${options.method ?? "GET"} ${path}`);
   const token = await getToken();
   const headers: Record<string, string> = {
@@ -136,7 +136,7 @@ export async function api<T = unknown>(
     const detail = data?.detail || null;
     throw new ApiError(
       res.status,
-      detail ? `${base} — ${detail}` : base,
+      detail ? `${base} : ${detail}` : base,
       { code: data?.code, detail },
     );
   }
@@ -153,10 +153,10 @@ export interface AuthUser {
   [key: string]: unknown;
 }
 
-/** Version affichée à l'admin (support & débogage) — celle d'app.json. */
+/** Version affichée à l'admin (support & débogage) : celle d'app.json. */
 // Version lisible de l'app (celle des notes de mise à jour), envoyée à la
 // connexion et à l'enregistrement push (User.lastAppVersion). `expo.version`
-// (app.json) est alignée dessus depuis la 2.3.2 — c'est elle que montrent
+// (app.json) est alignée dessus depuis la 2.3.2 : c'est elle que montrent
 // l'App Store et TestFlight : la monter EN MÊME TEMPS que le changelog.
 export const APP_VERSION =
   CHANGELOG[0]?.version ?? Constants.expoConfig?.version ?? null;

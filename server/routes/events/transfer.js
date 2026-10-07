@@ -21,7 +21,7 @@ const { audit } = require("../../services/auditLog");
  *
  * ⚠️ La cagnotte ne suit JAMAIS le transfert. En charges directes, l'argent
  * déjà versé se trouve sur le compte Stripe de l'ancien organisateur, et il
- * n'existe pas de moyen propre de le déplacer vers un autre compte connecté —
+ * n'existe pas de moyen propre de le déplacer vers un autre compte connecté :
  * il faudrait passer au modèle "separate charges & transfers", qui remettrait
  * BirthReminder dans le flux d'argent. L'ancien organisateur reste donc seul
  * responsable des sommes reçues : il rembourse, ou il reverse de la main à la
@@ -41,7 +41,7 @@ async function poolSummary(eventId) {
 }
 
 /*
- * POST /api/events/:shortId/transfer-lead — proposer l'organisation
+ * POST /api/events/:shortId/transfer-lead : proposer l'organisation
  * Body: { userId }
  */
 router.post("/:shortId/transfer-lead", isAuthenticated, async (req, res) => {
@@ -62,7 +62,7 @@ router.post("/:shortId/transfer-lead", isAuthenticated, async (req, res) => {
 
     // Cible obligatoirement un participant AYANT ACCEPTÉ : proposer
     // l'organisation à quelqu'un qui n'a pas confirmé sa venue, ou qui a
-    // décliné, n'a pas de sens — et à un invité externe sans compte,
+    // décliné, n'a pas de sens : et à un invité externe sans compte,
     // techniquement impossible (il n'a pas de session pour accepter).
     const invitation = await EventInvitation.findOne({
       event: event._id,
@@ -121,7 +121,7 @@ router.post("/:shortId/transfer-lead", isAuthenticated, async (req, res) => {
 });
 
 /*
- * DELETE /api/events/:shortId/transfer-lead — retirer la proposition
+ * DELETE /api/events/:shortId/transfer-lead : retirer la proposition
  * Accessible à l'organisateur (il se ravise) comme au destinataire (refus).
  */
 router.delete("/:shortId/transfer-lead", isAuthenticated, async (req, res) => {
@@ -148,7 +148,7 @@ router.delete("/:shortId/transfer-lead", isAuthenticated, async (req, res) => {
 
     res.status(200).json({ pending: false });
 
-    // Un refus se signale ; un retrait par l'organisateur lui-même, non — il
+    // Un refus se signale ; un retrait par l'organisateur lui-même, non : il
     // sait ce qu'il vient de faire, et prévenir le destinataire d'une
     // proposition retirée avant qu'il l'ait vue n'apporte rien.
     if (isTarget) {
@@ -179,7 +179,7 @@ router.delete("/:shortId/transfer-lead", isAuthenticated, async (req, res) => {
 });
 
 /*
- * POST /api/events/:shortId/transfer-lead/accept — accepter l'organisation
+ * POST /api/events/:shortId/transfer-lead/accept : accepter l'organisation
  */
 router.post(
   "/:shortId/transfer-lead/accept",
@@ -295,7 +295,7 @@ router.post(
       // ── Tous les autres participants ──────────────────────────────────────
       // Le message dit explicitement ce qu'il advient de l'argent déjà versé.
       // Sans cette phrase, les contributeurs supposent que leur contribution
-      // « suit » l'événement — ce qui est faux, et ce que l'app ne peut pas
+      // « suit » l'événement : ce qui est faux, et ce que l'app ne peut pas
       // garantir : c'est un engagement entre deux personnes.
       const invitations = await EventInvitation.find({ event: event._id });
       const poolLine = (L) =>

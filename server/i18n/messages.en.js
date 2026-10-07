@@ -67,7 +67,7 @@ const EXACT = {
     "You must accept the terms of use.",
   "Un email de vérification vous a été envoyé afin de pouvoir vous connecter. Pensez à regarder dans vos spams.":
     "A verification email has been sent so you can log in. Remember to check your spam folder.",
-  "Veuillez vérifier vos emails avant de vous connecter. Un nouvel email de vérification a été envoyé — pensez à regarder dans vos spams.":
+  "Veuillez vérifier vos emails avant de vous connecter. Un nouvel email de vérification a été envoyé : pensez à regarder dans vos spams.":
     "Please verify your email before logging in. A new verification email has been sent. Remember to check your spam folder.",
   "Ce lien de vérification a expiré.": "This verification link has expired.",
   "Token de vérification invalide": "Invalid verification link",
@@ -308,7 +308,7 @@ const EXACT = {
   "Lien PayPal invalide (ex : https://paypal.me/votrepseudo).":
     "Invalid PayPal link (e.g. https://paypal.me/yourname).",
   "Indiquez le lien de votre cagnotte.": "Please enter the link to your money pool.",
-  "Le lien doit être en https :// — une page de paiement non sécurisée ne peut pas être proposée à vos invités.":
+  "Le lien doit être en https ://, une page de paiement non sécurisée ne peut pas être proposée à vos invités.":
     "The link must start with https://. An unsecured payment page cannot be offered to your guests.",
   "Ce lien pointe vers BirthReminder. Pour une cagnotte sur BirthReminder, utilisez la cagnotte intégrée de l'événement.":
     "This link points to BirthReminder. For a money pool on BirthReminder, use the event's built-in money pool.",
@@ -383,7 +383,7 @@ const PATTERNS = [
     (m) => `You cannot suggest more than ${m[1]} gift(s).`,
   ],
   [
-    /^(.+) ne supporte pas le remplissage automatique — remplis les champs manuellement$/,
+    /^(.+) ne supporte pas le remplissage automatique : remplis les champs manuellement$/,
     (m) => `${m[1]} does not support auto-fill. Please fill in the fields manually`,
   ],
   [
@@ -411,7 +411,7 @@ const PATTERNS = [
       `You have ${m[1]} collected contribution(s) not yet refunded. Refund your participants before disconnecting your account: once the link is cut, no refund will be possible from the app.`,
   ],
   [
-    /^Vous avez atteint la limite de (\d+) événements en cours\. Annulez ou supprimez-en un pour en créer un nouveau — les événements passés ne comptent pas\./,
+    /^Vous avez atteint la limite de (\d+) événements en cours\. Annulez ou supprimez-en un pour en créer un nouveau : les événements passés ne comptent pas\./,
     (m) =>
       `You have reached the limit of ${m[1]} ongoing events. Cancel or delete one to create a new one. Past events do not count. ${SUPPORT_HINT_EN}`,
   ],

@@ -42,7 +42,7 @@ export default function DateShareCard({
   const fullName = `${name}${surname ? ` ${surname}` : ""}`.trim();
 
   // Demande d'ami : la personne doit accepter. Si elle accepte, le serveur
-  // crée les cartes liées des deux côtés (createFriendDates) — d'où le fait
+  // crée les cartes liées des deux côtés (createFriendDates) : d'où le fait
   // qu'on ne crée pas de carte manuelle en parallèle ici.
   const sendFriendRequest = async () => {
     if (requesting || !linkedUserId) return;

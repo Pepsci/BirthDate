@@ -10,7 +10,7 @@
     "text": "Tu utilises BirthReminder sans compte : tes cartes restent sur ce téléphone, rien n'est envoyé. Pense à faire des sauvegardes."
   },
   "showPools": "Afficher mes cagnottes",
-  "errorRetry": "{{error}} — appuyer pour réessayer",
+  "errorRetry": "{{error}} : appuyer pour réessayer",
   "searchPlaceholder": "🔍 Rechercher un prénom ou un nom…",
   "clearSearch": "Effacer la recherche",
   "filter": {
@@ -30,7 +30,7 @@
     "family": "FAMILLE"
   },
   "agenda": {
-    "calendarNotes": "Événement BirthReminder — {{url}}",
+    "calendarNotes": "Événement BirthReminder : {{url}}",
     "title": "Agenda",
     "month": "Mois",
     "week": "Semaine",

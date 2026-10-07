@@ -1,5 +1,5 @@
 /**
- * moderation.ts — Signalement de contenu et blocage d'utilisateurs.
+ * moderation.ts : Signalement de contenu et blocage d'utilisateurs.
  * Conformité stores : Apple guideline 1.2 / Google Play UGC policy.
  * Backend : server/routes/moderation.js (/api/moderation/*)
  */

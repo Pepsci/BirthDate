@@ -40,7 +40,7 @@ const BASE_STEPS = [
     description:
       "Ajoute des amis pour voir leurs anniversaires et partager les tiens. Gère tes demandes depuis ton profil.",
     highlight:
-      "ton nom en haut à droite — c'est un bouton qui ouvre ton profil !",
+      "ton nom en haut à droite : c'est un bouton qui ouvre ton profil !",
     tip: "Quand un ami accepte ta demande, son anniversaire est ajouté automatiquement à ta liste.",
     cta: "Super !",
   },
@@ -49,9 +49,9 @@ const BASE_STEPS = [
     emoji: "🎁",
     title: "Wishlist & cadeaux",
     description:
-      "Crée ta liste de souhaits et consulte celle de tes amis. Tu peux réserver un cadeau discrètement — l'ami ne verra pas qui l'a pris !",
+      "Crée ta liste de souhaits et consulte celle de tes amis. Tu peux réserver un cadeau discrètement : l'ami ne verra pas qui l'a pris !",
     highlight: "la section Wishlist dans ton profil et celui d'un ami",
-    tip: "Une fois le cadeau acheté, marque-le comme offert — il sera conservé dans ton historique de cadeaux dans l'onglet Idées.",
+    tip: "Une fois le cadeau acheté, marque-le comme offert : il sera conservé dans ton historique de cadeaux dans l'onglet Idées.",
     cta: "Trop bien !",
   },
   {

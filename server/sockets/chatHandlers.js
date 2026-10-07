@@ -200,7 +200,7 @@ module.exports = (io, socket, connectedUsers, app) => {
    * retrouve avec quatre réactions du même utilisateur.
    *
    * ⚠️ On n'exige PAS d'être l'auteur : réagir au message d'autrui est tout
-   * l'intérêt. En revanche il faut appartenir à la conversation — sans ce
+   * l'intérêt. En revanche il faut appartenir à la conversation : sans ce
    * contrôle, n'importe qui connaissant un identifiant de message pourrait
    * réagir dessus.
    */
@@ -341,7 +341,7 @@ module.exports = (io, socket, connectedUsers, app) => {
         });
       }
       // Messages chiffrés : modifiables uniquement si le client fournit les
-      // deux copies re-chiffrées (mobile E2E) — sinon comportement historique.
+      // deux copies re-chiffrées (mobile E2E) : sinon comportement historique.
       const isEncryptedEdit =
         message.isEncrypted && encryptedForRecipient && encryptedForSender;
       if (message.isEncrypted && !isEncryptedEdit) {

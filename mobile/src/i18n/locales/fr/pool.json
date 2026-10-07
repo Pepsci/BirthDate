@@ -16,7 +16,7 @@
     "ibanError": "Impossible d'afficher le RIB.",
     "title": "💸 Autres moyens de participer",
     "externalDefault": "Cagnotte externe",
-    "externalText": "{{label}} — l'organisateur l'a ouverte sur un autre service. Ta participation s'y déroule entièrement : BirthReminder n'en a aucune trace et ne pourra ni la confirmer ni la rembourser.",
+    "externalText": "{{label}} : l'organisateur l'a ouverte sur un autre service. Ta participation s'y déroule entièrement : BirthReminder n'en a aucune trace et ne pourra ni la confirmer ni la rembourser.",
     "openPool": "🔗 Ouvrir la cagnotte",
     "externalMissing": "L'organisateur a annoncé une cagnotte externe mais n'a pas encore renseigné le lien.",
     "paypal": "💳 Payer via PayPal",
@@ -44,7 +44,7 @@
     "hideAmount": "Masquer le montant",
     "hideAmountInfo": "ℹ️ Les autres participants verront ton nom, pas le montant. L'organisateur le voit, et il compte dans le total de la cagnotte.",
     "anonymousInfo": "ℹ️ Ta participation sera masquée pour les autres participants, mais restera visible par l'organisateur. Pour rester anonyme aussi vis-à-vis de lui, utilise un pseudonyme ci-dessus.",
-    "secure": "🔒 Paiement sécurisé par Stripe — l'argent va directement à l'organisateur. BirthReminder ne détient jamais les fonds : en cas d'annulation, le remboursement relève de l'organisateur.",
+    "secure": "🔒 Paiement sécurisé par Stripe : l'argent va directement à l'organisateur. BirthReminder ne détient jamais les fonds : en cas d'annulation, le remboursement relève de l'organisateur.",
     "stripeTerms": "Conditions des services Stripe",
     "amountPlaceholder": "Montant libre (min 1 €)",
     "pay": "💳 Payer"
@@ -77,8 +77,8 @@
     "error": "Erreur lors du remboursement.",
     "title": "💸 Rembourser les contributeurs",
     "summary": {
-      "one": "{{count}} contribution — {{amount}} € seront intégralement rendus à leurs auteurs.",
-      "other": "{{count}} contributions — {{amount}} € seront intégralement rendus à leurs auteurs."
+      "one": "{{count}} contribution : {{amount}} € seront intégralement rendus à leurs auteurs.",
+      "other": "{{count}} contributions : {{amount}} € seront intégralement rendus à leurs auteurs."
     },
     "warn": "⚠️ Cette opération te coûtera {{approx}}{{fee}} € : Stripe ne rend pas les frais des paiements d'origine.",
     "estimated": {
@@ -89,12 +89,12 @@
     "all": "Rembourser tout le monde"
   },
   "stripe": {
-    "notFinished": "Onboarding pas encore terminé — reprends-le quand tu veux avec le même bouton.",
+    "notFinished": "Onboarding pas encore terminé : reprends-le quand tu veux avec le même bouton.",
     "connectError": "Erreur lors de la connexion Stripe.",
     "available": "Disponible",
     "pending": "En attente de règlement",
     "lastPayout": "Dernier virement : {{amount}} €",
-    "arrival": " — arrivée le {{date}}",
+    "arrival": ", arrivée le {{date}}",
     "noPayout": "Aucun virement pour l'instant. Stripe verse automatiquement sur ton compte bancaire selon son calendrier.",
     "dashError": "Impossible d'ouvrir ton tableau de bord Stripe.",
     "dashboard": "Voir mes virements sur Stripe",
@@ -104,7 +104,7 @@
     "disconnect": "Déconnecter",
     "disconnectError": "Impossible de déconnecter ton compte.",
     "disconnectBtn": "Déconnecter mon compte de paiement",
-    "needAccount": "⚠️ Pour encaisser la cagnotte, tu dois créer un compte Stripe (une seule fois, environ 5 minutes — identité et RIB demandés par Stripe). C'est ton compte : tu y gères tes virements, et BirthReminder ne détient jamais l'argent.",
+    "needAccount": "⚠️ Pour encaisser la cagnotte, tu dois créer un compte Stripe (une seule fois, environ 5 minutes : identité et RIB demandés par Stripe). C'est ton compte : tu y gères tes virements, et BirthReminder ne détient jamais l'argent.",
     "connect": "🔗 Connecter mon compte Stripe"
   },
   "config": {
@@ -123,7 +123,7 @@
     "goalLabel": "Objectif (€)",
     "goalPlaceholder": "ex : 150",
     "deadline": "Date limite (optionnel)",
-    "noDeadline": "Aucune — appuyer pour choisir",
+    "noDeadline": "Aucune : appuyer pour choisir",
     "clearDeadline": "Retirer la date limite",
     "directHint": "Propose ton IBAN et/ou ton lien PayPal : les invités t'envoient l'argent directement, sans activer de cagnotte.",
     "offerIban": "Proposer un IBAN",
@@ -150,11 +150,11 @@
       "amount": "Montant : {{amount}}"
     },
     "report": {
-      "mine": "— Ma contribution —",
-      "what": "— Ce qui se passe —",
-      "contacted": "— Ai-je déjà contacté l'organisateur ? —",
+      "mine": "Ma contribution :",
+      "what": "Ce qui se passe :",
+      "contacted": "Ai-je déjà contacté l'organisateur ?",
       "contactedHint": "(oui, le … / pas encore)",
-      "subjectFor": "Problème de cagnotte — {{title}}",
+      "subjectFor": "Problème de cagnotte : {{title}}",
       "subject": "Problème avec une cagnotte"
     },
     "title": "Mes contributions",
@@ -171,7 +171,7 @@
     "note1a": "Les contributions sont encaissées",
     "note1b": "directement par l'organisateur",
     "note1c": "de chaque événement. BirthReminder ne détient jamais les fonds et ne peut donc pas rembourser à sa place.",
-    "note2": "Si un événement est annulé ou si le cadeau n'est pas acheté, contacte l'organisateur : le bouton « copier » prépare un message tout fait avec le montant, la date et la référence. Sans réponse de sa part, écris-nous en joignant ce récapitulatif — nous ne pouvons pas trancher un désaccord, mais la référence nous permet de retrouver le paiement et de confirmer qu'il a bien eu lieu.",
+    "note2": "Si un événement est annulé ou si le cadeau n'est pas acheté, contacte l'organisateur : le bouton « copier » prépare un message tout fait avec le montant, la date et la référence. Sans réponse de sa part, écris-nous en joignant ce récapitulatif : nous ne pouvons pas trancher un désaccord, mais la référence nous permet de retrouver le paiement et de confirmer qu'il a bien eu lieu.",
     "total": {
       "one": "{{count}} contribution · {{amount}} versés",
       "other": "{{count}} contributions · {{amount}} versés"

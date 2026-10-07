@@ -1,4 +1,4 @@
-/* Historique des contributions — écran de preuve, pas de décoration.
+/* Historique des contributions : écran de preuve, pas de décoration.
    La lisibilité de la référence de paiement prime sur l'esthétique : c'est
    l'élément que l'utilisateur va recopier dans un message. */
 
@@ -169,7 +169,7 @@
 }
 
 /* Signalement par contribution : discret, mais présent là où l'utilisateur a
-   les informations sous les yeux. Masqué sur une contribution remboursée —
+   les informations sous les yeux. Masqué sur une contribution remboursée :
    il n'y a plus de litige possible. */
 .mycontrib-report {
   display: block;

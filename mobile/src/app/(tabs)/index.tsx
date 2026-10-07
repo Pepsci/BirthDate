@@ -46,7 +46,7 @@ export default function BirthdaysScreen() {
   const { mode } = useAuth();
   // Nombre de colonnes selon la largeur : 2 sur téléphone, 3 puis 4 sur iPad
   // ou pliable déplié. Seuils choisis pour garder une carte d'environ 200 à
-  // 280 pt — en dessous, le nom et la date passent à la ligne.
+  // 280 pt : en dessous, le nom et la date passent à la ligne.
   const { width: windowWidth } = useWindowDimensions();
   const columns = windowWidth >= 1100 ? 4 : windowWidth >= 820 ? 3 : 2;
   const wide = columns > 2;
@@ -97,7 +97,7 @@ export default function BirthdaysScreen() {
   // cartes provisoires par la version du serveur.
   useEffect(() => onQueueFlushed(() => load()), [load]);
 
-  // Tour guidé de première utilisation (agenda → ＋) — ne se lance qu'une fois
+  // Tour guidé de première utilisation (agenda → ＋) : ne se lance qu'une fois
   useEffect(() => {
     startTour(TOURS.birthdays);
   }, [startTour]);

@@ -37,7 +37,7 @@ const eventMessageSchema = new Schema(
      *
      * ⚠️ Les réactions ne sont PAS chiffrées, contrairement au contenu.
      * Compromis assumé : le serveur sait donc qu'un utilisateur a posé un cœur
-     * sur un message donné. Pris isolément, l'emoji ne révèle presque rien —
+     * sur un message donné. Pris isolément, l'emoji ne révèle presque rien :
      * il n'a de sens que rapporté à un texte que nous ne pouvons pas lire. Les
      * chiffrer imposerait de re-chiffrer pour chaque destinataire à chaque
      * réaction, pour un gain de confidentialité marginal.

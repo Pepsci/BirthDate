@@ -21,7 +21,7 @@ import { formPane } from "../lib/layout";
  *
  * Absentes de cette liste, délibérément : l'annulation et le changement de
  * date. Ce sont les deux seules dont l'utilité est de rattraper quelqu'un qui
- * ne regarde pas l'application — les couper, c'est se déplacer pour rien.
+ * ne regarde pas l'application : les couper, c'est se déplacer pour rien.
  */
 interface Prefs {
   role: "organizer" | "participant";

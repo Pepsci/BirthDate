@@ -104,7 +104,7 @@ const supportLimiter = rateLimit({
 });
 
 // Formulaire public : sans compte à protéger, seule l'IP + l'email fourni
-// permettent de limiter — endpoint ouvert, cible privilégiée des bots qui
+// permettent de limiter : endpoint ouvert, cible privilégiée des bots qui
 // testent les formulaires de contact avec du contenu aléatoire.
 const supportPublicLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
@@ -130,7 +130,7 @@ const supportPublicLimiterByIp = rateLimit({
 });
 
 // Limiteur pour les réponses d'un utilisateur connecté dans un fil déjà
-// ouvert — plus permissif qu'un nouveau ticket, c'est une conversation.
+// ouvert : plus permissif qu'un nouveau ticket, c'est une conversation.
 const supportReplyLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
   max: 30,
@@ -209,7 +209,7 @@ router.post("/", isAuthenticated, supportLimiter, async (req, res) => {
     //
     // Le plafond devient : un ticket ouvert PAR CAGNOTTE concernée. Leur
     // nombre est donc borné par celui des cagnottes auxquelles la personne a
-    // réellement contribué — vérifié ci-dessous, pas déclaré par le client.
+    // réellement contribué : vérifié ci-dessous, pas déclaré par le client.
     //
     // ⚠️ C'est la CATÉGORIE qui décide de l'exemption, pas la présence d'un
     // identifiant d'événement. La première version liait les deux, et ça
@@ -219,8 +219,8 @@ router.post("/", isAuthenticated, supportLimiter, async (req, res) => {
     // cours sur un tout autre sujet. Quelqu'un qui n'a pas été remboursé se
     // retrouvait sans aucun moyen de le signaler.
     //
-    // L'événement reste une métadonnée précieuse quand on l'a — lien direct
-    // côté admin, plafond par cagnotte — mais son absence ne doit jamais
+    // L'événement reste une métadonnée précieuse quand on l'a : lien direct
+    // côté admin, plafond par cagnotte : mais son absence ne doit jamais
     // empêcher un signalement.
     const wantsPool = askedCategory === "pool" || Boolean(eventShortId);
     let category = wantsPool ? "pool" : "general";
@@ -267,8 +267,8 @@ router.post("/", isAuthenticated, supportLimiter, async (req, res) => {
       relatedEvent = event._id;
     } else if (wantsPool) {
       // Litige de cagnotte sans événement identifiable : contribution faite
-      // sans compte, ou événement supprimé depuis. On l'accepte — c'est
-      // précisément la situation la plus difficile pour l'utilisateur — mais
+      // sans compte, ou événement supprimé depuis. On l'accepte : c'est
+      // précisément la situation la plus difficile pour l'utilisateur : mais
       // on plafonne à un seul fil ouvert de ce type, faute de cagnotte sur
       // laquelle s'appuyer pour compter.
       const orphan = await SupportMessage.findOne({

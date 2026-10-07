@@ -27,7 +27,7 @@ export interface UserProfile extends AuthUser {
   pushEnabled?: boolean;
   pushEvents?: {
     birthdays?: boolean;
-    /** Fêtes (namedays) — catégorie distincte des anniversaires. */
+    /** Fêtes (namedays) : catégorie distincte des anniversaires. */
     namedays?: boolean;
     /** Activité des listes de cadeaux communes. */
     sharedLists?: boolean;
@@ -90,7 +90,7 @@ export async function setChatEmailForFriend(
 }
 
 /**
- * PATCH /users/me (JSON) — renvoie { payload, authToken } :
+ * PATCH /users/me (JSON), renvoie { payload, authToken } :
  * le back re-signe un token avec les nouvelles infos, on le re-stocke.
  */
 export async function updateMe(

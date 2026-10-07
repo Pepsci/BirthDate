@@ -1,6 +1,6 @@
 /* css/countdown.css */
 
-/* Variables de couleurs — SCOPÉES au composant countdown.
+/* Variables de couleurs : SCOPÉES au composant countdown.
    NE PAS remettre sur :root : cela écraserait le --primary global de l'app
    (variables.css) et désynchroniserait les couleurs partout ailleurs. */
 .birthCardCountdown {

@@ -5,7 +5,7 @@
 const Event = require("../models/event.model");
 const GiftPoolContribution = require("../models/giftPoolContribution.model");
 
-// Seuils "prudents" — surchargeables via variables d'env (montants en centimes)
+// Seuils "prudents" : surchargeables via variables d'env (montants en centimes)
 const THRESHOLDS = {
   bigContribution: parseInt(process.env.FRAUD_BIG_CONTRIBUTION) || 25000, // 250 €
   bigTotal: parseInt(process.env.FRAUD_BIG_TOTAL) || 200000, // 2 000 €

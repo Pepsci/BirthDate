@@ -100,7 +100,7 @@ async function main() {
   let apiHits = 0;
   let apiMisses = 0;
 
-  process.stderr.write('🚀 Démarrage — récupération API abalin.net (fr)...\n');
+  process.stderr.write('🚀 Démarrage : récupération API abalin.net (fr)...\n');
 
   for (let month = 1; month <= 12; month++) {
     for (let day = 1; day <= daysInMonth[month]; day++) {
@@ -123,7 +123,7 @@ async function main() {
 
   const byName = buildIndex(merged);
 
-  process.stderr.write(`\n✅ Terminé — ${apiHits} jours enrichis via API, ${apiMisses} sans données API\n`);
+  process.stderr.write(`\n✅ Terminé : ${apiHits} jours enrichis via API, ${apiMisses} sans données API\n`);
   process.stderr.write(`👤 ${Object.keys(byName).length} prénoms dans l'index\n\n`);
 
   // ─── Vérifications rapides ───
@@ -134,7 +134,7 @@ async function main() {
   }
   process.stderr.write('\n');
 
-  // ─── OUTPUT JSON (stdout uniquement — copier-coller) ───
+  // ─── OUTPUT JSON (stdout uniquement : copier-coller) ───
   process.stderr.write('═══════════════════════════════════════════════════\n');
   process.stderr.write('📋 COPIE DES FICHIERS JSON (stdout ci-dessous)\n');
   process.stderr.write('  namedays-fr-by-date.json :\n');

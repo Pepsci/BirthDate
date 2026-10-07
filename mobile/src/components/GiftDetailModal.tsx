@@ -25,7 +25,7 @@ import {
 import { useThemedStyles, ThemeColors } from "../lib/theme-context";
 
 /**
- * Modal détail d'un cadeau — bottom sheet (façon web affichage mobile).
+ * Modal détail d'un cadeau : bottom sheet (façon web affichage mobile).
  * Gros boutons de statut (À acheter / Acheté / Acheté & à offrir) + Modifier / Supprimer.
  */
 export default function GiftDetailModal({
@@ -191,7 +191,7 @@ export default function GiftDetailModal({
 
             {/* Visibilité pour les invités. Posée au-dessus de Modifier /
                 Supprimer parce qu'elle ne change pas l'idée, seulement qui
-                la voit — et parce que se tromper ici expose quelque chose
+                la voit : et parce que se tromper ici expose quelque chose
                 qu'on voulait garder entre gestionnaires. */}
             {onToggleHidden && (
               <Pressable

@@ -21,7 +21,7 @@ import {
   ThemeColors,
 } from "../lib/theme-context";
 
-/** Bleu de marque PayPal — hors thème, comme le violet Stripe. */
+/** Bleu de marque PayPal : hors thème, comme le violet Stripe. */
 const PAYPAL_BLUE = "#0070ba";
 
 /**
@@ -75,7 +75,7 @@ export default function DirectTransferViewer({
 
   /* Afficher le domaine réel sous le bouton : le libellé est choisi par
      l'organisateur et ne prouve rien, le domaine permet de reconnaître un
-     service légitime — ou de repérer une adresse douteuse avant de cliquer. */
+     service légitime : ou de repérer une adresse douteuse avant de cliquer. */
   const hostOf = (url: string) => {
     try {
       return new URL(url).hostname.replace(/^www\./, "");

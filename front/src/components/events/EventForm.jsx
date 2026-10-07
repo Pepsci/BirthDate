@@ -671,7 +671,7 @@ const EventForm = ({
                       </select>
                     </div>
 
-                    {/* Limite de propositions — mode proposals uniquement */}
+                    {/* Limite de propositions : mode proposals uniquement */}
                     {formData.giftMode === "proposals" && (
                       <div
                         className="event-form-group"

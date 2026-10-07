@@ -8,7 +8,7 @@ import "./css/reactions.css";
  * d'apprendre le dessin. Un ordre « intelligent » (par fréquence) ferait rater
  * la cible à chaque fois.
  *
- * `mine` entoure celle qu'on a déjà posée — recliquer dessus la retire, ce que
+ * `mine` entoure celle qu'on a déjà posée : recliquer dessus la retire, ce que
  * le serveur gère déjà en bascule.
  */
 export default function ReactionPicker({ mine, onPick }) {

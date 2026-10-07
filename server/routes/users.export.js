@@ -15,7 +15,7 @@ const Log = require("../models/log.model");
 const { isAuthenticated } = require("../middleware/jwt.middleware");
 
 /**
- * GET /api/users/me/export — droit d'accès et portabilité (RGPD art. 15 & 20).
+ * GET /api/users/me/export : droit d'accès et portabilité (RGPD art. 15 & 20).
  *
  * Deux partis pris :
  *
@@ -78,7 +78,7 @@ router.get("/me/export", isAuthenticated, exportLimiter, async (req, res) => {
     ]);
 
     // Regroupe les messages par conversation et n'expose à l'utilisateur que
-    // SA copie chiffrée — celle du correspondant ne le concerne pas.
+    // SA copie chiffrée : celle du correspondant ne le concerne pas.
     const byConversation = new Map();
     for (const m of messages) {
       const list = byConversation.get(String(m.conversation)) || [];
@@ -117,7 +117,7 @@ router.get("/me/export", isAuthenticated, exportLimiter, async (req, res) => {
         createdAt: conv.createdAt,
         lastMessageAt: conv.lastMessageAt,
         // Conversation retirée de votre liste à cette date : les messages
-        // antérieurs ne vous sont plus affichés, mais ils existent toujours —
+        // antérieurs ne vous sont plus affichés, mais ils existent toujours :
         // votre correspondant en garde une copie.
         hiddenFromYouSince: clear ? clear.at : null,
         messages: byConversation.get(String(conv._id)) || [],

@@ -74,8 +74,8 @@ const ON_PRIMARY_TICK_READ = "#86efac";
  * - `app/chat/[friendId].tsx` : écran plein, titre et actions dans l'en-tête
  *   de la pile ;
  * - `app/date/[id].tsx` en grand écran (`embedded`) : panneau de droite de la
- *   carte. L'en-tête de la pile appartient alors à la CARTE — y écrire le
- *   titre du chat l'écraserait — donc titre et actions passent dans une barre
+ *   carte. L'en-tête de la pile appartient alors à la CARTE : y écrire le
+ *   titre du chat l'écraserait : donc titre et actions passent dans une barre
  *   interne au panneau.
  */
 export default function DMChat({
@@ -112,7 +112,7 @@ export default function DMChat({
   }, []);
   const { refresh: refreshUnread, refreshNotifs } = useUnread();
   // Marquer la conversation lue met aussi à jour, côté serveur, la
-  // notification "nouveau message" liée (centre de notifs) — il faut donc
+  // notification "nouveau message" liée (centre de notifs) : il faut donc
   // rafraîchir les deux compteurs pour que le badge de l'icône de l'app
   // (total messages + notifCount) redescende immédiatement.
   const markReadAndRefresh = useCallback(
@@ -187,7 +187,7 @@ export default function DMChat({
         myPublicKeyRef.current = myKey;
 
         // Clé absente ? Elle peut être brièvement indisponible (retour de
-        // veille, migration Keychain App Group) — on retente avant de
+        // veille, migration Keychain App Group) : on retente avant de
         // laisser les messages affichés « chiffrés ».
         if (!privKey) {
           let attempts = 0;
@@ -276,7 +276,7 @@ export default function DMChat({
       const onConnectError = (err: Error) =>
         setError(t("chat:errors.realtime", { message: err.message }));
 
-      // Ré-enregistrement à chaque (re)connexion — pattern anti-stale-closure
+      // Ré-enregistrement à chaque (re)connexion : pattern anti-stale-closure
       const register = () => {
         socket.emit("conversation:join", { conversationId: convId });
       };
@@ -566,7 +566,7 @@ export default function DMChat({
             // pas de taille fixe. Sa boîte suivait donc les métriques du glyphe
             // (chasse à gauche/droite, jambage descendant réservé sous la ligne
             // de base), et iOS dessinait SON fond autour de cette boîte
-            // biscornue — d'où un bouton visiblement plus gros et plus décalé
+            // biscornue : d'où un bouton visiblement plus gros et plus décalé
             // que les autres. Il utilise maintenant le même composant que les
             // autres actions d'en-tête.
             <View style={{ flexDirection: "row", gap: 8 }}>
@@ -625,7 +625,7 @@ export default function DMChat({
       // la réintroduire ici la comptait deux fois.
       //
       // Exception : en panneau (`embedded`), la vue ne démarre pas en haut de
-      // la fenêtre — voir embeddedTop plus haut.
+      // la fenêtre : voir embeddedTop plus haut.
       keyboardVerticalOffset={embedded ? embeddedTop : 0}
     >
       {embedded ? (

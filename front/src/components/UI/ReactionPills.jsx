@@ -2,14 +2,14 @@ import ReactionIcon, { REACTION_LABELS } from "./ReactionIcon";
 import "./css/reactions.css";
 
 /**
- * Pastilles de réactions affichées sous une bulle — pendant web de
+ * Pastilles de réactions affichées sous une bulle : pendant web de
  * mobile/src/components/ReactionPills.tsx.
  *
  * ⚠️ Regroupées par type avec un compteur, jamais une pastille par personne :
  * sur un message d'événement à douze participants, l'affichage individuel
  * déborderait de la colonne et noierait le message lui-même.
  *
- * Le compteur n'apparaît qu'à partir de deux — « ❤️ 1 » est du bruit, la
+ * Le compteur n'apparaît qu'à partir de deux : « ❤️ 1 » est du bruit, la
  * présence de la pastille dit déjà « une personne ».
  *
  * Cliquer une pastille bascule sa propre réaction : c'est le raccourci qu'on

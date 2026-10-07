@@ -6,7 +6,7 @@ import { localFetchDates } from "./local-dates";
 import { onLocalChange, readLocal } from "./local-store";
 
 /**
- * Rappels du mode local — docs/MODE_LOCAL.md § 5.4.
+ * Rappels du mode local : docs/MODE_LOCAL.md § 5.4.
  *
  * En mode compte, le serveur envoie des push : anniversaires à minuit, fêtes
  * à 9h (jobs/sendReminders.js). Sans compte, pas de serveur : le téléphone
@@ -357,7 +357,7 @@ export function startLocalReminders(): void {
 
 /**
  * Sortie du mode local (connexion à un compte, effacement) : plus aucun
- * rappel local — le serveur prend le relais en mode compte.
+ * rappel local : le serveur prend le relais en mode compte.
  * Appelé aussi en mode compte au démarrage, pour nettoyer d'éventuels
  * restes d'une session locale précédente.
  */

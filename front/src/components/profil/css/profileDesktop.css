@@ -192,7 +192,7 @@
 }
 
 /* ========================================
-   E2E SETTINGS — section Confidentialité
+   E2E SETTINGS : section Confidentialité
    ======================================== */
 
 .e2e-section {
@@ -420,12 +420,12 @@
   margin: 0;
 }
 
-/* Variante bouton — couleur primaire explicite */
+/* Variante bouton : couleur primaire explicite */
 .e2e-btn-primary {
   background: var(--primary) !important;
 }
 
-/* Variante bouton — rouge danger */
+/* Variante bouton : rouge danger */
 .e2e-btn-danger {
   background: var(--danger) !important;
 }
@@ -445,7 +445,7 @@
   padding: 8px 12px;
 }
 
-/* Responsive mobile — grille 3 colonnes sur petit écran */
+/* Responsive mobile : grille 3 colonnes sur petit écran */
 @media (max-width: 480px) {
   .e2e-seed-grid {
     grid-template-columns: repeat(3, 1fr);

@@ -43,7 +43,7 @@ const WishlistPublicSettings = ({
       {/* ── Contenu déplié ── */}
       {isOpen && (
         <div className="wps-body">
-          {/* Ligne 1 — Partage public */}
+          {/* Ligne 1 : Partage public */}
           <div className="wps-row">
             <div className="wps-row-left">
               <span className="wps-icon">🔗</span>
@@ -81,7 +81,7 @@ const WishlistPublicSettings = ({
 
           <div className="wps-divider" />
 
-          {/* Ligne 2 — Code de réservation */}
+          {/* Ligne 2 : Code de réservation */}
           <div
             className={`wps-row ${!settings.isPublic ? "wps-row--disabled" : ""}`}
           >
@@ -143,7 +143,7 @@ const WishlistPublicSettings = ({
             </div>
           </div>
 
-          {/* Notice RGPD — uniquement avant première activation */}
+          {/* Notice RGPD : uniquement avant première activation */}
           {!settings.isPublic && !settings.publicSlug && (
             <p className="wps-notice">
               ⚠️ En activant cette option, ta liste de cadeaux partagés sera

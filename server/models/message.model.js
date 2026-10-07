@@ -16,7 +16,7 @@ const messageSchema = new mongoose.Schema(
     // "text" (défaut) | "gift_share" | "date_share"
     // date_share : partage d'une carte anniversaire (nom, date, fête) que le
     // destinataire peut ajouter à ses propres dates. Les idées cadeaux ne sont
-    // JAMAIS incluses — c'est ce qui le distingue de gift_share.
+    // JAMAIS incluses : c'est ce qui le distingue de gift_share.
     type: {
       type: String,
       enum: ["text", "gift_share", "date_share"],
@@ -29,7 +29,7 @@ const messageSchema = new mongoose.Schema(
       maxlength: 50000,
     },
     // Payload structuré pour les messages non-texte (gift_share, etc.)
-    // Pas chiffré intentionnellement — ce sont des métadonnées de coordination
+    // Pas chiffré intentionnellement : ce sont des métadonnées de coordination
     metadata: {
       type: mongoose.Schema.Types.Mixed,
       default: null,
@@ -44,7 +44,7 @@ const messageSchema = new mongoose.Schema(
      * Le destinataire garde sa copie des messages (voir `clears` sur
      * Conversation), mais le déchiffrement NaCl exige la clé publique de
      * l'émetteur. Sans cette recopie, la suppression d'un compte rendrait
-     * illisibles des messages qu'on s'était engagé à conserver — y compris
+     * illisibles des messages qu'on s'était engagé à conserver : y compris
      * ceux qui servent de preuve après un signalement.
      *
      * Ne contient rien de personnel : un libellé générique et une clé publique.
@@ -95,7 +95,7 @@ const messageSchema = new mongoose.Schema(
         },
       },
     ],
-    // Réponse à un autre message — la citation est résolue côté client
+    // Réponse à un autre message : la citation est résolue côté client
     // (compatible E2E : le serveur ne connaît jamais le texte cité)
     replyTo: {
       type: mongoose.Schema.Types.ObjectId,
@@ -110,7 +110,7 @@ const messageSchema = new mongoose.Schema(
      *
      * ⚠️ Les réactions ne sont PAS chiffrées, contrairement au contenu.
      * Compromis assumé : le serveur sait donc qu'un utilisateur a posé un cœur
-     * sur un message donné. Pris isolément, l'emoji ne révèle presque rien —
+     * sur un message donné. Pris isolément, l'emoji ne révèle presque rien :
      * il n'a de sens que rapporté à un texte que nous ne pouvons pas lire. Les
      * chiffrer imposerait de re-chiffrer pour chaque destinataire à chaque
      * réaction, pour un gain de confidentialité marginal.

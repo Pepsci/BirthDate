@@ -5,7 +5,7 @@
  * Partagée par le helper (lecture) et le script de build (écriture),
  * pour que les clés générées et les clés cherchées soient identiques.
  *
- * ⚠️ Copie conforme dans mobile/src/lib/nameday.ts — garder les deux alignées.
+ * ⚠️ Copie conforme dans mobile/src/lib/nameday.ts : garder les deux alignées.
  */
 
 /**
@@ -36,7 +36,7 @@ function nameKeys(name) {
  *
  *   1. le prénom entier            "jean-marc"   (s'il a sa ligne, il gagne)
  *   2. composés en « Jean- » :     "luc"         (Jean-Luc → saint Luc, 18/10)
- *      le deuxième prénom — Jean est partout, l'usage fête plutôt l'autre
+ *      le deuxième prénom : Jean est partout, l'usage fête plutôt l'autre
  *   3. le premier prénom           "gabriel"     (Gabriel-Henri → 29/09)
  *
  * La comparaison se fait ensuite à l'identique (pas de includes / startsWith).

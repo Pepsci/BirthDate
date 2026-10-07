@@ -68,7 +68,7 @@ router.get("/", async (req, res) => {
 });
 
 /*
- * GET /api/admin/users/:id — détail + compteurs associés
+ * GET /api/admin/users/:id : détail + compteurs associés
  */
 router.get("/:id", async (req, res) => {
   try {
@@ -129,7 +129,7 @@ router.get("/:id", async (req, res) => {
 });
 
 /*
- * PATCH /api/admin/users/:id/event-quota — { daily, active }
+ * PATCH /api/admin/users/:id/event-quota : { daily, active }
  * Chaque valeur : entier de 0 à 500, ou null pour revenir à la valeur par
  * défaut (services/quotas.js). Tracé dans les logs (event_quota_edit).
  */
@@ -177,7 +177,7 @@ router.patch("/:id/event-quota", async (req, res) => {
 });
 
 /*
- * PATCH /api/admin/users/:id/role — { role: "user" | "admin" }
+ * PATCH /api/admin/users/:id/role : { role: "user" | "admin" }
  * Un admin ne peut pas se rétrograder lui-même (évite de se verrouiller dehors).
  */
 router.patch("/:id/role", async (req, res) => {
@@ -203,7 +203,7 @@ router.patch("/:id/role", async (req, res) => {
 });
 
 /*
- * DELETE /api/admin/users/:id — suppression douce (deletedAt).
+ * DELETE /api/admin/users/:id : suppression douce (deletedAt).
  * Le cron purgeDeletedAccounts fera le ménage définitif.
  */
 router.delete("/:id", async (req, res) => {
@@ -230,7 +230,7 @@ router.delete("/:id", async (req, res) => {
 });
 
 /*
- * PATCH /api/admin/users/:id/restore — annule la suppression douce
+ * PATCH /api/admin/users/:id/restore : annule la suppression douce
  */
 router.patch("/:id/restore", async (req, res) => {
   try {
@@ -249,7 +249,7 @@ router.patch("/:id/restore", async (req, res) => {
 });
 
 /*
- * POST /api/admin/users/:id/pool-block — { reason }
+ * POST /api/admin/users/:id/pool-block : { reason }
  *
  * Bloque l'accès aux cagnottes d'un utilisateur (typiquement : mineur signalé
  * qui a modifié sa date de naissance). En une fois :

@@ -8,7 +8,7 @@
  * compte, puis figée dans `nameday`. Changer le calendrier ne touche donc pas
  * les cartes existantes tant qu'on ne les recalcule pas.
  *
- * Règle de sécurité — on ne touche JAMAIS une fête choisie à la main :
+ * Règle de sécurité, on ne touche JAMAIS une fête choisie à la main :
  *   - namedaySource = "manual"           → on laisse
  *   - namedaySource = "auto"             → on recalcule
  *   - pas encore de namedaySource (documents d'avant ce champ), on devine UNE fois :
@@ -80,7 +80,7 @@ async function run() {
   await mongoose.connect(process.env.MONGO_URI);
   // Calendrier de la base (celui de l'admin), pas le JSON du repo
   await initNamedays();
-  console.log(`✅ Connecté — mode ${APPLY ? "ÉCRITURE" : "SIMULATION (--apply pour écrire)"}\n`);
+  console.log(`✅ Connecté : mode ${APPLY ? "ÉCRITURE" : "SIMULATION (--apply pour écrire)"}\n`);
 
   const stats = { updated: 0, cleared: 0, manual: 0, trimmed: 0 };
   const manual = [];
@@ -152,7 +152,7 @@ async function run() {
   }
 
   console.log(
-    `\n📊 ${dates.length} cartes, ${users.length} comptes — ` +
+    `\n📊 ${dates.length} cartes, ${users.length} comptes : ` +
       `${stats.updated} fête(s) corrigée(s), ${stats.cleared} retirée(s), ` +
       `${stats.manual} manuelle(s) conservée(s), ${stats.trimmed} prénom(s) nettoyé(s).`,
   );

@@ -12,7 +12,7 @@ const SUPPORT_STATUS_LABEL = { open: "Ouvert", answered: "Répondu", closed: "Fe
 
 // Item de la liste des tickets support, avec un badge de statut coloré
 // (vert = en cours, rouge = fermé) pour distinguer les fils actifs des
-// résolus d'un coup d'œil — même code couleur que l'en-tête du fil
+// résolus d'un coup d'œil : même code couleur que l'en-tête du fil
 // (SupportThread.jsx).
 function SupportTicketItem({ ticket, selected, onSelect, formatLastMessageTime }) {
   return (
@@ -63,8 +63,8 @@ function ConversationList({
    * c'est ici qu'on vient lire ses messages.
    *
    * Onglet à part, et non fusion avec les conversations privées : ce ne sont
-   * pas les mêmes objets — l'une se supprime, l'autre appartient à un
-   * événement — et les mêler rendrait le bouton de suppression ambigu.
+   * pas les mêmes objets : l'une se supprime, l'autre appartient à un
+   * événement : et les mêler rendrait le bouton de suppression ambigu.
    */
   const [eventChats, setEventChats] = useState([]);
   const navigate = useNavigate();
@@ -259,7 +259,7 @@ function ConversationList({
     (n, t) => n + (t.unreadUser ? 1 : 0),
     0,
   );
-  // Fils en cours d'abord, résolus ensuite — avec un espace entre les deux
+  // Fils en cours d'abord, résolus ensuite : avec un espace entre les deux
   // groupes (voir le rendu de l'onglet Support ci-dessous).
   const openTickets = tickets.filter((t) => t.status !== "closed");
   const closedTickets = tickets.filter((t) => t.status === "closed");
@@ -350,7 +350,7 @@ function ConversationList({
 
       {/* Amis toujours là ; Événements seulement s'il y a quelque chose
           derrière (sinon ça n'ajoute qu'une décision à prendre) ; Support
-          toujours là aussi — c'est une conversation avec l'équipe comme une
+          toujours là aussi : c'est une conversation avec l'équipe comme une
           autre, on ne veut pas que l'utilisateur ait à deviner où la
           retrouver. */}
       <div className="cl-tabs">

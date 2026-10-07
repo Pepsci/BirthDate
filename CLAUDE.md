@@ -776,6 +776,11 @@ emails, messages d'erreur). Le site web (`front/`) reste en français.
 - En local (`localhost`), aucun pays n'est détecté côté site : c'est donc 16.
 - Cagnotte : 18 ans partout, inchangé (`utils/age.js`).
 
+### Ponctuation des textes
+Pas de tiret long (—) dans les textes affichés, en français comme en anglais :
+deux-points, virgule ou point à la place. Seule exception : le tiret seul qui
+marque une valeur vide dans un tableau (`"—"`).
+
 ### Ajouter une langue
 1. Mobile : dossier `locales/<code>/`, l'ajouter à `SUPPORTED_LANGUAGES`
    (`src/i18n/index.ts`) et au sélecteur du profil.

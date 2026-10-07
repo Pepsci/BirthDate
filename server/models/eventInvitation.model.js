@@ -42,7 +42,7 @@ const eventInvitationSchema = new Schema(
      *
      * ⚠️ Le champ existait déjà dans une route (PUT .../notifications) mais
      * pas dans ce schéma : Mongoose le supprimait en silence, et la route ne
-     * faisait donc rien. Elle était de surcroît réservée à l'organisateur —
+     * faisait donc rien. Elle était de surcroît réservée à l'organisateur :
      * un invité ne pouvait pas régler ses propres notifications.
      *
      * Ne couvre QUE ce qu'un participant reçoit réellement. Les réponses aux

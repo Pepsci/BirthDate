@@ -12,7 +12,7 @@ router.options("/", (req, res) => {
 // POST /api/verify-email
 // Le token reçu est en clair ; la base ne stocke que son hash SHA-256, valable 24 h.
 // Transition : les comptes créés avant ce changement ont un token en clair et
-// pas de verificationTokenExpires — on les accepte une dernière fois.
+// pas de verificationTokenExpires : on les accepte une dernière fois.
 router.post("/", async (req, res) => {
   const { token } = req.body;
 

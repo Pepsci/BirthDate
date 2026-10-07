@@ -30,7 +30,7 @@ interface Suggestion {
 /**
  * Autocomplete de lieux via Photon (photon.komoot.io, données OpenStreetMap).
  * Gratuit, sans clé, et gère les POI ("Jardin du Luxembourg") comme les
- * adresses — équivalent mobile du Google Places du web.
+ * adresses : équivalent mobile du Google Places du web.
  * La saisie libre reste possible (lieu sans adresse précise : "Chez moi"…).
  */
 export default function AddressAutocomplete({

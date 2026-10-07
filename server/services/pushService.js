@@ -25,7 +25,7 @@ async function localizePayload(userId, payload) {
 /**
  * Nombre total d'éléments non lus pour un utilisateur (messages chat +
  * notifications in-app). Utilisé pour poser le badge sur l'icône de l'app
- * mobile (champ `badge` du payload Expo Push — pris en compte par iOS/Android
+ * mobile (champ `badge` du payload Expo Push : pris en compte par iOS/Android
  * même quand l'app est fermée, contrairement à `shouldSetBadge` côté client
  * qui ne s'applique qu'à l'app au premier plan).
  */
@@ -58,7 +58,7 @@ async function getBadgeCountForUser(userId) {
   }
 }
 
-// 👇 Lazy init — évite le crash au require si VAPID pas encore chargé
+// 👇 Lazy init : évite le crash au require si VAPID pas encore chargé
 let vapidInitialized = false;
 
 function initVapid() {
@@ -68,7 +68,7 @@ function initVapid() {
     !process.env.VAPID_PUBLIC_KEY ||
     !process.env.VAPID_PRIVATE_KEY
   ) {
-    console.warn("⚠️ VAPID non configuré — push notifications désactivées");
+    console.warn("⚠️ VAPID non configuré : push notifications désactivées");
     return false;
   }
   webpush.setVapidDetails(
@@ -86,7 +86,7 @@ function initVapid() {
  * La vérification est faite ICI et nulle part ailleurs : les messages privés
  * appellent `sendPushToUser` directement, les messages d'événement passent
  * par `notify()` qui appelle ensuite `sendPushToUser`. C'est le seul point
- * que les deux traversent — le test posé plus haut aurait été à répéter à
+ * que les deux traversent : le test posé plus haut aurait été à répéter à
  * chaque appel, donc à oublier au prochain.
  *
  * La comparaison de date reste nécessaire malgré l'index TTL : Mongo passe
@@ -117,7 +117,7 @@ async function isMutedFor(userId, muteScope) {
  * @param {ObjectId} userId
  * @param {Object} payload  { title, body, icon, url, tag, type, friendId }
  *   type: "chat" | "birthday" | "friend" | "gift" | "default"
- * @param {Object} [payload.muteScope] { kind: "dm"|"event", id } — conversation
+ * @param {Object} [payload.muteScope] { kind: "dm"|"event", id } : conversation
  *   visée. Présent, il permet à la personne d'avoir mis CETTE conversation en
  *   silencieux ; absent, la notification part toujours.
  */
@@ -125,11 +125,11 @@ async function sendPushToUser(userId, payload) {
   if (await isMutedFor(userId, payload.muteScope)) return;
   payload = await localizePayload(userId, payload);
 
-  // Push natif mobile (Expo) — indépendant du web push, jamais bloquant
+  // Push natif mobile (Expo) : indépendant du web push, jamais bloquant
   // `webOnly: true` = uniquement web push (ex : récap "messages non lus" du cron,
   // redondant sur mobile où chaque message a déjà sa propre notification)
   // `skipExpoTokens` / `skipWeb` : l'appelant sait que ces appareils affichent
-  // déjà le message en temps réel (socket ouvert) — voir sendDirectMessage.js.
+  // déjà le message en temps réel (socket ouvert) : voir sendDirectMessage.js.
   if (!payload.webOnly) {
     sendExpoPushToUser(userId, payload).catch((err) =>
       console.error("[ExpoPush] error:", err.message),
@@ -151,7 +151,7 @@ async function sendPushToUser(userId, payload) {
     tag: payload.tag || "birthreminder-default",
     type: payload.type || "default",
     friendId: payload.friendId || null,
-    // Accusé « distribué » (messages de chat) — voir utils/messageReceipts.js
+    // Accusé « distribué » (messages de chat) : voir utils/messageReceipts.js
     messageId: payload.messageId || null,
     recipientId: payload.recipientId || null,
     receiptToken: payload.receiptToken || null,
@@ -201,7 +201,7 @@ const PUSH_CATEGORY_BY_TYPE = {
  * Les credentials FCM/APNs sont gérés côté Expo (eas credentials),
  * le backend n'a besoin d'aucune clé.
  *
- * ⚠️ C'est ICI qu'on applique `pushEnabled` / `pushEvents` — et nulle part
+ * ⚠️ C'est ICI qu'on applique `pushEnabled` / `pushEvents` : et nulle part
  * ailleurs. Les appelants étaient jusqu'ici libres de les vérifier ou non
  * (certains le faisaient, la plupart non), si bien que les interrupteurs de
  * l'écran Réglages n'avaient pratiquement aucun effet. La vérification est
@@ -263,7 +263,7 @@ async function sendExpoPushToUser(userId, payload) {
       // de fond déchiffre et présente elle-même la notif lisible.
       msg._contentAvailable = true;
     } else {
-      // iOS (et pushes classiques) : notif alerte — fiable à chaque message.
+      // iOS (et pushes classiques) : notif alerte, fiable à chaque message.
       // ⚠️ Les pushes silencieuses (_contentAvailable seul) sont throttlées par
       // iOS (~quelques réveils/h) → on affiche le fallback "🔒 Nouveau message
       // chiffré" à chaque message. mutableContent prépare la NSE (phase 2) qui

@@ -12,7 +12,7 @@ const rateLimit = require("express-rate-limit");
 const { resolveSession } = require("../../utils/session");
 
 // La contribution est ouverte sans compte (invités externes). Sans plafond,
-// la route permet de créer des paiements en rafale — c'est le schéma classique
+// la route permet de créer des paiements en rafale : c'est le schéma classique
 // du test de cartes volées, qui retomberait sur le compte Stripe de
 // l'organisateur. 15 tentatives par quart d'heure et par adresse IP laissent
 // largement la place à une famille derrière la même box.
@@ -27,14 +27,14 @@ const contributeLimiter = rateLimit({
   },
 });
 
-// Montant min/max d'une contribution (centimes) — garde-fous
+// Montant min/max d'une contribution (centimes) : garde-fous
 const MIN_AMOUNT = 100; // 1 €
 const MAX_AMOUNT = 1000000; // 10 000 €
 
 /**
  * Seuil au-delà duquel le 3D Secure est IMPOSÉ (centimes).
  *
- * En dessous, Stripe décide seul — ce qui suffit dans l'immense majorité des
+ * En dessous, Stripe décide seul : ce qui suffit dans l'immense majorité des
  * cas puisque la SCA européenne impose déjà l'authentification très souvent.
  * Au-dessus, on ne prend plus le risque : une authentification réussie fait
  * basculer sur l'émetteur la responsabilité d'une opposition pour fraude.
@@ -69,7 +69,7 @@ const estimatedFee = (amountCents) =>
  * donc entièrement à la charge de l'organisateur : c'est le chiffre qu'il faut
  * lui montrer AVANT qu'il déclenche l'opération, pas après.
  *
- * On utilise les frais RÉELS relevés à l'encaissement dès qu'ils existent —
+ * On utilise les frais RÉELS relevés à l'encaissement dès qu'ils existent :
  * l'estimation ci-dessus pouvait valoir la moitié de la perte réelle selon la
  * carte utilisée par le contributeur.
  */
@@ -157,12 +157,12 @@ router.get("/mine/contributions", isAuthenticated, async (req, res) => {
 /*
  * GET /api/events/mine/pools
  * Cagnottes actives des événements que l'utilisateur ORGANISE, avec le total
- * collecté — pour le bandeau "Mes cagnottes" de l'accueil.
+ * collecté : pour le bandeau "Mes cagnottes" de l'accueil.
  * DOIT ÊTRE AVANT /:shortId/pool.
  *
  * ⚠️ 23/09/26 : les événements où l'on est seulement invité ont été retirés.
  * Un invité voyait sur son accueil le montant collecté et le nombre de
- * contributions d'une cagnotte qu'il ne gère pas — un suivi qui regarde
+ * contributions d'une cagnotte qu'il ne gère pas : un suivi qui regarde
  * l'organisateur. Côté invité, ce qu'il a versé reste dans Profil →
  * Mes contributions.
  */
@@ -215,7 +215,7 @@ router.get("/mine/pools", isAuthenticated, async (req, res) => {
 });
 
 /*
- * GET /api/events/:shortId/pool/refund-preview — chiffrer avant d'agir
+ * GET /api/events/:shortId/pool/refund-preview : chiffrer avant d'agir
  * (organizer only)
  *
  * Séparé de l'exécution à dessein : l'organisateur doit voir ce que
@@ -266,12 +266,12 @@ router.get(
 );
 
 /*
- * POST /api/events/:shortId/pool/refund-all — rembourser tout le monde
+ * POST /api/events/:shortId/pool/refund-all : rembourser tout le monde
  * (organizer only)
  *
  * ⚠️ Stripe n'a pas d'endpoint de remboursement en lot : c'est un appel par
  * contribution, et la boucle vit donc ici. Elle est volontairement tolérante
- * aux échecs — un remboursement refusé (carte expirée côté réseau, solde
+ * aux échecs : un remboursement refusé (carte expirée côté réseau, solde
  * insuffisant sur le compte connecté) ne doit pas empêcher les onze autres
  * d'aboutir. On renvoie un rapport, et l'organisateur relance : l'opération
  * est idempotente puisque seules les contributions encore "succeeded" sont
@@ -340,7 +340,7 @@ router.post("/:shortId/pool/refund-all", isAuthenticated, async (req, res) => {
         row.refundFeeLoss = loss;
         // Statut laissé à "succeeded" : c'est `charge.refunded` qui le fera
         // basculer. Si le webhook n'arrive jamais, la contribution reste
-        // reprise au prochain appel — mais Stripe refusera un second
+        // reprise au prochain appel : mais Stripe refusera un second
         // remboursement du même PaymentIntent, donc aucun double débit.
         await row.save();
         report.refunded += 1;
@@ -392,7 +392,7 @@ router.get("/:shortId/pool", async (req, res) => {
       return res.status(404).json({ message: "Événement introuvable" });
 
     // Auth optionnelle : on cherche à savoir si le demandeur est l'organisateur.
-    // (endpoint public, mais l'organisateur voit plus de détails — façon Leetchi)
+    // (endpoint public, mais l'organisateur voit plus de détails : façon Leetchi)
     const requesterId = (await resolveSession(req))?._id || null;
     const isOrganizer =
       requesterId && event.organizer.toString() === String(requesterId);
@@ -445,7 +445,7 @@ router.get("/:shortId/pool", async (req, res) => {
       totalCollected,
       contributionsCount: contributions.length,
       contributions: contributions.map((c) => {
-        // Montant masqué à la demande du contributeur — sauf pour l'organisateur
+        // Montant masqué à la demande du contributeur : sauf pour l'organisateur
         const amountHidden = !!c.hideAmount && !isOrganizer;
         return {
           id: c._id,
@@ -551,7 +551,7 @@ router.post("/:shortId/pool/contribute", contributeLimiter, async (req, res) => 
     if (!event)
       return res.status(404).json({ message: "Événement introuvable" });
 
-    // La cagnotte est coupée à l'annulation, donc `pool.active` suffirait —
+    // La cagnotte est coupée à l'annulation, donc `pool.active` suffirait :
     // mais un message explicite vaut mieux qu'un « cagnotte inactive » pour
     // quelqu'un qui ne sait pas encore que l'événement est annulé.
     if (event.status === "cancelled") {
@@ -612,7 +612,7 @@ router.post("/:shortId/pool/contribute", contributeLimiter, async (req, res) => 
     // notre propre accusé de réception (envoyé par le webhook).
     //
     // ⚠️ Obligatoire pour un invité. On a longtemps cru que le PaymentElement
-    // s'en chargeait — il ne le fait pas : il ne collecte l'email que dans
+    // s'en chargeait, il ne le fait pas : il ne collecte l'email que dans
     // certaines configurations, et ça n'alimente de toute façon pas
     // `receipt_email`. Un invité repartait donc sans la moindre trace de son
     // paiement, alors que c'est précisément lui qui n'a pas de compte où la
@@ -658,7 +658,7 @@ router.post("/:shortId/pool/contribute", contributeLimiter, async (req, res) => 
         // Sans elle, une contribution payée avec une carte volée revient en
         // opposition, le compte de l'organisateur part en négatif, et la
         // perte remonte la cascade. C'est la seule protection réellement
-        // efficace contre ce scénario — une rétention des fonds ne sert à
+        // efficace contre ce scénario : une rétention des fonds ne sert à
         // rien, l'opposition arrivant souvent 60 jours plus tard.
         //
         // Le seuil est un compromis : le 3DS ajoute une étape et fait perdre
@@ -691,7 +691,7 @@ router.post("/:shortId/pool/contribute", contributeLimiter, async (req, res) => 
     );
 
     // Trace la contribution en pending ; le webhook la passera à succeeded.
-    // guestName sert de "nom affiché / pseudonyme" — valable aussi pour un
+    // guestName sert de "nom affiché / pseudonyme" : valable aussi pour un
     // utilisateur connecté qui veut masquer son vrai nom (y compris à l'organisateur).
     await GiftPoolContribution.create({
       event: event._id,

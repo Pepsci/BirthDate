@@ -7,7 +7,7 @@ const sharp = require("sharp");
 
 /**
  * Stockage des photos de carte (dates créées manuellement) sur le disque
- * local — même principe que les avatars (config/avatarStorage.js), pas de
+ * local : même principe que les avatars (config/avatarStorage.js), pas de
  * Cloudinary : le buffer multer n'est jamais écrit tel quel, sharp le
  * re-encode systématiquement en WebP 256×256, et un seul fichier existe par
  * carte (nom déterministe `<dateId>.webp`).
@@ -20,7 +20,7 @@ const CARD_PHOTO_DIR =
   process.env.CARD_PHOTO_DIR ||
   path.join(__dirname, "..", "uploads", "card-photos");
 
-// Chemin public (servi par nginx en prod — voir deploy/nginx-card-photos.conf —,
+// Chemin public (servi par nginx en prod, voir deploy/nginx-card-photos.conf, ,
 // par express.static en dev / filet de sécurité en prod)
 const CARD_PHOTO_PUBLIC_PATH = "/uploads/card-photos";
 
@@ -41,7 +41,7 @@ const ALLOWED_MIME_TYPES = [
 
 fs.mkdirSync(CARD_PHOTO_DIR, { recursive: true });
 
-/** Stockage mémoire uniquement — saveCardPhoto() écrit après authentification. */
+/** Stockage mémoire uniquement : saveCardPhoto() écrit après authentification. */
 const cardPhotoUploader = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: MAX_UPLOAD_BYTES, files: 1 },

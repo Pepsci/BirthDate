@@ -394,7 +394,7 @@ export default function PrivacyPolicy() {
           <p>
             Vos messages sont chiffrés de bout en bout (E2E).{" "}
             <strong>
-              BirthReminder ne peut pas lire le contenu de vos conversations —
+              BirthReminder ne peut pas lire le contenu de vos conversations :
               ni maintenant, ni jamais.
             </strong>
           </p>

@@ -4,7 +4,7 @@ import "./css/messageInfoModal.css";
 
 /**
  * « Infos message », comme sur WhatsApp : quand un de mes messages a été
- * envoyé, distribué et lu. Uniquement sur mes propres messages — les
+ * envoyé, distribué et lu. Uniquement sur mes propres messages : les
  * accusés des autres ne me regardent pas.
  */
 export default function MessageInfoModal({ message, preview, myUserId, onClose }) {

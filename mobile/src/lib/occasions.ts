@@ -1,6 +1,6 @@
 import { t } from "@/i18n";
 /**
- * Occasions de cadeaux — liste partagée (miroir du web FriendGiftList).
+ * Occasions de cadeaux : liste partagée (miroir du web FriendGiftList).
  * `value` est stocké en base ; `emoji`/`label` pour l'affichage.
  */
 export interface Occasion {

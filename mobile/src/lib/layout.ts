@@ -7,7 +7,7 @@
  * centre. Sur téléphone, ces valeurs sont plus grandes que l'écran : rien ne
  * change.
  *
- * Usage — dans le style passé en `contentContainerStyle` (ou sur le conteneur
+ * Usage : dans le style passé en `contentContainerStyle` (ou sur le conteneur
  * d'un écran sans défilement) :
  *
  *   content: { padding: 16, gap: 8, ...formPane },

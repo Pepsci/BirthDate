@@ -1,12 +1,12 @@
 /**
- * Tours guidés de première utilisation — overlay "spotlight" générique.
+ * Tours guidés de première utilisation : overlay "spotlight" générique.
  *
  * Un tour = une suite d'étapes. Chaque étape met en lumière une cible
  * (enregistrée via <TourTarget id="…">) avec une bulle explicative :
  *   - étape informative : la cible est verrouillée, bouton « Suivant » ;
  *   - étape `requirePress` : tout l'écran est bloqué SAUF la cible,
  *     l'utilisateur doit appuyer dessus pour continuer (échappatoire
- *     « Plus tard » pour ne jamais piéger l'utilisateur — ni la review Apple).
+ *     « Plus tard » pour ne jamais piéger l'utilisateur : ni la review Apple).
  *
  * Chaque tour ne s'affiche qu'une fois (expo-secure-store, clé par tour).
  * Intégration : provider + <TourOverlay /> dans app/(tabs)/_layout.tsx,
@@ -254,7 +254,7 @@ export function TourTarget({
 const block = () => true;
 
 /**
- * Overlay du tour — à rendre PAR-DESSUS le navigateur (dernier enfant
+ * Overlay du tour : à rendre PAR-DESSUS le navigateur (dernier enfant
  * d'un conteneur en flex:1 qui couvre tout l'écran, header et tab bar inclus).
  */
 export function TourOverlay() {

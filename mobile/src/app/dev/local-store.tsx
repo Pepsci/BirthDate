@@ -23,7 +23,7 @@ import type { DateEntry } from "../../lib/dates";
 import { useThemedStyles, ThemeColors } from "../../lib/theme-context";
 
 /**
- * Écran de test de l'étape 1 du mode local — DEV UNIQUEMENT.
+ * Écran de test de l'étape 1 du mode local : DEV UNIQUEMENT.
  * Ouvrir : xcrun simctl openurl booted "birthreminder://dev/local-store"
  * À supprimer une fois l'étape 3 (écran de choix) en place.
  */

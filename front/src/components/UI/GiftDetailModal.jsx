@@ -18,7 +18,7 @@ import { GIFT_STATUSES, GIFT_STATUS_META } from "../../utils/giftStatus";
  *   onClose     : () => void
  *   onEdit      : (raw) => void
  *   onDelete    : (id) => void
- *   onToggle    : (raw) => void   — toggle acheté / toggle sharing
+ *   onToggle    : (raw) => void, toggle acheté / toggle sharing
  *   onReserve   : (id) => void
  *   onUnreserve : (id) => void
  *   onOffered   : (raw) => void
@@ -210,7 +210,7 @@ const GiftDetailModal = ({
 
           {/* ── Actions ── */}
           <div className="gdm-actions">
-            {/* Wishlist — vue propriétaire */}
+            {/* Wishlist : vue propriétaire */}
             {type === "wishlist" && !readOnly && !item.isReserved && (
               <>
                 <button
@@ -234,7 +234,7 @@ const GiftDetailModal = ({
               </>
             )}
 
-            {/* Gifts — vue propriétaire : statut à 3 états + éditer/supprimer */}
+            {/* Gifts, vue propriétaire : statut à 3 états + éditer/supprimer */}
             {type === "gifts" && !readOnly && (
               <>
                 <div className="gdm-status-group">
@@ -254,7 +254,7 @@ const GiftDetailModal = ({
                 </div>
                 {/* Visibilité pour les invités. Posée avant Modifier /
                     Supprimer parce qu'elle ne change pas l'idée, seulement
-                    qui la voit — et parce que se tromper ici expose ce qu'on
+                    qui la voit : et parce que se tromper ici expose ce qu'on
                     voulait garder entre gestionnaires. */}
                 {onToggleHidden && (
                   <button
@@ -284,7 +284,7 @@ const GiftDetailModal = ({
               </>
             )}
 
-            {/* Wishlist — vue ami */}
+            {/* Wishlist : vue ami */}
             {type === "wishlist" && readOnly && !item.isPurchased && (
               <>
                 {!item.isReserved ? (
@@ -321,7 +321,7 @@ const GiftDetailModal = ({
               </>
             )}
 
-            {/* Event — vote */}
+            {/* Event : vote */}
             {type === "event" && (
               <>
                 {item.isOwner && (

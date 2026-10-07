@@ -545,7 +545,7 @@ function ChatWindow({ conversation, onBack, onRead }) {
     // APRÈS le retour anticipé : sur une carte partagée, le clic doit garder
     // son effet normal de fermeture.
     e.stopPropagation();
-    // Ses messages : modifier/supprimer — ceux des autres : signaler
+    // Ses messages : modifier/supprimer, ceux des autres : signaler
     setContextMenu({ x: e.clientX, y: e.clientY, message });
   };
 

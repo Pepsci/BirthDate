@@ -65,7 +65,7 @@ export default function SharedInvites({ embedded = false }) {
 
   /**
    * @param payload `{ dateId }` pour une carte existante, `{ newDate: {} }`
-   *   pour la créer au passage — le serveur reprend alors le nom et la date de
+   *   pour la créer au passage : le serveur reprend alors le nom et la date de
    *   naissance depuis la carte de celui qui invite, qui décrit la même
    *   personne.
    */
@@ -204,7 +204,7 @@ export default function SharedInvites({ embedded = false }) {
                     : "Quelqu'un"}
                 </strong>{" "}
                 vous a partagé une liste
-                {l.label ? ` pour ${l.label}` : ""} — {l.giftCount} idée
+                {l.label ? ` pour ${l.label}` : ""} : {l.giftCount} idée
                 {l.giftCount > 1 ? "s" : ""}.
               </span>
               <span className="sgi-pending-hint">
@@ -298,7 +298,7 @@ export default function SharedInvites({ embedded = false }) {
 
             {dates.length === 0 ? (
               <p className="sgs-modal-sub">
-                Vous n'avez encore aucune carte — utilisez le bouton ci-dessus.
+                Vous n'avez encore aucune carte : utilisez le bouton ci-dessus.
               </p>
             ) : (
               dates.map((d) => (

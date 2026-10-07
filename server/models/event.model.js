@@ -109,11 +109,11 @@ const eventSchema = new Schema(
       deadline: { type: Date, default: null }, // optionnel ; couplé au reminder "pool_deadline"
     },
 
-    // Virement direct (hors plateforme) — IBAN chiffré + PayPal.Me
+    // Virement direct (hors plateforme) : IBAN chiffré + PayPal.Me
     directTransfer: {
       ibanEnabled: { type: Boolean, default: false },
       paypalEnabled: { type: Boolean, default: false },
-      paypalLink: { type: String, default: "" }, // PayPal.Me — lien public, en clair
+      paypalLink: { type: String, default: "" }, // PayPal.Me : lien public, en clair
 
       /**
        * Cagnotte tenue sur un AUTRE service (Leetchi, Lydia, Le Pot Commun…).
@@ -125,7 +125,7 @@ const eventSchema = new Schema(
        *
        * ⚠️ BirthReminder n'a AUCUNE visibilité sur ces collectes : ni montant,
        * ni contributeurs, ni preuve de versement, ni possibilité de rembourser.
-       * C'est un simple lien affiché, et l'interface doit le dire clairement —
+       * C'est un simple lien affiché, et l'interface doit le dire clairement :
        * sinon les invités croiront payer « sur BirthReminder » et se
        * retourneront vers nous en cas de problème.
        */
@@ -184,7 +184,7 @@ const eventSchema = new Schema(
 
     // ── Transfert d'organisation ──────────────────────────────────────────
     // Une proposition en attente, pas un transfert immédiat : on ne peut pas
-    // imposer à quelqu'un la charge d'organiser un événement — invitations à
+    // imposer à quelqu'un la charge d'organiser un événement : invitations à
     // gérer, votes à trancher, parfois de l'argent. L'ancien organisateur
     // garde donc la main tant que la proposition n'est pas acceptée.
     pendingTransfer: {

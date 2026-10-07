@@ -1,5 +1,5 @@
 /**
- * fixAlmaNameday.js — Corrige la fête de "Alma" mal placée.
+ * fixAlmaNameday.js : Corrige la fête de "Alma" mal placée.
  *
  * Contexte : "Alma" n'existait pas dans les données FR, l'app tombait sur le
  * fallback US (namedays-us-by-name.json) qui la place au 21 juillet (07-21).
@@ -40,7 +40,7 @@ async function run() {
   await mongoose.connect(process.env.MONGO_URI, {
     serverSelectionTimeoutMS: 15000,
   });
-  console.log(`✅ Connecté à MongoDB — mode : ${APPLY ? "APPLY" : "DRY-RUN"}`);
+  console.log(`✅ Connecté à MongoDB, mode : ${APPLY ? "APPLY" : "DRY-RUN"}`);
 
   const dates = (await DateModel.find({ nameday: OLD })).filter(
     (d) => norm(d.name) === "alma",

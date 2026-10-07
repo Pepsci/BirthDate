@@ -140,7 +140,7 @@ export interface UrlInfo {
 }
 
 /**
- * POST /wishlist/fetch-url — scrape Open Graph côté serveur.
+ * POST /wishlist/fetch-url : scrape Open Graph côté serveur.
  * Amazon/Fnac/Micromania bloquent le scraping : success=false + blocked=true,
  * mais affiliateUrl est toujours renvoyée (lien affilié Amazon).
  */

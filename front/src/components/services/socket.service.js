@@ -13,7 +13,7 @@ class SocketService {
 
     const isLocal = window.location.hostname === "localhost";
 
-    // Suit automatiquement le domaine courant — pas de hardcode
+    // Suit automatiquement le domaine courant : pas de hardcode
     const apiUrl = isLocal
       ? "http://localhost:4000"
       : `${window.location.protocol}//${window.location.hostname}`;

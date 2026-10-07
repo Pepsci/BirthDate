@@ -6,7 +6,7 @@ const { Schema, model } = require("mongoose");
  * ⚠️ Ce modèle n'existe pas pour le confort de l'administrateur : il existe
  * pour prouver la diligence.
  *
- * Les alertes sont recalculées à la volée par `computePoolAlerts()` — elles
+ * Les alertes sont recalculées à la volée par `computePoolAlerts()` : elles
  * n'ont donc, par nature, aucune mémoire. Or le cron `poolFraudAlerts` nous
  * envoie un mail à chaque détection : la date à laquelle nous avons SU est
  * établie, et bien établie. Ne rien conserver de ce que nous en avons fait
@@ -19,7 +19,7 @@ const { Schema, model } = require("mongoose");
  * système de détection pour plaider ensuite l'ignorance : à partir du moment
  * où il tourne, la seule position défendable est de montrer que chaque alerte
  * a été regardée et tranchée. Écarter une alerte est une décision parfaitement
- * légitime — à condition qu'elle soit datée, signée et motivée.
+ * légitime : à condition qu'elle soit datée, signée et motivée.
  *
  * D'où le motif OBLIGATOIRE : une case cochée sans explication ne prouve rien.
  */
@@ -65,7 +65,7 @@ const poolAlertReviewSchema = new Schema(
      * une alerte écartée réapparaît au prochain passage du cron et l'on
      * ré-écarte tous les matins : le registre se remplit de décisions qui ne
      * décident rien. Avec elle, une alerte écartée reste écartée TANT QUE la
-     * situation n'a pas bougé — et se rouvre d'elle-même dès que le montant
+     * situation n'a pas bougé : et se rouvre d'elle-même dès que le montant
      * collecté ou le nombre de contributions change, c'est-à-dire au moment
      * précis où il faut la regarder à nouveau.
      */

@@ -29,7 +29,7 @@ import { findNameDay } from "./nameday";
  * utilisée en mode local (docs/MODE_LOCAL.md § 5.2).
  *
  * Règle : chaque fonction reproduit le comportement de la route serveur
- * correspondante (server/routes/date.js, wishlist.js) — mêmes valeurs par
+ * correspondante (server/routes/date.js, wishlist.js) : mêmes valeurs par
  * défaut, même calcul de fête, même erreur 404. Un écran ne doit voir
  * aucune différence entre les deux modes.
  *

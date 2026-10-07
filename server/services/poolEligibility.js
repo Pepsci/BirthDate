@@ -2,10 +2,10 @@
 //
 // Qui peut ouvrir une cagnotte (ou proposer RIB / PayPal / cagnotte externe) ?
 // Quatre raisons de refus, dans cet ordre :
-//   1. "minor"              — moins de 18 ans
-//   2. "birthdate_missing"  — pas de date de naissance
-//   3. "admin_blocked"      — bloqué par un admin (mineur signalé, fraude)
-//   4. "birthdate_cooldown" — date de naissance passée de mineur à majeur il y
+//   1. "minor" : moins de 18 ans
+//   2. "birthdate_missing" : pas de date de naissance
+//   3. "admin_blocked" : bloqué par un admin (mineur signalé, fraude)
+//   4. "birthdate_cooldown" : date de naissance passée de mineur à majeur il y
 //                             a moins de 30 jours
 //
 // Seul point d'entrée pour cette décision : le middleware requireAdultForPool,

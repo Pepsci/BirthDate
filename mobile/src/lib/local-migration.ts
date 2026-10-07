@@ -12,7 +12,7 @@ import {
 } from "./local-store";
 
 /**
- * Passage du mode local vers un compte — docs/MODE_LOCAL.md § 3.3.
+ * Passage du mode local vers un compte : docs/MODE_LOCAL.md § 3.3.
  *
  * Appelé APRÈS la connexion (mode déjà « compte ») : les appels passent donc
  * par api() normalement. Les données locales, elles, restent sur le disque
@@ -36,7 +36,7 @@ import {
  *
  * On appelle api() directement, et non createDate() : en cas de coupure,
  * createDate() mettrait l'opération en file d'attente et répondrait « OK »
- * avec un id provisoire — l'import croirait avoir réussi.
+ * avec un id provisoire : l'import croirait avoir réussi.
  */
 
 export interface ImportProgress {
@@ -189,7 +189,7 @@ async function importDate(
 
 /**
  * Importe tout ce qui ne l'est pas encore, puis efface les données locales
- * si — et seulement si — tout est passé.
+ * si, et seulement si, tout est passé.
  */
 export async function importLocalIntoAccount(
   onProgress?: (p: ImportProgress) => void,

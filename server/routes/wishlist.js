@@ -117,7 +117,7 @@ router.post("/fetch-url", fetchUrlLimiter, isAuthenticated, async (req, res) => 
       return res.status(200).json({
         success: false,
         blocked: true,
-        message: `${matchedBlocked.name} ne supporte pas le remplissage automatique — remplis les champs manuellement`,
+        message: `${matchedBlocked.name} ne supporte pas le remplissage automatique : remplis les champs manuellement`,
         data: null,
         affiliateUrl,
       });
@@ -391,7 +391,7 @@ router.post("/", isAuthenticated, async (req, res, next) => {
   }
 });
 
-// ─── Routes avec /:id — toujours EN DERNIER ──────────────────────────────────
+// ─── Routes avec /:id : toujours EN DERNIER ──────────────────────────────────
 
 // DELETE /api/wishlist/:id/reservation
 router.delete("/:id/reservation", isAuthenticated, async (req, res) => {

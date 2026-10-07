@@ -71,7 +71,7 @@ function poolLockMessages(
   };
 }
 
-/** Violet de marque Stripe — volontairement hors thème. */
+/** Violet de marque Stripe : volontairement hors thème. */
 const STRIPE_PURPLE = "#635bff";
 
 /**
@@ -124,7 +124,7 @@ export default function PoolConfig({
    *
    * ⚠️ « Où est mon argent ? » est la question la plus fréquente d'un
    * organisateur, et l'app n'y répondait pas : il fallait retrouver un vieil
-   * email de Stripe. Un solde à zéro signifie presque toujours « déjà viré » —
+   * email de Stripe. Un solde à zéro signifie presque toujours « déjà viré » :
    * d'où l'affichage du dernier virement juste à côté, sans lequel un zéro
    * inquiète au lieu de rassurer.
    */
@@ -501,8 +501,8 @@ export default function PoolConfig({
           <Text style={styles.refundWarn}>
             {t("pool:refund.warn", { approx: preview!.estimatedCount > 0 ? t("pool:refund.approx") : "", fee: (preview!.feeLoss / 100).toFixed(2) })}
           </Text>
-          {/* Les frais dépendent de la carte utilisée par chaque contributeur
-              — 1,5 % pour une carte européenne standard, jusqu'à 3,15 % plus
+          {/* Les frais dépendent de la carte utilisée par chaque contributeur,
+              1,5 % pour une carte européenne standard, jusqu'à 3,15 % plus
               conversion pour une carte étrangère. On les relève désormais à
               l'encaissement ; pour les contributions plus anciennes, il ne
               reste qu'une estimation, et l'annoncer comme un chiffre exact
@@ -526,7 +526,7 @@ export default function PoolConfig({
         </>
       )}
 
-      {/* ── Virement direct — indépendant de la cagnotte Stripe ── */}
+      {/* ── Virement direct : indépendant de la cagnotte Stripe ── */}
       <View style={styles.dtDivider} />
       <Text style={styles.dtTitle}>{t("events:pool.direct")}</Text>
       <Text style={styles.hint}>
@@ -796,7 +796,7 @@ const makeStyles = (c: ThemeColors) =>
     },
     label: { fontSize: 13, fontWeight: "700", color: c.sub, marginTop: 10 },
     hint: { color: c.faint, fontSize: 12 },
-    // Encadré d'engagement : ton informatif, pas alarmiste — il ne signale
+    // Encadré d'engagement : ton informatif, pas alarmiste, il ne signale
     // pas un danger, il énonce ce à quoi on souscrit en activant.
     commitBox: {
       marginTop: 4,

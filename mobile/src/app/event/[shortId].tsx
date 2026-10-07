@@ -132,7 +132,7 @@ export default function EventDetailScreen() {
   const DELETE_DELAY = 5000;
   // Repli/déploiement des encarts, mémorisé par événement (SecureStore) pour
   // rester dans l'état choisi par l'utilisateur après un aller-retour sur
-  // l'écran — même mécanisme que `stats-scope.ts`.
+  // l'écran : même mécanisme que `stats-scope.ts`.
   const collapseScope = `event_${shortId}`;
   const [showPool, setShowPool] = usePersistedCollapse(collapseScope, "pool");
   const [showInvite, setShowInvite] = usePersistedCollapse(
@@ -275,7 +275,7 @@ export default function EventDetailScreen() {
   );
 
   // Export vers le calendrier natif. Aucune synchronisation ensuite : si
-  // l'organisateur change la date, l'entrée déjà créée reste telle quelle —
+  // l'organisateur change la date, l'entrée déjà créée reste telle quelle :
   // l'utilisateur reçoit la notif "nouvelle date" et peut la retirer/rajouter.
   const onAddToCalendar = async () => {
     if (!event || addingToCalendar) return;
@@ -345,7 +345,7 @@ export default function EventDetailScreen() {
    *
    * ⚠️ Ça n'existait que sur le web : sur mobile, l'organisateur voyait les
    * résultats sans aucun moyen d'en tirer une conclusion. Il devait rouvrir
-   * « Modifier l'événement » et rebasculer la date en mode fixe — c'est-à-dire
+   * « Modifier l'événement » et rebasculer la date en mode fixe : c'est-à-dire
    * traverser tout le formulaire, sans plus avoir les décomptes sous les yeux
    * au moment de choisir.
    *
@@ -910,7 +910,7 @@ export default function EventDetailScreen() {
   // ⚠️ Un événement annulé n'accepte plus aucune participation. Le serveur le
   // refuse désormais (409 EVENT_CANCELLED), mais il faut aussi retirer les
   // boutons : sinon l'invité vote dans le vide, et surtout chaque tentative
-  // notifiait l'organisateur — qui recevait « X a voté pour le 12 mars » sur
+  // notifiait l'organisateur : qui recevait « X a voté pour le 12 mars » sur
   // un événement qu'il venait d'annuler.
   const isCancelled = event.status === "cancelled";
   const showDateVote =
@@ -958,7 +958,7 @@ export default function EventDetailScreen() {
           {t("events:hostedBy", { name: `${event.organizer.name} ${event.organizer.surname ?? ""}`.trim() })}
           {isOrganizer ? t("events:you") : ""}
         </Text>
-        {/* Export vers le calendrier natif — masqué tant que la date est au
+        {/* Export vers le calendrier natif : masqué tant que la date est au
             vote (rien de ferme à inscrire) et si le module natif manque dans
             ce binaire. Le bouton bascule en « déjà ajouté » pour ne plus
             créer de doublon à chaque appui. */}
@@ -1018,7 +1018,7 @@ export default function EventDetailScreen() {
           />
         )}
 
-      {/* Bandeau d'annulation — avant tout le reste : c'est l'information qui
+      {/* Bandeau d'annulation, avant tout le reste : c'est l'information qui
           conditionne la lecture de toute la page. */}
       {event.status === "cancelled" && (
         <View style={styles.cancelledCard}>
@@ -1034,7 +1034,7 @@ export default function EventDetailScreen() {
         </View>
       )}
 
-      {/* Proposition de transfert reçue — au-dessus de tout : c'est une
+      {/* Proposition de transfert reçue, au-dessus de tout : c'est une
           décision à prendre, pas une information à faire défiler. */}
       {iAmTransferTarget && (
         <View style={styles.transferCard}>
@@ -1066,7 +1066,7 @@ export default function EventDetailScreen() {
         </View>
       )}
 
-      {/* Organisation (organizer) — juste après les infos */}
+      {/* Organisation (organizer) : juste après les infos */}
       {isOrganizer && (
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>{t("events:org.title")}</Text>
@@ -1222,8 +1222,8 @@ export default function EventDetailScreen() {
 
           {/* Quitter : discret et en bas de la carte réponse, pas dans une
               carte à lui. Répondre « non » et quitter sont deux choses
-              différentes — décliner laisse l'organisateur informé, quitter
-              retire l'invitation — et les placer côte à côte rend la nuance
+              différentes : décliner laisse l'organisateur informé, quitter
+              retire l'invitation : et les placer côte à côte rend la nuance
               lisible au moment où elle se pose. */}
           <Pressable style={styles.leaveBtn} onPress={confirmLeave}>
             <Text style={styles.leaveBtnText}>{t("events:leave.btn")}</Text>
@@ -1424,7 +1424,7 @@ export default function EventDetailScreen() {
         </View>
       )}
 
-      {/* Virement direct — section autonome (visible même sans cagnotte) */}
+      {/* Virement direct : section autonome (visible même sans cagnotte) */}
       {event.hasFullAccess &&
         (event.directTransfer?.ibanEnabled ||
           event.directTransfer?.paypalEnabled ||
@@ -1519,7 +1519,7 @@ export default function EventDetailScreen() {
       )}
 
       {/* Paysage : ces boutons pilotent le panneau de droite. Celui du
-          panneau affiché est plein — on voit d'un coup d'œil ce qui est
+          panneau affiché est plein : on voit d'un coup d'œil ce qui est
           ouvert. Portrait : comportement d'origine (vue cadeaux, écran de
           réglages). */}
       {isSplit ? (
@@ -1962,7 +1962,7 @@ export default function EventDetailScreen() {
 
       {/* Choix du repreneur. Seuls les participants AYANT CONFIRMÉ apparaissent :
           le serveur refuse les autres, et proposer l'organisation à quelqu'un
-          qui a décliné — ou qui n'a pas de compte — n'a pas de sens. */}
+          qui a décliné, ou qui n'a pas de compte, n'a pas de sens. */}
       <BottomSheet
         visible={transferSheet}
         onClose={() => setTransferSheet(false)}
@@ -2005,7 +2005,7 @@ export default function EventDetailScreen() {
 
       {/* Motif d'annulation. Le champ est facultatif : forcer une justification
           pousse à écrire n'importe quoi, et un motif inventé vaut moins qu'une
-          absence de motif assumée — le message dit alors simplement que
+          absence de motif assumée : le message dit alors simplement que
           l'organisateur n'en a pas donné. */}
       <BottomSheet visible={cancelSheet} onClose={() => setCancelSheet(false)}>
         <Text style={styles.sheetTitle}>{t("events:cancel.sheetTitle")}</Text>

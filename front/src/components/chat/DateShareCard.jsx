@@ -23,7 +23,7 @@ const formatNameday = (mmdd) => {
  * Rendu inline dans ChatWindow pour les messages de type "date_share".
  *
  * Le destinataire peut ajouter la carte à ses propres anniversaires. Les idées
- * cadeaux ne sont jamais transmises — c'est la différence avec gift_share.
+ * cadeaux ne sont jamais transmises : c'est la différence avec gift_share.
  *
  * Props :
  *   - message : message avec metadata { personName, name, surname, birthDate, nameday }
@@ -48,7 +48,7 @@ const DateShareCard = ({ message, isOwn }) => {
   const fullName = `${name}${surname ? ` ${surname}` : ""}`.trim() || personName;
 
   // Demande d'ami : la personne doit accepter. Si elle accepte, le serveur
-  // crée les cartes liées des deux côtés (createFriendDates) — inutile donc de
+  // crée les cartes liées des deux côtés (createFriendDates) : inutile donc de
   // créer une carte manuelle en parallèle, ce serait un doublon.
   const handleFriendRequest = async () => {
     if (requesting || !linkedUserId) return;
@@ -135,7 +135,7 @@ const DateShareCard = ({ message, isOwn }) => {
         )}
         {requested && (
           <p className="dsc-added">
-            ✅ Demande envoyée — sa carte se créera s'il accepte
+            ✅ Demande envoyée : sa carte se créera s'il accepte
           </p>
         )}
 

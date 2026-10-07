@@ -103,7 +103,7 @@ export default function NotificationsScreen() {
 
   // Email récap des messages non lus, ami par ami (User.chatEmailDisabledFriends).
   // C'est ce que coupe le lien « Ne plus recevoir d'email pour les messages
-  // de X » des emails — ici on peut le réactiver.
+  // de X » des emails : ici on peut le réactiver.
   const [friends, setFriends] = useState<FriendEntry[] | null>(null);
   const [updatingFriendIds, setUpdatingFriendIds] = useState<Set<string>>(
     new Set(),
@@ -310,7 +310,7 @@ export default function NotificationsScreen() {
         <View style={styles.card}>
           {/* Levée d'ambiguïté : ces interrupteurs coupaient aussi le push et
               la notif in-app côté serveur (cf. jobs/sendReminders.js). Les
-              canaux sont maintenant indépendants — on le dit explicitement,
+              canaux sont maintenant indépendants : on le dit explicitement,
               sinon « Rappels d'anniversaires : OFF » se lit comme un « ne plus
               rien recevoir ». */}
           <Text style={styles.sectionNote}>

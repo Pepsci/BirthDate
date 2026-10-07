@@ -2,7 +2,7 @@ import apiHandler from "../../api/apiHandler";
 import "./css/reportMessageModal.css";
 
 /**
- * Modale de signalement d'un message — conformité stores (Apple 1.2 /
+ * Modale de signalement d'un message : conformité stores (Apple 1.2 /
  * Google Play UGC) : tout contenu produit par un utilisateur doit pouvoir être
  * signalé, partout où il s'affiche.
  *

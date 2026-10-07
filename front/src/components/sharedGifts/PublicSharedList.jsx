@@ -8,7 +8,7 @@ const API_URL =
     ? "http://localhost:4000/api"
     : "https://birthreminder.com/api";
 
-// Emojis d'occasion — miroir de mobile/src/lib/occasions.ts, pour qu'une meme
+// Emojis d'occasion : miroir de mobile/src/lib/occasions.ts, pour qu'une meme
 // idee porte le meme symbole dans l'app et sur la page publique.
 const OCCASION_EMOJI = {
   Anniversaire: "🎂",
@@ -27,7 +27,7 @@ const occasionEmoji = (occasion) => OCCASION_EMOJI[occasion] ?? "🎁";
 
 /**
  * « de Marie » / « d'Arthur ». L'elision se fait sur la voyelle initiale,
- * accents compris — « d'Élise », pas « de Élise ».
+ * accents compris : « d'Élise », pas « de Élise ».
  */
 function withPreposition(name) {
   const first = (name || "").trim().charAt(0).toLowerCase();
@@ -37,7 +37,7 @@ function withPreposition(name) {
 // ── Identite du visiteur ────────────────────────────────────────────────────
 // Le prenom ne peut PAS jouer ce role : il ne prouve rien, il se devine, et
 // le serveur ne peut pas s'en servir pour reconnaitre le navigateur qui a
-// reserve. D'ou un jeton tire au hasard, garde en local — c'est lui qui vaut
+// reserve. D'ou un jeton tire au hasard, garde en local : c'est lui qui vaut
 // « c'est bien moi », et lui seul autorise a liberer une reservation.
 const tokenKey = "psl_guest_token";
 const nameKey = "psl_guest_name";
@@ -79,7 +79,7 @@ function newToken() {
  * le code (`c`) : c'est ce qui permet de retrouver sa reservation depuis un
  * autre appareil, ou le stockage local est vide. Si on lit le stockage local
  * avant de regarder l'URL, on repart avec un jeton tout neuf et le lien du
- * mail ne sert plus a rien — la fonctionnalite entiere tombe.
+ * mail ne sert plus a rien : la fonctionnalite entiere tombe.
  *
  * L'adresse est nettoyee ensuite : un copier-coller de l'URL ne doit pas
  * diffuser le jeton de quelqu'un.
@@ -105,14 +105,14 @@ function bootstrapGuest(slug) {
 }
 
 /**
- * Vue publique d'une liste d'idees commune — /liste/:slug, sans compte.
+ * Vue publique d'une liste d'idees commune : /liste/:slug, sans compte.
  *
  * Le CODE OUVRE LA LISTE : tant qu'il n'est pas donne, l'API ne renvoie meme
  * pas les idees. Le lien seul ne montre donc rien, et peut circuler sans
  * exposer ce que quelqu'un prepare. Une liste sans code reste ouverte au lien
  * seul, c'est le choix de celui qui partage.
  *
- * Les prenoms des reserveurs ne sont jamais exposes ici — un lien public peut
+ * Les prenoms des reserveurs ne sont jamais exposes ici : un lien public peut
  * etre transfere a la personne concernee. Seuls les membres, dans
  * l'application, voient qui s'occupe de quoi.
  */
@@ -207,7 +207,7 @@ export default function PublicSharedList() {
 
   /**
    * Envoie une reservation ou une liberation. Renvoie le `reason` du serveur
-   * en cas de refus — « code invalide » et « ce n'est pas ta reservation »
+   * en cas de refus : « code invalide » et « ce n'est pas ta reservation »
    * arrivent tous deux en 403, et les confondre affichait « code incorrect »
    * a quelqu'un dont le code etait bon.
    */
@@ -437,7 +437,7 @@ export default function PublicSharedList() {
                         affichait « liberer ma reservation » a TOUT LE MONDE :
                         le serveur ne pouvait pas dire qui avait reserve, donc
                         chaque visiteur croyait que la reservation etait la
-                        sienne — et se prenait un refus en cliquant. */}
+                        sienne : et se prenait un refus en cliquant. */}
                     {g.reservedByMe ? (
                       <button
                         type="button"

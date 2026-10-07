@@ -13,7 +13,7 @@ import {
  * ne redescend plus. Le geste ne fait plus rien, et seul un aller-retour vers
  * un autre écran débloque la situation.
  *
- * Cause : ces écrans ont tous du contenu qui RÉTRÉCIT en cours de route —
+ * Cause : ces écrans ont tous du contenu qui RÉTRÉCIT en cours de route,
  * sections repliées dans Profil et sur la page d'un événement, changement
  * d'onglet sur la carte d'une personne, liste de conversations qui se
  * raccourcit après un rafraîchissement. Quand la hauteur du contenu passe
@@ -25,7 +25,7 @@ import {
  * Correctif : à chaque changement de hauteur du contenu, si la position
  * dépasse le maximum atteignable, on y revient immédiatement.
  *
- * Usage — étaler le retour sur la ScrollView :
+ * Usage, étaler le retour sur la ScrollView :
  *   const guard = useScrollBoundsGuard();
  *   <ScrollView {...guard}>…</ScrollView>
  *

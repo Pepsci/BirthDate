@@ -31,7 +31,7 @@ import {
 import { readingPane } from "../../lib/layout";
 
 /**
- * Sauvegarde et restauration pour un COMPTE — pendant de
+ * Sauvegarde et restauration pour un COMPTE : pendant de
  * app/profile/local-data.tsx, qui fait la même chose sans compte.
  *
  * ⚠️ À ne pas confondre avec « Télécharger mes données »
@@ -195,7 +195,7 @@ export default function AccountBackupScreen() {
       {progress && progress.total > 0 && (
         <Text style={styles.hint}>
           {progress.done} / {progress.total}
-          {progress.current ? ` — ${progress.current}` : ""}
+          {progress.current ? `, ${progress.current}` : ""}
         </Text>
       )}
 

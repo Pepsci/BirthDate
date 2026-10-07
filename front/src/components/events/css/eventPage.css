@@ -284,7 +284,7 @@
 }
 
 /* ═══════════════════════════════════════════════════════
-   TABS — style icône + label, grille adaptative
+   TABS : style icône + label, grille adaptative
 ═══════════════════════════════════════════════════════ */
 .ep-tabs {
   display: grid;
@@ -772,7 +772,7 @@
   }
 }
 
-/* Bouton "Partager la cagnotte" — onglet cagnotte */
+/* Bouton "Partager la cagnotte" : onglet cagnotte */
 .ep-share-pool-btn {
   display: inline-flex;
   align-items: center;
@@ -797,7 +797,7 @@
 /* ── Annulation & transfert d'organisation ──────────────────────────────────
    Ajouté avec le chantier « annuler / transférer / rembourser ». Ces blocs
    vivent dans le hero parce qu'ils portent une information qui conditionne la
-   lecture de toute la page — pas un détail rangé dans un onglet. */
+   lecture de toute la page : pas un détail rangé dans un onglet. */
 
 .ep-cancelled-banner,
 .ep-transfer-banner {

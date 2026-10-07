@@ -29,7 +29,7 @@ const {
 // vient du nom de fichier déterministe dans avatarStorage.js, qui rend
 // l'existence de deux avatars impossible quel que soit le nombre de process.
 //
-// `skip` : seules les requêtes portant réellement un fichier sont comptées —
+// `skip` : seules les requêtes portant réellement un fichier sont comptées,
 // le formulaire de profil envoie toujours un FormData, même sans photo.
 // Le limiteur doit donc être monté APRÈS multer pour que req.file existe.
 const avatarUploadLimiter = rateLimit({
@@ -68,7 +68,7 @@ const { minAgeForRequest } = require("../utils/minAge");
 /**
  * L'adresse email ne se modifie pas depuis le profil : il n'existe pas de
  * parcours de vérification de la nouvelle adresse, et l'accepter telle quelle
- * permettait de s'attribuer l'adresse de quelqu'un d'autre — ou, avec une
+ * permettait de s'attribuer l'adresse de quelqu'un d'autre : ou, avec une
  * session volée, de s'approprier le compte. Les clients renvoient l'adresse
  * actuelle avec le reste du formulaire : identique, elle est ignorée.
  */
@@ -87,7 +87,7 @@ const EMAIL_LOCKED_MESSAGE =
  *
  * Les clients renvoient la date même inchangée : une date identique (même
  * jour) passe toujours, pour ne jamais bloquer l'enregistrement du profil d'un
- * compte existant. Seul un CHANGEMENT est contrôlé — sans quoi il suffisait de
+ * compte existant. Seul un CHANGEMENT est contrôlé : sans quoi il suffisait de
  * modifier sa date après l'inscription pour contourner la limite d'âge.
  */
 function birthDateChangeError(current, incoming, req) {
@@ -113,7 +113,7 @@ function birthDateChangeError(current, incoming, req) {
  *
  * ⚠️ Cette fonction corrige une cause de déconnexions intempestives. Ces routes
  * réémettaient un token en dur à `expiresIn: "6h"` : la moindre modification de
- * profil — y compris un simple interrupteur de notification — remplaçait le
+ * profil, y compris un simple interrupteur de notification, remplaçait le
  * token de 30 jours obtenu à la connexion par un token de 6 heures. Et le mal
  * était irréversible, `/auth/verify` déduisant la durée à reconduire de la
  * durée d'origine (`> 8h` = rememberMe) : une fois tombé à 6h, il ne renouvelle
@@ -156,7 +156,7 @@ function formatUser(user) {
     // Emails événements
     receiveEventEmails: user.receiveEventEmails,
     eventEmailTimings: user.eventEmailTimings,
-    // Langue du compte (push, emails) — voir PATCH /users/me/language
+    // Langue du compte (push, emails) : voir PATCH /users/me/language
     language: user.language ?? null,
     // Push
     pushEnabled: user.pushEnabled,
@@ -406,7 +406,7 @@ router.patch(
 
       const payload = formatUser(updatedUser);
       // Le token ne porte que l'identité, comme à la connexion (routes/auth.js).
-      // Il embarquait tout le profil — clé privée chiffrée comprise — alors
+      // Il embarquait tout le profil, clé privée chiffrée comprise, alors
       // qu'un JWT est signé, pas chiffré : son contenu se lit en clair.
       const tokenDuration = tokenDurationFrom(req.payload);
       const authToken = jwt.sign(
@@ -501,7 +501,7 @@ router.patch("/me/nameday", isAuthenticated, async (req, res) => {
 });
 
 /*
- * PATCH /users/me/language — langue du compte ("fr" | "en").
+ * PATCH /users/me/language : langue du compte ("fr" | "en").
  *
  * Appelée par l'app mobile toute seule (ouverture de session, changement de
  * langue dans Profil) : c'est ce qui permet au serveur d'écrire les push et
@@ -556,7 +556,7 @@ router.patch("/me/chat-email-prefs", isAuthenticated, async (req, res) => {
 
 // ─── E2E Encryption ──────────────────────────────────────────────────────────
 
-/* PUT /users/keys — Stocker/mettre à jour la paire de clés E2E. */
+/* PUT /users/keys : Stocker/mettre à jour la paire de clés E2E. */
 router.put("/keys", isAuthenticated, async (req, res) => {
   const { publicKey, encryptedPrivateKey, e2eMode, encryptedSeedPhrase } =
     req.body;
@@ -625,7 +625,7 @@ router.put("/keys", isAuthenticated, async (req, res) => {
   }
 });
 
-/* GET /users/:id/publicKey — Récupérer la clé publique d'un utilisateur */
+/* GET /users/:id/publicKey : Récupérer la clé publique d'un utilisateur */
 router.get("/:id/publicKey", isAuthenticated, async (req, res) => {
   try {
     const user = await userModel.findById(req.params.id).select("publicKey");
@@ -773,7 +773,7 @@ router.patch(
 
       const payload = formatUser(updatedUser);
       // Le token ne porte que l'identité, comme à la connexion (routes/auth.js).
-      // Il embarquait tout le profil — clé privée chiffrée comprise — alors
+      // Il embarquait tout le profil, clé privée chiffrée comprise, alors
       // qu'un JWT est signé, pas chiffré : son contenu se lit en clair.
       const tokenDuration = tokenDurationFrom(req.payload);
       const authToken = jwt.sign(
@@ -853,7 +853,7 @@ router.delete(
 
       // Même règle que « retirer un ami » : le compte disparaît des deux
       // côtés. Ses cartes à lui, puis les cartes que les autres avaient de
-      // lui — avant de supprimer les amitiés, dont on lit les linkedDate.
+      // lui : avant de supprimer les amitiés, dont on lit les linkedDate.
       // Le compte n'a plus accès à rien (utils/session.js refuse un compte
       // supprimé) ; on coupe aussi ses connexions temps réel déjà ouvertes.
       disconnectUserSockets(req.app, req.params.id);

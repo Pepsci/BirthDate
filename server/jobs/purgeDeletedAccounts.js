@@ -48,7 +48,7 @@ const purgeDeletedAccounts = cron.schedule(
         // Avant de faire disparaître le compte : recopier sa clé publique sur
         // les messages qu'il a envoyés. Ses correspondants conservent leur
         // copie de la conversation, et le déchiffrement exige la clé publique
-        // de l'émetteur — sans cette empreinte, ils garderaient des messages
+        // de l'émetteur : sans cette empreinte, ils garderaient des messages
         // définitivement illisibles. Voir `senderSnapshot` dans message.model.
         await Message.updateMany(
           { sender: user._id, senderSnapshot: null },

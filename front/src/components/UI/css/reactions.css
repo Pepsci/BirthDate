@@ -1,4 +1,4 @@
-/* Réactions aux messages — pastilles sous la bulle + sélecteur dans le menu.
+/* Réactions aux messages : pastilles sous la bulle + sélecteur dans le menu.
    Pendant web de mobile/src/components/ReactionPills.tsx et
    MessageActionSheet.tsx. */
 
@@ -80,7 +80,7 @@
 }
 
 /* Appui long sur mobile : le bloc d'actions est centré en absolu sur la bulle
-   et empilé en colonne. Le sélecteur y devient une carte autonome — sans fond
+   et empilé en colonne. Le sélecteur y devient une carte autonome : sans fond
    propre il flotterait au-dessus du texte du message, illisible.
    `flex-wrap` parce que six pastilles de 34 px dépassent la largeur d'un
    écran étroit une fois la bulle rétrécie. */

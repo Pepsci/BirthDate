@@ -8,7 +8,7 @@ import "./css/bankInfo.css";
  *
  * Beaucoup d'organisateurs ont déjà ouvert une cagnotte ailleurs, ou préfèrent
  * un service qu'ils connaissent. Sans cet emplacement, ils collent le lien
- * dans le chat de l'événement — où il descend sous les messages et devient
+ * dans le chat de l'événement : où il descend sous les messages et devient
  * invisible pour les invités arrivés plus tard.
  *
  * ⚠️ Ce qui compte ici, c'est l'honnêteté de l'affichage : BirthReminder n'a

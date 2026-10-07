@@ -67,7 +67,7 @@ export default function EventsScreen() {
     }, [load]),
   );
 
-  // Tour guidé : créer son premier événement (＋) — première visite uniquement
+  // Tour guidé : créer son premier événement (＋), première visite uniquement
   useEffect(() => {
     startTour(TOURS.events);
   }, [startTour]);
@@ -188,7 +188,7 @@ export default function EventsScreen() {
  *
  * ⚠️ Propriété importante : ce statut est TOUJOURS recalculé à partir des dates
  * de l'événement, jamais stocké. Un événement archivé redevient donc « à venir »
- * de lui-même dès qu'une date future réapparaît — l'organisateur repousse un
+ * de lui-même dès qu'une date future réapparaît : l'organisateur repousse un
  * dîner qui n'a pas eu lieu, ou ajoute une nouvelle option à un vote périmé.
  * Le jour où on stockerait un booléen « archivé » en base, ce retour en arrière
  * cesserait de fonctionner tout seul.
@@ -208,7 +208,7 @@ function isPastEvent(e: EventEntry): boolean {
   // Un événement annulé n'aura pas lieu : sa date n'a plus de sens, il rejoint
   // les archives immédiatement, quelle qu'elle soit. Le badge « Annulé » sur la
   // carte dit pourquoi il s'y trouve. S'il est rétabli (status repasse à
-  // "published"), il remonte tout seul — comme le reste, c'est calculé, jamais
+  // "published"), il remonte tout seul : comme le reste, c'est calculé, jamais
   // stocké.
   if (e.status === "cancelled") return true;
 
@@ -297,7 +297,7 @@ function EventCard({
   const isCancelled = event.status === "cancelled";
 
   // ⚠️ Un brouillon ouvre directement le formulaire, jamais la page
-  // événement — or c'est là que se trouvaient Annuler et Supprimer. Un
+  // événement : or c'est là que se trouvaient Annuler et Supprimer. Un
   // brouillon était donc impossible à supprimer. Le bouton vit sur la carte.
   const confirmDeleteDraft = () => {
     Alert.alert(
@@ -393,7 +393,7 @@ function EventCard({
           <View style={styles.cancelBanner}>
             <Text style={styles.cancelBannerText} numberOfLines={2}>
               ❌ {t("events:status.cancelled")}
-              {event.cancellationReason ? ` — ${event.cancellationReason}` : ""}
+              {event.cancellationReason ? ` : ${event.cancellationReason}` : ""}
             </Text>
           </View>
         )}

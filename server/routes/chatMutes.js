@@ -1,6 +1,6 @@
 // ============================================================
 // server/routes/chatMutes.js
-// Mise en silencieux d'une conversation — privée ou discussion d'événement.
+// Mise en silencieux d'une conversation : privée ou discussion d'événement.
 //
 // Ne coupe que le PUSH : la notification in-app est toujours créée et le
 // badge de non-lus continue de monter. Voir models/chatMute.model.js.

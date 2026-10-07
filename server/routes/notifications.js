@@ -27,7 +27,7 @@ router.get("/", isAuthenticated, async (req, res) => {
   }
 });
 
-// PATCH /api/notifications/read-all — avant /:id pour éviter le conflit
+// PATCH /api/notifications/read-all : avant /:id pour éviter le conflit
 router.patch("/read-all", isAuthenticated, async (req, res) => {
   try {
     const userId = req.payload._id;
@@ -48,7 +48,7 @@ router.patch("/read-all", isAuthenticated, async (req, res) => {
  *
  * ⚠️ Pourquoi c'est nécessaire : un utilisateur lit rarement ses messages
  * depuis le centre de notifications. Il ouvre l'application, va dans le chat,
- * lit — et la pastille reste rouge pour un message déjà lu. Il finit par ne
+ * lit : et la pastille reste rouge pour un message déjà lu. Il finit par ne
  * plus la croire, et le compteur ne veut plus rien dire. Une notification
  * décrit un fait ; quand ce fait est consommé ailleurs, elle doit s'éteindre.
  *
@@ -118,7 +118,7 @@ router.patch("/:id/read", isAuthenticated, async (req, res) => {
   }
 });
 
-// DELETE /api/notifications/:id — supprimer une notif
+// DELETE /api/notifications/:id : supprimer une notif
 router.delete("/:id", isAuthenticated, async (req, res) => {
   try {
     const userId = req.payload._id;
@@ -130,7 +130,7 @@ router.delete("/:id", isAuthenticated, async (req, res) => {
   }
 });
 
-// DELETE /api/notifications — supprimer toutes les notifs
+// DELETE /api/notifications : supprimer toutes les notifs
 router.delete("/", isAuthenticated, async (req, res) => {
   try {
     const userId = req.payload._id;

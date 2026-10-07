@@ -124,7 +124,7 @@ export default function EventLocationMap({
 
       <Pressable style={styles.mapsBtn} onPress={onOpenMaps}>
         <Text style={styles.mapsBtnText}>
-          {/* Android ouvre un lien geo: — Google Maps dans la quasi-totalité
+          {/* Android ouvre un lien geo: : Google Maps dans la quasi-totalité
               des cas, avec un choix si plusieurs apps de cartes sont
               installées. iOS ouvre Plans (nom français d'Apple Maps). */}
           {Platform.OS === "android"

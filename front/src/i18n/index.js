@@ -1,5 +1,5 @@
 /**
- * i18n — socle de traduction du front web.
+ * i18n : socle de traduction du front web.
  *
  * Ordre de résolution de la langue :
  *   1. choix manuel de l'utilisateur (localStorage "br-lang")

@@ -15,7 +15,7 @@ const GiftPoolManager = ({ shortId, pool, onUpdated }) => {
 
   // ── Remboursement ─────────────────────────────────────────────────────────
   // Chargé séparément de la cagnotte : le bloc reste pertinent quand celle-ci
-  // est DÉJÀ fermée par une annulation ou un transfert d'organisation — c'est
+  // est DÉJÀ fermée par une annulation ou un transfert d'organisation : c'est
   // même précisément là qu'on en a besoin.
   const [refund, setRefund] = useState(null);
   const [refunding, setRefunding] = useState(false);
@@ -73,7 +73,7 @@ const GiftPoolManager = ({ shortId, pool, onUpdated }) => {
    * ⚠️ « Où est mon argent ? » est LA question de l'organisateur, et
    * l'application n'y répondait pas du tout : il fallait retrouver un vieil
    * email de Stripe. Un solde à zéro veut d'ailleurs presque toujours dire
-   * « déjà viré sur votre banque » — d'où l'affichage des derniers virements
+   * « déjà viré sur votre banque » : d'où l'affichage des derniers virements
    * à côté, sans lesquels un zéro inquiète au lieu de rassurer.
    */
   const [balance, setBalance] = useState(null);
@@ -84,7 +84,7 @@ const GiftPoolManager = ({ shortId, pool, onUpdated }) => {
    *
    * ⚠️ Sans ce bouton, un organisateur qui a créé un compte Stripe une fois
    * n'avait aucun moyen de revenir en arrière depuis l'application. Avec des
-   * comptes Standard — de vrais comptes Stripe lui appartenant — pouvoir
+   * comptes Standard, de vrais comptes Stripe lui appartenant, pouvoir
    * couper le lien est une attente légitime.
    *
    * Le serveur refuse tant qu'il reste des contributions encaissées non
@@ -132,7 +132,7 @@ const GiftPoolManager = ({ shortId, pool, onUpdated }) => {
     // Un `window.open` exécuté après un `await` a perdu le contexte du clic :
     // les navigateurs le traitent comme une fenêtre surgissante non
     // sollicitée et la bloquent, silencieusement. Aucune erreur, aucun
-    // onglet — exactement le symptôme « le bouton ne fait rien ».
+    // onglet : exactement le symptôme « le bouton ne fait rien ».
     //
     // On ouvre donc l'onglet dans la foulée du clic, puis on y pose l'adresse
     // quand elle arrive. Si l'ouverture a quand même été refusée, on le dit
@@ -161,7 +161,7 @@ const GiftPoolManager = ({ shortId, pool, onUpdated }) => {
           d?.detail,
         ]
           .filter(Boolean)
-          .join(" — "),
+          .join(", "),
       );
     } finally {
       setDashLoading(false);
@@ -195,13 +195,13 @@ const GiftPoolManager = ({ shortId, pool, onUpdated }) => {
       window.location.href = res.data.url;
     } catch (err) {
       // Le `detail` porte le message exact de Stripe (champ refusé, URL non
-      // publique…). Sans lui, l'utilisateur — et toi en développement — restez
+      // publique…). Sans lui, l'utilisateur, et toi en développement, restez
       // devant une erreur générique sans piste.
       const d = err?.response?.data;
       setError(
         [d?.message || "Impossible de démarrer la connexion Stripe.", d?.detail]
           .filter(Boolean)
-          .join(" — "),
+          .join(", "),
       );
       setOnboarding(false);
     }
@@ -259,7 +259,7 @@ const GiftPoolManager = ({ shortId, pool, onUpdated }) => {
             <div className="gp-status gp-status-ok">
               <i className="fa-solid fa-circle-check"></i>
               <span>
-                Compte Stripe connecté — vous pouvez encaisser une cagnotte.
+                Compte Stripe connecté : vous pouvez encaisser une cagnotte.
               </span>
             </div>
 
@@ -281,8 +281,7 @@ const GiftPoolManager = ({ shortId, pool, onUpdated }) => {
                     Dernier virement : {euro(balance.payouts[0].amount)}
                     {balance.payouts[0].arrivalDate && (
                       <>
-                        {" "}
-                        — arrivée le{" "}
+                        , arrivée le{" "}
                         {new Date(
                           balance.payouts[0].arrivalDate,
                         ).toLocaleDateString("fr-FR")}
@@ -497,7 +496,7 @@ const GiftPoolManager = ({ shortId, pool, onUpdated }) => {
         <div className="gp-section">
           <p className="gp-section-title">💸 Rembourser les contributeurs</p>
           <p className="gp-muted">
-            {refund.count} contribution{refund.count > 1 ? "s" : ""} —{" "}
+            {refund.count} contribution{refund.count > 1 ? "s" : ""} : {" "}
             <strong>{euro(refund.totalRefunded)}</strong> seront intégralement
             rendus à leurs auteurs.
           </p>
@@ -512,7 +511,7 @@ const GiftPoolManager = ({ shortId, pool, onUpdated }) => {
             frais des paiements d'origine. La cagnotte sera fermée, et
             l'opération est irréversible.
           </p>
-          {/* Les frais dépendent de la carte de chaque contributeur — 1,5 %
+          {/* Les frais dépendent de la carte de chaque contributeur : 1,5 %
               pour une carte européenne standard, jusqu'à 3,15 % plus
               conversion pour une carte étrangère. On les relève désormais à
               l'encaissement ; pour les contributions plus anciennes il ne

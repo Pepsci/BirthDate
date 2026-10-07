@@ -185,7 +185,7 @@ router.get("/:conversationId/messages", isAuthenticated, async (req, res) => {
   }
 });
 
-// Envoyer un message par REST — utilisé par la réponse depuis une notification
+// Envoyer un message par REST : utilisé par la réponse depuis une notification
 // push (app fermée, pas de socket). Même logique que le socket `message:send`.
 // Body : { content, isEncrypted, encryptedForRecipient, encryptedForSender,
 //          replyTo, clientId, markRead }
@@ -494,7 +494,7 @@ router.delete("/messages/:messageId", isAuthenticated, async (req, res) => {
   }
 });
 
-// Supprimer une conversation — « pour moi » uniquement
+// Supprimer une conversation : « pour moi » uniquement
 //
 // Auparavant : deleteMany sur les messages + suppression du document, donc un
 // participant effaçait l'historique de l'autre. Désormais on horodate son

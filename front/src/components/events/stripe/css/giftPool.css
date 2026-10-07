@@ -1,5 +1,5 @@
 /* ============================================
-   GIFT POOL — Cagnotte Stripe
+   GIFT POOL : Cagnotte Stripe
    Variables globales : variables.css
    ============================================ */
 
@@ -561,7 +561,7 @@
 }
 
 /* Précision sur la fiabilité du chiffre annoncé juste au-dessus. Discrète :
-   elle nuance, elle n'alarme pas — l'alarme, c'est le montant lui-même. */
+   elle nuance, elle n'alarme pas : l'alarme, c'est le montant lui-même. */
 .gp-refund-note {
   margin: 6px 0 0;
   padding: 0 2px;
@@ -572,7 +572,7 @@
 
 /* Encadré d'engagement affiché à l'activation de la cagnotte. Ton informatif,
    pas alarmiste : il ne signale pas un danger, il énonce ce à quoi on
-   souscrit — l'alerte, elle, est réservée au montant d'un remboursement. */
+   souscrit : l'alerte, elle, est réservée au montant d'un remboursement. */
 .gp-commit {
   margin: 10px 0 4px;
   padding: 12px 14px;
@@ -666,7 +666,7 @@
 }
 
 /* Solde du compte connecté, côté organisateur.
-   « Où est mon argent ? » est sa question la plus fréquente — et un solde à
+   « Où est mon argent ? » est sa question la plus fréquente : et un solde à
    zéro veut presque toujours dire « déjà viré », d'où la ligne sur le dernier
    virement juste en dessous. */
 .gp-balance {
@@ -708,7 +708,7 @@
 }
 
 /* Déconnexion du compte de paiement : action rare et lourde de conséquences,
-   donc discrète — mais présente, parce que ne pas pouvoir revenir en arrière
+   donc discrète : mais présente, parce que ne pas pouvoir revenir en arrière
    sur un compte qu'on a créé est difficilement défendable. */
 .gp-disconnect {
   display: block;

@@ -7,7 +7,7 @@
 // frais réels sur la `balance_transaction` de la charge, côté compte connecté.
 // Si cette lecture ne renvoie plus rien, rien ne casse visiblement : le
 // paiement passe, la cagnotte se met à jour. Mais le coût d'un remboursement
-// affiché à l'organisateur retombe sur une estimation — un chiffre qui peut
+// affiché à l'organisateur retombe sur une estimation : un chiffre qui peut
 // valoir la moitié de la réalité, montré juste avant une opération
 // irréversible.
 //
@@ -57,7 +57,7 @@ const limit = parseInt(process.argv[2]) || 5;
     // qui valide un échec est pire que pas de vérificateur.
     //
     // Les "pending" restent exclus : le webhook n'est jamais passé dessus,
-    // l'absence de frais y est normale — mais on les signale à part.
+    // l'absence de frais y est normale : mais on les signale à part.
     const feeOk = typeof c.feeCents === "number";
     if (!feeOk && (c.status === "succeeded" || c.status === "refunded")) {
       missing += 1;

@@ -99,7 +99,7 @@ const GiftShareCard = ({ message, isOwn }) => {
               </>
             )}
 
-            {/* ── Bouton sauvegarder — uniquement pour le destinataire ── */}
+            {/* ── Bouton sauvegarder : uniquement pour le destinataire ── */}
             {!isOwn && gifts.length > 0 && (
               <button
                 className="gsc-save-btn"

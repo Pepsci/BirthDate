@@ -12,7 +12,7 @@ const service = axios.create({
 });
 
 // ── Analytics produit (PostHog) ───────────────────────────────────────────
-// Événements métier capturés au succès des appels API — un seul point d'entrée.
+// Événements métier capturés au succès des appels API : un seul point d'entrée.
 // No-op si l'utilisateur n'a pas consenti aux cookies analytics.
 service.interceptors.response.use(
   (response) => {

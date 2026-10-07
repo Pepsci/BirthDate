@@ -405,7 +405,7 @@ export default function CGU() {
               demande d'un participant mécontent
             </strong>{" "}
             : cette faculté est réservée à des situations exceptionnelles et
-            documentées — fraude caractérisée, organisateur injoignable ou
+            documentées : fraude caractérisée, organisateur injoignable ou
             compte supprimé, décision d'une autorité compétente. Elle reste par
             ailleurs limitée par le solde disponible sur le compte de
             l'organisateur : une fois les sommes virées sur son compte
@@ -424,8 +424,8 @@ export default function CGU() {
             L'annulation d'un événement, comme le transfert du rôle
             d'organisateur, <strong>gèle la cagnotte</strong> : plus aucune
             contribution ne peut y être versée. Les sommes déjà collectées
-            restent sur le compte Stripe de l'organisateur qui les a encaissées
-            — elles ne suivent pas le transfert du rôle. Il lui appartient de
+            restent sur le compte Stripe de l'organisateur qui les a encaissées,
+            elles ne suivent pas le transfert du rôle. Il lui appartient de
             les reverser au nouvel organisateur ou de les rembourser aux
             participants.
           </p>
@@ -488,7 +488,7 @@ export default function CGU() {
             </li>
             <li>
               <strong>Déposez plainte</strong> si vous estimez avoir été victime
-              d'une escroquerie — événement inventé, organisateur disparu avec
+              d'une escroquerie : événement inventé, organisateur disparu avec
               les fonds. Le dépôt de plainte en ligne pour escroquerie sur
               internet se fait via le dispositif THESEE, sur le site du
               ministère de l'Intérieur. Signalez-le-nous également : nous gelons

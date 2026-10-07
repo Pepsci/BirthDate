@@ -232,7 +232,7 @@ const FriendProfile = ({ date, onCancel, initialSection = "info" }) => {
       const status = error.response?.status;
       const message = error.response?.data?.message;
       if (status === 400 && message === "Cet item est déjà réservé") {
-        // Réservé via la page publique — rafraîchir pour refléter l'état réel
+        // Réservé via la page publique : rafraîchir pour refléter l'état réel
         loadFriendWishlist();
       } else {
         console.error("Erreur réservation:", error);
@@ -475,7 +475,7 @@ const FriendProfile = ({ date, onCancel, initialSection = "info" }) => {
         </div>
       );
 
-    // Pas de filtre ici — GiftCardGrid gère l'affichage selon
+    // Pas de filtre ici : GiftCardGrid gère l'affichage selon
     // isReserved + isReservedByMe (réservé par moi ou par un guest)
     return (
       <div className="wishlist-section">

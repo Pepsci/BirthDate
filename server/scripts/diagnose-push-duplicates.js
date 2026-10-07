@@ -12,7 +12,7 @@
 // enregistrés pour le compte. Deux canaux qui aboutissent au même appareil
 // produisent deux bannières. Les deux cas courants :
 //
-//   1. plusieurs jetons Expo — une réinstallation, un build TestFlight à côté
+//   1. plusieurs jetons Expo : une réinstallation, un build TestFlight à côté
 //      d'un build de développement, et l'ancien jeton reste valide ;
 //   2. un abonnement web push (la version installée depuis Safari/Chrome) EN
 //      PLUS de l'application native, sur le même téléphone.
@@ -101,7 +101,7 @@ if (!process.env.MONGO_URI) {
 
   const expo = user.expoPushTokens || [];
   // `endpoint` est imbriqué sous `subscription`, et `userAgent` est ce qui
-  // permet de reconnaître QUEL appareil a posé l'abonnement — c'est toute la
+  // permet de reconnaître QUEL appareil a posé l'abonnement : c'est toute la
   // question ici.
   const webSubs = await PushSubscription.find({ user: user._id }).select(
     "subscription.endpoint userAgent createdAt",
@@ -291,7 +291,7 @@ if (!process.env.MONGO_URI) {
     console.log("\nEnvoi d'une notification de test sur tous les canaux…");
     await sendPushToUser(user._id, {
       title: "Test BirthReminder",
-      body: `Envoi unique de ${stamp} — comptez combien vous en recevez.`,
+      body: `Envoi unique de ${stamp} : comptez combien vous en recevez.`,
       url: "/home",
       tag: `diagnostic-${Date.now()}`,
       type: "default",
@@ -308,7 +308,7 @@ if (!process.env.MONGO_URI) {
     const target = webSubs[pruneWebIndex - 1];
     if (!target) {
       console.error(
-        `\nAucun abonnement web push n° ${pruneWebIndex} — il y en a ${webSubs.length}.`,
+        `\nAucun abonnement web push n° ${pruneWebIndex} : il y en a ${webSubs.length}.`,
       );
     } else {
       await PushSubscription.deleteOne({ _id: target._id });

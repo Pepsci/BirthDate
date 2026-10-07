@@ -21,32 +21,32 @@ export default function ContactPage() {
    * Chemin guidé « problème de cagnotte ».
    *
    * ⚠️ Nos conditions disent au contributeur de nous écrire quand
-   * l'organisateur ne répond pas — mais rien ne structurait ce moment-là. Il
+   * l'organisateur ne répond pas : mais rien ne structurait ce moment-là. Il
    * arrivait un ticket « bonjour j'ai payé quelque part et je n'ai rien reçu »,
    * sans montant, sans événement, sans référence : deux allers-retours avant
    * de pouvoir seulement identifier le paiement.
    *
-   * Le gabarit demande ces éléments d'emblée. La dernière question — « avez-vous
-   * contacté l'organisateur ? » — est la plus utile de toutes : c'est la
+   * Le gabarit demande ces éléments d'emblée. La dernière question : « avez-vous
+   * contacté l'organisateur ? », est la plus utile de toutes : c'est la
    * première marche de la procédure, et la grande majorité des situations se
    * règlent là. Connaître la réponse dès le premier message évite de la poser.
    */
   const poolIssueTemplate = (c) => ({
     subject: c?.eventTitle
-      ? `Problème de cagnotte — ${c.eventTitle}`.slice(0, SUBJECT_MAX)
+      ? `Problème de cagnotte : ${c.eventTitle}`.slice(0, SUBJECT_MAX)
       : "Problème avec une cagnotte",
     message: [
-      "— Ma contribution —",
+      "Ma contribution :",
       c?.amountLabel ? `Montant : ${c.amountLabel}` : "Montant : ",
       c?.dateLabel ? `Date : ${c.dateLabel}` : "Date : ",
       c?.eventTitle ? `Événement : ${c.eventTitle}` : "Événement : ",
       c?.organizer ? `Encaissé par : ${c.organizer}` : "Encaissé par : ",
       c?.reference ? `Référence de paiement : ${c.reference}` : "Référence de paiement : ",
       "",
-      "— Ce qui se passe —",
+      "Ce qui se passe :",
       "",
       "",
-      "— Ai-je déjà contacté l'organisateur ? —",
+      "Ai-je déjà contacté l'organisateur ?",
       "(oui, le … / pas encore)",
       "",
     ].join("\n"),
@@ -70,7 +70,7 @@ export default function ContactPage() {
   // Un seul ticket actif à la fois (voir routes/support.js) : un utilisateur
   // connecté qui en a déjà un en cours continue cette conversation dans le
   // dashboard (onglet Support) plutôt que d'en ouvrir un nouveau ici. Un
-  // ticket fermé (résolu) ne compte pas — il peut repartir sur un nouveau
+  // ticket fermé (résolu) ne compte pas : il peut repartir sur un nouveau
   // sujet normalement.
   const [activeTicket, setActiveTicket] = useState(null);
 
@@ -98,7 +98,7 @@ export default function ContactPage() {
    * Avec elle, le ticket porte l'identifiant de la cagnotte : l'admin ouvre
    * directement les contributions concernées.
    *
-   * C'est aussi ce qui autorise la dérogation à la règle du ticket unique —
+   * C'est aussi ce qui autorise la dérogation à la règle du ticket unique :
    * le serveur plafonne à un ticket ouvert par cagnotte, donc la liste des
    * contributions borne naturellement le nombre de fils possibles.
    */
@@ -110,7 +110,7 @@ export default function ContactPage() {
    * contribution dont l'événement a été supprimé n'a plus de `shortId`. Si la
    * catégorie dépendait de l'événement, ces demandes repartaient en « général »
    * et se faisaient refuser au profit d'une conversation en cours sur un autre
-   * sujet — celui qui n'a pas été remboursé ne pouvait plus rien signaler.
+   * sujet : celui qui n'a pas été remboursé ne pouvait plus rien signaler.
    */
   const [isPoolIssue, setIsPoolIssue] = useState(false);
 
@@ -154,7 +154,7 @@ export default function ContactPage() {
     }
     setFormOpen(true);
     // On ne pré-remplit que si l'utilisateur n'a pas déjà commencé à écrire
-    // son propre objet — jamais écraser ce qu'il a tapé.
+    // son propre objet : jamais écraser ce qu'il a tapé.
     if (context && !subject.trim()) {
       setSubject(`Question non résolue : ${context}`.slice(0, SUBJECT_MAX));
     }
@@ -189,7 +189,7 @@ export default function ContactPage() {
    * ⚠️ Un litige de cagnotte n'est PAS bloqué par une conversation en cours
    * sur un autre sujet : c'est le seul cas où de l'argent est en jeu, et
    * c'était précisément celui que la règle du ticket unique empêchait. Le
-   * serveur plafonne autrement — un ticket ouvert par cagnotte.
+   * serveur plafonne autrement : un ticket ouvert par cagnotte.
    */
   const openPoolIssue = (prepared) => {
     setIsPoolIssue(true);
@@ -211,7 +211,7 @@ export default function ContactPage() {
 
   /*
    * Arrivée depuis « Mes contributions » : la contribution voyage dans l'état
-   * de navigation, jamais dans l'URL — une référence de paiement n'a rien à
+   * de navigation, jamais dans l'URL : une référence de paiement n'a rien à
    * faire dans une barre d'adresse, ni dans un historique de navigateur.
    */
   // Arrivée depuis une carte (« Fête incorrecte ? ») : prénom pré-rempli
@@ -275,7 +275,7 @@ export default function ContactPage() {
         const existing = err.response.data.ticket;
         setActiveTicket(existing);
         setError(
-          `${err.response.data.message} Vous allez être redirigé vers cette conversation — votre message n'a pas été envoyé, pensez à le copier.`,
+          `${err.response.data.message} Vous allez être redirigé vers cette conversation : votre message n'a pas été envoyé, pensez à le copier.`,
         );
         setTimeout(() => {
           setFormOpen(false);
@@ -367,7 +367,7 @@ export default function ContactPage() {
                 <strong>Un problème avec une cagnotte ?</strong>
                 <small>
                   Contribution non remboursée, événement annulé, organisateur
-                  injoignable — nous vous guidons.
+                  injoignable : nous vous guidons.
                 </small>
               </span>
             </button>

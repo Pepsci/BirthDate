@@ -83,7 +83,7 @@ const ProfilDetails = ({
     // l'argent part chez l'organisateur et l'application n'en gardait aucune
     // vue côté contributeur : montant, date et référence disparaissaient dès
     // la page fermée. C'est pourtant ce qu'il faut produire pour réclamer un
-    // remboursement — à quelqu'un qui n'est pas nous.
+    // remboursement : à quelqu'un qui n'est pas nous.
     { id: "contributions", title: "Mes contributions", icon: "💝" },
     {
       id: "e2e",
@@ -629,7 +629,7 @@ const ProfilDetails = ({
                       className="avatar-edit__input"
                     />
                     <span className="auth-input-hint">
-                      JPG, PNG, WEBP ou GIF — 5 Mo max
+                      JPG, PNG, WEBP ou GIF : 5 Mo max
                     </span>
                     {removeAvatar && (
                       <span className="auth-input-hint">
@@ -708,7 +708,7 @@ const ProfilDetails = ({
                     maxLength={5}
                   />
                   <span className="auth-input-hint">
-                    Format MM-JJ — exemple : 03-13 pour le 13 mars
+                    Format MM-JJ, exemple : 03-13 pour le 13 mars
                   </span>
                 </div>
 

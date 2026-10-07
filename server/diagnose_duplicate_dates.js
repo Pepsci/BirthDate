@@ -1,4 +1,4 @@
-// Script de diagnostic ponctuel — à lancer toi-même dans un terminal normal
+// Script de diagnostic ponctuel : à lancer toi-même dans un terminal normal
 // (`node diagnose_duplicate_dates.js` depuis server/), PAS depuis mon
 // bac à sable : je n'ai pas accès réseau à Mongo Atlas d'ici (SRV DNS
 // bloqué), donc je ne peux pas l'exécuter pour toi.
@@ -6,12 +6,12 @@
 // But : vérifier si les notifs d'anniversaire en double viennent de deux
 // VRAIES cartes distinctes en base (donc deux _id différents, deux rappels
 // parfaitement légitimes du point de vue du cron) plutôt que d'un bug dans
-// le cron lui-même — auquel cas mon correctif d'idempotence (ReminderClaim,
+// le cron lui-même : auquel cas mon correctif d'idempotence (ReminderClaim,
 // keyé par carte) n'y changerait rien puisque chaque carte a son propre
 // verrou.
 //
 // Une fois que tu as le résultat, supprime ce fichier (ou dis-le moi, je
-// m'en charge) — il n'a pas vocation à rester dans le repo.
+// m'en charge) : il n'a pas vocation à rester dans le repo.
 require("dotenv").config();
 const mongoose = require("mongoose");
 

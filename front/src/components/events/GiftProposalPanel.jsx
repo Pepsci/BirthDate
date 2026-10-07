@@ -129,7 +129,7 @@ const GiftProposalPanel = ({
           ? { type: "success", text: "✓ Infos récupérées !" }
           : {
               type: "warning",
-              text: `⚠️ Remplissage partiel — ${missing.join(", ")} non trouvé${missing.length > 1 ? "s" : ""}`,
+              text: `⚠️ Remplissage partiel : ${missing.join(", ")} non trouvé${missing.length > 1 ? "s" : ""}`,
             },
       );
     } catch {

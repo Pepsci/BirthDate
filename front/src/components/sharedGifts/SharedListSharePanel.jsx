@@ -3,7 +3,7 @@ import apiHandler from "../../api/apiHandler";
 import "./css/sharedListSharePanel.css";
 
 /**
- * Partage et accès d'une liste commune — réservé aux membres.
+ * Partage et accès d'une liste commune : réservé aux membres.
  *
  * Ce panneau n'existait pas côté web. Les routes serveur (`/:id/share`,
  * `/:id/access`, `/:id/viewers`, `/:id/access/code`) étaient toutes en place et
@@ -185,7 +185,7 @@ export default function SharedListSharePanel({ listId, onClose }) {
           <ul className="slsp-picker">
             {selectable.length === 0 ? (
               <li className="slsp-muted">
-                Aucun contact à ajouter — ils ont déjà tous accès.
+                Aucun contact à ajouter : ils ont déjà tous accès.
               </li>
             ) : (
               selectable.map((f) => (

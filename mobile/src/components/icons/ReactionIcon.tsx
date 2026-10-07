@@ -8,7 +8,7 @@ import Svg, { Circle, Path } from "react-native-svg";
  * ⚠️ Traitement différent des icônes d'en-tête, et c'est délibéré.
  *
  * Les icônes de Icon.tsx sont en TRAIT parce que ce sont des affordances : on
- * doit les comprendre, pas les ressentir. Une réaction est l'inverse — un
+ * doit les comprendre, pas les ressentir. Une réaction est l'inverse : un
  * tampon émotionnel, affiché à 14-16 px sous une bulle. En trait fin et gris à
  * cette taille, un cœur devient une tache illisible. D'où des APLATS COLORÉS,
  * lisibles au premier coup d'œil et reconnaissables de loin.
@@ -17,7 +17,7 @@ import Svg, { Circle, Path } from "react-native-svg";
  * sens en clair comme en sombre : un cœur rouge est un cœur rouge. Les teintes
  * sont choisies assez soutenues pour tenir sur les deux fonds.
  *
- * Le stockage, lui, ne connaît que la clé ("love") — jamais le dessin. On peut
+ * Le stockage, lui, ne connaît que la clé ("love") : jamais le dessin. On peut
  * donc tout redessiner sans toucher à une seule ligne de la base.
  */
 
@@ -33,7 +33,7 @@ export const REACTIONS: ReactionName[] = [
   "party",
 ];
 
-/** Libellés pour l'accessibilité — un dessin seul n'est pas annonçable. */
+/** Libellés pour l'accessibilité : un dessin seul n'est pas annonçable. */
 export const REACTION_LABELS: Record<ReactionName, string> = {
   get like() { return t("chat:reaction.like"); },
   get love() { return t("chat:reaction.love"); },
@@ -57,7 +57,7 @@ export default function ReactionIcon({
     case "love":
       return (
         <Svg width={size} height={size} viewBox="0 0 24 24">
-          {/* Cœur : emprise x 3→21, y 5→20,5 — centrée sur (12, 12,75). */}
+          {/* Cœur : emprise x 3→21, y 5→20,5, centrée sur (12, 12,75). */}
           <Path
             d="M12 20.5 C12 20.5 3 15.2 3 9.8 C3 6.9 5.2 5 7.6 5 C9.4 5 11.1 6 12 7.6 C12.9 6 14.6 5 16.4 5 C18.8 5 21 6.9 21 9.8 C21 15.2 12 20.5 12 20.5 Z"
             fill="#E8385A"
@@ -121,7 +121,7 @@ export default function ReactionIcon({
           <Circle cx="12" cy="12" r="9" fill={FACE} />
           <Circle cx="8.7" cy="10.2" r="1.3" fill={FACE_INK} />
           <Circle cx="15.3" cy="10.2" r="1.3" fill={FACE_INK} />
-          {/* Bouche inversée — arc vers le bas. */}
+          {/* Bouche inversée : arc vers le bas. */}
           <Path
             d="M8.2 17 C9.3 15.2 14.7 15.2 15.8 17"
             stroke={FACE_INK}

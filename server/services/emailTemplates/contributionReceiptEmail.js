@@ -6,7 +6,7 @@
 //
 // Sur une charge directe, l'argent va sur le compte Stripe de l'organisateur
 // et BirthReminder ne le détient jamais. Le jour où l'événement est annulé,
-// le contributeur n'a donc qu'un interlocuteur — l'organisateur — et il ne
+// le contributeur n'a donc qu'un interlocuteur, l'organisateur, et il ne
 // peut rien lui opposer sans référence de paiement.
 //
 // Le reçu automatique de Stripe ne remplace pas celui-ci : sur une charge
@@ -124,7 +124,7 @@ async function sendContributionReceiptEmail({
         `BirthReminder ne détient jamais les fonds et ne peut donc pas rembourser à sa place.<br><br>` +
         `Si l'événement est annulé ou si le cadeau n'est finalement pas acheté, c'est à ${esc(organizerName)} ` +
         `de te rembourser : contacte-le d'abord, en lui donnant la référence ci-dessus. ` +
-        `Si tu restes sans réponse, écris-nous — nous ne pouvons pas trancher un désaccord, ` +
+        `Si tu restes sans réponse, écris-nous : nous ne pouvons pas trancher un désaccord, ` +
         `mais nous pouvons confirmer ce paiement et relancer l'organisateur : ${helpUrl}`,
     ) +
     emailFooter();
@@ -132,7 +132,7 @@ async function sendContributionReceiptEmail({
   await transporter.sendMail({
     from: "no-reply@birthreminder.com",
     to: email,
-    subject: `💝 Reçu de ta contribution — ${eventTitle}`,
+    subject: `💝 Reçu de ta contribution : ${eventTitle}`,
     text:
       `${guestName ? `Bonjour ${guestName},` : "Bonjour,"}\n\n` +
       `Merci pour ta participation à la cagnotte de « ${eventTitle} ».\n\n` +

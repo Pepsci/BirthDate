@@ -33,7 +33,7 @@
     "untilTime": "jusqu'à {{time}}",
     "untilDate": "jusqu'au {{date}}"
   },
-  "e2eMissing": "⚠️ Clé privée absente sur cet appareil — déconnecte-toi puis reconnecte-toi pour activer le chiffrement.",
+  "e2eMissing": "⚠️ Clé privée absente sur cet appareil : déconnecte-toi puis reconnecte-toi pour activer le chiffrement.",
   "typingName": "{{name}} est en train d'écrire…",
   "input": "Ton message…",
   "encryptedEvent": "🔒 Message chiffré (déchiffrement impossible)",
@@ -65,11 +65,11 @@
     "delivered": "Distribué",
     "sent": "Envoyé"
   },
-  "encryptedDm": "🔒 Chiffré — déchiffrement impossible",
+  "encryptedDm": "🔒 Chiffré : déchiffrement impossible",
   "enc": {
-    "noPrivateKey": "🔒 Chiffré — clé privée absente (reconnecte-toi)",
-    "noSenderKey": "🔒 Chiffré — expéditeur sans clé publique",
-    "noCopy": "🔒 Chiffré — pas de copie pour ce compte"
+    "noPrivateKey": "🔒 Chiffré : clé privée absente (reconnecte-toi)",
+    "noSenderKey": "🔒 Chiffré : expéditeur sans clé publique",
+    "noCopy": "🔒 Chiffré : pas de copie pour ce compte"
   },
   "info": {
     "title": "Infos message"

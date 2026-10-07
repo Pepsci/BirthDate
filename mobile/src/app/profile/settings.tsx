@@ -41,7 +41,7 @@ export default function SettingsScreen() {
   const [busy, setBusy] = useState<string | null>(null);
   const statsScope = useStatsScope();
   // Mode local : les stats affichées sont toujours les siennes (les stats
-  // communauté viennent du serveur) — le choix n'a pas lieu d'être.
+  // communauté viennent du serveur) : le choix n'a pas lieu d'être.
   const { mode } = useAuth();
   const isLocal = mode === "local";
   const calendarPrefs = useCalendarPrefs();
@@ -52,7 +52,7 @@ export default function SettingsScreen() {
 
   // useFocusEffect : cet écran reste monté dans la pile entre deux visites
   // (ex. aller cocher "Rappels de fêtes" dans Notifications puis revenir
-  // ici) — sans ça, "me" reste figé sur sa valeur du tout premier montage et
+  // ici) : sans ça, "me" reste figé sur sa valeur du tout premier montage et
   // les deux écrans peuvent sembler « désynchronisés ».
   useFocusEffect(
     useCallback(() => {

@@ -41,7 +41,7 @@ function nextBirthdayOf(birthDate: string): string {
  * Carte qui glisse depuis le haut au tap sur le nom d'un contact dans le
  * chat : âge, anniversaire, nombre de cadeaux dans sa liste, et la liste
  * commune si elle existe (rien sinon). Équivalent mobile du composant web
- * PersonPreviewCard.jsx — même endpoint GET /friends/:id/card-summary.
+ * PersonPreviewCard.jsx : même endpoint GET /friends/:id/card-summary.
  */
 export default function PersonPreviewCard({
   friendId,

@@ -12,12 +12,12 @@ const {
   browserFromUserAgent,
 } = require("../../utils/signupSource");
 
-// Nom de pays en français ("États-Unis") — Intl.DisplayNames est natif à
+// Nom de pays en français ("États-Unis") : Intl.DisplayNames est natif à
 // Node, donc pas de dépendance supplémentaire pour ça. geoip-country ne
 // renvoie qu'un code ISO à 2 lettres ("US").
 const countryNames = new Intl.DisplayNames(["fr"], { type: "region" });
 
-// Emoji drapeau à partir d'un code pays ISO — trick Unicode standard
+// Emoji drapeau à partir d'un code pays ISO : trick Unicode standard
 // (indicateurs régionaux), aucune lib nécessaire.
 function flagEmoji(iso) {
   if (!iso || iso.length !== 2) return "";
@@ -42,7 +42,7 @@ function countryFromIp(ip) {
 // Provenance d'une inscription, prête à afficher.
 // `metadata` n'existe que sur les inscriptions récentes (utils/signupSource.js) ;
 // pour les anciennes, la plateforme est déduite du User-Agent, qui a toujours
-// été enregistré — c'est ce qui rend la colonne utile rétroactivement.
+// été enregistré : c'est ce qui rend la colonne utile rétroactivement.
 function signupOrigin(log, inviterNames) {
   const meta = log.metadata || {};
   const invitedBy = (meta.invitedBy || [])

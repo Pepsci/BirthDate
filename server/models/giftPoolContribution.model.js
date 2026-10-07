@@ -29,7 +29,7 @@ const giftPoolContributionSchema = new Schema(
      * visiteur arrivé par le lien public, lui, n'avait jamais rien accepté :
      * il pouvait payer sans qu'aucun texte ne lui soit opposable. Or c'est
      * exactement la personne qui se retournera vers nous le jour où
-     * l'événement est annulé — et le seul texte qui répond à sa question
+     * l'événement est annulé : et le seul texte qui répond à sa question
      * (« BirthReminder ne détient pas les fonds, le litige se règle avec
      * l'organisateur ») ne vaut que si elle l'a accepté.
      *
@@ -77,7 +77,7 @@ const giftPoolContributionSchema = new Schema(
      * sur la `balance_transaction` de la charge et figés à l'encaissement.
      *
      * ⚠️ Pourquoi ce champ existe. Le coût d'un remboursement était estimé à
-     * partir d'une constante — 1,5 % + 0,25 €, le tarif d'une carte
+     * partir d'une constante : 1,5 % + 0,25 €, le tarif d'une carte
      * européenne standard. Or c'est un cas de figure sur quatre : une carte
      * européenne professionnelle est à 2,8 %, une carte britannique à 2,5 %,
      * une carte hors Europe à 3,15 % plus 2 % de conversion. L'organisateur

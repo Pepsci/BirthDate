@@ -1,6 +1,8 @@
 {
-  "NSCameraUsageDescription": "BirthReminder peut utiliser la caméra pour scanner une carte bancaire lors d'une participation à une cagnotte.",
-  "NSPhotoLibraryUsageDescription": "BirthReminder accède à tes photos uniquement pour choisir ta photo de profil.",
-  "NSCalendarsUsageDescription": "BirthReminder ajoute un événement à ton calendrier uniquement quand tu appuies sur « Ajouter à mon calendrier ».",
-  "NSCalendarsFullAccessUsageDescription": "BirthReminder ajoute un événement à ton calendrier uniquement quand tu appuies sur « Ajouter à mon calendrier »."
+  "ios": {
+    "NSCameraUsageDescription": "BirthReminder peut utiliser la caméra pour scanner une carte bancaire lors d'une participation à une cagnotte.",
+    "NSPhotoLibraryUsageDescription": "BirthReminder accède à tes photos uniquement pour choisir ta photo de profil.",
+    "NSCalendarsUsageDescription": "BirthReminder ajoute un événement à ton calendrier uniquement quand tu appuies sur « Ajouter à mon calendrier ».",
+    "NSCalendarsFullAccessUsageDescription": "BirthReminder ajoute un événement à ton calendrier uniquement quand tu appuies sur « Ajouter à mon calendrier »."
+  }
 }

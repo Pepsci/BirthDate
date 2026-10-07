@@ -10,8 +10,8 @@
     },
     "noIdeas": "Aucune idée cadeau partagée",
     "sharedList": {
-      "one": "Liste commune — {{count}} cadeau",
-      "other": "Liste commune — {{count}} cadeaux"
+      "one": "Liste commune : {{count}} cadeau",
+      "other": "Liste commune : {{count}} cadeaux"
     },
     "viewProfile": "Voir le profil"
   },
@@ -43,7 +43,7 @@
   },
   "nameday": {
     "none": "Aucune fête définie",
-    "dayIn": "Jour — {{month}}",
+    "dayIn": "Jour : {{month}}",
     "pickMonth": "Mois de la fête",
     "changeMonth": "← Changer de mois",
     "remove": "Retirer la fête"
@@ -96,7 +96,7 @@
     "addFromList": "☑ Ajouter depuis une liste",
     "shareBtn": "🔗 Partager",
     "members": "Membres :",
-    "viewerNote": "Liste partagée avec toi — tu peux consulter et réserver.",
+    "viewerNote": "Liste partagée avec toi : tu peux consulter et réserver.",
     "chipAll": "Toutes",
     "chipFree": "🆓 Libres",
     "chipTaken": "🔒 Réservées",
@@ -215,7 +215,7 @@
     "nameday": "🎉 Fête le {{date}}",
     "note": "Les idées cadeaux ne sont pas partagées.",
     "addFriend": "👥 Ajouter en ami",
-    "requested": "✅ Demande envoyée — sa carte se créera s'il accepte",
+    "requested": "✅ Demande envoyée : sa carte se créera s'il accepte",
     "justCreate": "🎂 Juste créer la carte",
     "add": "＋ Ajouter à mes anniversaires",
     "added": "✅ Ajouté à vos anniversaires"

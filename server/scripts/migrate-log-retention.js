@@ -6,8 +6,8 @@
 // ── Pourquoi ────────────────────────────────────────────────────────────────
 // L'index TTL historique portait sur `createdAt` avec expireAfterSeconds
 // 31536000 : TOUT était effacé à un an, sans distinction. Or les actions à
-// conséquence durable — annulation d'événement, transfert d'organisation,
-// remboursement de cagnotte — doivent rester consultables bien au-delà : ce
+// conséquence durable : annulation d'événement, transfert d'organisation,
+// remboursement de cagnotte, doivent rester consultables bien au-delà : ce
 // sont elles qu'on ressort le jour où quelqu'un conteste.
 //
 // Le nouveau schéma indexe `expiresAt` avec expireAfterSeconds: 0. MongoDB
@@ -90,7 +90,7 @@ async function migrate() {
     );
 
     if (!old) {
-      console.log("ℹ️  Aucun index TTL sur createdAt — déjà migré.");
+      console.log("ℹ️  Aucun index TTL sur createdAt : déjà migré.");
     } else {
       console.log(
         `🔎 Ancien index trouvé : ${old.name} (expireAfterSeconds=${old.expireAfterSeconds})`,

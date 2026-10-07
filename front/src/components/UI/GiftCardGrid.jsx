@@ -27,7 +27,7 @@ const GiftCardGrid = ({
   onAdd,
 }) => {
   const [selectedItem, setSelectedItem] = useState(null);
-  // Réservation qu'on s'apprête à libérer — c'est celle d'une autre personne,
+  // Réservation qu'on s'apprête à libérer : c'est celle d'une autre personne,
   // elle mérite d'être nommée dans la question posée.
   const [releasing, setReleasing] = useState(null);
 
@@ -440,7 +440,7 @@ const GiftCardGrid = ({
                           {/* Libérer la réservation d'un autre : action
                               distincte, réservée aux gestionnaires. Sans elle,
                               une idée réservée par quelqu'un qui ne revient
-                              jamais — un visiteur du lien public, surtout —
+                              jamais, un visiteur du lien public, surtout,
                               restait bloquée pour toujours. */}
                           <button
                             className="gcg-btn gcg-btn--danger"

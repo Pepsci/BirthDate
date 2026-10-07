@@ -1,6 +1,6 @@
 import { t } from "@/i18n";
 /**
- * Statut d'une idée cadeau — 3 états.
+ * Statut d'une idée cadeau : 3 états.
  * `status` est stocké en base ; `purchased` reste synchro pour la compat web.
  */
 export type GiftStatus = "to_buy" | "bought" | "to_give" | "offered";

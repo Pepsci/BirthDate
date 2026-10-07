@@ -55,7 +55,7 @@ export default function GuideScreen() {
               style={styles.sectionAction}
               /* Vers le support avec le gabarit prêt, et NON vers « Mes
                  contributions » : une contribution faite sans compte, ou dont
-                 l'événement a disparu, n'y figure pas — l'utilisateur
+                 l'événement a disparu, n'y figure pas : l'utilisateur
                  tomberait sur une liste vide au moment précis où il a besoin
                  d'aide. L'étape 1 lui dit où trouver sa référence. */
               onPress={() =>

@@ -1,5 +1,5 @@
 /* ============================================
-   BANK INFO — RIB organisateur (chiffré)
+   BANK INFO : RIB organisateur (chiffré)
    ============================================ */
 .bi-manager,
 .bi-viewer {
@@ -267,7 +267,7 @@ a.bi-btn {
   text-decoration: none;
 }
 
-/* Cagnotte tenue sur un autre service — l'avertissement doit se lire AVANT
+/* Cagnotte tenue sur un autre service : l'avertissement doit se lire AVANT
    le clic, pas après. D'où le ton neutre mais la place qu'il occupe. */
 .bi-external-warning {
   margin-bottom: 10px;

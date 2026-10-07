@@ -1,5 +1,5 @@
 /**
- * Jeu de réactions dessinées en SVG — pendant web de
+ * Jeu de réactions dessinées en SVG : pendant web de
  * mobile/src/components/icons/ReactionIcon.tsx.
  *
  * ⚠️ Les deux fichiers doivent rester identiques au tracé près : une réaction
@@ -11,7 +11,7 @@
  * gris à cette taille, un cœur devient une tache illisible.
  *
  * ⚠️ Couleurs FIXES, pas de variables de thème. Une réaction garde le même sens
- * en clair comme en sombre — un cœur rouge est un cœur rouge. Les teintes sont
+ * en clair comme en sombre : un cœur rouge est un cœur rouge. Les teintes sont
  * assez soutenues pour tenir sur les deux fonds.
  *
  * Le stockage ne connaît que la clé ("love"), jamais le dessin : tout peut être

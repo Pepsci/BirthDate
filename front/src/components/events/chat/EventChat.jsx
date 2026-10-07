@@ -292,7 +292,7 @@ const EventChat = ({ shortId, participants = {} }) => {
   };
 
   /*
-   * Signalement — conformité stores (Apple 1.2 / Google Play UGC) : le chat
+   * Signalement, conformité stores (Apple 1.2 / Google Play UGC) : le chat
    * d'événement affiche du contenu écrit par d'autres, il doit donc offrir la
    * même issue que la messagerie privée. C'était déjà le cas sur mobile ; le
    * web n'avait aucun menu jusqu'ici, donc aucun accès.
@@ -326,7 +326,7 @@ const EventChat = ({ shortId, participants = {} }) => {
    *
    * La discussion reste réservée aux comptes : elle est chiffrée de bout en
    * bout, avec un contenu chiffré pour chaque destinataire, et quelqu'un sans
-   * compte n'a pas de clé. Plutôt qu'une impasse, on propose la sortie — et on
+   * compte n'a pas de clé. Plutôt qu'une impasse, on propose la sortie : et on
    * retient l'événement, pour que la participation déjà commencée (réponse à
    * l'invitation, votes, idées cadeaux) suive la personne sur son compte au
    * lieu d'être perdue.
@@ -412,7 +412,7 @@ const EventChat = ({ shortId, participants = {} }) => {
               if (lateJoiner)
                 displayText = "🔒 Vous avez rejoint après cet échange";
               else if (locked)
-                displayText = "🔒 Clé absente — reconnectez-vous";
+                displayText = "🔒 Clé absente : reconnectez-vous";
               else if (error) displayText = "🔒 Message non lisible";
               else displayText = "🔒 Message chiffré";
             }

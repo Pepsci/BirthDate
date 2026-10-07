@@ -158,7 +158,7 @@ export default function AgendaScreen() {
 
   // Export d'un événement vers le calendrier natif du téléphone.
   // `eventDate` renvoie la date effective (selectedDate sinon fixedDate) : sans
-  // elle, il n'y a rien à écrire dans un calendrier — le bouton est masqué.
+  // elle, il n'y a rien à écrire dans un calendrier : le bouton est masqué.
   const [addingToCalendar, setAddingToCalendar] = useState<string | null>(null);
   const addEventToCalendar = async (ev: EventEntry) => {
     const dt = eventDate(ev);
@@ -193,7 +193,7 @@ export default function AgendaScreen() {
     );
   }
 
-  // Grille : lundi en premier — offset (firstDay + 6) % 7 (règle projet)
+  // Grille : lundi en premier, offset (firstDay + 6) % 7 (règle projet)
   const firstDay = new Date(year, month, 1).getDay();
   const offset = (firstDay + 6) % 7;
   const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -439,7 +439,7 @@ export default function AgendaScreen() {
                 {/* Export calendrier : seulement si l'événement a une date
                     ferme (tant qu'un vote est en cours il n'y a rien à
                     inscrire) et si le module natif est présent dans ce
-                    binaire — sinon le bouton mènerait à une impasse. */}
+                    binaire : sinon le bouton mènerait à une impasse. */}
                 {eventDate(ev) && isCalendarAvailable() && (
                   <Pressable
                     hitSlop={8}

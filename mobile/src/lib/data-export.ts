@@ -7,7 +7,7 @@ import { getPrivateKey, getOldPrivateKey, decryptMessage } from "./crypto";
  *
  * Le serveur ne peut pas produire un export lisible : les messages sont
  * chiffrés de bout en bout et il n'a pas la clé. Il renvoie donc le chiffré,
- * et c'est ici — sur l'appareil, où vit la clé privée — qu'on le déchiffre
+ * et c'est ici, sur l'appareil, où vit la clé privée, qu'on le déchiffre
  * avant d'écrire le fichier.
  *
  * Conséquence assumée : un export lancé depuis un appareil sans clé (nouvelle

@@ -27,7 +27,7 @@ const conversationSchema = new mongoose.Schema(
      * Deux raisons de ne pas détruire des deux côtés : les messages reçus sont
      * aussi les données personnelles du destinataire, et surtout un harceleur
      * ne doit pas pouvoir effacer la preuve de son harcèlement après avoir été
-     * signalé — ce qui viderait le dispositif de modération de sa substance.
+     * signalé : ce qui viderait le dispositif de modération de sa substance.
      *
      * Un nouveau message rend naturellement le fil visible : sa date est
      * postérieure au `at`, aucun nettoyage du tableau n'est nécessaire.

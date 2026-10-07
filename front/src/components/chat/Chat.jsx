@@ -27,7 +27,7 @@ function Chat({
   const [isChatWindowOpen, setIsChatWindowOpen] = useState(false);
 
   // ── Onglet Amis / Événements / Support de la liste, et fil de ticket
-  // sélectionné — voir ConversationList pour le rendu des trois listes.
+  // sélectionné : voir ConversationList pour le rendu des trois listes.
   const [tab, setTab] = useState(initialTab || "dm");
   const [tickets, setTickets] = useState([]);
   const [selectedTicket, setSelectedTicket] = useState(null);
@@ -163,7 +163,7 @@ function Chat({
     console.log("User offline:", userId);
 
   // ── Support : réponse admin poussée en direct (même room socket que les
-  // notifications in-app — voir routes/admin/support.js côté serveur) ──
+  // notifications in-app : voir routes/admin/support.js côté serveur) ──
   const handleSupportMessage = ({ ticket }) => {
     if (!ticket) return;
     setTickets((prev) => {

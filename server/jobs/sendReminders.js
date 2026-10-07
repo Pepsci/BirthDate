@@ -4,7 +4,7 @@ const User = require("../models/user.model");
 const { sendPushToUser } = require("../services/pushService");
 const { emailsFor } = require("../services/emailTemplates/localized");
 
-// notify nécessite l'instance app — on la reçoit via init()
+// notify nécessite l'instance app : on la reçoit via init()
 let _app = null;
 const initApp = (app) => {
   _app = app;
@@ -66,7 +66,7 @@ const ReminderClaim = require("../models/reminderClaim.model");
 
 /**
  * Tente de "réclamer" l'envoi d'un rappel pour aujourd'hui. Retourne `true`
- * la première fois (le rappel peut partir), `false` si déjà réclamé — que ce
+ * la première fois (le rappel peut partir), `false` si déjà réclamé : que ce
  * soit par ce même passage du cron ou un autre processus qui tournerait en
  * parallèle (voir le commentaire dans reminderClaim.model.js). Un rappel non
  * réclamé (erreur DB autre qu'un doublon) est traité comme "peut partir" :
@@ -237,7 +237,7 @@ async function checkAndSendCardBirthdayReminders() {
       // ⚠️ Les 3 canaux sont indépendants. `receiveBirthdayEmails` est présenté
       // à l'utilisateur comme un réglage EMAIL : il ne doit couper que l'email.
       // Avant, un `continue` en tête de boucle coupait aussi la notif in-app et
-      // la push — d'où des utilisateurs qui ne recevaient plus rien du tout.
+      // la push : d'où des utilisateurs qui ne recevaient plus rien du tout.
       // Le seul interrupteur global "cette personne", c'est
       // `date.receiveNotifications`, déjà filtré dans la requête ci-dessus.
       const emailOk = owner.receiveBirthdayEmails !== false;
@@ -451,7 +451,7 @@ const cronJob = cron.schedule(
 );
 
 // ========================================
-// PLANIFICATION : Fêtes — tous les jours à 9h
+// PLANIFICATION : Fêtes, tous les jours à 9h
 // ========================================
 // Séparé des anniversaires : un « Pensez à lui souhaiter une bonne fête » reçu
 // à minuit tombe en pleine nuit et se perd dans les notifs du matin.
@@ -464,7 +464,7 @@ const namedayCronJob = cron.schedule(
 );
 
 // ========================================
-// PLANIFICATION : Récap mensuel — 1er du mois à 8h
+// PLANIFICATION : Récap mensuel, 1er du mois à 8h
 // ========================================
 const monthlyRecapJob = cron.schedule(
   "0 8 1 * *",

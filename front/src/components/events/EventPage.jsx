@@ -289,7 +289,7 @@ const EventPage = () => {
    * ⚠️ Ne se contente pas de « rejoindre » : le serveur CONVERTIT l'invitation
    * invité. Sans ça, la personne qui se crée un compte pour pouvoir écrire
    * dans la discussion perdrait sa réponse à l'invitation, ses votes de date et
-   * de lieu, et le droit de modifier les idées cadeaux qu'elle a proposées —
+   * de lieu, et le droit de modifier les idées cadeaux qu'elle a proposées :
    * elle apparaîtrait même deux fois dans la liste des participants.
    *
    * Idempotent : la route répond `alreadyIn` sans rien changer si le compte
@@ -397,7 +397,7 @@ const EventPage = () => {
   }, [shortId, event?.hasFullAccess]);
 
   // Rejoindre la room de l'événement dès qu'on a accès (pour tout le temps réel :
-  // cagnotte, virements, etc.) — indépendamment de l'onglet Discussion.
+  // cagnotte, virements, etc.) : indépendamment de l'onglet Discussion.
   useEffect(() => {
     if (!event?.hasFullAccess) return;
     const socket = socketService.getSocket();
@@ -435,7 +435,7 @@ const EventPage = () => {
       setRefreshKey((k) => k + 1);
       if (res.data?.poolFrozen) {
         window.alert(
-          "Événement annulé. La cagnotte est fermée : plus aucune contribution ne peut arriver. Les sommes déjà versées ne sont pas remboursées automatiquement — tu peux le faire depuis l'onglet Cagnotte.",
+          "Événement annulé. La cagnotte est fermée : plus aucune contribution ne peut arriver. Les sommes déjà versées ne sont pas remboursées automatiquement : tu peux le faire depuis l'onglet Cagnotte.",
         );
       }
     } catch (err) {
@@ -478,7 +478,7 @@ const EventPage = () => {
       const pool = res.data?.pool;
       window.alert(
         pool?.count > 0
-          ? `Proposition envoyée à ${name}. Attention : la cagnotte ne suivra pas — les ${(pool.total / 100).toFixed(2)} € déjà versés resteront sur ton compte Stripe, et c'est à toi de les rembourser ou de les reverser.`
+          ? `Proposition envoyée à ${name}. Attention : la cagnotte ne suivra pas, les ${(pool.total / 100).toFixed(2)} € déjà versés resteront sur ton compte Stripe, et c'est à toi de les rembourser ou de les reverser.`
           : `Proposition envoyée à ${name}. Tant qu'elle n'a pas accepté, tu restes l'organisateur.`,
       );
     } catch (err) {
@@ -720,7 +720,7 @@ const EventPage = () => {
 
           {/* Annulation : l'information qui conditionne la lecture de toute la
               page, donc placée dans le hero et non dans un onglet. L'événement
-              n'est pas supprimé — les invités doivent pouvoir comprendre ce
+              n'est pas supprimé : les invités doivent pouvoir comprendre ce
               qui s'est passé. */}
           {event.status === "cancelled" && (
             <motion.div className="ep-cancelled-banner" {...fadeUp(0.3)}>
@@ -745,7 +745,7 @@ const EventPage = () => {
               `pendingTransfer` : les deux côtés valaient `undefined`, donc
               l'égalité était VRAIE et la bannière s'affichait à tout le monde.
               Les boutons n'auraient rien pu faire (le serveur exige d'être le
-              destinataire) et aucune donnée n'était exposée — mais on
+              destinataire) et aucune donnée n'était exposée : mais on
               proposait à un inconnu de reprendre l'organisation d'un événement
               privé qu'il n'a même pas rejoint.
 
@@ -813,7 +813,7 @@ const EventPage = () => {
                       whileHover={{ scale: 1.03 }}
                       whileTap={{ scale: 0.97 }}
                     >
-                      ⏳ En attente de {event.pendingTransfer.toUser.name} —
+                      ⏳ En attente de {event.pendingTransfer.toUser.name} :
                       retirer
                     </motion.button>
                   ) : (
@@ -886,7 +886,7 @@ const EventPage = () => {
 
         {/* Formulaire d'annulation. Le motif est FACULTATIF : forcer une
             justification pousse à écrire n'importe quoi, et un motif inventé
-            vaut moins qu'une absence assumée — le message dit alors simplement
+            vaut moins qu'une absence assumée : le message dit alors simplement
             que l'organisateur n'en a pas donné. */}
         {isOrganizer && showCancelForm && event.status !== "cancelled" && (
           <motion.div className="ep-cancel-form" {...fadeUp(0.35)}>
@@ -900,7 +900,7 @@ const EventPage = () => {
             </p>
             <textarea
               className="ep-cancel-textarea"
-              placeholder="Motif (facultatif) — ex : salle indisponible"
+              placeholder="Motif (facultatif), ex : salle indisponible"
               maxLength={500}
               rows={3}
               value={cancelReason}
@@ -926,8 +926,8 @@ const EventPage = () => {
 
         {/* Choix du repreneur : uniquement les participants AYANT CONFIRMÉ.
             Le serveur refuse les autres, et proposer l'organisation à quelqu'un
-            qui a décliné — ou à un invité sans compte, qui n'a pas de session
-            pour accepter — n'a pas de sens. */}
+            qui a décliné : ou à un invité sans compte, qui n'a pas de session
+            pour accepter : n'a pas de sens. */}
         {isOrganizer && showTransferPicker && !event.pendingTransfer?.toUser && (
           <motion.div className="ep-cancel-form" {...fadeUp(0.35)}>
             <p className="ep-cancel-form-hint">
@@ -1052,7 +1052,7 @@ const EventPage = () => {
                           </div>
                         )}
 
-                        {/* Bouton d'itinéraire — sous la carte */}
+                        {/* Bouton d'itinéraire : sous la carte */}
                         <a
                           href={getMapsUrl(event.fixedLocation)}
                           target="_blank"
@@ -1294,7 +1294,7 @@ const EventPage = () => {
                         if (navigator.share) {
                           navigator
                             .share({
-                              title: `Cagnotte — ${event.title}`,
+                              title: `Cagnotte : ${event.title}`,
                               url,
                             })
                             .catch(() => {});

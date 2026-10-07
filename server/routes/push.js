@@ -14,7 +14,7 @@ router.post("/subscribe", isAuthenticated, async (req, res) => {
     }
 
     // Upsert : met à jour si l'endpoint existe déjà pour cet user
-    // Ligne 17 et 18 — remplace req.user.id par req.payload._id
+    // Ligne 17 et 18 : remplace req.user.id par req.payload._id
     await PushSubscription.findOneAndUpdate(
       { user: req.payload._id, "subscription.endpoint": subscription.endpoint },
       { user: req.payload._id, subscription, userAgent },
@@ -49,14 +49,14 @@ router.get("/vapid-public-key", (req, res) => {
 
 // ── Expo Push (app mobile) ────────────────────────────────────────────────────
 
-// POST /push/expo-token — enregistre le token de l'appareil
+// POST /push/expo-token : enregistre le token de l'appareil
 router.post("/expo-token", isAuthenticated, async (req, res) => {
   try {
     const { token, platform, appVersion } = req.body;
     if (!token || !/^ExponentPushToken\[.+\]$/.test(token)) {
       return res.status(400).json({ error: "Token Expo invalide" });
     }
-    // Le token est ré-enregistré à chaque lancement de l'app (registerForPush) —
+    // Le token est ré-enregistré à chaque lancement de l'app (registerForPush) :
     // c'est le meilleur signal qu'on ait de "dernière plateforme/version vue"
     // pour un compte mobile, bien plus fréquent que le login (session persistée).
     const $set = { lastSeenAt: new Date() };
@@ -66,7 +66,7 @@ router.post("/expo-token", isAuthenticated, async (req, res) => {
     // ⚠️ On n'active le push QUE lors de l'enregistrement du tout premier
     // appareil. Auparavant `pushEnabled: true` était écrit à chaque lancement,
     // ce qui réactivait silencieusement le push d'un utilisateur qui venait de
-    // le couper dans Réglages — son choix ne survivait pas au redémarrage.
+    // le couper dans Réglages : son choix ne survivait pas au redémarrage.
     const existing = await User.findById(req.payload._id).select(
       "expoPushTokens",
     );
@@ -86,7 +86,7 @@ router.post("/expo-token", isAuthenticated, async (req, res) => {
   }
 });
 
-// DELETE /push/expo-token — retire le token (déconnexion)
+// DELETE /push/expo-token : retire le token (déconnexion)
 router.delete("/expo-token", isAuthenticated, async (req, res) => {
   try {
     const { token } = req.body;

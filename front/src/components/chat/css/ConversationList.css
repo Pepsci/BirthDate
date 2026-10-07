@@ -573,7 +573,7 @@
 }
 
 /* Statut d'un ticket support dans la liste : vert = en cours (ouvert ou
-   répondu), rouge = fermé — pour distinguer les fils actifs des résolus
+   répondu), rouge = fermé : pour distinguer les fils actifs des résolus
    sans avoir à lire le texte. */
 .cl-support-status {
   display: inline-block;

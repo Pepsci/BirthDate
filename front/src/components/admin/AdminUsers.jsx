@@ -97,7 +97,7 @@ const AdminUsers = () => {
   // ── Quota d'événements : à augmenter quand quelqu'un le demande au support ──
   const askQuota = (label, current) => {
     const answer = window.prompt(
-      `${label}\n(nombre entier — laisser vide pour revenir à la valeur par défaut)`,
+      `${label}\n(nombre entier : laisser vide pour revenir à la valeur par défaut)`,
       String(current),
     );
     if (answer === null) return undefined; // annulé
@@ -271,7 +271,7 @@ const AdminUsers = () => {
                       : detail.user.lastPlatform === "android"
                         ? "📱 Android"
                         : "🌐 Web"
-                  }${detail.user.lastAppVersion ? ` — version ${detail.user.lastAppVersion}` : ""}${
+                  }${detail.user.lastAppVersion ? `, version ${detail.user.lastAppVersion}` : ""}${
                     detail.user.lastSeenAt
                       ? ` (vu le ${new Date(detail.user.lastSeenAt).toLocaleString("fr-FR")})`
                       : ""
@@ -297,7 +297,7 @@ const AdminUsers = () => {
                 Événements : {detail.eventQuota.activeCount} en cours sur{" "}
                 {detail.eventQuota.active} · {detail.eventQuota.createdLast24h}{" "}
                 créés sur 24 h (max {detail.eventQuota.daily})
-                {detail.eventQuota.custom ? " — quota personnalisé" : ""}
+                {detail.eventQuota.custom ? ", quota personnalisé" : ""}
                 <br />
                 <span className="admin-muted">
                   Invitations par email sur 24 h : {detail.eventQuota.invitesLast24h}{" "}

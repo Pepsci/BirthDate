@@ -293,7 +293,7 @@ function AccountProfile() {
   const { startTour } = useGuidedTour();
   const avatar = (user as { avatar?: string } | null)?.avatar;
 
-  // Tour guidé détaillé du profil — première visite uniquement
+  // Tour guidé détaillé du profil : première visite uniquement
   useEffect(() => {
     startTour(TOURS.profile);
   }, [startTour]);
@@ -406,7 +406,7 @@ function AccountProfile() {
         {/* ⚠️ Trace des sommes versées. En charges directes l'argent part chez
             l'organisateur et l'app n'en gardait aucune vue côté contributeur :
             montant, date et référence disparaissaient dès l'écran fermé. C'est
-            pourtant ce qu'il faut produire pour réclamer un remboursement — à
+            pourtant ce qu'il faut produire pour réclamer un remboursement : à
             quelqu'un qui n'est pas nous. */}
         <MenuRow
           emoji="💝"

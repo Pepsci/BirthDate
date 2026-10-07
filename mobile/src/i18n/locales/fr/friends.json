@@ -22,11 +22,11 @@
     "received": "Reçues",
     "sent": "Envoyées"
   },
-  "empty": "Pas encore d'amis — invite-les par email ci-dessus !",
+  "empty": "Pas encore d'amis : invite-les par email ci-dessus !",
   "longPressHint": "Appui long sur un ami pour le retirer.",
   "noPending": "Aucune demande en attente.",
   "added": "Ami ajouté 🎉",
   "noSent": "Aucune demande envoyée.",
   "waiting": "En attente de réponse…",
-  "externalInvite": "Invitation externe — pas encore inscrit·e"
+  "externalInvite": "Invitation externe : pas encore inscrit·e"
 }

@@ -198,7 +198,7 @@ const Agenda = ({ dates, events = [], initialMonth, initialYear }) => {
       </div>
 
       {/* ═══════════════════════════════════════════════
-          VUE MOIS — grille CSS 7 colonnes
+          VUE MOIS : grille CSS 7 colonnes
           ═══════════════════════════════════════════════ */}
       {viewMode === "month" && (
         <div className="agenda-month-grid">
@@ -242,7 +242,7 @@ const Agenda = ({ dates, events = [], initialMonth, initialYear }) => {
       )}
 
       {/* ═══════════════════════════════════════════════
-          VUE SEMAINE — layout vertical 7 lignes
+          VUE SEMAINE : layout vertical 7 lignes
           ═══════════════════════════════════════════════ */}
       {viewMode === "week" && (
         <div className="agenda-week-grid">

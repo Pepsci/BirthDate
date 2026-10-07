@@ -5,7 +5,7 @@
 // En charges directes, BirthReminder ne voit rien de ce qui se passe côté
 // versement : les fonds vivent sur le compte connecté de l'organisateur et
 // Stripe les vire selon SON calendrier, avec SES conditions. Quand ça ne part
-// pas, la cause est presque toujours l'une des cinq ci-dessous — et aucune
+// pas, la cause est presque toujours l'une des cinq ci-dessous : et aucune
 // n'est visible depuis l'application.
 //
 //   1. payouts_enabled = false : onboarding incomplet, vérification d'identité
@@ -24,7 +24,7 @@
 // ⚠️ La troisième forme existe pour les comptes ORPHELINS : un compte dont la
 // ligne en base a été supprimée (reset --local-only, ou utilisateur effacé)
 // continue d'exister chez Stripe, et peut très bien détenir de l'argent. Il
-// devient alors invisible d'une recherche par utilisateur — il faut pouvoir
+// devient alors invisible d'une recherche par utilisateur : il faut pouvoir
 // l'interroger par son identifiant.
 
 require("dotenv").config();
@@ -168,7 +168,7 @@ async function inspect(record) {
     if (!acct.payouts_enabled) {
       found = true;
       console.log(
-        "     ⛔ Versements désactivés sur ce compte — c'est LA cause la plus\n" +
+        "     ⛔ Versements désactivés sur ce compte : c'est LA cause la plus\n" +
           "        fréquente d'un solde qui ne bouge pas.",
       );
     }

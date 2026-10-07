@@ -1,5 +1,5 @@
 /* ========================================
-   PROFILE — AVATAR (édition)
+   PROFILE : AVATAR (édition)
    ======================================== */
 
 .avatar-edit {
@@ -68,7 +68,7 @@
 }
 
 /* ========================================
-   PROFILE — BASE
+   PROFILE : BASE
    ======================================== */
 
 .profile-wrapper {
@@ -123,7 +123,7 @@
 
 
 /* ========================================
-   BOUTONS — PROFIL
+   BOUTONS : PROFIL
    ======================================== */
 
 .btn-profil {
@@ -206,7 +206,7 @@
 }
 
 /* ================================================
-   PROFILE EDIT — ajouts dans profile.css
+   PROFILE EDIT : ajouts dans profile.css
    Les styles de base viennent de auth.css et updateDate.css
    ================================================ */
 
@@ -222,7 +222,7 @@
     width: 100%;
 }
 
-/* Bouton toggle mot de passe — style lien discret */
+/* Bouton toggle mot de passe : style lien discret */
 .profile-toggle-password {
     background: none;
     border: none;
@@ -251,7 +251,7 @@
 
 
 /* ========================================
-   BOUTON RETOUR — VISIBILITÉ PAR BREAKPOINT
+   BOUTON RETOUR : VISIBILITÉ PAR BREAKPOINT
    ======================================== */
 
 /* Par défaut (desktop) : btn desktop visible, btn mobile caché */
@@ -287,7 +287,7 @@
 
 
 /* ========================================
-   RESPONSIVE — TABLETTE (≤ 900px)
+   RESPONSIVE : TABLETTE (≤ 900px)
    ======================================== */
 
 @media (max-width: 900px) {
@@ -306,7 +306,7 @@
 
 
 /* ========================================
-   RESPONSIVE — MOBILE (≤ 600px)
+   RESPONSIVE : MOBILE (≤ 600px)
    ======================================== */
 
 @media (max-width: 600px) {

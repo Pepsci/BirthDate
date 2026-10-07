@@ -94,7 +94,7 @@ router.post("/:id/reply", async (req, res) => {
 
     if (ticket.userId) {
       // Utilisateur connecté : la réponse vit dans son fil, pas besoin
-      // d'email — il la voit (et peut y répondre) directement dans l'app.
+      // d'email : il la voit (et peut y répondre) directement dans l'app.
       ticket.status = "answered";
       ticket.unreadUser = true;
       await ticket.save();
@@ -108,7 +108,7 @@ router.post("/:id/reply", async (req, res) => {
 
       // Le fil vit maintenant dans l'onglet Support du dashboard (pas /contact) :
       // pousser le ticket à jour en direct évite à l'utilisateur de recharger
-      // pour voir la réponse — même socket room que les notifications in-app.
+      // pour voir la réponse : même socket room que les notifications in-app.
       const io = req.app.get("io");
       if (io) {
         io.to(`user:${ticket.userId}`).emit("support:message", { ticket });

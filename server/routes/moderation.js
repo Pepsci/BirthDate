@@ -49,7 +49,7 @@ router.post("/reports", isAuthenticated, async (req, res) => {
       details: (details || "").slice(0, 2000),
     });
 
-    // Alerte support (best effort — le signalement est déjà enregistré)
+    // Alerte support (best effort : le signalement est déjà enregistré)
     try {
       const reporter = await User.findById(req.payload._id).select("name surname email");
       const target = report.targetUser
@@ -58,11 +58,11 @@ router.post("/reports", isAuthenticated, async (req, res) => {
       await sendSupportEmail({
         fromEmail: reporter?.email,
         fromName: reporter ? `${reporter.name} ${reporter.surname || ""}`.trim() : "Utilisateur",
-        subject: `🚨 SIGNALEMENT [${reason}] ${contentType} — report ${report._id}`,
+        subject: `🚨 SIGNALEMENT [${reason}] ${contentType} : report ${report._id}`,
         message:
           `Signalement à traiter sous 24 h.\n\n` +
           `Type : ${contentType}\nMotif : ${reason}\n` +
-          `Cible : ${target ? `${target.name} (${target.email}) — ${target._id}` : targetUserId || "n/a"}\n` +
+          `Cible : ${target ? `${target.name} (${target.email}), ${target._id}` : targetUserId || "n/a"}\n` +
           `Contenu (id) : ${contentId || "n/a"}\n` +
           `Extrait : ${(contentPreview || "").slice(0, 500) || "n/a"}\n` +
           `Détails : ${details || "n/a"}`,

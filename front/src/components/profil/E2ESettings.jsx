@@ -81,7 +81,7 @@ const E2ESettings = () => {
   const { currentUser, updateUser } = useAuth();
 
   const [view, setView] = useState("overview");
-  // Seed générée en mémoire — effacée dès que le flow se termine
+  // Seed générée en mémoire : effacée dès que le flow se termine
   const [seedPhrase, setSeedPhrase] = useState("");
   const [seedInput, setSeedInput] = useState("");
   const [password, setPassword] = useState("");
@@ -238,11 +238,11 @@ const E2ESettings = () => {
         <h3 className="e2e-title">Chiffrement Maximum (Full E2E)</h3>
         <p className="e2e-desc">
           Le mode standard protège déjà vos messages. Le Chiffrement Maximum
-          ajoute une sécurité basée sur une phrase de 12 mots — indépendante
+          ajoute une sécurité basée sur une phrase de 12 mots : indépendante
           de votre mot de passe.
         </p>
         <div className="e2e-info-box">
-          <p>✅ Clé non liée à votre mot de passe — plus robuste</p>
+          <p>✅ Clé non liée à votre mot de passe : plus robuste</p>
           <p>⚠️ Si vous perdez vos 12 mots, vos messages seront inaccessibles</p>
           <p>⚠️ Les anciens messages (mode standard) ne seront pas re-chiffrés</p>
         </div>
@@ -271,7 +271,7 @@ const E2ESettings = () => {
         )}
         <p className="e2e-desc">
           Vos messages sont chiffrés avec votre phrase de récupération de
-          12 mots. Conservez-la précieusement — c'est votre seule façon
+          12 mots. Conservez-la précieusement : c'est votre seule façon
           d'accéder à vos messages depuis un nouvel appareil.
         </p>
         <div className="e2e-actions">
@@ -307,7 +307,7 @@ const E2ESettings = () => {
           <p>🔑 <strong>Vos 12 mots sont irremplaçables</strong><br />Si vous perdez votre phrase de 12 mots ET oubliez votre mot de passe, vos messages pendant la période chiffrée seront définitivement inaccessibles.</p>
           <p>⚠️ <strong>En cas de désactivation</strong><br />Vous perdrez uniquement les messages échangés pendant la période de Chiffrement Maximum. Vos messages antérieurs resteront lisibles.</p>
           <p>📝 Préparez crayon et papier, ou un gestionnaire de mots de passe</p>
-          <p>🚫 Ne prenez pas de capture d'écran — risque de fuite</p>
+          <p>🚫 Ne prenez pas de capture d'écran : risque de fuite</p>
         </div>
         <p className="e2e-desc">Vos amis, wishlists et événements ne sont jamais affectés.</p>
         <div className="e2e-nav">
@@ -424,7 +424,7 @@ const E2ESettings = () => {
     );
   }
 
-  // ── Voir seed — saisie du mot de passe ───────────────────────────────
+  // ── Voir seed : saisie du mot de passe ───────────────────────────────
 
   if (view === "view-seed-pw") {
     return (
@@ -458,7 +458,7 @@ const E2ESettings = () => {
     );
   }
 
-  // ── Voir seed — affichage ─────────────────────────────────────────────
+  // ── Voir seed : affichage ─────────────────────────────────────────────
 
   if (view === "view-seed-reveal") {
     return (

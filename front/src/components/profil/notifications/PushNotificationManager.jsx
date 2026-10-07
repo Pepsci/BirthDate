@@ -54,7 +54,7 @@ export default function PushNotificationManager() {
   if (status === "denied") {
     return (
       <div className="push-banner push-banner--denied">
-        🔔 Notifications bloquées — autorise-les dans les réglages de ton
+        🔔 Notifications bloquées : autorise-les dans les réglages de ton
         navigateur
       </div>
     );

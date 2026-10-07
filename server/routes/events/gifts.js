@@ -10,7 +10,7 @@ const { notifyOrganizer } = require("./notifyOrganizer");
  * Vue d'une proposition de cadeau, adaptée à celui qui la demande.
  *
  * ⚠️ `guestVotes` ne doit JAMAIS sortir d'ici. Ce tableau contient les jetons
- * des invités sans compte — et un jeton d'invité ouvre l'événement à qui le
+ * des invités sans compte : et un jeton d'invité ouvre l'événement à qui le
  * détient (voir checkGuestOrAuth). Les documents étaient renvoyés bruts : tout
  * participant, y compris un autre invité, pouvait lire les jetons des autres
  * dans la réponse et se faire passer pour eux.

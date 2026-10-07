@@ -157,7 +157,7 @@
 }
 
 /* ============================================
-   RESPONSIVE — bottom sheet on mobile
+   RESPONSIVE : bottom sheet on mobile
    ============================================ */
 @media (max-width: 600px) {
   .agm-overlay {

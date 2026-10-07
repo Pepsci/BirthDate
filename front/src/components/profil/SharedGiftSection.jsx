@@ -43,7 +43,7 @@ export default function SharedGiftSection({ currentDate, onUpdate }) {
   // anniversaire et le reste : sans filtre, préparer UNE occasion oblige à
   // faire le tri à l'œil à chaque visite.
   const [filter, setFilter] = useState("all");
-  // Second axe : l'état de réservation. Indépendant de l'occasion — chercher
+  // Second axe : l'état de réservation. Indépendant de l'occasion : chercher
   // « ce qui reste à prendre pour Noël » croise les deux, et n'aurait pas de
   // réponse si l'un remplaçait l'autre.
   const [reservedFilter, setReservedFilter] = useState("all");
@@ -77,7 +77,7 @@ export default function SharedGiftSection({ currentDate, onUpdate }) {
     g.isReserved ?? (!!g.reservedBy || !!g.reservedByGuest);
   // Le `!!currentUser?._id` n'est pas décoratif : sans lui, un cadeau non
   // réservé donne `undefined` à gauche, et un visiteur sans session `undefined`
-  // à droite — l'égalité serait vraie et le filtre « Je m'en occupe »
+  // à droite : l'égalité serait vraie et le filtre « Je m'en occupe »
   // retournerait TOUTE la liste.
   const giftIsMine = (g) =>
     g.reservedByMe ??
@@ -222,7 +222,7 @@ export default function SharedGiftSection({ currentDate, onUpdate }) {
 
   /**
    * Masquer une idée aux invités et au lien public. Elle reste dans la liste
-   * pour les gestionnaires — c'est ce qu'on garde entre soi : le gros cadeau
+   * pour les gestionnaires, c'est ce qu'on garde entre soi : le gros cadeau
    * qu'on se réserve, l'idée encore incertaine.
    *
    * Le filtrage est fait par le SERVEUR : une idée masquée ne part jamais sur
@@ -263,7 +263,7 @@ export default function SharedGiftSection({ currentDate, onUpdate }) {
 
   // ── Réservation ──────────────────────────────────────────────────────────
   // « Je m'en occupe » : c'est ce qui évite que deux personnes achètent la même
-  // chose. Le web n'appelait tout simplement pas ces routes — une réservation
+  // chose. Le web n'appelait tout simplement pas ces routes : une réservation
   // faite depuis le mobile ou le lien public n'apparaissait nulle part ici, et
   // aucune ne pouvait être créée depuis le web.
   const reserve = async (giftId) => {
@@ -393,7 +393,7 @@ export default function SharedGiftSection({ currentDate, onUpdate }) {
       </div>
 
       {/* ⚠️ Garde indispensable : pour un invité, le serveur met `members` à
-          undefined (les identités lui sont masquées) — sans le `?? []`, ce
+          undefined (les identités lui sont masquées) : sans le `?? []`, ce
           .map() faisait planter tout l'écran. */}
       {isMember && (
         <p className="sgs-members">
@@ -469,7 +469,7 @@ export default function SharedGiftSection({ currentDate, onUpdate }) {
         </form>
       )}
 
-      {/* Filtre par occasion — seules celles réellement présentes : proposer
+      {/* Filtre par occasion, seules celles réellement présentes : proposer
           un filtre qui ne renvoie rien est une impasse. */}
       {list.gifts.length > 0 && (
         <div className="sgs-filters">
@@ -530,7 +530,7 @@ export default function SharedGiftSection({ currentDate, onUpdate }) {
         type="gifts"
         currentUserId={currentUser?._id}
         // readOnly retire les actions de gestion et fait apparaître, à la
-        // place, le bouton de réservation — la seule action ouverte à un invité.
+        // place, le bouton de réservation : la seule action ouverte à un invité.
         readOnly={!isMember}
         onEdit={isMember ? startEdit : undefined}
         onDelete={isMember ? deleteGift : undefined}
@@ -543,7 +543,7 @@ export default function SharedGiftSection({ currentDate, onUpdate }) {
 
       {/* Déjà offerts, sous un trait. Rangés, pas cachés : c'est la mémoire de
           ce qui a été offert, et donc ce qui évite d'offrir deux fois la même
-          chose l'année suivante. Les invités ne sont pas concernés — le
+          chose l'année suivante. Les invités ne sont pas concernés : le
           serveur ne leur envoie jamais les cadeaux « offert ». */}
       {offered.length > 0 && (
         <section className="sgs-offered">

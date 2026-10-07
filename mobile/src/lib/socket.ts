@@ -3,7 +3,7 @@ import { AppState } from "react-native";
 import { API_URL, getToken } from "./api";
 import { assertAccountMode } from "./app-mode";
 
-// Service socket singleton — même pattern que le web (socket.service.js) :
+// Service socket singleton, même pattern que le web (socket.service.js) :
 // auth par token dans le handshake (auth: { token }), pas par cookie.
 let socket: Socket | null = null;
 
@@ -20,7 +20,7 @@ let creating: Promise<Socket> | null = null;
 
 // Jeton push de CET appareil, transmis au serveur pour qu'il ne saute que
 // lui quand l'app est ouverte (server/utils/presence.js). Sans ce jeton, le
-// serveur ne coupe aucune push — un appareil ouvert ne fait plus taire les
+// serveur ne coupe aucune push : un appareil ouvert ne fait plus taire les
 // autres téléphones du compte.
 let presencePushToken: string | null = null;
 
@@ -90,7 +90,7 @@ export async function getSocket(): Promise<Socket> {
             .then((token) => cb({ token, pushToken: presencePushToken }))
             .catch(() => cb({ token: null, pushToken: presencePushToken }));
         },
-        // Polling d'abord puis upgrade websocket — le websocket direct
+        // Polling d'abord puis upgrade websocket : le websocket direct
         // échoue dans certains environnements RN/réseau local
         transports: ["polling", "websocket"],
         reconnection: true,

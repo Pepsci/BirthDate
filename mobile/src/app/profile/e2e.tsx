@@ -269,7 +269,7 @@ export default function E2EScreen() {
         <Text style={s.infoBanner}>{info}</Text>
       )}
 
-      {/* Overview — standard */}
+      {/* Overview : standard */}
       {view === "overview" && !isFullE2E && (
         <View style={s.card}>
           <Text style={s.title}>{t("profile:e2e.maxTitle")}</Text>
@@ -293,7 +293,7 @@ export default function E2EScreen() {
         </View>
       )}
 
-      {/* Overview — full actif */}
+      {/* Overview : full actif */}
       {view === "overview" && isFullE2E && (
         <View style={s.card}>
           <View style={s.activeBadge}>
@@ -326,7 +326,7 @@ export default function E2EScreen() {
         </View>
       )}
 
-      {/* Step 1 — avertissement */}
+      {/* Step 1 : avertissement */}
       {view === "step1" && (
         <View style={s.card}>
           <Stepper n={1} />
@@ -362,7 +362,7 @@ export default function E2EScreen() {
         </View>
       )}
 
-      {/* Step 2 — affichage seed */}
+      {/* Step 2 : affichage seed */}
       {view === "step2" && (
         <View style={s.card}>
           <Stepper n={2} />
@@ -391,7 +391,7 @@ export default function E2EScreen() {
         </View>
       )}
 
-      {/* Step 3 — vérification */}
+      {/* Step 3 : vérification */}
       {view === "step3" && (
         <View style={s.card}>
           <Stepper n={3} />
@@ -428,7 +428,7 @@ export default function E2EScreen() {
         </View>
       )}
 
-      {/* Step 4 — mot de passe */}
+      {/* Step 4 : mot de passe */}
       {view === "step4" && (
         <View style={s.card}>
           <Stepper n={4} />
@@ -472,7 +472,7 @@ export default function E2EScreen() {
         </View>
       )}
 
-      {/* Voir seed — mot de passe */}
+      {/* Voir seed : mot de passe */}
       {view === "view-seed-pw" && (
         <View style={s.card}>
           <Text style={s.title}>{t("profile:e2e.viewTitle")}</Text>
@@ -515,7 +515,7 @@ export default function E2EScreen() {
         </View>
       )}
 
-      {/* Voir seed — révélation */}
+      {/* Voir seed : révélation */}
       {view === "view-seed-reveal" && (
         <View style={s.card}>
           <Text style={s.title}>{t("profile:e2e.phraseTitle")}</Text>
@@ -540,7 +540,7 @@ export default function E2EScreen() {
         </View>
       )}
 
-      {/* Restore — recovery depuis la phrase */}
+      {/* Restore : recovery depuis la phrase */}
       {view === "restore" && (
         <View style={s.card}>
           <Text style={s.title}>{t("profile:e2e.restoreTitle")}</Text>

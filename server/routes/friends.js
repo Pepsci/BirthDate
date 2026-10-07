@@ -16,7 +16,7 @@ const SharedGiftList = require("../models/sharedGiftList.model");
 const rateLimit = require("express-rate-limit");
 
 // Demandes d'ami : 30 par compte et par 24 h, tous modes confondus (par email
-// ou par identifiant). Chaque demande envoie un email — à un inscrit ou, pour
+// ou par identifiant). Chaque demande envoie un email : à un inscrit ou, pour
 // une adresse inconnue, une invitation à rejoindre l'app : sans plafond, la
 // route servait de relais d'emails et permettait de tester en masse quelles
 // adresses ont un compte. Compté par compte, donc monté APRÈS isAuthenticated.
@@ -220,7 +220,7 @@ router.post("/", isAuthenticated, friendRequestLimiter, async (req, res, next) =
 // Exposer l'email d'un tiers dans un message stocké en base serait une fuite ;
 // un ObjectId est opaque et inexploitable hors de l'app.
 //
-// À l'acceptation, createFriendDates() crée les cartes liées des deux côtés —
+// À l'acceptation, createFriendDates() crée les cartes liées des deux côtés :
 // inutile donc de créer une carte manuelle en parallèle.
 // ========================================
 router.post("/request-by-id", isAuthenticated, friendRequestLimiter, async (req, res, next) => {
@@ -246,7 +246,7 @@ router.post("/request-by-id", isAuthenticated, friendRequestLimiter, async (req,
       return res.status(404).json({ message: "Utilisateur introuvable" });
     }
 
-    // Refus silencieux en cas de blocage — même logique que POST /.
+    // Refus silencieux en cas de blocage : même logique que POST /.
     if (await isBlockedBetween(currentUserId, targetUser._id)) {
       return res.status(201).json({ type: "request_sent" });
     }
@@ -572,7 +572,7 @@ router.get("/:friendId/card-summary", isAuthenticated, async (req, res) => {
         "sharedGiftList",
       ),
     ]);
-    // dateId : la carte anniversaire (Date) que JE possède pour cet ami —
+    // dateId : la carte anniversaire (Date) que JE possède pour cet ami,
     // c'est ce que le front utilise pour naviguer vers son profil
     // (/home?tab=date&dateId=... côté web, /date/:id côté mobile).
     const dateId = myLinkedDate?._id ?? null;

@@ -50,7 +50,7 @@ const ALLOWED_MIME_TYPES = [
 fs.mkdirSync(AVATAR_DIR, { recursive: true });
 
 /**
- * Uploader multer — stockage mémoire uniquement.
+ * Uploader multer : stockage mémoire uniquement.
  * Aucune écriture disque ne se produit ici : c'est saveAvatar() qui écrit,
  * et il n'est appelé qu'après authentification.
  */

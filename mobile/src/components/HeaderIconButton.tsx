@@ -25,7 +25,7 @@ import {
  *
  * L'icône est un SVG et non plus un emoji : un glyphe repose sur la ligne de
  * base et sa boîte réserve la place du jambage descendant, si bien qu'un emoji
- * centré par le conteneur apparaît trop haut — on corrigeait ça par un `top`
+ * centré par le conteneur apparaît trop haut : on corrigeait ça par un `top`
  * proportionnel à la taille de police, dont la bonne valeur dépendait de la
  * police système. Le viewBox SVG rend ce réglage inutile.
  */

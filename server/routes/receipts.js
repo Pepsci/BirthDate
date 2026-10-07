@@ -1,5 +1,5 @@
 /**
- * POST /api/receipts/delivered — accusé « distribué » envoyé par l'appareil à
+ * POST /api/receipts/delivered : accusé « distribué » envoyé par l'appareil à
  * la réception d'une notification push (app fermée, donc sans socket).
  *
  * Route publique : l'authentification est le jeton HMAC embarqué dans la push

@@ -1,4 +1,4 @@
-// Script ponctuel — à lancer toi-même (`node merge_duplicate_dates.js`),
+// Script ponctuel : à lancer toi-même (`node merge_duplicate_dates.js`),
 // je n'ai pas accès réseau à Mongo depuis mon bac à sable.
 //
 // Par défaut : DRY RUN, n'écrit rien, affiche juste ce qu'il ferait pour
@@ -44,7 +44,7 @@ async function main() {
   for (const dupe of dupes) {
     const docs = await DateModel.find({ _id: { $in: dupe.ids } });
     if (docs.length !== 2) {
-      console.log(`⚠️  ${dupe._id.name} (owner ${dupe._id.owner}) : ${docs.length} cartes, pas 2 — ignoré, à traiter à la main.`);
+      console.log(`⚠️  ${dupe._id.name} (owner ${dupe._id.owner}) : ${docs.length} cartes, pas 2, ignoré, à traiter à la main.`);
       continue;
     }
     const [a, b] = docs;
@@ -58,7 +58,7 @@ async function main() {
       loser = winner === a ? b : a;
     }
 
-    console.log(`— ${dupe._id.name} (owner ${dupe._id.owner}) —`);
+    console.log(`, ${dupe._id.name} (owner ${dupe._id.owner}), `);
     console.log(`  garde  : ${winner._id}  linkedUser=${winner.linkedUser || "-"} photo=${winner.photo ? "oui" : "non"} gifts=${winner.gifts.length}`);
     console.log(`  fusion : ${loser._id}  linkedUser=${loser.linkedUser || "-"} photo=${loser.photo ? "oui" : "non"} gifts=${loser.gifts.length}`);
 
@@ -78,7 +78,7 @@ async function main() {
   }
 
   if (!APPLY) {
-    console.log("Aperçu seulement — rien n'a été modifié. Relance avec --apply pour appliquer.");
+    console.log("Aperçu seulement : rien n'a été modifié. Relance avec --apply pour appliquer.");
   }
 
   await mongoose.disconnect();

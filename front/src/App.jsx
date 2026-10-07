@@ -114,7 +114,7 @@ function App() {
           {/* ── Routes publiques ── */}
           <Route path="/event/:shortId" element={<EventPage />} />
           <Route path="/wishlist/:publicSlug" element={<PublicWishlist />} />
-          {/* Liste d'idées commune partagée par lien — publique, lecture seule */}
+          {/* Liste d'idées commune partagée par lien : publique, lecture seule */}
           <Route path="/liste/:publicSlug" element={<PublicSharedList />} />
           <Route path="/pool/:shortId" element={<PoolPage />} />
 

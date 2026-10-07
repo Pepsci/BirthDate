@@ -35,7 +35,7 @@ export default function SupportScreen() {
   //
   // `poolSubject` / `poolMessage` : gabarit préparé par « Mes contributions »
   // pour un litige de cagnotte. Sans lui arrivaient des tickets « j'ai payé
-  // quelque part et je n'ai rien reçu », sans montant ni référence — deux
+  // quelque part et je n'ai rien reçu », sans montant ni référence : deux
   // allers-retours avant de pouvoir seulement identifier le paiement.
   const { context, poolSubject, poolMessage, eventShortId, poolPicker } =
     useLocalSearchParams<{
@@ -57,7 +57,7 @@ export default function SupportScreen() {
    * ⚠️ Sans elle, un litige arrive en texte libre et il faut deviner
    * l'événement pour retrouver le paiement. Avec elle, le ticket porte
    * l'identifiant : l'admin ouvre directement les contributions. C'est aussi
-   * ce qui borne la dérogation à la règle du ticket unique — un ticket ouvert
+   * ce qui borne la dérogation à la règle du ticket unique : un ticket ouvert
    * par cagnotte, donc au plus autant que de participations réelles.
    */
   const [pickedEvent, setPickedEvent] = useState<string | null>(null);

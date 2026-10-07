@@ -7,7 +7,7 @@
 //
 // L'identité d'un visiteur anonyme tient dans un jeton tiré au hasard et
 // rangé dans le `localStorage` de son navigateur. Ça suffit tant qu'il reste
-// sur le même navigateur — et ça tombe dès qu'il réserve sur son téléphone
+// sur le même navigateur : et ça tombe dès qu'il réserve sur son téléphone
 // puis rouvre le lien sur son ordinateur : plus de jeton, donc plus moyen de
 // libérer sa propre réservation. Le lien ci-dessous remet le jeton (et le
 // code de la liste) entre ses mains, sur n'importe quel appareil.
@@ -76,7 +76,7 @@ async function sendGuestReservationEmail({
     ctaButton(manageUrl, "Voir ou libérer ma réservation") +
     linkFallback(manageUrl) +
     note(
-      "Garde ce message : ce lien est le seul moyen de retrouver ta réservation depuis un autre téléphone ou un autre ordinateur. Si tu changes d'avis, libère-la — l'idée redeviendra disponible pour quelqu'un d'autre.",
+      "Garde ce message : ce lien est le seul moyen de retrouver ta réservation depuis un autre téléphone ou un autre ordinateur. Si tu changes d'avis, libère-la : l'idée redeviendra disponible pour quelqu'un d'autre.",
     ) +
     emailFooter();
 

@@ -91,7 +91,7 @@ export default function EventFormStepper({
     setMaxReached((m) => Math.max(m, i));
   };
 
-  // Étape 1 — essentiel
+  // Étape 1 : essentiel
   const [type, setType] = useState<EventType>(
     initial?.type ?? (isBirthday ? "birthday" : "party"),
   );
@@ -100,7 +100,7 @@ export default function EventFormStepper({
   );
   const [description, setDescription] = useState(initial?.description ?? "");
 
-  // Étape 2 — date
+  // Étape 2 : date
   const [dateMode, setDateMode] = useState<"fixed" | "vote">(
     initial?.dateMode ?? "fixed",
   );
@@ -122,7 +122,7 @@ export default function EventFormStepper({
     return d;
   });
 
-  // Étape 3 — lieu
+  // Étape 3 : lieu
   const [locationMode, setLocationMode] = useState<"fixed" | "vote">(
     initial?.locationMode ?? "fixed",
   );
@@ -138,7 +138,7 @@ export default function EventFormStepper({
   const [pendingLoc, setPendingLoc] = useState<LocationValue | null>(null);
   const [locKey, setLocKey] = useState(0); // reset de l'autocomplete après ajout
 
-  // Étape 4 — cadeaux
+  // Étape 4 : cadeaux
   const [giftMode, setGiftMode] = useState<"imposed" | "proposals" | "none">(
     initial?.giftMode ?? "proposals",
   );
@@ -148,7 +148,7 @@ export default function EventFormStepper({
   const [giftName, setGiftName] = useState("");
   const [giftPrice, setGiftPrice] = useState("");
 
-  // Étape 5 — cagnotte (finalisée après création)
+  // Étape 5 : cagnotte (finalisée après création)
   // Cagnotte réservée aux 18 ans et plus (le serveur bloque aussi).
   const { user } = useAuth();
   const poolLocked = user?.canCreatePool === false;
@@ -162,7 +162,7 @@ export default function EventFormStepper({
     initial?.directTransfer?.paypalEnabled ?? false,
   );
 
-  // Étape 6 — invitation
+  // Étape 6 : invitation
   const [maxGuests, setMaxGuests] = useState(
     initial?.maxGuests ? String(initial.maxGuests) : "",
   );
@@ -282,7 +282,7 @@ export default function EventFormStepper({
 
       {error && <Text style={styles.error}>{error}</Text>}
 
-      {/* ÉTAPE 1 — Essentiel */}
+      {/* ÉTAPE 1 : Essentiel */}
       {step === 0 && (
         <View style={styles.card}>
           <Text style={styles.label}>{t("events:form.type")}</Text>
@@ -321,7 +321,7 @@ export default function EventFormStepper({
         </View>
       )}
 
-      {/* ÉTAPE 2 — Date */}
+      {/* ÉTAPE 2 : Date */}
       {step === 1 && (
         <View style={styles.card}>
           <ModeSwitch
@@ -485,7 +485,7 @@ export default function EventFormStepper({
         </View>
       )}
 
-      {/* ÉTAPE 3 — Lieu */}
+      {/* ÉTAPE 3 : Lieu */}
       {step === 2 && (
         <View style={styles.card}>
           <ModeSwitch
@@ -550,7 +550,7 @@ export default function EventFormStepper({
         </View>
       )}
 
-      {/* ÉTAPE 4 — Cadeaux */}
+      {/* ÉTAPE 4 : Cadeaux */}
       {step === 3 && (
         <View style={styles.card}>
           <View style={styles.switchRow}>
@@ -642,7 +642,7 @@ export default function EventFormStepper({
         </View>
       )}
 
-      {/* ÉTAPE 5 — Cagnotte */}
+      {/* ÉTAPE 5 : Cagnotte */}
       {step === 4 && (
         <View style={styles.card}>
           <View style={styles.switchRow}>
@@ -704,7 +704,7 @@ export default function EventFormStepper({
         </View>
       )}
 
-      {/* ÉTAPE 6 — Invitation */}
+      {/* ÉTAPE 6 : Invitation */}
       {step === 5 && (
         <View style={styles.card}>
           <Text style={styles.label}>{t("events:form.maxGuests")}</Text>

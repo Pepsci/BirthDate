@@ -11,13 +11,13 @@
     "restoreError": "Erreur lors de la restauration.",
     "title": "Chiffrement",
     "maxTitle": "Chiffrement Maximum (Full E2E)",
-    "intro": "Le mode standard protège déjà tes messages. Le Chiffrement Maximum ajoute une sécurité basée sur une phrase de 12 mots — indépendante de ton mot de passe.",
-    "pro1": "✅ Clé non liée à ton mot de passe — plus robuste",
+    "intro": "Le mode standard protège déjà tes messages. Le Chiffrement Maximum ajoute une sécurité basée sur une phrase de 12 mots : indépendante de ton mot de passe.",
+    "pro1": "✅ Clé non liée à ton mot de passe : plus robuste",
     "con1": "⚠️ Si tu perds tes 12 mots, tes messages seront inaccessibles",
     "con2": "⚠️ Les anciens messages ne seront pas re-chiffrés",
     "activate": "Activer le Chiffrement Maximum",
     "active": "🔐 Chiffrement Maximum actif",
-    "activeText": "Tes messages sont chiffrés avec ta phrase de récupération de 12 mots. Conserve-la précieusement — c'est ta seule façon d'accéder à tes messages depuis un nouvel appareil.",
+    "activeText": "Tes messages sont chiffrés avec ta phrase de récupération de 12 mots. Conserve-la précieusement : c'est ta seule façon d'accéder à tes messages depuis un nouvel appareil.",
     "viewPhrase": "Voir ma phrase de récupération",
     "restoreHere": "Restaurer mes clés sur cet appareil",
     "deactivate": "Désactiver le Chiffrement Maximum",
@@ -139,7 +139,7 @@
     "uploading": "Envoi en cours…",
     "emailLocked": "L'adresse email ne peut pas être modifiée.",
     "birthDate": "Date de naissance",
-    "noBirthDate": "Non renseignée — appuyer pour choisir",
+    "noBirthDate": "Non renseignée : appuyer pour choisir",
     "myNameday": "Ma fête (format MM-JJ)"
   },
   "password": {
@@ -245,9 +245,9 @@
     "generate": "Générer mon fichier",
     "generated": "Fichier généré",
     "shareAgain": "Partager à nouveau",
-    "encNoCopy": "[chiffré — aucune copie pour ce compte]",
-    "encNoKey": "[chiffré — clé privée absente de cet appareil]",
-    "encFail": "[chiffré — déchiffrement impossible]"
+    "encNoCopy": "[chiffré : aucune copie pour ce compte]",
+    "encNoKey": "[chiffré : clé privée absente de cet appareil]",
+    "encFail": "[chiffré : déchiffrement impossible]"
   },
   "language": {
     "title": "Langue",

@@ -132,7 +132,7 @@
 }
 
 /* Ticket fermé : plus d'input, juste le rappel + un lien pour repartir sur
-   un nouveau sujet — pas de réouverture silencieuse d'un problème résolu. */
+   un nouveau sujet : pas de réouverture silencieuse d'un problème résolu. */
 .support-thread-closed {
   flex-shrink: 0;
   display: flex;

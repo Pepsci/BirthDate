@@ -4,7 +4,7 @@ const DateModel = require("../models/date.model");
 // d'acceptation d'ami est appelée deux fois pour la même paire (double clic,
 // requête rejouée, deux onglets...), les deux appels peuvent passer le
 // `findOne` avant qu'aucun des deux n'ait encore créé le document, et on se
-// retrouve avec deux cartes "ami" identiques — donc, plus tard, deux
+// retrouve avec deux cartes "ami" identiques : donc, plus tard, deux
 // rappels d'anniversaire bien distincts (chacun avec son propre _id) pour
 // la même personne. `findOneAndUpdate` + upsert est atomique : peu importe
 // combien de fois createFriendDates est appelée pour la même paire, une
@@ -15,11 +15,11 @@ async function upsertFriendDate(ownerId, friendId, friend) {
   // Cas fréquent : la carte existe déjà, ajoutée à la main AVANT que la
   // demande d'ami soit acceptée (on connaît la date d'anniversaire de son
   // ami avant même qu'il ait un compte). Le check ci-dessus ne la trouve
-  // jamais puisqu'elle n'a pas encore de `linkedUser` — donc une DEUXIÈME
+  // jamais puisqu'elle n'a pas encore de `linkedUser` : donc une DEUXIÈME
   // carte se créait à côté, identique en apparence (même nom, même date),
   // mais avec son propre _id : deux rappels séparés à chaque anniversaire.
   // On récupère cette carte manuelle existante et on la relie au lieu d'en
-  // créer une nouvelle — ça garde aussi la photo/les cadeaux déjà dessus.
+  // créer une nouvelle : ça garde aussi la photo/les cadeaux déjà dessus.
   const sameDay = new Date(friend.birthDate);
   const existingManual = await DateModel.findOne({
     owner: ownerId,

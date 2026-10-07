@@ -1,5 +1,5 @@
 /**
- * Accusés de réception d'un message privé — miroir de
+ * Accusés de réception d'un message privé : miroir de
  * front/src/components/chat/receipts.js. Voir server/utils/messageReceipts.js.
  *
  * `readBy` contient aussi l'expéditeur (posé à l'envoi) : on ne compte que les

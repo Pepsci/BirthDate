@@ -60,7 +60,7 @@ const authLimiterByIp = rateLimit({
 // Limiteur propre au mot de passe oublié. Il était auparavant confondu avec
 // authLimiter : le compteur de /login mangeait celui de /forgot-password, et
 // une seule IP pouvait déclencher 10 envois SES vers des adresses arbitraires.
-// Fenêtre plus longue, quota plus bas — un utilisateur légitime demande un
+// Fenêtre plus longue, quota plus bas : un utilisateur légitime demande un
 // reset une à deux fois, pas cinq. Même principe de clé composite IP+email
 // que pour le login.
 const passwordResetLimiter = rateLimit({
@@ -89,7 +89,7 @@ const passwordResetLimiterByIp = rateLimit({
 });
 
 // Création de compte : aucune notion de "compte cible" à protéger (le
-// compte n'existe pas encore), donc pas de clé composite ici — seul un
+// compte n'existe pas encore), donc pas de clé composite ici : seul un
 // volume anormal depuis UNE IP compte. Plafond volontairement large pour
 // ne pas bloquer une famille/un bureau qui s'inscrit en même temps, tout en
 // coupant un bot qui créerait des dizaines de comptes (coût SES + pollution
@@ -135,7 +135,7 @@ const validatePassword = (password) => {
 // POST /auth/signup
 // ========================================
 /**
- * GET /api/auth/min-age — âge minimum pour créer un compte, pour ce visiteur.
+ * GET /api/auth/min-age : âge minimum pour créer un compte, pour ce visiteur.
  * Public. Sert aux formulaires d'inscription (app et site) à prévenir AVANT
  * l'envoi ; le contrôle qui fait foi reste celui de POST /signup.
  */
@@ -148,7 +148,7 @@ router.post("/signup", signupLimiter, async (req, res) => {
   // Langue de l'app mobile au moment de l'inscription (absente depuis le web)
   const language = parseLanguage(req.body.language);
 
-  // CGU « tolérance zéro » (conformité Apple 1.2) — requis si le client l'envoie explicitement à false
+  // CGU « tolérance zéro » (conformité Apple 1.2) : requis si le client l'envoie explicitement à false
   if (acceptedTerms === false) {
     return res
       .status(400)
@@ -270,7 +270,7 @@ router.post("/signup", signupLimiter, async (req, res) => {
       console.error("❌ Erreur traitement invitations:", invitationError);
     }
 
-    // Journal d'audit — écrit APRÈS le traitement des invitations pour pouvoir
+    // Journal d'audit : écrit APRÈS le traitement des invitations pour pouvoir
     // y noter le parrain. La provenance (plateforme, site d'origine, page
     // d'arrivée, campagne) est construite par utils/signupSource.js.
     try {
@@ -366,7 +366,7 @@ router.post("/login", authLimiterByIp, authLimiter, async (req, res) => {
 
       return res.status(401).json({
         message:
-          "Veuillez vérifier vos emails avant de vous connecter. Un nouvel email de vérification a été envoyé — pensez à regarder dans vos spams.",
+          "Veuillez vérifier vos emails avant de vous connecter. Un nouvel email de vérification a été envoyé : pensez à regarder dans vos spams.",
       });
     }
 
@@ -502,7 +502,7 @@ router.post("/forgot-password", passwordResetLimiterByIp, passwordResetLimiter, 
     const user = await userModel.findOne({ email });
     if (user) {
       // Un token émis il y a moins de 2 min reste valable : on ne renvoie pas
-      // d'email, mais la réponse est identique — l'attaquant n'apprend rien.
+      // d'email, mais la réponse est identique : l'attaquant n'apprend rien.
       const throttled = resetRequestedTooRecently(user);
 
       if (!throttled) {

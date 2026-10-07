@@ -143,7 +143,7 @@ export default function LocalRemindersScreen() {
               <Text style={styles.hint}>
                 {t("local:reminders.next", { title: next.title })}
                 {next.at
-                  ? ` — ${next.at.toLocaleDateString(getLocaleTag(), { weekday: "long", day: "numeric", month: "long" })}`
+                  ? `, ${next.at.toLocaleDateString(getLocaleTag(), { weekday: "long", day: "numeric", month: "long" })}`
                   : ""}
               </Text>
             )}

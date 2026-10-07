@@ -1,4 +1,4 @@
-// Panel admin : signalements UGC (conformité stores — traitement < 24 h)
+// Panel admin : signalements UGC (conformité stores, traitement < 24 h)
 import React, { useCallback, useEffect, useState } from "react";
 import apiHandler from "../../api/apiHandler";
 import "./css/admin.css";

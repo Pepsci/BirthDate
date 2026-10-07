@@ -47,7 +47,7 @@ export default function SharedInvitesScreen() {
   // définitivement introuvables.
   const [pending, setPending] = useState<SharedListPending[]>([]);
   // Listes déjà rattachées, que je gère ou où je suis invité. Sans elles, cet
-  // écran ne montrait que ce qui est « en attente » — une liste active
+  // écran ne montrait que ce qui est « en attente » : une liste active
   // n'était atteignable que par la carte de la personne concernée.
   const [mine, setMine] = useState<MySharedList[]>([]);
 
@@ -92,7 +92,7 @@ export default function SharedInvitesScreen() {
 
   /**
    * @param target carte existante, ou `{ newDate: {} }` pour la créer au
-   *   passage — le serveur reprend alors le nom et la date de naissance depuis
+   *   passage : le serveur reprend alors le nom et la date de naissance depuis
    *   la carte de celui qui invite, qui décrit la même personne.
    */
   const confirmAccept = async (
@@ -439,7 +439,7 @@ const makeStyles = (c: ThemeColors) =>
   sheetTitle: { fontSize: 18, fontWeight: "800", color: c.text },
   sheetSub: { color: c.sub, fontSize: 13, marginTop: 4, marginBottom: 12 },
   // Action « créer la carte » : mise en avant par rapport aux cartes existantes
-  // — c'est le seul chemin disponible quand l'utilisateur n'en a aucune.
+  // c'est le seul chemin disponible quand l'utilisateur n'en a aucune.
   createRow: {
     marginTop: 10,
     paddingVertical: 12,

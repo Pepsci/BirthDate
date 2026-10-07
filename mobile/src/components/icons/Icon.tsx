@@ -10,11 +10,11 @@ import Svg, { Path } from "react-native-svg";
  * réglages optiques faits à la main :
  *
  *  - un emoji repose sur la ligne de base et sa boîte réserve la place du
- *    jambage descendant, que le glyphe n'occupe pas — d'où un décalage vertical
+ *    jambage descendant, que le glyphe n'occupe pas : d'où un décalage vertical
  *    qu'on compensait par un `top` proportionnel à la taille de police, et dont
  *    la valeur exacte dépend de la police système de l'appareil ;
  *  - le chevron bordé n'a que deux bordures peintes sur quatre, donc son encre
- *    est décentrée dans sa propre boîte après rotation — on la recalait avec un
+ *    est décentrée dans sa propre boîte après rotation : on la recalait avec un
  *    `left: 2.5` calculé à la main.
  *
  * En SVG, le `viewBox` EST le repère : une forme dont l'emprise est symétrique
@@ -22,7 +22,7 @@ import Svg, { Path } from "react-native-svg";
  * et quelle que soit la police du système. Plus rien à régler à l'œil.
  *
  * Chaque tracé ci-dessous est construit pour que son emprise soit centrée sur
- * (12, 12) — c'est la règle à respecter en ajoutant une icône.
+ * (12, 12) : c'est la règle à respecter en ajoutant une icône.
  */
 
 export type IconName =
@@ -35,7 +35,7 @@ export type IconName =
   | "bell-off";
 
 const PATHS: Record<IconName, string[]> = {
-  // Emprise x : 8,75 → 15,25 · y : 5 → 19 — symétrique autour de (12, 12).
+  // Emprise x : 8,75 → 15,25 · y : 5 → 19, symétrique autour de (12, 12).
   "chevron-left": ["M15.25 5 L8.75 12 L15.25 19"],
 
   // Bulle avec ergot en bas à gauche. Emprise x : 3 → 21 · y : 4 → 20.
@@ -98,7 +98,7 @@ export default function Icon({
    * (34 − 2 × 0,333 − 20) / 2 = 6,67 pt de chaque côté : une valeur
    * fractionnaire que le moteur de rendu arrondit, et pas forcément du même
    * côté à gauche et à droite. En couvrant le parent, il n'y a plus aucun
-   * centrage à calculer — la position du tracé ne dépend plus que du viewBox,
+   * centrage à calculer : la position du tracé ne dépend plus que du viewBox,
    * qui est exact par construction.
    */
   fill?: boolean;

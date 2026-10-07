@@ -51,7 +51,7 @@ router.post("/:shortId/invite", isAuthenticated, async (req, res) => {
     // ── Invitations par email : nettoyage + plafonds, AVANT tout envoi ──────
     // Sans plafond, cette route servait de relais d'emails vers n'importe
     // quelle adresse, aux frais de la réputation d'envoi du domaine. On valide
-    // donc ici — avant d'avoir invité qui que ce soit — pour qu'un refus ne
+    // donc ici, avant d'avoir invité qui que ce soit, pour qu'un refus ne
     // laisse pas une demande à moitié traitée.
     const externalEmails = cleanEmails(req.body.externalEmails);
     let newExternalEmails = [];
@@ -209,7 +209,7 @@ router.post("/:shortId/join", async (req, res) => {
  * jusque-là un invité sans compte (`guestToken` en local).
  *
  * ⚠️ On CONVERTIT l'invitation existante, on n'en crée pas une seconde. Tout ce
- * que la personne a déjà fait vit sur cette invitation — sa réponse à
+ * que la personne a déjà fait vit sur cette invitation : sa réponse à
  * l'invitation, ses votes de date, son vote de lieu. En créant une nouvelle
  * ligne, elle repartirait de zéro et l'organisateur verrait deux participants
  * là où il n'y a qu'une personne.
@@ -259,7 +259,7 @@ router.post("/:shortId/claim", isAuthenticated, async (req, res) => {
     //
     // Règle de report, volontairement bête et prévisible : le compte l'emporte
     // dès qu'il s'est prononcé, l'invité comble les blancs. Arbitrer par
-    // ancienneté serait plus malin et beaucoup moins compréhensible — la
+    // ancienneté serait plus malin et beaucoup moins compréhensible : la
     // personne verrait sa réponse changer sans savoir pourquoi.
     if (mine) {
       if (guestInv) {

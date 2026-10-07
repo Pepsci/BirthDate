@@ -18,7 +18,7 @@ import {
  * Le chevron est une icône SVG : son centrage vient du viewBox, pas d'un
  * réglage optique (cf. components/icons/Icon.tsx). Les versions précédentes le
  * dessinaient avec un carré bordé tourné à 45°, recalé par un `left` calculé à
- * la main — c'est ce qui le laissait visiblement décentré dans son rond.
+ * la main : c'est ce qui le laissait visiblement décentré dans son rond.
  *
  * ⚠️ Écran ouvert directement depuis un lien (email, invitation, notification
  * au démarrage) : il n'y a AUCUN écran derrière lui. Le bouton n'était alors

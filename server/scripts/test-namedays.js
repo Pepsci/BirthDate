@@ -1,5 +1,5 @@
 /**
- * test-namedays.js — node scripts/test-namedays.js
+ * test-namedays.js : node scripts/test-namedays.js
  *
  * Vérifie le calendrier maison et le matching des prénoms.
  * Les cas viennent de vrais bugs (notifs du 29/09/2026 : Mia notifiée à tort,

@@ -144,7 +144,7 @@ const AuthPage = () => {
       if (newToken) storeToken(newToken);
 
       // Étape 3 : initialise les clés E2E (génère ou déchiffre la clé privée)
-      // Le mot de passe en clair n'est disponible qu'ici — il ne quitte pas le client
+      // Le mot de passe en clair n'est disponible qu'ici : il ne quitte pas le client
       await setupE2EKeys(loginData.password, user);
 
       // Étape 4 : met à jour le contexte auth sans second appel API

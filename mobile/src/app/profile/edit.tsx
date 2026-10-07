@@ -77,7 +77,7 @@ export default function ProfileEditScreen() {
     try {
       // Les photos iPhone sont en HEIC, que le serveur (sharp sans codec HEVC)
       // ne sait pas décoder. On convertit en JPEG et on réduit à 512px avant
-      // l'envoi — même logique que le web avec canvas.
+      // l'envoi : même logique que le web avec canvas.
       const jpeg = await ImageManipulator.manipulateAsync(
         result.assets[0].uri,
         [{ resize: { width: 512 } }],

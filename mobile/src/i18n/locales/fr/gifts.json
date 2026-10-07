@@ -32,8 +32,8 @@
   },
   "form": {
     "newIdea": "Nouvelle idée",
-    "fetched": "✅ Infos récupérées — vérifie et ajuste si besoin",
-    "notFound": "Infos non trouvées — remplis manuellement",
+    "fetched": "✅ Infos récupérées : vérifie et ajuste si besoin",
+    "notFound": "Infos non trouvées : remplis manuellement",
     "fetchError": "Erreur lors de la récupération.",
     "url": "Lien du produit (URL)",
     "fetching": "Récupération…",
@@ -88,7 +88,7 @@
     "fill": "🔍 Remplir",
     "wishName": "Nom du souhait *",
     "price": "Prix €",
-    "empty": "Ta wishlist est vide. Ajoute des idées — tes amis pourront les réserver !",
+    "empty": "Ta wishlist est vide. Ajoute des idées : tes amis pourront les réserver !",
     "reserved": "🎁 Réservé",
     "hidden": "🔒 Masqué",
     "someoneReserved": "🎁 Quelqu'un a réservé ce cadeau pour toi",
@@ -172,6 +172,6 @@
     "kindFriend": "Ami",
     "kindFamily": "Famille",
     "kindManual": "Manuelle",
-    "noCards": "Tu n'as encore aucune carte — utilise le bouton ci-dessus."
+    "noCards": "Tu n'as encore aucune carte : utilise le bouton ci-dessus."
   }
 }

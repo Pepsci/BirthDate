@@ -1,7 +1,7 @@
 /* ========================================
    MERGE DUPLICATES
    Les styles génériques des cards (.friend-card, .request-card)
-   sont dans friend.css — ici uniquement les styles propres au merge
+   sont dans friend.css : ici uniquement les styles propres au merge
    ======================================== */
 
 .merge-duplicates-page {
@@ -107,7 +107,7 @@
     font-weight: bold;
 }
 
-/* Card preview — spécifique merge, différente de .friend-card générique */
+/* Card preview : spécifique merge, différente de .friend-card générique */
 .card-preview {
     background: var(--bg-surface, rgba(30, 41, 59, 0.8));
     border: 2px solid rgba(148, 163, 184, 0.2);

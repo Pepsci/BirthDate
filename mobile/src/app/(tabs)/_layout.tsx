@@ -167,7 +167,7 @@ function TabIcon({ emoji, focused }: { emoji: string; focused: boolean }) {
  * Bouton d'en-tête qui ramène le bandeau « Mes cagnottes ».
  *
  * Composant à part, et non un rendu inline : il doit s'abonner au magasin
- * (useCagnottesStrip), donc appeler un hook — impossible dans la fonction
+ * (useCagnottesStrip), donc appeler un hook : impossible dans la fonction
  * `headerLeft`, qui n'est pas un composant React.
  */
 function CagnottesToggle() {

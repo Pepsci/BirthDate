@@ -10,7 +10,7 @@ import { useThemedStyles, ThemeColors } from "../lib/theme-context";
  * derrière chaque UIBarButtonItem une capsule translucide de 44 pt, et il n'y
  * place pas notre vue exactement au centre : mesuré sur capture, notre rond de
  * 34 pt s'y retrouvait décalé de 1,5 à 1,75 px. Ce décalage naît côté natif,
- * après le layout React Native — aucune valeur en JS ne peut l'annuler. Toutes
+ * après le layout React Native : aucune valeur en JS ne peut l'annuler. Toutes
  * les tentatives précédentes (marges, `left` optique, taille du glyphe, puis
  * alignement de notre vue sur les 44 pt de la capsule) ne faisaient que
  * déplacer le problème : à 44 pt la capsule est simplement devenue un ovale.
@@ -35,7 +35,7 @@ export default function AppStackHeader({ options, route }: any) {
    * des notifications, « Tout lire » et « Tout supprimer » occupent bien plus :
    * le titre, centré en absolu, passait dessous et les deux textes se
    * chevauchaient. On mesure donc les deux côtés et on retient le PLUS LARGE
-   * comme marge symétrique — le titre reste exactement au centre de l'écran
+   * comme marge symétrique : le titre reste exactement au centre de l'écran
    * (c'est tout l'objet de ce composant) et se tronque au lieu de déborder.
    */
   const [leftW, setLeftW] = useState(0);
@@ -54,7 +54,7 @@ export default function AppStackHeader({ options, route }: any) {
   const right = options.headerRight?.({});
 
   // headerTitle peut être une fonction (chat : avatar + nom cliquables), un
-  // élément, ou rien — auquel cas on retombe sur `title` puis le nom de route.
+  // élément, ou rien : auquel cas on retombe sur `title` puis le nom de route.
   let title = null;
   if (typeof options.headerTitle === "function") {
     title = options.headerTitle({});

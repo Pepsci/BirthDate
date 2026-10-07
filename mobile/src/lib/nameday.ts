@@ -1,7 +1,7 @@
 import FR from "../data/namedays-fr-by-name.json";
 
 /**
- * Fête d'un prénom, calculée sur le téléphone — utilisée en mode local.
+ * Fête d'un prénom, calculée sur le téléphone : utilisée en mode local.
  *
  * ⚠️ Copie conforme de server/utils/namedayHelper.js + namedayNormalize.js
  * (même normalisation, même règle) : une carte doit avoir la même fête

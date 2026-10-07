@@ -23,7 +23,7 @@ const sharedGiftSchema = new Schema(
     /**
      * Idée réservée aux MEMBRES : invisible aux invités internes comme aux
      * visiteurs du lien public. Même intention que `isShared` sur un article
-     * de wishlist — sauf qu'ici on cache à ceux à qui la liste est partagée,
+     * de wishlist : sauf qu'ici on cache à ceux à qui la liste est partagée,
      * pas à la personne concernée.
      *
      * Sert à ce qu'on garde entre gestionnaires : le gros cadeau qu'on se
@@ -35,25 +35,25 @@ const sharedGiftSchema = new Schema(
     hiddenFromViewers: { type: Boolean, default: false },
     // Réservation : « je m'en occupe », avant tout achat. Distinct de `status`,
     // qui décrit l'avancement du cadeau ; ici on retient QUI s'en charge.
-    // Les membres d'une liste commune sont les offrants — la personne
-    // concernée n'y a pas accès — donc afficher le nom ne gâche aucune
+    // Les membres d'une liste commune sont les offrants : la personne
+    // concernée n'y a pas accès : donc afficher le nom ne gâche aucune
     // surprise, et c'est ce qui évite le double achat.
     reservedBy: { type: Schema.Types.ObjectId, ref: "User", default: null },
     // Visiteur du lien public : pas de compte. Le prénom est ce que les
-    // membres verront — c'est la seule part de son identité qui sort d'ici.
+    // membres verront : c'est la seule part de son identité qui sort d'ici.
     reservedByGuest: { type: String, default: null },
     // ⚠️ Le prénom NE PEUT PAS servir de preuve d'identité. Il l'a fait, et
     // ça donnait deux défauts : le serveur ne savait pas reconnaître le
     // navigateur du réserveur (tout le monde voyait « libérer ma
     // réservation »), et connaître un prénom suffisait à défaire la
     // réservation de quelqu'un d'autre. Le jeton, lui, est tiré au hasard et
-    // ne quitte jamais le navigateur du visiteur — sauf par le mail de
+    // ne quitte jamais le navigateur du visiteur : sauf par le mail de
     // confirmation, qui est justement ce qui lui permet de retrouver sa
     // réservation depuis un autre appareil.
     reservedByGuestToken: { type: String, default: null },
     // Facultatif : uniquement pour l'accusé de réception et le lien de
-    // gestion. Jamais renvoyée par l'API — ni aux membres, ni sur la page
-    // publique — et jamais réutilisée pour autre chose.
+    // gestion. Jamais renvoyée par l'API : ni aux membres, ni sur la page
+    // publique : et jamais réutilisée pour autre chose.
     reservedByGuestEmail: { type: String, default: null },
     reservedAt: { type: Date, default: null },
   },
@@ -77,7 +77,7 @@ const sharedGiftSchema = new Schema(
  * `image`) : une proposition acceptée devient une idée sans rien perdre.
  *
  * Visible des gestionnaires, et de son auteur uniquement. Les autres invités
- * et le lien public n'en voient rien — filtré côté serveur, comme
+ * et le lien public n'en voient rien : filtré côté serveur, comme
  * `hiddenFromViewers`.
  */
 const sharedGiftProposalSchema = new Schema(
@@ -105,13 +105,13 @@ const sharedGiftProposalSchema = new Schema(
 
 const sharedGiftListSchema = new Schema(
   {
-    // `members` : le créateur et les contributeurs. Droits complets — ajouter,
+    // `members` : le créateur et les contributeurs. Droits complets : ajouter,
     // modifier, supprimer une idée, inviter et révoquer des invités.
     members: [{ type: Schema.Types.ObjectId, ref: "User" }],
     createdBy: { type: Schema.Types.ObjectId, ref: "User" },
 
     // `viewers` : contacts à qui la liste a été partagée depuis l'app. Ils
-    // peuvent CONSULTER et RÉSERVER, rien d'autre — ils ne touchent jamais au
+    // peuvent CONSULTER et RÉSERVER, rien d'autre : ils ne touchent jamais au
     // contenu de la liste et ne voient pas les prénoms des réserveurs.
     // On garde qui a invité et quand, pour l'écran de gestion des accès.
     viewers: [
