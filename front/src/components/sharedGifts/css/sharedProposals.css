@@ -1,4 +1,5 @@
-/* Propositions d'idées sur une liste commune (SharedProposals.jsx) */
+/* Propositions d'idées sur une liste commune (SharedProposals.jsx).
+   Les cartes elles-mêmes utilisent les classes gcg-* de giftCardGrid.css. */
 
 .sgp-box {
     margin: 12px 0;
@@ -8,88 +9,72 @@
     border-radius: 12px;
 }
 
+.sgp-section + .sgp-section,
+.sgp-form + .sgp-section,
+.gcg-btn + .sgp-section,
+.sgp-error + .sgp-section {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border-color);
+}
+
+/* Titre cliquable qui replie le bloc */
+.sgp-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 4px 0 10px;
+    font-size: 15px;
+    font-weight: 700;
+    text-align: left;
+    color: var(--text-primary);
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.sgp-toggle[aria-expanded="false"] {
+    padding-bottom: 4px;
+}
+
+.sgp-chevron {
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
 .sgp-title {
-    margin: 0 0 6px;
+    margin: 0;
     font-size: 15px;
     font-weight: 700;
     color: var(--text-primary);
 }
 
-.sgp-row {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    padding: 10px 0;
-    border-top: 1px solid var(--border-color);
-}
-
-.sgp-details {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-
-.sgp-name {
-    font-size: 15px;
-    font-weight: 600;
-    color: var(--text-primary);
-}
-
-.sgp-meta {
+.sgp-hint {
     margin: 0;
     font-size: 13px;
     color: var(--text-secondary);
 }
 
-.sgp-link {
-    font-size: 13px;
-    color: var(--primary);
-    overflow-wrap: anywhere;
-}
-
-.sgp-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 8px;
-}
-
-.sgp-btn {
-    padding: 8px 14px;
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--text-primary);
-    background: var(--bg-primary);
-    border: 1px solid var(--border-color);
-    border-radius: 10px;
-    cursor: pointer;
-    transition: border-color 0.2s, background 0.2s;
-}
-
-.sgp-btn:hover:not(:disabled) {
-    border-color: var(--border-color-hover);
-}
-
-.sgp-btn:disabled,
-.sgp-withdraw:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
-.sgp-btn--primary {
-    color: var(--bg-primary);
-    background: var(--primary);
-    border-color: var(--primary);
-}
-
-.sgp-btn--primary:hover:not(:disabled) {
-    background: var(--primary-dark);
-    border-color: var(--primary-dark);
-}
-
 .sgp-form {
     display: flex;
     flex-direction: column;
+    gap: 8px;
+}
+
+.sgp-form-row {
+    display: flex;
+    gap: 8px;
+}
+
+.sgp-form-row .sgp-input {
+    flex: 1;
+    min-width: 0;
+}
+
+.sgp-form-actions {
+    display: flex;
+    flex-wrap: wrap;
     gap: 8px;
 }
 
@@ -102,22 +87,87 @@
     border-radius: 10px;
 }
 
+.sgp-preview {
+    width: 96px;
+    height: 96px;
+    object-fit: cover;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+}
+
+.sgp-hidden {
+    display: none;
+}
+
 .sgp-error {
-    margin: 8px 0 0;
+    margin: 8px 0;
     font-size: 13px;
     color: var(--danger);
 }
 
-.sgp-mine {
+/* Bouton « Récupérer les infos » : garde sa largeur, le champ prend le reste */
+.sgp-fetch {
+    flex: 0 0 auto;
+    white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+    .sgp-form-row {
+        flex-wrap: wrap;
+    }
+
+    .sgp-fetch {
+        flex: 1 1 100%;
+    }
+}
+
+/* État d'une proposition (en attente, acceptée, non retenue), dans le pied de
+   carte. Les couleurs viennent des classes gcg-badge--* ; on ne reprend pas
+   .gcg-badge lui-même, qui est positionné sur l'image. */
+.sgp-status {
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+    border-radius: 100px;
+}
+
+.sgp-status--declined {
+    color: var(--danger);
+    background: color-mix(in srgb, var(--danger) 14%, transparent);
+    border: 1px solid color-mix(in srgb, var(--danger) 35%, transparent);
+}
+
+/* Contour de la carte selon la réponse : vert acceptée, rouge non retenue.
+   Double classe pour passer devant la bordure de .gcg-card. */
+.gcg-card.sgp-card--accepted {
+    border-color: var(--success);
+}
+
+.gcg-card.sgp-card--declined {
+    border-color: var(--danger);
+}
+
+/* Bandeau « effacée · Annuler », affiché le temps du délai d'annulation */
+.sgp-undo {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
     margin-top: 12px;
+    padding: 10px 14px;
+    font-size: 14px;
+    color: var(--text-primary);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
 }
 
-.sgp-withdraw {
-    align-self: flex-start;
+.sgp-undo-btn {
     padding: 0;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--danger);
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--primary);
     background: none;
     border: none;
     cursor: pointer;

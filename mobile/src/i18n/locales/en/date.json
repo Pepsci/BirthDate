@@ -223,20 +223,27 @@
   "proposals": {
     "proposeBtn": "💡 Suggest an idea",
     "formTitle": "Suggest an idea",
-    "formHint": "The list managers decide whether to add it.",
-    "namePlaceholder": "Gift name",
-    "urlPlaceholder": "Link (optional)",
-    "pricePlaceholder": "Price (optional)",
     "send": "Send suggestion",
-    "nameRequired": "Enter the gift name.",
-    "mineTitle": "My pending suggestions",
-    "withdraw": "Withdraw",
-    "pendingTitle": "Suggestions to review",
-    "from": "Suggested by {{name}}",
+    "pendingTitle": "💡 Suggestions to review",
+    "handledTitle": "🗂️ Handled suggestions",
+    "mineTitle": "📝 My suggestions",
+    "by": "By {{name}}",
     "accept": "Accept",
     "decline": "Decline",
+    "withdraw": "Withdraw",
     "declineTitle": "Decline this suggestion?",
     "declineText": "{{name}} will be told that \"{{gift}}\" was not kept.",
-    "someone": "a guest"
+    "someone": "a guest",
+    "status": {
+      "pending": "⏳ Pending",
+      "accepted": "✅ Accepted",
+      "declined": "↩️ Not kept"
+    },
+    "openBtn": "💡 Suggestions",
+    "openBtnCount": "💡 Suggestions ({{count}})",
+    "empty": "No suggestions yet. The guests of this list can send some.",
+    "erase": "Clear",
+    "erased": "\"{{gift}}\" cleared",
+    "withdrawn": "\"{{gift}}\" withdrawn"
   }
 }

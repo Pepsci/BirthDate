@@ -422,7 +422,12 @@ export default function SharedGiftSection({ currentDate, onUpdate }) {
 
       {/* Propositions d'idées : l'invité propose, le gestionnaire accepte ou
           refuse. */}
-      <SharedProposals list={list} listId={listId} onChange={setList} />
+      <SharedProposals
+        list={list}
+        listId={listId}
+        occasions={OCCASIONS}
+        onChange={setList}
+      />
 
       {isMember && showForm && (
         <form className="sgs-form" onSubmit={submitForm}>

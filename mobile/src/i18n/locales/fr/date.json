@@ -223,20 +223,27 @@
   "proposals": {
     "proposeBtn": "💡 Proposer une idée",
     "formTitle": "Proposer une idée",
-    "formHint": "Les gestionnaires de la liste décident de l'ajouter ou non.",
-    "namePlaceholder": "Nom du cadeau",
-    "urlPlaceholder": "Lien (facultatif)",
-    "pricePlaceholder": "Prix (facultatif)",
     "send": "Envoyer la proposition",
-    "nameRequired": "Indique le nom du cadeau.",
-    "mineTitle": "Mes propositions en attente",
-    "withdraw": "Retirer",
-    "pendingTitle": "Propositions à examiner",
-    "from": "Proposé par {{name}}",
+    "pendingTitle": "💡 Propositions à examiner",
+    "handledTitle": "🗂️ Propositions traitées",
+    "mineTitle": "📝 Mes propositions",
+    "by": "Par {{name}}",
     "accept": "Accepter",
     "decline": "Refuser",
+    "withdraw": "Retirer",
     "declineTitle": "Refuser cette proposition ?",
     "declineText": "{{name}} sera prévenu que « {{gift}} » n'a pas été retenue.",
-    "someone": "un invité"
+    "someone": "un invité",
+    "status": {
+      "pending": "⏳ En attente",
+      "accepted": "✅ Acceptée",
+      "declined": "↩️ Non retenue"
+    },
+    "openBtn": "💡 Propositions",
+    "openBtnCount": "💡 Propositions ({{count}})",
+    "empty": "Aucune proposition pour l'instant. Les invités de la liste peuvent en envoyer.",
+    "erase": "Effacer",
+    "erased": "« {{gift}} » effacée",
+    "withdrawn": "« {{gift}} » retirée"
   }
 }

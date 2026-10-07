@@ -487,9 +487,20 @@ function serializeListForRole(list, role, userId) {
     // le regardent pas, et leur auteur encore moins.
     proposals: (obj.proposals || [])
       .filter(
-        (p) => String(p.proposedBy?._id ?? p.proposedBy) === String(userId),
+        (p) =>
+          String(p.proposedBy?._id ?? p.proposedBy) === String(userId) &&
+          // Réponse qu'il a effacée de sa liste : elle reste chez les
+          // gestionnaires, plus chez lui.
+          !p.hiddenByProposer,
       )
-      .map((p) => ({ ...p, proposedBy: undefined, mine: true })),
+      // Ni son propre nom (il le connaît), ni celui du gestionnaire qui a
+      // tranché : un invité ne connaît pas la composition de la liste.
+      .map((p) => ({
+        ...p,
+        proposedBy: undefined,
+        decidedBy: undefined,
+        mine: true,
+      })),
     gifts: (obj.gifts || [])
       .filter(
         (g) => !HIDDEN_STATUSES_FOR_VIEWER.has(g.status) && !g.hiddenFromViewers,
@@ -660,7 +671,8 @@ router.get("/:id", isAuthenticated, loadListAsParticipant, async (req, res) => {
       .populate("members", "name surname avatar")
       .populate("gifts.addedBy", "name surname")
       .populate("gifts.reservedBy", "name surname")
-      .populate("proposals.proposedBy", "name surname");
+      .populate("proposals.proposedBy", "name surname")
+      .populate("proposals.decidedBy", "name surname");
     // `myRole` permet à l'app de masquer d'emblée ce qu'un invité ne peut pas
     // faire, plutôt que de lui laisser découvrir ses limites par des 403.
     res.json({
@@ -738,6 +750,21 @@ router.post("/:id/gifts", isAuthenticated, loadListAsMember, async (req, res) =>
 // Garde-fous : un invité ne peut pas noyer une liste sous les suggestions.
 const MAX_PENDING_PROPOSALS_PER_USER = 5;
 const MAX_PENDING_PROPOSALS_PER_LIST = 50;
+// Propositions traitées conservées par liste. Au-delà, les plus anciennes
+// partent : c'est un historique de consultation, pas une archive.
+const MAX_DECIDED_PROPOSALS_PER_LIST = 30;
+
+const isPending = (p) => (p.status || "pending") === "pending";
+
+/** Retire les propositions traitées les plus anciennes au-delà du plafond. */
+function trimDecidedProposals(list) {
+  const decided = (list.proposals || [])
+    .filter((p) => !isPending(p))
+    .sort((a, b) => new Date(b.decidedAt || 0) - new Date(a.decidedAt || 0));
+  for (const old of decided.slice(MAX_DECIDED_PROPOSALS_PER_LIST)) {
+    list.proposals.pull(old._id);
+  }
+}
 
 /** Lien http(s) propre, ou null. Jamais de `javascript:` ni de texte libre. */
 function cleanProposalUrl(value) {
@@ -770,7 +797,8 @@ async function sendListForRole(req, res, status = 200) {
     .populate("members", "name surname avatar")
     .populate("gifts.addedBy", "name surname")
     .populate("gifts.reservedBy", "name surname")
-    .populate("proposals.proposedBy", "name surname");
+    .populate("proposals.proposedBy", "name surname")
+    .populate("proposals.decidedBy", "name surname");
   res.status(status).json({
     ...serializeListForRole(list, req.listRole, req.payload._id),
     myRole: req.listRole,
@@ -815,7 +843,8 @@ router.post(
       const giftName = String(req.body.giftName || "").trim().slice(0, 120);
       if (!giftName) return res.status(400).json({ message: "Nom requis" });
 
-      const pending = list.proposals || [];
+      // Seules les propositions EN ATTENTE comptent dans les limites.
+      const pending = (list.proposals || []).filter(isPending);
       const mine = pending.filter((p) => p.proposedBy.toString() === uid);
       if (mine.length >= MAX_PENDING_PROPOSALS_PER_USER)
         return res.status(400).json({
@@ -827,10 +856,16 @@ router.post(
             "Cette liste a déjà beaucoup de propositions en attente. Réessaie plus tard.",
         });
 
+      const year = parseInt(req.body.year, 10);
       list.proposals.push({
         giftName,
+        occasion:
+          String(req.body.occasion || "").trim().slice(0, 40) || "Anniversaire",
+        year: year >= 2000 && year <= 2100 ? year : new Date().getFullYear(),
         url: cleanProposalUrl(req.body.url),
         price: cleanProposalPrice(req.body.price),
+        // Même filtre que le lien : une image ne se charge que depuis http(s).
+        image: cleanProposalUrl(req.body.image),
         proposedBy: uid,
       });
       await list.save();
@@ -851,7 +886,12 @@ router.post(
   },
 );
 
-/** Retirer SA proposition tant qu'elle attend. */
+/**
+ * Retirer SA proposition. En attente : elle est annulée pour tout le monde.
+ * Déjà traitée : elle disparaît seulement de SA vue (`hiddenByProposer`) ;
+ * les gestionnaires gardent leur historique, et l'idée acceptée reste dans
+ * la liste.
+ */
 router.delete(
   "/:id/proposals/:proposalId",
   isAuthenticated,
@@ -866,7 +906,14 @@ router.delete(
       if (proposal.proposedBy.toString() !== req.payload._id)
         return res.status(403).json({ message: "Non autorisé" });
       // .pull() : `deleteOne()` n'existe pas sur un sous-document en mongoose 6.
-      list.proposals.pull(proposal._id);
+      if (isPending(proposal)) {
+        // Pas encore de réponse : la proposition est réellement annulée.
+        list.proposals.pull(proposal._id);
+      } else {
+        // Déjà traitée : on la retire de SA vue seulement. La supprimer
+        // effacerait aussi l'historique des gestionnaires.
+        proposal.hiddenByProposer = true;
+      }
       await list.save();
       await sendListForRole(req, res);
     } catch (err) {
@@ -878,18 +925,24 @@ router.delete(
 
 /**
  * Accepter ou refuser une proposition. Gestionnaires uniquement.
- * Acceptée : elle devient une idée normale de la liste, attribuée à son
- * auteur. Refusée : elle est supprimée. Dans les deux cas l'auteur est prévenu.
+ * Acceptée : une idée normale est créée dans la liste, attribuée à son
+ * auteur. Dans les deux cas la proposition est conservée avec son résultat,
+ * et l'auteur est prévenu.
  */
 async function decideProposal(req, res, accepted) {
   try {
     const list = req.sharedList;
     const proposal = list.proposals.id(req.params.proposalId);
-    // Déjà traitée par un autre gestionnaire : on le dit, sans rien refaire.
     if (!proposal)
       return res.status(404).json({ message: "Proposition introuvable" });
+    // Déjà traitée par un autre gestionnaire : on le dit, sans rien refaire
+    // (sinon un double clic ajouterait l'idée deux fois).
+    if (!isPending(proposal))
+      return res
+        .status(409)
+        .json({ message: "Cette proposition a déjà été traitée." });
 
-    const { giftName, url, price } = proposal;
+    const { giftName, url, price, image, occasion, year } = proposal;
     const proposerId = proposal.proposedBy.toString();
 
     if (accepted) {
@@ -897,13 +950,20 @@ async function decideProposal(req, res, accepted) {
         giftName,
         url,
         price,
-        occasion: "Anniversaire",
+        image,
+        occasion: occasion || "Anniversaire",
+        year: year || new Date().getFullYear(),
         status: "to_buy",
         purchased: false,
         addedBy: proposal.proposedBy,
       });
     }
-    list.proposals.pull(proposal._id);
+    // On garde la proposition, avec son résultat : son auteur doit pouvoir
+    // retrouver la réponse même sans la notification.
+    proposal.status = accepted ? "accepted" : "declined";
+    proposal.decidedAt = new Date();
+    proposal.decidedBy = req.payload._id;
+    trimDecidedProposals(list);
     await list.save();
     await sendListForRole(req, res);
 

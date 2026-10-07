@@ -39,16 +39,24 @@ export interface SharedMember {
 }
 
 /**
- * Idée suggérée par un invité, en attente de la décision d'un gestionnaire.
+ * Idée suggérée par un invité. Elle attend la décision d'un gestionnaire
+ * (`pending`), puis garde son résultat (`accepted` / `declined`) : c'est ce
+ * qui permet de retrouver la réponse sans la notification.
  * Un gestionnaire les reçoit toutes, avec leur auteur ; un invité ne reçoit
- * que les siennes (`mine: true`), sans `proposedBy`.
+ * que les siennes (`mine: true`), sans `proposedBy` ni `decidedBy`.
  */
 export interface SharedGiftProposal {
   _id: string;
   giftName: string;
+  occasion?: string;
+  year?: number;
   url?: string | null;
   price?: number | null;
+  image?: string | null;
   proposedBy?: { _id: string; name: string; surname?: string } | null;
+  status?: "pending" | "accepted" | "declined";
+  decidedAt?: string | null;
+  decidedBy?: { _id: string; name: string; surname?: string } | null;
   mine?: boolean;
   createdAt?: string;
 }
@@ -56,7 +64,7 @@ export interface SharedGiftProposal {
 export interface SharedGiftList {
   _id: string;
   label?: string | null;
-  /** Propositions en attente visibles par moi (voir SharedGiftProposal). */
+  /** Propositions visibles par moi, en attente ou traitées. */
   proposals?: SharedGiftProposal[];
   /** Absent dans la vue « invité » : il ne connaît pas la composition. */
   members?: SharedMember[];
@@ -175,7 +183,14 @@ export async function fetchSharedList(id: string): Promise<SharedGiftList> {
 /** Invité : suggérer une idée aux gestionnaires de la liste. */
 export async function proposeSharedGift(
   listId: string,
-  proposal: { giftName: string; url?: string; price?: number | null },
+  proposal: {
+    giftName: string;
+    occasion?: string;
+    year?: number;
+    url?: string;
+    price?: number | null;
+    image?: string;
+  },
 ): Promise<SharedGiftList> {
   return api<SharedGiftList>(`/shared-gifts/${listId}/proposals`, {
     method: "POST",
@@ -183,7 +198,7 @@ export async function proposeSharedGift(
   });
 }
 
-/** Invité : retirer sa proposition tant qu'elle attend. */
+/** Invité : retirer sa proposition en attente, ou masquer une réponse reçue. */
 export async function withdrawSharedProposal(
   listId: string,
   proposalId: string,

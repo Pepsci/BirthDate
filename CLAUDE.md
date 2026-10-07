@@ -788,16 +788,27 @@ emails, messages d'erreur). Le site web (`front/`) reste en français.
 ## 💡 Listes communes : propositions d'idées (octobre 2026)
 
 - Un **invité** (viewer, avec compte) peut proposer une idée ; elle attend dans
-  `SharedGiftList.proposals`, hors de `gifts`. Un **gestionnaire** (member)
-  l'accepte (elle devient une idée normale, `addedBy` = l'auteur) ou la refuse
-  (elle est supprimée). On ne stocke que les propositions en attente.
+  `SharedGiftList.proposals`, hors de `gifts`, avec les mêmes champs qu'une
+  idée (nom, occasion, année, lien, prix, image). Un **gestionnaire** (member)
+  l'accepte (une idée normale est créée, `addedBy` = l'auteur) ou la refuse.
+- Une proposition traitée **n'est pas supprimée** : elle garde `status`
+  (`accepted` / `declined`), `decidedAt`, `decidedBy`. C'est ce qui permet de
+  retrouver la réponse sans la notification. Historique plafonné à 30
+  propositions traitées par liste (les plus anciennes partent).
 - Le lien public (visiteurs sans compte) ne permet pas de proposer.
 - Visibilité filtrée par `serializeListForRole` : un gestionnaire voit tout,
   un invité seulement les siennes, sans `proposedBy`.
 - Routes (`routes/sharedGifts.js`) : `POST /:id/proposals`,
-  `DELETE /:id/proposals/:proposalId` (retirer la sienne),
+  `DELETE /:id/proposals/:proposalId` (retirer la sienne, ou masquer une
+  réponse reçue),
   `POST /:id/proposals/:proposalId/accept|decline`.
+- « Effacer » côté invité ne supprime pas une proposition traitée : il pose
+  `hiddenByProposer`, et les gestionnaires gardent leur historique. Seule une
+  proposition encore en attente est réellement retirée. L'interface attend
+  6 s (bandeau « Annuler ») avant d'appeler le serveur.
 - Limites : 5 propositions en attente par invité, 50 par liste.
+- Affichage : blocs repliables, cartes au même format que les idées cadeaux
+  (`gcg-*` sur le site, `GiftGridCard` dans l'app).
 - Notifications : `shared_gift_proposed` (aux gestionnaires),
   `shared_gift_proposal_accepted` / `_declined` (à l'auteur, dans les deux cas).
 - ⚠️ Sous-documents en mongoose 6 : `list.proposals.pull(id)`, pas

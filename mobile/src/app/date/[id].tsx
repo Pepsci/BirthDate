@@ -376,6 +376,9 @@ export default function DateDetailScreen() {
   // Le partage vit dans une feuille : trois réglages (lien public, envoi,
   // gestion des accès) alourdiraient l'en-tête s'ils y étaient dépliés.
   const [shareSheetOpen, setShareSheetOpen] = useState(false);
+  // Propositions d'idées : fermées par défaut, ouvertes par leur bouton, pour
+  // ne pas encombrer la liste.
+  const [proposalsOpen, setProposalsOpen] = useState(false);
 
   useEffect(() => {
     if (!entry?.sharedGiftList) {
@@ -402,6 +405,36 @@ export default function DateDetailScreen() {
   // Rôle sur la liste commune. Absent = membre : les listes créées avant les
   // invités n'ont pas ce champ, et leurs participants sont tous membres.
   const isSharedMember = (sharedList?.myRole ?? "member") === "member";
+
+  // Bouton qui ouvre / ferme les propositions d'idées. Le nombre affiché est
+  // ce qui attend : à examiner pour un gestionnaire, sans réponse pour un
+  // invité. Teinté quand il y a quelque chose à voir.
+  const pendingProposals = (sharedList?.proposals ?? []).filter(
+    (p) => (p.status ?? "pending") === "pending",
+  ).length;
+  const proposalsButton = (
+    <Pressable
+      style={[
+        styles.importFromListBtn,
+        (proposalsOpen || pendingProposals > 0) && styles.proposalsBtnActive,
+      ]}
+      onPress={() => setProposalsOpen((v) => !v)}
+      accessibilityRole="button"
+      accessibilityState={{ expanded: proposalsOpen }}
+    >
+      <Text
+        style={[
+          styles.importFromListText,
+          (proposalsOpen || pendingProposals > 0) &&
+            styles.proposalsBtnActiveText,
+        ]}
+      >
+        {pendingProposals > 0
+          ? t("date:proposals.openBtnCount", { count: pendingProposals })
+          : t("date:proposals.openBtn")}
+      </Text>
+    </Pressable>
+  );
 
   /** Réservé par moi, quel que soit le rôle : un membre reçoit `reservedBy`
    *  peuplé, un invité seulement le booléen `reservedByMe`. */
@@ -1829,6 +1862,7 @@ export default function DateDetailScreen() {
                       {t("date:shared.shareBtn")}
                     </Text>
                   </Pressable>
+                  {proposalsButton}
                 </View>
               )}
               {isSharedMember ? (
@@ -1843,17 +1877,25 @@ export default function DateDetailScreen() {
                   {t("date:shared.viewerNote")}
                 </Text>
               )}
+              {/* L'invité n'a pas la rangée d'actions des gestionnaires : le
+                  bouton des propositions a sa propre ligne. */}
+              {!isSharedMember && (
+                <View style={styles.sharedHeaderActions}>{proposalsButton}</View>
+              )}
 
               {/* Propositions d'idées : l'invité propose, le gestionnaire
-                  accepte ou refuse. La réponse du serveur n'a pas
+                  accepte ou refuse. Affichées seulement à la demande (bouton
+                  « Propositions »). La réponse du serveur n'a pas
                   `suggestedCard`, d'où la fusion avec l'état précédent. */}
-              <SharedProposals
-                list={sharedList}
-                onChange={(next) =>
-                  setSharedList((prev) => ({ ...(prev ?? next), ...next }))
-                }
-                onError={setError}
-              />
+              {proposalsOpen && (
+                <SharedProposals
+                  list={sharedList}
+                  onChange={(next) =>
+                    setSharedList((prev) => ({ ...(prev ?? next), ...next }))
+                  }
+                  onError={setError}
+                />
+              )}
 
 
 
@@ -3446,6 +3488,8 @@ const makeStyles = (c: ThemeColors) =>
     paddingHorizontal: 10,
   },
   importFromListText: { color: c.sub, fontWeight: "700", fontSize: 12 },
+  proposalsBtnActive: { borderColor: c.primary, backgroundColor: c.primarySoft },
+  proposalsBtnActiveText: { color: c.primaryStrong },
   // Cadeau réservé par quelqu'un d'autre : atténué, mais toujours lisible.
   giftCardReserved: { opacity: 0.55 },
   reservePill: {

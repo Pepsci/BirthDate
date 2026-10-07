@@ -201,7 +201,8 @@ const EXACT = {
 
   // ── Listes communes ──────────────────────────────────────────────────────
   "Liste introuvable": "List not found",
-  "Proposition introuvable": "Suggestion not found",
+  "Cette proposition a déjà été traitée.":
+    "This suggestion has already been handled.",
   "Tu gères cette liste : ajoute l'idée directement, sans passer par une proposition.":
     "You manage this list: add the idea directly, without making a suggestion.",
   "Cette liste a déjà beaucoup de propositions en attente. Réessaie plus tard.":

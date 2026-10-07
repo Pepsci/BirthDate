@@ -65,9 +65,16 @@ const sharedGiftSchema = new Schema(
  *
  * Un invité ne touche jamais au contenu de la liste. Il peut en revanche
  * suggérer une idée : elle attend ici, hors de `gifts`, qu'un gestionnaire
- * l'accepte (elle devient alors une idée normale) ou la refuse (elle est
- * supprimée). On ne garde donc que les propositions EN ATTENTE : pas de
- * statut, pas d'historique à purger.
+ * l'accepte (une idée normale est alors créée dans `gifts`) ou la refuse.
+ *
+ * Une proposition traitée N'EST PAS supprimée : elle garde son résultat
+ * (`status`, `decidedAt`, `decidedBy`). C'est ce qui permet à son auteur de
+ * retrouver la réponse dans la liste, même s'il a effacé la notification
+ * sans la lire. L'historique est plafonné côté route (les plus anciennes
+ * propositions traitées sont retirées).
+ *
+ * Mêmes champs qu'une idée (`giftName`, `occasion`, `year`, `url`, `price`,
+ * `image`) : une proposition acceptée devient une idée sans rien perdre.
  *
  * Visible des gestionnaires, et de son auteur uniquement. Les autres invités
  * et le lien public n'en voient rien — filtré côté serveur, comme
@@ -76,9 +83,22 @@ const sharedGiftSchema = new Schema(
 const sharedGiftProposalSchema = new Schema(
   {
     giftName: { type: String, required: true },
+    occasion: { type: String, default: "Anniversaire" },
+    year: { type: Number, default: () => new Date().getFullYear() },
     url: { type: String, default: null },
     price: { type: Number, default: null },
+    image: { type: String, default: null },
     proposedBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    status: {
+      type: String,
+      enum: ["pending", "accepted", "declined"],
+      default: "pending",
+    },
+    decidedAt: { type: Date, default: null },
+    decidedBy: { type: Schema.Types.ObjectId, ref: "User", default: null },
+    // L'auteur a effacé cette réponse de SA liste. La proposition n'est pas
+    // supprimée pour autant : les gestionnaires gardent leur historique.
+    hiddenByProposer: { type: Boolean, default: false },
   },
   { timestamps: true },
 );

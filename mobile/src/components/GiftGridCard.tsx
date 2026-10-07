@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { View, Text, Image, Pressable, StyleSheet } from "react-native";
 import { useThemedStyles, ThemeColors } from "../lib/theme-context";
 
@@ -21,6 +22,8 @@ export default function GiftGridCard({
   price,
   dimmed,
   onPress,
+  accentColor,
+  children,
 }: {
   imageUri?: string | null;
   placeholderEmoji?: string;
@@ -30,11 +33,19 @@ export default function GiftGridCard({
   price?: number | null;
   dimmed?: boolean;
   onPress?: () => void;
+  /** Couleur du contour, pour signaler un état (accepté, refusé…). */
+  accentColor?: string;
+  /** Actions propres à l'appelant, affichées sous le pied de carte. */
+  children?: ReactNode;
 }) {
   const styles = useThemedStyles(makeStyles);
   return (
     <Pressable
-      style={[styles.card, dimmed && styles.cardDimmed]}
+      style={[
+        styles.card,
+        dimmed && styles.cardDimmed,
+        accentColor ? { borderColor: accentColor } : null,
+      ]}
       onPress={onPress}
     >
       {imageUri ? (
@@ -66,6 +77,7 @@ export default function GiftGridCard({
           </View>
         )}
       </View>
+      {children}
     </Pressable>
   );
 }
