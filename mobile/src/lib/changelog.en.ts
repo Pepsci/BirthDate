@@ -16,6 +16,21 @@ const SERVER_NOTE =
   "Please report anything that gets in your way. Items marked ⚠️ need the new server version.";
 
 export const CHANGELOG_EN: Record<string, ChangelogText> = {
+  "2.4.0": {
+    title: "BirthReminder in English, and suggestions on shared lists",
+    note: "Gift suggestions, and notifications and emails in English, need the new server version.",
+    items: [
+      "🌍 BirthReminder speaks English: the app follows your phone's language (French if your phone is in French, English otherwise). To choose yourself: Profile → Language.",
+      "🔔 Notifications, emails and error messages also arrive in your language. A guest without an account gets the email in the language of the person inviting them.",
+      "💡 Shared lists: a guest can suggest a gift idea, with a link, a price and an image. Managers accept or decline it from the \"Suggestions\" button, next to \"Share\".",
+      "📝 The answer stays visible: the guest finds their accepted or declined suggestions in \"My suggestions\", even after clearing the notification. \"Clear\" leaves a few seconds to undo.",
+      "📜 Terms of use, privacy, cookies and legal notice are available in English: the links in the app open the right version.",
+      "🎂 The minimum age to create an account now depends on the country: 15, or 16 where the law requires it. The app tells you as soon as you pick your date of birth.",
+      "📅 The monthly recap no longer depends on birthday reminders: you can keep one without the other.",
+      "🎉 New event: \"Guests can invite\" is ticked by default. You can still untick it.",
+      "🧭 A link that leads nowhere now shows a clear screen with a way back to the home screen.",
+    ],
+  },
   "2.3.2": {
     title: "Told about new versions",
     items: [

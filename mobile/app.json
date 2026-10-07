@@ -2,7 +2,7 @@
   "expo": {
     "name": "BirthReminder",
     "slug": "birthreminder",
-    "version": "2.3.2",
+    "version": "2.4.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "birthreminder",

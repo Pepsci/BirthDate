@@ -20,6 +20,24 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: "2.4.0",
+    date: "2026-10-07",
+    build: "53",
+    title: "BirthReminder en anglais, et des propositions sur les listes communes",
+    note: "Les propositions d'idées, les notifications et les emails en anglais nécessitent la nouvelle version du serveur.",
+    items: [
+      "🌍 BirthReminder parle anglais : l'app suit la langue de ton téléphone (français si ton téléphone est en français, anglais sinon). Pour choisir toi-même : Profil → Langue.",
+      "🔔 Notifications, emails et messages d'erreur arrivent aussi dans ta langue. Un invité sans compte reçoit l'email dans la langue de la personne qui l'invite.",
+      "💡 Listes communes : un invité peut proposer une idée de cadeau, avec lien, prix et image. Les gestionnaires l'acceptent ou la refusent depuis le bouton « Propositions », à côté de « Partager ».",
+      "📝 La réponse reste visible : l'invité retrouve ses propositions acceptées ou non retenues dans « Mes propositions », même s'il a effacé la notification. « Effacer » laisse quelques secondes pour annuler.",
+      "📜 Conditions d'utilisation, confidentialité, cookies et mentions légales existent en anglais : les liens de l'app ouvrent la bonne version.",
+      "🎂 L'âge minimum pour créer un compte dépend maintenant du pays : 15 ans, ou 16 ans là où la loi l'exige. L'app l'indique dès que tu choisis ta date de naissance.",
+      "📅 Le récap mensuel ne dépend plus des rappels d'anniversaire : tu peux garder l'un sans l'autre.",
+      "🎉 Nouvel événement : « Les invités peuvent inviter » est coché par défaut. Tu peux toujours le décocher.",
+      "🧭 Un lien qui ne mène nulle part affiche maintenant un écran clair avec un retour à l'accueil.",
+    ],
+  },
+  {
     version: "2.3.2",
     date: "2026-10-01",
     build: "50",
