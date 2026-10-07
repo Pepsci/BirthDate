@@ -55,6 +55,36 @@ const BASE_STEPS = [
     cta: "Trop bien !",
   },
   {
+    id: "shared",
+    emoji: "👥",
+    title: "Listes de cadeaux communes",
+    description:
+      "Prépare les cadeaux d'un proche à plusieurs : chacun voit la même liste et réserve une idée, ce qui évite les doublons. Tes invités peuvent aussi te proposer des idées.",
+    highlight: "la fiche d'une personne → Idées communes",
+    tip: "Partage la liste par lien à quelqu'un qui n'a pas de compte : il pourra consulter et réserver.",
+    cta: "Pratique !",
+  },
+  {
+    id: "events",
+    emoji: "🎉",
+    title: "Événements & cagnotte",
+    description:
+      "Organise un anniversaire : fais voter la date et le lieu, invite tes amis (même sans compte), discutez dans le chat de l'événement et proposez des cadeaux.",
+    highlight: "le bouton Événements de l'accueil",
+    tip: "Tu peux ouvrir une cagnotte pour financer un cadeau à plusieurs. BirthReminder ne prend aucune commission.",
+    cta: "Génial !",
+  },
+  {
+    id: "chat",
+    emoji: "💬",
+    title: "Discute avec tes amis",
+    description:
+      "Envoie des messages à tes amis, partage une carte anniversaire ou une idée cadeau. Tes messages sont chiffrés de bout en bout : personne d'autre ne peut les lire.",
+    highlight: "le bouton de discussion sur la carte d'un ami",
+    tip: "Une question ? Le guide d'utilisation et le contact sont en bas de chaque page.",
+    cta: "Compris !",
+  },
+  {
     id: "notifications",
     emoji: "🔔",
     title: "Ne rate rien grâce aux notifications",
@@ -86,9 +116,11 @@ export default function OnboardingModal({ onClose }) {
   // Construire les étapes selon le device
   const steps = React.useMemo(() => {
     if (isIOS() && !isPWA()) {
-      // Insérer l'étape PWA avant les notifications
+      // Insérer l'étape PWA juste avant les notifications. On cherche
+      // l'étape par son id : un index fixe se décale dès qu'on en ajoute une.
       const s = [...BASE_STEPS];
-      s.splice(4, 0, IOS_STEP);
+      const at = s.findIndex((step) => step.id === "notifications");
+      s.splice(at === -1 ? s.length : at, 0, IOS_STEP);
       return s;
     }
     return BASE_STEPS;

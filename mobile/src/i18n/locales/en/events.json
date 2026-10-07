@@ -26,7 +26,7 @@
     "organizing": "I'm hosting",
     "invited": "I'm invited",
     "past": "🗄️ Past events ({{count}})",
-    "poolTip": "You can create a money pool to fund a gift together, right from an event, with no extra fee from BirthReminder for now.",
+    "poolTip": "You can create a money pool to fund a gift together, right from an event. BirthReminder takes no commission.",
     "empty": "No events yet. Create one with the ＋ button and it will show up here."
   },
   "draft": {
@@ -259,7 +259,8 @@
     },
     "short": "Notifications",
     "screenTitle": "Event notifications",
-    "footer": "You will always be notified if the event is cancelled or its date changes: these are the only messages nobody can afford to miss."
+    "footer": "You will always be notified if the event is cancelled or its date changes: these are the only messages nobody can afford to miss.",
+    "tip": "Too many notifications for this event? Adjust them here, without affecting your other events."
   },
   "backToEvent": "‹ Back to the event",
   "gifts": {

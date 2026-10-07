@@ -1,4 +1,5 @@
 import { t, tn } from "@/i18n";
+import OnboardingTip from "../../lib/tips";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   View,
@@ -1594,6 +1595,12 @@ export default function EventDetailScreen() {
               bruit d'un seul événement demandait de couper la catégorie
               « Événements » en entier, donc tous les autres avec. */}
           {event.hasFullAccess && (
+            <>
+            <OnboardingTip
+              id="eventNotifs"
+              emoji="🔔"
+              text={t("events:notifs.tip")}
+            />
             <Pressable
               style={styles.giftsBtn}
               onPress={() => router.push(`/event/notifications/${shortId}`)}
@@ -1602,6 +1609,7 @@ export default function EventDetailScreen() {
                 {t("events:notifs.btn")}
               </Text>
             </Pressable>
+            </>
           )}
         </>
       )}

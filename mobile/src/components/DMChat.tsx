@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { Alert } from "react-native";
 import { Stack, useRouter } from "expo-router";
+import OnboardingTip from "../lib/tips";
 import { promptReport, promptBlock } from "../lib/moderation";
 import { markConversationNotifsRead } from "../lib/notifications";
 import MessageActionSheet, {
@@ -636,6 +637,9 @@ export default function DMChat({
       ) : (
         <Stack.Screen options={{ headerTitle, headerRight }} />
       )}
+
+      {/* Gestes qu'on ne devine pas : dits une fois, à la première discussion. */}
+      <OnboardingTip id="chatMessage" emoji="💬" text={t("chat:messageTip")} />
 
       <MuteSheet
         visible={muteSheet}

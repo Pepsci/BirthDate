@@ -1,5 +1,6 @@
 import { t, tn } from "@/i18n";
 import SharedProposals from "../../components/SharedProposals";
+import OnboardingTip from "../../lib/tips";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { isLocalMode } from "../../lib/app-mode";
 import {
@@ -1882,6 +1883,17 @@ export default function DateDetailScreen() {
               {!isSharedMember && (
                 <View style={styles.sharedHeaderActions}>{proposalsButton}</View>
               )}
+
+              {/* Astuce de première visite, différente selon le rôle. */}
+              <OnboardingTip
+                id={isSharedMember ? "sharedListMember" : "sharedListViewer"}
+                emoji="👥"
+                text={
+                  isSharedMember
+                    ? t("date:shared.tipMember")
+                    : t("date:shared.tipViewer")
+                }
+              />
 
               {/* Propositions d'idées : l'invité propose, le gestionnaire
                   accepte ou refuse. Affichées seulement à la demande (bouton

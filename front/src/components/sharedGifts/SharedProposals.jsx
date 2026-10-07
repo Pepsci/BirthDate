@@ -31,7 +31,8 @@ const EMPTY_FORM = {
   image: "",
 };
 
-/** Temps laissé pour annuler un effacement. */
+/** Temps laissé pour annuler un effacement. La barre de progression du
+ *  bandeau dure le même temps : garder `.sgp-undo-bar` (CSS) aligné. */
 const UNDO_DELAY_MS = 6000;
 
 const statusOf = (p) => p.status || "pending";
@@ -383,6 +384,28 @@ export default function SharedProposals({ list, listId, occasions, onChange }) {
                         : ""
                     } le ${shortDate(p.decidedAt)}`,
                   ],
+                  // Revenir sur la décision. Refuser passe par la même
+                  // confirmation que la première fois.
+                  actions:
+                    statusOf(p) === "accepted" ? (
+                      <button
+                        type="button"
+                        className="gcg-btn gcg-btn--ghost"
+                        disabled={busy}
+                        onClick={() => setToDecline(p)}
+                      >
+                        ↩️ Refuser finalement
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className="gcg-btn gcg-btn--ghost"
+                        disabled={busy}
+                        onClick={() => decide(p._id, "accept")}
+                      >
+                        ✅ Accepter finalement
+                      </button>
+                    ),
                 }),
               )}
             </div>
@@ -394,7 +417,11 @@ export default function SharedProposals({ list, listId, occasions, onChange }) {
           title="Refuser cette proposition ?"
           message={
             toDecline
-              ? `${fullName(toDecline.proposedBy) || "L'invité"} sera prévenu que « ${toDecline.giftName} » n'a pas été retenue.`
+              ? `${fullName(toDecline.proposedBy) || "L'invité"} sera prévenu que « ${toDecline.giftName} » n'a pas été retenue.${
+                  statusOf(toDecline) === "accepted"
+                    ? " L'idée sera retirée de la liste."
+                    : ""
+                }`
               : ""
           }
           confirmLabel="Refuser"
@@ -517,13 +544,24 @@ export default function SharedProposals({ list, listId, occasions, onChange }) {
 
       {removing && (
         <div className="sgp-undo" role="status">
-          <span>
-            « {removing.giftName} »{" "}
-            {statusOf(removing) === "pending" ? "retirée" : "effacée"}
-          </span>
-          <button type="button" className="sgp-undo-btn" onClick={undoRemove}>
-            Annuler
-          </button>
+          <div className="sgp-undo-row">
+            <span>
+              « {removing.giftName} »{" "}
+              {statusOf(removing) === "pending" ? "retirée" : "effacée"}
+            </span>
+            <button
+              type="button"
+              className="sgp-undo-btn"
+              onClick={undoRemove}
+            >
+              Annuler
+            </button>
+          </div>
+          {/* Temps restant pour annuler. `key` : la barre repart de zéro si
+              on efface une autre carte pendant le délai. */}
+          <div className="sgp-undo-track" aria-hidden="true">
+            <div key={removing._id} className="sgp-undo-bar" />
+          </div>
         </div>
       )}
 

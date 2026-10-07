@@ -201,6 +201,8 @@ const EXACT = {
 
   // ── Listes communes ──────────────────────────────────────────────────────
   "Liste introuvable": "List not found",
+  "Cette idée est déjà réservée ou achetée : libère-la ou retire-la depuis la liste avant de refuser la proposition.":
+    "This idea is already taken or bought: release it or remove it from the list before declining the suggestion.",
   "Cette proposition a déjà été traitée.":
     "This suggestion has already been handled.",
   "Tu gères cette liste : ajoute l'idée directement, sans passer par une proposition.":

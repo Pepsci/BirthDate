@@ -499,6 +499,7 @@ function serializeListForRole(list, role, userId) {
         ...p,
         proposedBy: undefined,
         decidedBy: undefined,
+        giftId: undefined,
         mine: true,
       })),
     gifts: (obj.gifts || [])
@@ -925,6 +926,9 @@ router.delete(
 
 /**
  * Accepter ou refuser une proposition. Gestionnaires uniquement.
+ * Sert aussi à REVENIR sur une décision : une proposition refusée peut être
+ * acceptée ensuite, et inversement (l'idée créée est alors retirée de la
+ * liste, sauf si elle est déjà réservée ou achetée).
  * Acceptée : une idée normale est créée dans la liste, attribuée à son
  * auteur. Dans les deux cas la proposition est conservée avec son résultat,
  * et l'auteur est prévenu.
@@ -935,15 +939,45 @@ async function decideProposal(req, res, accepted) {
     const proposal = list.proposals.id(req.params.proposalId);
     if (!proposal)
       return res.status(404).json({ message: "Proposition introuvable" });
-    // Déjà traitée par un autre gestionnaire : on le dit, sans rien refaire
-    // (sinon un double clic ajouterait l'idée deux fois).
-    if (!isPending(proposal))
+    // Même décision demandée deux fois (double clic, ou un autre gestionnaire
+    // vient de trancher pareil) : on le dit, sans rien refaire, sinon l'idée
+    // serait ajoutée deux fois.
+    const target = accepted ? "accepted" : "declined";
+    if (proposal.status === target)
       return res
         .status(409)
         .json({ message: "Cette proposition a déjà été traitée." });
 
     const { giftName, url, price, image, occasion, year } = proposal;
     const proposerId = proposal.proposedBy.toString();
+
+    // ── Retour en arrière : acceptée → refusée ──────────────────────────────
+    // L'idée créée à l'acceptation doit quitter la liste. On refuse si
+    // quelqu'un s'en occupe déjà ou si elle est achetée : la retirer à ce
+    // stade ferait disparaître un cadeau sur lequel quelqu'un compte.
+    if (!accepted && proposal.status === "accepted") {
+      const gift =
+        (proposal.giftId && list.gifts.id(proposal.giftId)) ||
+        // Proposition acceptée avant l'ajout de `giftId` : on retrouve l'idée
+        // par son nom et son auteur.
+        list.gifts.find(
+          (g) =>
+            g.giftName === giftName &&
+            g.addedBy &&
+            g.addedBy.toString() === proposerId,
+        );
+      if (gift) {
+        const taken =
+          !!gift.reservedBy || !!gift.reservedByGuest || gift.status !== "to_buy";
+        if (taken)
+          return res.status(409).json({
+            message:
+              "Cette idée est déjà réservée ou achetée : libère-la ou retire-la depuis la liste avant de refuser la proposition.",
+          });
+        list.gifts.pull(gift._id);
+      }
+      proposal.giftId = null;
+    }
 
     if (accepted) {
       list.gifts.push({
@@ -957,7 +991,11 @@ async function decideProposal(req, res, accepted) {
         purchased: false,
         addedBy: proposal.proposedBy,
       });
+      proposal.giftId = list.gifts[list.gifts.length - 1]._id;
     }
+    // Nouvelle réponse : elle doit réapparaître chez l'auteur, même s'il avait
+    // effacé la précédente de sa liste.
+    proposal.hiddenByProposer = false;
     // On garde la proposition, avec son résultat : son auteur doit pouvoir
     // retrouver la réponse même sans la notification.
     proposal.status = accepted ? "accepted" : "declined";

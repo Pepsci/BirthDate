@@ -128,7 +128,9 @@
     "sendLinkNoCode": "🔗 Envoyer le lien sans le code",
     "shareContact": "👤 Partager à un contact",
     "manageAccess": "👥 Gérer les accès et le code",
-    "guestsNote": "Les invités consultent et réservent, sans modifier la liste. Avec un code, le lien public ne montre rien tant qu'il n'est pas saisi."
+    "guestsNote": "Les invités consultent et réservent, sans modifier la liste. Avec un code, le lien public ne montre rien tant qu'il n'est pas saisi.",
+    "tipMember": "Chacun réserve une idée avec « Je m'en occupe », pour éviter les doublons. « Partager » ouvre la liste à des invités : ils peuvent réserver et te proposer des idées, à retrouver dans « Propositions ».",
+    "tipViewer": "Tu es invité sur cette liste : réserve une idée avec « Je m'en occupe », ou propose la tienne avec le bouton « Propositions »."
   },
   "share": {
     "ideasFor": "🎁 Idées cadeaux pour {{name}}",
@@ -244,6 +246,9 @@
     "empty": "Aucune proposition pour l'instant. Les invités de la liste peuvent en envoyer.",
     "erase": "Effacer",
     "erased": "« {{gift}} » effacée",
-    "withdrawn": "« {{gift}} » retirée"
+    "withdrawn": "« {{gift}} » retirée",
+    "declineAfter": "↩️ Refuser finalement",
+    "acceptAfter": "✅ Accepter finalement",
+    "declineRemoves": "L'idée sera retirée de la liste."
   }
 }

@@ -86,7 +86,7 @@
     "removeTitle": "Retirer de ma liste",
     "removeText": "Les messages échangés avec {{name}} disparaîtront de votre côté. {{name}} garde sa copie, et la conversation réapparaîtra si un nouveau message arrive.",
     "removeError": "Suppression impossible.",
-    "tip": "Tes messages sont chiffrés de bout en bout : personne d'autre que toi et ton ami ne peut les lire. Appui long sur une conversation pour la retirer de ta liste. Ajoute des amis depuis Profil → Mes amis.",
+    "tip": "Tes messages sont chiffrés de bout en bout : personne d'autre que toi et ton ami ne peut les lire. Appui long sur une conversation pour la retirer de ta liste. Une question pour l'équipe ? Les réponses du support arrivent dans l'onglet Support, ici même.",
     "noSupport": "Aucune conversation avec le support.",
     "newSupport": "✉️ Nouvelle demande au support",
     "supportPrefix": "Support : ",
@@ -130,5 +130,6 @@
   "quoteUnavailable": "Message d'origine indisponible",
   "tabs": {
     "friends": "Amis"
-  }
+  },
+  "messageTip": "Appui long sur un message pour y réagir ou y répondre. Les coches indiquent s'il est envoyé, arrivé, puis lu."
 }

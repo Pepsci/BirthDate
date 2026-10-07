@@ -86,7 +86,7 @@
     "removeTitle": "Remove from my list",
     "removeText": "Messages exchanged with {{name}} will disappear on your side. {{name}} keeps their copy, and the conversation will come back if a new message arrives.",
     "removeError": "Could not remove.",
-    "tip": "Your messages are end-to-end encrypted: nobody but you and your friend can read them. Long press a conversation to remove it from your list. Add friends from Profile → My friends.",
+    "tip": "Your messages are end-to-end encrypted: nobody but you and your friend can read them. Long press a conversation to remove it from your list. A question for the team? Support replies arrive in the Support tab, right here.",
     "noSupport": "No conversation with support.",
     "newSupport": "✉️ New support request",
     "supportPrefix": "Support: ",
@@ -130,5 +130,6 @@
   "quoteUnavailable": "Original message unavailable",
   "tabs": {
     "friends": "Friends"
-  }
+  },
+  "messageTip": "Long press a message to react or reply. The ticks show whether it is sent, delivered, then read."
 }

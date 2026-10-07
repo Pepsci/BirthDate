@@ -17,7 +17,7 @@
     },
     "agenda": {
       "title": "Agenda",
-      "text": "Vue mois ou semaine, toutes vos dates importantes d'un coup d'œil."
+      "text": "Vue mois ou semaine, toutes tes dates importantes d'un coup d'œil."
     },
     "events": {
       "title": "Événements",
@@ -25,29 +25,29 @@
     },
     "wishlist": {
       "title": "Wishlist & cadeaux",
-      "text": "Partagez vos envies et trouvez le cadeau parfait, ensemble."
+      "text": "Partage tes envies et trouve le cadeau parfait, ensemble."
     },
     "chat": {
       "title": "Messagerie",
-      "text": "Discutez avec vos amis directement dans l'app, en privé."
+      "text": "Discute avec tes amis directement dans l'app, en privé."
     },
     "pool": {
       "title": "Cagnotte",
-      "text": "Financez un cadeau à plusieurs pour un anniversaire ou un événement, sans commission."
+      "text": "Finance un cadeau à plusieurs pour un anniversaire ou un événement, sans commission."
     }
   },
   "steps": {
     "s1": {
-      "title": "Ajoutez vos proches",
-      "text": "Anniversaires, fêtes, ou connectez-vous avec vos amis inscrits."
+      "title": "Ajoute tes proches",
+      "text": "Anniversaires, fêtes, ou connecte-toi avec tes amis inscrits."
     },
     "s2": {
-      "title": "Recevez vos rappels",
+      "title": "Reçois tes rappels",
       "text": "Notification la veille et le jour J, plus jamais d'oubli."
     },
     "s3": {
       "title": "Célébrez ensemble",
-      "text": "Organisez un événement, discutez et choisissez le cadeau à plusieurs."
+      "text": "Organise un événement, discute et choisis le cadeau à plusieurs."
     }
   },
   "someone": "Quelqu'un",
@@ -57,9 +57,9 @@
   "createFree": "Créer un compte gratuitement",
   "localHint": "Sans compte, tes cartes restent sur ce téléphone.",
   "haveAccount": "J'ai déjà un compte · Se connecter",
-  "tagline": "N'oubliez plus jamais un anniversaire",
+  "tagline": "N'oublie plus jamais un anniversaire",
   "subTagline": "Rappels, agenda, événements et cadeaux, tout au même endroit, entre amis.",
-  "todayLabel": "🎈 AUJOURD'HUI CHEZ VOS PROCHES",
+  "todayLabel": "🎈 AUJOURD'HUI CHEZ TES PROCHES",
   "birthdayOf": "C'est l'anniversaire de {{name}} !",
   "birthdaysToday": "anniversaires aujourd'hui 🎂",
   "stats": {
@@ -79,13 +79,13 @@
     "thisMonth": "ce mois-ci",
     "thisYear": "cette année",
     "saved": {
-      "one": "{{n}} date enregistrée, vous n'en oublierez aucune",
-      "other": "{{n}} dates enregistrées, vous n'en oublierez aucune"
+      "one": "{{n}} date enregistrée, tu n'en oublieras aucune",
+      "other": "{{n}} dates enregistrées, tu n'en oublieras aucune"
     },
     "members": "{{n}} membres inscrits, et la fête ne fait que commencer"
   },
   "sectionFeatures": "Tout pour ne rien oublier",
   "sectionHow": "Comment ça marche ?",
-  "bannerTitle": "Organisez le prochain anniversaire",
-  "bannerText": "Créez un événement, invitez vos amis (même sans compte) et décidez ensemble de la date, du lieu et du cadeau."
+  "bannerTitle": "Organise le prochain anniversaire",
+  "bannerText": "Crée un événement, invite tes amis (même sans compte) et décidez ensemble de la date, du lieu et du cadeau."
 }

@@ -99,6 +99,9 @@ const sharedGiftProposalSchema = new Schema(
     // L'auteur a effacé cette réponse de SA liste. La proposition n'est pas
     // supprimée pour autant : les gestionnaires gardent leur historique.
     hiddenByProposer: { type: Boolean, default: false },
+    // Idée créée dans `gifts` quand la proposition a été acceptée. Sert à la
+    // retirer si un gestionnaire revient sur sa décision.
+    giftId: { type: Schema.Types.ObjectId, default: null },
   },
   { timestamps: true },
 );

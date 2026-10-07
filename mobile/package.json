@@ -1,7 +1,7 @@
 {
   "name": "birthreminder-mobile",
   "main": "index.ts",
-  "version": "2.4.0",
+  "version": "2.4.1",
   "dependencies": {
     "@noble/hashes": "^2.2.0",
     "@react-native-community/datetimepicker": "^8.4.4",

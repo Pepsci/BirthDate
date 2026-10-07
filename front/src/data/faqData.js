@@ -16,6 +16,10 @@ export const FAQ_SECTIONS = [
         a: "Appuie sur une carte d'anniversaire dans la liste pour accéder aux options de modification ou de suppression.",
       },
       {
+        q: "Comment fonctionnent les fêtes ?",
+        a: "La fête d'un prénom est trouvée automatiquement dans le calendrier français, y compris pour les prénoms composés (Jean-Luc est fêté à la Saint-Luc). Si tu choisis toi-même une date de fête sur une carte, elle n'est plus jamais modifiée. Une fête te semble fausse ? Signale-la depuis la page Contact : la correction profite à tout le monde.",
+      },
+      {
         q: "Les anniversaires de mes amis s'ajoutent-ils automatiquement ?",
         a: "Oui ! Dès qu'un ami accepte ta demande d'amitié, son anniversaire apparaît automatiquement dans ta liste avec un badge 👥.",
       },
@@ -95,6 +99,10 @@ export const FAQ_SECTIONS = [
       {
         q: "Que devient la cagnotte si je transmets l'organisation ?",
         a: "Elle est gelée et tes coordonnées bancaires sont retirées de l'événement : plus aucune contribution n'est possible. L'argent déjà collecté reste sur TON compte Stripe : il ne suit pas le rôle. C'est à toi de le reverser ou de le rembourser, et le nouvel organisateur peut ouvrir sa propre cagnotte. Tous les participants sont prévenus.",
+      },
+      {
+        q: "Mes invités peuvent-ils inviter d'autres personnes ?",
+        a: "Oui, par défaut : l'option « Les invités peuvent inviter » est cochée quand tu crées un événement. Décoche-la si tu veux garder la main sur la liste des invités. Tu peux la changer plus tard en modifiant l'événement.",
       },
       {
         q: "Comment quitter un événement auquel je participe ?",
@@ -232,6 +240,18 @@ export const FAQ_SECTIONS = [
         a: "Oui. Ouvre l'idée et choisis « Masquer aux invités » : elle reste visible des gestionnaires, marquée 🙈, mais disparaît pour les invités et pour le lien public.",
       },
       {
+        q: "Un invité peut-il proposer une idée ?",
+        a: "Oui. Sur une liste où tu es invité, clique sur « Proposer une idée » : colle le lien du produit puis « Récupérer les infos » pour remplir le nom, le prix et l'image, ou saisis-les à la main. Ta proposition n'entre pas directement dans la liste : les gestionnaires décident.",
+      },
+      {
+        q: "Comment accepter ou refuser une proposition ?",
+        a: "Si tu gères la liste, un bloc « Propositions à examiner » apparaît en haut de la liste dès qu'il y en a. Clique sur Accepter ou Refuser sur chaque carte. Une proposition acceptée devient une idée normale de la liste. La personne qui a proposé est prévenue dans les deux cas. Les décisions passées restent dans « Propositions traitées ».",
+      },
+      {
+        q: "Où voir la réponse à ma proposition ?",
+        a: "Dans « Mes propositions », sur la liste : chaque carte indique En attente, Acceptée ou Non retenue, même si tu as effacé la notification. « Effacer » retire une réponse de ta liste, avec quelques secondes pour annuler.",
+      },
+      {
         q: "Comment m'y retrouver dans une longue liste ?",
         a: "Le filtre permet de croiser deux critères : l'occasion, et l'état de réservation (libres, réservées, ou celles dont tu t'occupes). Les cadeaux déjà offerts descendent automatiquement sous un trait, en bas : ils ne sont pas supprimés, c'est la mémoire de ce qui a déjà été offert.",
       },
@@ -270,6 +290,10 @@ export const FAQ_SECTIONS = [
         a: "Va dans ton profil → onglet Notifications → Email. Tu peux choisir d'être rappelé 30, 14, 7, 3, 1 jours avant ou le jour J.",
       },
       {
+        q: "Comment recevoir le récap du mois ?",
+        a: "Profil → onglet Notifications → Email → « Recevoir un récap des anniversaires du mois ». Tu le reçois le 1er de chaque mois. Ce réglage est indépendant des rappels d'anniversaire : tu peux garder l'un sans l'autre.",
+      },
+      {
         q: "Comment activer les notifications push ?",
         a: "Va dans ton profil → onglet Notifications → Push. Clique sur Activer et accepte la permission dans ton navigateur.",
       },
@@ -295,6 +319,14 @@ export const FAQ_SECTIONS = [
       {
         q: "Comment changer mon mot de passe ?",
         a: "Dans ton profil → onglet Informations, tu trouveras une section pour modifier ton mot de passe. Tu devras saisir ton mot de passe actuel pour confirmer.",
+      },
+      {
+        q: "Quel âge faut-il pour créer un compte ?",
+        a: "15 ans, ou 16 ans dans les pays où la loi l'exige (Allemagne, Irlande, Pays-Bas, Pologne…). Le formulaire d'inscription l'indique dès que tu choisis ta date de naissance.",
+      },
+      {
+        q: "Le site existe-t-il en anglais ?",
+        a: "Le site est en français. L'application mobile, elle, existe en français et en anglais, et les conditions d'utilisation, la politique de confidentialité, les cookies et les mentions légales ont une version anglaise (lien « English » en haut de chaque page).",
       },
       {
         q: "Comment récupérer une copie de mes données ?",

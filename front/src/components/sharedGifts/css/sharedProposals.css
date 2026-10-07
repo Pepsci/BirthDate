@@ -150,10 +150,6 @@
 
 /* Bandeau « effacée · Annuler », affiché le temps du délai d'annulation */
 .sgp-undo {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
     margin-top: 12px;
     padding: 10px 14px;
     font-size: 14px;
@@ -171,4 +167,45 @@
     background: none;
     border: none;
     cursor: pointer;
+}
+
+.sgp-undo-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+/* Barre qui se vide pendant le délai d'annulation.
+   ⚠️ 6s = UNDO_DELAY_MS dans SharedProposals.jsx : changer les deux ensemble. */
+.sgp-undo-track {
+    height: 4px;
+    margin-top: 10px;
+    overflow: hidden;
+    background: var(--border-color);
+    border-radius: 2px;
+}
+
+.sgp-undo-bar {
+    height: 100%;
+    background: var(--primary);
+    border-radius: 2px;
+    transform-origin: left;
+    animation: sgp-undo-countdown 6s linear forwards;
+}
+
+@keyframes sgp-undo-countdown {
+    from {
+        transform: scaleX(1);
+    }
+
+    to {
+        transform: scaleX(0);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .sgp-undo-bar {
+        animation: none;
+    }
 }

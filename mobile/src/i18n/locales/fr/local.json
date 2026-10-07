@@ -152,5 +152,6 @@
     "titleRequired": "Le titre est obligatoire.",
     "storeTooRecent": "Tes données ont été enregistrées par une version plus récente de BirthReminder. Mets l'app à jour pour y accéder.",
     "needsAccount": "Indisponible sans compte ({{what}})."
-  }
+  },
+  "homeTip": "Tes cartes restent sur ce téléphone, rien n'est envoyé. Pense à les sauvegarder de temps en temps : Profil → Mes données. Tu pourras créer un compte plus tard sans rien perdre."
 }

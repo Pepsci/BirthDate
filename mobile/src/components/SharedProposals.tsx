@@ -1,6 +1,15 @@
 import { t } from "@/i18n";
 import { ReactNode, useEffect, useRef, useState } from "react";
-import { View, Text, Pressable, StyleSheet, Alert, Linking } from "react-native";
+import {
+  View,
+  Text,
+  Pressable,
+  StyleSheet,
+  Alert,
+  Linking,
+  Animated,
+  Easing,
+} from "react-native";
 import {
   SharedGiftList,
   SharedGiftProposal,
@@ -107,6 +116,8 @@ export default function SharedProposals({
   const removeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const removingRef = useRef<SharedGiftProposal | null>(null);
   removingRef.current = removing;
+  // Barre du bandeau : pleine au départ, vide à la fin du délai.
+  const undoProgress = useRef(new Animated.Value(1)).current;
   const listId = list._id;
 
   // Si on quitte l'écran pendant le délai, l'effacement demandé est envoyé.
@@ -159,6 +170,14 @@ export default function SharedProposals({
       withdrawSharedProposal(listId, removingRef.current._id).catch(() => {});
     }
     setRemoving(p);
+    undoProgress.stopAnimation();
+    undoProgress.setValue(1);
+    Animated.timing(undoProgress, {
+      toValue: 0,
+      duration: UNDO_DELAY_MS,
+      easing: Easing.linear,
+      useNativeDriver: false, // on anime une largeur
+    }).start();
     removeTimer.current = setTimeout(() => {
       setRemoving(null);
       run(() => withdrawSharedProposal(listId, p._id));
@@ -167,6 +186,7 @@ export default function SharedProposals({
 
   const undoRemove = () => {
     if (removeTimer.current) clearTimeout(removeTimer.current);
+    undoProgress.stopAnimation();
     setRemoving(null);
   };
 
@@ -190,7 +210,10 @@ export default function SharedProposals({
       t("date:proposals.declineText", {
         name: proposerName(p),
         gift: p.giftName,
-      }),
+      }) +
+        (statusOf(p) === "accepted"
+          ? " " + t("date:proposals.declineRemoves")
+          : ""),
       [
         { text: t("common:actions.cancel"), style: "cancel" },
         {
@@ -294,7 +317,31 @@ export default function SharedProposals({
           >
             <View style={giftGridStyles.grid}>
               {decided.map((p) =>
-                card(p, { showBadge: true, showAuthor: true }),
+                card(p, {
+                  showBadge: true,
+                  showAuthor: true,
+                  // Revenir sur la décision. Refuser passe par la même
+                  // confirmation que la première fois.
+                  actions: (
+                    <Pressable
+                      style={styles.btn}
+                      disabled={busy}
+                      onPress={() =>
+                        statusOf(p) === "accepted"
+                          ? confirmDecline(p)
+                          : run(() =>
+                              decideSharedProposal(list._id, p._id, "accept"),
+                            )
+                      }
+                    >
+                      <Text style={styles.btnText}>
+                        {statusOf(p) === "accepted"
+                          ? t("date:proposals.declineAfter")
+                          : t("date:proposals.acceptAfter")}
+                      </Text>
+                    </Pressable>
+                  ),
+                }),
               )}
             </View>
           </Section>
@@ -327,14 +374,30 @@ export default function SharedProposals({
 
       {removing && (
         <View style={styles.undo}>
-          <Text style={styles.undoText} numberOfLines={1}>
-            {statusOf(removing) === "pending"
-              ? t("date:proposals.withdrawn", { gift: removing.giftName })
-              : t("date:proposals.erased", { gift: removing.giftName })}
-          </Text>
-          <Pressable onPress={undoRemove} hitSlop={10}>
-            <Text style={styles.undoBtn}>{t("common:actions.cancel")}</Text>
-          </Pressable>
+          <View style={styles.undoRow}>
+            <Text style={styles.undoText} numberOfLines={1}>
+              {statusOf(removing) === "pending"
+                ? t("date:proposals.withdrawn", { gift: removing.giftName })
+                : t("date:proposals.erased", { gift: removing.giftName })}
+            </Text>
+            <Pressable onPress={undoRemove} hitSlop={10}>
+              <Text style={styles.undoBtn}>{t("common:actions.cancel")}</Text>
+            </Pressable>
+          </View>
+          {/* Temps restant pour annuler */}
+          <View style={styles.undoTrack}>
+            <Animated.View
+              style={[
+                styles.undoBar,
+                {
+                  width: undoProgress.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: ["0%", "100%"],
+                  }),
+                },
+              ]}
+            />
+          </View>
         </View>
       )}
 
@@ -403,11 +466,21 @@ const makeStyles = (c: ThemeColors) =>
     btnPrimary: { backgroundColor: c.primary, borderColor: c.primary },
     btnPrimaryText: { fontSize: 13, fontWeight: "600", color: "#fff" },
     empty: { fontSize: 13, color: c.sub, textAlign: "center" },
-    undo: {
+    undoRow: {
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
       gap: 12,
+    },
+    undoTrack: {
+      height: 4,
+      borderRadius: 2,
+      backgroundColor: c.border,
+      overflow: "hidden",
+    },
+    undoBar: { height: 4, borderRadius: 2, backgroundColor: c.primary },
+    undo: {
+      gap: 10,
       paddingVertical: 10,
       paddingHorizontal: 12,
       borderRadius: 10,

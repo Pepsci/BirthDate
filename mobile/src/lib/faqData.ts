@@ -76,6 +76,10 @@ export const FAQ_SECTIONS_FR: Section[] = [
         a: "Appuie sur une carte pour ouvrir sa fiche. Pour une date manuelle, tu y trouveras les options de modification et de suppression.",
       },
       {
+        q: "Comment fonctionnent les fêtes ?",
+        a: "La fête d'un prénom est trouvée automatiquement dans le calendrier français, y compris pour les prénoms composés (Jean-Luc est fêté à la Saint-Luc). Si tu choisis toi-même une date de fête sur une carte, elle n'est plus jamais modifiée. Une fête te semble fausse ? Utilise le lien « Fête incorrecte ? » sous la fête de la carte : la correction profite à tout le monde.",
+      },
+      {
         q: "Les anniversaires de mes amis s'ajoutent-ils tout seuls ?",
         a: "Oui ! Dès qu'un ami accepte ta demande, son anniversaire apparaît automatiquement dans ta liste avec un badge AMI.",
       },
@@ -159,6 +163,10 @@ export const FAQ_SECTIONS_FR: Section[] = [
       {
         q: "Que devient la cagnotte si je transmets l'organisation ?",
         a: "Elle est gelée et tes coordonnées bancaires sont retirées de l'événement. L'argent déjà collecté reste sur TON compte Stripe : il ne suit pas le rôle. C'est à toi de le reverser ou de le rembourser, et le nouvel organisateur peut ouvrir sa propre cagnotte. Tous les participants sont prévenus.",
+      },
+      {
+        q: "Mes invités peuvent-ils inviter d'autres personnes ?",
+        a: "Oui, par défaut : l'option « Les invités peuvent inviter » est cochée quand tu crées un événement. Décoche-la si tu veux garder la main sur la liste des invités. Tu peux la changer plus tard en modifiant l'événement.",
       },
       {
         q: "Comment quitter un événement ?",
@@ -293,6 +301,18 @@ export const FAQ_SECTIONS_FR: Section[] = [
         a: "Oui : ouvre l'idée puis « Masquer aux invités ». Elle reste visible des gestionnaires, marquée 🙈, mais disparaît pour les invités et pour le lien public.",
       },
       {
+        q: "Un invité peut-il proposer une idée ?",
+        a: "Oui. Sur une liste où tu es invité, ouvre « Propositions » puis « Proposer une idée » : indique le nom du cadeau, et si tu veux un lien, un prix et une image. Le bouton « Récupérer les infos » remplit tout depuis le lien du produit. Ta proposition n'entre pas directement dans la liste : les gestionnaires décident.",
+      },
+      {
+        q: "Comment accepter ou refuser une proposition ?",
+        a: "Si tu gères la liste, le bouton « Propositions » (à côté de « Partager ») affiche le nombre de propositions en attente. Ouvre-le, puis choisis Accepter ou Refuser sur chaque carte. Une proposition acceptée devient une idée normale de la liste. La personne qui a proposé est prévenue dans les deux cas.",
+      },
+      {
+        q: "Où voir la réponse à ma proposition ?",
+        a: "Dans « Propositions » → « Mes propositions » : chaque carte indique En attente, Acceptée ou Non retenue, même si tu as effacé la notification. « Effacer » retire une réponse de ta liste, avec quelques secondes pour annuler.",
+      },
+      {
         q: "Comment m'y retrouver dans une longue liste ?",
         a: "Le filtre croise deux critères : l'occasion, et l'état de réservation (libres, réservées, ou celles dont tu t'occupes). Les cadeaux déjà offerts descendent sous un trait en bas : ils ne sont pas supprimés, c'est la mémoire de ce qui a déjà été offert.",
       },
@@ -331,6 +351,14 @@ export const FAQ_SECTIONS_FR: Section[] = [
         a: "Profil → Notifications email. Choisis d'être rappelé 30, 14, 7, 3, 1 jour(s) avant, ou le jour J.",
       },
       {
+        q: "Comment recevoir le récap du mois ?",
+        a: "Profil → Notifications email → Récap mensuel. Tu reçois le 1er de chaque mois les anniversaires à venir. Ce réglage est indépendant des rappels d'anniversaire : tu peux garder l'un sans l'autre.",
+      },
+      {
+        q: "Je ne reçois pas les notifications, que faire ?",
+        a: "Vérifie d'abord qu'elles sont autorisées sur ton téléphone. Si tu les as refusées au premier lancement, l'app ne peut plus te reposer la question : Profil → Notifications affiche alors un bandeau avec le bouton « Ouvrir les réglages ». À la main : sur iPhone, Réglages → BirthReminder → Notifications → Autoriser les notifications ; sur Android, Paramètres → Applications → BirthReminder → Notifications. Vérifie ensuite que la catégorie voulue est cochée dans Profil → Notifications.",
+      },
+      {
         q: "Les notifications push sont-elles natives ?",
         a: "Oui. Accepte la permission de notifications au lancement de l'app. Tu peux régler les rappels par date depuis la fiche d'une personne.",
       },
@@ -352,6 +380,22 @@ export const FAQ_SECTIONS_FR: Section[] = [
       {
         q: "Comment changer mon mot de passe ?",
         a: "Profil → Changer mon mot de passe. Ton mot de passe actuel te sera demandé.",
+      },
+      {
+        q: "Comment changer la langue de l'app ?",
+        a: "L'app suit la langue de ton téléphone : français si ton téléphone est en français, anglais sinon. Pour choisir toi-même, va dans Profil → Langue. Les notifications et les emails arrivent dans la langue choisie.",
+      },
+      {
+        q: "Quel âge faut-il pour créer un compte ?",
+        a: "15 ans, ou 16 ans dans les pays où la loi l'exige (Allemagne, Irlande, Pays-Bas, Pologne…). L'app l'indique dès que tu choisis ta date de naissance. Sans compte, il n'y a pas d'âge minimum : tes données restent sur ton téléphone.",
+      },
+      {
+        q: "Puis-je sauvegarder mes cartes ?",
+        a: "Oui : Profil → Sauvegarde. Le fichier contient tes cartes d'anniversaire, leurs idées de cadeaux, leurs photos et ta liste d'envies. Tu peux le restaurer à tout moment sans créer de doublon.",
+      },
+      {
+        q: "Comment contacter le support ?",
+        a: "Profil → Contacter le support. Les réponses de l'équipe arrivent dans l'onglet Support de Messages, où tu peux poursuivre l'échange. Une notification te prévient à chaque réponse.",
       },
       {
         q: "Comment récupérer une copie de mes données ?",

@@ -74,5 +74,11 @@
   "sharedProposed": "{{who}} suggests \"{{gift}}\" for your shared list",
   "sharedProposedTo": "{{who}} suggests \"{{gift}}\" for {{list}}",
   "sharedProposalAccepted": "{{who}} accepted your suggestion \"{{gift}}\"",
-  "sharedProposalDeclined": "{{who}} did not keep your suggestion \"{{gift}}\""
+  "sharedProposalDeclined": "{{who}} did not keep your suggestion \"{{gift}}\"",
+  "blocked": {
+    "title": "🔕 Notifications blocked on this phone",
+    "settingsText": "Push notifications will not arrive until BirthReminder is allowed in your phone settings. Your choices below stay saved, and emails are not affected.",
+    "homeText": "You will not receive birthday reminders while BirthReminder notifications are turned off in your phone settings.",
+    "later": "Later"
+  }
 }

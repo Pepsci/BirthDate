@@ -20,9 +20,9 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
-    version: "2.4.0",
+    version: "2.4.1",
     date: "2026-10-07",
-    build: "53",
+    build: "54",
     title: "BirthReminder en anglais, et des propositions sur les listes communes",
     note: "Les propositions d'idées, les notifications et les emails en anglais nécessitent la nouvelle version du serveur.",
     items: [
@@ -35,6 +35,10 @@ export const CHANGELOG: ChangelogEntry[] = [
       "📅 Le récap mensuel ne dépend plus des rappels d'anniversaire : tu peux garder l'un sans l'autre.",
       "🎉 Nouvel événement : « Les invités peuvent inviter » est coché par défaut. Tu peux toujours le décocher.",
       "🧭 Un lien qui ne mène nulle part affiche maintenant un écran clair avec un retour à l'accueil.",
+      "↩️ Listes communes : un gestionnaire peut revenir sur sa décision. Une proposition refusée peut être acceptée ensuite, et l'inverse, tant que l'idée n'est ni réservée ni achetée.",
+      "🔕 Notifications refusées au premier lancement ? Un bandeau le signale sur l'accueil et dans Profil → Notifications, avec un bouton qui ouvre directement les réglages du téléphone.",
+      "💡 Des astuces à la première visite : listes communes, mode sans compte, réactions et accusés de lecture dans les discussions, notifications d'un événement.",
+      "📖 Guide d'utilisation complété : propositions, fêtes, récap mensuel, langue, âge minimum, sauvegarde, support, et que faire quand les notifications n'arrivent pas.",
     ],
   },
   {

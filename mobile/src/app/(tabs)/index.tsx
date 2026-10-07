@@ -38,6 +38,8 @@ import {
 } from "../../lib/dates";
 import { fetchMe } from "../../lib/users";
 import { useAuth } from "../../lib/auth-context";
+import OnboardingTip from "../../lib/tips";
+import PushBlockedBanner from "../../components/PushBlockedBanner";
 
 export default function BirthdaysScreen() {
   const { colors } = useTheme();
@@ -169,6 +171,11 @@ export default function BirthdaysScreen() {
       <OfflineBanner />
       <BackupReminder />
       <HomeBanners />
+      <PushBlockedBanner variant="home" />
+      {/* Mode sans compte : ce qui lui est propre, dit une fois. */}
+      {mode === "local" && (
+        <OnboardingTip id="localMode" emoji="📱" text={t("local:homeTip")} />
+      )}
       {error && (
         <Pressable style={styles.errorBanner} onPress={onRefresh}>
           <Text style={styles.errorText}>{t("home:errorRetry", { error })}</Text>

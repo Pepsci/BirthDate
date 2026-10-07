@@ -16,7 +16,7 @@ const SERVER_NOTE =
   "Please report anything that gets in your way. Items marked ⚠️ need the new server version.";
 
 export const CHANGELOG_EN: Record<string, ChangelogText> = {
-  "2.4.0": {
+  "2.4.1": {
     title: "BirthReminder in English, and suggestions on shared lists",
     note: "Gift suggestions, and notifications and emails in English, need the new server version.",
     items: [
@@ -29,6 +29,10 @@ export const CHANGELOG_EN: Record<string, ChangelogText> = {
       "📅 The monthly recap no longer depends on birthday reminders: you can keep one without the other.",
       "🎉 New event: \"Guests can invite\" is ticked by default. You can still untick it.",
       "🧭 A link that leads nowhere now shows a clear screen with a way back to the home screen.",
+      "↩️ Shared lists: a manager can change their mind. A declined suggestion can be accepted later, and the other way round, as long as the idea is neither taken nor bought.",
+      "🔕 Declined notifications at first launch? A banner tells you on the home screen and in Profile → Notifications, with a button that opens your phone settings directly.",
+      "💡 Tips on your first visit: shared lists, use without an account, reactions and read receipts in chats, notifications for an event.",
+      "📖 User guide extended: suggestions, name days, monthly recap, language, minimum age, backup, support, and what to do when notifications do not arrive.",
     ],
   },
   "2.3.2": {

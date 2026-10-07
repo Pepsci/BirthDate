@@ -74,5 +74,11 @@
   "sharedProposed": "{{who}} propose « {{gift}} » pour votre liste commune",
   "sharedProposedTo": "{{who}} propose « {{gift}} » pour {{list}}",
   "sharedProposalAccepted": "{{who}} a accepté ta proposition « {{gift}} »",
-  "sharedProposalDeclined": "{{who}} n'a pas retenu ta proposition « {{gift}} »"
+  "sharedProposalDeclined": "{{who}} n'a pas retenu ta proposition « {{gift}} »",
+  "blocked": {
+    "title": "🔕 Notifications bloquées sur ce téléphone",
+    "settingsText": "Les notifications push n'arriveront pas tant que BirthReminder n'est pas autorisé dans les réglages du téléphone. Tes choix ci-dessous restent enregistrés, et les emails ne sont pas concernés.",
+    "homeText": "Tu ne recevras pas les rappels d'anniversaire tant que les notifications de BirthReminder sont refusées dans les réglages du téléphone.",
+    "later": "Plus tard"
+  }
 }

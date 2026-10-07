@@ -26,7 +26,7 @@
     "organizing": "J'organise",
     "invited": "Je suis invité·e",
     "past": "🗄️ Événements passés ({{count}})",
-    "poolTip": "Tu peux créer une cagnotte pour financer un cadeau à plusieurs, directement depuis un événement, sans commission supplémentaire de la part de BirthReminder pour le moment.",
+    "poolTip": "Tu peux créer une cagnotte pour financer un cadeau à plusieurs, directement depuis un événement. BirthReminder ne prend aucune commission.",
     "empty": "Aucun événement pour l'instant. Crée-en un avec le bouton ＋ : il apparaîtra ici."
   },
   "draft": {
@@ -259,7 +259,8 @@
     },
     "short": "Notifications",
     "screenTitle": "Notifications de l'événement",
-    "footer": "L'annulation de l'événement et le changement de date te seront toujours notifiés : ce sont les seuls messages qu'on ne peut pas se permettre de rater."
+    "footer": "L'annulation de l'événement et le changement de date te seront toujours notifiés : ce sont les seuls messages qu'on ne peut pas se permettre de rater.",
+    "tip": "Trop de notifications pour cet événement ? Règle-les ici, sans toucher aux autres événements."
   },
   "backToEvent": "‹ Retour à l'événement",
   "gifts": {

@@ -1,4 +1,5 @@
 import { t } from "@/i18n";
+import PushBlockedBanner from "../../components/PushBlockedBanner";
 import { useCallback, useMemo, useState } from "react";
 import {
   View,
@@ -296,6 +297,10 @@ export default function NotificationsScreen() {
     >
       <Stack.Screen options={{ title: t("events:notifs.short") }} />
       {error && <Text style={styles.error}>{error}</Text>}
+
+      {/* Permission refusée au niveau du téléphone : sans ce bandeau, les
+          réglages ci-dessous ont l'air de marcher alors que rien n'arrive. */}
+      <PushBlockedBanner variant="settings" />
 
       <Pressable
         style={styles.sectionHeaderRow}

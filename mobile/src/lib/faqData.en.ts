@@ -52,6 +52,10 @@ export const FAQ_SECTIONS_EN: Section[] = [
         a: "Tap a card to open it. For a date you added yourself, you will find the edit and delete options there.",
       },
       {
+        q: "How do name days work?",
+        a: "A first name's name day is found automatically in the French calendar, including compound names (Jean-Luc is celebrated on St Luke's day). If you choose a name day yourself on a card, it is never changed again. A name day looks wrong? Use the \"Wrong name day?\" link under the card's name day: the fix benefits everyone.",
+      },
+      {
         q: "Are my friends' birthdays added automatically?",
         a: "Yes! As soon as a friend accepts your request, their birthday shows up in your list automatically with a FRIEND badge.",
       },
@@ -135,6 +139,10 @@ export const FAQ_SECTIONS_EN: Section[] = [
       {
         q: "What happens to the money pool if I hand over hosting?",
         a: "It is frozen and your bank details are removed from the event. The money already collected stays on YOUR Stripe account: it does not follow the role. It is up to you to pass it on or refund it, and the new host can open their own money pool. All participants are notified.",
+      },
+      {
+        q: "Can my guests invite other people?",
+        a: "Yes, by default: the \"Guests can invite\" option is ticked when you create an event. Untick it if you want to keep control of the guest list. You can change it later by editing the event.",
       },
       {
         q: "How do I leave an event?",
@@ -269,6 +277,18 @@ export const FAQ_SECTIONS_EN: Section[] = [
         a: "Yes: open the idea then tap \"Visible to guests · hide\". It stays visible to managers, marked 🙈, but disappears for guests and for the public link.",
       },
       {
+        q: "Can a guest suggest an idea?",
+        a: "Yes. On a list where you are a guest, open \"Suggestions\" then \"Suggest an idea\": enter the gift name and, if you like, a link, a price and an image. The \"Fetch details from the link\" button fills everything in from the product link. Your suggestion does not go straight into the list: the managers decide.",
+      },
+      {
+        q: "How do I accept or decline a suggestion?",
+        a: "If you manage the list, the \"Suggestions\" button (next to \"Share\") shows how many suggestions are waiting. Open it, then choose Accept or Decline on each card. An accepted suggestion becomes a normal idea in the list. The person who suggested it is told either way.",
+      },
+      {
+        q: "Where do I see the answer to my suggestion?",
+        a: "In \"Suggestions\" → \"My suggestions\": each card shows Pending, Accepted or Not kept, even if you cleared the notification. \"Clear\" removes an answer from your list, with a few seconds to undo.",
+      },
+      {
         q: "How do I find my way around a long list?",
         a: "The filter combines two criteria: the occasion, and the reservation status (available, reserved, or the ones you are taking care of). Gifts already given move below a line at the bottom: they are not deleted, they are the record of what has already been given.",
       },
@@ -307,6 +327,14 @@ export const FAQ_SECTIONS_EN: Section[] = [
         a: "Profile → Notifications. Choose to be reminded 30, 14, 7, 3 or 1 day(s) before, or on the day.",
       },
       {
+        q: "I am not getting notifications, what should I do?",
+        a: "First check that they are allowed on your phone. If you declined them at first launch, the app cannot ask you again: Profile → Notifications then shows a banner with an \"Open settings\" button. By hand: on iPhone, Settings → BirthReminder → Notifications → Allow Notifications; on Android, Settings → Apps → BirthReminder → Notifications. Then check that the category you want is ticked in Profile → Notifications.",
+      },
+      {
+        q: "How do I get the monthly recap?",
+        a: "Profile → Email notifications → Monthly recap. On the 1st of each month you receive the upcoming birthdays. This setting is independent of birthday reminders: you can keep one without the other.",
+      },
+      {
         q: "Are push notifications native?",
         a: "Yes. Accept the notification permission when the app starts. You can set reminders per date from a person's card.",
       },
@@ -328,6 +356,22 @@ export const FAQ_SECTIONS_EN: Section[] = [
       {
         q: "How do I change my password?",
         a: "Profile → Change my password. You will be asked for your current password.",
+      },
+      {
+        q: "How do I change the app's language?",
+        a: "The app follows your phone's language: French if your phone is in French, English otherwise. To choose yourself, go to Profile → Language. Notifications and emails arrive in the language you choose.",
+      },
+      {
+        q: "How old do I need to be to create an account?",
+        a: "15, or 16 in countries where the law requires it (Germany, Ireland, the Netherlands, Poland and others). The app tells you as soon as you pick your date of birth. Without an account there is no minimum age: your data stays on your phone.",
+      },
+      {
+        q: "Can I back up my cards?",
+        a: "Yes: Profile → Backup. The file contains your birthday cards, their gift ideas, their photos and your wishlist. You can restore it at any time without creating duplicates.",
+      },
+      {
+        q: "How do I contact support?",
+        a: "Profile → Contact support. The team's replies arrive in the Support tab of Chats, where you can continue the conversation. A notification tells you about each reply.",
       },
       {
         q: "How do I get a copy of my data?",

@@ -128,7 +128,9 @@
     "sendLinkNoCode": "🔗 Send the link without the code",
     "shareContact": "👤 Share with a contact",
     "manageAccess": "👥 Manage access and code",
-    "guestsNote": "Guests can view and reserve without editing the list. With a code, the public link shows nothing until it is entered."
+    "guestsNote": "Guests can view and reserve without editing the list. With a code, the public link shows nothing until it is entered.",
+    "tipMember": "Everyone books an idea with \"I'll take it\", to avoid duplicates. \"Share\" opens the list to guests: they can book ideas and suggest their own, which you will find under \"Suggestions\".",
+    "tipViewer": "You are a guest on this list: book an idea with \"I'll take it\", or suggest your own with the \"Suggestions\" button."
   },
   "share": {
     "ideasFor": "🎁 Gift ideas for {{name}}",
@@ -244,6 +246,9 @@
     "empty": "No suggestions yet. The guests of this list can send some.",
     "erase": "Clear",
     "erased": "\"{{gift}}\" cleared",
-    "withdrawn": "\"{{gift}}\" withdrawn"
+    "withdrawn": "\"{{gift}}\" withdrawn",
+    "declineAfter": "↩️ Decline after all",
+    "acceptAfter": "✅ Accept after all",
+    "declineRemoves": "The idea will be removed from the list."
   }
 }
