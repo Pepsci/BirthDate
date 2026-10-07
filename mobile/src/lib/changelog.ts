@@ -20,9 +20,9 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
-    version: "2.4.1",
+    version: "2.4.2",
     date: "2026-10-07",
-    build: "54",
+    build: "55",
     title: "BirthReminder en anglais, et des propositions sur les listes communes",
     note: "Les propositions d'idées, les notifications et les emails en anglais nécessitent la nouvelle version du serveur.",
     items: [

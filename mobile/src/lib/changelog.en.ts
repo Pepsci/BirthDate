@@ -16,7 +16,7 @@ const SERVER_NOTE =
   "Please report anything that gets in your way. Items marked ⚠️ need the new server version.";
 
 export const CHANGELOG_EN: Record<string, ChangelogText> = {
-  "2.4.1": {
+  "2.4.2": {
     title: "BirthReminder in English, and suggestions on shared lists",
     note: "Gift suggestions, and notifications and emails in English, need the new server version.",
     items: [

@@ -2,7 +2,7 @@
   "expo": {
     "name": "BirthReminder",
     "slug": "birthreminder",
-    "version": "2.4.1",
+    "version": "2.4.2",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "birthreminder",
@@ -14,7 +14,7 @@
     "ios": {
       "icon": "./assets/images/icon.png",
       "bundleIdentifier": "com.birthreminder.app",
-      "buildNumber": "54",
+      "buildNumber": "55",
       "supportsTablet": true,
       "associatedDomains": [
         "applinks:birthreminder.com"
